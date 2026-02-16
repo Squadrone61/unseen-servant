@@ -1,0 +1,218 @@
+import { GameRoom } from "./durable-objects/game-room";
+import { getGoogleAuthURL, handleGoogleCallback } from "./auth/google";
+import { verifyJWT } from "./auth/jwt";
+import { getProvider } from "@aidnd/shared";
+import type { AIProviderModel } from "@aidnd/shared";
+import type { Env } from "./types";
+
+export { GameRoom };
+
+function getCorsHeaders(): Record<string, string> {
+  return {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+  };
+}
+
+function generateRoomCode(): string {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let code = "";
+  const bytes = new Uint8Array(6);
+  crypto.getRandomValues(bytes);
+  for (const byte of bytes) {
+    code += chars[byte % chars.length];
+  }
+  return code;
+}
+
+async function fetchProviderModels(
+  format: string,
+  baseUrl: string,
+  modelsEndpoint: string,
+  apiKey: string
+): Promise<AIProviderModel[]> {
+  const origin = new URL(baseUrl).origin;
+
+  if (format === "gemini") {
+    const res = await fetch(`${origin}${modelsEndpoint}?key=${apiKey}&pageSize=100`);
+    if (!res.ok) throw new Error(`Gemini API error (${res.status})`);
+    const data = (await res.json()) as {
+      models: Array<{
+        name: string;
+        displayName: string;
+        supportedGenerationMethods?: string[];
+      }>;
+    };
+    return (data.models ?? [])
+      .filter((m) =>
+        m.supportedGenerationMethods?.includes("generateContent")
+      )
+      .map((m) => ({
+        id: m.name.replace(/^models\//, ""),
+        name: m.displayName,
+      }));
+  }
+
+  if (format === "anthropic") {
+    const res = await fetch(`${origin}${modelsEndpoint}?limit=100`, {
+      headers: {
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+      },
+    });
+    if (!res.ok) throw new Error(`Anthropic API error (${res.status})`);
+    const data = (await res.json()) as {
+      data: Array<{ id: string; display_name: string }>;
+    };
+    return (data.data ?? []).map((m) => ({
+      id: m.id,
+      name: m.display_name || m.id,
+    }));
+  }
+
+  // OpenAI-compatible: openai, groq, deepseek, xai, mistral, openrouter
+  const res = await fetch(`${origin}${modelsEndpoint}`, {
+    headers: { Authorization: `Bearer ${apiKey}` },
+  });
+  if (!res.ok) throw new Error(`${format} API error (${res.status})`);
+  const data = (await res.json()) as {
+    data: Array<{ id: string; name?: string }>;
+  };
+  return (data.data ?? []).map((m) => ({
+    id: m.id,
+    name: m.name || m.id,
+  }));
+}
+
+export default {
+  async fetch(request: Request, env: Env): Promise<Response> {
+    const url = new URL(request.url);
+    const cors = getCorsHeaders();
+
+    if (request.method === "OPTIONS") {
+      return new Response(null, { headers: cors });
+    }
+
+    // --- Auth routes ---
+
+    // GET /api/auth/google — redirect to Google OAuth consent screen
+    if (url.pathname === "/api/auth/google" && request.method === "GET") {
+      const authUrl = getGoogleAuthURL(env);
+      return Response.redirect(authUrl, 302);
+    }
+
+    // GET /api/auth/google/callback — handle OAuth callback
+    if (
+      url.pathname === "/api/auth/google/callback" &&
+      request.method === "GET"
+    ) {
+      return handleGoogleCallback(request, env);
+    }
+
+    // GET /api/auth/me — verify JWT and return user info
+    if (url.pathname === "/api/auth/me" && request.method === "GET") {
+      const authHeader = request.headers.get("Authorization");
+      if (!authHeader?.startsWith("Bearer ")) {
+        return new Response(JSON.stringify({ error: "No token provided" }), {
+          status: 401,
+          headers: { "Content-Type": "application/json", ...cors },
+        });
+      }
+
+      const token = authHeader.slice(7);
+      const payload = await verifyJWT(token, env.JWT_SECRET);
+      if (!payload) {
+        return new Response(JSON.stringify({ error: "Invalid or expired token" }), {
+          status: 401,
+          headers: { "Content-Type": "application/json", ...cors },
+        });
+      }
+
+      return new Response(
+        JSON.stringify({
+          userId: payload.sub,
+          displayName: payload.name,
+          email: payload.email,
+          avatarUrl: payload.picture,
+        }),
+        { headers: { "Content-Type": "application/json", ...cors } }
+      );
+    }
+
+    // --- Room routes ---
+
+    // POST /api/rooms/create — generate a new room code
+    if (url.pathname === "/api/rooms/create" && request.method === "POST") {
+      const roomCode = generateRoomCode();
+      return new Response(JSON.stringify({ roomCode }), {
+        headers: { "Content-Type": "application/json", ...cors },
+      });
+    }
+
+    // GET /api/rooms/:code/ws — WebSocket upgrade into a game room
+    const wsMatch = url.pathname.match(/^\/api\/rooms\/([A-Z0-9]{6})\/ws$/);
+    if (wsMatch) {
+      const roomCode = wsMatch[1];
+      const upgradeHeader = request.headers.get("Upgrade");
+      if (!upgradeHeader || upgradeHeader !== "websocket") {
+        return new Response("Expected WebSocket upgrade", { status: 426 });
+      }
+
+      const roomId = env.GAME_ROOM.idFromName(roomCode);
+      const room = env.GAME_ROOM.get(roomId);
+      return room.fetch(request);
+    }
+
+    // POST /api/models — fetch available models from a provider
+    if (url.pathname === "/api/models" && request.method === "POST") {
+      try {
+        const body = (await request.json()) as {
+          provider: string;
+          apiKey: string;
+        };
+        if (!body.provider || !body.apiKey) {
+          return new Response(
+            JSON.stringify({ error: "provider and apiKey required" }),
+            { status: 400, headers: { "Content-Type": "application/json", ...cors } }
+          );
+        }
+
+        const provider = getProvider(body.provider);
+        if (!provider) {
+          return new Response(
+            JSON.stringify({ error: `Unknown provider: ${body.provider}` }),
+            { status: 400, headers: { "Content-Type": "application/json", ...cors } }
+          );
+        }
+
+        const models = await fetchProviderModels(
+          provider.format,
+          provider.baseUrl,
+          provider.modelsEndpoint,
+          body.apiKey
+        );
+
+        return new Response(JSON.stringify({ models }), {
+          headers: { "Content-Type": "application/json", ...cors },
+        });
+      } catch (e) {
+        const message = e instanceof Error ? e.message : "Failed to fetch models";
+        return new Response(JSON.stringify({ error: message }), {
+          status: 502,
+          headers: { "Content-Type": "application/json", ...cors },
+        });
+      }
+    }
+
+    // GET /api/health
+    if (url.pathname === "/api/health") {
+      return new Response(
+        JSON.stringify({ status: "ok", timestamp: Date.now() }),
+        { headers: { "Content-Type": "application/json", ...cors } }
+      );
+    }
+
+    return new Response("Not Found", { status: 404 });
+  },
+} satisfies ExportedHandler<Env>;

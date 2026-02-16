@@ -1,0 +1,30 @@
+{
+  "name": "@aidnd/web",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "next build",
+    "build:cf": "npx @opennextjs/cloudflare build",
+    "deploy": "npx @opennextjs/cloudflare deploy",
+    "preview": "npx @opennextjs/cloudflare dev",
+    "start": "next start",
+    "type-check": "tsc --noEmit",
+    "lint": "echo 'lint placeholder'"
+  },
+  "dependencies": {
+    "@aidnd/shared": "workspace:*",
+    "next": "16.1.6",
+    "react": "19.2.3",
+    "react-dom": "19.2.3"
+  },
+  "devDependencies": {
+    "@opennextjs/cloudflare": "^1.16",
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}

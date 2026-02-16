@@ -1,0 +1,12 @@
+node_modules
+.next
+.open-next
+dist
+.wrangler
+.turbo
+*.tsbuildinfo
+.env
+.env.local
+.dev.vars
+worker-configuration.d.ts
+.claude

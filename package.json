@@ -1,0 +1,33 @@
+{
+  "name": "ai-dungeon-master",
+  "private": true,
+  "scripts": {
+    "build": "turbo build",
+    "dev": "turbo dev",
+    "lint": "turbo lint",
+    "type-check": "turbo type-check",
+    "dev:web": "turbo dev --filter=@aidnd/web",
+    "dev:worker": "turbo dev --filter=@aidnd/worker",
+    "dev:all": "turbo dev --filter=@aidnd/web --filter=@aidnd/worker",
+    "deploy": "turbo deploy",
+    "deploy:worker": "turbo deploy --filter=@aidnd/worker",
+    "deploy:web": "turbo deploy --filter=@aidnd/web"
+  },
+  "devDependencies": {
+    "turbo": "^2",
+    "typescript": "^5.9"
+  },
+  "packageManager": "pnpm@10.4.1",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "sharp",
+      "workerd"
+    ],
+    "ignoredBuiltDependencies": [
+      "esbuild",
+      "sharp",
+      "workerd"
+    ]
+  }
+}
