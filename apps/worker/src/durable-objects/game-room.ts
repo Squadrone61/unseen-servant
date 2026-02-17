@@ -32,6 +32,7 @@ export class GameRoom extends DurableObject<Env> {
   private aiConfig: AIConfig | null = null;
   private conversationHistory: ConversationMessage[] = [];
   private hostUserId: string | null = null;
+  private hostPlayerName: string = "";
   private approvedUserIds: Set<string> = new Set();
   private chatLog: ServerMessage[] = [];
   private roomCode: string = "";
@@ -62,17 +63,19 @@ export class GameRoom extends DurableObject<Env> {
 
     // Load persisted state from storage
     this.ctx.blockConcurrencyWhile(async () => {
-      const [chatLog, conversationHistory, aiConfig, roomCode] =
+      const [chatLog, conversationHistory, aiConfig, roomCode, hostPlayerName] =
         await Promise.all([
           this.ctx.storage.get<ServerMessage[]>("chatLog"),
           this.ctx.storage.get<ConversationMessage[]>("conversationHistory"),
           this.ctx.storage.get<AIConfig>("aiConfig"),
           this.ctx.storage.get<string>("roomCode"),
+          this.ctx.storage.get<string>("hostPlayerName"),
         ]);
       if (chatLog) this.chatLog = chatLog;
       if (conversationHistory) this.conversationHistory = conversationHistory;
       if (aiConfig) this.aiConfig = aiConfig;
       if (roomCode) this.roomCode = roomCode;
+      if (hostPlayerName) this.hostPlayerName = hostPlayerName;
       this.storageLoaded = true;
     });
   }
@@ -298,10 +301,14 @@ export class GameRoom extends DurableObject<Env> {
       // First player to join is the host
       status = "host";
       this.hostUserId = userId;
+      this.hostPlayerName = msg.playerName;
       this.approvedUserIds.add(userId);
+      this.ctx.storage.put("hostPlayerName", this.hostPlayerName);
     } else if (this.hostUserId === userId) {
       // Host reconnecting
       status = "host";
+      this.hostPlayerName = msg.playerName;
+      this.ctx.storage.put("hostPlayerName", this.hostPlayerName);
     } else if (this.approvedUserIds.has(userId)) {
       // Previously approved player reconnecting
       status = "approved";
@@ -334,6 +341,14 @@ export class GameRoom extends DurableObject<Env> {
           type: "server:join_request",
           playerName: msg.playerName,
           avatarUrl,
+        });
+      } else {
+        // Host is offline — let the pending player know
+        this.sendTo(ws, {
+          type: "server:system",
+          content:
+            "The host is currently offline. You'll be admitted when they return.",
+          timestamp: Date.now(),
         });
       }
       return;
@@ -400,6 +415,19 @@ export class GameRoom extends DurableObject<Env> {
 
     if (this.aiConfig && this.conversationHistory.length === 0 && !isReconnect) {
       this.sendAIGreeting();
+    }
+
+    // If the host just reconnected, notify them about any pending players
+    if (session.status === "host") {
+      for (const [, pendingSession] of this.sessions.entries()) {
+        if (pendingSession.status === "pending" && pendingSession.playerName) {
+          this.sendTo(ws, {
+            type: "server:join_request",
+            playerName: pendingSession.playerName,
+            avatarUrl: pendingSession.avatarUrl,
+          });
+        }
+      }
     }
   }
 
@@ -703,10 +731,7 @@ export class GameRoom extends DurableObject<Env> {
   }
 
   private getHostName(): string {
-    for (const session of this.sessions.values()) {
-      if (session.status === "host") return session.playerName;
-    }
-    return "";
+    return this.hostPlayerName;
   }
 
   private getRoomCode(): string {

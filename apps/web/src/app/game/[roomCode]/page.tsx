@@ -5,6 +5,7 @@ import { useCallback, useState } from "react";
 import { ChatPanel } from "@/components/chat/ChatPanel";
 import { Sidebar } from "@/components/sidebar/Sidebar";
 import { PendingOverlay } from "@/components/game/PendingOverlay";
+import { JoinGate } from "@/components/game/JoinGate";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import type { AIConfig, ServerMessage } from "@aidnd/shared/types";
 
@@ -31,8 +32,36 @@ function isLogMessage(msg: ServerMessage): boolean {
   return msg.type === "server:system" || msg.type === "server:error";
 }
 
+function getInitialPlayerName(): string | null {
+  if (typeof window === "undefined") return null;
+  return sessionStorage.getItem("playerName") || null;
+}
+
 export default function GamePage() {
   const { roomCode } = useParams<{ roomCode: string }>();
+  const initialName = getInitialPlayerName();
+  const [playerName, setPlayerName] = useState<string | null>(initialName);
+
+  // If no name in sessionStorage, show the JoinGate
+  if (!playerName) {
+    return (
+      <JoinGate
+        roomCode={roomCode}
+        onReady={(name) => setPlayerName(name)}
+      />
+    );
+  }
+
+  return <GameContent roomCode={roomCode} playerName={playerName} />;
+}
+
+function GameContent({
+  roomCode,
+  playerName,
+}: {
+  roomCode: string;
+  playerName: string;
+}) {
   const router = useRouter();
   const [storyMessages, setStoryMessages] = useState<ServerMessage[]>([]);
   const [logMessages, setLogMessages] = useState<ServerMessage[]>([]);
@@ -45,10 +74,6 @@ export default function GamePage() {
   const [joinPending, setJoinPending] = useState(false);
   const [pendingPlayers, setPendingPlayers] = useState<string[]>([]);
 
-  const playerName =
-    typeof window !== "undefined"
-      ? sessionStorage.getItem("playerName") || "Anonymous"
-      : "Anonymous";
   const aiConfig = loadAIConfig();
   const authToken =
     typeof window !== "undefined"
