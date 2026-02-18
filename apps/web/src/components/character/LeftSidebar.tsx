@@ -81,21 +81,33 @@ export function LeftSidebar({ character, onCharacterImported }: LeftSidebarProps
           )}
           <div className="flex items-center gap-1 shrink-0">
             {character && (
-              <button
-                onClick={() => {
-                  const next = !showReimport;
-                  setShowReimport(next);
-                  if (next) resetForReimport();
-                }}
-                className={`text-xs px-2 py-0.5 rounded transition-colors ${
-                  showReimport
-                    ? "bg-purple-600/20 text-purple-400"
-                    : "text-gray-500 hover:text-gray-300"
-                }`}
-                title="Re-import character after leveling up or making changes on D&D Beyond"
-              >
-                Update
-              </button>
+              <>
+                <button
+                  onClick={() => {
+                    const next = !showReimport;
+                    setShowReimport(next);
+                    if (next) resetForReimport();
+                  }}
+                  className={`text-xs px-2 py-0.5 rounded transition-colors ${
+                    showReimport
+                      ? "bg-purple-600/20 text-purple-400"
+                      : "text-gray-500 hover:text-gray-300"
+                  }`}
+                  title="Re-import character after leveling up or making changes on D&D Beyond"
+                >
+                  Update
+                </button>
+                <button
+                  onClick={() => {
+                    clearCharacter();
+                    setShowReimport(true);
+                  }}
+                  className="text-xs px-2 py-0.5 rounded text-gray-500 hover:text-gray-300 transition-colors"
+                  title="Clear current character and import a new one"
+                >
+                  Change
+                </button>
+              </>
             )}
             <button
               onClick={() => setCollapsed(true)}
