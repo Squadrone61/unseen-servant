@@ -13,9 +13,11 @@ interface LeftSidebarProps {
   onCharacterImported: (character: CharacterData) => void;
 }
 
+type ImportMode = "closed" | "update" | "change";
+
 export function LeftSidebar({ character, onCharacterImported }: LeftSidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
-  const [showReimport, setShowReimport] = useState(false);
+  const [importMode, setImportMode] = useState<ImportMode>("closed");
 
   const {
     importState,
@@ -27,13 +29,14 @@ export function LeftSidebar({ character, onCharacterImported }: LeftSidebarProps
     importFromJson,
     clearCharacter,
     resetForReimport,
+    setFreshImport,
   } = useCharacterImport({ existingCharacter: character });
 
-  // When import succeeds, bubble up to GameContent and close re-import panel
+  // When import succeeds, bubble up to GameContent and close import panel
   useEffect(() => {
     if (importedCharacter && importState === "success") {
       onCharacterImported(importedCharacter);
-      setShowReimport(false);
+      setImportMode("closed");
     }
   }, [importedCharacter, importState, onCharacterImported]);
 
@@ -63,6 +66,8 @@ export function LeftSidebar({ character, onCharacterImported }: LeftSidebarProps
     );
   }
 
+  const panelOpen = importMode !== "closed";
+
   return (
     <div className="w-80 bg-gray-800 border-r border-gray-700 flex flex-col shrink-0 relative">
       {/* Header */}
@@ -84,12 +89,16 @@ export function LeftSidebar({ character, onCharacterImported }: LeftSidebarProps
               <>
                 <button
                   onClick={() => {
-                    const next = !showReimport;
-                    setShowReimport(next);
-                    if (next) resetForReimport();
+                    if (importMode === "update") {
+                      setImportMode("closed");
+                    } else {
+                      setImportMode("update");
+                      setFreshImport(false);
+                      resetForReimport();
+                    }
                   }}
                   className={`text-xs px-2 py-0.5 rounded transition-colors ${
-                    showReimport
+                    importMode === "update"
                       ? "bg-purple-600/20 text-purple-400"
                       : "text-gray-500 hover:text-gray-300"
                   }`}
@@ -99,11 +108,21 @@ export function LeftSidebar({ character, onCharacterImported }: LeftSidebarProps
                 </button>
                 <button
                   onClick={() => {
-                    clearCharacter();
-                    setShowReimport(true);
+                    if (importMode === "change") {
+                      setImportMode("closed");
+                      setFreshImport(false);
+                    } else {
+                      setImportMode("change");
+                      setFreshImport(true);
+                      resetForReimport();
+                    }
                   }}
-                  className="text-xs px-2 py-0.5 rounded text-gray-500 hover:text-gray-300 transition-colors"
-                  title="Clear current character and import a new one"
+                  className={`text-xs px-2 py-0.5 rounded transition-colors ${
+                    importMode === "change"
+                      ? "bg-purple-600/20 text-purple-400"
+                      : "text-gray-500 hover:text-gray-300"
+                  }`}
+                  title="Import a different character from scratch"
                 >
                   Change
                 </button>
@@ -152,24 +171,29 @@ export function LeftSidebar({ character, onCharacterImported }: LeftSidebarProps
       <div className="flex-1 overflow-hidden flex flex-col">
         {character ? (
           <div className="flex flex-col flex-1 min-h-0">
-            {/* Re-import panel (shown when Update is clicked) */}
-            {showReimport && (
+            {/* Import panel (shown when Update or Change is clicked) */}
+            {panelOpen && (
               <div className="bg-gray-900/50 border border-gray-700 rounded-lg p-3 mx-3 mt-3 space-y-2 shrink-0">
                 <div className="flex items-center justify-between">
                   <div className="text-xs text-gray-400 font-medium">
-                    Re-import Character
+                    {importMode === "change"
+                      ? "Change Character"
+                      : "Re-import Character"}
                   </div>
                   <button
-                    onClick={() => setShowReimport(false)}
+                    onClick={() => {
+                      setImportMode("closed");
+                      setFreshImport(false);
+                    }}
                     className="text-gray-600 hover:text-gray-400 transition-colors text-xs"
                   >
                     Cancel
                   </button>
                 </div>
                 <p className="text-[10px] text-gray-500">
-                  Leveled up or made changes on D&D Beyond? Re-import to update
-                  your stats. Your current HP, conditions, and spell slot usage
-                  will be preserved.
+                  {importMode === "change"
+                    ? "Import a new character. All current data will be replaced."
+                    : "Leveled up or made changes on D&D Beyond? Re-import to update your stats. Your current HP, conditions, and spell slot usage will be preserved."}
                 </p>
                 <CharacterImport
                   importState={importState}

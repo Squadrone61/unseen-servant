@@ -22,6 +22,8 @@ interface UseCharacterImportResult {
   clearCharacter: () => void;
   /** Reset import state to idle (shows the form) without clearing character from storage */
   resetForReimport: () => void;
+  /** When true, next import skips mergeReimport and uses fresh DDB data */
+  setFreshImport: (value: boolean) => void;
 }
 
 function getWorkerUrl(): string {
@@ -43,6 +45,12 @@ export function useCharacterImport(
   const existingRef = useRef(options?.existingCharacter ?? null);
   existingRef.current = options?.existingCharacter ?? null;
 
+  // When true, next import skips mergeReimport and uses fresh data
+  const freshImportRef = useRef(false);
+  const setFreshImport = useCallback((value: boolean) => {
+    freshImportRef.current = value;
+  }, []);
+
   // Load from localStorage on mount
   useEffect(() => {
     try {
@@ -60,12 +68,13 @@ export function useCharacterImport(
   }, []);
 
   const saveCharacter = useCallback((newChar: CharacterData) => {
-    // If we have an existing character, merge to preserve dynamic state
+    // If we have an existing character and this is NOT a fresh import, merge to preserve dynamic state
     const existing = existingRef.current;
     const finalChar =
-      existing
+      existing && !freshImportRef.current
         ? mergeReimport(existing, newChar.static, newChar.dynamic)
         : newChar;
+    freshImportRef.current = false; // reset after use
 
     setCharacter(finalChar);
     setImportState("success");
@@ -174,5 +183,6 @@ export function useCharacterImport(
     importFromJson,
     clearCharacter,
     resetForReimport,
+    setFreshImport,
   };
 }
