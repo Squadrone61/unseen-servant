@@ -30,20 +30,6 @@ export function useModels(
       return;
     }
 
-    // Check sessionStorage cache — return immediately, no debounce
-    const cacheKey = `models_${providerId}`;
-    try {
-      const cached = sessionStorage.getItem(cacheKey);
-      if (cached) {
-        setModels(JSON.parse(cached));
-        setError(null);
-        setLoading(false);
-        return;
-      }
-    } catch {
-      // ignore
-    }
-
     // Show loading immediately while debouncing
     setLoading(true);
 
@@ -73,13 +59,6 @@ export function useModels(
         const data = (await res.json()) as { models: AIProviderModel[] };
         setModels(data.models);
         setError(null);
-
-        // Cache in sessionStorage
-        try {
-          sessionStorage.setItem(cacheKey, JSON.stringify(data.models));
-        } catch {
-          // quota exceeded, ignore
-        }
       } catch (e) {
         if ((e as Error).name === "AbortError") return;
         setError((e as Error).message);

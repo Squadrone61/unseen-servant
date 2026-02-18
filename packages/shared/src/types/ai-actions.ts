@@ -2,7 +2,7 @@
 // Structured actions the AI embeds in its response as fenced JSON blocks.
 // The server parses, validates, and applies these via the state resolver.
 
-import type { CheckType, CreatureSize, GridPosition } from "./game-state";
+import type { CheckType, CreatureSize, GridPosition, JournalNPC } from "./game-state";
 
 // ─── Individual action types ───
 
@@ -141,6 +141,18 @@ export interface AILongRest {
   targets?: string[];
 }
 
+export interface AIJournalUpdate {
+  type: "journal_update";
+  storySummary?: string;
+  activeQuest?: string;
+  questCompleted?: string;
+  addNPC?: JournalNPC;
+  removeNPC?: string;
+  addLocation?: string;
+  addItem?: string;
+  removeItem?: string;
+}
+
 // ─── Union type ───
 
 export type AIAction =
@@ -161,7 +173,8 @@ export type AIAction =
   | AIAddCombatants
   | AIMoveCombatant
   | AIShortRest
-  | AILongRest;
+  | AILongRest
+  | AIJournalUpdate;
 
 // ─── Wrapper the AI produces ───
 

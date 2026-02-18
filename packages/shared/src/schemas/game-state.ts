@@ -210,6 +210,25 @@ export const gameEventSchema = z.object({
   changes: z.array(stateChangeSchema),
 });
 
+// ─── Campaign Journal ───
+
+export const journalNPCSchema = z.object({
+  name: z.string(),
+  role: z.string(),
+  disposition: z.string(),
+  lastSeen: z.string().optional(),
+});
+
+export const campaignJournalSchema = z.object({
+  storySummary: z.string(),
+  activeQuest: z.string().optional(),
+  completedQuests: z.array(z.string()),
+  npcs: z.array(journalNPCSchema),
+  locations: z.array(z.string()),
+  notableItems: z.array(z.string()),
+  partyLevel: z.number(),
+});
+
 // ─── Game State ───
 
 export const gameStateSchema = z.object({
@@ -219,6 +238,7 @@ export const gameStateSchema = z.object({
   encounterLength: encounterLengthSchema,
   customSystemPrompt: z.string().optional(),
   pendingCheck: checkRequestSchema.optional(),
+  journal: campaignJournalSchema.optional(),
 });
 
 // ─── AI Actions ───
@@ -363,6 +383,18 @@ const aiLongRestSchema = z.object({
   targets: z.array(z.string()).optional(),
 });
 
+const aiJournalUpdateSchema = z.object({
+  type: z.literal("journal_update"),
+  storySummary: z.string().optional(),
+  activeQuest: z.string().optional(),
+  questCompleted: z.string().optional(),
+  addNPC: journalNPCSchema.optional(),
+  removeNPC: z.string().optional(),
+  addLocation: z.string().optional(),
+  addItem: z.string().optional(),
+  removeItem: z.string().optional(),
+});
+
 export const aiActionSchema = z.discriminatedUnion("type", [
   aiCheckRequestSchema,
   aiDamageSchema,
@@ -382,6 +414,7 @@ export const aiActionSchema = z.discriminatedUnion("type", [
   aiMoveCombatantSchema,
   aiShortRestSchema,
   aiLongRestSchema,
+  aiJournalUpdateSchema,
 ]);
 
 export const aiActionBlockSchema = z.object({

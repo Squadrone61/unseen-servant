@@ -120,6 +120,11 @@ export interface ClientDMOverrideMessage {
   changes: StateChange[];
 }
 
+/** Host-only: permanently destroy the room and wipe all data */
+export interface ClientDestroyRoomMessage {
+  type: "client:destroy_room";
+}
+
 export type ClientMessage =
   | ClientChatMessage
   | ClientJoinMessage
@@ -135,7 +140,8 @@ export type ClientMessage =
   | ClientRollbackMessage
   | ClientSetSystemPromptMessage
   | ClientSetPacingMessage
-  | ClientDMOverrideMessage;
+  | ClientDMOverrideMessage
+  | ClientDestroyRoomMessage;
 
 // === Server → Client messages ===
 
@@ -276,6 +282,11 @@ export interface ServerEventLogMessage {
   event: GameEvent;
 }
 
+/** Broadcast when host destroys the room — all clients should disconnect */
+export interface ServerRoomDestroyedMessage {
+  type: "server:room_destroyed";
+}
+
 export type ServerMessage =
   | ServerChatMessage
   | ServerAIMessage
@@ -294,4 +305,5 @@ export type ServerMessage =
   | ServerCombatUpdateMessage
   | ServerGameStateSyncMessage
   | ServerRollbackMessage
-  | ServerEventLogMessage;
+  | ServerEventLogMessage
+  | ServerRoomDestroyedMessage;

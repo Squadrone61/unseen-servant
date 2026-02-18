@@ -208,8 +208,15 @@ function GameContent({
           router.push("/");
           break;
 
+        case "server:room_destroyed":
+          sessionStorage.removeItem("playerName");
+          sessionStorage.setItem("kick_message", "The room has been destroyed by the host.");
+          router.push("/");
+          return;
+
         case "server:error":
-          if (msg.code === "REJECTED") {
+          if (msg.code === "REJECTED" || msg.code === "ROOM_NOT_FOUND") {
+            sessionStorage.removeItem("playerName");
             sessionStorage.setItem("kick_message", msg.message);
             router.push("/");
             return;
@@ -325,6 +332,10 @@ function GameContent({
     send({ type: "client:rollback", eventId });
   };
 
+  const handleDestroyRoom = () => {
+    send({ type: "client:destroy_room" });
+  };
+
   const handleCharacterImported = useCallback(
     (character: CharacterData) => {
       setMyCharacter(character);
@@ -376,6 +387,7 @@ function GameContent({
         onKick={handleKick}
         onStartStory={handleStartStory}
         onRollback={handleRollback}
+        onDestroyRoom={handleDestroyRoom}
       />
     </div>
   );

@@ -523,6 +523,74 @@ export function resolveActions(
         }
         break;
       }
+
+      case "journal_update": {
+        // Apply journal updates to game state
+        if (!gameState.journal) {
+          gameState.journal = {
+            storySummary: "",
+            completedQuests: [],
+            npcs: [],
+            locations: [],
+            notableItems: [],
+            partyLevel: 1,
+          };
+        }
+        const j = gameState.journal;
+
+        if (action.storySummary) j.storySummary = action.storySummary;
+        if (action.activeQuest !== undefined) j.activeQuest = action.activeQuest;
+        if (action.questCompleted) {
+          j.completedQuests.push(action.questCompleted);
+          // Keep last 10 completed quests
+          if (j.completedQuests.length > 10) {
+            j.completedQuests = j.completedQuests.slice(-10);
+          }
+          // Clear active quest if it matches the completed one
+          if (j.activeQuest === action.questCompleted) {
+            j.activeQuest = undefined;
+          }
+        }
+        if (action.addNPC) {
+          // Replace existing NPC with same name, or add new
+          const idx = j.npcs.findIndex(
+            (n) => n.name.toLowerCase() === action.addNPC!.name.toLowerCase()
+          );
+          if (idx >= 0) {
+            j.npcs[idx] = action.addNPC;
+          } else {
+            j.npcs.push(action.addNPC);
+          }
+          // Cap at 10 NPCs — evict oldest
+          if (j.npcs.length > 10) {
+            j.npcs = j.npcs.slice(-10);
+          }
+        }
+        if (action.removeNPC) {
+          j.npcs = j.npcs.filter(
+            (n) => n.name.toLowerCase() !== action.removeNPC!.toLowerCase()
+          );
+        }
+        if (action.addLocation && !j.locations.includes(action.addLocation)) {
+          j.locations.push(action.addLocation);
+          // Cap at 8 locations — evict oldest
+          if (j.locations.length > 8) {
+            j.locations = j.locations.slice(-8);
+          }
+        }
+        if (action.addItem && !j.notableItems.includes(action.addItem)) {
+          j.notableItems.push(action.addItem);
+          if (j.notableItems.length > 8) {
+            j.notableItems = j.notableItems.slice(-8);
+          }
+        }
+        if (action.removeItem) {
+          j.notableItems = j.notableItems.filter(
+            (i) => i.toLowerCase() !== action.removeItem!.toLowerCase()
+          );
+        }
+        break;
+      }
     }
 
     // Create event for non-trivial actions
@@ -1009,5 +1077,7 @@ function describeAction(action: AIAction): string {
       return "Short rest";
     case "long_rest":
       return "Long rest";
+    case "journal_update":
+      return "Journal updated";
   }
 }

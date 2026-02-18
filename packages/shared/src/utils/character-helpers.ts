@@ -175,6 +175,27 @@ export function buildCharacterContextBlock(
     );
   }
 
+  // Depletion warnings — help AI avoid impossible actions
+  const warnings: string[] = [];
+  if (d.currentHP === 0) {
+    warnings.push("UNCONSCIOUS at 0 HP — needs death saves");
+  } else if (s.maxHP > 0 && d.currentHP / s.maxHP <= 0.25) {
+    warnings.push(`LOW HP (${d.currentHP}/${s.maxHP})`);
+  }
+  for (const sl of d.spellSlotsUsed) {
+    if (sl.total > 0 && sl.used >= sl.total) {
+      warnings.push(`NO level ${sl.level} spell slots`);
+    }
+  }
+  for (const sl of d.pactMagicSlots || []) {
+    if (sl.total > 0 && sl.used >= sl.total) {
+      warnings.push(`NO pact slots (level ${sl.level})`);
+    }
+  }
+  if (warnings.length > 0) {
+    lines.push(`**\u26A0\uFE0F WARNING:** ${warnings.join(", ")}`);
+  }
+
   return lines.join("\n");
 }
 

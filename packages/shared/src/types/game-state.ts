@@ -207,6 +207,35 @@ export interface GameEvent {
 export type PacingProfile = "story-heavy" | "balanced" | "combat-heavy";
 export type EncounterLength = "quick" | "standard" | "epic";
 
+// ─── Campaign Journal ───
+
+export interface JournalNPC {
+  name: string;
+  /** e.g. "quest giver", "merchant", "antagonist" */
+  role: string;
+  /** e.g. "friendly", "hostile", "neutral" */
+  disposition: string;
+  /** Last known location, e.g. "Oakfield tavern" */
+  lastSeen?: string;
+}
+
+export interface CampaignJournal {
+  /** 1-3 sentence summary of story so far */
+  storySummary: string;
+  /** Current objective */
+  activeQuest?: string;
+  /** Short labels of completed quests */
+  completedQuests: string[];
+  /** Key NPCs the party has met (max 10) */
+  npcs: JournalNPC[];
+  /** Visited location names (max 8) */
+  locations: string[];
+  /** Important loot/artifacts (max 8) */
+  notableItems: string[];
+  /** Party level for quick reference */
+  partyLevel: number;
+}
+
 // ─── Session-Level Game State ───
 
 export interface GameState {
@@ -217,4 +246,6 @@ export interface GameState {
   customSystemPrompt?: string;
   /** Check pending outside of combat (exploration phase) */
   pendingCheck?: CheckRequest;
+  /** Compact campaign journal maintained by AI for story continuity */
+  journal?: CampaignJournal;
 }

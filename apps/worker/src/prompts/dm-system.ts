@@ -1,4 +1,5 @@
 import type {
+  CampaignJournal,
   CharacterData,
   CombatState,
   PacingProfile,
@@ -39,6 +40,7 @@ CHARACTER RULES:
 - When a character attempts an action, consider their ability scores and proficiencies
 - Note when a spell or ability would be appropriate for the situation
 - If a character's HP is low, describe them as visibly wounded or exhausted
+- If a character has a WARNING in their sheet (low HP, no spell slots), respect it — do NOT allow actions that require depleted resources
 - Use character backgrounds, traits, and bonds to enrich interactions`;
 
 const STRUCTURED_OUTPUT_INSTRUCTIONS = `
@@ -107,6 +109,11 @@ CRITICAL: When game-mechanical events occur, you MUST include a JSON action bloc
 { "type": "long_rest" }
 \`\`\`
 
+**Story Journal (emit after significant story beats — new quests, NPCs, locations, quest completions):**
+\`\`\`
+{ "type": "journal_update", "storySummary": "The party cleared the goblin caves and rescued the merchant.", "activeQuest": "Return to Oakfield with the rescued merchant", "addNPC": { "name": "Eldon", "role": "merchant", "disposition": "grateful", "lastSeen": "Goblin Caves" }, "addLocation": "Goblin Caves" }
+\`\`\`
+
 ### Rules for Actions:
 1. ALWAYS request checks before narrating uncertain outcomes. Do NOT decide success/failure — the server rolls dice.
 2. After requesting a check, STOP and wait. The system will tell you the result, then you narrate the outcome.
@@ -115,7 +122,76 @@ CRITICAL: When game-mechanical events occur, you MUST include a JSON action bloc
 5. Use exact character names as they appear in the party roster.
 6. For attack rolls, use \`"type": "attack"\` in the check.
 7. During combat, end enemy/NPC turns with \`turn_end\` after their actions.
-8. Do NOT include damage in the same response as an attack check_request — wait for the roll result first.`;
+8. Do NOT include damage in the same response as an attack check_request — wait for the roll result first.
+9. When a leveled spell is cast, ALWAYS include \`spell_slot_use\` in the same action block.
+10. ALL damage MUST include a \`damage\` action. ALL healing MUST include a \`healing\` action. Narrating damage/healing without the action does NOTHING to the character's HP.`;
+
+const FEW_SHOT_EXAMPLES = `
+
+## EXAMPLES OF CORRECT ACTION OUTPUT
+
+**Player attacks in combat:**
+> [Player1]: I swing my battleaxe at the goblin!
+
+*Thorin raises his battleaxe high and brings it crashing down toward the snarling goblin!*
+
+\`\`\`json:actions
+{ "actions": [{ "type": "check_request", "check": { "type": "attack", "ability": "strength", "dc": 15, "targetCharacter": "Thorin", "reason": "Battleaxe melee attack vs Goblin (AC 15)" } }] }
+\`\`\`
+
+**After a successful attack (system said "Thorin rolled 18 — Success"):**
+
+*The battleaxe cleaves into the goblin with a sickening crunch, splitting its crude shield in two!*
+
+\`\`\`json:actions
+{ "actions": [{ "type": "damage", "target": "Goblin", "amount": 9, "damageType": "slashing" }, { "type": "turn_end" }] }
+\`\`\`
+
+**Casting a leveled spell:**
+
+*Elara raises her staff, channeling arcane energy. A bolt of fire streaks toward the goblin boss!*
+
+\`\`\`json:actions
+{ "actions": [{ "type": "spell_slot_use", "target": "Elara", "level": 1 }, { "type": "check_request", "check": { "type": "attack", "ability": "intelligence", "dc": 17, "targetCharacter": "Elara", "reason": "Chromatic Orb ranged spell attack vs Goblin Boss (AC 17)" } }] }
+\`\`\`
+
+**WRONG — never do this:**
+*The goblin slashes Thorin for 6 damage!*
+(MISSING the damage action — Thorin's HP will NOT change! Always include the JSON action block.)`;
+
+const COMBAT_RULES = `
+
+## COMBAT RULES (STRICT — follow exactly during combat)
+
+TURN STRUCTURE:
+- Each combatant gets ONE turn per round: Movement + Action + Bonus Action + free object interaction
+- You MUST emit \`turn_end\` after resolving each NPC/enemy turn
+- NEVER skip a combatant's turn — process them in initiative order
+- Only resolve the ACTIVE combatant's turn (marked with << ACTIVE TURN)
+
+ATTACKS:
+- Melee/ranged attacks ALWAYS require \`check_request\` with type "attack" — NEVER narrate hit/miss without a roll
+- Set the DC equal to the target's AC
+- After a SUCCESSFUL attack roll result, emit \`damage\` in your NEXT response with the appropriate damage amount and type
+- After a FAILED attack roll result, narrate the miss — no damage action
+- NEVER emit damage and attack check_request in the same response — always wait for the roll result
+
+SPELLS:
+- When ANY leveled spell is cast (level 1+), ALWAYS emit \`spell_slot_use\` with the spell's level
+- Check the character's spell slot availability — if they have NO slots of that level, the spell CANNOT be cast
+- Cantrips (level 0) do NOT consume spell slots
+- Spell attacks use \`check_request\` with type "attack"; spell saves use \`check_request\` with type "saving_throw"
+
+HP TRACKING:
+- ALL damage MUST be emitted as a \`damage\` action — narrating damage without the action changes NOTHING
+- ALL healing MUST be emitted as a \`healing\` action
+- Track NPC/enemy HP: when their HP reaches 0, narrate their defeat
+- Apply conditions (poisoned, prone, stunned, restrained, etc.) via \`condition_add\`; remove when they expire
+
+DEATH & UNCONSCIOUSNESS:
+- At 0 HP, a creature is unconscious (not dead, unless massive damage)
+- Player characters at 0 HP must make death saving throws — emit \`death_save\` on their turn
+- 3 successes = stabilized, 3 failures = death`;
 
 const PACING_INSTRUCTIONS: Record<PacingProfile, string> = {
   "story-heavy": `
@@ -151,6 +227,38 @@ const ENCOUNTER_LENGTH_NOTES: Record<EncounterLength, string> = {
   standard: "\n- Standard encounter length: 3-5 rounds of combat.",
   epic: "\n- EPIC encounters: multi-phase battles, legendary actions, environmental hazards, 5+ rounds.",
 };
+
+function buildJournalContext(journal: CampaignJournal): string {
+  const lines: string[] = ["\n## CAMPAIGN JOURNAL"];
+
+  lines.push(`**Story so far:** ${journal.storySummary}`);
+
+  if (journal.activeQuest) {
+    lines.push(`**Current quest:** ${journal.activeQuest}`);
+  }
+
+  if (journal.completedQuests.length > 0) {
+    lines.push(`**Completed:** ${journal.completedQuests.join(", ")}`);
+  }
+
+  if (journal.npcs.length > 0) {
+    const npcStrs = journal.npcs.map((n) => {
+      const loc = n.lastSeen ? `, ${n.lastSeen}` : "";
+      return `${n.name} (${n.role}, ${n.disposition}${loc})`;
+    });
+    lines.push(`**Key NPCs:** ${npcStrs.join("; ")}`);
+  }
+
+  if (journal.locations.length > 0) {
+    lines.push(`**Visited locations:** ${journal.locations.join(", ")}`);
+  }
+
+  if (journal.notableItems.length > 0) {
+    lines.push(`**Notable loot:** ${journal.notableItems.join(", ")}`);
+  }
+
+  return lines.join("\n");
+}
 
 function buildCombatContext(combat: CombatState): string {
   const lines: string[] = ["\n## CURRENT COMBAT STATE"];
@@ -191,11 +299,12 @@ export interface BuildDMPromptOptions {
   pacingProfile?: PacingProfile;
   encounterLength?: EncounterLength;
   combatState?: CombatState;
+  journal?: CampaignJournal;
 }
 
 /**
  * Build a dynamic DM system prompt that includes character data,
- * structured output instructions, pacing profile, and combat context.
+ * structured output instructions, pacing profile, combat rules, and combat context.
  */
 export function buildDMSystemPrompt(options: BuildDMPromptOptions): string {
   const {
@@ -204,12 +313,15 @@ export function buildDMSystemPrompt(options: BuildDMPromptOptions): string {
     pacingProfile = "balanced",
     encounterLength = "standard",
     combatState,
+    journal,
   } = options;
 
   const entries = Object.entries(characters);
 
+  // 1. Base prompt (or custom override)
   let prompt = customPrompt || BASE_PROMPT;
 
+  // 2. Character rules + character blocks
   if (entries.length > 0) {
     prompt += CHARACTER_RULES;
 
@@ -220,14 +332,27 @@ export function buildDMSystemPrompt(options: BuildDMPromptOptions): string {
     prompt += `\n\n## THE ADVENTURING PARTY\n\n${characterBlocks}`;
   }
 
-  // Structured output instructions (always included)
+  // 3. Campaign journal (if exists)
+  if (journal) {
+    prompt += buildJournalContext(journal);
+  }
+
+  // 4. Structured output instructions (always included)
   prompt += STRUCTURED_OUTPUT_INSTRUCTIONS;
 
-  // Pacing
+  // 5. Few-shot examples (always included)
+  prompt += FEW_SHOT_EXAMPLES;
+
+  // 6. Pacing
   prompt += PACING_INSTRUCTIONS[pacingProfile];
   prompt += ENCOUNTER_LENGTH_NOTES[encounterLength];
 
-  // Combat context
+  // 7. Combat rules (only during active combat)
+  if (combatState && combatState.phase === "active") {
+    prompt += COMBAT_RULES;
+  }
+
+  // 8. Combat state context (only during active combat)
   if (combatState && combatState.phase === "active") {
     prompt += buildCombatContext(combatState);
   }

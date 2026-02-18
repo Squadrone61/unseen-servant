@@ -66,6 +66,8 @@ export class GameRoom extends DurableObject<Env> {
   private allPlayerRecords: Map<string, PlayerRecord> = new Map(); // keyed by userId
   private storyStarted: boolean = false;
   private gameState: GameState = { ...DEFAULT_GAME_STATE, eventLog: [] };
+  /** Whether this room was explicitly created via /api/rooms/create */
+  private created: boolean = false;
 
   constructor(ctx: DurableObjectState, env: Env) {
     super(ctx, env);
@@ -95,7 +97,7 @@ export class GameRoom extends DurableObject<Env> {
       const [
         chatLog, conversationHistory, aiConfig, roomCode,
         hostPlayerName, characters, allPlayerRecords, storyStarted,
-        gameState,
+        gameState, created,
       ] = await Promise.all([
         this.ctx.storage.get<ServerMessage[]>("chatLog"),
         this.ctx.storage.get<ConversationMessage[]>("conversationHistory"),
@@ -106,6 +108,7 @@ export class GameRoom extends DurableObject<Env> {
         this.ctx.storage.get<Record<string, PlayerRecord>>("allPlayerRecords"),
         this.ctx.storage.get<boolean>("storyStarted"),
         this.ctx.storage.get<GameState>("gameState"),
+        this.ctx.storage.get<boolean>("created"),
       ]);
       if (chatLog) this.chatLog = chatLog;
       if (conversationHistory) this.conversationHistory = conversationHistory;
@@ -116,6 +119,7 @@ export class GameRoom extends DurableObject<Env> {
       if (allPlayerRecords) this.allPlayerRecords = new Map(Object.entries(allPlayerRecords));
       if (storyStarted) this.storyStarted = storyStarted;
       if (gameState) this.gameState = gameState;
+      if (created) this.created = created;
       this.storageLoaded = true;
     });
   }
@@ -134,7 +138,109 @@ export class GameRoom extends DurableObject<Env> {
     await this.ctx.storage.put("conversationHistory", this.conversationHistory);
   }
 
+  // ─── Conversation Compaction ───
+
+  private static readonly COMPACTION_THRESHOLD = 40;
+  private static readonly KEEP_RECENT = 14;
+
+  /**
+   * Compact conversation history if it exceeds the threshold.
+   * Replaces old messages with a server-side summary, keeping recent messages verbatim.
+   * The campaign journal provides structured continuity that compaction might lose.
+   */
+  private async compactConversationIfNeeded(): Promise<void> {
+    if (this.conversationHistory.length < GameRoom.COMPACTION_THRESHOLD) return;
+
+    const oldMessages = this.conversationHistory.slice(0, -GameRoom.KEEP_RECENT);
+    const recentMessages = this.conversationHistory.slice(-GameRoom.KEEP_RECENT);
+
+    const summary = this.buildConversationSummary(oldMessages);
+
+    // Replace history: [summary] + recent messages
+    this.conversationHistory = [
+      { role: "user", content: `[Session recap: ${summary}]` },
+      {
+        role: "assistant",
+        content:
+          "Understood. I have the session context and will continue the adventure seamlessly.",
+      },
+      ...recentMessages,
+    ];
+
+    await this.ctx.storage.put("conversationHistory", this.conversationHistory);
+  }
+
+  /**
+   * Build a heuristic summary from old conversation messages (no AI call).
+   * Extracts system messages (check results, combat events), player actions,
+   * and key narrative beats.
+   */
+  private buildConversationSummary(messages: ConversationMessage[]): string {
+    const systemEvents: string[] = [];
+    const playerActions: Map<string, string> = new Map(); // last action per player
+    const narrativeBeats: string[] = [];
+
+    for (const msg of messages) {
+      if (msg.role === "user") {
+        // System messages like "[System: Thorin rolled 18...]"
+        const sysMatch = msg.content.match(/^\[System:\s*(.+)\]$/);
+        if (sysMatch) {
+          systemEvents.push(sysMatch[1]);
+          continue;
+        }
+        // Player messages like "[PlayerName]: action"
+        const playerMatch = msg.content.match(/^\[(.+?)\]:\s*(.+)$/);
+        if (playerMatch) {
+          playerActions.set(playerMatch[1], playerMatch[2]);
+        }
+      } else {
+        // AI responses — extract first sentence as narrative beat
+        const text = msg.content
+          .replace(/```json:actions[\s\S]*?```/g, "") // strip action blocks
+          .trim();
+        if (text.length > 0) {
+          const firstSentence = text.split(/[.!?]\s/)[0];
+          if (firstSentence && firstSentence.length > 10 && firstSentence.length < 200) {
+            narrativeBeats.push(firstSentence.replace(/^\*+|\*+$/g, "").trim());
+          }
+        }
+      }
+    }
+
+    const parts: string[] = [];
+
+    // Keep last ~5 narrative beats for story context
+    if (narrativeBeats.length > 0) {
+      const recent = narrativeBeats.slice(-5);
+      parts.push("Story beats: " + recent.join(". ") + ".");
+    }
+
+    // Include notable system events (combat results, checks)
+    if (systemEvents.length > 0) {
+      const recent = systemEvents.slice(-8);
+      parts.push("Events: " + recent.join("; "));
+    }
+
+    // Last player actions
+    if (playerActions.size > 0) {
+      const actions = Array.from(playerActions.entries())
+        .map(([name, action]) => `${name}: "${action}"`)
+        .join(", ");
+      parts.push("Recent player actions: " + actions);
+    }
+
+    return parts.join(" | ") || "The adventure continues...";
+  }
+
   async fetch(request: Request): Promise<Response> {
+    // Internal init request from /api/rooms/create — marks room as explicitly created
+    const url = new URL(request.url);
+    if (url.pathname === "/init" && request.method === "POST") {
+      this.created = true;
+      await this.ctx.storage.put("created", true);
+      return new Response("OK");
+    }
+
     const pair = new WebSocketPair();
     const [client, server] = Object.values(pair);
 
@@ -235,6 +341,9 @@ export class GameRoom extends DurableObject<Env> {
       case "client:dm_override":
         await this.handleDMOverride(ws, msg);
         break;
+      case "client:destroy_room":
+        await this.handleDestroyRoom(ws);
+        break;
     }
   }
 
@@ -276,6 +385,17 @@ export class GameRoom extends DurableObject<Env> {
     ws: WebSocket,
     msg: Extract<ClientMessage, { type: "client:join" }>
   ): Promise<void> {
+    // Reject if room was never explicitly created via /api/rooms/create
+    if (!this.created) {
+      this.sendTo(ws, {
+        type: "server:error",
+        message: "Room does not exist",
+        code: "ROOM_NOT_FOUND",
+      });
+      ws.close(4004, "Room not found");
+      return;
+    }
+
     // Store room code for later use (e.g., approve/reject)
     if (!this.roomCode) {
       this.roomCode = msg.roomCode;
@@ -665,6 +785,48 @@ export class GameRoom extends DurableObject<Env> {
     });
   }
 
+  private async handleDestroyRoom(ws: WebSocket): Promise<void> {
+    const session = this.sessions.get(ws);
+    if (!session || session.status !== "host") {
+      this.sendTo(ws, {
+        type: "server:error",
+        message: "Only the host can destroy the room",
+        code: "NOT_HOST",
+      });
+      return;
+    }
+
+    // Broadcast room_destroyed to all connected clients
+    this.broadcast({ type: "server:room_destroyed" });
+
+    // Close all WebSocket connections
+    for (const [clientWs] of this.sessions) {
+      try {
+        clientWs.close(1000, "Room destroyed");
+      } catch {
+        // Already closed
+      }
+    }
+
+    // Wipe all DO storage
+    await this.ctx.storage.deleteAll();
+
+    // Reset in-memory state
+    this.sessions.clear();
+    this.aiConfig = null;
+    this.conversationHistory = [];
+    this.hostUserId = null;
+    this.hostPlayerName = "";
+    this.approvedUserIds.clear();
+    this.chatLog = [];
+    this.roomCode = "";
+    this.characters.clear();
+    this.allPlayerRecords.clear();
+    this.storyStarted = false;
+    this.gameState = { ...DEFAULT_GAME_STATE, eventLog: [] };
+    this.created = false;
+  }
+
   private async handleChat(
     ws: WebSocket,
     msg: Extract<ClientMessage, { type: "client:chat" }>
@@ -809,6 +971,9 @@ export class GameRoom extends DurableObject<Env> {
         content: result.text,
       });
 
+      // Compact conversation if it's grown too long
+      await this.compactConversationIfNeeded();
+
       // Process narrative + actions
       await this.processAIActions(parsed.narrative, parsed.actions);
     } catch (error) {
@@ -831,6 +996,7 @@ export class GameRoom extends DurableObject<Env> {
       pacingProfile: this.gameState.pacingProfile,
       encounterLength: this.gameState.encounterLength,
       combatState: this.gameState.encounter?.combat ?? undefined,
+      journal: this.gameState.journal,
     });
   }
 
@@ -967,6 +1133,7 @@ export class GameRoom extends DurableObject<Env> {
             role: "assistant",
             content: aiResult.text,
           });
+          await this.compactConversationIfNeeded();
           await this.processAIActions(
             parsed.narrative,
             parsed.actions,
@@ -1046,6 +1213,7 @@ export class GameRoom extends DurableObject<Env> {
           role: "assistant",
           content: aiResult.text,
         });
+        await this.compactConversationIfNeeded();
         await this.processAIActions(parsed.narrative, parsed.actions);
       } catch (error) {
         this.broadcast({
@@ -1226,6 +1394,7 @@ export class GameRoom extends DurableObject<Env> {
 
         const parsed = parseAIResponse(result.text);
         await this.appendToConversation({ role: "assistant", content: result.text });
+        await this.compactConversationIfNeeded();
         await this.processAIActions(parsed.narrative, parsed.actions);
       } catch (error) {
         this.broadcast({

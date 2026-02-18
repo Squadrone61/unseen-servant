@@ -311,6 +311,10 @@ export const clientDMOverrideSchema = z.object({
   changes: z.array(z.any()), // StateChange is a union, validated at runtime
 });
 
+export const clientDestroyRoomSchema = z.object({
+  type: z.literal("client:destroy_room"),
+});
+
 export const clientMessageSchema = z.discriminatedUnion("type", [
   clientChatSchema,
   clientJoinSchema,
@@ -327,6 +331,7 @@ export const clientMessageSchema = z.discriminatedUnion("type", [
   clientSetSystemPromptSchema,
   clientSetPacingSchema,
   clientDMOverrideSchema,
+  clientDestroyRoomSchema,
 ]);
 
 // === Server → Client schemas ===
@@ -460,6 +465,10 @@ export const serverEventLogSchema = z.object({
   event: gameEventSchema,
 });
 
+export const serverRoomDestroyedSchema = z.object({
+  type: z.literal("server:room_destroyed"),
+});
+
 export const serverMessageSchema = z.discriminatedUnion("type", [
   serverChatSchema,
   serverAISchema,
@@ -479,4 +488,5 @@ export const serverMessageSchema = z.discriminatedUnion("type", [
   serverGameStateSyncSchema,
   serverRollbackSchema,
   serverEventLogSchema,
+  serverRoomDestroyedSchema,
 ]);

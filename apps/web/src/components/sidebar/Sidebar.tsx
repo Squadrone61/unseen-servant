@@ -35,6 +35,7 @@ interface SidebarProps {
   onKick: (playerName: string) => void;
   onStartStory: () => void;
   onRollback?: (eventId: string) => void;
+  onDestroyRoom?: () => void;
 }
 
 export function Sidebar({
@@ -58,6 +59,7 @@ export function Sidebar({
   onKick,
   onStartStory,
   onRollback,
+  onDestroyRoom,
 }: SidebarProps) {
   const [showConfigForm, setShowConfigForm] = useState(false);
   const [dmCollapsed, setDmCollapsed] = useState(false);
@@ -501,6 +503,26 @@ export function Sidebar({
               </p>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Destroy Room — host only */}
+      {isHost && onDestroyRoom && (
+        <div className="border-t border-red-900/30 pt-3 mt-4">
+          <button
+            onClick={() => {
+              if (
+                window.confirm(
+                  "Are you sure you want to destroy this room? All data will be permanently deleted and all players will be disconnected."
+                )
+              ) {
+                onDestroyRoom();
+              }
+            }}
+            className="w-full px-3 py-2 text-sm font-medium text-red-400 bg-red-950/40 border border-red-800/50 rounded-lg hover:bg-red-900/50 hover:text-red-300 transition-colors"
+          >
+            Destroy Room
+          </button>
         </div>
       )}
     </div>
