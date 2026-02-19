@@ -253,7 +253,7 @@ export const clientSetAIConfigSchema = z.object({
 
 export const clientSetPasswordSchema = z.object({
   type: z.literal("client:set_password"),
-  password: z.string().min(1).max(100),
+  password: z.string().max(100),
 });
 
 export const clientKickPlayerSchema = z.object({

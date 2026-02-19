@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
@@ -31,53 +31,66 @@ export default function RoomsPage() {
   const router = useRouter();
   const [rooms, setRooms] = useState<RoomMeta[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    let active = true;
-
-    async function fetchRooms() {
-      try {
-        const res = await fetch(`${getWorkerUrl()}/api/rooms`);
-        if (!res.ok) throw new Error("Failed to fetch rooms");
-        const data = await res.json();
-        if (active) {
-          setRooms(data.rooms ?? []);
-          setError("");
-        }
-      } catch {
-        if (active) setError("Could not load rooms. Is the server running?");
-      } finally {
-        if (active) setLoading(false);
-      }
+  const fetchRooms = useCallback(async (isManual = false) => {
+    if (isManual) setRefreshing(true);
+    try {
+      const res = await fetch(`${getWorkerUrl()}/api/rooms`);
+      if (!res.ok) throw new Error("Failed to fetch rooms");
+      const data = await res.json();
+      setRooms(data.rooms ?? []);
+      setError("");
+    } catch {
+      setError("Could not load rooms. Is the server running?");
+    } finally {
+      setLoading(false);
+      if (isManual) setRefreshing(false);
     }
-
-    fetchRooms();
-    const interval = setInterval(fetchRooms, 15000);
-    return () => {
-      active = false;
-      clearInterval(interval);
-    };
   }, []);
 
+  useEffect(() => {
+    fetchRooms();
+    const interval = setInterval(() => fetchRooms(), 15000);
+    return () => clearInterval(interval);
+  }, [fetchRooms]);
+
   const handleRoomClick = (roomCode: string) => {
-    const playerName = sessionStorage.getItem("playerName");
-    if (playerName) {
-      router.push(`/rooms/${roomCode}`);
-    } else {
-      router.push(`/?join=${roomCode}`);
-    }
+    router.push(`/rooms/${roomCode}`);
   };
 
   return (
     <div className="min-h-screen p-6">
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-2xl font-bold text-purple-400">Browse Rooms</h1>
-            <p className="text-sm text-gray-500 mt-1">
-              Join an active game session
-            </p>
+          <div className="flex items-center gap-3">
+            <div>
+              <h1 className="text-2xl font-bold text-purple-400">Browse Rooms</h1>
+              <p className="text-sm text-gray-500 mt-1">
+                Join an active game session
+              </p>
+            </div>
+            <button
+              onClick={() => fetchRooms(true)}
+              disabled={refreshing}
+              className="mt-1 p-2 text-gray-500 hover:text-purple-400 transition-colors disabled:opacity-50"
+              title="Refresh"
+            >
+              <svg
+                className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                />
+              </svg>
+            </button>
           </div>
           <Link
             href="/"
