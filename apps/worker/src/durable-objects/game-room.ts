@@ -919,7 +919,9 @@ export class GameRoom extends DurableObject<Env> {
     const provider = getProvider(this.aiConfig.provider);
     const providerName = provider?.name ?? this.aiConfig.provider;
 
-    const userMessage = `[${playerName}]: ${content}`;
+    // Sanitize: replace any [Name]: patterns in content to prevent speaker injection
+    const sanitizedContent = content.replace(/\[([^\]]+)\]\s*:/g, "($1):");
+    const userMessage = `[${playerName}]: ${sanitizedContent}`;
     await this.appendToConversation({ role: "user", content: userMessage });
 
     try {

@@ -103,6 +103,9 @@ function GameContent({
   const [combatState, setCombatState] = useState<CombatState | null>(null);
   const [eventLog, setEventLog] = useState<GameEvent[]>([]);
 
+  // Join state — don't render game UI until successfully joined
+  const [joined, setJoined] = useState(false);
+
   // Password prompt state
   const [passwordRequired, setPasswordRequired] = useState(false);
   const [passwordInput, setPasswordInput] = useState("");
@@ -146,6 +149,7 @@ function GameContent({
     (msg: ServerMessage) => {
       switch (msg.type) {
         case "server:room_joined":
+          setJoined(true);
           setPlayers(msg.players);
           setHostName(msg.hostName);
           setHasApiKey(msg.hasApiKey);
@@ -383,6 +387,20 @@ function GameContent({
               Back
             </button>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show connecting state until we've successfully joined
+  if (!joined) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="text-center space-y-3">
+          <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-sm text-gray-400">
+            Connecting to room <span className="font-mono text-purple-400">{roomCode}</span>...
+          </p>
         </div>
       </div>
     );
