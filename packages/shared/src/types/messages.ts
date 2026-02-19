@@ -47,6 +47,7 @@ export interface ClientJoinMessage {
   aiConfig?: AIConfig;
   authToken?: string;
   guestId?: string;
+  password?: string;
   /** @deprecated Use aiConfig instead */
   apiKey?: string;
 }
@@ -56,14 +57,9 @@ export interface ClientSetAIConfigMessage {
   aiConfig: AIConfig;
 }
 
-export interface ClientApproveJoinMessage {
-  type: "client:approve_join";
-  playerName: string;
-}
-
-export interface ClientRejectJoinMessage {
-  type: "client:reject_join";
-  playerName: string;
+export interface ClientSetPasswordMessage {
+  type: "client:set_password";
+  password: string;
 }
 
 export interface ClientKickPlayerMessage {
@@ -129,8 +125,7 @@ export type ClientMessage =
   | ClientChatMessage
   | ClientJoinMessage
   | ClientSetAIConfigMessage
-  | ClientApproveJoinMessage
-  | ClientRejectJoinMessage
+  | ClientSetPasswordMessage
   | ClientKickPlayerMessage
   | ClientSetCharacterMessage
   | ClientStartStoryMessage
@@ -212,18 +207,6 @@ export interface ServerErrorMessage {
   code: string;
 }
 
-export interface ServerJoinPendingMessage {
-  type: "server:join_pending";
-  roomCode: string;
-  position?: number;
-}
-
-export interface ServerJoinRequestMessage {
-  type: "server:join_request";
-  playerName: string;
-  avatarUrl?: string;
-}
-
 export interface ServerKickedMessage {
   type: "server:kicked";
   reason: string;
@@ -295,8 +278,6 @@ export type ServerMessage =
   | ServerPlayerJoinedMessage
   | ServerPlayerLeftMessage
   | ServerErrorMessage
-  | ServerJoinPendingMessage
-  | ServerJoinRequestMessage
   | ServerKickedMessage
   | ServerCharacterUpdatedMessage
   | ServerCheckRequestMessage

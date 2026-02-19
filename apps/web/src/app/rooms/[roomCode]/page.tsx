@@ -4,8 +4,6 @@ import { useParams, useRouter } from "next/navigation";
 import { useCallback, useState, useEffect, useRef } from "react";
 import { ChatPanel } from "@/components/chat/ChatPanel";
 import { Sidebar } from "@/components/sidebar/Sidebar";
-import { PendingOverlay } from "@/components/game/PendingOverlay";
-import { JoinGate } from "@/components/game/JoinGate";
 import { LeftSidebar } from "@/components/character/LeftSidebar";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { InitiativeTracker } from "@/components/game/InitiativeTracker";
@@ -14,7 +12,6 @@ import type {
   CharacterData,
   CombatState,
   GameEvent,
-  GameState,
   PlayerInfo,
   ServerMessage,
 } from "@aidnd/shared/types";
@@ -49,12 +46,11 @@ function isLogMessage(msg: ServerMessage): boolean {
 
 export default function GamePage() {
   const { roomCode } = useParams<{ roomCode: string }>();
+  const router = useRouter();
   // Start as undefined (matches server render), then read sessionStorage after mount
   const [playerName, setPlayerName] = useState<string | null | undefined>(
     undefined
   );
-  const [initialCharacter, setInitialCharacter] =
-    useState<CharacterData | null>(null);
 
   // Read player name from sessionStorage after hydration
   useEffect(() => {
@@ -67,24 +63,16 @@ export default function GamePage() {
     return null;
   }
 
-  // No name in sessionStorage — show the JoinGate
+  // No name in sessionStorage — redirect to home with join param
   if (!playerName) {
-    return (
-      <JoinGate
-        roomCode={roomCode}
-        onReady={(name, character) => {
-          setPlayerName(name);
-          if (character) setInitialCharacter(character);
-        }}
-      />
-    );
+    router.push(`/?join=${roomCode}`);
+    return null;
   }
 
   return (
     <GameContent
       roomCode={roomCode}
       playerName={playerName}
-      initialCharacter={initialCharacter}
     />
   );
 }
@@ -92,11 +80,9 @@ export default function GamePage() {
 function GameContent({
   roomCode,
   playerName,
-  initialCharacter,
 }: {
   roomCode: string;
   playerName: string;
-  initialCharacter: CharacterData | null;
 }) {
   const router = useRouter();
   const [storyMessages, setStoryMessages] = useState<ServerMessage[]>([]);
@@ -108,17 +94,21 @@ function GameContent({
   const [aiModel, setAiModel] = useState<string | undefined>();
   const [isHost, setIsHost] = useState(false);
   const [hostName, setHostName] = useState<string>("");
-  const [joinPending, setJoinPending] = useState(false);
-  const [pendingPlayers, setPendingPlayers] = useState<string[]>([]);
-  const [myCharacter, setMyCharacter] = useState<CharacterData | null>(
-    initialCharacter
-  );
+  const [myCharacter, setMyCharacter] = useState<CharacterData | null>(null);
   const [partyCharacters, setPartyCharacters] = useState<
     Record<string, CharacterData>
   >({});
   const [storyStarted, setStoryStarted] = useState(false);
   const [combatState, setCombatState] = useState<CombatState | null>(null);
   const [eventLog, setEventLog] = useState<GameEvent[]>([]);
+
+  // Password prompt state
+  const [passwordRequired, setPasswordRequired] = useState(false);
+  const [passwordInput, setPasswordInput] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [roomPassword, setRoomPassword] = useState<string | undefined>(
+    undefined
+  );
 
   // Client-only state: browser storage values loaded after mount
   const [clientReady, setClientReady] = useState(false);
@@ -133,6 +123,13 @@ function GameContent({
   useEffect(() => {
     setAiConfig(loadAIConfig());
     setAuthToken(localStorage.getItem("auth_token") || undefined);
+
+    // Load password from sessionStorage (set by home page quick-join)
+    const storedPassword = sessionStorage.getItem("roomPassword");
+    if (storedPassword) {
+      setRoomPassword(storedPassword);
+      sessionStorage.removeItem("roomPassword");
+    }
 
     let id = sessionStorage.getItem("guestId");
     if (!id) {
@@ -154,7 +151,8 @@ function GameContent({
           setAiProvider(msg.aiProvider);
           setAiModel(msg.aiModel);
           setIsHost(msg.isHost ?? false);
-          setJoinPending(false);
+          setPasswordRequired(false);
+          setPasswordError("");
           if (msg.allPlayers) setAllPlayers(msg.allPlayers);
           if (msg.characters) {
             setPartyCharacters(msg.characters);
@@ -184,25 +182,6 @@ function GameContent({
           }
           break;
 
-        case "server:join_pending":
-          setJoinPending(true);
-          break;
-
-        case "server:join_request":
-          setPendingPlayers((prev) => {
-            if (prev.includes(msg.playerName)) return prev;
-            return [...prev, msg.playerName];
-          });
-          setLogMessages((prev) => [
-            ...prev,
-            {
-              type: "server:system",
-              content: `${msg.playerName} is requesting to join the room.`,
-              timestamp: Date.now(),
-            },
-          ]);
-          break;
-
         case "server:kicked":
           sessionStorage.setItem("kick_message", msg.reason);
           router.push("/");
@@ -215,6 +194,15 @@ function GameContent({
           return;
 
         case "server:error":
+          if (msg.code === "PASSWORD_REQUIRED") {
+            setPasswordRequired(true);
+            return;
+          }
+          if (msg.code === "WRONG_PASSWORD") {
+            setPasswordRequired(true);
+            setPasswordError("Incorrect password");
+            return;
+          }
           if (msg.code === "REJECTED" || msg.code === "ROOM_NOT_FOUND") {
             sessionStorage.removeItem("playerName");
             sessionStorage.setItem("kick_message", msg.message);
@@ -273,6 +261,7 @@ function GameContent({
     aiConfig,
     authToken,
     guestId,
+    password: roomPassword,
     onMessage: handleMessage,
     enabled: clientReady,
   });
@@ -305,16 +294,6 @@ function GameContent({
     setAiModel(config.model);
   };
 
-  const handleApprove = (name: string) => {
-    send({ type: "client:approve_join", playerName: name });
-    setPendingPlayers((prev) => prev.filter((p) => p !== name));
-  };
-
-  const handleReject = (name: string) => {
-    send({ type: "client:reject_join", playerName: name });
-    setPendingPlayers((prev) => prev.filter((p) => p !== name));
-  };
-
   const handleKick = (name: string) => {
     send({ type: "client:kick_player", playerName: name });
   };
@@ -336,6 +315,10 @@ function GameContent({
     send({ type: "client:destroy_room" });
   };
 
+  const handleSetPassword = (password: string) => {
+    send({ type: "client:set_password", password });
+  };
+
   const handleCharacterImported = useCallback(
     (character: CharacterData) => {
       setMyCharacter(character);
@@ -344,8 +327,64 @@ function GameContent({
     [send]
   );
 
-  if (joinPending) {
-    return <PendingOverlay roomCode={roomCode} />;
+  const handlePasswordSubmit = () => {
+    if (!passwordInput.trim()) return;
+    setRoomPassword(passwordInput.trim());
+    setPasswordError("");
+    setPasswordRequired(false);
+    setPasswordInput("");
+  };
+
+  // Password prompt overlay
+  if (passwordRequired) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="bg-gray-800 rounded-xl p-6 w-full max-w-sm space-y-4">
+          <div className="text-center">
+            <div className="text-3xl mb-2">&#128274;</div>
+            <h2 className="text-lg font-semibold text-gray-200">
+              Room Password Required
+            </h2>
+            <p className="text-sm text-gray-500 mt-1">
+              Room <span className="font-mono text-purple-400">{roomCode}</span>{" "}
+              is password protected
+            </p>
+          </div>
+
+          {passwordError && (
+            <p className="text-red-400 text-sm text-center">{passwordError}</p>
+          )}
+
+          <input
+            type="password"
+            value={passwordInput}
+            onChange={(e) => setPasswordInput(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handlePasswordSubmit()}
+            placeholder="Enter room password..."
+            autoFocus
+            className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2.5
+                       text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2
+                       focus:ring-purple-500 focus:border-transparent"
+          />
+
+          <div className="flex gap-3">
+            <button
+              onClick={handlePasswordSubmit}
+              className="flex-1 bg-purple-600 hover:bg-purple-700 text-white py-2.5 rounded-lg
+                         font-medium transition-colors text-sm"
+            >
+              Join Room
+            </button>
+            <button
+              onClick={() => router.push("/")}
+              className="px-4 text-gray-500 hover:text-gray-300 text-sm transition-colors"
+            >
+              Back
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -375,19 +414,17 @@ function GameContent({
         aiProvider={aiProvider}
         aiModel={aiModel}
         isHost={isHost}
-        pendingPlayers={pendingPlayers}
         logMessages={logMessages}
         partyCharacters={partyCharacters}
         storyStarted={storyStarted}
         combatState={combatState}
         eventLog={eventLog}
         onSetAIConfig={handleSetAIConfig}
-        onApprove={handleApprove}
-        onReject={handleReject}
         onKick={handleKick}
         onStartStory={handleStartStory}
         onRollback={handleRollback}
         onDestroyRoom={handleDestroyRoom}
+        onSetPassword={handleSetPassword}
       />
     </div>
   );

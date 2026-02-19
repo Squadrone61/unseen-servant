@@ -18,6 +18,13 @@
     ]
   },
 
+  "kv_namespaces": [
+    {
+      "binding": "ROOMS",
+      "id": "TBD"
+    }
+  ],
+
   "migrations": [
     {
       "tag": "v1",

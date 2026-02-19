@@ -242,6 +242,7 @@ export const clientJoinSchema = z.object({
   aiConfig: aiConfigSchema.optional(),
   authToken: z.string().optional(),
   guestId: z.string().optional(),
+  password: z.string().optional(),
   apiKey: z.string().optional(),
 });
 
@@ -250,14 +251,9 @@ export const clientSetAIConfigSchema = z.object({
   aiConfig: aiConfigSchema,
 });
 
-export const clientApproveJoinSchema = z.object({
-  type: z.literal("client:approve_join"),
-  playerName: z.string().min(1).max(30),
-});
-
-export const clientRejectJoinSchema = z.object({
-  type: z.literal("client:reject_join"),
-  playerName: z.string().min(1).max(30),
+export const clientSetPasswordSchema = z.object({
+  type: z.literal("client:set_password"),
+  password: z.string().min(1).max(100),
 });
 
 export const clientKickPlayerSchema = z.object({
@@ -319,8 +315,7 @@ export const clientMessageSchema = z.discriminatedUnion("type", [
   clientChatSchema,
   clientJoinSchema,
   clientSetAIConfigSchema,
-  clientApproveJoinSchema,
-  clientRejectJoinSchema,
+  clientSetPasswordSchema,
   clientKickPlayerSchema,
   clientSetCharacterSchema,
   clientStartStorySchema,
@@ -402,18 +397,6 @@ export const serverErrorSchema = z.object({
   code: z.string(),
 });
 
-export const serverJoinPendingSchema = z.object({
-  type: z.literal("server:join_pending"),
-  roomCode: z.string(),
-  position: z.number().optional(),
-});
-
-export const serverJoinRequestSchema = z.object({
-  type: z.literal("server:join_request"),
-  playerName: z.string(),
-  avatarUrl: z.string().optional(),
-});
-
 export const serverKickedSchema = z.object({
   type: z.literal("server:kicked"),
   reason: z.string(),
@@ -477,8 +460,6 @@ export const serverMessageSchema = z.discriminatedUnion("type", [
   serverPlayerJoinedSchema,
   serverPlayerLeftSchema,
   serverErrorSchema,
-  serverJoinPendingSchema,
-  serverJoinRequestSchema,
   serverKickedSchema,
   serverCharacterUpdatedSchema,
   serverCheckRequestSchema,

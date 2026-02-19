@@ -1,7 +1,16 @@
 import type { GameRoom } from "./durable-objects/game-room";
 
+export interface RoomMeta {
+  roomCode: string;
+  hostName: string;
+  playerCount: number;
+  hasPassword: boolean;
+  createdAt: number;
+}
+
 export interface Env {
   GAME_ROOM: DurableObjectNamespace<GameRoom>;
+  ROOMS: KVNamespace;
   ENVIRONMENT: string;
 
   // Auth

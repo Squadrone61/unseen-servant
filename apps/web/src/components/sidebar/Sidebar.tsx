@@ -23,19 +23,17 @@ interface SidebarProps {
   aiProvider?: string;
   aiModel?: string;
   isHost: boolean;
-  pendingPlayers: string[];
   logMessages: ServerMessage[];
   partyCharacters: Record<string, CharacterData>;
   storyStarted: boolean;
   combatState?: CombatState | null;
   eventLog?: GameEvent[];
   onSetAIConfig: (config: AIConfig) => void;
-  onApprove: (playerName: string) => void;
-  onReject: (playerName: string) => void;
   onKick: (playerName: string) => void;
   onStartStory: () => void;
   onRollback?: (eventId: string) => void;
   onDestroyRoom?: () => void;
+  onSetPassword?: (password: string) => void;
 }
 
 export function Sidebar({
@@ -47,19 +45,17 @@ export function Sidebar({
   aiProvider,
   aiModel,
   isHost,
-  pendingPlayers,
   logMessages,
   partyCharacters,
   storyStarted,
   combatState,
   eventLog,
   onSetAIConfig,
-  onApprove,
-  onReject,
   onKick,
   onStartStory,
   onRollback,
   onDestroyRoom,
+  onSetPassword,
 }: SidebarProps) {
   const [showConfigForm, setShowConfigForm] = useState(false);
   const [dmCollapsed, setDmCollapsed] = useState(false);
@@ -70,6 +66,8 @@ export function Sidebar({
   const [modelInput, setModelInput] = useState("");
   const [copied, setCopied] = useState(false);
   const [hoveredPlayer, setHoveredPlayer] = useState<string | null>(null);
+  const [passwordInput, setPasswordInput] = useState("");
+  const [passwordSet, setPasswordSet] = useState(false);
   const logEndRef = useRef<HTMLDivElement>(null);
 
   const currentFormProvider = getProvider(provider);
@@ -104,6 +102,19 @@ export function Sidebar({
     setShowConfigForm(false);
     setApiKeyInput("");
     setModelInput("");
+  };
+
+  const handleSetPassword = () => {
+    if (!passwordInput.trim() || !onSetPassword) return;
+    onSetPassword(passwordInput.trim());
+    setPasswordSet(true);
+    setPasswordInput("");
+  };
+
+  const handleRemovePassword = () => {
+    if (!onSetPassword) return;
+    onSetPassword("");
+    setPasswordSet(false);
   };
 
   // Use allPlayers if available, otherwise fall back to online-only players list
@@ -143,34 +154,48 @@ export function Sidebar({
         )}
       </div>
 
-      {/* Pending Players (Host only) */}
-      {isHost && pendingPlayers.length > 0 && (
-        <div className="p-4 border-b border-gray-700 bg-yellow-900/10">
-          <div className="text-xs text-yellow-500 uppercase tracking-wider mb-3">
-            Join Requests ({pendingPlayers.length})
+      {/* Password Management (Host only) */}
+      {isHost && onSetPassword && (
+        <div className="p-4 border-b border-gray-700">
+          <div className="text-xs text-gray-500 uppercase tracking-wider mb-2">
+            Room Password
           </div>
-          <ul className="space-y-2">
-            {pendingPlayers.map((name) => (
-              <li key={name} className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-yellow-500" />
-                <span className="text-sm text-gray-200 flex-1">{name}</span>
-                <button
-                  onClick={() => onApprove(name)}
-                  className="text-xs bg-green-600/20 text-green-400 hover:bg-green-600/40
-                             px-2 py-1 rounded transition-colors"
-                >
-                  Accept
-                </button>
-                <button
-                  onClick={() => onReject(name)}
-                  className="text-xs bg-red-600/20 text-red-400 hover:bg-red-600/40
-                             px-2 py-1 rounded transition-colors"
-                >
-                  Deny
-                </button>
-              </li>
-            ))}
-          </ul>
+          {passwordSet ? (
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5 text-sm text-yellow-400">
+                <span>&#128274;</span>
+                <span>Password set</span>
+              </div>
+              <button
+                onClick={handleRemovePassword}
+                className="text-xs text-red-400/60 hover:text-red-400 transition-colors"
+              >
+                Remove
+              </button>
+            </div>
+          ) : (
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={passwordInput}
+                onChange={(e) => setPasswordInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleSetPassword()}
+                placeholder="Set password..."
+                className="flex-1 bg-gray-900 border border-gray-700 rounded px-2 py-1.5
+                           text-sm text-gray-100 placeholder-gray-500 focus:outline-none
+                           focus:ring-1 focus:ring-purple-500 min-w-0"
+              />
+              <button
+                onClick={handleSetPassword}
+                disabled={!passwordInput.trim()}
+                className="text-xs bg-purple-600/20 text-purple-400 hover:bg-purple-600/40
+                           disabled:opacity-30 disabled:hover:bg-purple-600/20
+                           px-2.5 py-1.5 rounded transition-colors shrink-0"
+              >
+                Set
+              </button>
+            </div>
+          )}
         </div>
       )}
 

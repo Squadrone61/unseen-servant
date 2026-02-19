@@ -16,6 +16,7 @@ interface UseWebSocketOptions {
   aiConfig?: AIConfig;
   authToken?: string;
   guestId?: string;
+  password?: string;
   onMessage: (msg: ServerMessage) => void;
   /** When false, the hook will not attempt to connect. Defaults to true. */
   enabled?: boolean;
@@ -30,6 +31,7 @@ export function useWebSocket({
   aiConfig,
   authToken,
   guestId,
+  password,
   onMessage,
   enabled = true,
 }: UseWebSocketOptions) {
@@ -80,6 +82,9 @@ export function useWebSocket({
         }
         if (guestId) {
           joinMsg.guestId = guestId;
+        }
+        if (password) {
+          joinMsg.password = password;
         }
         ws.send(JSON.stringify(joinMsg));
       };
@@ -150,7 +155,7 @@ export function useWebSocket({
       }
       wsRef.current?.close(1000, "Component unmount");
     };
-  }, [roomCode, playerName, aiConfigJson, authToken, guestId, enabled]);
+  }, [roomCode, playerName, aiConfigJson, authToken, guestId, password, enabled]);
 
   const send = useCallback((msg: ClientMessage) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {

@@ -822,8 +822,8 @@ function extractSpellSlots(char: any): {
       // Single class: use class's own levelSpellSlots table
       const cls = casterClasses[0];
       const table = cls.definition?.spellRules?.levelSpellSlots;
-      if (table && cls.level >= 1 && cls.level <= table.length) {
-        slotRow = table[cls.level - 1];
+      if (table && cls.level >= 1 && cls.level < table.length) {
+        slotRow = table[cls.level];
       } else {
         // Fallback to multiclass table using class multiplier
         const className = (cls.definition?.name || "").toLowerCase();
@@ -858,8 +858,8 @@ function extractSpellSlots(char: any): {
   );
   if (warlockClass) {
     const pactTable = warlockClass.definition?.spellRules?.levelSpellSlots;
-    if (pactTable && warlockClass.level >= 1 && warlockClass.level <= pactTable.length) {
-      const pactRow = pactTable[warlockClass.level - 1];
+    if (pactTable && warlockClass.level >= 1 && warlockClass.level < pactTable.length) {
+      const pactRow = pactTable[warlockClass.level];
       const pactUsed = new Map<number, number>();
       for (const slot of char.pactMagic || []) {
         if (slot.level >= 1 && (slot.used ?? 0) > 0) {
@@ -1262,6 +1262,21 @@ function extractSpells(char: any): CharacterSpell[] {
     }
   }
 
+  // Class feature spells (e.g. Evocation Savant, subclass grants)
+  // These live in char.spells.class, separate from char.classSpells
+  for (const spell of char.spells?.class || []) {
+    const def = spell.definition;
+    if (!def?.name || seen.has(def.name)) continue;
+    seen.add(def.name);
+    spells.push(
+      parseSpellDef(def, true, {
+        alwaysPrepared: true,
+        spellSource: "class",
+        knownByClass: true,
+      })
+    );
+  }
+
   // Race spells
   for (const spell of char.spells?.race || []) {
     const def = spell.definition;
@@ -1459,6 +1474,15 @@ function stripHtml(html: string): string {
     .replace(/&gt;/gi, ">")
     .replace(/&quot;/gi, '"')
     .replace(/&#39;/gi, "'")
+    .replace(/&ndash;/gi, "\u2013")
+    .replace(/&mdash;/gi, "\u2014")
+    .replace(/&lsquo;/gi, "\u2018")
+    .replace(/&rsquo;/gi, "\u2019")
+    .replace(/&ldquo;/gi, "\u201C")
+    .replace(/&rdquo;/gi, "\u201D")
+    .replace(/&hellip;/gi, "\u2026")
+    .replace(/&times;/gi, "\u00D7")
+    .replace(/&#(\d+);/g, (_, code) => String.fromCharCode(Number(code)))
     .replace(/\n{3,}/g, "\n\n")
     .trim();
 }

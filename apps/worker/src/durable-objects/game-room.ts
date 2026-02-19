@@ -23,9 +23,9 @@ import { buildDMSystemPrompt } from "../prompts/dm-system";
 import { parseAIResponse } from "../services/ai-parser";
 import { resolveActions } from "../services/state-resolver";
 import { rollCheck } from "../services/dice";
-import type { Env } from "../types";
+import type { Env, RoomMeta } from "../types";
 
-type PlayerStatus = "host" | "approved" | "pending";
+type PlayerStatus = "host" | "player";
 
 interface SessionData {
   playerName: string;
@@ -66,8 +66,10 @@ export class GameRoom extends DurableObject<Env> {
   private allPlayerRecords: Map<string, PlayerRecord> = new Map(); // keyed by userId
   private storyStarted: boolean = false;
   private gameState: GameState = { ...DEFAULT_GAME_STATE, eventLog: [] };
+  private password: string | null = null;
   /** Whether this room was explicitly created via /api/rooms/create */
   private created: boolean = false;
+  private createdAt: number = 0;
 
   constructor(ctx: DurableObjectState, env: Env) {
     super(ctx, env);
@@ -82,7 +84,7 @@ export class GameRoom extends DurableObject<Env> {
         if (attachment.status === "host") {
           this.hostUserId = attachment.userId;
         }
-        if (attachment.status === "host" || attachment.status === "approved") {
+        if (attachment.status === "host" || attachment.status === "player") {
           this.approvedUserIds.add(attachment.userId);
         }
       }
@@ -97,7 +99,7 @@ export class GameRoom extends DurableObject<Env> {
       const [
         chatLog, conversationHistory, aiConfig, roomCode,
         hostPlayerName, characters, allPlayerRecords, storyStarted,
-        gameState, created,
+        gameState, created, password, createdAt,
       ] = await Promise.all([
         this.ctx.storage.get<ServerMessage[]>("chatLog"),
         this.ctx.storage.get<ConversationMessage[]>("conversationHistory"),
@@ -109,6 +111,8 @@ export class GameRoom extends DurableObject<Env> {
         this.ctx.storage.get<boolean>("storyStarted"),
         this.ctx.storage.get<GameState>("gameState"),
         this.ctx.storage.get<boolean>("created"),
+        this.ctx.storage.get<string>("password"),
+        this.ctx.storage.get<number>("createdAt"),
       ]);
       if (chatLog) this.chatLog = chatLog;
       if (conversationHistory) this.conversationHistory = conversationHistory;
@@ -120,8 +124,29 @@ export class GameRoom extends DurableObject<Env> {
       if (storyStarted) this.storyStarted = storyStarted;
       if (gameState) this.gameState = gameState;
       if (created) this.created = created;
+      if (password) this.password = password;
+      if (createdAt) this.createdAt = createdAt;
       this.storageLoaded = true;
     });
+  }
+
+  /** Update room metadata in KV for the room list */
+  private async updateRoomMeta(): Promise<void> {
+    if (!this.roomCode) return;
+    const meta: RoomMeta = {
+      roomCode: this.roomCode,
+      hostName: this.hostPlayerName,
+      playerCount: this.getPlayerNames().length,
+      hasPassword: this.password !== null,
+      createdAt: this.createdAt,
+    };
+    try {
+      await this.env.ROOMS.put(`room:${this.roomCode}`, JSON.stringify(meta), {
+        expirationTtl: 86400 * 7,
+      });
+    } catch (e) {
+      console.error("Failed to update room meta:", e);
+    }
   }
 
   /** Append a message to the chat log and persist it */
@@ -237,7 +262,9 @@ export class GameRoom extends DurableObject<Env> {
     const url = new URL(request.url);
     if (url.pathname === "/init" && request.method === "POST") {
       this.created = true;
+      this.createdAt = Date.now();
       await this.ctx.storage.put("created", true);
+      await this.ctx.storage.put("createdAt", this.createdAt);
       return new Response("OK");
     }
 
@@ -249,7 +276,7 @@ export class GameRoom extends DurableObject<Env> {
     const tempSession: SessionData = {
       playerName: "",
       userId: "",
-      status: "pending",
+      status: "player",
       joinedAt: Date.now(),
     };
     server.serializeAttachment(tempSession);
@@ -305,11 +332,8 @@ export class GameRoom extends DurableObject<Env> {
       case "client:set_ai_config":
         await this.handleSetAIConfig(ws, msg);
         break;
-      case "client:approve_join":
-        await this.handleApproveJoin(ws, msg);
-        break;
-      case "client:reject_join":
-        await this.handleRejectJoin(ws, msg);
+      case "client:set_password":
+        await this.handleSetPassword(ws, msg);
         break;
       case "client:kick_player":
         await this.handleKickPlayer(ws, msg);
@@ -356,7 +380,7 @@ export class GameRoom extends DurableObject<Env> {
     this.sessions.delete(ws);
     ws.close(code, "Connection closed");
 
-    if (session?.playerName && session.status !== "pending") {
+    if (session?.playerName) {
       // Player stays in allPlayerRecords (visible as offline)
       this.broadcast({
         type: "server:player_left",
@@ -370,6 +394,7 @@ export class GameRoom extends DurableObject<Env> {
         content: `${session.playerName} has disconnected.`,
         timestamp: Date.now(),
       });
+      this.updateRoomMeta();
     }
   }
 
@@ -426,7 +451,7 @@ export class GameRoom extends DurableObject<Env> {
       userId = msg.guestId || `guest_${crypto.randomUUID().slice(0, 8)}`;
     }
 
-    // Check room capacity (only count non-pending players)
+    // Check room capacity
     if (this.getPlayerNames().length >= MAX_PLAYERS_PER_ROOM) {
       this.sendTo(ws, {
         type: "server:error",
@@ -434,6 +459,27 @@ export class GameRoom extends DurableObject<Env> {
         code: "ROOM_FULL",
       });
       return;
+    }
+
+    // Check room password (skip for reconnecting players)
+    const isReturning = this.approvedUserIds.has(userId) || this.hostUserId === userId;
+    if (this.password !== null && !isReturning) {
+      if (!msg.password) {
+        this.sendTo(ws, {
+          type: "server:error",
+          message: "This room requires a password",
+          code: "PASSWORD_REQUIRED",
+        });
+        return;
+      }
+      if (msg.password !== this.password) {
+        this.sendTo(ws, {
+          type: "server:error",
+          message: "Incorrect password",
+          code: "WRONG_PASSWORD",
+        });
+        return;
+      }
     }
 
     // Clean up stale sessions for the same player name
@@ -481,7 +527,7 @@ export class GameRoom extends DurableObject<Env> {
       this.ctx.storage.put("aiConfig", this.aiConfig);
     }
 
-    // Determine player status
+    // Determine player status — no pending state, all valid joins are immediate
     let status: PlayerStatus;
     const isReconnect =
       this.approvedUserIds.has(userId) || this.hostUserId === userId;
@@ -498,12 +544,10 @@ export class GameRoom extends DurableObject<Env> {
       status = "host";
       this.hostPlayerName = msg.playerName;
       this.ctx.storage.put("hostPlayerName", this.hostPlayerName);
-    } else if (this.approvedUserIds.has(userId)) {
-      // Previously approved player reconnecting
-      status = "approved";
     } else {
-      // New player — needs host approval
-      status = "pending";
+      // Regular player (new or reconnecting)
+      status = "player";
+      this.approvedUserIds.add(userId);
     }
 
     const session: SessionData = {
@@ -516,34 +560,6 @@ export class GameRoom extends DurableObject<Env> {
     ws.serializeAttachment(session);
     this.sessions.set(ws, session);
 
-    if (status === "pending") {
-      // Send pending notice to the player
-      this.sendTo(ws, {
-        type: "server:join_pending",
-        roomCode: msg.roomCode,
-      });
-
-      // Notify the host about the join request
-      const hostWs = this.findHostWebSocket();
-      if (hostWs) {
-        this.sendTo(hostWs, {
-          type: "server:join_request",
-          playerName: msg.playerName,
-          avatarUrl,
-        });
-      } else {
-        // Host is offline — let the pending player know
-        this.sendTo(ws, {
-          type: "server:system",
-          content:
-            "The host is currently offline. You'll be admitted when they return.",
-          timestamp: Date.now(),
-        });
-      }
-      return;
-    }
-
-    // Player is approved (host, reconnect, or auto-approved)
     this.completeJoin(ws, session, msg.roomCode, isReconnect, authUser);
   }
 
@@ -618,95 +634,36 @@ export class GameRoom extends DurableObject<Env> {
     // Story greeting is now host-triggered via client:start_story
     // (no auto-greeting on join)
 
-    // If the host just reconnected, notify them about any pending players
-    if (session.status === "host") {
-      for (const [, pendingSession] of this.sessions.entries()) {
-        if (pendingSession.status === "pending" && pendingSession.playerName) {
-          this.sendTo(ws, {
-            type: "server:join_request",
-            playerName: pendingSession.playerName,
-            avatarUrl: pendingSession.avatarUrl,
-          });
-        }
-      }
-    }
+    // Update room metadata in KV (player count, host name)
+    this.updateRoomMeta();
   }
 
-  private async handleApproveJoin(
+  private async handleSetPassword(
     ws: WebSocket,
-    msg: Extract<ClientMessage, { type: "client:approve_join" }>
+    msg: Extract<ClientMessage, { type: "client:set_password" }>
   ): Promise<void> {
     const session = this.sessions.get(ws);
     if (!session || session.status !== "host") {
       this.sendTo(ws, {
         type: "server:error",
-        message: "Only the host can approve players",
+        message: "Only the host can set a password",
         code: "NOT_HOST",
       });
       return;
     }
 
-    const pendingEntry = this.findPendingSession(msg.playerName);
-    if (!pendingEntry) {
-      this.sendTo(ws, {
-        type: "server:error",
-        message: "Player not found in pending list",
-        code: "PLAYER_NOT_FOUND",
-      });
-      return;
-    }
+    this.password = msg.password || null;
+    await this.ctx.storage.put("password", this.password);
 
-    const [pendingWs, pendingSession] = pendingEntry;
+    this.updateRoomMeta();
 
-    // Approve the player
-    pendingSession.status = "approved";
-    this.approvedUserIds.add(pendingSession.userId);
-    pendingWs.serializeAttachment(pendingSession);
-    this.sessions.set(pendingWs, pendingSession);
-
-    // Extract roomCode from session or derive from context
-    const roomCode = this.getRoomCode();
-    this.completeJoin(pendingWs, pendingSession, roomCode, false);
-  }
-
-  private async handleRejectJoin(
-    ws: WebSocket,
-    msg: Extract<ClientMessage, { type: "client:reject_join" }>
-  ): Promise<void> {
-    const session = this.sessions.get(ws);
-    if (!session || session.status !== "host") {
-      this.sendTo(ws, {
-        type: "server:error",
-        message: "Only the host can reject players",
-        code: "NOT_HOST",
-      });
-      return;
-    }
-
-    const pendingEntry = this.findPendingSession(msg.playerName);
-    if (!pendingEntry) {
-      this.sendTo(ws, {
-        type: "server:error",
-        message: "Player not found in pending list",
-        code: "PLAYER_NOT_FOUND",
-      });
-      return;
-    }
-
-    const [pendingWs] = pendingEntry;
-
-    this.sendTo(pendingWs, {
-      type: "server:error",
-      message: "Your join request was rejected by the host",
-      code: "REJECTED",
+    this.broadcast({
+      type: "server:system",
+      content: this.password
+        ? "Room password has been set."
+        : "Room password has been removed.",
+      timestamp: Date.now(),
     });
-
-    this.sessions.delete(pendingWs);
-    try {
-      pendingWs.close(4001, "Join request rejected");
-    } catch {
-      // Already closed
-    }
   }
 
   private async handleKickPlayer(
@@ -783,6 +740,8 @@ export class GameRoom extends DurableObject<Env> {
       content: `${msg.playerName} was kicked from the room.`,
       timestamp: Date.now(),
     });
+
+    this.updateRoomMeta();
   }
 
   private async handleDestroyRoom(ws: WebSocket): Promise<void> {
@@ -808,6 +767,13 @@ export class GameRoom extends DurableObject<Env> {
       }
     }
 
+    // Delete room from KV registry
+    try {
+      await this.env.ROOMS.delete(`room:${this.roomCode}`);
+    } catch {
+      // ignore
+    }
+
     // Wipe all DO storage
     await this.ctx.storage.deleteAll();
 
@@ -825,6 +791,8 @@ export class GameRoom extends DurableObject<Env> {
     this.storyStarted = false;
     this.gameState = { ...DEFAULT_GAME_STATE, eventLog: [] };
     this.created = false;
+    this.password = null;
+    this.createdAt = 0;
   }
 
   private async handleChat(
@@ -832,7 +800,7 @@ export class GameRoom extends DurableObject<Env> {
     msg: Extract<ClientMessage, { type: "client:chat" }>
   ): Promise<void> {
     const session = this.sessions.get(ws);
-    if (!session?.playerName || session.status === "pending") {
+    if (!session?.playerName) {
       this.sendTo(ws, {
         type: "server:error",
         message: "Must join room first",
@@ -1240,7 +1208,7 @@ export class GameRoom extends DurableObject<Env> {
     msg: Extract<ClientMessage, { type: "client:set_character" }>
   ): Promise<void> {
     const session = this.sessions.get(ws);
-    if (!session?.playerName || session.status === "pending") {
+    if (!session?.playerName) {
       this.sendTo(ws, {
         type: "server:error",
         message: "Must join room first",
@@ -1308,7 +1276,7 @@ export class GameRoom extends DurableObject<Env> {
     msg: Extract<ClientMessage, { type: "client:roll_dice" }>
   ): Promise<void> {
     const session = this.sessions.get(ws);
-    if (!session?.playerName || session.status === "pending") {
+    if (!session?.playerName) {
       this.sendTo(ws, { type: "server:error", message: "Must join room first", code: "NOT_JOINED" });
       return;
     }
@@ -1411,7 +1379,7 @@ export class GameRoom extends DurableObject<Env> {
     msg: Extract<ClientMessage, { type: "client:combat_action" }>
   ): Promise<void> {
     const session = this.sessions.get(ws);
-    if (!session?.playerName || session.status === "pending") {
+    if (!session?.playerName) {
       this.sendTo(ws, { type: "server:error", message: "Must join room first", code: "NOT_JOINED" });
       return;
     }
@@ -1449,7 +1417,7 @@ export class GameRoom extends DurableObject<Env> {
     msg: Extract<ClientMessage, { type: "client:move_token" }>
   ): Promise<void> {
     const session = this.sessions.get(ws);
-    if (!session?.playerName || session.status === "pending") {
+    if (!session?.playerName) {
       this.sendTo(ws, { type: "server:error", message: "Must join room first", code: "NOT_JOINED" });
       return;
     }
@@ -1726,7 +1694,7 @@ export class GameRoom extends DurableObject<Env> {
 
   private getPlayerNames(): string[] {
     return Array.from(this.sessions.values())
-      .filter((s) => s.playerName && s.status !== "pending")
+      .filter((s) => s.playerName)
       .map((s) => s.playerName);
   }
 
@@ -1741,17 +1709,6 @@ export class GameRoom extends DurableObject<Env> {
   private findHostWebSocket(): WebSocket | null {
     for (const [ws, session] of this.sessions.entries()) {
       if (session.status === "host") return ws;
-    }
-    return null;
-  }
-
-  private findPendingSession(
-    playerName: string
-  ): [WebSocket, SessionData] | null {
-    for (const [ws, session] of this.sessions.entries()) {
-      if (session.playerName === playerName && session.status === "pending") {
-        return [ws, session];
-      }
     }
     return null;
   }
@@ -1789,8 +1746,7 @@ export class GameRoom extends DurableObject<Env> {
 
     const json = JSON.stringify(message);
     for (const [ws, session] of this.sessions.entries()) {
-      // Only send to approved/host players, not pending
-      if (session.status === "pending") continue;
+      if (!session.playerName) continue;
       try {
         ws.send(json);
       } catch {
@@ -1799,7 +1755,7 @@ export class GameRoom extends DurableObject<Env> {
     }
   }
 
-  /** Broadcast to all approved players except the excluded one */
+  /** Broadcast to all players except the excluded one */
   private broadcastToApproved(
     message: ServerMessage,
     excluded?: WebSocket
@@ -1807,7 +1763,7 @@ export class GameRoom extends DurableObject<Env> {
     const json = JSON.stringify(message);
     for (const [ws, session] of this.sessions.entries()) {
       if (ws === excluded) continue;
-      if (session.status === "pending") continue;
+      if (!session.playerName) continue;
       try {
         ws.send(json);
       } catch {
@@ -1818,10 +1774,9 @@ export class GameRoom extends DurableObject<Env> {
 
   /** Get all players (online + offline) with their current status */
   private getAllPlayersWithStatus(): PlayerInfo[] {
-    // Build set of currently online userIds
     const onlineUserIds = new Set<string>();
     for (const session of this.sessions.values()) {
-      if (session.status !== "pending") {
+      if (session.playerName) {
         onlineUserIds.add(session.userId);
       }
     }

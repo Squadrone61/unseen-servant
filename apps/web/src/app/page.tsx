@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { AI_PROVIDERS, getProvider } from "@aidnd/shared";
 import type { AIConfig } from "@aidnd/shared/types";
 import { useAuth } from "@/hooks/useAuth";
@@ -12,10 +13,20 @@ function getWorkerUrl(): string {
 }
 
 export default function HomePage() {
+  return (
+    <Suspense>
+      <HomePageInner />
+    </Suspense>
+  );
+}
+
+function HomePageInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user, loading: authLoading, login, logout } = useAuth();
   const [playerName, setPlayerName] = useState("");
   const [joinCode, setJoinCode] = useState("");
+  const [joinPassword, setJoinPassword] = useState("");
   const [selectedProvider, setSelectedProvider] = useState("anthropic");
   const [apiKey, setApiKey] = useState("");
   const [selectedModel, setSelectedModel] = useState("");
@@ -49,7 +60,13 @@ export default function HomePage() {
       setKickMessage(kick);
       sessionStorage.removeItem("kick_message");
     }
-  }, []);
+
+    // Support ?join=ROOMCODE query param (redirect-back from room page)
+    const joinParam = searchParams.get("join");
+    if (joinParam) {
+      setJoinCode(joinParam.toUpperCase().slice(0, 6));
+    }
+  }, [searchParams]);
 
   // Pre-fill character name from Google account
   useEffect(() => {
@@ -95,7 +112,7 @@ export default function HomePage() {
         method: "POST",
       });
       const { roomCode } = await res.json();
-      router.push(`/game/${roomCode}`);
+      router.push(`/rooms/${roomCode}`);
     } catch {
       setError("Failed to create room. Is the server running?");
       setLoading(false);
@@ -113,8 +130,11 @@ export default function HomePage() {
     }
 
     sessionStorage.setItem("playerName", playerName.trim());
+    if (joinPassword.trim()) {
+      sessionStorage.setItem("roomPassword", joinPassword.trim());
+    }
     saveConfig();
-    router.push(`/game/${joinCode.trim().toUpperCase()}`);
+    router.push(`/rooms/${joinCode.trim().toUpperCase()}`);
   };
 
   return (
@@ -194,13 +214,6 @@ export default function HomePage() {
               </button>
             )}
           </div>
-
-          {!user && (
-            <p className="text-xs text-yellow-500/80 bg-yellow-900/10 rounded px-3 py-2">
-              Sign in to get automatic room access on reconnect and skip
-              re-approval. Guests may need to be re-approved if they disconnect.
-            </p>
-          )}
 
           {/* Character Name */}
           <div>
@@ -348,6 +361,21 @@ export default function HomePage() {
                 />
               </div>
 
+              <div>
+                <label className="block text-xs text-gray-400 mb-1">
+                  Password <span className="text-gray-600">(if required)</span>
+                </label>
+                <input
+                  type="password"
+                  value={joinPassword}
+                  onChange={(e) => setJoinPassword(e.target.value)}
+                  placeholder="Leave blank if none"
+                  className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2
+                             text-sm text-gray-100 placeholder-gray-500 focus:outline-none
+                             focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                />
+              </div>
+
               <button
                 onClick={handleJoin}
                 className="w-full bg-gray-700 hover:bg-gray-600 text-white py-2.5 rounded-lg
@@ -356,6 +384,17 @@ export default function HomePage() {
                 Join Room
               </button>
             </div>
+          </div>
+
+          {/* Browse Rooms */}
+          <div className="pt-2 border-t border-gray-700">
+            <Link
+              href="/rooms"
+              className="block text-center text-sm text-purple-400 hover:text-purple-300
+                         transition-colors py-2"
+            >
+              Browse Rooms
+            </Link>
           </div>
         </div>
       </div>

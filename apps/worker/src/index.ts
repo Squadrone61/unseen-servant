@@ -5,7 +5,7 @@ import { getProvider } from "@aidnd/shared";
 import type { AIProviderModel } from "@aidnd/shared";
 import { parseDDBCharacter } from "./services/ddb-parser";
 import { extractDDBCharacterId, fetchDDBCharacter, DDBFetchError } from "./services/ddb-fetcher";
-import type { Env } from "./types";
+import type { Env, RoomMeta } from "./types";
 
 export { GameRoom };
 
@@ -153,7 +153,38 @@ export default {
       const room = env.GAME_ROOM.get(roomId);
       await room.fetch(new Request("https://internal/init", { method: "POST" }));
 
+      // Register room in KV for the room list
+      const meta: RoomMeta = {
+        roomCode,
+        hostName: "",
+        playerCount: 0,
+        hasPassword: false,
+        createdAt: Date.now(),
+      };
+      await env.ROOMS.put(`room:${roomCode}`, JSON.stringify(meta), {
+        expirationTtl: 86400 * 7,
+      });
+
       return new Response(JSON.stringify({ roomCode }), {
+        headers: { "Content-Type": "application/json", ...cors },
+      });
+    }
+
+    // GET /api/rooms — list all active rooms
+    if (url.pathname === "/api/rooms" && request.method === "GET") {
+      const list = await env.ROOMS.list({ prefix: "room:" });
+      const rooms: RoomMeta[] = [];
+      for (const key of list.keys) {
+        const val = await env.ROOMS.get(key.name);
+        if (val) {
+          try {
+            rooms.push(JSON.parse(val));
+          } catch {
+            // skip malformed entries
+          }
+        }
+      }
+      return new Response(JSON.stringify({ rooms }), {
         headers: { "Content-Type": "application/json", ...cors },
       });
     }
