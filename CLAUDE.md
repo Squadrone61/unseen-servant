@@ -111,14 +111,14 @@ pnpm deploy:web     # Deploy web only
 ## GDD Progress (Phase Completion)
 - Phase 1 (Foundation): COMPLETE — multiplayer chat, multi-provider AI, OAuth, reconnection
 - Phase 2 (Character Integration): COMPLETE — D&D Beyond import, character sheet, party list
-- Phase 3 (Game State & Rules): PARTIAL — dice, spell tracking, HP, state resolver, initiative done. Missing: full skill check flow, event log rollback, editable system prompt
+- Phase 3 (Game State & Rules): COMPLETE — dice, spell tracking, HP, state resolver, initiative, skill check flow, event log with rollback, editable system prompt
 - Phase 4 (Battle Map): NOT STARTED
 - Phase 5 (Campaign Persistence): NOT STARTED (D1 database)
 - Phase 6 (Polish): NOT STARTED
 
 ## Testing
 - **Automated tests** (Playwright) live in `tests/` and `playwright.config.ts` at the repo root — these are committed to the repo.
-- **Temporary test artifacts** (snapshots, reports, screenshots, DDB JSON dumps) go in `.testing/` which is gitignored.
+- **Temporary test artifacts** (snapshots, reports, screenshots, DDB JSON dumps) go in `.testing/` which is gitignored. Always place disposable/generated test-related files here so they stay out of git.
 - `pnpm test` — starts dev servers, runs all tests, then stops servers
 - `pnpm test:only` — runs tests without starting servers (use when `pnpm dev:all` is already running)
 - `pnpm test:ui` — opens Playwright UI runner (servers must be running)

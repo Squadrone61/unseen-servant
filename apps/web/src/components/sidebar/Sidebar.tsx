@@ -83,7 +83,9 @@ export function Sidebar({
   const [passwordSet, setPasswordSet] = useState(false);
   const [dmSettingsCollapsed, setDmSettingsCollapsed] = useState(false);
   const [showPromptModal, setShowPromptModal] = useState(false);
+  const [confirmingRollbackId, setConfirmingRollbackId] = useState<string | null>(null);
   const logEndRef = useRef<HTMLDivElement>(null);
+  const rollbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const currentFormProvider = getProvider(provider);
   const { models, loading: modelsLoading } = useModels(provider, apiKeyInput);
@@ -104,6 +106,25 @@ export function Sidebar({
     await navigator.clipboard.writeText(roomCode);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleRollbackClick = (eventId: string) => {
+    if (rollbackTimeoutRef.current) clearTimeout(rollbackTimeoutRef.current);
+    setConfirmingRollbackId(eventId);
+    rollbackTimeoutRef.current = setTimeout(() => {
+      setConfirmingRollbackId(null);
+    }, 3000);
+  };
+
+  const handleRollbackConfirm = (eventId: string) => {
+    if (rollbackTimeoutRef.current) clearTimeout(rollbackTimeoutRef.current);
+    setConfirmingRollbackId(null);
+    onRollback?.(eventId);
+  };
+
+  const handleRollbackCancel = () => {
+    if (rollbackTimeoutRef.current) clearTimeout(rollbackTimeoutRef.current);
+    setConfirmingRollbackId(null);
   };
 
   const handleSubmitConfig = () => {
@@ -394,14 +415,32 @@ export function Sidebar({
                     <span>{event.description}</span>
                   </div>
                   {onRollback && (
-                    <button
-                      onClick={() => onRollback(event.id)}
-                      className="text-[10px] text-red-400/60 hover:text-red-400
-                                 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
-                      title="Rollback to before this event"
-                    >
-                      Undo
-                    </button>
+                    confirmingRollbackId === event.id ? (
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          onClick={() => handleRollbackConfirm(event.id)}
+                          className="text-[10px] text-red-400 font-medium shrink-0"
+                        >
+                          Confirm?
+                        </button>
+                        <button
+                          onClick={handleRollbackCancel}
+                          className="text-[10px] text-gray-500 hover:text-gray-300 shrink-0"
+                          title="Cancel rollback"
+                        >
+                          &times;
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => handleRollbackClick(event.id)}
+                        className="text-[10px] text-red-400/60 hover:text-red-400
+                                   opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                        title="Rollback to before this event"
+                      >
+                        Undo
+                      </button>
+                    )
                   )}
                 </div>
               ))}
