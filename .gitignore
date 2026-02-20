@@ -13,3 +13,4 @@ worker-configuration.d.ts
 .testing
 test-results
 playwright-report
+.playwright-mcp

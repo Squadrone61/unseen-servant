@@ -309,10 +309,10 @@ export function parseDDBCharacter(raw: unknown): {
   const speed = computeSpeed(char);
 
   // === Skills (ddb2alchemy getSkills approach) ===
-  const skills = extractSkills(char);
+  const skills = extractSkills(char, proficiencyBonus);
 
   // === Saving Throws ===
-  const savingThrows = extractSavingThrows(gatherModifiers(char));
+  const savingThrows = extractSavingThrows(char);
 
   // === Features ===
   const features = extractFeatures(char, classes);
@@ -477,19 +477,48 @@ function computeAbilityScores(char: any, warnings: string[]): AbilityScores {
   // need to be applied on top of stats[] base values.
   const hasAbilityScoreIncreasesTrait = (char.race?.racialTraits || []).some(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (t: any) => t.definition?.name === "Ability Score Increases"
+    (t: any) => {
+      const name: string = t.definition?.name || "";
+      return name === "Ability Score Increases" || name === "Ability Score Increase";
+    }
   );
 
-  // Collect race-sourced ability score modifier componentIds to skip
-  const raceAbilityModComponentIds = new Set<number>();
+  // Collect ability score modifier componentIds to skip (2024 double-counting).
+  // In 2024, stats[] already includes bonuses from:
+  //   1. Race modifiers (in char.modifiers.race)
+  //   2. Background ASI feats like "Acolyte Ability Score Improvements" (in char.modifiers.feat)
+  const skipAbilityModComponentIds = new Set<number>();
   if (hasAbilityScoreIncreasesTrait) {
+    // Skip race-sourced ability score modifiers
     for (const mod of (char.modifiers?.race || []) as DDBModifier[]) {
       if (
         mod.type === "bonus" &&
         mod.subType?.endsWith("-score") &&
         mod.componentId != null
       ) {
-        raceAbilityModComponentIds.add(mod.componentId);
+        skipAbilityModComponentIds.add(mod.componentId);
+      }
+    }
+
+    // Skip background ASI feat modifiers ("[Background] Ability Score Improvements")
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const bgAsiFeatIds = new Set<number>();
+    for (const feat of (char.feats || []) as any[]) {
+      const featName: string = feat.definition?.name || "";
+      if (featName.endsWith("Ability Score Improvements")) {
+        if (feat.componentId != null) bgAsiFeatIds.add(feat.componentId);
+        if (feat.id != null) bgAsiFeatIds.add(feat.id);
+        if (feat.definition?.id != null) bgAsiFeatIds.add(feat.definition.id);
+      }
+    }
+    for (const mod of (char.modifiers?.feat || []) as DDBModifier[]) {
+      if (
+        mod.type === "bonus" &&
+        mod.subType?.endsWith("-score") &&
+        mod.componentId != null &&
+        bgAsiFeatIds.has(mod.componentId)
+      ) {
+        skipAbilityModComponentIds.add(mod.componentId);
       }
     }
   }
@@ -519,11 +548,11 @@ function computeAbilityScores(char: any, warnings: string[]): AbilityScores {
     let bonus = 0;
     for (const mod of bonusMods) {
       if (
-        raceAbilityModComponentIds.size > 0 &&
+        skipAbilityModComponentIds.size > 0 &&
         mod.componentId != null &&
-        raceAbilityModComponentIds.has(mod.componentId)
+        skipAbilityModComponentIds.has(mod.componentId)
       ) {
-        continue; // skip double-applied 2024 racial ASI modifiers
+        continue; // skip double-applied 2024 ASI modifiers (race + background feat)
       }
       bonus += mod.value || 0;
     }
@@ -693,15 +722,24 @@ function computeSpeed(char: any): number {
 
 /**
  * Extract skills using ddb2alchemy's getSkills approach with entityTypeId.
+ * Also detects Jack of All Trades (half-proficiency on ability checks)
+ * which adds floor(profBonus/2) to all non-proficient skills.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function extractSkills(char: any): SkillProficiency[] {
+function extractSkills(char: any, proficiencyBonus: number): SkillProficiency[] {
   // Get skill proficiencies using entityTypeId (more reliable than string matching)
   const profMods = getModifiers(char, { type: "proficiency" });
   const expertiseMods = getModifiers(char, { type: "expertise" });
   const bonusMods = gatherModifiers(char).filter(
     (m) => m.type === "bonus" && m.subType && SKILL_ABILITY_MAP[m.subType]
   );
+
+  // Detect Jack of All Trades: half-proficiency on "ability-checks"
+  const hasHalfProfOnChecks = getModifiers(char, {
+    type: "half-proficiency",
+    subType: "ability-checks",
+  }).length > 0;
+  const halfProfBonus = hasHalfProfOnChecks ? Math.floor(proficiencyBonus / 2) : 0;
 
   const profSet = new Set<string>();
   const expertiseSet = new Set<string>();
@@ -731,12 +769,21 @@ function extractSkills(char: any): SkillProficiency[] {
 
   const skills: SkillProficiency[] = [];
   for (const [skillSlug, ability] of Object.entries(SKILL_ABILITY_MAP)) {
+    const isProficient = profSet.has(skillSlug);
+    const isExpertise = expertiseSet.has(skillSlug);
+    let bonus = bonusMap.get(skillSlug) || 0;
+
+    // Jack of All Trades: add half-prof to non-proficient skills
+    if (halfProfBonus > 0 && !isProficient) {
+      bonus += halfProfBonus;
+    }
+
     skills.push({
       name: skillSlug,
       ability,
-      proficient: profSet.has(skillSlug),
-      expertise: expertiseSet.has(skillSlug),
-      bonus: bonusMap.get(skillSlug) || undefined,
+      proficient: isProficient,
+      expertise: isExpertise,
+      bonus: bonus || undefined,
     });
   }
 
@@ -745,25 +792,54 @@ function extractSkills(char: any): SkillProficiency[] {
 
 /**
  * Extract saving throw proficiencies.
+ * D&D 5e multiclass rule: only the starting class grants save proficiencies.
+ * We use DDB's componentId on class modifiers to identify which class they
+ * came from, and only include saves from the starting class.
  */
-function extractSavingThrows(
-  modifiers: DDBModifier[]
-): SavingThrowProficiency[] {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function extractSavingThrows(char: any): SavingThrowProficiency[] {
   const profSet = new Set<keyof AbilityScores>();
   const bonusMap = new Map<keyof AbilityScores, number>();
 
-  for (const mod of modifiers) {
+  // Build set of feature IDs belonging to the starting class
+  const startingClassFeatureIds = new Set<number>();
+  for (const cls of char.classes || []) {
+    if (!cls.isStartingClass) continue;
+    for (const feature of cls.classFeatures || []) {
+      if (feature.id != null) startingClassFeatureIds.add(feature.id);
+      if (feature.definition?.id != null) startingClassFeatureIds.add(feature.definition.id);
+    }
+  }
+
+  // Process class modifiers: only starting class grants save proficiencies
+  for (const mod of (char.modifiers?.class || []) as DDBModifier[]) {
     if (!mod.subType) continue;
 
     if (mod.type === "proficiency" && SAVE_SUBTYPE_MAP[mod.subType]) {
-      profSet.add(SAVE_SUBTYPE_MAP[mod.subType]);
-    } else if (
-      mod.type === "bonus" &&
-      SAVE_SUBTYPE_MAP[mod.subType] &&
-      mod.value
-    ) {
+      // Only include if componentId matches a starting class feature
+      if (mod.componentId != null && startingClassFeatureIds.has(mod.componentId)) {
+        profSet.add(SAVE_SUBTYPE_MAP[mod.subType]);
+      }
+    } else if (mod.type === "bonus" && SAVE_SUBTYPE_MAP[mod.subType] && mod.value) {
+      // Bonuses are additive from all sources
       const ability = SAVE_SUBTYPE_MAP[mod.subType];
       bonusMap.set(ability, (bonusMap.get(ability) || 0) + mod.value);
+    }
+  }
+
+  // Process non-class modifiers (race, feat, item, background, condition)
+  // These are not class-specific and always apply
+  const nonClassCategories = ["race", "feat", "item", "background", "condition"];
+  for (const category of nonClassCategories) {
+    for (const mod of (char.modifiers?.[category] || []) as DDBModifier[]) {
+      if (!mod.subType) continue;
+
+      if (mod.type === "proficiency" && SAVE_SUBTYPE_MAP[mod.subType]) {
+        profSet.add(SAVE_SUBTYPE_MAP[mod.subType]);
+      } else if (mod.type === "bonus" && SAVE_SUBTYPE_MAP[mod.subType] && mod.value) {
+        const ability = SAVE_SUBTYPE_MAP[mod.subType];
+        bonusMap.set(ability, (bonusMap.get(ability) || 0) + mod.value);
+      }
     }
   }
 
