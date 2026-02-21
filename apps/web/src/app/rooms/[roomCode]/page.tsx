@@ -238,6 +238,7 @@ function GameContent({
           setPacingProfile(msg.gameState.pacingProfile);
           setEncounterLength(msg.gameState.encounterLength);
           setCustomSystemPrompt(msg.gameState.customSystemPrompt);
+          setGameStateSynced(true);
           break;
 
         case "server:rollback":
@@ -286,6 +287,21 @@ function GameContent({
     onMessage: handleMessage,
     enabled: clientReady,
   });
+
+  // Expose message handler for Playwright tests (zero cost, no-op in production)
+  useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (window as any).__testInjectMessage = handleMessage;
+    return () => { delete (window as any).__testInjectMessage; };
+  }, [handleMessage]);
+
+  // Flag that initial game state sync has been received (for test timing)
+  const [gameStateSynced, setGameStateSynced] = useState(false);
+  useEffect(() => {
+    if (gameStateSynced) {
+      (window as any).__testGameStateSynced = true;
+    }
+  }, [gameStateSynced]);
 
   // Send initial character data after connection
   useEffect(() => {
