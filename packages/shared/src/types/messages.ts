@@ -11,6 +11,7 @@ export interface AuthUser {
 import type { CharacterData, PlayerInfo } from "./character";
 import type { AIAction } from "./ai-actions";
 import type {
+  BattleMapState,
   CheckRequest,
   CheckResult,
   CombatState,
@@ -241,6 +242,7 @@ export interface ServerDiceRollMessage {
 export interface ServerCombatUpdateMessage {
   type: "server:combat_update";
   combat: CombatState | null;
+  map?: BattleMapState | null;
   timestamp: number;
 }
 

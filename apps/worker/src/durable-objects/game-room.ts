@@ -1098,6 +1098,7 @@ export class GameRoom extends DurableObject<Env> {
       this.broadcast({
         type: "server:combat_update",
         combat: result.combatUpdate ?? null,
+        map: this.gameState.encounter?.map ?? null,
         timestamp: Date.now(),
       });
     }

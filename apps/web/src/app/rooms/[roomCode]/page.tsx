@@ -7,8 +7,10 @@ import { Sidebar } from "@/components/sidebar/Sidebar";
 import { LeftSidebar } from "@/components/character/LeftSidebar";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { InitiativeTracker } from "@/components/game/InitiativeTracker";
+import { BattleMap } from "@/components/game/BattleMap";
 import type {
   AIConfig,
+  BattleMapState,
   CharacterData,
   CombatState,
   EncounterLength,
@@ -103,10 +105,12 @@ function GameContent({
   >({});
   const [storyStarted, setStoryStarted] = useState(false);
   const [combatState, setCombatState] = useState<CombatState | null>(null);
+  const [battleMap, setBattleMap] = useState<BattleMapState | null>(null);
   const [eventLog, setEventLog] = useState<GameEvent[]>([]);
   const [pacingProfile, setPacingProfile] = useState<PacingProfile>("balanced");
   const [encounterLength, setEncounterLength] = useState<EncounterLength>("standard");
   const [customSystemPrompt, setCustomSystemPrompt] = useState<string | undefined>(undefined);
+  const [highlightedCombatantId, setHighlightedCombatantId] = useState<string | null>(null);
 
   // Join state — don't render game UI until successfully joined
   const [joined, setJoined] = useState(false);
@@ -222,12 +226,14 @@ function GameContent({
 
         case "server:combat_update":
           setCombatState(msg.combat ?? null);
+          if (msg.map !== undefined) setBattleMap(msg.map ?? null);
           break;
 
         case "server:game_state_sync":
           if (msg.gameState.encounter?.combat) {
             setCombatState(msg.gameState.encounter.combat);
           }
+          setBattleMap(msg.gameState.encounter?.map ?? null);
           setEventLog(msg.gameState.eventLog);
           setPacingProfile(msg.gameState.pacingProfile);
           setEncounterLength(msg.gameState.encounterLength);
@@ -247,6 +253,7 @@ function GameContent({
           } else {
             setCombatState(null);
           }
+          setBattleMap(msg.gameState.encounter?.map ?? null);
           setEventLog(msg.gameState.eventLog);
           setPacingProfile(msg.gameState.pacingProfile);
           setEncounterLength(msg.gameState.encounterLength);
@@ -324,6 +331,13 @@ function GameContent({
   const handleRollback = (eventId: string) => {
     send({ type: "client:rollback", eventId });
   };
+
+  const handleMoveToken = useCallback(
+    (to: { x: number; y: number }) => {
+      send({ type: "client:move_token", to });
+    },
+    [send],
+  );
 
   const handleDestroyRoom = () => {
     send({ type: "client:destroy_room" });
@@ -434,7 +448,20 @@ function GameContent({
       />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {combatState && combatState.phase === "active" && (
-          <InitiativeTracker combat={combatState} />
+          <InitiativeTracker
+            combat={combatState}
+            onCombatantClick={setHighlightedCombatantId}
+          />
+        )}
+        {battleMap && combatState && combatState.phase === "active" && (
+          <BattleMap
+            map={battleMap}
+            combat={combatState}
+            partyCharacters={partyCharacters}
+            myCharacterName={myCharacter?.static.name}
+            onMoveToken={handleMoveToken}
+            highlightedCombatantId={highlightedCombatantId}
+          />
         )}
         <ChatPanel
           messages={storyMessages}

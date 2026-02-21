@@ -2,9 +2,10 @@ import type { CombatState } from "@aidnd/shared/types";
 
 interface InitiativeTrackerProps {
   combat: CombatState;
+  onCombatantClick?: (combatantId: string) => void;
 }
 
-export function InitiativeTracker({ combat }: InitiativeTrackerProps) {
+export function InitiativeTracker({ combat, onCombatantClick }: InitiativeTrackerProps) {
   if (combat.phase !== "active") return null;
 
   return (
@@ -35,11 +36,14 @@ export function InitiativeTracker({ combat }: InitiativeTrackerProps) {
               : null;
 
           return (
-            <div
+            <button
               key={id}
+              type="button"
+              onClick={() => onCombatantClick?.(id)}
               className={`
                 flex flex-col items-center px-2.5 py-1.5 rounded-lg text-center min-w-[72px]
                 transition-all
+                ${onCombatantClick ? "cursor-pointer hover:bg-gray-700/40" : ""}
                 ${isActive ? "ring-2 ring-amber-400 bg-amber-900/20" : "bg-gray-800/50"}
                 ${isDead ? "opacity-40" : ""}
               `}
@@ -86,7 +90,7 @@ export function InitiativeTracker({ combat }: InitiativeTrackerProps) {
                   {combatant.conditions.length} cond.
                 </div>
               )}
-            </div>
+            </button>
           );
         })}
       </div>

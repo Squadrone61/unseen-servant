@@ -83,6 +83,7 @@ pnpm deploy:web     # Deploy web only
 - `components/chat/ChatPanel.tsx` — Main chat interface
 - `components/character/CharacterSheet.tsx` — D&D character sheet display
 - `components/character/LeftSidebar.tsx` — Left sidebar with character details
+- `components/game/BattleMap.tsx` — Tactical grid combat map (CSS Grid, tokens, click-to-move)
 - `components/game/InitiativeTracker.tsx` — Combat turn order
 - `components/sidebar/Sidebar.tsx` — Right sidebar (room info, player list, activity log)
 
@@ -112,7 +113,7 @@ pnpm deploy:web     # Deploy web only
 - Phase 1 (Foundation): COMPLETE — multiplayer chat, multi-provider AI, OAuth, reconnection
 - Phase 2 (Character Integration): COMPLETE — D&D Beyond import, character sheet, party list
 - Phase 3 (Game State & Rules): COMPLETE — dice, spell tracking, HP, state resolver, initiative, skill check flow, event log with rollback, editable system prompt
-- Phase 4 (Battle Map): NOT STARTED
+- Phase 4 (Battle Map): COMPLETE — CSS Grid map renderer, token placement, click-to-move with BFS range highlighting, conditions on tokens, InitiativeTracker integration
 - Phase 5 (Campaign Persistence): NOT STARTED (D1 database)
 - Phase 6 (Polish): NOT STARTED
 

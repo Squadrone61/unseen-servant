@@ -5,6 +5,7 @@ import {
   checkResultSchema,
   rollResultSchema,
   combatStateSchema,
+  battleMapStateSchema,
   gameStateSchema,
   gameEventSchema,
   pacingProfileSchema,
@@ -427,6 +428,7 @@ export const serverDiceRollSchema = z.object({
 export const serverCombatUpdateSchema = z.object({
   type: z.literal("server:combat_update"),
   combat: combatStateSchema.nullable(),
+  map: battleMapStateSchema.nullable().optional(),
   timestamp: z.number(),
 });
 
