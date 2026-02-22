@@ -30,7 +30,6 @@ const providerSelect = $<HTMLSelectElement>("provider");
 const apiKeyInput = $<HTMLInputElement>("apiKey");
 const keyHelpLink = $<HTMLAnchorElement>("key-help");
 const modelSelect = $<HTMLSelectElement>("model");
-const modelsLoading = $<HTMLSpanElement>("models-loading");
 const saveBtn = $<HTMLButtonElement>("save");
 const statusDiv = $<HTMLDivElement>("status");
 
@@ -44,6 +43,17 @@ for (const p of PROVIDERS) {
 
 let currentProvider = PROVIDERS[0];
 
+function setModelPlaceholder(text: string, disabled: boolean) {
+  modelSelect.innerHTML = "";
+  const opt = document.createElement("option");
+  opt.value = "";
+  opt.textContent = text;
+  opt.disabled = true;
+  opt.selected = true;
+  modelSelect.appendChild(opt);
+  modelSelect.disabled = disabled;
+}
+
 function updateUI() {
   const provider = PROVIDERS.find((p) => p.id === providerSelect.value) || PROVIDERS[0];
   currentProvider = provider;
@@ -56,20 +66,16 @@ function updateUI() {
     keyHelpLink.style.display = "none";
   }
 
-  // Reset model to default
-  modelSelect.innerHTML = "";
-  const defaultOpt = document.createElement("option");
-  defaultOpt.value = provider.defaultModel;
-  defaultOpt.textContent = provider.defaultModel;
-  modelSelect.appendChild(defaultOpt);
-
-  // Try to fetch models if we have an API key
-  if (apiKeyInput.value) fetchModels(provider, apiKeyInput.value);
+  // Try to fetch models if we have an API key, otherwise show placeholder
+  if (apiKeyInput.value) {
+    setModelPlaceholder("Loading models...", true);
+    fetchModels(provider, apiKeyInput.value);
+  } else {
+    setModelPlaceholder("Enter API key first", true);
+  }
 }
 
 async function fetchModels(provider: ProviderEntry, apiKey: string) {
-  modelsLoading.style.display = "inline";
-
   try {
     let url: string;
     const headers: Record<string, string> = { Accept: "application/json" };
@@ -87,7 +93,7 @@ async function fetchModels(provider: ProviderEntry, apiKey: string) {
 
     const response = await fetch(url, { headers });
     if (!response.ok) {
-      modelsLoading.style.display = "none";
+      setModelPlaceholder("Failed to load models", false);
       return;
     }
 
@@ -117,20 +123,19 @@ async function fetchModels(provider: ProviderEntry, apiKey: string) {
 
     if (models.length > 0) {
       modelSelect.innerHTML = "";
+      modelSelect.disabled = false;
       for (const m of models) {
         const opt = document.createElement("option");
         opt.value = m.id;
         opt.textContent = m.name;
         modelSelect.appendChild(opt);
       }
-      // Try to select the default model
-      const defaultIdx = models.findIndex((m) => m.id === provider.defaultModel);
-      if (defaultIdx >= 0) modelSelect.selectedIndex = defaultIdx;
+    } else {
+      setModelPlaceholder("No models found", false);
     }
   } catch (err) {
     console.warn("Failed to fetch models:", err);
-  } finally {
-    modelsLoading.style.display = "none";
+    setModelPlaceholder("Failed to load models", false);
   }
 }
 
@@ -156,10 +161,15 @@ saveBtn.addEventListener("click", async () => {
     return;
   }
 
+  if (!modelSelect.value) {
+    showStatus("Please select a model", "error");
+    return;
+  }
+
   const config: ExtensionAIConfig = {
     provider: currentProvider.id,
     apiKey,
-    model: modelSelect.value || currentProvider.defaultModel,
+    model: modelSelect.value,
     supportsTools: providerSupportsTools(currentProvider.id),
   };
 
@@ -201,14 +211,16 @@ function showStatus(message: string, type: "success" | "error" | "info") {
     apiKeyInput.value = config.apiKey;
     updateUI();
 
-    // updateUI resets the model dropdown; restore saved model after fetch completes
+    // Restore saved model after fetch completes
     const savedModel = config.model;
     if (savedModel) {
-      // Set immediately (default option), then re-set after models load
-      modelSelect.value = savedModel;
       const observer = new MutationObserver(() => {
-        modelSelect.value = savedModel;
-        observer.disconnect();
+        // Only set if the dropdown now has real options (not just placeholder)
+        const hasOption = Array.from(modelSelect.options).some((o) => o.value === savedModel);
+        if (hasOption) {
+          modelSelect.value = savedModel;
+          observer.disconnect();
+        }
       });
       observer.observe(modelSelect, { childList: true });
     }

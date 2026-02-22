@@ -27,6 +27,33 @@ import type { Env, RoomMeta } from "../types";
 
 type PlayerStatus = "host" | "player";
 
+/** Build a descriptive label for a dice roll from check fields. */
+function buildCheckLabel(check: CheckRequest): string {
+  const abilityAbbr = check.ability?.slice(0, 3).toUpperCase();
+  switch (check.type) {
+    case "saving_throw":
+      return abilityAbbr
+        ? `${abilityAbbr} Save${check.reason ? ` — ${check.reason}` : ""}`
+        : `Save${check.reason ? ` — ${check.reason}` : ""}`;
+    case "skill": {
+      const skill = check.skill
+        ? check.skill.charAt(0).toUpperCase() + check.skill.slice(1)
+        : null;
+      return skill
+        ? `${skill}${check.reason && check.reason.toLowerCase() !== skill.toLowerCase() ? ` — ${check.reason}` : ""}`
+        : check.reason;
+    }
+    case "ability":
+      return abilityAbbr
+        ? `${abilityAbbr} Check${check.reason ? ` — ${check.reason}` : ""}`
+        : check.reason;
+    case "attack":
+      return `Attack${check.reason ? ` — ${check.reason}` : ""}`;
+    default:
+      return check.reason;
+  }
+}
+
 interface SessionData {
   playerName: string;
   userId: string;
@@ -1170,7 +1197,7 @@ export class GameRoom extends DurableObject<Env> {
       modifier,
       advantage: check.advantage,
       disadvantage: check.disadvantage,
-      label: check.reason,
+      label: buildCheckLabel(check),
     });
 
     const success = check.dc !== undefined ? roll.total >= check.dc : true;
@@ -1355,7 +1382,7 @@ export class GameRoom extends DurableObject<Env> {
       modifier,
       advantage: pendingCheck.advantage,
       disadvantage: pendingCheck.disadvantage,
-      label: pendingCheck.reason,
+      label: buildCheckLabel(pendingCheck),
     });
 
     // Determine success

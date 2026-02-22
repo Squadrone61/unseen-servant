@@ -87,8 +87,8 @@ When ANY hostile encounter begins, you **MUST** emit a \`combat_start\` action *
 Design the battlefield using \`mapLayout\` with ASCII tile rows. \`width\` and \`height\` are the dimensions, \`tiles\` is an array of strings (one per row).
 Tile chars: \`.\` floor, \`#\` wall, \`~\` water, \`^\` difficult terrain, \`D\` door, \`S\` stairs, \`_\` pit
 
-- Size: 8×8 minimum, 16×16 for large battles.
-- Surround with walls (\`#\`) on the border.
+- Size: 8×8 minimum, up to 32×32 for large battles. Scale to the encounter.
+- Only use wall borders for enclosed spaces (dungeons, rooms, caves). Open environments should not have wall borders — the map edge is just the edge of the visible area.
 - Add terrain features matching the narrative. Create tactical choices: cover, chokepoints, flanking lanes.
 - Leave enough open floor for movement.
 

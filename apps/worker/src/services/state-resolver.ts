@@ -192,14 +192,13 @@ function parseMapLayout(layout: AICombatStart["mapLayout"]): BattleMapState | un
 
 /** Generate a simple default rectangular room. */
 function generateDefaultMap(combatantCount: number): BattleMapState {
-  const size = Math.max(8, Math.min(20, combatantCount * 3));
+  const size = Math.max(8, Math.min(32, combatantCount * 3));
   const tiles: MapTile[][] = [];
 
   for (let y = 0; y < size; y++) {
     const row: MapTile[] = [];
     for (let x = 0; x < size; x++) {
-      const isWall = y === 0 || y === size - 1 || x === 0 || x === size - 1;
-      row.push({ type: isWall ? "wall" : "floor" });
+      row.push({ type: "floor" });
     }
     tiles.push(row);
   }
@@ -221,26 +220,28 @@ function generateTerrainMap(
   combatantCount: number
 ): BattleMapState {
   const t = terrain.toLowerCase();
-  const size = Math.max(8, Math.min(20, combatantCount * 3));
+  const size = Math.max(8, Math.min(32, combatantCount * 3));
 
   // Determine dimensions based on terrain
   let width = size;
   let height = size;
   if (t.includes("corridor") || t.includes("alley") || t.includes("tunnel") || t.includes("bridge")) {
-    width = Math.max(6, Math.min(8, size - 2));
-    height = Math.max(10, Math.min(16, size + 4));
+    width = Math.max(6, Math.min(10, size - 2));
+    height = Math.max(10, Math.min(24, size + 4));
   } else if (t.includes("clearing") || t.includes("field") || t.includes("plaza")) {
-    width = Math.max(10, Math.min(16, size + 2));
-    height = Math.max(10, Math.min(16, size + 2));
+    width = Math.max(12, Math.min(32, size + 4));
+    height = Math.max(12, Math.min(32, size + 4));
   }
 
-  const tiles: MapTile[][] = [];
+  // Enclosed terrains get wall borders; open terrains are all floor
+  const enclosed = t.includes("dungeon") || t.includes("room") || t.includes("chamber") ||
+    t.includes("corridor") || t.includes("alley") || t.includes("tunnel");
 
-  // Fill with floor, surround with walls
+  const tiles: MapTile[][] = [];
   for (let y = 0; y < height; y++) {
     const row: MapTile[] = [];
     for (let x = 0; x < width; x++) {
-      const isWall = y === 0 || y === height - 1 || x === 0 || x === width - 1;
+      const isWall = enclosed && (y === 0 || y === height - 1 || x === 0 || x === width - 1);
       row.push({ type: isWall ? "wall" : "floor" });
     }
     tiles.push(row);

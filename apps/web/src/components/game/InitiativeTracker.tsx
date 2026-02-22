@@ -1,4 +1,12 @@
-import type { CombatState } from "@aidnd/shared/types";
+import type { CombatState, TileType } from "@aidnd/shared/types";
+
+const LEGEND_ITEMS: Array<{ type: TileType; label: string; bg: string; extra?: string }> = [
+  { type: "floor", label: "Floor", bg: "#26262c" },
+  { type: "wall", label: "Wall", bg: "#131318" },
+  { type: "water", label: "Water", bg: "#182535", extra: "repeating-linear-gradient(160deg, transparent 0 4px, rgba(60,160,220,.35) 4px 5px)" },
+  { type: "difficult_terrain", label: "Difficult", bg: "#28221a", extra: "repeating-linear-gradient(45deg, transparent 0 3px, rgba(200,150,50,.35) 3px 4px)" },
+  { type: "door", label: "Door", bg: "#34291a" },
+];
 
 interface InitiativeTrackerProps {
   combat: CombatState;
@@ -15,6 +23,20 @@ export function InitiativeTracker({ combat, onCombatantClick }: InitiativeTracke
           Combat
         </span>
         <span className="text-xs text-gray-600">Round {combat.round}</span>
+        <div className="flex items-center gap-2.5 ml-auto">
+          {LEGEND_ITEMS.map(({ type, label, bg, extra }) => (
+            <div key={type} className="flex items-center gap-1">
+              <div
+                className="w-3.5 h-3.5 rounded-[3px] border border-gray-600/60"
+                style={{
+                  backgroundColor: bg,
+                  backgroundImage: extra,
+                }}
+              />
+              <span className="text-[9px] text-gray-500">{label}</span>
+            </div>
+          ))}
+        </div>
       </div>
       <div className="flex gap-1.5 overflow-x-auto pb-1">
         {combat.turnOrder.map((id, idx) => {

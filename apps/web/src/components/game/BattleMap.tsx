@@ -15,7 +15,6 @@ import type {
 
 const TILE_SIZE = 40;
 const TILE_GAP = 1;
-const LABEL_W = 24;
 
 const TILE_BG: Record<TileType, string> = {
   floor: "#26262c",
@@ -59,12 +58,6 @@ function sizeSpan(s: CreatureSize): number {
     case "gargantuan": return 4;
     default: return 1;
   }
-}
-
-function colLabel(x: number): string {
-  return x < 26
-    ? String.fromCharCode(65 + x)
-    : String.fromCharCode(64 + Math.floor(x / 26)) + String.fromCharCode(65 + (x % 26));
 }
 
 // ─── BFS reachable tiles ───
@@ -212,10 +205,10 @@ export function BattleMap({
   const movementLeft = myCombatant ? myCombatant.speed - myCombatant.movementUsed : 0;
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col border-b border-gray-700/50 bg-[#111114]">
+    <div className="flex flex-col border-b border-gray-700/50 bg-[#111114] max-h-[50vh]">
       {/* Your-turn banner */}
       {isMyTurn && (
-        <div className="px-3 py-1.5 bg-amber-950/40 border-b border-amber-800/30 text-amber-300 text-xs font-medium tracking-wide flex items-center justify-between gap-2">
+        <div className="px-3 py-1.5 bg-amber-950/40 border-b border-amber-800/30 text-amber-300 text-xs font-medium tracking-wide flex items-center justify-between gap-2 shrink-0">
           <div className="flex items-center gap-2">
             <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
             Your turn &mdash; click a highlighted tile to move
@@ -233,47 +226,19 @@ export function BattleMap({
       )}
 
       {/* Scrollable map area */}
-      <div className="flex-1 min-h-0 overflow-auto p-3 flex items-start justify-center">
-        <div className="inline-flex flex-col">
-          {/* Column labels */}
-          <div className="flex select-none" style={{ paddingLeft: LABEL_W }}>
-            {Array.from({ length: map.width }, (_, x) => (
-              <div
-                key={x}
-                className="text-[9px] text-gray-600 font-mono text-center leading-4"
-                style={{ width: TILE_SIZE + TILE_GAP }}
-              >
-                {colLabel(x)}
-              </div>
-            ))}
-          </div>
-
-          <div className="flex">
-            {/* Row labels */}
-            <div className="flex flex-col select-none" style={{ width: LABEL_W }}>
-              {Array.from({ length: map.height }, (_, y) => (
-                <div
-                  key={y}
-                  className="text-[9px] text-gray-600 font-mono flex items-center justify-end pr-1.5"
-                  style={{ height: TILE_SIZE + TILE_GAP }}
-                >
-                  {y + 1}
-                </div>
-              ))}
-            </div>
-
-            {/* The grid itself */}
-            <div
-              ref={gridRef}
-              className="relative rounded-sm overflow-hidden"
-              style={{
-                display: "grid",
-                gridTemplateColumns: `repeat(${map.width}, ${TILE_SIZE}px)`,
-                gridTemplateRows: `repeat(${map.height}, ${TILE_SIZE}px)`,
-                gap: TILE_GAP,
-                backgroundColor: "#1c1c20",
-              }}
-            >
+      <div className="flex-1 min-h-0 overflow-auto p-2 flex items-start justify-center">
+        {/* The grid itself */}
+        <div
+          ref={gridRef}
+          className="relative rounded-sm overflow-hidden"
+          style={{
+            display: "grid",
+            gridTemplateColumns: `repeat(${map.width}, ${TILE_SIZE}px)`,
+            gridTemplateRows: `repeat(${map.height}, ${TILE_SIZE}px)`,
+            gap: TILE_GAP,
+            backgroundColor: "#1c1c20",
+          }}
+        >
               {/* ─── Layer 1: Tiles ─── */}
               {map.tiles.map((row, y) =>
                 row.map((tile, x) => {
@@ -397,27 +362,6 @@ export function BattleMap({
                   </div>
                 );
               })}
-            </div>
-          </div>
-
-          {/* Legend */}
-          <div className="flex gap-3 mt-2 px-1 flex-wrap">
-            {([
-              ["floor", "Floor"],
-              ["wall", "Wall"],
-              ["water", "Water"],
-              ["difficult_terrain", "Diff. Terrain"],
-              ["door", "Door"],
-            ] as const).map(([type, label]) => (
-              <div key={type} className="flex items-center gap-1">
-                <div
-                  className="w-3 h-3 rounded-sm border border-gray-700/50"
-                  style={{ backgroundColor: TILE_BG[type] }}
-                />
-                <span className="text-[9px] text-gray-600">{label}</span>
-              </div>
-            ))}
-          </div>
         </div>
       </div>
     </div>
