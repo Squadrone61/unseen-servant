@@ -15,7 +15,8 @@
     "test": "node scripts/test.mjs",
     "test:ui": "playwright test --ui",
     "build:extension": "cd apps/extension && node build.mjs",
-    "dev:extension": "cd apps/extension && node build.mjs --watch"
+    "dev:extension": "cd apps/extension && node build.mjs --watch",
+    "release:extension": "cd apps/extension && node release.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.58.2",
