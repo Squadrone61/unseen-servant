@@ -127,8 +127,8 @@ test.describe("Game Room", () => {
       page.getByText("AI Dungeon Master", { exact: false }).last()
     ).toBeVisible();
 
-    // Configure AI Provider link
-    await expect(page.getByText("Configure AI Provider")).toBeVisible();
+    // Extension status should show "Waiting for extension..."
+    await expect(page.getByText("Waiting for extension...")).toBeVisible();
   });
 
   test("shows Host badge in sidebar", async ({ page }) => {

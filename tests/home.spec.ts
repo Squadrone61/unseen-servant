@@ -29,13 +29,8 @@ test.describe("Home Page", () => {
     await expect(page.getByText("Join Room", { exact: false }).first()).toBeVisible();
     await expect(page.getByRole("button", { name: "Join Room" })).toBeVisible();
 
-    // AI Provider dropdown
-    await expect(page.getByText("AI Provider")).toBeVisible();
-    await expect(page.locator("select").first()).toBeVisible();
-
-    // API Key input
-    await expect(page.getByText("API Key")).toBeVisible();
-    await expect(page.locator("input[type='password']").first()).toBeVisible();
+    // Extension info text
+    await expect(page.getByText("AIDND DM Extension")).toBeVisible();
 
     // Browse Rooms link
     await expect(page.getByRole("link", { name: "Browse Rooms" })).toBeVisible();
@@ -129,12 +124,7 @@ test.describe("Home Page", () => {
     await expect(codeInput).toHaveValue("ABCDEF");
   });
 
-  test("AI provider dropdown has options", async ({ page }) => {
-    const select = page.locator("select").first();
-    const options = select.locator("option");
-    // Should have multiple AI providers
-    expect(await options.count()).toBeGreaterThanOrEqual(3);
-    // First should be Anthropic
-    await expect(options.first()).toHaveText("Anthropic");
+  test("shows extension info for AI setup", async ({ page }) => {
+    await expect(page.getByText("AIDND DM Extension")).toBeVisible();
   });
 });

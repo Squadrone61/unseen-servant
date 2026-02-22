@@ -25,12 +25,19 @@ import type {
 } from "./game-state";
 export type { CharacterData, PlayerInfo };
 
-// === AI Configuration ===
+// === AI Configuration (legacy — only used by extension internally) ===
 
 export interface AIConfig {
   provider: string;
   apiKey: string;
   model?: string;
+}
+
+// === DM Extension Configuration (flows through WebSocket) ===
+
+export interface DMExtensionConfig {
+  provider: string;
+  supportsTools: boolean;
 }
 
 // === Client → Server messages ===
@@ -45,17 +52,24 @@ export interface ClientJoinMessage {
   type: "client:join";
   playerName: string;
   roomCode: string;
-  aiConfig?: AIConfig;
   authToken?: string;
   guestId?: string;
   password?: string;
-  /** @deprecated Use aiConfig instead */
-  apiKey?: string;
 }
 
-export interface ClientSetAIConfigMessage {
-  type: "client:set_ai_config";
-  aiConfig: AIConfig;
+/** Extension → Server: AI response for a dm_request */
+export interface ClientDMResponseMessage {
+  type: "client:dm_response";
+  requestId: string;
+  text: string;
+  error?: string;
+}
+
+/** Extension → Server: DM extension provider config changed */
+export interface ClientDMConfigMessage {
+  type: "client:dm_config";
+  provider: string;
+  supportsTools: boolean;
 }
 
 export interface ClientSetPasswordMessage {
@@ -118,6 +132,10 @@ export interface ClientDMOverrideMessage {
 }
 
 /** Host-only: permanently destroy the room and wipe all data */
+export interface ClientEndTurnMessage {
+  type: "client:end_turn";
+}
+
 export interface ClientDestroyRoomMessage {
   type: "client:destroy_room";
 }
@@ -125,7 +143,8 @@ export interface ClientDestroyRoomMessage {
 export type ClientMessage =
   | ClientChatMessage
   | ClientJoinMessage
-  | ClientSetAIConfigMessage
+  | ClientDMResponseMessage
+  | ClientDMConfigMessage
   | ClientSetPasswordMessage
   | ClientKickPlayerMessage
   | ClientSetCharacterMessage
@@ -137,6 +156,7 @@ export type ClientMessage =
   | ClientSetSystemPromptMessage
   | ClientSetPacingMessage
   | ClientDMOverrideMessage
+  | ClientEndTurnMessage
   | ClientDestroyRoomMessage;
 
 // === Server → Client messages ===
@@ -178,6 +198,8 @@ export interface ServerRoomJoinedMessage {
   characters?: Record<string, CharacterData>;
   allPlayers?: PlayerInfo[];
   storyStarted?: boolean;
+  /** Whether a DM extension has connected and configured */
+  extensionConnected?: boolean;
 }
 
 export interface ServerPlayerJoinedMessage {
@@ -267,6 +289,14 @@ export interface ServerEventLogMessage {
   event: GameEvent;
 }
 
+/** Server → Host: request the extension to make an AI call */
+export interface ServerDMRequestMessage {
+  type: "server:dm_request";
+  requestId: string;
+  systemPrompt: string;
+  messages: { role: "user" | "assistant"; content: string }[];
+}
+
 /** Broadcast when host destroys the room — all clients should disconnect */
 export interface ServerRoomDestroyedMessage {
   type: "server:room_destroyed";
@@ -289,4 +319,5 @@ export type ServerMessage =
   | ServerGameStateSyncMessage
   | ServerRollbackMessage
   | ServerEventLogMessage
+  | ServerDMRequestMessage
   | ServerRoomDestroyedMessage;

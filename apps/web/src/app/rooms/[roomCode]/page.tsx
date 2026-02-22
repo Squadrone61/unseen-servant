@@ -9,7 +9,6 @@ import { useWebSocket } from "@/hooks/useWebSocket";
 import { InitiativeTracker } from "@/components/game/InitiativeTracker";
 import { BattleMap } from "@/components/game/BattleMap";
 import type {
-  AIConfig,
   BattleMapState,
   CharacterData,
   CombatState,
@@ -19,18 +18,6 @@ import type {
   PlayerInfo,
   ServerMessage,
 } from "@aidnd/shared/types";
-
-function loadAIConfig(): AIConfig | undefined {
-  try {
-    const raw = localStorage.getItem("ai_config");
-    if (!raw) return undefined;
-    const parsed = JSON.parse(raw);
-    if (parsed?.provider && parsed?.apiKey) return parsed as AIConfig;
-  } catch {
-    // ignore malformed JSON
-  }
-  return undefined;
-}
 
 /** Messages that belong in the main story chat */
 function isStoryMessage(msg: ServerMessage): boolean {
@@ -94,9 +81,7 @@ function GameContent({
   const [logMessages, setLogMessages] = useState<ServerMessage[]>([]);
   const [players, setPlayers] = useState<string[]>([]);
   const [allPlayers, setAllPlayers] = useState<PlayerInfo[]>([]);
-  const [hasApiKey, setHasApiKey] = useState(false);
-  const [aiProvider, setAiProvider] = useState<string | undefined>();
-  const [aiModel, setAiModel] = useState<string | undefined>();
+  const [extensionConnected, setExtensionConnected] = useState(false);
   const [isHost, setIsHost] = useState(false);
   const [hostName, setHostName] = useState<string>("");
   const [myCharacter, setMyCharacter] = useState<CharacterData | null>(null);
@@ -125,7 +110,6 @@ function GameContent({
 
   // Client-only state: browser storage values loaded after mount
   const [clientReady, setClientReady] = useState(false);
-  const [aiConfig, setAiConfig] = useState<AIConfig | undefined>(undefined);
   const [authToken, setAuthToken] = useState<string | undefined>(undefined);
   const [guestId, setGuestId] = useState<string | undefined>(undefined);
 
@@ -134,7 +118,6 @@ function GameContent({
 
   // Load all browser storage values after mount (avoids hydration mismatch)
   useEffect(() => {
-    setAiConfig(loadAIConfig());
     setAuthToken(localStorage.getItem("auth_token") || undefined);
 
     // Load password from sessionStorage (set by home page quick-join)
@@ -161,9 +144,7 @@ function GameContent({
           setJoined(true);
           setPlayers(msg.players);
           setHostName(msg.hostName);
-          setHasApiKey(msg.hasApiKey);
-          setAiProvider(msg.aiProvider);
-          setAiModel(msg.aiModel);
+          setExtensionConnected(msg.extensionConnected ?? msg.hasApiKey);
           setIsHost(msg.isHost ?? false);
           setPasswordRequired(false);
           setPasswordError("");
@@ -265,6 +246,11 @@ function GameContent({
           setEventLog((prev) => [...prev, msg.event]);
           break;
 
+        case "server:dm_request":
+          // Relay to extension via postMessage
+          window.postMessage({ type: "aidnd:dm_request", payload: msg }, "*");
+          break;
+
         default:
           if (isStoryMessage(msg)) {
             setStoryMessages((prev) => [...prev, msg]);
@@ -277,16 +263,30 @@ function GameContent({
     [router, playerName]
   );
 
-  const { send, connectionState } = useWebSocket({
+  const { send, sendRaw, connectionState } = useWebSocket({
     roomCode,
     playerName,
-    aiConfig,
     authToken,
     guestId,
     password: roomPassword,
     onMessage: handleMessage,
     enabled: clientReady,
   });
+
+  // Extension relay: forward dm_response and dm_config from extension to server
+  useEffect(() => {
+    const handler = (event: MessageEvent) => {
+      if (event.data?.type === "aidnd:dm_response") {
+        sendRaw(JSON.stringify(event.data.payload));
+      }
+      if (event.data?.type === "aidnd:dm_config") {
+        sendRaw(JSON.stringify(event.data.payload));
+        setExtensionConnected(true);
+      }
+    };
+    window.addEventListener("message", handler);
+    return () => window.removeEventListener("message", handler);
+  }, [sendRaw]);
 
   // Expose message handler for Playwright tests (zero cost, no-op in production)
   useEffect(() => {
@@ -323,14 +323,6 @@ function GameContent({
     });
   };
 
-  const handleSetAIConfig = (config: AIConfig) => {
-    send({ type: "client:set_ai_config", aiConfig: config });
-    localStorage.setItem("ai_config", JSON.stringify(config));
-    setHasApiKey(true);
-    setAiProvider(config.provider);
-    setAiModel(config.model);
-  };
-
   const handleKick = (name: string) => {
     send({ type: "client:kick_player", playerName: name });
   };
@@ -354,6 +346,10 @@ function GameContent({
     },
     [send],
   );
+
+  const handleEndTurn = useCallback(() => {
+    send({ type: "client:end_turn" });
+  }, [send]);
 
   const handleDestroyRoom = () => {
     send({ type: "client:destroy_room" });
@@ -476,6 +472,7 @@ function GameContent({
             partyCharacters={partyCharacters}
             myCharacterName={myCharacter?.static.name}
             onMoveToken={handleMoveToken}
+            onEndTurn={handleEndTurn}
             highlightedCombatantId={highlightedCombatantId}
           />
         )}
@@ -492,9 +489,7 @@ function GameContent({
         players={players}
         allPlayers={allPlayers}
         hostName={hostName}
-        hasApiKey={hasApiKey}
-        aiProvider={aiProvider}
-        aiModel={aiModel}
+        extensionConnected={extensionConnected}
         isHost={isHost}
         logMessages={logMessages}
         partyCharacters={partyCharacters}
@@ -504,7 +499,6 @@ function GameContent({
         pacingProfile={pacingProfile}
         encounterLength={encounterLength}
         customSystemPrompt={customSystemPrompt}
-        onSetAIConfig={handleSetAIConfig}
         onKick={handleKick}
         onStartStory={handleStartStory}
         onRollback={handleRollback}

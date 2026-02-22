@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import { serverMessageSchema } from "@aidnd/shared/schemas";
-import type { AIConfig, ClientMessage, ServerMessage } from "@aidnd/shared/types";
+import type { ClientMessage, ServerMessage } from "@aidnd/shared/types";
 
 export type ConnectionState =
   | "connecting"
@@ -13,7 +13,6 @@ export type ConnectionState =
 interface UseWebSocketOptions {
   roomCode: string;
   playerName: string;
-  aiConfig?: AIConfig;
   authToken?: string;
   guestId?: string;
   password?: string;
@@ -28,7 +27,6 @@ const BASE_RECONNECT_DELAY = 1000; // 1 second
 export function useWebSocket({
   roomCode,
   playerName,
-  aiConfig,
   authToken,
   guestId,
   password,
@@ -44,9 +42,6 @@ export function useWebSocket({
   const reconnectAttemptRef = useRef(0);
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const intentionalCloseRef = useRef(false);
-
-  // Stable serialization to avoid reconnection loops from object reference changes
-  const aiConfigJson = aiConfig ? JSON.stringify(aiConfig) : undefined;
 
   useEffect(() => {
     if (!enabled) return;
@@ -74,9 +69,6 @@ export function useWebSocket({
           playerName,
           roomCode,
         };
-        if (aiConfigJson) {
-          joinMsg.aiConfig = JSON.parse(aiConfigJson);
-        }
         if (authToken) {
           joinMsg.authToken = authToken;
         }
@@ -155,7 +147,7 @@ export function useWebSocket({
       }
       wsRef.current?.close(1000, "Component unmount");
     };
-  }, [roomCode, playerName, aiConfigJson, authToken, guestId, password, enabled]);
+  }, [roomCode, playerName, authToken, guestId, password, enabled]);
 
   const send = useCallback((msg: ClientMessage) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
@@ -163,5 +155,12 @@ export function useWebSocket({
     }
   }, []);
 
-  return { send, connectionState };
+  /** Send raw JSON string directly on the WebSocket (for extension relay) */
+  const sendRaw = useCallback((json: string) => {
+    if (wsRef.current?.readyState === WebSocket.OPEN) {
+      wsRef.current.send(json);
+    }
+  }, []);
+
+  return { send, sendRaw, connectionState };
 }

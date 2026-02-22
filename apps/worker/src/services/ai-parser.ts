@@ -64,6 +64,23 @@ export function parseAIResponse(raw: string): ParsedAIResponse {
     }
   }
 
+  // Handle inline action JSON not in a fenced block (AI sometimes outputs this as plain text)
+  const inlineRegex = /\{\s*"actions"\s*:\s*\[[\s\S]*?\]\s*\}/g;
+  let inlineMatch: RegExpExecArray | null;
+  while ((inlineMatch = inlineRegex.exec(narrative)) !== null) {
+    const inlineStr = inlineMatch[0];
+    try {
+      const parsed = JSON.parse(inlineStr);
+      const result = aiActionBlockSchema.safeParse(parsed);
+      if (result.success && result.data.actions.length > 0) {
+        actions.push(...result.data.actions);
+      }
+    } catch {
+      // Not valid JSON — just strip it
+    }
+    narrative = narrative.replace(inlineStr, "").trim();
+  }
+
   // Clean up extra whitespace from block removal
   narrative = narrative.replace(/\n{3,}/g, "\n\n").trim();
 

@@ -24,6 +24,8 @@ export interface AIDamage {
   type: "damage";
   target: string;
   amount: number;
+  /** Dice formula (e.g. "2d6+3") — server rolls, overrides amount */
+  dice?: string;
   damageType?: string;
   description?: string;
 }
@@ -82,12 +84,17 @@ export interface AICombatStart {
     position?: GridPosition;
     tokenColor?: string;
   }>;
+  /** Terrain keyword for auto-generating the battlefield map */
+  terrain?: string;
+  /** Override: full map layout (if AI can generate it). Takes precedence over terrain. */
   mapLayout?: {
     width: number;
     height: number;
     /** Array of row strings: "." floor, "#" wall, "~" water, "^" difficult, "D" door */
     tiles: string[];
   };
+  /** Map of character name → starting position on the grid */
+  playerPositions?: Record<string, GridPosition>;
   description?: string;
 }
 

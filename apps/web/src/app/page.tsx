@@ -3,10 +3,7 @@
 import { Suspense, useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { AI_PROVIDERS, getProvider } from "@aidnd/shared";
-import type { AIConfig } from "@aidnd/shared/types";
 import { useAuth } from "@/hooks/useAuth";
-import { useModels } from "@/hooks/useModels";
 
 function getWorkerUrl(): string {
   return process.env.NEXT_PUBLIC_WORKER_URL || "http://localhost:8787";
@@ -28,33 +25,15 @@ function HomePageInner() {
   const playerNameLoadedRef = useRef(false);
   const [joinCode, setJoinCode] = useState("");
   const [joinPassword, setJoinPassword] = useState("");
-  const [selectedProvider, setSelectedProvider] = useState("anthropic");
-  const [apiKey, setApiKey] = useState("");
-  const [selectedModel, setSelectedModel] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [kickMessage, setKickMessage] = useState("");
 
-  // Migrate legacy localStorage key & load saved config on mount
+  // Load saved state on mount
   useEffect(() => {
-    const legacyKey = localStorage.getItem("anthropic_api_key");
-    if (legacyKey) {
-      const migrated: AIConfig = { provider: "anthropic", apiKey: legacyKey };
-      localStorage.setItem("ai_config", JSON.stringify(migrated));
-      localStorage.removeItem("anthropic_api_key");
-    }
-
-    try {
-      const raw = localStorage.getItem("ai_config");
-      if (raw) {
-        const config = JSON.parse(raw) as AIConfig;
-        if (config.provider) setSelectedProvider(config.provider);
-        if (config.apiKey) setApiKey(config.apiKey);
-        if (config.model) setSelectedModel(config.model);
-      }
-    } catch {
-      // ignore malformed JSON
-    }
+    // Clean up legacy ai_config from localStorage (now handled by extension)
+    localStorage.removeItem("ai_config");
+    localStorage.removeItem("anthropic_api_key");
 
     // Restore player name from localStorage
     const storedName = localStorage.getItem("playerName");
@@ -94,27 +73,6 @@ function HomePageInner() {
     return () => clearTimeout(timer);
   }, [playerName]);
 
-  const currentProvider = getProvider(selectedProvider);
-  const { models, loading: modelsLoading } = useModels(selectedProvider, apiKey);
-
-  // Sync selectedModel with what the dropdown actually shows
-  useEffect(() => {
-    if (models.length > 0 && !selectedModel) {
-      setSelectedModel(models[0].id);
-    }
-  }, [models, selectedModel]);
-
-  const saveConfig = () => {
-    if (apiKey.trim()) {
-      const config: AIConfig = {
-        provider: selectedProvider,
-        apiKey: apiKey.trim(),
-        ...(selectedModel ? { model: selectedModel } : {}),
-      };
-      localStorage.setItem("ai_config", JSON.stringify(config));
-    }
-  };
-
   const handleCreate = async () => {
     if (!playerName.trim()) {
       setError("Enter your character name");
@@ -125,7 +83,6 @@ function HomePageInner() {
 
     try {
       localStorage.setItem("playerName", playerName.trim());
-      saveConfig();
 
       const res = await fetch(`${getWorkerUrl()}/api/rooms/create`, {
         method: "POST",
@@ -152,7 +109,6 @@ function HomePageInner() {
     if (joinPassword.trim()) {
       sessionStorage.setItem("roomPassword", joinPassword.trim());
     }
-    saveConfig();
     router.push(`/rooms/${joinCode.trim().toUpperCase()}`);
   };
 
@@ -261,89 +217,9 @@ function HomePageInner() {
                 Create Room
               </div>
 
-              {/* AI Provider */}
-              <div>
-                <label className="block text-xs text-gray-400 mb-1">
-                  AI Provider{" "}
-                  <span className="text-gray-600">(optional)</span>
-                </label>
-                <select
-                  value={selectedProvider}
-                  onChange={(e) => {
-                    setSelectedProvider(e.target.value);
-                    setSelectedModel("");
-                  }}
-                  className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2
-                             text-sm text-gray-100 focus:outline-none focus:ring-2
-                             focus:ring-purple-500 focus:border-transparent"
-                >
-                  {AI_PROVIDERS.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* API Key */}
-              <div>
-                <label className="block text-xs text-gray-400 mb-1">
-                  API Key
-                </label>
-                <input
-                  type="password"
-                  value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
-                  placeholder={
-                    currentProvider?.keyPlaceholder ?? "Enter API key..."
-                  }
-                  className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2
-                             text-sm text-gray-100 placeholder-gray-500 focus:outline-none
-                             focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                />
-                <div className="flex items-center justify-between mt-1">
-                  <p className="text-[10px] text-gray-600">
-                    Stored in your browser only.
-                  </p>
-                  {currentProvider?.keyHelpUrl && (
-                    <a
-                      href={currentProvider.keyHelpUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-[10px] text-purple-400 hover:text-purple-300 underline shrink-0 ml-1"
-                    >
-                      Get key
-                    </a>
-                  )}
-                </div>
-              </div>
-
-              {/* Model Selection */}
-              {models.length > 0 ? (
-                <div>
-                  <label className="block text-xs text-gray-400 mb-1">
-                    Model <span className="text-gray-600">(optional)</span>
-                  </label>
-                  <select
-                    value={selectedModel || ""}
-                    onChange={(e) => setSelectedModel(e.target.value)}
-                    className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2
-                               text-sm text-gray-100 focus:outline-none focus:ring-2
-                               focus:ring-purple-500 focus:border-transparent"
-                  >
-                    {models.map((m) => (
-                      <option key={m.id} value={m.id}>
-                        {m.name}
-                        {m.id === currentProvider?.defaultModel
-                          ? " (default)"
-                          : ""}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              ) : modelsLoading ? (
-                <p className="text-[10px] text-gray-500">Loading models...</p>
-              ) : null}
+              <p className="text-xs text-gray-500">
+                Create a room and use the AIDND DM Extension to connect your AI provider.
+              </p>
 
               <button
                 onClick={handleCreate}

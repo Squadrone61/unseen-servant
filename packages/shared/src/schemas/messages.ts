@@ -22,7 +22,7 @@ export const authUserSchema = z.object({
   avatarUrl: z.string().optional(),
 });
 
-// === AI Config schema ===
+// === AI Config schema (legacy — kept for extension internal use) ===
 
 export const aiConfigSchema = z.object({
   provider: z.string().min(1),
@@ -240,16 +240,22 @@ export const clientJoinSchema = z.object({
   type: z.literal("client:join"),
   playerName: z.string().min(1).max(30),
   roomCode: z.string().length(6),
-  aiConfig: aiConfigSchema.optional(),
   authToken: z.string().optional(),
   guestId: z.string().optional(),
   password: z.string().optional(),
-  apiKey: z.string().optional(),
 });
 
-export const clientSetAIConfigSchema = z.object({
-  type: z.literal("client:set_ai_config"),
-  aiConfig: aiConfigSchema,
+export const clientDMResponseSchema = z.object({
+  type: z.literal("client:dm_response"),
+  requestId: z.string(),
+  text: z.string(),
+  error: z.string().optional(),
+});
+
+export const clientDMConfigSchema = z.object({
+  type: z.literal("client:dm_config"),
+  provider: z.string(),
+  supportsTools: z.boolean(),
 });
 
 export const clientSetPasswordSchema = z.object({
@@ -308,6 +314,10 @@ export const clientDMOverrideSchema = z.object({
   changes: z.array(z.any()), // StateChange is a union, validated at runtime
 });
 
+export const clientEndTurnSchema = z.object({
+  type: z.literal("client:end_turn"),
+});
+
 export const clientDestroyRoomSchema = z.object({
   type: z.literal("client:destroy_room"),
 });
@@ -315,7 +325,8 @@ export const clientDestroyRoomSchema = z.object({
 export const clientMessageSchema = z.discriminatedUnion("type", [
   clientChatSchema,
   clientJoinSchema,
-  clientSetAIConfigSchema,
+  clientDMResponseSchema,
+  clientDMConfigSchema,
   clientSetPasswordSchema,
   clientKickPlayerSchema,
   clientSetCharacterSchema,
@@ -327,6 +338,7 @@ export const clientMessageSchema = z.discriminatedUnion("type", [
   clientSetSystemPromptSchema,
   clientSetPacingSchema,
   clientDMOverrideSchema,
+  clientEndTurnSchema,
   clientDestroyRoomSchema,
 ]);
 
@@ -368,6 +380,7 @@ export const serverRoomJoinedSchema = z.object({
   characters: z.record(z.string(), characterDataSchema).optional(),
   allPlayers: z.array(playerInfoSchema).optional(),
   storyStarted: z.boolean().optional(),
+  extensionConnected: z.boolean().optional(),
 });
 
 export const serverPlayerJoinedSchema = z.object({
@@ -450,6 +463,16 @@ export const serverEventLogSchema = z.object({
   event: gameEventSchema,
 });
 
+export const serverDMRequestSchema = z.object({
+  type: z.literal("server:dm_request"),
+  requestId: z.string(),
+  systemPrompt: z.string(),
+  messages: z.array(z.object({
+    role: z.enum(["user", "assistant"]),
+    content: z.string(),
+  })),
+});
+
 export const serverRoomDestroyedSchema = z.object({
   type: z.literal("server:room_destroyed"),
 });
@@ -471,5 +494,6 @@ export const serverMessageSchema = z.discriminatedUnion("type", [
   serverGameStateSyncSchema,
   serverRollbackSchema,
   serverEventLogSchema,
+  serverDMRequestSchema,
   serverRoomDestroyedSchema,
 ]);

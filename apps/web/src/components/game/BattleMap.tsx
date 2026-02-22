@@ -133,6 +133,7 @@ interface BattleMapProps {
   partyCharacters: Record<string, CharacterData>;
   myCharacterName?: string;
   onMoveToken: (to: GridPosition) => void;
+  onEndTurn: () => void;
   highlightedCombatantId?: string | null;
 }
 
@@ -142,6 +143,7 @@ export function BattleMap({
   partyCharacters,
   myCharacterName,
   onMoveToken,
+  onEndTurn,
   highlightedCombatantId,
 }: BattleMapProps) {
   const [hovered, setHovered] = useState<string | null>(null);
@@ -213,12 +215,20 @@ export function BattleMap({
     <div className="flex-1 min-h-0 flex flex-col border-b border-gray-700/50 bg-[#111114]">
       {/* Your-turn banner */}
       {isMyTurn && (
-        <div className="px-3 py-1.5 bg-amber-950/40 border-b border-amber-800/30 text-amber-300 text-xs font-medium text-center tracking-wide flex items-center justify-center gap-2">
-          <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-          Your turn &mdash; click a highlighted tile to move
-          <span className="text-amber-500/70 font-mono ml-1">
-            {movementLeft}ft remaining
-          </span>
+        <div className="px-3 py-1.5 bg-amber-950/40 border-b border-amber-800/30 text-amber-300 text-xs font-medium tracking-wide flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+            Your turn &mdash; click a highlighted tile to move
+            <span className="text-amber-500/70 font-mono ml-1">
+              {movementLeft}ft remaining
+            </span>
+          </div>
+          <button
+            onClick={onEndTurn}
+            className="px-3 py-0.5 rounded bg-amber-700/60 hover:bg-amber-600/70 text-amber-100 text-xs font-semibold transition-colors shrink-0 cursor-pointer"
+          >
+            End Turn
+          </button>
         </div>
       )}
 

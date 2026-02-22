@@ -261,6 +261,7 @@ const aiDamageSchema = z.object({
   type: z.literal("damage"),
   target: z.string(),
   amount: z.number(),
+  dice: z.string().optional(),
   damageType: z.string().optional(),
   description: z.string().optional(),
 });
@@ -321,6 +322,7 @@ const aiCombatStartSchema = z.object({
       tokenColor: z.string().optional(),
     })
   ),
+  terrain: z.string().optional(),
   mapLayout: z
     .object({
       width: z.number().int().positive(),
@@ -328,6 +330,7 @@ const aiCombatStartSchema = z.object({
       tiles: z.array(z.string()),
     })
     .optional(),
+  playerPositions: z.record(z.string(), gridPositionSchema).optional(),
   description: z.string().optional(),
 });
 

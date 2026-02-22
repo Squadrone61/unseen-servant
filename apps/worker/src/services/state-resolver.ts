@@ -18,9 +18,11 @@ import type {
   CheckRequest,
   Combatant,
   CombatState,
+  CreatureSize,
   GameEvent,
   GameState,
   GridPosition,
+  RollResult,
   StateChange,
   BattleMapState,
   MapTile,
@@ -30,7 +32,7 @@ import {
   getProficiencyBonus,
   getTotalLevel,
 } from "@aidnd/shared/utils";
-import { rollInitiative } from "./dice";
+import { rollInitiative, rollDamage } from "./dice";
 
 // ─── Result type ───
 
@@ -45,9 +47,50 @@ export interface ResolveResult {
   events: GameEvent[];
   /** Validation warnings (non-fatal) */
   warnings: string[];
+  /** User-visible system messages (broadcast to activity log) */
+  systemMessages: string[];
+  /** Damage dice rolls to broadcast (when AI specifies dice formula) */
+  damageRolls: Array<{ targetName: string; roll: RollResult; damageType?: string }>;
 }
 
 // ─── Helpers ───
+
+/** Get the tile span for a creature size (large=2, huge=3, gargantuan=4, otherwise 1) */
+function sizeSpan(size: CreatureSize): number {
+  switch (size) {
+    case "large": return 2;
+    case "huge": return 3;
+    case "gargantuan": return 4;
+    default: return 1;
+  }
+}
+
+/** Get all tiles occupied by a combatant (top-left anchor + size span) */
+function getOccupiedTiles(pos: GridPosition, size: CreatureSize): GridPosition[] {
+  const span = sizeSpan(size);
+  const tiles: GridPosition[] = [];
+  for (let dy = 0; dy < span; dy++) {
+    for (let dx = 0; dx < span; dx++) {
+      tiles.push({ x: pos.x + dx, y: pos.y + dy });
+    }
+  }
+  return tiles;
+}
+
+/** Minimum Chebyshev distance between any tile of combatant A and any tile of combatant B */
+function combatantDistance(a: Combatant, b: Combatant): number | null {
+  if (!a.position || !b.position) return null;
+  const aTiles = getOccupiedTiles(a.position, a.size);
+  const bTiles = getOccupiedTiles(b.position, b.size);
+  let minDist = Infinity;
+  for (const at of aTiles) {
+    for (const bt of bTiles) {
+      const d = Math.max(Math.abs(at.x - bt.x), Math.abs(at.y - bt.y));
+      if (d < minDist) minDist = d;
+    }
+  }
+  return minDist === Infinity ? null : minDist;
+}
 
 /** Find a character by character name (case-insensitive, with fuzzy fallback). Returns [userId, CharacterData]. */
 function findCharacterByName(
@@ -169,6 +212,146 @@ function generateDefaultMap(combatantCount: number): BattleMapState {
   };
 }
 
+/**
+ * Generate a themed battlefield map from a terrain keyword.
+ * Uses seeded randomness to create interesting tactical terrain.
+ */
+function generateTerrainMap(
+  terrain: string,
+  combatantCount: number
+): BattleMapState {
+  const t = terrain.toLowerCase();
+  const size = Math.max(8, Math.min(20, combatantCount * 3));
+
+  // Determine dimensions based on terrain
+  let width = size;
+  let height = size;
+  if (t.includes("corridor") || t.includes("alley") || t.includes("tunnel") || t.includes("bridge")) {
+    width = Math.max(6, Math.min(8, size - 2));
+    height = Math.max(10, Math.min(16, size + 4));
+  } else if (t.includes("clearing") || t.includes("field") || t.includes("plaza")) {
+    width = Math.max(10, Math.min(16, size + 2));
+    height = Math.max(10, Math.min(16, size + 2));
+  }
+
+  const tiles: MapTile[][] = [];
+
+  // Fill with floor, surround with walls
+  for (let y = 0; y < height; y++) {
+    const row: MapTile[] = [];
+    for (let x = 0; x < width; x++) {
+      const isWall = y === 0 || y === height - 1 || x === 0 || x === width - 1;
+      row.push({ type: isWall ? "wall" : "floor" });
+    }
+    tiles.push(row);
+  }
+
+  // Helper to set tile if in bounds and not on border
+  const setTile = (x: number, y: number, type: MapTile["type"]) => {
+    if (x > 0 && x < width - 1 && y > 0 && y < height - 1) {
+      tiles[y][x] = { type };
+    }
+  };
+
+  // Simple pseudo-random using position for determinism
+  const rng = (x: number, y: number) => {
+    const n = Math.sin(x * 127.1 + y * 311.7) * 43758.5453;
+    return n - Math.floor(n);
+  };
+
+  // Apply terrain features
+  if (t.includes("forest") || t.includes("wood") || t.includes("grove")) {
+    // Scattered trees (walls) and undergrowth (difficult terrain)
+    for (let y = 2; y < height - 2; y++) {
+      for (let x = 2; x < width - 2; x++) {
+        const r = rng(x, y);
+        if (r < 0.12) setTile(x, y, "wall"); // tree
+        else if (r < 0.25) setTile(x, y, "difficult_terrain"); // undergrowth
+      }
+    }
+  } else if (t.includes("cave") || t.includes("cavern") || t.includes("underground")) {
+    // Irregular walls, some water pools
+    for (let y = 2; y < height - 2; y++) {
+      for (let x = 2; x < width - 2; x++) {
+        const r = rng(x, y);
+        const edgeDist = Math.min(x, y, width - 1 - x, height - 1 - y);
+        if (edgeDist <= 2 && r < 0.3) setTile(x, y, "wall"); // cave wall protrusions
+        else if (r < 0.06) setTile(x, y, "water"); // puddle
+        else if (r < 0.12) setTile(x, y, "difficult_terrain"); // rubble
+      }
+    }
+  } else if (t.includes("dungeon") || t.includes("room") || t.includes("chamber")) {
+    // Pillars, doors
+    const midX = Math.floor(width / 2);
+    const midY = Math.floor(height / 2);
+    // Pillars in a grid pattern
+    for (let y = 3; y < height - 3; y += 3) {
+      for (let x = 3; x < width - 3; x += 3) {
+        setTile(x, y, "wall");
+      }
+    }
+    // Doors on walls
+    setTile(midX, 0, "door");
+    setTile(midX, height - 1, "door");
+  } else if (t.includes("swamp") || t.includes("marsh") || t.includes("bog")) {
+    for (let y = 2; y < height - 2; y++) {
+      for (let x = 2; x < width - 2; x++) {
+        const r = rng(x, y);
+        if (r < 0.2) setTile(x, y, "water");
+        else if (r < 0.35) setTile(x, y, "difficult_terrain");
+      }
+    }
+  } else if (t.includes("village") || t.includes("town") || t.includes("street") || t.includes("alley")) {
+    // Building walls on sides, open path in middle
+    const pathLeft = Math.floor(width * 0.3);
+    const pathRight = Math.floor(width * 0.7);
+    for (let y = 2; y < height - 2; y++) {
+      for (let x = 2; x < width - 2; x++) {
+        if (x < pathLeft || x > pathRight) {
+          const r = rng(x, y);
+          if (r < 0.5) setTile(x, y, "wall"); // building walls
+        }
+      }
+    }
+  } else if (t.includes("river") || t.includes("stream") || t.includes("shore")) {
+    // Water stripe through the middle
+    const midX = Math.floor(width / 2);
+    for (let y = 0; y < height; y++) {
+      const offset = Math.floor(Math.sin(y * 0.8) * 1.5);
+      setTile(midX + offset, y, "water");
+      setTile(midX + offset - 1, y, "water");
+      if (rng(midX, y) < 0.3) setTile(midX + offset + 1, y, "water");
+    }
+  } else if (t.includes("mountain") || t.includes("cliff") || t.includes("rocky")) {
+    for (let y = 2; y < height - 2; y++) {
+      for (let x = 2; x < width - 2; x++) {
+        const r = rng(x, y);
+        if (r < 0.15) setTile(x, y, "wall"); // boulders
+        else if (r < 0.3) setTile(x, y, "difficult_terrain"); // scree
+        else if (r < 0.35) setTile(x, y, "pit"); // crevasse
+      }
+    }
+  } else if (t.includes("bridge")) {
+    // Water on sides, narrow bridge in center
+    const bridgeLeft = Math.floor(width * 0.35);
+    const bridgeRight = Math.floor(width * 0.65);
+    for (let y = 2; y < height - 2; y++) {
+      for (let x = 1; x < width - 1; x++) {
+        if (x < bridgeLeft || x > bridgeRight) {
+          setTile(x, y, "water");
+        }
+      }
+    }
+  }
+
+  return {
+    id: crypto.randomUUID(),
+    width,
+    height,
+    tiles,
+  };
+}
+
 // ─── Main resolver ───
 
 export function resolveActions(
@@ -181,6 +364,8 @@ export function resolveActions(
   const checkRequests: CheckRequest[] = [];
   const events: GameEvent[] = [];
   const warnings: string[] = [];
+  const systemMessages: string[] = [];
+  const damageRolls: Array<{ targetName: string; roll: RollResult; damageType?: string }> = [];
   let combat = gameState.encounter?.combat
     ? { ...gameState.encounter.combat }
     : undefined;
@@ -200,16 +385,41 @@ export function resolveActions(
 
     switch (action.type) {
       case "damage": {
+        let damageAmount = action.amount;
+        let diceRoll: RollResult | undefined;
+
+        // Roll dice if AI specified a formula (e.g. "2d6+3")
+        if (action.dice) {
+          diceRoll = rollDamage(action.dice);
+          damageAmount = Math.max(1, diceRoll.total);
+          diceRoll = { ...diceRoll, label: `${action.dice}${action.damageType ? ` ${action.damageType}` : ""} damage` };
+        }
+
         const result = applyDamage(
           action.target,
-          action.amount,
+          damageAmount,
           action.damageType,
           characters,
           combat,
           characterUpdates,
           warnings
         );
-        if (result) changes.push(...result);
+
+        if (result && diceRoll) {
+          damageRolls.push({
+            targetName: action.target,
+            roll: diceRoll,
+            damageType: action.damageType,
+          });
+        }
+
+        if (result) {
+          changes.push(...result);
+          // Mark combat changed if target was a combatant (not a player character)
+          if (combat && !findCharacterByName(characters, action.target)) {
+            combatChanged = true;
+          }
+        }
         break;
       }
 
@@ -222,7 +432,12 @@ export function resolveActions(
           characterUpdates,
           warnings
         );
-        if (result) changes.push(...result);
+        if (result) {
+          changes.push(...result);
+          if (combat && !findCharacterByName(characters, action.target)) {
+            combatChanged = true;
+          }
+        }
         break;
       }
 
@@ -235,7 +450,12 @@ export function resolveActions(
           characterUpdates,
           warnings
         );
-        if (result) changes.push(...result);
+        if (result) {
+          changes.push(...result);
+          if (combat && !findCharacterByName(characters, action.target)) {
+            combatChanged = true;
+          }
+        }
         break;
       }
 
@@ -248,7 +468,12 @@ export function resolveActions(
           characterUpdates,
           warnings
         );
-        if (result) changes.push(...result);
+        if (result) {
+          changes.push(...result);
+          if (combat && !findCharacterByName(characters, action.target)) {
+            combatChanged = true;
+          }
+        }
         break;
       }
 
@@ -262,7 +487,12 @@ export function resolveActions(
           characterUpdates,
           warnings
         );
-        if (result) changes.push(...result);
+        if (result) {
+          changes.push(...result);
+          if (combat && !findCharacterByName(characters, action.target)) {
+            combatChanged = true;
+          }
+        }
         break;
       }
 
@@ -276,7 +506,12 @@ export function resolveActions(
           characterUpdates,
           warnings
         );
-        if (result) changes.push(...result);
+        if (result) {
+          changes.push(...result);
+          if (combat && !findCharacterByName(characters, action.target)) {
+            combatChanged = true;
+          }
+        }
         break;
       }
 
@@ -351,10 +586,36 @@ export function resolveActions(
           disadvantage: action.check.disadvantage,
           reason: action.check.reason,
         };
+
+        // Melee adjacency warning: if this is a combat attack, check positions
+        if (combat && check.type === "attack" && check.reason) {
+          const reasonLower = check.reason.toLowerCase();
+          const isMelee = reasonLower.includes("melee") ||
+            (!reasonLower.includes("ranged") && !reasonLower.includes("spell attack"));
+          if (isMelee) {
+            // Find attacker combatant
+            const attacker = findCombatantByName(combat, check.targetCharacter);
+            // Try to find target from the reason string (e.g. "...vs Goblin (AC 15)")
+            const vsMatch = check.reason.match(/vs\s+(.+?)(?:\s*\(|$)/i);
+            const targetName = vsMatch?.[1]?.trim();
+            const target = targetName ? findCombatantByName(combat, targetName) : null;
+
+            if (attacker && target) {
+              const dist = combatantDistance(attacker, target);
+              if (dist !== null && dist > 1) {
+                systemMessages.push(
+                  `⚠️ Melee attack: ${attacker.name} is ${dist * 5}ft from ${target.name} (not adjacent)`
+                );
+              }
+            }
+          }
+        }
+
         checkRequests.push(check);
         // Store pending check on combat or game state
         if (combat) {
           combat.pendingCheck = check;
+          combatChanged = true;
         } else {
           gameState.pendingCheck = check;
         }
@@ -362,14 +623,53 @@ export function resolveActions(
       }
 
       case "combat_start": {
+        if (!action.enemies || action.enemies.length === 0) {
+          warnings.push("combat_start ignored: enemies array is empty");
+          break;
+        }
         combat = startCombat(action, characters, warnings);
         combatChanged = true;
-        // Set up encounter with map
-        const map =
-          parseMapLayout(action.mapLayout) ||
-          generateDefaultMap(
-            Object.keys(combat.combatants).length
+        // Set up encounter with map: AI mapLayout > terrain-based > default
+        const combatantCount = Object.keys(combat.combatants).length;
+        let mapSource: string;
+        let map: BattleMapState;
+        const parsedMap = parseMapLayout(action.mapLayout);
+        if (parsedMap) {
+          map = parsedMap;
+          mapSource = "AI-designed map";
+        } else if (action.terrain) {
+          map = generateTerrainMap(action.terrain, combatantCount);
+          mapSource = `Auto-generated ${action.terrain} terrain`;
+        } else {
+          map = generateDefaultMap(combatantCount);
+          mapSource = "Default map (AI did not specify terrain)";
+          systemMessages.push("AI did not specify terrain — using default map.");
+        }
+
+        // Track which combatants needed auto-placement
+        const preAssignPlayers = Object.values(combat.combatants)
+          .filter((c) => c.type === "player" && !c.position)
+          .map((c) => c.name);
+        const preAssignEnemies = Object.values(combat.combatants)
+          .filter((c) => c.type !== "player" && !c.position)
+          .map((c) => c.name);
+
+        assignCombatantPositions(combat, map);
+
+        if (preAssignPlayers.length > 0) {
+          systemMessages.push(
+            `Auto-placed players: ${preAssignPlayers.join(", ")}`
           );
+        }
+        if (preAssignEnemies.length > 0) {
+          systemMessages.push(
+            `Auto-placed enemies: ${preAssignEnemies.join(", ")}`
+          );
+        }
+        systemMessages.push(
+          `Combat started: ${mapSource} (${map.width}×${map.height})`
+        );
+
         if (!gameState.encounter) {
           gameState.encounter = {
             id: crypto.randomUUID(),
@@ -465,7 +765,50 @@ export function resolveActions(
           break;
         }
         const from = combatant.position || { x: 0, y: 0 };
+
+        // Calculate Chebyshev distance (diagonal = 1 tile)
+        const moveDx = Math.abs(action.to.x - from.x);
+        const moveDy = Math.abs(action.to.y - from.y);
+        const moveDistFt = Math.max(moveDx, moveDy) * 5;
+
+        // Check speed budget: warn if over (AI may have valid reason like Dash)
+        const moveRemaining = combatant.speed - (combatant.movementUsed ?? 0);
+        if (moveDistFt > moveRemaining) {
+          const overBy = moveDistFt - moveRemaining;
+          systemMessages.push(
+            `⚠️ ${combatant.name} moved ${moveDistFt}ft but only had ${moveRemaining}ft remaining (${overBy}ft over budget)`
+          );
+        }
+
+        // Check for token stacking — warn if any tile the mover will occupy overlaps another combatant
+        const moverTiles = getOccupiedTiles(action.to, combatant.size);
+        for (const other of Object.values(combat.combatants)) {
+          if (other.id === combatant.id || !other.position) continue;
+          const otherTiles = getOccupiedTiles(other.position, other.size);
+          const overlap = moverTiles.some((mt) => otherTiles.some((ot) => mt.x === ot.x && mt.y === ot.y));
+          if (overlap) {
+            systemMessages.push(
+              `⚠️ ${combatant.name} overlaps ${other.name} at destination (${action.to.x},${action.to.y}) — tokens should not stack`
+            );
+            break;
+          }
+        }
+
+        // Check target tile walkability
+        const map = gameState.encounter?.map;
+        if (map) {
+          const tile = map.tiles[action.to.y]?.[action.to.x];
+          if (tile && (tile.type === "wall" || tile.type === "pit")) {
+            systemMessages.push(
+              `⚠️ ${combatant.name} moved onto a ${tile.type} tile at (${action.to.x},${action.to.y})`
+            );
+          }
+        }
+
+        // Update movement tracking
+        combatant.movementUsed = (combatant.movementUsed ?? 0) + moveDistFt;
         combatant.position = action.to;
+        combatChanged = true;
         changes.push({
           type: "move",
           combatantId: combatant.id,
@@ -617,6 +960,8 @@ export function resolveActions(
     checkRequests,
     events,
     warnings,
+    systemMessages,
+    damageRolls,
   };
 }
 
@@ -940,6 +1285,9 @@ function startCombat(
       ? Math.max(rollInitiative(initMod), rollInitiative(initMod))
       : rollInitiative(initMod);
 
+    // Apply AI-provided player position if available
+    const aiPos = action.playerPositions?.[char.static.name];
+
     combatants[id] = {
       id,
       name: char.static.name,
@@ -950,6 +1298,7 @@ function startCombat(
       speed: char.static.speed,
       movementUsed: 0,
       size: "medium", // TODO: derive from race
+      position: aiPos,
     };
   }
 
@@ -992,6 +1341,111 @@ function startCombat(
     turnOrder,
     combatants,
   };
+}
+
+/** Get number of tiles a creature occupies per axis (large=2, huge=3, etc.) */
+function creatureTileSpan(size: string): number {
+  switch (size) {
+    case "large": return 2;
+    case "huge": return 3;
+    case "gargantuan": return 4;
+    default: return 1; // tiny, small, medium
+  }
+}
+
+/**
+ * Assign grid positions to combatants that don't already have one.
+ * Players go on the left side, enemies/NPCs on the right side.
+ * Accounts for creature size (large=2x2, huge=3x3, gargantuan=4x4).
+ */
+function assignCombatantPositions(
+  combat: CombatState,
+  map: BattleMapState
+): void {
+  const players: string[] = [];
+  const enemies: string[] = [];
+
+  for (const [id, c] of Object.entries(combat.combatants)) {
+    if (c.position) continue; // Already has a position
+    if (c.type === "player") {
+      players.push(id);
+    } else {
+      enemies.push(id);
+    }
+  }
+
+  // Find walkable tiles (not wall/pit)
+  const isWalkable = (x: number, y: number): boolean => {
+    if (x < 0 || y < 0 || x >= map.width || y >= map.height) return false;
+    const tile = map.tiles[y]?.[x];
+    return tile != null && tile.type !== "wall" && tile.type !== "pit";
+  };
+
+  // Occupied set to prevent stacking — tracks ALL tiles used by placed creatures
+  const occupied = new Set<string>();
+  for (const c of Object.values(combat.combatants)) {
+    if (!c.position) continue;
+    const span = creatureTileSpan(c.size);
+    for (let dy = 0; dy < span; dy++) {
+      for (let dx = 0; dx < span; dx++) {
+        occupied.add(`${c.position.x + dx},${c.position.y + dy}`);
+      }
+    }
+  }
+
+  /** Check if a creature of given size can be placed at (x,y). All tiles must be walkable + unoccupied. */
+  const canPlace = (x: number, y: number, span: number): boolean => {
+    for (let dy = 0; dy < span; dy++) {
+      for (let dx = 0; dx < span; dx++) {
+        const tx = x + dx;
+        const ty = y + dy;
+        if (!isWalkable(tx, ty) || occupied.has(`${tx},${ty}`)) return false;
+      }
+    }
+    return true;
+  };
+
+  /** Place creature and mark all its tiles as occupied. */
+  const placeAt = (id: string, x: number, y: number): boolean => {
+    const span = creatureTileSpan(combat.combatants[id].size);
+    if (!canPlace(x, y, span)) return false;
+    combat.combatants[id].position = { x, y };
+    for (let dy = 0; dy < span; dy++) {
+      for (let dx = 0; dx < span; dx++) {
+        occupied.add(`${x + dx},${y + dy}`);
+      }
+    }
+    return true;
+  };
+
+  // Place players on the left side, scanning from column 1 outward
+  const midY = Math.floor(map.height / 2);
+  for (let i = 0; i < players.length; i++) {
+    let placed = false;
+    // Spread vertically from center, scanning columns left-to-right
+    for (let dx = 1; dx < map.width - 1 && !placed; dx++) {
+      for (let dy = 0; dy < map.height && !placed; dy++) {
+        const tryY = midY + (dy % 2 === 0 ? Math.floor(dy / 2) : -Math.ceil(dy / 2));
+        if (tryY >= 1 && tryY < map.height - 1) {
+          placed = placeAt(players[i], dx, tryY);
+        }
+      }
+    }
+  }
+
+  // Place enemies on the right side, scanning from right edge inward
+  for (let i = 0; i < enemies.length; i++) {
+    const span = creatureTileSpan(combat.combatants[enemies[i]].size);
+    let placed = false;
+    for (let dx = map.width - 1 - span; dx >= 1 && !placed; dx--) {
+      for (let dy = 0; dy < map.height && !placed; dy++) {
+        const tryY = midY + (dy % 2 === 0 ? Math.floor(dy / 2) : -Math.ceil(dy / 2));
+        if (tryY >= 1 && tryY < map.height - 1) {
+          placed = placeAt(enemies[i], dx, tryY);
+        }
+      }
+    }
+  }
 }
 
 /** Insert a combatant into the turn order by initiative. */

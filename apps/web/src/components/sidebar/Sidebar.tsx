@@ -1,10 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { AI_PROVIDERS, getProvider } from "@aidnd/shared";
 import { formatClassString, getTotalLevel } from "@aidnd/shared/utils";
 import type {
-  AIConfig,
   CharacterData,
   CombatState,
   EncounterLength,
@@ -15,16 +13,13 @@ import type {
 } from "@aidnd/shared/types";
 import { CharacterPopover } from "@/components/character/CharacterPopover";
 import { SystemPromptModal } from "@/components/sidebar/SystemPromptModal";
-import { useModels } from "@/hooks/useModels";
 
 interface SidebarProps {
   roomCode: string;
   players: string[];
   allPlayers: PlayerInfo[];
   hostName: string;
-  hasApiKey: boolean;
-  aiProvider?: string;
-  aiModel?: string;
+  extensionConnected: boolean;
   isHost: boolean;
   logMessages: ServerMessage[];
   partyCharacters: Record<string, CharacterData>;
@@ -34,7 +29,6 @@ interface SidebarProps {
   pacingProfile?: PacingProfile;
   encounterLength?: EncounterLength;
   customSystemPrompt?: string;
-  onSetAIConfig: (config: AIConfig) => void;
   onKick: (playerName: string) => void;
   onStartStory: () => void;
   onRollback?: (eventId: string) => void;
@@ -49,16 +43,13 @@ export function Sidebar({
   players,
   allPlayers,
   hostName,
-  hasApiKey,
-  aiProvider,
-  aiModel,
+  extensionConnected,
   isHost,
   logMessages,
   partyCharacters,
   storyStarted,
   combatState,
   eventLog,
-  onSetAIConfig,
   onKick,
   onStartStory,
   onRollback,
@@ -70,13 +61,9 @@ export function Sidebar({
   encounterLength = "standard",
   customSystemPrompt,
 }: SidebarProps) {
-  const [showConfigForm, setShowConfigForm] = useState(false);
   const [dmCollapsed, setDmCollapsed] = useState(false);
   const [logCollapsed, setLogCollapsed] = useState(false);
   const [eventLogCollapsed, setEventLogCollapsed] = useState(true);
-  const [provider, setProvider] = useState("anthropic");
-  const [apiKeyInput, setApiKeyInput] = useState("");
-  const [modelInput, setModelInput] = useState("");
   const [copied, setCopied] = useState(false);
   const [hoveredPlayer, setHoveredPlayer] = useState<string | null>(null);
   const [passwordInput, setPasswordInput] = useState("");
@@ -86,16 +73,6 @@ export function Sidebar({
   const [confirmingRollbackId, setConfirmingRollbackId] = useState<string | null>(null);
   const logEndRef = useRef<HTMLDivElement>(null);
   const rollbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const currentFormProvider = getProvider(provider);
-  const { models, loading: modelsLoading } = useModels(provider, apiKeyInput);
-
-  // Sync modelInput with what the dropdown actually shows
-  useEffect(() => {
-    if (models.length > 0 && !modelInput) {
-      setModelInput(models[0].id);
-    }
-  }, [models, modelInput]);
 
   // Auto-scroll activity log
   useEffect(() => {
@@ -125,19 +102,6 @@ export function Sidebar({
   const handleRollbackCancel = () => {
     if (rollbackTimeoutRef.current) clearTimeout(rollbackTimeoutRef.current);
     setConfirmingRollbackId(null);
-  };
-
-  const handleSubmitConfig = () => {
-    if (!apiKeyInput.trim()) return;
-    const config: AIConfig = {
-      provider,
-      apiKey: apiKeyInput.trim(),
-      ...(modelInput ? { model: modelInput } : {}),
-    };
-    onSetAIConfig(config);
-    setShowConfigForm(false);
-    setApiKeyInput("");
-    setModelInput("");
   };
 
   const handleSetPassword = () => {
@@ -318,7 +282,7 @@ export function Sidebar({
       </div>
 
       {/* Start Story Button (Host only, before story starts) */}
-      {isHost && !storyStarted && hasApiKey && (
+      {isHost && !storyStarted && extensionConnected && (
         <div className="p-4 border-b border-gray-700">
           <button
             onClick={onStartStory}
@@ -552,141 +516,42 @@ export function Sidebar({
         />
       )}
 
-      {/* AI Config (Host only) */}
-      {isHost && (
-        <div className="p-4 border-t border-gray-700">
-          <button
-            onClick={() => setDmCollapsed(!dmCollapsed)}
-            className="flex items-center gap-1 w-full text-left mb-2"
+      {/* DM Extension Status */}
+      <div className="p-4 border-t border-gray-700">
+        <button
+          onClick={() => setDmCollapsed(!dmCollapsed)}
+          className="flex items-center gap-1 w-full text-left mb-2"
+        >
+          <span
+            className={`text-[10px] text-gray-600 transition-transform ${dmCollapsed ? "" : "rotate-90"}`}
           >
-            <span
-              className={`text-[10px] text-gray-600 transition-transform ${dmCollapsed ? "" : "rotate-90"}`}
-            >
-              &#9654;
-            </span>
-            <span className="text-xs text-gray-500 uppercase tracking-wider">
-              AI Dungeon Master
-            </span>
-          </button>
-          {!dmCollapsed && (
-            <div>
-              {hasApiKey && !showConfigForm ? (
-                <div className="space-y-1">
-                  <div className="text-sm text-green-400 flex items-center gap-1.5">
-                    <div className="w-2 h-2 rounded-full bg-green-500" />
-                    <span>{aiProvider || "Active"}</span>
-                  </div>
-                  {aiModel && (
-                    <div className="text-xs text-gray-500 ml-3.5">
-                      {aiModel}
-                    </div>
-                  )}
-                  <button
-                    onClick={() => setShowConfigForm(true)}
-                    className="text-xs text-purple-400 hover:text-purple-300 underline transition-colors mt-1"
-                  >
-                    Change provider
-                  </button>
+            &#9654;
+          </span>
+          <span className="text-xs text-gray-500 uppercase tracking-wider">
+            AI Dungeon Master
+          </span>
+        </button>
+        {!dmCollapsed && (
+          <div>
+            {extensionConnected ? (
+              <div className="text-sm text-green-400 flex items-center gap-1.5">
+                <div className="w-2 h-2 rounded-full bg-green-500" />
+                <span>Extension connected</span>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <div className="text-sm text-yellow-400 flex items-center gap-1.5">
+                  <div className="w-2 h-2 rounded-full bg-yellow-500 animate-pulse" />
+                  <span>Waiting for extension...</span>
                 </div>
-              ) : showConfigForm ? (
-                <div className="space-y-2">
-                  {/* Provider select */}
-                  <select
-                    value={provider}
-                    onChange={(e) => {
-                      setProvider(e.target.value);
-                      setModelInput("");
-                    }}
-                    className="w-full bg-gray-800 border border-gray-600 rounded px-2 py-1.5
-                               text-sm text-gray-200 focus:outline-none focus:ring-1
-                               focus:ring-purple-500"
-                  >
-                    {AI_PROVIDERS.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name}
-                      </option>
-                    ))}
-                  </select>
-
-                  {/* API Key */}
-                  <input
-                    type="password"
-                    value={apiKeyInput}
-                    onChange={(e) => setApiKeyInput(e.target.value)}
-                    placeholder={
-                      currentFormProvider?.keyPlaceholder ?? "API key..."
-                    }
-                    className="w-full bg-gray-800 border border-gray-600 rounded px-2 py-1.5
-                               text-sm text-gray-200 focus:outline-none focus:ring-1
-                               focus:ring-purple-500"
-                  />
-
-                  {/* Model select */}
-                  {modelsLoading ? (
-                    <p className="text-xs text-gray-500">Loading models...</p>
-                  ) : models.length > 0 ? (
-                    <select
-                      value={modelInput || ""}
-                      onChange={(e) => setModelInput(e.target.value)}
-                      className="w-full bg-gray-800 border border-gray-600 rounded px-2 py-1.5
-                                 text-sm text-gray-200 focus:outline-none focus:ring-1
-                                 focus:ring-purple-500"
-                    >
-                      {models.map((m) => (
-                        <option key={m.id} value={m.id}>
-                          {m.name}
-                        </option>
-                      ))}
-                    </select>
-                  ) : null}
-
-                  {/* Actions */}
-                  <div className="flex gap-2">
-                    <button
-                      onClick={handleSubmitConfig}
-                      className="flex-1 bg-purple-600 hover:bg-purple-700 text-white text-sm
-                                 py-1.5 rounded transition-colors"
-                    >
-                      Set
-                    </button>
-                    <button
-                      onClick={() => {
-                        setShowConfigForm(false);
-                        setApiKeyInput("");
-                        setModelInput("");
-                      }}
-                      className="px-3 text-gray-500 hover:text-gray-300 text-sm transition-colors"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-
-                  {currentFormProvider?.keyHelpUrl && (
-                    <a
-                      href={currentFormProvider.keyHelpUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs text-purple-400 hover:text-purple-300 underline block"
-                    >
-                      Get an API key
-                    </a>
-                  )}
-                </div>
-              ) : (
-                <button
-                  onClick={() => setShowConfigForm(true)}
-                  className="text-sm text-purple-400 hover:text-purple-300 underline transition-colors"
-                >
-                  Configure AI Provider
-                </button>
-              )}
-              <p className="text-xs text-gray-600 mt-2">
-                Key stays in your browser. Sent per-request only.
-              </p>
-            </div>
-          )}
-        </div>
-      )}
+                <p className="text-xs text-gray-600">
+                  Install the AIDND DM Extension and configure an AI provider to start.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* Destroy Room — host only */}
       {isHost && onDestroyRoom && (
