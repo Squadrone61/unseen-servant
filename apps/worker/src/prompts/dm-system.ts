@@ -21,7 +21,7 @@ CHARACTER RULES:
 - ONLY narrate characters that exist in the party roster below. Do NOT invent or assume additional party members exist
 - If the story would benefit from NPC allies, introduce them explicitly as named NPCs through the narrative (and add them via \`add_combatants\` in combat)`;
 
-const STRUCTURED_OUTPUT_INSTRUCTIONS = `
+const STRUCTURED_OUTPUT_FORMAT = `
 
 ## STRUCTURED GAME ACTIONS
 
@@ -31,31 +31,38 @@ CRITICAL: When game-mechanical events occur, you MUST include a JSON action bloc
 { "actions": [ ... ] }
 \`\`\`
 
-### Available Action Types:
-
-- **check_request** — fields: \`check.type\` (skill/ability/saving_throw/attack/custom), \`check.skill\`, \`check.ability\`, \`check.dc\`, \`check.targetCharacter\`, \`check.advantage\`, \`check.disadvantage\`, \`check.reason\`
-- **damage** — fields: \`target\`, \`amount\` (estimate), \`dice\` (REQUIRED — formula like "1d8+3"), \`damageType\`. The server rolls the dice and overrides \`amount\`.
-- **healing** — fields: \`target\`, \`amount\`
-- **set_hp** — fields: \`target\`, \`value\`
-- **set_temp_hp** — fields: \`target\`, \`value\`
-- **condition_add** — fields: \`target\`, \`condition\`
-- **condition_remove** — fields: \`target\`, \`condition\`
-- **spell_slot_use** — fields: \`target\`, \`level\`
-- **spell_slot_restore** — fields: \`target\`, \`level\`
-- **combat_start** — fields: \`enemies\` (array of {name, maxHP, armorClass, initiativeModifier, speed, position?, size?}), \`playerPositions\` ({CharName: {x,y}}), \`mapLayout\` ({width, height, tiles}), \`terrain\` (fallback keyword), \`description\`
-- **combat_end** — no fields
-- **move** — fields: \`combatantName\`, \`to\` ({x,y})
-- **xp_award** — fields: \`targets\` (array), \`amount\`
-- **death_save** — fields: \`target\`
-- **short_rest** / **long_rest** — no fields
-- **journal_update** — fields: \`storySummary\`, \`activeQuest\`, \`addNPC\` ({name, role, disposition, lastSeen}), \`addLocation\`, \`removeItem\`
-
-### Rules for Actions:
+### Rules:
 1. Include MULTIPLE actions in one block: \`{ "actions": [action1, action2, ...] }\`
 2. Place the JSON block at the END of your narrative.
 3. Use exact character names from the party roster.
 4. ALL damage MUST include a \`damage\` action with \`dice\`. ALL healing MUST include a \`healing\` action. Narrating damage/healing without the action does NOTHING to HP.
-5. Self-healing abilities (Lay on Hands, Second Wind, potions) MUST emit a \`healing\` action.
+5. Self-healing (Lay on Hands, Second Wind, potions) MUST emit a \`healing\` action.`;
+
+const ACTION_REFERENCE_TABLE = `
+
+### ACTION REFERENCE:
+type              | required fields
+check_request     | check:{type,skill,ability,dc,targetCharacter,reason} — type: skill/ability/saving_throw/attack/custom
+damage            | target, amount, dice (REQUIRED, e.g. "1d8+3"), damageType — server rolls dice, amount is estimate
+healing           | target, amount
+set_hp            | target, value
+set_temp_hp       | target, value
+condition_add     | target, condition
+condition_remove  | target, condition
+spell_slot_use    | target, level
+spell_slot_restore| target, level
+combat_start      | enemies[{name,maxHP,armorClass,initiativeModifier,speed,position?,size?}], playerPositions:{Name:{x,y}}, mapLayout:{width,height,tiles}, terrain (fallback keyword), description
+combat_end        | (no fields)
+move              | combatantName, to:{x,y}
+xp_award          | targets[], amount
+death_save        | target
+short_rest        | (no fields)
+long_rest         | (no fields)
+journal_update    | storySummary, activeQuest, addNPC:{name,role,disposition,lastSeen}, addLocation, removeItem
+turn_end          | (no fields)
+add_combatants    | combatants[{name,maxHP,armorClass,initiativeModifier,speed,type,position?,size?}]`;
+
+const COMBAT_START_INSTRUCTIONS = `
 
 ### CRITICAL — Starting Combat:
 When ANY hostile encounter begins, you **MUST** emit a \`combat_start\` action **immediately in the same response**. This activates the tactical combat grid, rolls initiative, and places tokens on the map.
@@ -102,6 +109,71 @@ Tile chars: \`.\` floor, \`#\` wall, \`~\` water, \`^\` difficult terrain, \`D\`
 
 After emitting \`combat_start\`, STOP. The system sets up the battle map, rolls initiative, and tells you the turn order.`;
 
+// Exploration scenarios (shown when NOT in combat)
+const EXPLORATION_SCENARIO_EXAMPLES = `
+
+### EXAMPLES:
+
+**Scenario — Starting combat (hostile encounter):**
+*[Narrative describing the encounter...]*
+
+\`\`\`json:actions
+{ "actions": [{ "type": "combat_start", "enemies": [{ "name": "Goblin", "maxHP": 7, "armorClass": 15, "initiativeModifier": 2, "speed": 30, "position": { "x": 7, "y": 2 } }, { "name": "Goblin Boss", "maxHP": 21, "armorClass": 17, "initiativeModifier": 2, "speed": 30, "position": { "x": 8, "y": 4 } }], "playerPositions": { "Omuras": { "x": 2, "y": 4 } }, "mapLayout": { "width": 10, "height": 8, "tiles": ["..##......", "..##......", "..........", "..^^......", "..........", "..........", "..~~......", "..~~......"] }, "description": "A rocky clearing near the cave mouth" }] }
+\`\`\`
+
+**Scenario — Skill check + journal update:**
+*[Narrative where the player investigates something and the story advances...]*
+
+\`\`\`json:actions
+{ "actions": [{ "type": "check_request", "check": { "type": "skill", "skill": "investigation", "ability": "intelligence", "dc": 14, "targetCharacter": "Omuras", "reason": "Search the desk for hidden compartments" } }, { "type": "journal_update", "activeQuest": "Find the missing merchant", "addNPC": { "name": "Elara", "role": "innkeeper", "disposition": "friendly", "lastSeen": "The Silver Flagon" }, "addLocation": "Thornfield Village" }] }
+\`\`\`
+
+**Scenario — Trap: damage + condition:**
+*[Narrative describing a trap triggering...]*
+
+\`\`\`json:actions
+{ "actions": [{ "type": "damage", "target": "Omuras", "amount": 7, "dice": "2d6", "damageType": "poison" }, { "type": "condition_add", "target": "Omuras", "condition": "poisoned" }] }
+\`\`\``;
+
+// Combat scenarios (shown during active combat)
+const COMBAT_SCENARIO_EXAMPLES = `
+
+### EXAMPLES:
+
+**Scenario — Skill check + journal update:**
+*[Narrative where the player investigates something and the story advances...]*
+
+\`\`\`json:actions
+{ "actions": [{ "type": "check_request", "check": { "type": "skill", "skill": "investigation", "ability": "intelligence", "dc": 14, "targetCharacter": "Omuras", "reason": "Search the desk for hidden compartments" } }, { "type": "journal_update", "activeQuest": "Find the missing merchant", "addNPC": { "name": "Elara", "role": "innkeeper", "disposition": "friendly", "lastSeen": "The Silver Flagon" }, "addLocation": "Thornfield Village" }] }
+\`\`\`
+
+**Scenario — Trap: damage + condition:**
+*[Narrative describing a trap triggering...]*
+
+\`\`\`json:actions
+{ "actions": [{ "type": "damage", "target": "Omuras", "amount": 7, "dice": "2d6", "damageType": "poison" }, { "type": "condition_add", "target": "Omuras", "condition": "poisoned" }] }
+\`\`\`
+
+**Scenario — Enemy melee turn (move + attack):**
+*[Narrative of the enemy's turn...]*
+
+\`\`\`json:actions
+{ "actions": [{ "type": "move", "combatantName": "Goblin", "to": { "x": 3, "y": 4 } }, { "type": "check_request", "check": { "type": "attack", "ability": "strength", "dc": 16, "targetCharacter": "Goblin", "reason": "Scimitar attack against Omuras" } }] }
+\`\`\`
+
+**Scenario — Spell with save + damage:**
+*[Narrative of a spell being cast...]*
+
+\`\`\`json:actions
+{ "actions": [{ "type": "spell_slot_use", "target": "Omuras", "level": 1 }, { "type": "check_request", "check": { "type": "saving_throw", "ability": "dexterity", "dc": 14, "targetCharacter": "Goblin Boss", "reason": "Burning Hands — DEX save" } }] }
+\`\`\``;
+
+
+// Slim reminder for exploration phase (~100 tokens instead of ~3000)
+const COMBAT_START_REMINDER = `
+
+## COMBAT
+When a hostile encounter begins, IMMEDIATELY emit a \`combat_start\` action with enemies, mapLayout, and playerPositions. Do NOT narrate attacks or damage without starting combat first. You decide the enemies — never ask the player. After emitting \`combat_start\`, STOP and wait for the system to set up the battle map and roll initiative.`;
 
 const COMBAT_RULES = `
 
@@ -455,24 +527,39 @@ export function buildDMSystemPrompt(options: BuildDMPromptOptions): string {
     prompt += buildJournalContext(journal);
   }
 
-  // 5. Structured output instructions (always included)
-  prompt += STRUCTURED_OUTPUT_INSTRUCTIONS;
+  const inCombat = combatState && combatState.phase === "active";
 
-  // 6. Tool-use instructions (only for tool-capable providers)
+  // 5. Structured output format + compact action reference (always included)
+  prompt += STRUCTURED_OUTPUT_FORMAT;
+  prompt += ACTION_REFERENCE_TABLE;
+
+  // 6. Combat start instructions (only during exploration — combat already started)
+  if (!inCombat) {
+    prompt += COMBAT_START_INSTRUCTIONS;
+  }
+
+  // 7. Phase-dependent scenario examples
+  if (inCombat) {
+    prompt += COMBAT_SCENARIO_EXAMPLES;
+  } else {
+    prompt += EXPLORATION_SCENARIO_EXAMPLES;
+  }
+
+  // 8. Pacing
+  prompt += PACING_INSTRUCTIONS[pacingProfile];
+  prompt += ENCOUNTER_LENGTH_NOTES[encounterLength];
+
+  // 9. Tool-use instructions (only for tool-capable providers)
   if (hasToolAccess) {
     prompt += TOOL_USE_INSTRUCTIONS;
   }
 
-  // 7. Pacing
-  prompt += PACING_INSTRUCTIONS[pacingProfile];
-  prompt += ENCOUNTER_LENGTH_NOTES[encounterLength];
-
-  // 8. Combat rules (always included so AI knows when/how to start combat)
-  prompt += COMBAT_RULES;
-
-  // 9. Combat state context (only during active combat)
-  if (combatState && combatState.phase === "active") {
+  // 10. Combat rules + state (full rules only during active combat, slim reminder otherwise)
+  if (inCombat) {
+    prompt += COMBAT_RULES;
     prompt += buildCombatContext(combatState, mapSize, characters);
+  } else {
+    prompt += COMBAT_START_REMINDER;
   }
 
   return prompt;
