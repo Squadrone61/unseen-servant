@@ -74,14 +74,14 @@ chrome.runtime.onMessage.addListener((message) => {
 (async () => {
   try {
     const stored = await chrome.storage.local.get(["aiConfig"]);
-    const config = stored.aiConfig as { provider: string; supportsTools: boolean } | undefined;
+    const config = stored.aiConfig as { supportsTools: boolean } | undefined;
     if (config) {
       window.postMessage(
         {
           type: "aidnd:dm_config",
           payload: {
             type: "client:dm_config",
-            provider: config.provider,
+            provider: "ollama",
             supportsTools: config.supportsTools,
           },
         },

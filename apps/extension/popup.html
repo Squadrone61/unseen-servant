@@ -8,26 +8,38 @@
 <body>
   <div class="container">
     <h1>AIDND DM Extension</h1>
+    <p class="subtitle">Local AI via Ollama</p>
 
     <div class="field">
-      <label for="provider">Provider</label>
-      <select id="provider"></select>
+      <label for="ollamaUrl">Ollama URL</label>
+      <div class="url-row">
+        <input type="text" id="ollamaUrl" placeholder="http://localhost:11434">
+        <button id="checkBtn" class="btn-check" title="Test connection">&#x21BB;</button>
+      </div>
     </div>
 
-    <div class="field">
-      <label for="apiKey">API Key</label>
-      <input type="password" id="apiKey" placeholder="Enter API key...">
-      <a id="key-help" href="#" target="_blank" class="help-link">Get an API key</a>
-    </div>
+    <div id="connectionStatus" class="connection-status"></div>
 
     <div class="field">
       <label for="model">Model</label>
-      <select id="model"></select>
+      <select id="model" disabled></select>
+      <div id="modelInfo" class="model-info"></div>
     </div>
 
-    <button id="save" class="btn-primary">Save & Connect</button>
+    <div id="toolStatus" class="tool-status"></div>
+
+    <button id="save" class="btn-primary">Save</button>
 
     <div id="status" class="status"></div>
+
+    <div class="guide">
+      <p>Setup Guide</p>
+      <ol>
+        <li>Install <a href="https://ollama.com" target="_blank">Ollama</a></li>
+        <li>Pull a model: <code>ollama pull qwen3</code></li>
+        <li>Ollama runs automatically — configure above</li>
+      </ol>
+    </div>
   </div>
 
   <script src="dist/popup.js" type="module"></script>

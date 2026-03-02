@@ -69,20 +69,23 @@ pnpm build:extension # Build the Chrome extension
 
 The host needs to install the Chrome extension to connect an AI provider.
 
-**1. Build the extension**
+**Option A: Download from Releases (recommended)**
+
+1. Download the latest `aidnd-extension-v*.zip` from [GitHub Releases](https://github.com/Squadrone61/AIDND/releases)
+2. Unzip to a folder
+
+**Option B: Build from source**
 
 ```bash
 pnpm build:extension
 ```
 
-This compiles `apps/extension/src/` into `apps/extension/dist/`.
-
-**2. Load in Chrome**
+**Load in Chrome**
 
 1. Open `chrome://extensions`
 2. Enable **Developer mode** (toggle in top right)
 3. Click **Load unpacked**
-4. Select the `apps/extension/` directory
+4. Select the unzipped folder (Option A) or the `apps/extension/` directory (Option B)
 
 **3. Configure a provider**
 

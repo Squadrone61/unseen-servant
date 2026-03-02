@@ -1,11 +1,20 @@
 // === Extension internal message types ===
 
+export const DEFAULT_OLLAMA_URL = "http://localhost:11434";
+
 /** Stored AI configuration (in chrome.storage.local) */
 export interface ExtensionAIConfig {
-  provider: string;
-  apiKey: string;
+  ollamaUrl: string;
   model: string;
   supportsTools: boolean;
+}
+
+/** Model info from Ollama /api/tags */
+export interface OllamaModelInfo {
+  name: string;
+  size: number;
+  parameter_size: string;
+  quantization_level: string;
 }
 
 /** Message from content script to background SW */

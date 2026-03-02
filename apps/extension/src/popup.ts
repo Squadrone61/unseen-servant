@@ -1,47 +1,23 @@
-import type { ExtensionAIConfig } from "./types";
-import { providerSupportsTools } from "./ai-tool-loop";
-
-interface ProviderEntry {
-  id: string;
-  name: string;
-  baseUrl: string;
-  format: string;
-  defaultModel: string;
-  modelsEndpoint: string;
-  keyPlaceholder: string;
-  keyHelpUrl: string;
-  keyOptional?: boolean;
-}
-
-const PROVIDERS: ProviderEntry[] = [
-  { id: "anthropic", name: "Anthropic", baseUrl: "https://api.anthropic.com", format: "anthropic", defaultModel: "claude-sonnet-4-5-20250929", modelsEndpoint: "/v1/models", keyPlaceholder: "sk-ant-api03-...", keyHelpUrl: "https://console.anthropic.com/settings/keys" },
-  { id: "openai", name: "OpenAI", baseUrl: "https://api.openai.com/v1", format: "openai", defaultModel: "gpt-4o", modelsEndpoint: "/v1/models", keyPlaceholder: "sk-...", keyHelpUrl: "https://platform.openai.com/api-keys" },
-  { id: "groq", name: "Groq", baseUrl: "https://api.groq.com/openai/v1", format: "openai", defaultModel: "llama-3.3-70b-versatile", modelsEndpoint: "/openai/v1/models", keyPlaceholder: "gsk_...", keyHelpUrl: "https://console.groq.com/keys" },
-  { id: "deepseek", name: "DeepSeek", baseUrl: "https://api.deepseek.com/v1", format: "openai", defaultModel: "deepseek-chat", modelsEndpoint: "/models", keyPlaceholder: "sk-...", keyHelpUrl: "https://platform.deepseek.com/api_keys" },
-  { id: "gemini", name: "Google Gemini", baseUrl: "https://generativelanguage.googleapis.com", format: "gemini", defaultModel: "gemini-2.5-flash", modelsEndpoint: "/v1beta/models", keyPlaceholder: "AIza...", keyHelpUrl: "https://aistudio.google.com/apikey" },
-  { id: "xai", name: "xAI (Grok)", baseUrl: "https://api.x.ai/v1", format: "openai", defaultModel: "grok-3", modelsEndpoint: "/v1/models", keyPlaceholder: "xai-...", keyHelpUrl: "https://console.x.ai/" },
-  { id: "mistral", name: "Mistral", baseUrl: "https://api.mistral.ai/v1", format: "openai", defaultModel: "mistral-large-latest", modelsEndpoint: "/v1/models", keyPlaceholder: "...", keyHelpUrl: "https://console.mistral.ai/api-keys/" },
-  { id: "openrouter", name: "OpenRouter", baseUrl: "https://openrouter.ai/api/v1", format: "openai", defaultModel: "anthropic/claude-sonnet-4.5", modelsEndpoint: "/api/v1/models", keyPlaceholder: "sk-or-v1-...", keyHelpUrl: "https://openrouter.ai/keys" },
-];
+import { DEFAULT_OLLAMA_URL, type ExtensionAIConfig, type OllamaModelInfo } from "./types";
 
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 
-const providerSelect = $<HTMLSelectElement>("provider");
-const apiKeyInput = $<HTMLInputElement>("apiKey");
-const keyHelpLink = $<HTMLAnchorElement>("key-help");
+const ollamaUrlInput = $<HTMLInputElement>("ollamaUrl");
+const checkBtn = $<HTMLButtonElement>("checkBtn");
+const connectionStatus = $<HTMLDivElement>("connectionStatus");
 const modelSelect = $<HTMLSelectElement>("model");
+const modelInfo = $<HTMLDivElement>("modelInfo");
+const toolStatus = $<HTMLDivElement>("toolStatus");
 const saveBtn = $<HTMLButtonElement>("save");
 const statusDiv = $<HTMLDivElement>("status");
 
-// Populate provider dropdown
-for (const p of PROVIDERS) {
-  const opt = document.createElement("option");
-  opt.value = p.id;
-  opt.textContent = p.name;
-  providerSelect.appendChild(opt);
-}
+let models: OllamaModelInfo[] = [];
+let currentSupportsTools = false;
 
-let currentProvider = PROVIDERS[0];
+function setConnectionStatus(state: "connected" | "disconnected" | "checking", text: string) {
+  connectionStatus.textContent = text;
+  connectionStatus.className = `connection-status ${state}`;
+}
 
 function setModelPlaceholder(text: string, disabled: boolean) {
   modelSelect.innerHTML = "";
@@ -54,123 +30,146 @@ function setModelPlaceholder(text: string, disabled: boolean) {
   modelSelect.disabled = disabled;
 }
 
-function updateUI() {
-  const provider = PROVIDERS.find((p) => p.id === providerSelect.value) || PROVIDERS[0];
-  currentProvider = provider;
-
-  apiKeyInput.placeholder = provider.keyPlaceholder;
-  if (provider.keyHelpUrl) {
-    keyHelpLink.href = provider.keyHelpUrl;
-    keyHelpLink.style.display = "inline-block";
-  } else {
-    keyHelpLink.style.display = "none";
-  }
-
-  // Try to fetch models if we have an API key, otherwise show placeholder
-  if (apiKeyInput.value) {
-    setModelPlaceholder("Loading models...", true);
-    fetchModels(provider, apiKeyInput.value);
-  } else {
-    setModelPlaceholder("Enter API key first", true);
-  }
+function formatFileSize(bytes: number): string {
+  if (bytes >= 1e9) return `${(bytes / 1e9).toFixed(1)} GB`;
+  if (bytes >= 1e6) return `${(bytes / 1e6).toFixed(0)} MB`;
+  return `${bytes} B`;
 }
 
-async function fetchModels(provider: ProviderEntry, apiKey: string) {
+async function checkConnection(url: string): Promise<void> {
+  setConnectionStatus("checking", "Connecting...");
+  setModelPlaceholder("Checking...", true);
+  modelInfo.textContent = "";
+  toolStatus.className = "tool-status";
+
   try {
-    let url: string;
-    const headers: Record<string, string> = { Accept: "application/json" };
+    const response = await fetch(`${url}/api/tags`);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
-    if (provider.format === "gemini") {
-      url = `${provider.baseUrl}${provider.modelsEndpoint}?key=${apiKey}`;
-    } else if (provider.format === "anthropic") {
-      url = `${provider.baseUrl}${provider.modelsEndpoint}`;
-      headers["x-api-key"] = apiKey;
-      headers["anthropic-version"] = "2023-06-01";
-    } else {
-      url = `${provider.baseUrl.replace(/\/v1$/, "")}${provider.modelsEndpoint}`;
-      headers.Authorization = `Bearer ${apiKey}`;
-    }
+    const data = await response.json() as {
+      models: Array<{
+        name: string;
+        size: number;
+        details: { parameter_size: string; quantization_level: string };
+      }>;
+    };
 
-    const response = await fetch(url, { headers });
-    if (!response.ok) {
-      setModelPlaceholder("Failed to load models", false);
+    models = (data.models || []).map((m) => ({
+      name: m.name,
+      size: m.size,
+      parameter_size: m.details?.parameter_size ?? "",
+      quantization_level: m.details?.quantization_level ?? "",
+    }));
+
+    if (models.length === 0) {
+      setConnectionStatus("disconnected", "Connected but no models found. Run: ollama pull qwen3");
+      setModelPlaceholder("No models available", true);
       return;
     }
 
-    const data = await response.json();
+    setConnectionStatus("connected", `Connected \u2014 ${models.length} model(s)`);
 
-    // Parse models based on format
-    let models: Array<{ id: string; name: string }> = [];
-
-    if (provider.format === "gemini") {
-      models = (data.models || [])
-        .filter((m: { name: string }) => m.name.includes("gemini"))
-        .map((m: { name: string; displayName?: string }) => ({
-          id: m.name.replace("models/", ""),
-          name: m.displayName || m.name.replace("models/", ""),
-        }));
-    } else if (provider.format === "anthropic") {
-      models = (data.data || []).map((m: { id: string; display_name?: string }) => ({
-        id: m.id,
-        name: m.display_name || m.id,
-      }));
-    } else {
-      models = (data.data || [])
-        .filter((m: { id: string }) => !m.id.includes("whisper") && !m.id.includes("tts") && !m.id.includes("dall-e") && !m.id.includes("embedding"))
-        .map((m: { id: string }) => ({ id: m.id, name: m.id }))
-        .sort((a: { id: string }, b: { id: string }) => a.id.localeCompare(b.id));
+    // Populate model dropdown
+    modelSelect.innerHTML = "";
+    modelSelect.disabled = false;
+    for (const m of models) {
+      const opt = document.createElement("option");
+      opt.value = m.name;
+      const parts = [m.name];
+      if (m.parameter_size) parts.push(m.parameter_size);
+      if (m.quantization_level) parts.push(m.quantization_level);
+      opt.textContent = parts.join(" \u2014 ");
+      modelSelect.appendChild(opt);
     }
 
-    if (models.length > 0) {
-      modelSelect.innerHTML = "";
-      modelSelect.disabled = false;
-      for (const m of models) {
-        const opt = document.createElement("option");
-        opt.value = m.id;
-        opt.textContent = m.name;
-        modelSelect.appendChild(opt);
-      }
-    } else {
-      setModelPlaceholder("No models found", false);
-    }
-  } catch (err) {
-    console.warn("Failed to fetch models:", err);
-    setModelPlaceholder("Failed to load models", false);
+    // Auto-check tool support for the first model
+    await checkToolSupport(url, models[0].name);
+  } catch {
+    models = [];
+    setConnectionStatus("disconnected", "Cannot reach Ollama. Is it running?");
+    setModelPlaceholder("No connection", true);
   }
 }
 
-providerSelect.addEventListener("change", updateUI);
+async function checkToolSupport(url: string, modelName: string): Promise<void> {
+  currentSupportsTools = false;
+  toolStatus.className = "tool-status";
 
-// Fetch models when API key changes (debounced)
-let debounceTimer: ReturnType<typeof setTimeout>;
-apiKeyInput.addEventListener("input", () => {
-  clearTimeout(debounceTimer);
-  debounceTimer = setTimeout(() => {
-    if (apiKeyInput.value.length > 10) {
-      fetchModels(currentProvider, apiKeyInput.value);
-    }
-  }, 500);
-});
-
-// Save configuration
-saveBtn.addEventListener("click", async () => {
-  const apiKey = apiKeyInput.value.trim();
-
-  if (!apiKey) {
-    showStatus("Please enter an API key", "error");
-    return;
+  // Show model info
+  const m = models.find((m) => m.name === modelName);
+  if (m) {
+    const parts: string[] = [];
+    if (m.parameter_size) parts.push(m.parameter_size);
+    if (m.quantization_level) parts.push(m.quantization_level);
+    if (m.size) parts.push(formatFileSize(m.size));
+    modelInfo.textContent = parts.join(" \u2022 ");
+  } else {
+    modelInfo.textContent = "";
   }
 
+  try {
+    const response = await fetch(`${url}/api/show`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: modelName }),
+    });
+
+    if (!response.ok) return;
+
+    const data = await response.json() as { template?: string };
+    const template = data.template ?? "";
+
+    if (template.includes("{{ .Tools }}") || template.includes("{{.Tools}}") || template.includes("{{ if .Tools }}") || template.includes("{{- if .Tools }}")) {
+      currentSupportsTools = true;
+      toolStatus.textContent = "D&D tool-use supported";
+      toolStatus.className = "tool-status supported";
+    } else {
+      currentSupportsTools = false;
+      toolStatus.textContent = "No tool-use \u2014 will use context injection";
+      toolStatus.className = "tool-status unsupported";
+    }
+  } catch {
+    // Can't determine — default to false
+    toolStatus.textContent = "Could not check tool support";
+    toolStatus.className = "tool-status unsupported";
+  }
+}
+
+// Event: model change → check tool support
+modelSelect.addEventListener("change", () => {
+  const url = ollamaUrlInput.value.trim() || DEFAULT_OLLAMA_URL;
+  if (modelSelect.value) {
+    checkToolSupport(url, modelSelect.value);
+  }
+});
+
+// Event: URL change → debounced auto-reconnect
+let debounceTimer: ReturnType<typeof setTimeout>;
+ollamaUrlInput.addEventListener("input", () => {
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(() => {
+    const url = ollamaUrlInput.value.trim() || DEFAULT_OLLAMA_URL;
+    checkConnection(url);
+  }, 800);
+});
+
+// Event: check button → immediate reconnect
+checkBtn.addEventListener("click", () => {
+  const url = ollamaUrlInput.value.trim() || DEFAULT_OLLAMA_URL;
+  checkConnection(url);
+});
+
+// Event: save
+saveBtn.addEventListener("click", async () => {
   if (!modelSelect.value) {
     showStatus("Please select a model", "error");
     return;
   }
 
   const config: ExtensionAIConfig = {
-    provider: currentProvider.id,
-    apiKey,
+    ollamaUrl: ollamaUrlInput.value.trim() || DEFAULT_OLLAMA_URL,
     model: modelSelect.value,
-    supportsTools: providerSupportsTools(currentProvider.id),
+    supportsTools: currentSupportsTools,
   };
 
   await chrome.storage.local.set({ aiConfig: config });
@@ -184,7 +183,7 @@ saveBtn.addEventListener("click", async () => {
       try {
         await chrome.tabs.sendMessage(tab.id, {
           type: "dm_config",
-          provider: config.provider,
+          provider: "ollama",
           supportsTools: config.supportsTools,
         });
       } catch {
@@ -207,26 +206,23 @@ function showStatus(message: string, type: "success" | "error" | "info") {
   const config = stored.aiConfig as ExtensionAIConfig | undefined;
 
   if (config) {
-    providerSelect.value = config.provider;
-    apiKeyInput.value = config.apiKey;
-    updateUI();
+    ollamaUrlInput.value = config.ollamaUrl || DEFAULT_OLLAMA_URL;
 
-    // Restore saved model after fetch completes
+    // Check connection and restore saved model
     const savedModel = config.model;
+    await checkConnection(config.ollamaUrl || DEFAULT_OLLAMA_URL);
+
     if (savedModel) {
-      const observer = new MutationObserver(() => {
-        // Only set if the dropdown now has real options (not just placeholder)
-        const hasOption = Array.from(modelSelect.options).some((o) => o.value === savedModel);
-        if (hasOption) {
-          modelSelect.value = savedModel;
-          observer.disconnect();
-        }
-      });
-      observer.observe(modelSelect, { childList: true });
+      const hasOption = Array.from(modelSelect.options).some((o) => o.value === savedModel);
+      if (hasOption) {
+        modelSelect.value = savedModel;
+        await checkToolSupport(config.ollamaUrl || DEFAULT_OLLAMA_URL, savedModel);
+      }
     }
 
-    showStatus("Configured — ready to DM", "info");
+    showStatus("Configured \u2014 ready to DM", "info");
   } else {
-    updateUI();
+    ollamaUrlInput.value = DEFAULT_OLLAMA_URL;
+    checkConnection(DEFAULT_OLLAMA_URL);
   }
 })();

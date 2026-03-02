@@ -153,16 +153,6 @@ export async function executeToolCall(
   }
 }
 
-export function toAnthropicTools(
-  tools: ToolDefinition[],
-): Array<{ name: string; description: string; input_schema: Record<string, unknown> }> {
-  return tools.map((t) => ({
-    name: t.name,
-    description: t.description,
-    input_schema: t.parameters,
-  }));
-}
-
 export function toOpenAITools(
   tools: ToolDefinition[],
 ): Array<{ type: "function"; function: { name: string; description: string; parameters: Record<string, unknown> } }> {
@@ -174,16 +164,4 @@ export function toOpenAITools(
       parameters: t.parameters,
     },
   }));
-}
-
-export function toGeminiTools(
-  tools: ToolDefinition[],
-): { function_declarations: Array<{ name: string; description: string; parameters: Record<string, unknown> }> } {
-  return {
-    function_declarations: tools.map((t) => ({
-      name: t.name,
-      description: t.description,
-      parameters: t.parameters,
-    })),
-  };
 }
