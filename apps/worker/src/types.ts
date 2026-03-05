@@ -11,7 +11,6 @@ export interface RoomMeta {
 export interface Env {
   GAME_ROOM: DurableObjectNamespace<GameRoom>;
   ROOMS: KVNamespace;
-  DND_CACHE: KVNamespace;
   ENVIRONMENT: string;
 
   // Auth

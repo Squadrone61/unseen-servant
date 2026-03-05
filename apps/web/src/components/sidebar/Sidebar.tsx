@@ -13,13 +13,21 @@ import type {
 } from "@aidnd/shared/types";
 import { CharacterPopover } from "@/components/character/CharacterPopover";
 import { SystemPromptModal } from "@/components/sidebar/SystemPromptModal";
+import { CampaignSelector } from "@/components/sidebar/CampaignSelector";
+
+interface CampaignInfo {
+  slug: string;
+  name: string;
+  lastPlayedAt: string;
+  sessionCount: number;
+}
 
 interface SidebarProps {
   roomCode: string;
   players: string[];
   allPlayers: PlayerInfo[];
   hostName: string;
-  extensionConnected: boolean;
+  dmConnected: boolean;
   isHost: boolean;
   logMessages: ServerMessage[];
   partyCharacters: Record<string, CharacterData>;
@@ -29,6 +37,9 @@ interface SidebarProps {
   pacingProfile?: PacingProfile;
   encounterLength?: EncounterLength;
   customSystemPrompt?: string;
+  campaigns?: CampaignInfo[];
+  activeCampaignSlug?: string;
+  activeCampaignName?: string;
   onKick: (playerName: string) => void;
   onStartStory: () => void;
   onRollback?: (eventId: string) => void;
@@ -36,6 +47,8 @@ interface SidebarProps {
   onSetPassword?: (password: string) => void;
   onSetPacing?: (profile: PacingProfile, encounterLength: EncounterLength) => void;
   onSetSystemPrompt?: (prompt?: string) => void;
+  onSelectCampaign?: (slug: string) => void;
+  onCreateCampaign?: (name: string) => void;
 }
 
 export function Sidebar({
@@ -43,7 +56,7 @@ export function Sidebar({
   players,
   allPlayers,
   hostName,
-  extensionConnected,
+  dmConnected,
   isHost,
   logMessages,
   partyCharacters,
@@ -57,9 +70,14 @@ export function Sidebar({
   onSetPassword,
   onSetPacing,
   onSetSystemPrompt,
+  onSelectCampaign,
+  onCreateCampaign,
   pacingProfile = "balanced",
   encounterLength = "standard",
   customSystemPrompt,
+  campaigns = [],
+  activeCampaignSlug,
+  activeCampaignName,
 }: SidebarProps) {
   const [dmCollapsed, setDmCollapsed] = useState(false);
   const [logCollapsed, setLogCollapsed] = useState(false);
@@ -282,7 +300,7 @@ export function Sidebar({
       </div>
 
       {/* Start Story Button (Host only, before story starts) */}
-      {isHost && !storyStarted && extensionConnected && (
+      {isHost && !storyStarted && dmConnected && (
         <div className="p-4 border-b border-gray-700">
           <button
             onClick={onStartStory}
@@ -431,6 +449,22 @@ export function Sidebar({
           </button>
           {!dmSettingsCollapsed && (
             <div className="px-4 pb-3 space-y-3">
+              {/* Campaign */}
+              {dmConnected && onSelectCampaign && onCreateCampaign && (
+                <div>
+                  <label className="text-[11px] text-gray-500 block mb-1">
+                    Campaign
+                  </label>
+                  <CampaignSelector
+                    campaigns={campaigns}
+                    activeCampaignSlug={activeCampaignSlug}
+                    activeCampaignName={activeCampaignName}
+                    onSelectCampaign={onSelectCampaign}
+                    onCreateCampaign={onCreateCampaign}
+                  />
+                </div>
+              )}
+
               {/* Pacing Profile */}
               <div>
                 <label className="text-[11px] text-gray-500 block mb-1">
@@ -516,7 +550,7 @@ export function Sidebar({
         />
       )}
 
-      {/* DM Extension Status */}
+      {/* DM Status */}
       <div className="p-4 border-t border-gray-700">
         <button
           onClick={() => setDmCollapsed(!dmCollapsed)}
@@ -533,19 +567,19 @@ export function Sidebar({
         </button>
         {!dmCollapsed && (
           <div>
-            {extensionConnected ? (
+            {dmConnected ? (
               <div className="text-sm text-green-400 flex items-center gap-1.5">
                 <div className="w-2 h-2 rounded-full bg-green-500" />
-                <span>Extension connected</span>
+                <span>DM connected</span>
               </div>
             ) : (
               <div className="space-y-2">
                 <div className="text-sm text-yellow-400 flex items-center gap-1.5">
                   <div className="w-2 h-2 rounded-full bg-yellow-500 animate-pulse" />
-                  <span>Waiting for extension...</span>
+                  <span>Waiting for DM...</span>
                 </div>
                 <p className="text-xs text-gray-600">
-                  Install the AIDND DM Extension and configure an AI provider to start.
+                  Start the MCP bridge to connect Claude Code as the Dungeon Master.
                 </p>
               </div>
             )}

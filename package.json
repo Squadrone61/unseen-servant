@@ -14,9 +14,8 @@
     "deploy:web": "turbo deploy --filter=@aidnd/web",
     "test": "node scripts/test.mjs",
     "test:ui": "playwright test --ui",
-    "build:extension": "cd apps/extension && node build.mjs",
-    "dev:extension": "cd apps/extension && node build.mjs --watch",
-    "release:extension": "cd apps/extension && node release.mjs"
+    "dev:mcp": "tsx apps/mcp-bridge/src/index.ts",
+    "build:dm": "cd apps/dm-launcher && node build.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.58.2",

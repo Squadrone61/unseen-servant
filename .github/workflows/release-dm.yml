@@ -1,0 +1,60 @@
+name: Release AI DM Launcher
+
+on:
+  push:
+    tags:
+      - "dm-v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build dm-launcher
+        run: cd apps/dm-launcher && node build.mjs
+
+      - name: Extract version from tag
+        id: version
+        run: echo "version=${GITHUB_REF_NAME#dm-v}" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "AI DM Launcher v${{ steps.version.outputs.version }}"
+          body: |
+            ## AI Dungeon Master — Standalone Launcher
+
+            Download `aidnd-dm.mjs` and run:
+            ```bash
+            node aidnd-dm.mjs
+            ```
+
+            ### Requirements
+            - Node.js 18+
+            - [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code/overview) (`npm i -g @anthropic-ai/claude-code`)
+
+            ### Usage
+            ```bash
+            # Interactive mode
+            node aidnd-dm.mjs
+
+            # With arguments
+            node aidnd-dm.mjs --room ABC123 --model sonnet
+            ```
+          files: apps/dm-launcher/dist/aidnd-dm.mjs

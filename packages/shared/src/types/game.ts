@@ -7,8 +7,6 @@ export interface Player {
 export interface RoomState {
   roomCode: string;
   players: Player[];
-  hasApiKey: boolean;
+  dmConnected: boolean;
   createdAt: number;
-  aiProvider?: string;
-  aiModel?: string;
 }

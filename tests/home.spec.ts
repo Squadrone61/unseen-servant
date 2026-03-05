@@ -29,8 +29,8 @@ test.describe("Home Page", () => {
     await expect(page.getByText("Join Room", { exact: false }).first()).toBeVisible();
     await expect(page.getByRole("button", { name: "Join Room" })).toBeVisible();
 
-    // Extension info text
-    await expect(page.getByText("AIDND DM Extension")).toBeVisible();
+    // MCP bridge info text
+    await expect(page.getByText("MCP bridge")).toBeVisible();
 
     // Browse Rooms link
     await expect(page.getByRole("link", { name: "Browse Rooms" })).toBeVisible();
@@ -124,7 +124,7 @@ test.describe("Home Page", () => {
     await expect(codeInput).toHaveValue("ABCDEF");
   });
 
-  test("shows extension info for AI setup", async ({ page }) => {
-    await expect(page.getByText("AIDND DM Extension")).toBeVisible();
+  test("shows MCP bridge info for AI setup", async ({ page }) => {
+    await expect(page.getByText("MCP bridge")).toBeVisible();
   });
 });

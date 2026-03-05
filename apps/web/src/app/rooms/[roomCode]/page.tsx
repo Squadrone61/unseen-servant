@@ -81,7 +81,7 @@ function GameContent({
   const [logMessages, setLogMessages] = useState<ServerMessage[]>([]);
   const [players, setPlayers] = useState<string[]>([]);
   const [allPlayers, setAllPlayers] = useState<PlayerInfo[]>([]);
-  const [extensionConnected, setExtensionConnected] = useState(false);
+  const [dmConnected, setDmConnected] = useState(false);
   const [isHost, setIsHost] = useState(false);
   const [hostName, setHostName] = useState<string>("");
   const [myCharacter, setMyCharacter] = useState<CharacterData | null>(null);
@@ -96,6 +96,9 @@ function GameContent({
   const [encounterLength, setEncounterLength] = useState<EncounterLength>("standard");
   const [customSystemPrompt, setCustomSystemPrompt] = useState<string | undefined>(undefined);
   const [highlightedCombatantId, setHighlightedCombatantId] = useState<string | null>(null);
+  const [campaigns, setCampaigns] = useState<{ slug: string; name: string; lastPlayedAt: string; sessionCount: number }[]>([]);
+  const [activeCampaignSlug, setActiveCampaignSlug] = useState<string | undefined>(undefined);
+  const [activeCampaignName, setActiveCampaignName] = useState<string | undefined>(undefined);
 
   // Join state — don't render game UI until successfully joined
   const [joined, setJoined] = useState(false);
@@ -144,7 +147,7 @@ function GameContent({
           setJoined(true);
           setPlayers(msg.players);
           setHostName(msg.hostName);
-          setExtensionConnected(msg.extensionConnected ?? msg.hasApiKey);
+          setDmConnected(msg.dmConnected);
           setIsHost(msg.isHost ?? false);
           setPasswordRequired(false);
           setPasswordError("");
@@ -157,6 +160,8 @@ function GameContent({
             }
           }
           if (msg.storyStarted !== undefined) setStoryStarted(msg.storyStarted);
+          if (msg.activeCampaignSlug) setActiveCampaignSlug(msg.activeCampaignSlug);
+          if (msg.activeCampaignName) setActiveCampaignName(msg.activeCampaignName);
           break;
 
         case "server:player_joined":
@@ -242,13 +247,18 @@ function GameContent({
           setCustomSystemPrompt(msg.gameState.customSystemPrompt);
           break;
 
-        case "server:event_log":
-          setEventLog((prev) => [...prev, msg.event]);
+        case "server:dm_config_update":
+          setDmConnected(true);
+          if (msg.campaigns) setCampaigns(msg.campaigns);
           break;
 
-        case "server:dm_request":
-          // Relay to extension via postMessage
-          window.postMessage({ type: "aidnd:dm_request", payload: msg }, "*");
+        case "server:campaign_loaded":
+          setActiveCampaignSlug(msg.campaignSlug);
+          setActiveCampaignName(msg.campaignName);
+          break;
+
+        case "server:event_log":
+          setEventLog((prev) => [...prev, msg.event]);
           break;
 
         default:
@@ -263,7 +273,7 @@ function GameContent({
     [router, playerName]
   );
 
-  const { send, sendRaw, connectionState } = useWebSocket({
+  const { send, connectionState } = useWebSocket({
     roomCode,
     playerName,
     authToken,
@@ -272,21 +282,6 @@ function GameContent({
     onMessage: handleMessage,
     enabled: clientReady,
   });
-
-  // Extension relay: forward dm_response and dm_config from extension to server
-  useEffect(() => {
-    const handler = (event: MessageEvent) => {
-      if (event.data?.type === "aidnd:dm_response") {
-        sendRaw(JSON.stringify(event.data.payload));
-      }
-      if (event.data?.type === "aidnd:dm_config") {
-        sendRaw(JSON.stringify(event.data.payload));
-        setExtensionConnected(true);
-      }
-    };
-    window.addEventListener("message", handler);
-    return () => window.removeEventListener("message", handler);
-  }, [sendRaw]);
 
   // Expose message handler for Playwright tests (zero cost, no-op in production)
   useEffect(() => {
@@ -368,6 +363,14 @@ function GameContent({
   const handleSetSystemPrompt = (prompt?: string) => {
     send({ type: "client:set_system_prompt", prompt });
     setCustomSystemPrompt(prompt);
+  };
+
+  const handleSelectCampaign = (slug: string) => {
+    send({ type: "client:set_campaign", campaignSlug: slug });
+  };
+
+  const handleCreateCampaign = (name: string) => {
+    send({ type: "client:set_campaign", newCampaignName: name });
   };
 
   const handleCharacterImported = useCallback(
@@ -489,7 +492,7 @@ function GameContent({
         players={players}
         allPlayers={allPlayers}
         hostName={hostName}
-        extensionConnected={extensionConnected}
+        dmConnected={dmConnected}
         isHost={isHost}
         logMessages={logMessages}
         partyCharacters={partyCharacters}
@@ -506,6 +509,11 @@ function GameContent({
         onSetPassword={handleSetPassword}
         onSetPacing={handleSetPacing}
         onSetSystemPrompt={handleSetSystemPrompt}
+        campaigns={campaigns}
+        activeCampaignSlug={activeCampaignSlug}
+        activeCampaignName={activeCampaignName}
+        onSelectCampaign={handleSelectCampaign}
+        onCreateCampaign={handleCreateCampaign}
       />
     </div>
   );

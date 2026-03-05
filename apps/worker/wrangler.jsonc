@@ -21,10 +21,6 @@
 		{
 			"binding": "ROOMS",
 			"id": "c10fedf5133c4636b679d47f5ba09524"
-		},
-		{
-			"binding": "DND_CACHE",
-			"id": "5974079b9523467faa4c52eae728f120"
 		}
 	],
 	"migrations": [
@@ -53,10 +49,6 @@
 				{
 					"binding": "ROOMS",
 					"id": "c10fedf5133c4636b679d47f5ba09524"
-				},
-				{
-					"binding": "DND_CACHE",
-					"id": "5974079b9523467faa4c52eae728f120"
 				}
 			]
 		}

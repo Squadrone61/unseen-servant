@@ -1,8 +1,6 @@
 import { GameRoom } from "./durable-objects/game-room";
 import { getGoogleAuthURL, handleGoogleCallback } from "./auth/google";
 import { verifyJWT } from "./auth/jwt";
-import { getProvider } from "@aidnd/shared";
-import type { AIProviderModel } from "@aidnd/shared";
 import { parseDDBCharacter } from "./services/ddb-parser";
 import { extractDDBCharacterId, fetchDDBCharacter, DDBFetchError } from "./services/ddb-fetcher";
 import type { Env, RoomMeta } from "./types";
@@ -26,65 +24,6 @@ function generateRoomCode(): string {
     code += chars[byte % chars.length];
   }
   return code;
-}
-
-async function fetchProviderModels(
-  format: string,
-  baseUrl: string,
-  modelsEndpoint: string,
-  apiKey: string
-): Promise<AIProviderModel[]> {
-  const origin = new URL(baseUrl).origin;
-
-  if (format === "gemini") {
-    const res = await fetch(`${origin}${modelsEndpoint}?key=${apiKey}&pageSize=100`);
-    if (!res.ok) throw new Error(`Gemini API error (${res.status})`);
-    const data = (await res.json()) as {
-      models: Array<{
-        name: string;
-        displayName: string;
-        supportedGenerationMethods?: string[];
-      }>;
-    };
-    return (data.models ?? [])
-      .filter((m) =>
-        m.supportedGenerationMethods?.includes("generateContent")
-      )
-      .map((m) => ({
-        id: m.name.replace(/^models\//, ""),
-        name: m.displayName,
-      }));
-  }
-
-  if (format === "anthropic") {
-    const res = await fetch(`${origin}${modelsEndpoint}?limit=100`, {
-      headers: {
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-      },
-    });
-    if (!res.ok) throw new Error(`Anthropic API error (${res.status})`);
-    const data = (await res.json()) as {
-      data: Array<{ id: string; display_name: string }>;
-    };
-    return (data.data ?? []).map((m) => ({
-      id: m.id,
-      name: m.display_name || m.id,
-    }));
-  }
-
-  // OpenAI-compatible: openai, groq, deepseek, xai, mistral, openrouter
-  const res = await fetch(`${origin}${modelsEndpoint}`, {
-    headers: { Authorization: `Bearer ${apiKey}` },
-  });
-  if (!res.ok) throw new Error(`${format} API error (${res.status})`);
-  const data = (await res.json()) as {
-    data: Array<{ id: string; name?: string }>;
-  };
-  return (data.data ?? []).map((m) => ({
-    id: m.id,
-    name: m.name || m.id,
-  }));
 }
 
 export default {
@@ -201,47 +140,6 @@ export default {
       const roomId = env.GAME_ROOM.idFromName(roomCode);
       const room = env.GAME_ROOM.get(roomId);
       return room.fetch(request);
-    }
-
-    // POST /api/models — fetch available models from a provider
-    if (url.pathname === "/api/models" && request.method === "POST") {
-      try {
-        const body = (await request.json()) as {
-          provider: string;
-          apiKey: string;
-        };
-        if (!body.provider || !body.apiKey) {
-          return new Response(
-            JSON.stringify({ error: "provider and apiKey required" }),
-            { status: 400, headers: { "Content-Type": "application/json", ...cors } }
-          );
-        }
-
-        const provider = getProvider(body.provider);
-        if (!provider) {
-          return new Response(
-            JSON.stringify({ error: `Unknown provider: ${body.provider}` }),
-            { status: 400, headers: { "Content-Type": "application/json", ...cors } }
-          );
-        }
-
-        const models = await fetchProviderModels(
-          provider.format,
-          provider.baseUrl,
-          provider.modelsEndpoint,
-          body.apiKey
-        );
-
-        return new Response(JSON.stringify({ models }), {
-          headers: { "Content-Type": "application/json", ...cors },
-        });
-      } catch (e) {
-        const message = e instanceof Error ? e.message : "Failed to fetch models";
-        return new Response(JSON.stringify({ error: message }), {
-          status: 502,
-          headers: { "Content-Type": "application/json", ...cors },
-        });
-      }
     }
 
     // POST /api/character/import — parse a DDB character from URL or JSON

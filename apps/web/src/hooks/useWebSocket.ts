@@ -155,7 +155,7 @@ export function useWebSocket({
     }
   }, []);
 
-  /** Send raw JSON string directly on the WebSocket (for extension relay) */
+  /** Send raw JSON string directly on the WebSocket */
   const sendRaw = useCallback((json: string) => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
       wsRef.current.send(json);

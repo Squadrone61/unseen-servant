@@ -1,6 +1,13 @@
+/**
+ * D&D 5e SRD API client with file-based cache.
+ * D&D 5e SRD API client — uses in-memory Map cache
+ * (process-scoped, clears on restart).
+ */
+
 const API_BASE = "https://www.dnd5eapi.co/api/2014";
-const CACHE_TTL = 86400 * 30; // 30 days
-const NOT_FOUND_TTL = 86400; // 1 day for 404s
+
+const cache = new Map<string, { data: unknown; timestamp: number }>();
+const CACHE_TTL = 1800_000; // 30 minutes
 
 export interface SpellData {
   index: string;
@@ -69,23 +76,6 @@ export interface ConditionData {
   desc: string[];
 }
 
-export interface RuleData {
-  index: string;
-  name: string;
-  desc: string;
-}
-
-export interface SpellSearchResult {
-  index: string;
-  name: string;
-  level: number;
-}
-
-export interface MonsterSearchResult {
-  index: string;
-  name: string;
-}
-
 function normalizeIndex(name: string): string {
   return name
     .toLowerCase()
@@ -95,21 +85,10 @@ function normalizeIndex(name: string): string {
     .replace(/[^a-z0-9-]/g, "");
 }
 
-const NOT_FOUND_SENTINEL = '{"__not_found":true}';
-
-async function cachedFetch<T>(
-  url: string,
-  cacheKey: string,
-  kv: KVNamespace,
-): Promise<T | null> {
-  const cached = await kv.get(cacheKey);
-  if (cached !== null) {
-    if (cached === NOT_FOUND_SENTINEL) return null;
-    try {
-      return JSON.parse(cached) as T;
-    } catch {
-      // Corrupted cache entry, refetch
-    }
+async function cachedFetch<T>(url: string, cacheKey: string): Promise<T | null> {
+  const cached = cache.get(cacheKey);
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+    return cached.data as T | null;
   }
 
   try {
@@ -118,7 +97,7 @@ async function cachedFetch<T>(
     });
 
     if (response.status === 404) {
-      await kv.put(cacheKey, NOT_FOUND_SENTINEL, { expirationTtl: NOT_FOUND_TTL });
+      cache.set(cacheKey, { data: null, timestamp: Date.now() });
       return null;
     }
 
@@ -128,7 +107,7 @@ async function cachedFetch<T>(
     }
 
     const data = (await response.json()) as T;
-    await kv.put(cacheKey, JSON.stringify(data), { expirationTtl: CACHE_TTL });
+    cache.set(cacheKey, { data, timestamp: Date.now() });
     return data;
   } catch (error) {
     console.error(`[dnd-api] Fetch error for ${url}:`, error);
@@ -136,90 +115,34 @@ async function cachedFetch<T>(
   }
 }
 
-export async function lookupSpell(
-  name: string,
-  kv: KVNamespace,
-): Promise<SpellData | null> {
+export async function lookupSpell(name: string): Promise<SpellData | null> {
   const index = normalizeIndex(name);
-  return cachedFetch<SpellData>(
-    `${API_BASE}/spells/${index}`,
-    `dnd:spell:${index}`,
-    kv,
-  );
+  return cachedFetch<SpellData>(`${API_BASE}/spells/${index}`, `spell:${index}`);
 }
 
-export async function lookupMonster(
-  name: string,
-  kv: KVNamespace,
-): Promise<MonsterData | null> {
+export async function lookupMonster(name: string): Promise<MonsterData | null> {
   const index = normalizeIndex(name);
-  return cachedFetch<MonsterData>(
-    `${API_BASE}/monsters/${index}`,
-    `dnd:monster:${index}`,
-    kv,
-  );
+  return cachedFetch<MonsterData>(`${API_BASE}/monsters/${index}`, `monster:${index}`);
 }
 
-export async function lookupCondition(
-  name: string,
-  kv: KVNamespace,
-): Promise<ConditionData | null> {
+export async function lookupCondition(name: string): Promise<ConditionData | null> {
   const index = normalizeIndex(name);
-  return cachedFetch<ConditionData>(
-    `${API_BASE}/conditions/${index}`,
-    `dnd:condition:${index}`,
-    kv,
-  );
-}
-
-export async function lookupRule(
-  section: string,
-  kv: KVNamespace,
-): Promise<RuleData | null> {
-  const index = normalizeIndex(section);
-  return cachedFetch<RuleData>(
-    `${API_BASE}/rule-sections/${index}`,
-    `dnd:rule:${index}`,
-    kv,
-  );
-}
-
-export async function searchSpells(
-  query: string,
-  kv: KVNamespace,
-): Promise<SpellSearchResult[]> {
-  const normalized = query.toLowerCase().trim();
-  const cacheKey = `dnd:search:spell:${normalized}`;
-
-  const result = await cachedFetch<{ count: number; results: SpellSearchResult[] }>(
-    `${API_BASE}/spells?name=${encodeURIComponent(normalized)}`,
-    cacheKey,
-    kv,
-  );
-
-  return result?.results ?? [];
+  return cachedFetch<ConditionData>(`${API_BASE}/conditions/${index}`, `condition:${index}`);
 }
 
 export function formatSpellForAI(spell: SpellData): string {
   const lines: string[] = [];
-
   const school = spell.school?.name ?? "Unknown";
   const conc = spell.concentration ? ", Concentration" : "";
   const ritual = spell.ritual ? ", Ritual" : "";
-  lines.push(
-    `SPELL: ${spell.name} (Level ${spell.level}, ${school}${conc}${ritual})`,
-  );
+  lines.push(`SPELL: ${spell.name} (Level ${spell.level}, ${school}${conc}${ritual})`);
 
   const components = spell.components.join(", ");
   const material = spell.material ? ` (${spell.material})` : "";
-  lines.push(
-    `Casting Time: ${spell.casting_time} | Range: ${spell.range} | Components: ${components}${material}`,
-  );
+  lines.push(`Casting Time: ${spell.casting_time} | Range: ${spell.range} | Components: ${components}${material}`);
   lines.push(`Duration: ${spell.duration}`);
 
-  if (spell.desc.length > 0) {
-    lines.push(spell.desc[0]);
-  }
+  if (spell.desc.length > 0) lines.push(spell.desc[0]);
 
   if (spell.damage) {
     const dmgType = spell.damage.damage_type?.name ?? "untyped";
@@ -227,9 +150,7 @@ export function formatSpellForAI(spell: SpellData): string {
     if (slotLevels) {
       const baseLevel = String(spell.level);
       const baseDice = slotLevels[baseLevel] ?? Object.values(slotLevels)[0];
-      if (baseDice) {
-        lines.push(`Damage: ${baseDice} ${dmgType}`);
-      }
+      if (baseDice) lines.push(`Damage: ${baseDice} ${dmgType}`);
     }
   }
 
@@ -240,9 +161,7 @@ export function formatSpellForAI(spell: SpellData): string {
   }
 
   if (spell.area_of_effect) {
-    lines.push(
-      `Area: ${spell.area_of_effect.size}-ft ${spell.area_of_effect.type}`,
-    );
+    lines.push(`Area: ${spell.area_of_effect.size}-ft ${spell.area_of_effect.type}`);
   }
 
   if (spell.higher_level && spell.higher_level.length > 0) {
@@ -258,23 +177,19 @@ export function formatSpellForAI(spell: SpellData): string {
 
 export function formatMonsterForAI(monster: MonsterData): string {
   const lines: string[] = [];
-
   const ac = monster.armor_class?.[0]?.value ?? "?";
-  lines.push(
-    `MONSTER: ${monster.name} (${monster.size} ${monster.type}, ${monster.alignment})`,
-  );
-  lines.push(
-    `AC: ${ac} | HP: ${monster.hit_points} (${monster.hit_dice}) | Speed: ${formatSpeed(monster.speed)}`,
-  );
+  lines.push(`MONSTER: ${monster.name} (${monster.size} ${monster.type}, ${monster.alignment})`);
+  lines.push(`AC: ${ac} | HP: ${monster.hit_points} (${monster.hit_dice}) | Speed: ${formatSpeed(monster.speed)}`);
   lines.push(`CR: ${monster.challenge_rating} (${monster.xp} XP)`);
 
+  const mod = (s: number) => { const m = Math.floor((s - 10) / 2); return m >= 0 ? `+${m}` : `${m}`; };
   lines.push(
-    `STR ${monster.strength} (${mod(monster.strength)}) | DEX ${monster.dexterity} (${mod(monster.dexterity)}) | CON ${monster.constitution} (${mod(monster.constitution)}) | INT ${monster.intelligence} (${mod(monster.intelligence)}) | WIS ${monster.wisdom} (${mod(monster.wisdom)}) | CHA ${monster.charisma} (${mod(monster.charisma)})`,
+    `STR ${monster.strength} (${mod(monster.strength)}) | DEX ${monster.dexterity} (${mod(monster.dexterity)}) | CON ${monster.constitution} (${mod(monster.constitution)}) | INT ${monster.intelligence} (${mod(monster.intelligence)}) | WIS ${monster.wisdom} (${mod(monster.wisdom)}) | CHA ${monster.charisma} (${mod(monster.charisma)})`
   );
 
   if (monster.proficiencies.length > 0) {
     const profs = monster.proficiencies.map(
-      (p) => `${p.proficiency.name.replace("Skill: ", "").replace("Saving Throw: ", "Save:")} +${p.value}`,
+      (p) => `${p.proficiency.name.replace("Skill: ", "").replace("Saving Throw: ", "Save:")} +${p.value}`
     );
     lines.push(`Proficiencies: ${profs.join(", ")}`);
   }
@@ -284,35 +199,23 @@ export function formatMonsterForAI(monster: MonsterData): string {
     .map(([k, v]) => `${k.replace(/_/g, " ")}: ${v}`)
     .join(", ");
   if (senses) lines.push(`Senses: ${senses}`);
-
   if (monster.languages) lines.push(`Languages: ${monster.languages}`);
 
-  if (monster.special_abilities && monster.special_abilities.length > 0) {
+  if (monster.special_abilities?.length) {
     lines.push("--- Special Abilities ---");
-    for (const a of monster.special_abilities) {
-      lines.push(`${a.name}: ${a.desc}`);
-    }
+    for (const a of monster.special_abilities) lines.push(`${a.name}: ${a.desc}`);
   }
-
-  if (monster.actions && monster.actions.length > 0) {
+  if (monster.actions?.length) {
     lines.push("--- Actions ---");
-    for (const a of monster.actions) {
-      lines.push(`${a.name}: ${a.desc}`);
-    }
+    for (const a of monster.actions) lines.push(`${a.name}: ${a.desc}`);
   }
-
-  if (monster.legendary_actions && monster.legendary_actions.length > 0) {
+  if (monster.legendary_actions?.length) {
     lines.push("--- Legendary Actions ---");
-    for (const a of monster.legendary_actions) {
-      lines.push(`${a.name}: ${a.desc}`);
-    }
+    for (const a of monster.legendary_actions) lines.push(`${a.name}: ${a.desc}`);
   }
-
-  if (monster.reactions && monster.reactions.length > 0) {
+  if (monster.reactions?.length) {
     lines.push("--- Reactions ---");
-    for (const a of monster.reactions) {
-      lines.push(`${a.name}: ${a.desc}`);
-    }
+    for (const a of monster.reactions) lines.push(`${a.name}: ${a.desc}`);
   }
 
   return lines.join("\n");
@@ -322,19 +225,8 @@ export function formatConditionForAI(condition: ConditionData): string {
   return `CONDITION: ${condition.name}\n${condition.desc.join("\n")}`;
 }
 
-export function formatRuleForAI(rule: RuleData): string {
-  // Truncate very long rules to keep context manageable
-  const desc = rule.desc.length > 2000 ? rule.desc.slice(0, 2000) + "..." : rule.desc;
-  return `RULE: ${rule.name}\n${desc}`;
-}
-
 function formatSpeed(speed: Record<string, string>): string {
   return Object.entries(speed)
     .map(([type, val]) => (type === "walk" ? val : `${type} ${val}`))
     .join(", ");
-}
-
-function mod(score: number): string {
-  const m = Math.floor((score - 10) / 2);
-  return m >= 0 ? `+${m}` : `${m}`;
 }

@@ -9,7 +9,6 @@ export interface AuthUser {
 
 // Re-export types for convenience
 import type { CharacterData, PlayerInfo } from "./character";
-import type { AIAction } from "./ai-actions";
 import type {
   BattleMapState,
   CheckRequest,
@@ -25,17 +24,9 @@ import type {
 } from "./game-state";
 export type { CharacterData, PlayerInfo };
 
-// === AI Configuration (legacy — only used by extension internally) ===
+// === DM Bridge Configuration (flows through WebSocket) ===
 
-export interface AIConfig {
-  provider: string;
-  apiKey: string;
-  model?: string;
-}
-
-// === DM Extension Configuration (flows through WebSocket) ===
-
-export interface DMExtensionConfig {
+export interface DMBridgeConfig {
   provider: string;
   supportsTools: boolean;
 }
@@ -57,7 +48,7 @@ export interface ClientJoinMessage {
   password?: string;
 }
 
-/** Extension → Server: AI response for a dm_request */
+/** DM Bridge → Server: AI response for a dm_request */
 export interface ClientDMResponseMessage {
   type: "client:dm_response";
   requestId: string;
@@ -65,11 +56,27 @@ export interface ClientDMResponseMessage {
   error?: string;
 }
 
-/** Extension → Server: DM extension provider config changed */
+/** DM Bridge → Server: DM provider config changed */
 export interface ClientDMConfigMessage {
   type: "client:dm_config";
   provider: string;
   supportsTools: boolean;
+  campaigns?: { slug: string; name: string; lastPlayedAt: string; sessionCount: number }[];
+}
+
+/** Host-only: select or create a campaign */
+export interface ClientSetCampaignMessage {
+  type: "client:set_campaign";
+  campaignSlug?: string;
+  newCampaignName?: string;
+}
+
+/** DM Bridge → Server: campaign loaded confirmation */
+export interface ClientCampaignLoadedMessage {
+  type: "client:campaign_loaded";
+  campaignSlug: string;
+  campaignName: string;
+  sessionCount: number;
 }
 
 export interface ClientSetPasswordMessage {
@@ -145,6 +152,8 @@ export type ClientMessage =
   | ClientJoinMessage
   | ClientDMResponseMessage
   | ClientDMConfigMessage
+  | ClientSetCampaignMessage
+  | ClientCampaignLoadedMessage
   | ClientSetPasswordMessage
   | ClientKickPlayerMessage
   | ClientSetCharacterMessage
@@ -174,8 +183,6 @@ export interface ServerAIMessage {
   content: string;
   timestamp: number;
   id: string;
-  /** Structured game actions parsed from the AI response */
-  actions?: AIAction[];
 }
 
 export interface ServerSystemMessage {
@@ -189,17 +196,17 @@ export interface ServerRoomJoinedMessage {
   roomCode: string;
   players: string[];
   hostName: string;
-  hasApiKey: boolean;
-  aiProvider?: string;
-  aiModel?: string;
   isHost?: boolean;
   isReconnect?: boolean;
   user?: AuthUser;
   characters?: Record<string, CharacterData>;
   allPlayers?: PlayerInfo[];
   storyStarted?: boolean;
-  /** Whether a DM extension has connected and configured */
-  extensionConnected?: boolean;
+  /** Whether a DM bridge has connected */
+  dmConnected: boolean;
+  /** Active campaign info (if one is loaded) */
+  activeCampaignSlug?: string;
+  activeCampaignName?: string;
 }
 
 export interface ServerPlayerJoinedMessage {
@@ -289,12 +296,28 @@ export interface ServerEventLogMessage {
   event: GameEvent;
 }
 
-/** Server → Host: request the extension to make an AI call */
+/** Server → DM Bridge: request to make an AI call */
 export interface ServerDMRequestMessage {
   type: "server:dm_request";
   requestId: string;
   systemPrompt: string;
   messages: { role: "user" | "assistant"; content: string }[];
+}
+
+/** DM config update — forwarded to all clients when bridge connects/updates */
+export interface ServerDMConfigUpdateMessage {
+  type: "server:dm_config_update";
+  provider: string;
+  supportsTools: boolean;
+  campaigns?: { slug: string; name: string; lastPlayedAt: string; sessionCount: number }[];
+}
+
+/** Campaign loaded confirmation — Bridge → Worker → all clients */
+export interface ServerCampaignLoadedMessage {
+  type: "server:campaign_loaded";
+  campaignSlug: string;
+  campaignName: string;
+  sessionCount: number;
 }
 
 /** Broadcast when host destroys the room — all clients should disconnect */
@@ -320,4 +343,6 @@ export type ServerMessage =
   | ServerRollbackMessage
   | ServerEventLogMessage
   | ServerDMRequestMessage
+  | ServerDMConfigUpdateMessage
+  | ServerCampaignLoadedMessage
   | ServerRoomDestroyedMessage;

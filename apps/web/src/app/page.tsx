@@ -31,7 +31,7 @@ function HomePageInner() {
 
   // Load saved state on mount
   useEffect(() => {
-    // Clean up legacy ai_config from localStorage (now handled by extension)
+    // Clean up legacy ai_config from localStorage
     localStorage.removeItem("ai_config");
     localStorage.removeItem("anthropic_api_key");
 
@@ -218,7 +218,7 @@ function HomePageInner() {
               </div>
 
               <p className="text-xs text-gray-500">
-                Create a room and use the AIDND DM Extension to connect your AI provider.
+                Create a room and start the MCP bridge to connect Claude Code as the AI Dungeon Master.
               </p>
 
               <button

@@ -6,7 +6,7 @@ import type {
   CharacterDynamicData,
   CheckRequest,
   ClientMessage,
-  DMExtensionConfig,
+  DMBridgeConfig,
   GameState,
   PlayerInfo,
   ServerMessage,
@@ -17,11 +17,7 @@ import {
   getSavingThrowModifier,
 } from "@aidnd/shared/utils";
 import { MAX_PLAYERS_PER_ROOM } from "@aidnd/shared";
-import { runDMPrep } from "../services/dm-prep";
 import { verifyJWT } from "../auth/jwt";
-import { buildDMSystemPrompt } from "../prompts/dm-system";
-import { parseAIResponse } from "../services/ai-parser";
-import { resolveActions } from "../services/state-resolver";
 import { rollCheck } from "../services/dice";
 import type { Env, RoomMeta } from "../types";
 
@@ -81,7 +77,7 @@ const DEFAULT_GAME_STATE: GameState = {
 
 export class GameRoom extends DurableObject<Env> {
   private sessions: Map<WebSocket, SessionData> = new Map();
-  private dmExtensionConfig: DMExtensionConfig | null = null;
+  private dmBridgeConfig: DMBridgeConfig | null = null;
   private conversationHistory: ConversationMessage[] = [];
   private pendingDMRequests = new Map<string, {
     resolve: (text: string) => void;
@@ -101,8 +97,9 @@ export class GameRoom extends DurableObject<Env> {
   /** Whether this room was explicitly created via /api/rooms/create */
   private created: boolean = false;
   private createdAt: number = 0;
-  /** DM Prep summary — cached from story start, injected into system prompt */
-  private dmPrepSummary: string = "";
+  /** Active campaign slug (set via set_campaign, stored for display/reconnect) */
+  private activeCampaignSlug: string | null = null;
+  private activeCampaignName: string | null = null;
 
   constructor(ctx: DurableObjectState, env: Env) {
     super(ctx, env);
@@ -132,8 +129,10 @@ export class GameRoom extends DurableObject<Env> {
       const [
         chatLog, conversationHistory, roomCode,
         hostPlayerName, characters, allPlayerRecords, storyStarted,
-        gameState, created, password, createdAt, dmPrepSummary,
-        dmExtensionConfig,
+        gameState, created, password, createdAt,
+        dmBridgeConfig,
+        activeCampaignSlug,
+        activeCampaignName,
       ] = await Promise.all([
         this.ctx.storage.get<ServerMessage[]>("chatLog"),
         this.ctx.storage.get<ConversationMessage[]>("conversationHistory"),
@@ -146,8 +145,9 @@ export class GameRoom extends DurableObject<Env> {
         this.ctx.storage.get<boolean>("created"),
         this.ctx.storage.get<string>("password"),
         this.ctx.storage.get<number>("createdAt"),
-        this.ctx.storage.get<string>("dmPrepSummary"),
-        this.ctx.storage.get<DMExtensionConfig>("dmExtensionConfig"),
+        this.ctx.storage.get<DMBridgeConfig>("dmBridgeConfig"),
+        this.ctx.storage.get<string>("activeCampaignSlug"),
+        this.ctx.storage.get<string>("activeCampaignName"),
       ]);
       if (chatLog) this.chatLog = chatLog;
       if (conversationHistory) this.conversationHistory = conversationHistory;
@@ -160,8 +160,9 @@ export class GameRoom extends DurableObject<Env> {
       if (created) this.created = created;
       if (password) this.password = password;
       if (createdAt) this.createdAt = createdAt;
-      if (dmPrepSummary) this.dmPrepSummary = dmPrepSummary;
-      if (dmExtensionConfig) this.dmExtensionConfig = dmExtensionConfig;
+      if (dmBridgeConfig) this.dmBridgeConfig = dmBridgeConfig;
+      if (activeCampaignSlug) this.activeCampaignSlug = activeCampaignSlug;
+      if (activeCampaignName) this.activeCampaignName = activeCampaignName;
       this.storageLoaded = true;
     });
   }
@@ -197,100 +198,6 @@ export class GameRoom extends DurableObject<Env> {
   ): Promise<void> {
     this.conversationHistory.push(...messages);
     await this.ctx.storage.put("conversationHistory", this.conversationHistory);
-  }
-
-  // ─── Conversation Compaction ───
-
-  private static readonly COMPACTION_THRESHOLD = 40;
-  private static readonly KEEP_RECENT = 14;
-
-  /**
-   * Compact conversation history if it exceeds the threshold.
-   * Replaces old messages with a server-side summary, keeping recent messages verbatim.
-   * The campaign journal provides structured continuity that compaction might lose.
-   */
-  private async compactConversationIfNeeded(): Promise<void> {
-    if (this.conversationHistory.length < GameRoom.COMPACTION_THRESHOLD) return;
-
-    const oldMessages = this.conversationHistory.slice(0, -GameRoom.KEEP_RECENT);
-    const recentMessages = this.conversationHistory.slice(-GameRoom.KEEP_RECENT);
-
-    const summary = this.buildConversationSummary(oldMessages);
-
-    // Replace history: [summary] + recent messages
-    this.conversationHistory = [
-      { role: "user", content: `[Session recap: ${summary}]` },
-      {
-        role: "assistant",
-        content:
-          "Understood. I have the session context and will continue the adventure seamlessly.",
-      },
-      ...recentMessages,
-    ];
-
-    await this.ctx.storage.put("conversationHistory", this.conversationHistory);
-  }
-
-  /**
-   * Build a heuristic summary from old conversation messages (no AI call).
-   * Extracts system messages (check results, combat events), player actions,
-   * and key narrative beats.
-   */
-  private buildConversationSummary(messages: ConversationMessage[]): string {
-    const systemEvents: string[] = [];
-    const playerActions: Map<string, string> = new Map(); // last action per player
-    const narrativeBeats: string[] = [];
-
-    for (const msg of messages) {
-      if (msg.role === "user") {
-        // System messages like "[System: Thorin rolled 18...]"
-        const sysMatch = msg.content.match(/^\[System:\s*(.+)\]$/);
-        if (sysMatch) {
-          systemEvents.push(sysMatch[1]);
-          continue;
-        }
-        // Player messages like "[PlayerName]: action"
-        const playerMatch = msg.content.match(/^\[(.+?)\]:\s*(.+)$/);
-        if (playerMatch) {
-          playerActions.set(playerMatch[1], playerMatch[2]);
-        }
-      } else {
-        // AI responses — extract first sentence as narrative beat
-        const text = msg.content
-          .replace(/```json:actions[\s\S]*?```/g, "") // strip action blocks
-          .trim();
-        if (text.length > 0) {
-          const firstSentence = text.split(/[.!?]\s/)[0];
-          if (firstSentence && firstSentence.length > 10 && firstSentence.length < 200) {
-            narrativeBeats.push(firstSentence.replace(/^\*+|\*+$/g, "").trim());
-          }
-        }
-      }
-    }
-
-    const parts: string[] = [];
-
-    // Keep last ~5 narrative beats for story context
-    if (narrativeBeats.length > 0) {
-      const recent = narrativeBeats.slice(-5);
-      parts.push("Story beats: " + recent.join(". ") + ".");
-    }
-
-    // Include notable system events (combat results, checks)
-    if (systemEvents.length > 0) {
-      const recent = systemEvents.slice(-8);
-      parts.push("Events: " + recent.join("; "));
-    }
-
-    // Last player actions
-    if (playerActions.size > 0) {
-      const actions = Array.from(playerActions.entries())
-        .map(([name, action]) => `${name}: "${action}"`)
-        .join(", ");
-      parts.push("Recent player actions: " + actions);
-    }
-
-    return parts.join(" | ") || "The adventure continues...";
   }
 
   async fetch(request: Request): Promise<Response> {
@@ -375,13 +282,61 @@ export class GameRoom extends DurableObject<Env> {
         break;
       }
       case "client:dm_config": {
-        this.dmExtensionConfig = { provider: msg.provider, supportsTools: msg.supportsTools };
-        this.ctx.storage.put("dmExtensionConfig", this.dmExtensionConfig);
-        // Notify all players the extension is connected
+        this.dmBridgeConfig = { provider: msg.provider, supportsTools: msg.supportsTools };
+        this.ctx.storage.put("dmBridgeConfig", this.dmBridgeConfig);
+        // Notify all players the DM bridge is connected
+        const campaignInfo = this.activeCampaignName
+          ? ` Campaign: ${this.activeCampaignName}.`
+          : "";
         this.broadcast({
           type: "server:system",
-          content: `DM Extension connected (${msg.provider}). The AI Dungeon Master is ready!`,
+          content: `DM connected (${msg.provider}). The AI Dungeon Master is ready!${campaignInfo}`,
           timestamp: Date.now(),
+        });
+        // Forward dm_config (with campaigns list) to all clients
+        this.broadcast({
+          type: "server:dm_config_update",
+          provider: msg.provider,
+          supportsTools: msg.supportsTools,
+          campaigns: msg.campaigns,
+        });
+        break;
+      }
+      case "client:set_campaign": {
+        // Host-only: relay to DM bridge
+        const setCampSession = this.sessions.get(ws);
+        if (setCampSession?.status !== "host") {
+          this.sendTo(ws, {
+            type: "server:error",
+            message: "Only the host can set the campaign",
+            code: "NOT_HOST",
+          });
+          break;
+        }
+        // Forward raw JSON to DM bridge (bridge parses it directly)
+        const dmWsForCampaign = this.findDMBridgeWebSocket();
+        if (dmWsForCampaign) {
+          dmWsForCampaign.send(JSON.stringify(msg));
+        } else {
+          this.sendTo(ws, {
+            type: "server:error",
+            message: "DM bridge not connected",
+            code: "NO_DM",
+          });
+        }
+        break;
+      }
+      case "client:campaign_loaded": {
+        // From DM bridge: store and broadcast
+        this.activeCampaignSlug = msg.campaignSlug;
+        this.activeCampaignName = msg.campaignName;
+        this.ctx.storage.put("activeCampaignSlug", msg.campaignSlug);
+        this.ctx.storage.put("activeCampaignName", msg.campaignName);
+        this.broadcast({
+          type: "server:campaign_loaded",
+          campaignSlug: msg.campaignSlug,
+          campaignName: msg.campaignName,
+          sessionCount: msg.sessionCount,
         });
         break;
       }
@@ -631,15 +586,15 @@ export class GameRoom extends DurableObject<Env> {
       roomCode,
       players: this.getPlayerNames(),
       hostName: this.getHostName(),
-      hasApiKey: this.dmExtensionConfig !== null,
-      aiProvider: this.dmExtensionConfig?.provider,
       isHost: session.status === "host",
       isReconnect,
       user: authUser,
       characters: this.getCharactersByPlayerName(),
       allPlayers: this.getAllPlayersWithStatus(),
       storyStarted: this.storyStarted,
-      extensionConnected: this.dmExtensionConfig !== null,
+      dmConnected: this.dmBridgeConfig !== null,
+      activeCampaignSlug: this.activeCampaignSlug ?? undefined,
+      activeCampaignName: this.activeCampaignName ?? undefined,
     });
 
     // Replay full chat log so joining/reconnecting players see all history
@@ -828,7 +783,7 @@ export class GameRoom extends DurableObject<Env> {
 
     // Reset in-memory state
     this.sessions.clear();
-    this.dmExtensionConfig = null;
+    this.dmBridgeConfig = null;
     this.pendingDMRequests.clear();
     this.conversationHistory = [];
     this.hostUserId = null;
@@ -843,7 +798,6 @@ export class GameRoom extends DurableObject<Env> {
     this.created = false;
     this.password = null;
     this.createdAt = 0;
-    this.dmPrepSummary = "";
   }
 
   private async handleChat(
@@ -868,7 +822,7 @@ export class GameRoom extends DurableObject<Env> {
       id: crypto.randomUUID(),
     });
 
-    if (this.dmExtensionConfig) {
+    if (this.dmBridgeConfig) {
       // Use character name for AI context so the DM addresses the character, not the player
       const character = this.characters.get(session.userId);
       const speakerName = character?.static.name || session.playerName;
@@ -876,33 +830,45 @@ export class GameRoom extends DurableObject<Env> {
     }
   }
 
-  // --- AI ---
+  // --- AI (DM Bridge) ---
 
   /**
-   * Send a dm_request to the host's browser extension and await the response.
-   * The extension handles AI API calls, tool-use loops, and D&D API lookups.
+   * Find the DM bridge participant's WebSocket connection.
+   * The MCP bridge joins as a player named "DM" with guestId "aidnd-dm-bridge".
+   */
+  private findDMBridgeWebSocket(): WebSocket | null {
+    for (const [ws, session] of this.sessions.entries()) {
+      if (session.playerName === "DM") return ws;
+    }
+    return null;
+  }
+
+  /**
+   * Send a dm_request to the DM bridge (MCP server) and await the response.
+   * The bridge routes requests to Claude Code, which handles AI reasoning,
+   * D&D tool lookups, and narrative generation.
    */
   private async makeAICall(
     systemPrompt: string,
     messages: ConversationMessage[],
   ): Promise<{ text: string }> {
-    const hostWs = this.findHostWebSocket();
-    if (!hostWs) throw new Error("Host not connected — cannot reach DM extension");
+    const dmWs = this.findDMBridgeWebSocket();
+    if (!dmWs) throw new Error("DM bridge not connected — start the MCP bridge server");
 
     const requestId = crypto.randomUUID();
 
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
         this.pendingDMRequests.delete(requestId);
-        reject(new Error("DM extension did not respond (timeout after 2 minutes)"));
-      }, 120_000);
+        reject(new Error("DM bridge did not respond (timeout after 5 minutes)"));
+      }, 300_000);
 
       this.pendingDMRequests.set(requestId, {
         resolve: (text) => { clearTimeout(timeout); resolve({ text }); },
         reject: (err) => { clearTimeout(timeout); reject(err); },
       });
 
-      this.sendTo(hostWs, {
+      this.sendTo(dmWs, {
         type: "server:dm_request",
         requestId,
         systemPrompt,
@@ -911,15 +877,64 @@ export class GameRoom extends DurableObject<Env> {
     });
   }
 
-  private async sendAIGreeting(): Promise<void> {
-    if (!this.dmExtensionConfig) return;
+  /**
+   * Request AI response from the DM bridge and broadcast the result.
+   * The DM bridge / Claude Code handles all narrative generation, D&D lookups, etc.
+   */
+  private async getAIResponse(
+    playerName: string,
+    content: string
+  ): Promise<void> {
+    if (!this.dmBridgeConfig) {
+      this.broadcast({
+        type: "server:system",
+        content:
+          "No DM bridge connected. Start the MCP bridge server to enable the AI Dungeon Master.",
+        timestamp: Date.now(),
+      });
+      return;
+    }
 
-    const providerName = this.dmExtensionConfig.provider;
-    const characterMap = this.getCharactersByPlayerName();
-    const systemPrompt = this.buildSystemPrompt(characterMap);
+    // Sanitize: replace any [Name]: patterns in content to prevent speaker injection
+    const sanitizedContent = content.replace(/\[([^\]]+)\]\s*:/g, "($1):");
+    const userMessage = `[${playerName}]: ${sanitizedContent}`;
+    await this.appendToConversation({ role: "user", content: userMessage });
 
     try {
-      const playerNames = this.getPlayerNames();
+      const systemPrompt = this.gameState.customSystemPrompt ?? "";
+      const result = await this.makeAICall(systemPrompt, this.conversationHistory);
+
+      // Store in conversation history
+      await this.appendToConversation({
+        role: "assistant",
+        content: result.text,
+      });
+
+      // Broadcast the AI narrative
+      this.broadcast({
+        type: "server:ai",
+        content: result.text,
+        timestamp: Date.now(),
+        id: crypto.randomUUID(),
+      });
+    } catch (error) {
+      this.broadcast({
+        type: "server:error",
+        message:
+          error instanceof Error
+            ? error.message
+            : "DM bridge request failed",
+        code: "AI_ERROR",
+      });
+    }
+  }
+
+  private async sendAIGreeting(): Promise<void> {
+    if (!this.dmBridgeConfig) return;
+
+    try {
+      const characterMap = this.getCharactersByPlayerName();
+      const playerNames = this.getPlayerNames().filter((n) => n !== "DM");
       const partyDescriptions = playerNames.map((name) => {
         const char = characterMap[name];
         if (char) {
@@ -932,332 +947,34 @@ export class GameRoom extends DurableObject<Env> {
       });
 
       const userMsg = `The adventuring party has gathered: ${partyDescriptions.join(", ")}. Set the scene and introduce each character!`;
+      const systemPrompt = this.gameState.customSystemPrompt ?? "";
 
       const result = await this.makeAICall(
         systemPrompt,
         [{ role: "user", content: userMsg }],
       );
 
-      // Parse AI response for actions
-      const parsed = parseAIResponse(result.text);
-
       await this.appendToConversation(
         { role: "user", content: `[Party gathered: ${playerNames.join(", ")}]` },
         { role: "assistant", content: result.text }
       );
 
-      // Resolve any actions from the greeting
-      await this.processAIActions(parsed.narrative, parsed.actions);
-    } catch (error) {
+      // Broadcast the AI greeting
       this.broadcast({
-        type: "server:error",
-        message:
-          error instanceof Error
-            ? error.message
-            : `${providerName} request failed`,
-        code: "AI_ERROR",
-      });
-    }
-  }
-
-  private async getAIResponse(
-    playerName: string,
-    content: string
-  ): Promise<void> {
-    if (!this.dmExtensionConfig) {
-      this.broadcast({
-        type: "server:system",
-        content:
-          "No DM extension connected. The host needs to install and configure the AIDND DM Extension.",
-        timestamp: Date.now(),
-      });
-      return;
-    }
-
-    const providerName = this.dmExtensionConfig.provider;
-
-    // Sanitize: replace any [Name]: patterns in content to prevent speaker injection
-    const sanitizedContent = content.replace(/\[([^\]]+)\]\s*:/g, "($1):");
-    const userMessage = `[${playerName}]: ${sanitizedContent}`;
-    await this.appendToConversation({ role: "user", content: userMessage });
-
-    try {
-      const systemPrompt = this.buildSystemPrompt(this.getCharactersByPlayerName());
-
-      const result = await this.makeAICall(systemPrompt, this.conversationHistory);
-
-      // Parse AI response for structured actions
-      const parsed = parseAIResponse(result.text);
-
-      // Store the raw text in conversation history (including JSON blocks)
-      await this.appendToConversation({
-        role: "assistant",
+        type: "server:ai",
         content: result.text,
-      });
-
-      // Compact conversation if it's grown too long
-      await this.compactConversationIfNeeded();
-
-      // Process narrative + actions
-      await this.processAIActions(parsed.narrative, parsed.actions);
-    } catch (error) {
-      this.broadcast({
-        type: "server:error",
-        message:
-          error instanceof Error
-            ? error.message
-            : `${providerName} request failed`,
-        code: "AI_ERROR",
-      });
-    }
-  }
-
-  /** Build system prompt with current game state context. */
-  private buildSystemPrompt(characters: Record<string, CharacterData>): string {
-    const hasToolAccess = this.dmExtensionConfig?.supportsTools ?? false;
-    const map = this.gameState.encounter?.map;
-    return buildDMSystemPrompt({
-      characters,
-      customPrompt: this.gameState.customSystemPrompt,
-      pacingProfile: this.gameState.pacingProfile,
-      encounterLength: this.gameState.encounterLength,
-      combatState: this.gameState.encounter?.combat ?? undefined,
-      mapSize: map ? { width: map.width, height: map.height } : undefined,
-      journal: this.gameState.journal,
-      dmPrepSummary: this.dmPrepSummary || undefined,
-      hasToolAccess,
-    });
-  }
-
-  /**
-   * Process parsed AI response: broadcast narrative, resolve actions,
-   * apply state changes, and broadcast updates.
-   */
-  private async processAIActions(
-    narrative: string,
-    actions: import("@aidnd/shared/types").AIAction[],
-    npcTurnDepth: number = 0
-  ): Promise<void> {
-    // Broadcast the AI narrative message (with actions metadata)
-    this.broadcast({
-      type: "server:ai",
-      content: narrative,
-      timestamp: Date.now(),
-      id: crypto.randomUUID(),
-      actions: actions.length > 0 ? actions : undefined,
-    });
-
-    if (actions.length === 0) return;
-
-    // Resolve actions against game state
-    const result = resolveActions(
-      actions,
-      this.gameState,
-      this.characters,
-      this.conversationHistory.length
-    );
-
-    // Apply character updates
-    for (const [userId, dynamicData] of result.characterUpdates) {
-      const char = this.characters.get(userId);
-      if (char) {
-        char.dynamic = dynamicData;
-        // Broadcast character update to all players
-        const playerName = this.getPlayerNameByUserId(userId);
-        if (playerName) {
-          this.broadcast({
-            type: "server:character_updated",
-            playerName,
-            character: char,
-          });
-        }
-      }
-    }
-
-    // Apply combat update (null = combat ended, CombatState = updated)
-    if (result.combatUpdate !== undefined) {
-      if (this.gameState.encounter) {
-        this.gameState.encounter.combat = result.combatUpdate ?? undefined;
-      }
-      this.broadcast({
-        type: "server:combat_update",
-        combat: result.combatUpdate ?? null,
-        map: this.gameState.encounter?.map ?? null,
-        timestamp: Date.now(),
-      });
-    }
-
-    // Process check requests — auto-roll for NPCs, broadcast to players
-    for (const check of result.checkRequests) {
-      const combat = this.gameState.encounter?.combat;
-      const isNPC = combat && Object.values(combat.combatants).some(
-        (c) =>
-          c.name.toLowerCase() === check.targetCharacter.toLowerCase() &&
-          c.type !== "player"
-      );
-
-      if (isNPC) {
-        await this.autoRollForNPC(check);
-      } else {
-        this.broadcast({
-          type: "server:check_request",
-          check,
-          timestamp: Date.now(),
-          id: crypto.randomUUID(),
-        });
-      }
-    }
-
-    // Append events to log, broadcast to host
-    for (const event of result.events) {
-      this.gameState.eventLog.push(event);
-      // Trim to last 100 events
-      if (this.gameState.eventLog.length > 100) {
-        this.gameState.eventLog = this.gameState.eventLog.slice(-100);
-      }
-      // Broadcast event to host for rollback UI
-      const hostWs = this.findHostWebSocket();
-      if (hostWs) {
-        this.sendTo(hostWs, {
-          type: "server:event_log",
-          event,
-        });
-      }
-    }
-
-    // Log warnings
-    for (const w of result.warnings) {
-      console.warn("[StateResolver]", w);
-    }
-
-    // Broadcast damage dice rolls
-    for (const dmgRoll of result.damageRolls) {
-      this.broadcast({
-        type: "server:dice_roll",
-        roll: dmgRoll.roll,
-        playerName: "DM",
         timestamp: Date.now(),
         id: crypto.randomUUID(),
       });
-    }
-
-    // Broadcast user-visible system messages (combat setup info, etc.)
-    for (const msg of result.systemMessages) {
+    } catch (error) {
       this.broadcast({
-        type: "server:system",
-        content: msg,
-        timestamp: Date.now(),
+        type: "server:error",
+        message:
+          error instanceof Error
+            ? error.message
+            : "DM bridge greeting failed",
+        code: "AI_ERROR",
       });
-    }
-
-    // Persist updated state
-    await this.persistGameState();
-    if (result.characterUpdates.size > 0) {
-      this.persistCharacters();
-    }
-
-    // Auto-advance NPC turns and continue NPC loop
-    const currentCombat = this.gameState.encounter?.combat;
-    if (
-      currentCombat &&
-      currentCombat.phase === "active" &&
-      npcTurnDepth < 10 &&
-      this.dmExtensionConfig
-    ) {
-      const hasTurnEnd = actions.some((a) => a.type === "turn_end");
-      const activeId = currentCombat.turnOrder[currentCombat.turnIndex];
-      const activeCombatant = currentCombat.combatants[activeId];
-
-      // If an NPC just acted and the AI didn't emit turn_end, auto-advance their turn
-      if (!hasTurnEnd && activeCombatant && activeCombatant.type !== "player") {
-        this.advanceTurn(currentCombat);
-        this.broadcast({
-          type: "server:combat_update",
-          combat: currentCombat,
-          map: this.gameState.encounter?.map ?? null,
-          timestamp: Date.now(),
-        });
-        await this.persistGameState();
-      }
-
-      // Continue resolving consecutive NPC turns
-      await this.triggerNPCTurn(npcTurnDepth + 1);
-    }
-  }
-
-  /**
-   * Auto-roll a check for an NPC/enemy combatant.
-   * Uses the same server-side rollCheck() as player rolls (crypto-random).
-   */
-  private async autoRollForNPC(check: CheckRequest): Promise<void> {
-    // Default modifier +0 for NPCs (they don't have full CharacterData)
-    const modifier = 0;
-
-    const roll = rollCheck({
-      modifier,
-      advantage: check.advantage,
-      disadvantage: check.disadvantage,
-      label: buildCheckLabel(check),
-    });
-
-    const success = check.dc !== undefined ? roll.total >= check.dc : true;
-
-    // Broadcast dice roll (NPC name as playerName)
-    this.broadcast({
-      type: "server:dice_roll",
-      roll,
-      playerName: check.targetCharacter,
-      timestamp: Date.now(),
-      id: crypto.randomUUID(),
-    });
-
-    // Broadcast check result
-    this.broadcast({
-      type: "server:check_result",
-      result: {
-        requestId: check.id,
-        roll,
-        dc: check.dc,
-        success,
-        characterName: check.targetCharacter,
-      },
-      timestamp: Date.now(),
-      id: crypto.randomUUID(),
-    });
-
-    // Inject result into AI conversation
-    const resultLabel = success ? "Success" : "Failure";
-    const dcStr = check.dc !== undefined ? ` (DC ${check.dc})` : "";
-    const systemMsg = `[System: ${check.targetCharacter} rolled ${roll.total} on ${check.reason}${dcStr} — ${resultLabel}${roll.criticalHit ? " (Critical!)" : ""}${roll.criticalFail ? " (Critical Fail!)" : ""}]`;
-    await this.appendToConversation({ role: "user", content: systemMsg });
-
-    // Trigger AI to narrate the outcome
-    if (this.dmExtensionConfig) {
-      try {
-        const systemPrompt = this.buildSystemPrompt(
-          this.getCharactersByPlayerName()
-        );
-        const aiResult = await this.makeAICall(
-          systemPrompt,
-          this.conversationHistory,
-        );
-        const parsed = parseAIResponse(aiResult.text);
-        await this.appendToConversation({
-          role: "assistant",
-          content: aiResult.text,
-        });
-        await this.compactConversationIfNeeded();
-        await this.processAIActions(parsed.narrative, parsed.actions);
-      } catch (error) {
-        this.broadcast({
-          type: "server:error",
-          message:
-            error instanceof Error
-              ? error.message
-              : "AI follow-up failed after NPC roll",
-          code: "AI_ERROR",
-        });
-      }
     }
   }
 
@@ -1313,11 +1030,11 @@ export class GameRoom extends DurableObject<Env> {
       return;
     }
 
-    if (!this.dmExtensionConfig) {
+    if (!this.dmBridgeConfig) {
       this.sendTo(ws, {
         type: "server:error",
-        message: "DM Extension not connected. Install and configure the AIDND DM Extension first.",
-        code: "NO_DM_EXTENSION",
+        message: "DM bridge not connected. Start the MCP bridge server first.",
+        code: "NO_DM_BRIDGE",
       });
       return;
     }
@@ -1330,19 +1047,6 @@ export class GameRoom extends DurableObject<Env> {
       content: "The adventure begins...",
       timestamp: Date.now(),
     });
-
-    // Run DM Prep phase — pre-fetch party spells and build capabilities summary
-    try {
-      const prep = await runDMPrep(
-        this.getCharactersByPlayerName(),
-        this.env.DND_CACHE,
-      );
-      this.dmPrepSummary = prep.prepSummary;
-      await this.ctx.storage.put("dmPrepSummary", this.dmPrepSummary);
-    } catch (error) {
-      console.error("[DM Prep] Non-fatal error:", error);
-      // Non-fatal — continue without prep data
-    }
 
     await this.sendAIGreeting();
   }
@@ -1428,19 +1132,18 @@ export class GameRoom extends DurableObject<Env> {
 
     await this.appendToConversation({ role: "user", content: systemMsg });
 
-    // Trigger AI to narrate the outcome
-    if (this.dmExtensionConfig) {
+    // Trigger AI to narrate the outcome via DM bridge
+    if (this.dmBridgeConfig) {
       try {
-        const systemPrompt = this.buildSystemPrompt(this.getCharactersByPlayerName());
-        const result = await this.makeAICall(
-          systemPrompt,
-          this.conversationHistory,
-        );
-
-        const parsed = parseAIResponse(result.text);
-        await this.appendToConversation({ role: "assistant", content: result.text });
-        await this.compactConversationIfNeeded();
-        await this.processAIActions(parsed.narrative, parsed.actions);
+        const systemPrompt = this.gameState.customSystemPrompt ?? "";
+        const aiResult = await this.makeAICall(systemPrompt, this.conversationHistory);
+        await this.appendToConversation({ role: "assistant", content: aiResult.text });
+        this.broadcast({
+          type: "server:ai",
+          content: aiResult.text,
+          timestamp: Date.now(),
+          id: crypto.randomUUID(),
+        });
       } catch (error) {
         this.broadcast({
           type: "server:error",
@@ -1484,7 +1187,7 @@ export class GameRoom extends DurableObject<Env> {
       id: crypto.randomUUID(),
     });
 
-    if (this.dmExtensionConfig) {
+    if (this.dmBridgeConfig) {
       await this.getAIResponse(session.playerName, msg.action);
     }
   }
@@ -1502,12 +1205,15 @@ export class GameRoom extends DurableObject<Env> {
     }
   }
 
-  /** Trigger AI to resolve the active NPC's turn, then auto-advance and continue for consecutive NPCs. */
+  /**
+   * Trigger AI to resolve the active NPC's turn via the DM bridge.
+   * Sends turn context, gets narrative response, auto-advances and recurses for consecutive NPCs.
+   */
   private async triggerNPCTurn(npcTurnDepth: number = 0): Promise<void> {
     if (npcTurnDepth >= 10) return;
 
     const combat = this.gameState.encounter?.combat;
-    if (!combat || combat.phase !== "active" || !this.dmExtensionConfig) return;
+    if (!combat || combat.phase !== "active" || !this.dmBridgeConfig) return;
 
     const activeId = combat.turnOrder[combat.turnIndex];
     const activeCombatant = combat.combatants[activeId];
@@ -1515,7 +1221,7 @@ export class GameRoom extends DurableObject<Env> {
 
     await new Promise((resolve) => setTimeout(resolve, 2000));
 
-    // Build a position-aware turn message so the AI knows where everyone is
+    // Build NPC turn context message
     const pos = activeCombatant.position;
     const posStr = pos ? ` at position (${pos.x},${pos.y})` : "";
     const speed = activeCombatant.speed ?? 30;
@@ -1525,115 +1231,54 @@ export class GameRoom extends DurableObject<Env> {
       ? ` Conditions: ${activeCombatant.conditions.join(", ")}.`
       : "";
 
-    // Build player AC lookup from character data
-    const charsByName: Record<string, import("@aidnd/shared/types").CharacterData> = {};
-    for (const char of this.characters.values()) {
-      charsByName[char.static.name.toLowerCase()] = char;
-    }
-
-    // Size-aware distance: minimum Chebyshev between any occupied tiles of two creatures
-    const sizeSpan = (s: string) => s === "large" ? 2 : s === "huge" ? 3 : s === "gargantuan" ? 4 : 1;
-    const multiTileDist = (aPos: { x: number; y: number }, aSize: string, bPos: { x: number; y: number }, bSize: string): number => {
-      const aSpan = sizeSpan(aSize);
-      const bSpan = sizeSpan(bSize);
-      let minDist = Infinity;
-      for (let ay = 0; ay < aSpan; ay++) {
-        for (let ax = 0; ax < aSpan; ax++) {
-          for (let by = 0; by < bSpan; by++) {
-            for (let bx = 0; bx < bSpan; bx++) {
-              const d = Math.max(Math.abs((aPos.x + ax) - (bPos.x + bx)), Math.abs((aPos.y + ay) - (bPos.y + by)));
-              if (d < minDist) minDist = d;
-            }
-          }
-        }
-      }
-      return minDist;
-    };
-
-    // Find nearby targets with AC info
-    const targets = Object.values(combat.combatants)
-      .filter((c) => c.id !== activeId && c.position && (!("currentHP" in c) || (c.currentHP ?? 1) > 0))
-      .map((c) => {
-        const dist = pos && c.position
-          ? multiTileDist(pos, activeCombatant.size, c.position, c.size) * 5
-          : null;
-        // Get AC: from combatant (enemy/npc) or from character sheet (player)
-        let targetAC: number | string = "?";
-        if (c.type === "player") {
-          const pChar = charsByName[c.name.toLowerCase()];
-          if (pChar) targetAC = pChar.static.armorClass;
-        } else {
-          targetAC = c.armorClass ?? "?";
-        }
-        return { name: c.name, type: c.type, dist, pos: c.position, ac: targetAC };
-      })
-      .sort((a, b) => (a.dist ?? 999) - (b.dist ?? 999));
-
-    const targetLines = targets
-      .slice(0, 4)
-      .map((t) => {
-        const adjacent = t.dist !== null && t.dist <= 5 ? "ADJACENT" : "NOT adjacent — must move before melee";
-        return `  - ${t.name} (${t.type}) at (${t.pos?.x},${t.pos?.y}), AC ${t.ac}, ${t.dist}ft away [${adjacent}]`;
-      })
-      .join("\n");
-
-    const turnMsg = `[System: It is now ${activeCombatant.name}'s turn${posStr}. HP: ${hp}, AC: ${ac}, Speed: ${speed}ft.${conditions}\nNearby targets:\n${targetLines}\nUse lookup_monster if you haven't already verified this creature's stat block.\nResolve this combatant's turn: check adjacency, move if needed (emit "move"), then attack/act.]`;
+    const turnMsg = `[System: It is now ${activeCombatant.name}'s turn${posStr}. HP: ${hp}, AC: ${ac}, Speed: ${speed}ft.${conditions}\nResolve this combatant's turn.]`;
     await this.appendToConversation({ role: "user", content: turnMsg });
 
     try {
-      const systemPrompt = this.buildSystemPrompt(this.getCharactersByPlayerName());
+      const systemPrompt = this.gameState.customSystemPrompt ?? "";
       let aiResult = await this.makeAICall(systemPrompt, this.conversationHistory);
 
-      // Retry once on empty response
       if (!aiResult.text || !aiResult.text.trim()) {
-        console.warn("[NPC Turn] Empty AI response for", activeCombatant.name, "— retrying");
+        console.warn("[NPC Turn] Empty response for", activeCombatant.name, "— retrying");
         aiResult = await this.makeAICall(systemPrompt, this.conversationHistory);
       }
 
-      const parsed = parseAIResponse(aiResult.text);
       await this.appendToConversation({ role: "assistant", content: aiResult.text });
-      await this.compactConversationIfNeeded();
-      await this.processAIActions(parsed.narrative, parsed.actions, npcTurnDepth);
+
+      this.broadcast({
+        type: "server:ai",
+        content: aiResult.text,
+        timestamp: Date.now(),
+        id: crypto.randomUUID(),
+      });
+
+      // Auto-advance NPC turn and continue loop
+      this.advanceTurn(combat);
+      this.broadcast({
+        type: "server:combat_update",
+        combat,
+        map: this.gameState.encounter?.map ?? null,
+        timestamp: Date.now(),
+      });
+      await this.persistGameState();
+      await this.triggerNPCTurn(npcTurnDepth + 1);
     } catch (error) {
-      const errMsg = error instanceof Error ? error.message : String(error);
-      const isRateLimit = errMsg.includes("(429)");
+      console.error("[NPC Turn]", error);
+      this.broadcast({
+        type: "server:error",
+        message: `Failed to resolve ${activeCombatant.name}'s turn — skipping`,
+        code: "AI_ERROR",
+      });
 
-      if (isRateLimit && npcTurnDepth < 10) {
-        // Rate-limited — wait and retry the same NPC turn
-        console.warn("[NPC Turn] Rate limited, retrying in 5s...", activeCombatant.name);
-        this.broadcast({
-          type: "server:system",
-          content: `Waiting for API rate limit before resolving ${activeCombatant.name}'s turn...`,
-          timestamp: Date.now(),
-        });
-        // Remove the turn message we appended so it doesn't duplicate on retry
-        if (this.conversationHistory.length > 0 && this.conversationHistory[this.conversationHistory.length - 1].role === "user") {
-          this.conversationHistory.pop();
-        }
-        await new Promise((resolve) => setTimeout(resolve, 5000));
-        await this.triggerNPCTurn(npcTurnDepth + 1);
-      } else {
-        // Non-rate-limit error — skip this NPC so combat doesn't get stuck
-        console.error("[NPC Turn]", error);
-        this.broadcast({
-          type: "server:error",
-          message: `Failed to resolve ${activeCombatant.name}'s turn — skipping`,
-          code: "AI_ERROR",
-        });
-
-        const c = this.gameState.encounter?.combat;
-        if (c && c.phase === "active") {
-          this.advanceTurn(c);
-          this.broadcast({
-            type: "server:combat_update",
-            combat: c,
-            map: this.gameState.encounter?.map ?? null,
-            timestamp: Date.now(),
-          });
-          await this.persistGameState();
-          await this.triggerNPCTurn(npcTurnDepth + 1);
-        }
-      }
+      this.advanceTurn(combat);
+      this.broadcast({
+        type: "server:combat_update",
+        combat,
+        map: this.gameState.encounter?.map ?? null,
+        timestamp: Date.now(),
+      });
+      await this.persistGameState();
+      await this.triggerNPCTurn(npcTurnDepth + 1);
     }
   }
 

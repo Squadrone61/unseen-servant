@@ -4,45 +4,42 @@ A multiplayer D&D 5e web app where an AI plays the Dungeon Master. Players impor
 
 ## Features
 
-- **AI Dungeon Master** — Narrative generation, skill checks, combat encounters, and spell resolution powered by LLMs
-- **Bring Your Own Key** — Supports 8 AI providers via a Chrome extension: Anthropic, OpenAI, Gemini, Groq, DeepSeek, xAI, Mistral, OpenRouter
+- **AI Dungeon Master** — Claude Code acts as the DM via MCP bridge, generating narrative, adjudicating rules, managing combat, and adapting to player choices
+- **No API Keys Needed** — AI runs through Claude Code's MCP protocol; no provider configuration or API keys required
 - **D&D Beyond Import** — Import characters by URL or JSON paste. Ability scores, spells, inventory, proficiencies, and class features are all parsed
 - **Multiplayer** — Real-time WebSocket rooms with party list, activity log, and shared game state
-- **D&D 5e Rules** — Tool-use integration with the D&D 5e SRD API for accurate spell mechanics, monster stat blocks, conditions, and rules
+- **D&D 5e Rules** — MCP tools look up spells, monsters, and conditions from the D&D 5e SRD API in real time
 - **Battle Map** — Tactical CSS Grid combat map with token placement, click-to-move, BFS range highlighting, and condition badges
 - **Combat System** — Initiative tracking, turn order, attack rolls, saving throws, and HP management
 - **Character Sheet** — Full interactive sheet with abilities, skills, saves, spells (prepared/ritual/known), actions, inventory, and features
+- **Campaign Notes** — DM can save and recall campaign notes locally across sessions
 - **Auth** — Google OAuth or guest mode
 
 ## Tech Stack
 
 | Layer | Tech |
 |-------|------|
-| Frontend | Next.js 16, React 19, TypeScript, Tailwind CSS 4 |
+| Frontend | Next.js 16, React 19, TypeScript 5.9, Tailwind CSS 4 |
 | Backend | Cloudflare Workers, Durable Objects, KV |
 | Real-time | Native WebSocket (Durable Objects Hibernation API) |
-| AI | Chrome extension makes AI calls (raw fetch, no SDK dependencies) |
-| Extension | Chrome Manifest V3, esbuild |
+| AI | Claude Code via MCP bridge (no SDK, no API keys) |
+| MCP Bridge | @modelcontextprotocol/sdk, ws, tsx |
 | Validation | Zod 4 |
 | Monorepo | pnpm workspaces, Turborepo |
 
 ## Architecture
 
 ```
-Player  -->  WebSocket  -->  Worker (prompt builder + state processor)
-                                |
-                          dm_request (via WS to host)
-                                |
-                          Host's Browser  -->  Extension  -->  AI Provider API
-                                |
-                          dm_response (via WS back to server)
-                                |
-                          Worker parses response, applies state changes
-                                |
-                          Broadcasts to all players
+[Players' Browsers] ←WebSocket→ [Cloudflare Worker]  (multiplayer relay + rooms + auth)
+                                       ↕ WebSocket (DM participant)
+                                [MCP Bridge Server]  (game engine + D&D tools + campaign docs)
+                                    ↕ stdio MCP
+                                [Claude Code]  (AI Dungeon Master)
 ```
 
-The server builds the system prompt and conversation history, then sends it to the host's browser via WebSocket. The Chrome extension intercepts the request, calls the AI provider using the host's API key, and returns the response. The server never sees the API key.
+The worker is a thin multiplayer relay — it manages rooms, WebSocket connections, and auth. It does NOT do any AI processing.
+
+The MCP bridge connects to the worker as a "DM" participant via WebSocket, receives player messages as `dm_request`s, and exposes them to Claude Code via MCP tools. Claude Code thinks, optionally looks up D&D rules, and sends a response back through the bridge.
 
 ## Getting Started
 
@@ -50,7 +47,7 @@ The server builds the system prompt and conversation history, then sends it to t
 
 - Node.js 20+
 - pnpm 10+
-- Chrome or Chromium-based browser (for the DM extension)
+- Claude Code CLI (for AI DM)
 
 ### Install
 
@@ -61,45 +58,37 @@ pnpm install
 ### Development
 
 ```bash
-pnpm dev:all         # Starts web (localhost:3000) + worker (localhost:8787)
-pnpm build:extension # Build the Chrome extension
+pnpm dev:all     # Starts web (localhost:3000) + worker (localhost:8787)
 ```
 
-### DM Extension Setup
+### Running a Game Session
 
-The host needs to install the Chrome extension to connect an AI provider.
+1. `pnpm dev:all` — start web + worker
+2. Create a room in the browser at `http://localhost:3000`, note the room code
+3. Set the room code in `.mcp.json` → `AIDND_ROOM_CODE`
+4. Claude Code connects via MCP — the bridge joins the room as "DM"
+5. Players join via room code and import their D&D Beyond characters
+6. Host clicks "Begin the Adventure"
+7. Claude Code receives `dm_request`s via `wait_for_message`, responds via `send_response`
 
-**Option A: Download from Releases (recommended)**
+### MCP Configuration
 
-1. Download the latest `aidnd-extension-v*.zip` from [GitHub Releases](https://github.com/Squadrone61/AIDND/releases)
-2. Unzip to a folder
+The `.mcp.json` at the repo root configures the MCP bridge:
 
-**Option B: Build from source**
-
-```bash
-pnpm build:extension
+```json
+{
+  "mcpServers": {
+    "aidnd-dm": {
+      "command": "npx",
+      "args": ["tsx", "apps/mcp-bridge/src/index.ts"],
+      "env": {
+        "AIDND_ROOM_CODE": "<your-room-code>",
+        "AIDND_WORKER_URL": "http://localhost:8787"
+      }
+    }
+  }
+}
 ```
-
-**Load in Chrome**
-
-1. Open `chrome://extensions`
-2. Enable **Developer mode** (toggle in top right)
-3. Click **Load unpacked**
-4. Select the unzipped folder (Option A) or the `apps/extension/` directory (Option B)
-
-**3. Configure a provider**
-
-1. Click the extension icon in the Chrome toolbar
-2. Select a provider from the dropdown (Anthropic, OpenAI, Gemini, etc.)
-3. Enter your API key
-4. Choose a model (the dropdown auto-populates after entering a valid key)
-5. Click **Save & Connect**
-
-**4. Play**
-
-1. Open the game at `http://localhost:3000`
-2. Create a room — the sidebar should show "Extension connected"
-3. Start the adventure
 
 ### Testing
 
@@ -121,22 +110,38 @@ pnpm deploy:web     # Web only
 
 ```
 apps/web/        — Next.js frontend
-apps/worker/     — Cloudflare Worker backend (Durable Objects for game rooms)
-apps/extension/  — Chrome extension (AI provider integration)
+apps/worker/     — Cloudflare Worker backend (thin multiplayer relay)
+apps/mcp-bridge/ — MCP server (WebSocket client + D&D tools + campaign notes)
 packages/shared/ — Shared types, schemas, constants, utilities
 tests/           — Playwright E2E tests
 ```
 
+## MCP Tools
+
+Claude Code has access to these tools when acting as DM:
+
+| Tool | Description |
+|------|-------------|
+| `wait_for_message` | Blocks until a player message/dm_request arrives |
+| `send_response` | Sends DM narrative back to all players |
+| `get_players` | Returns current player list with character summaries |
+| `lookup_spell` | Look up spell details from D&D 5e SRD API |
+| `lookup_monster` | Look up monster stats |
+| `lookup_condition` | Look up condition effects |
+| `roll_dice` | Roll dice (e.g., "2d6+3", "d20 advantage") |
+| `save_campaign_note` | Save/update a campaign note |
+| `read_campaign_note` | Read a specific note |
+| `list_campaign_notes` | List all notes for current campaign |
+
 ## How It Works
 
-1. Host creates a room and installs the AIDND DM Extension
-2. Host configures an AI provider in the extension popup (API key never leaves their browser)
-3. Players join via room code and import their D&D Beyond characters
-4. Host starts the adventure — the server sends a prompt request to the extension, which calls the AI and returns the narrative
-5. Players describe actions in chat — the AI responds with narrative and game mechanics
-6. The AI can request dice rolls, manage combat, track HP/spell slots, and apply conditions
-
-For providers that support tool-use (Anthropic, OpenAI), the extension runs a tool-use loop — looking up spells, monsters, and rules from the D&D 5e SRD in real time. Other providers get context injected automatically.
+1. Host creates a room and starts the dev servers
+2. Players join via room code and import their D&D Beyond characters
+3. Host clicks "Begin the Adventure" — the server sends a `dm_request` to the MCP bridge
+4. Claude Code receives the request via `wait_for_message`, thinks about the narrative, and optionally looks up spells/monsters/rules from the SRD
+5. Claude Code calls `send_response` — the bridge sends the response back through the worker to all players
+6. Players describe actions in chat — each message triggers a new `dm_request` → Claude Code → `send_response` cycle
+7. Campaign notes persist locally in `.aidnd/campaigns/{roomCode}/`
 
 ## License
 
