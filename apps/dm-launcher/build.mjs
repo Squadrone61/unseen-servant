@@ -8,9 +8,12 @@ const pkg = JSON.parse(
   fs.readFileSync(path.join(__dirname, "package.json"), "utf-8")
 );
 
+const isDev = process.argv.includes("--dev");
+if (isDev) console.log("Building in DEV mode (localhost:8787)\n");
+
 const result = await esbuild.build({
   entryPoints: [path.join(__dirname, "src/entry.ts")],
-  outfile: path.join(__dirname, "dist/aidnd-dm.mjs"),
+  outfile: path.join(__dirname, isDev ? "dist/aidnd-dm-dev.mjs" : "dist/aidnd-dm.mjs"),
   bundle: true,
   platform: "node",
   format: "esm",
@@ -40,9 +43,9 @@ const result = await esbuild.build({
 
   // Inject build-time constants
   define: {
-    PRODUCTION_WORKER_URL: JSON.stringify(
-      "https://aidnd-api.safaakyuz.com"
-    ),
+    ...(isDev
+      ? {} // no PRODUCTION_WORKER_URL → falls back to localhost:8787
+      : { PRODUCTION_WORKER_URL: JSON.stringify("https://aidnd-api.safaakyuz.com") }),
     AIDND_VERSION: JSON.stringify(pkg.version),
   },
 
@@ -59,7 +62,7 @@ const result = await esbuild.build({
   logLevel: "info",
 });
 
-const outPath = path.join(__dirname, "dist/aidnd-dm.mjs");
+const outPath = path.join(__dirname, isDev ? "dist/aidnd-dm-dev.mjs" : "dist/aidnd-dm.mjs");
 const stat = fs.statSync(outPath);
 const sizeKB = (stat.size / 1024).toFixed(0);
-console.log(`\n✓ Built dist/aidnd-dm.mjs (${sizeKB} KB)`);
+console.log(`\n✓ Built ${isDev ? "dist/aidnd-dm-dev.mjs" : "dist/aidnd-dm.mjs"} (${sizeKB} KB)`);

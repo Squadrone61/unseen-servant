@@ -54,7 +54,8 @@ pnpm dev:web        # Next.js dev server only (port 3000)
 pnpm dev:worker     # Wrangler dev server only (port 8787)
 pnpm dev:mcp        # Run MCP bridge (needs AIDND_ROOM_CODE env var)
 pnpm build          # Build all packages
-pnpm build:dm       # Build dm-launcher (esbuild bundle)
+pnpm build:dm       # Build dm-launcher (production, points to aidnd-api.safaakyuz.com)
+pnpm dev:dm         # Build + launch DM pointed at localhost:8787
 pnpm type-check     # TypeScript type checking
 pnpm dead-code      # Run knip dead code detection
 pnpm deploy         # Deploy all to Cloudflare

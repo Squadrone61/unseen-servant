@@ -54,7 +54,7 @@ Claude Code connects to the room as the DM. Share the room code with your player
 
 ```bash
 node aidnd-dm.mjs --room ABC123 --model sonnet
-node aidnd-dm.mjs --worker-url http://localhost:8787  # point to local dev server
+node aidnd-dm.mjs --worker-url http://localhost:8787  # override worker URL
 ```
 
 ---
@@ -85,12 +85,19 @@ pnpm dev:all     # Starts web (localhost:3000) + worker (localhost:8787)
 
 ### Run a Local Game Session
 
+**Option A: Using the dev DM launcher**
+
+```bash
+pnpm dev:dm    # builds dev bundle + launches DM pointed at localhost:8787
+```
+
+**Option B: Using `.mcp.json` with Claude Code**
+
 1. Open `http://localhost:3000`, create a room, note the room code
 2. Set the room code in `.mcp.json` → `AIDND_ROOM_CODE`
 3. Claude Code connects via MCP — the bridge joins the room as "DM"
-4. Players join via room code, import characters
-5. Host configures campaign, clicks "Begin the Adventure"
-6. Claude Code receives player messages via `wait_for_message`, responds via `send_response`
+
+Then: players join, host configures campaign, clicks "Begin the Adventure".
 
 ### MCP Configuration (Local Dev)
 
@@ -118,7 +125,8 @@ pnpm dev:all        # Web + worker dev servers
 pnpm dev:web        # Next.js only (port 3000)
 pnpm dev:worker     # Wrangler only (port 8787)
 pnpm build          # Build all packages
-pnpm build:dm       # Build dm-launcher
+pnpm build:dm       # Build dm-launcher (production)
+pnpm dev:dm         # Build + launch DM pointed at localhost:8787
 pnpm type-check     # TypeScript checking
 pnpm dead-code      # Knip dead code detection
 pnpm test           # Start servers + run Playwright tests

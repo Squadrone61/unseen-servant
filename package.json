@@ -16,6 +16,7 @@
     "test:ui": "playwright test --ui",
     "dev:mcp": "tsx apps/mcp-bridge/src/index.ts",
     "build:dm": "cd apps/dm-launcher && node build.mjs",
+    "dev:dm": "cd apps/dm-launcher && node build.mjs --dev && node dist/aidnd-dm-dev.mjs",
     "dead-code": "knip"
   },
   "devDependencies": {

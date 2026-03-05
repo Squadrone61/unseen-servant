@@ -11,9 +11,15 @@ import { randomBytes } from "crypto";
 import { DM_SYSTEM_PROMPT } from "@aidnd/shared";
 
 declare const AIDND_VERSION: string;
+declare const PRODUCTION_WORKER_URL: string;
 
 const VERSION =
   typeof AIDND_VERSION !== "undefined" ? AIDND_VERSION : "dev";
+
+const DEFAULT_WORKER_URL =
+  typeof PRODUCTION_WORKER_URL !== "undefined"
+    ? PRODUCTION_WORKER_URL
+    : "http://127.0.0.1:8787";
 
 const BANNER = `
 ╔══════════════════════════════════════════════════╗
@@ -59,7 +65,7 @@ export async function startCli(): Promise<void> {
   // Get room code and model from args or interactive prompt
   let roomCode = findArg("--room");
   let model = findArg("--model") || "sonnet";
-  const workerUrl = findArg("--worker-url") || process.env.AIDND_WORKER_URL || "http://127.0.0.1:8787";
+  const workerUrl = findArg("--worker-url") || process.env.AIDND_WORKER_URL || DEFAULT_WORKER_URL;
 
   if (!roomCode) {
     const rl = readline.createInterface({
