@@ -5,7 +5,7 @@ import { ChatMessage } from "./ChatMessage";
 import type { ServerMessage, CheckRequest, CheckResult, RollResult } from "@aidnd/shared/types";
 import type { ConnectionState } from "@/hooks/useWebSocket";
 
-// Merged check: replaces 3 messages (check_request, dice_roll, check_result) with one
+// Merged check: all 3 messages resolved (check_request + dice_roll + check_result)
 export interface MergedCheckMessage {
   type: "merged_check";
   request: CheckRequest;
@@ -15,85 +15,89 @@ export interface MergedCheckMessage {
   timestamp: number;
 }
 
-export type DisplayMessage = ServerMessage | MergedCheckMessage;
+// Merged check pending: check_request + dice_roll arrived, but no check_result yet
+export interface MergedCheckPendingMessage {
+  type: "merged_check_pending";
+  request: CheckRequest;
+  roll: RollResult;
+  playerName: string;
+  timestamp: number;
+}
+
+export type DisplayMessage = ServerMessage | MergedCheckMessage | MergedCheckPendingMessage;
 
 /**
- * Post-process messages to merge resolved check sequences.
- * When a check_result is found, look backward for its matching dice_roll
- * and check_request by requestId. Replace all three with a single merged_check.
- * Unresolved check_requests are left as-is (still show "Roll d20" button).
+ * Post-process messages to merge check sequences using checkRequestId.
+ * - check_request + dice_roll + check_result → merged_check
+ * - check_request + dice_roll (no result yet) → merged_check_pending
+ * - bare check_request (no roll yet) → left as-is (shows "Roll d20" button)
  */
 function mergeCheckMessages(messages: ServerMessage[]): DisplayMessage[] {
-  // Collect resolved requestIds first
-  const resolvedIds = new Set<string>();
-  for (const msg of messages) {
+  // Index dice_rolls and check_results by checkRequestId
+  const rollByCheckId = new Map<string, { msg: Extract<ServerMessage, { type: "server:dice_roll" }>; idx: number }>();
+  const resultByCheckId = new Map<string, { msg: Extract<ServerMessage, { type: "server:check_result" }>; idx: number }>();
+
+  for (let i = 0; i < messages.length; i++) {
+    const msg = messages[i];
+    if (msg.type === "server:dice_roll" && msg.checkRequestId) {
+      rollByCheckId.set(msg.checkRequestId, { msg: msg as Extract<ServerMessage, { type: "server:dice_roll" }>, idx: i });
+    }
     if (msg.type === "server:check_result") {
-      resolvedIds.add(msg.result.requestId);
+      resultByCheckId.set(msg.result.requestId, { msg: msg as Extract<ServerMessage, { type: "server:check_result" }>, idx: i });
     }
   }
 
-  if (resolvedIds.size === 0) return messages;
+  // Nothing to merge
+  if (rollByCheckId.size === 0 && resultByCheckId.size === 0) return messages;
 
-  // Build index of check_requests and dice_rolls by requestId
-  const requestMap = new Map<string, ServerMessage>();
-  const rollMap = new Map<string, ServerMessage>();
-
-  for (const msg of messages) {
-    if (msg.type === "server:check_request" && resolvedIds.has(msg.check.id)) {
-      requestMap.set(msg.check.id, msg);
-    }
-    // dice_roll doesn't have requestId directly, but it appears right before check_result
-    // We match by looking at sequential order
-  }
-
-  // Walk messages, building merged output
+  const consumed = new Set<number>();
   const result: DisplayMessage[] = [];
-  const consumed = new Set<number>(); // indices to skip
 
   for (let i = 0; i < messages.length; i++) {
     if (consumed.has(i)) continue;
     const msg = messages[i];
 
-    if (msg.type === "server:check_result") {
-      const requestId = msg.result.requestId;
+    if (msg.type === "server:check_request") {
+      const checkId = msg.check.id;
+      const rollEntry = rollByCheckId.get(checkId);
+      const resultEntry = resultByCheckId.get(checkId);
 
-      // Find matching check_request (look backward)
-      let requestIdx = -1;
-      let rollIdx = -1;
-      for (let j = i - 1; j >= 0; j--) {
-        const prev = messages[j];
-        if (prev.type === "server:dice_roll" && rollIdx === -1) {
-          rollIdx = j;
-        }
-        if (prev.type === "server:check_request" && prev.check.id === requestId) {
-          requestIdx = j;
-          break;
-        }
-      }
-
-      if (requestIdx >= 0 && rollIdx >= 0) {
-        const reqMsg = messages[requestIdx] as Extract<ServerMessage, { type: "server:check_request" }>;
-        const rollMsg = messages[rollIdx] as Extract<ServerMessage, { type: "server:dice_roll" }>;
-
-        consumed.add(requestIdx);
-        consumed.add(rollIdx);
+      if (rollEntry && resultEntry) {
+        // All 3 present → merged_check
         consumed.add(i);
-
+        consumed.add(rollEntry.idx);
+        consumed.add(resultEntry.idx);
         result.push({
           type: "merged_check",
-          request: reqMsg.check,
-          roll: rollMsg.roll,
-          result: msg.result,
-          playerName: rollMsg.playerName,
-          timestamp: msg.timestamp,
+          request: msg.check,
+          roll: rollEntry.msg.roll,
+          result: resultEntry.msg.result,
+          playerName: rollEntry.msg.playerName,
+          timestamp: resultEntry.msg.timestamp,
         });
-        continue;
+      } else if (rollEntry) {
+        // Roll arrived but no result yet → merged_check_pending
+        consumed.add(i);
+        consumed.add(rollEntry.idx);
+        result.push({
+          type: "merged_check_pending",
+          request: msg.check,
+          roll: rollEntry.msg.roll,
+          playerName: rollEntry.msg.playerName,
+          timestamp: rollEntry.msg.timestamp,
+        });
+      } else {
+        // Bare check_request — leave as-is (shows Roll button)
+        result.push(msg);
       }
+      continue;
     }
 
-    // Skip already-consumed messages (check_request/dice_roll that were merged)
+    // Skip dice_roll/check_result that were consumed by merge
     if (consumed.has(i)) continue;
 
+    // Standalone dice_roll with checkRequestId but no matching check_request (shouldn't happen, but safe)
+    // and check_results without a matching request are passed through
     result.push(msg);
   }
 
