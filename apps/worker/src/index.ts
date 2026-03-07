@@ -117,7 +117,10 @@ export default {
         const val = await env.ROOMS.get(key.name);
         if (val) {
           try {
-            rooms.push(JSON.parse(val));
+            const meta = JSON.parse(val);
+            if (meta.playerCount > 0) {
+              rooms.push(meta);
+            }
           } catch {
             // skip malformed entries
           }

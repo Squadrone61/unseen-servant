@@ -109,16 +109,18 @@ export class GameRoom extends DurableObject<Env> {
 
   private async updateRoomMeta(): Promise<void> {
     if (!this.roomCode) return;
+    const playerCount = this.getPlayerNames().length;
     const meta: RoomMeta = {
       roomCode: this.roomCode,
       hostName: this.hostPlayerName,
-      playerCount: this.getPlayerNames().length,
+      playerCount,
       hasPassword: this.password !== null,
       createdAt: this.createdAt,
     };
     try {
+      const ttl = playerCount === 0 ? 300 : 86400 * 7;
       await this.env.ROOMS.put(`room:${this.roomCode}`, JSON.stringify(meta), {
-        expirationTtl: 86400 * 7,
+        expirationTtl: ttl,
       });
     } catch (e) {
       console.error("Failed to update room meta:", e);
