@@ -1,7 +1,7 @@
 import WebSocket from "ws";
 import type { MessageQueue } from "./message-queue.js";
 import type { CampaignManager } from "./services/campaign-manager.js";
-import { GameStateManager } from "./services/game-state-manager.js";
+import { GameStateManager, type SessionStateSnapshot } from "./services/game-state-manager.js";
 import type { PlayerSummary } from "./types.js";
 import type {
   ClientMessage,
@@ -178,6 +178,11 @@ export class WSClient {
             campaigns: campaigns.length > 0 ? campaigns : undefined,
           });
           this.configSent = true;
+        }
+
+        // Auto-restore session state if reconnecting to active campaign
+        if (msg.activeCampaignSlug && msg.storyStarted) {
+          this.restoreSessionFromCampaign(msg.activeCampaignSlug);
         }
         break;
       }
@@ -453,12 +458,15 @@ export class WSClient {
     }
   }
 
-  /** Auto-snapshot characters to campaign on disconnect/destroy. */
+  /** Auto-snapshot characters and session state to campaign on disconnect/destroy. */
   private autoSnapshot(): void {
     const cm = this.options.campaignManager;
     if (!cm.activeSlug) return;
 
     try {
+      // Save session state before character snapshots
+      this.gameStateManager.saveSessionStateToCampaign();
+
       if (Object.keys(this.characters).length > 0) {
         const count = cm.snapshotCharacters(this.characters);
         console.error(
@@ -469,6 +477,73 @@ export class WSClient {
     } catch (e) {
       console.error(
         `[ws-client] Auto-snapshot error: ${e instanceof Error ? e.message : String(e)}`
+      );
+    }
+  }
+
+  /** Restore full session state from campaign files on reconnect. */
+  private restoreSessionFromCampaign(slug: string): void {
+    const cm = this.options.campaignManager;
+
+    try {
+      // Load campaign (sets activeSlug)
+      const manifest = cm.loadCampaign(slug);
+      console.error(`[ws-client] Restoring session for campaign: ${manifest.name} (${slug})`);
+
+      // Read session-state.json
+      const raw = cm.readFile("session-state");
+      if (!raw) {
+        console.error(`[ws-client] No session-state.json found, skipping state restoration`);
+        return;
+      }
+
+      const snapshot = JSON.parse(raw) as SessionStateSnapshot;
+
+      // Restore game state manager
+      this.gameStateManager.restoreSessionState(snapshot);
+      this.storyStarted = true;
+
+      // Restore characters from campaign snapshots
+      this.restoreCharactersFromCampaign(cm);
+
+      // Merge live characters from room_joined over restored ones (live data wins)
+      for (const [playerName, char] of Object.entries(this.characters)) {
+        this.gameStateManager.characters[playerName] = char;
+      }
+
+      // Restore system prompt from campaign
+      const savedPrompt = cm.getSystemPrompt();
+      if (savedPrompt) {
+        this.gameStateManager.gameState.customSystemPrompt = savedPrompt;
+      }
+
+      // Restore pacing/encounterLength from manifest
+      if (manifest.pacingProfile) {
+        this.gameStateManager.gameState.pacingProfile = manifest.pacingProfile as import("@aidnd/shared/types").PacingProfile;
+      }
+      if (manifest.encounterLength) {
+        this.gameStateManager.gameState.encounterLength = manifest.encounterLength as import("@aidnd/shared/types").EncounterLength;
+      }
+
+      // Notify worker that campaign is loaded
+      this.send({
+        type: "client:campaign_loaded",
+        campaignSlug: manifest.slug,
+        campaignName: manifest.name,
+        sessionCount: manifest.sessionCount,
+      });
+
+      // Broadcast game state sync so players get restored combat/encounter state
+      this.gameStateManager.broadcastGameStateSync();
+
+      console.error(
+        `[ws-client] Session restored: ${snapshot.conversationHistory.length} messages, ` +
+        `story=${snapshot.storyStarted}, combat=${!!snapshot.gameState.encounter?.combat}, ` +
+        `saved at ${snapshot.savedAt}`
+      );
+    } catch (e) {
+      console.error(
+        `[ws-client] Session restore error: ${e instanceof Error ? e.message : String(e)}`
       );
     }
   }

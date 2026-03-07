@@ -436,6 +436,12 @@ export class CampaignManager {
       "utf-8"
     );
 
+    // Clean up stale session state file
+    const sessionStatePath = path.join(this.activeDir!, "session-state.json");
+    if (fs.existsSync(sessionStatePath)) {
+      fs.unlinkSync(sessionStatePath);
+    }
+
     return { sessionNumber };
   }
 

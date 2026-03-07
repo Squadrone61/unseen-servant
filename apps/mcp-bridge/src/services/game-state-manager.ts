@@ -34,6 +34,16 @@ interface ConversationMessage {
   content: string;
 }
 
+export interface SessionStateSnapshot {
+  conversationHistory: ConversationMessage[];
+  gameState: GameState;
+  storyStarted: boolean;
+  hostName: string;
+  playerNames: string[];
+  lastSentIndex: number;
+  savedAt: string;
+}
+
 type BroadcastFn = (msg: ServerMessage, targets?: string[]) => void;
 
 export class GameStateManager {
@@ -65,6 +75,40 @@ export class GameStateManager {
     this.broadcast = opts.broadcast;
     this.messageQueue = opts.messageQueue;
     this.campaignManager = opts.campaignManager;
+  }
+
+  // ─── Session State Persistence ───
+
+  serializeSessionState(): SessionStateSnapshot {
+    return {
+      conversationHistory: this.conversationHistory,
+      gameState: this.gameState,
+      storyStarted: this.storyStarted,
+      hostName: this.hostName,
+      playerNames: this.playerNames,
+      lastSentIndex: this.lastSentIndex,
+      savedAt: new Date().toISOString(),
+    };
+  }
+
+  restoreSessionState(snapshot: SessionStateSnapshot): void {
+    this.conversationHistory = snapshot.conversationHistory;
+    this.gameState = snapshot.gameState;
+    this.storyStarted = snapshot.storyStarted;
+    this.hostName = snapshot.hostName;
+    this.playerNames = snapshot.playerNames;
+    // Set lastSentIndex to end so pushDMRequest only sends new messages
+    this.lastSentIndex = this.conversationHistory.length;
+  }
+
+  saveSessionStateToCampaign(): void {
+    if (!this.campaignManager.activeSlug) return;
+    try {
+      const snapshot = this.serializeSessionState();
+      this.campaignManager.writeFile("session-state.json", JSON.stringify(snapshot, null, 2));
+    } catch (e) {
+      console.error(`[game-state] Failed to save session state: ${e instanceof Error ? e.message : String(e)}`);
+    }
   }
 
   /** Push a DM request with only new messages since last send */
@@ -220,6 +264,9 @@ export class GameStateManager {
       timestamp: Date.now(),
       id: crypto.randomUUID(),
     });
+
+    // Persist session state after every DM response
+    this.saveSessionStateToCampaign();
   }
 
   // ─── Roll Dice ───
@@ -1352,6 +1399,14 @@ export class GameStateManager {
       type: "server:game_state_sync",
       gameState: this.gameState,
     }, [playerName]);
+  }
+
+  /** Broadcast game state sync to all players (on session restore) */
+  broadcastGameStateSync(): void {
+    this.broadcast({
+      type: "server:game_state_sync",
+      gameState: this.gameState,
+    });
   }
 
   // ─── Internal Helpers ───
