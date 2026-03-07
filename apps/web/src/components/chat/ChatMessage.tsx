@@ -349,10 +349,25 @@ export function ChatMessage({ message, onRollDice, myCharacterName }: ChatMessag
 
     // Standalone dice_roll (DM rolls not tied to checks, or unlinked legacy rolls)
     case "server:dice_roll": {
-      // If this has a checkRequestId, it should have been consumed by merge — but render standalone as fallback
       const roll = message.roll;
       const isCrit = roll.criticalHit;
       const isFail = roll.criticalFail;
+
+      // Compact inline format for DM rolls to reduce chat clutter
+      if (message.playerName === "DM") {
+        return (
+          <div className="flex items-center gap-2 py-1 px-2 text-sm text-gray-400">
+            <span className="text-xs">&#127922;</span>
+            <span className="text-gray-500">DM rolled</span>
+            <DieBadges roll={roll} />
+            <span className="text-gray-500">=</span>
+            <span className={`font-bold ${isCrit ? "text-yellow-400" : isFail ? "text-red-400" : "text-gray-300"}`}>
+              {roll.total}
+            </span>
+            {roll.label && <span className="text-gray-600">({roll.label})</span>}
+          </div>
+        );
+      }
 
       return (
         <div

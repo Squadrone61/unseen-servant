@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect } from "react";
 import { ChatMessage } from "./ChatMessage";
 import type { ServerMessage, CheckRequest, CheckResult, RollResult } from "@aidnd/shared/types";
 import type { ConnectionState } from "@/hooks/useWebSocket";
@@ -26,86 +26,28 @@ export interface MergedCheckPendingMessage {
 
 export type DisplayMessage = ServerMessage | MergedCheckMessage | MergedCheckPendingMessage;
 
-/**
- * Post-process messages to merge check sequences using checkRequestId.
- * - check_request + dice_roll + check_result → merged_check
- * - check_request + dice_roll (no result yet) → merged_check_pending
- * - bare check_request (no roll yet) → left as-is (shows "Roll d20" button)
- */
-function mergeCheckMessages(messages: ServerMessage[]): DisplayMessage[] {
-  // Index dice_rolls and check_results by checkRequestId
-  const rollByCheckId = new Map<string, { msg: Extract<ServerMessage, { type: "server:dice_roll" }>; idx: number }>();
-  const resultByCheckId = new Map<string, { msg: Extract<ServerMessage, { type: "server:check_result" }>; idx: number }>();
-
-  for (let i = 0; i < messages.length; i++) {
-    const msg = messages[i];
-    if (msg.type === "server:dice_roll" && msg.checkRequestId) {
-      rollByCheckId.set(msg.checkRequestId, { msg: msg as Extract<ServerMessage, { type: "server:dice_roll" }>, idx: i });
-    }
-    if (msg.type === "server:check_result") {
-      resultByCheckId.set(msg.result.requestId, { msg: msg as Extract<ServerMessage, { type: "server:check_result" }>, idx: i });
-    }
+/** Stable key for check-related messages so React updates in-place */
+function getMessageKey(msg: DisplayMessage, index: number): string {
+  switch (msg.type) {
+    case "server:check_request":
+      return `check-${msg.check.id}`;
+    case "merged_check_pending":
+      return `check-${msg.request.id}`;
+    case "merged_check":
+      return `check-${msg.request.id}`;
+    case "server:dice_roll":
+      return `roll-${msg.id}`;
+    case "server:check_result":
+      return `result-${msg.result.requestId}`;
+    default:
+      // ServerMessage types with id field
+      if ("id" in msg && typeof msg.id === "string") return msg.id;
+      return `msg-${index}`;
   }
-
-  // Nothing to merge
-  if (rollByCheckId.size === 0 && resultByCheckId.size === 0) return messages;
-
-  const consumed = new Set<number>();
-  const result: DisplayMessage[] = [];
-
-  for (let i = 0; i < messages.length; i++) {
-    if (consumed.has(i)) continue;
-    const msg = messages[i];
-
-    if (msg.type === "server:check_request") {
-      const checkId = msg.check.id;
-      const rollEntry = rollByCheckId.get(checkId);
-      const resultEntry = resultByCheckId.get(checkId);
-
-      if (rollEntry && resultEntry) {
-        // All 3 present → merged_check
-        consumed.add(i);
-        consumed.add(rollEntry.idx);
-        consumed.add(resultEntry.idx);
-        result.push({
-          type: "merged_check",
-          request: msg.check,
-          roll: rollEntry.msg.roll,
-          result: resultEntry.msg.result,
-          playerName: rollEntry.msg.playerName,
-          timestamp: resultEntry.msg.timestamp,
-        });
-      } else if (rollEntry) {
-        // Roll arrived but no result yet → merged_check_pending
-        consumed.add(i);
-        consumed.add(rollEntry.idx);
-        result.push({
-          type: "merged_check_pending",
-          request: msg.check,
-          roll: rollEntry.msg.roll,
-          playerName: rollEntry.msg.playerName,
-          timestamp: rollEntry.msg.timestamp,
-        });
-      } else {
-        // Bare check_request — leave as-is (shows Roll button)
-        result.push(msg);
-      }
-      continue;
-    }
-
-    // Skip dice_roll/check_result that were consumed by merge
-    if (consumed.has(i)) continue;
-
-    // Standalone dice_roll with checkRequestId but no matching check_request (shouldn't happen, but safe)
-    // and check_results without a matching request are passed through
-    result.push(msg);
-  }
-
-  return result;
 }
 
 interface ChatPanelProps {
-  messages: ServerMessage[];
+  messages: DisplayMessage[];
   onSend: (content: string) => void;
   connectionState: ConnectionState;
   onRollDice?: (checkRequestId: string) => void;
@@ -117,8 +59,6 @@ interface ChatPanelProps {
 export function ChatPanel({ messages, onSend, connectionState, onRollDice, myCharacterName, isMyTurn, onEndTurn }: ChatPanelProps) {
   const [input, setInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  const displayMessages = useMemo(() => mergeCheckMessages(messages), [messages]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -167,7 +107,7 @@ export function ChatPanel({ messages, onSend, connectionState, onRollDice, myCha
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-3 min-h-0">
-        {displayMessages.length === 0 && (
+        {messages.length === 0 && (
           <div className="text-center text-gray-600 mt-8">
             <p className="text-lg mb-1">Waiting for the adventure to begin...</p>
             <p className="text-sm">
@@ -175,8 +115,8 @@ export function ChatPanel({ messages, onSend, connectionState, onRollDice, myCha
             </p>
           </div>
         )}
-        {displayMessages.map((msg, i) => (
-          <ChatMessage key={i} message={msg} onRollDice={onRollDice} myCharacterName={myCharacterName} />
+        {messages.map((msg, i) => (
+          <ChatMessage key={getMessageKey(msg, i)} message={msg} onRollDice={onRollDice} myCharacterName={myCharacterName} />
         ))}
         <div ref={messagesEndRef} />
       </div>

@@ -19,15 +19,13 @@ import type {
   PlayerInfo,
   ServerMessage,
 } from "@aidnd/shared/types";
+import type { DisplayMessage } from "@/components/chat/ChatPanel";
 
 /** Messages that belong in the main story chat */
 function isStoryMessage(msg: ServerMessage): boolean {
   return (
     msg.type === "server:chat" ||
-    msg.type === "server:ai" ||
-    msg.type === "server:check_request" ||
-    msg.type === "server:check_result" ||
-    msg.type === "server:dice_roll"
+    msg.type === "server:ai"
   );
 }
 
@@ -78,7 +76,7 @@ function GameContent({
   playerName: string;
 }) {
   const router = useRouter();
-  const [storyMessages, setStoryMessages] = useState<ServerMessage[]>([]);
+  const [storyMessages, setStoryMessages] = useState<DisplayMessage[]>([]);
   const [logMessages, setLogMessages] = useState<ServerMessage[]>([]);
   const [players, setPlayers] = useState<string[]>([]);
   const [allPlayers, setAllPlayers] = useState<PlayerInfo[]>([]);
@@ -279,6 +277,76 @@ function GameContent({
 
         case "server:event_log":
           setEventLog((prev) => [...prev, msg.event]);
+          break;
+
+        case "server:check_request":
+          // Append as-is — shows Roll button to target player
+          setStoryMessages((prev) => [...prev, msg]);
+          break;
+
+        case "server:dice_roll":
+          if (msg.checkRequestId) {
+            // Find the matching check_request or merged_check_pending and replace in-place
+            setStoryMessages((prev) => {
+              const idx = prev.findLastIndex(
+                (m) =>
+                  (m.type === "server:check_request" && m.check.id === msg.checkRequestId) ||
+                  (m.type === "merged_check_pending" && m.request.id === msg.checkRequestId)
+              );
+              if (idx === -1) {
+                // No matching request found — append as standalone
+                return [...prev, msg];
+              }
+              const existing = prev[idx];
+              const request = existing.type === "server:check_request"
+                ? existing.check
+                : (existing as Extract<DisplayMessage, { type: "merged_check_pending" }>).request;
+              const updated: DisplayMessage[] = [...prev];
+              updated[idx] = {
+                type: "merged_check_pending",
+                request,
+                roll: msg.roll,
+                playerName: msg.playerName,
+                timestamp: msg.timestamp,
+              };
+              return updated;
+            });
+          } else {
+            // Standalone DM/player roll — append directly
+            setStoryMessages((prev) => [...prev, msg]);
+          }
+          break;
+
+        case "server:check_result":
+          // Find matching check_request or merged_check_pending and replace with merged_check
+          setStoryMessages((prev) => {
+            const idx = prev.findLastIndex(
+              (m) =>
+                (m.type === "server:check_request" && m.check.id === msg.result.requestId) ||
+                (m.type === "merged_check_pending" && m.request.id === msg.result.requestId)
+            );
+            if (idx === -1) {
+              // No matching request — append as standalone fallback
+              return [...prev, msg];
+            }
+            const existing = prev[idx];
+            const request = existing.type === "server:check_request"
+              ? existing.check
+              : (existing as Extract<DisplayMessage, { type: "merged_check_pending" }>).request;
+            const roll = existing.type === "merged_check_pending"
+              ? (existing as Extract<DisplayMessage, { type: "merged_check_pending" }>).roll
+              : msg.result.roll;
+            const updated: DisplayMessage[] = [...prev];
+            updated[idx] = {
+              type: "merged_check",
+              request,
+              roll,
+              result: msg.result,
+              playerName: msg.result.characterName,
+              timestamp: msg.timestamp,
+            };
+            return updated;
+          });
           break;
 
         default:
