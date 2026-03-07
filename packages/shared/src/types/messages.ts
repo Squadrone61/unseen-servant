@@ -46,6 +46,7 @@ export interface ClientJoinMessage {
   authToken?: string;
   guestId?: string;
   password?: string;
+  isDM?: boolean;
 }
 
 /** DM Bridge → Server: AI response for a dm_request */
@@ -290,6 +291,7 @@ export interface ServerPlayerJoinedMessage {
   players: string[];
   hostName: string;
   allPlayers?: PlayerInfo[];
+  isDM?: boolean;
 }
 
 export interface ServerPlayerLeftMessage {
@@ -298,6 +300,7 @@ export interface ServerPlayerLeftMessage {
   players: string[];
   hostName: string;
   allPlayers?: PlayerInfo[];
+  isDM?: boolean;
 }
 
 export interface ServerCharacterUpdatedMessage {

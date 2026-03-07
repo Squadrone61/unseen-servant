@@ -218,6 +218,7 @@ export const playerInfoSchema = z.object({
   name: z.string(),
   online: z.boolean(),
   isHost: z.boolean(),
+  isDM: z.boolean().optional(),
 });
 
 // === Client → Server schemas ===
@@ -235,6 +236,7 @@ export const clientJoinSchema = z.object({
   authToken: z.string().optional(),
   guestId: z.string().optional(),
   password: z.string().optional(),
+  isDM: z.boolean().optional(),
 });
 
 export const clientDMResponseSchema = z.object({
@@ -471,6 +473,7 @@ export const serverPlayerJoinedSchema = z.object({
   players: z.array(z.string()),
   hostName: z.string(),
   allPlayers: z.array(playerInfoSchema).optional(),
+  isDM: z.boolean().optional(),
 });
 
 export const serverPlayerLeftSchema = z.object({
@@ -479,6 +482,7 @@ export const serverPlayerLeftSchema = z.object({
   players: z.array(z.string()),
   hostName: z.string(),
   allPlayers: z.array(playerInfoSchema).optional(),
+  isDM: z.boolean().optional(),
 });
 
 export const serverCharacterUpdatedSchema = z.object({

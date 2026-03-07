@@ -167,10 +167,17 @@ function GameContent({
           break;
 
         case "server:player_joined":
+          setPlayers(msg.players);
+          setHostName(msg.hostName);
+          if (msg.allPlayers) setAllPlayers(msg.allPlayers);
+          if (msg.isDM) setDmConnected(true);
+          break;
+
         case "server:player_left":
           setPlayers(msg.players);
           setHostName(msg.hostName);
           if (msg.allPlayers) setAllPlayers(msg.allPlayers);
+          if (msg.isDM) setDmConnected(false);
           break;
 
         case "server:character_updated":

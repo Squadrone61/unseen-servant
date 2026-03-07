@@ -25,8 +25,9 @@ export class WSClient {
   private ws: WebSocket | null = null;
   private options: WSClientOptions;
   private reconnectAttempts = 0;
-  private maxReconnectAttempts = 20;
   private closed = false;
+  private pingInterval: ReturnType<typeof setInterval> | null = null;
+  private lastPongAt = 0;
 
   /** Latest player list from room_joined / player_joined / player_left */
   players: PlayerSummary[] = [];
@@ -65,12 +66,33 @@ export class WSClient {
     this.ws.on("open", () => {
       console.error(`[ws-client] WebSocket open, joining room as DM...`);
       this.reconnectAttempts = 0;
+      this.lastPongAt = Date.now();
       this.send({
         type: "client:join",
         playerName: "DM",
         roomCode: this.options.roomCode,
         guestId: "aidnd-dm-bridge",
+        isDM: true,
       });
+
+      // Start heartbeat: ping every 30s, terminate if no pong in 60s
+      this.clearPingInterval();
+      this.pingInterval = setInterval(() => {
+        if (Date.now() - this.lastPongAt > 60_000) {
+          console.error(`[ws-client] No pong received in 60s, terminating connection...`);
+          this.ws?.terminate();
+          return;
+        }
+        try {
+          this.ws?.ping();
+        } catch {
+          // WebSocket may be closing
+        }
+      }, 30_000);
+    });
+
+    this.ws.on("pong", () => {
+      this.lastPongAt = Date.now();
     });
 
     this.ws.on("message", (data) => {
@@ -112,6 +134,7 @@ export class WSClient {
       console.error(`[ws-client] Disconnected: ${code} ${reason.toString()}`);
       this.connected = false;
       this.configSent = false;
+      this.clearPingInterval();
       this.scheduleReconnect();
     });
 
@@ -141,7 +164,7 @@ export class WSClient {
         if (msg.allPlayers) {
           this.updatePlayers(msg.allPlayers);
           this.gameStateManager.playerNames = msg.allPlayers
-            .filter((p) => p.name !== "DM")
+            .filter((p) => !p.isDM)
             .map((p) => p.name);
         }
 
@@ -163,7 +186,7 @@ export class WSClient {
         if (msg.allPlayers) {
           this.updatePlayers(msg.allPlayers);
           this.gameStateManager.playerNames = msg.allPlayers
-            .filter((p) => p.name !== "DM")
+            .filter((p) => !p.isDM)
             .map((p) => p.name);
         }
         console.error(
@@ -171,7 +194,7 @@ export class WSClient {
         );
 
         // Send game state sync to newly joined player
-        if (msg.playerName !== "DM") {
+        if (!msg.isDM) {
           this.gameStateManager.hostName = msg.hostName;
           this.gameStateManager.sendStateSyncTo(msg.playerName);
         }
@@ -182,7 +205,7 @@ export class WSClient {
         if (msg.allPlayers) {
           this.updatePlayers(msg.allPlayers);
           this.gameStateManager.playerNames = msg.allPlayers
-            .filter((p) => p.name !== "DM")
+            .filter((p) => !p.isDM)
             .map((p) => p.name);
         }
         console.error(
@@ -452,7 +475,7 @@ export class WSClient {
 
   private updatePlayers(allPlayers: PlayerInfo[]): void {
     this.players = allPlayers
-      .filter((p) => p.name !== "DM")
+      .filter((p) => !p.isDM)
       .map((p) => {
         const char = this.characters[p.name];
         const summary: PlayerSummary = {
@@ -617,25 +640,31 @@ export class WSClient {
   }
 
   private scheduleReconnect(): void {
-    if (this.closed || this.reconnectAttempts >= this.maxReconnectAttempts) {
-      if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-        console.error(
-          `[ws-client] Max reconnect attempts reached, giving up.`
-        );
-      }
-      return;
-    }
+    if (this.closed) return;
 
-    const delay = Math.min(1000 * 2 ** this.reconnectAttempts, 30_000);
+    const delay = Math.min(1000 * 2 ** Math.min(this.reconnectAttempts, 5), 30_000);
     this.reconnectAttempts++;
+    if (this.reconnectAttempts % 10 === 0) {
+      console.error(
+        `[ws-client] WARNING: ${this.reconnectAttempts} reconnect attempts so far — still trying...`
+      );
+    }
     console.error(
       `[ws-client] Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts})...`
     );
     setTimeout(() => this.connect(), delay);
   }
 
+  private clearPingInterval(): void {
+    if (this.pingInterval) {
+      clearInterval(this.pingInterval);
+      this.pingInterval = null;
+    }
+  }
+
   close(): void {
     this.closed = true;
+    this.clearPingInterval();
     this.ws?.close();
   }
 }

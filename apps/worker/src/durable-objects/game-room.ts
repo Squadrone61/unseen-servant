@@ -20,6 +20,7 @@ interface SessionData {
   avatarUrl?: string;
   status: PlayerStatus;
   joinedAt: number;
+  isDM: boolean;
 }
 
 interface PlayerRecord {
@@ -154,6 +155,7 @@ export class GameRoom extends DurableObject<Env> {
       userId: "",
       status: "player",
       joinedAt: Date.now(),
+      isDM: false,
     };
     server.serializeAttachment(tempSession);
     this.sessions.set(server, tempSession);
@@ -292,12 +294,19 @@ export class GameRoom extends DurableObject<Env> {
     ws.close(code, "Connection closed");
 
     if (session?.playerName) {
+      // Clear DM bridge config when DM disconnects
+      if (session.isDM) {
+        this.dmBridgeConfig = null;
+        this.ctx.storage.delete("dmBridgeConfig");
+      }
+
       this.broadcast({
         type: "server:player_left",
         playerName: session.playerName,
         players: this.getPlayerNames(),
         hostName: this.getHostName(),
         allPlayers: this.getAllPlayersWithStatus(),
+        isDM: session.isDM || undefined,
       });
       this.broadcast({
         type: "server:system",
@@ -305,14 +314,16 @@ export class GameRoom extends DurableObject<Env> {
         timestamp: Date.now(),
       });
 
-      // Notify bridge of player leaving
-      this.forwardToBridgeDirect({
-        type: "server:player_left",
-        playerName: session.playerName,
-        players: this.getPlayerNames(),
-        hostName: this.getHostName(),
-        allPlayers: this.getAllPlayersWithStatus(),
-      });
+      // Notify bridge of player leaving (only if it wasn't the bridge itself)
+      if (!session.isDM) {
+        this.forwardToBridgeDirect({
+          type: "server:player_left",
+          playerName: session.playerName,
+          players: this.getPlayerNames(),
+          hostName: this.getHostName(),
+          allPlayers: this.getAllPlayersWithStatus(),
+        });
+      }
 
       this.updateRoomMeta();
     }
@@ -352,12 +363,20 @@ export class GameRoom extends DurableObject<Env> {
     }
 
     const requestId = crypto.randomUUID();
-    dmWs.send(JSON.stringify({
-      type: "server:player_action",
-      playerName: session.playerName,
-      action: msg,
-      requestId,
-    }));
+    try {
+      dmWs.send(JSON.stringify({
+        type: "server:player_action",
+        playerName: session.playerName,
+        action: msg,
+        requestId,
+      }));
+    } catch {
+      this.sendTo(ws, {
+        type: "server:error",
+        message: "Failed to send to DM bridge — it may have disconnected",
+        code: "DM_SEND_FAILED",
+      });
+    }
   }
 
   /**
@@ -366,7 +385,11 @@ export class GameRoom extends DurableObject<Env> {
   private forwardToBridgeDirect(msg: ServerMessage): void {
     const dmWs = this.findDMBridgeWebSocket();
     if (dmWs) {
-      dmWs.send(JSON.stringify(msg));
+      try {
+        dmWs.send(JSON.stringify(msg));
+      } catch {
+        // DM bridge WebSocket may have closed
+      }
     }
   }
 
@@ -379,7 +402,7 @@ export class GameRoom extends DurableObject<Env> {
     msg: Extract<ClientMessage, { type: "client:broadcast" }>
   ): void {
     const session = this.sessions.get(ws);
-    if (session?.playerName !== "DM") {
+    if (!session?.isDM) {
       this.sendTo(ws, {
         type: "server:error",
         message: "Only the DM bridge can broadcast",
@@ -561,6 +584,7 @@ export class GameRoom extends DurableObject<Env> {
       avatarUrl,
       status,
       joinedAt: Date.now(),
+      isDM: msg.isDM ?? false,
     };
     ws.serializeAttachment(session);
     this.sessions.set(ws, session);
@@ -575,7 +599,7 @@ export class GameRoom extends DurableObject<Env> {
     isReconnect: boolean,
     authUser?: AuthUser
   ): void {
-    if (!this.allPlayerRecords.has(session.userId) && session.playerName !== "DM") {
+    if (!this.allPlayerRecords.has(session.userId) && !session.isDM) {
       this.allPlayerRecords.set(session.userId, {
         name: session.playerName,
         isHost: session.status === "host",
@@ -608,13 +632,15 @@ export class GameRoom extends DurableObject<Env> {
     }
 
     // Notify bridge so it can send game_state_sync
-    this.forwardToBridgeDirect({
-      type: "server:player_joined",
-      playerName: session.playerName,
-      players: this.getPlayerNames(),
-      hostName: this.getHostName(),
-      allPlayers: this.getAllPlayersWithStatus(),
-    });
+    if (!session.isDM) {
+      this.forwardToBridgeDirect({
+        type: "server:player_joined",
+        playerName: session.playerName,
+        players: this.getPlayerNames(),
+        hostName: this.getHostName(),
+        allPlayers: this.getAllPlayersWithStatus(),
+      });
+    }
 
     this.broadcastToApproved(
       {
@@ -623,6 +649,7 @@ export class GameRoom extends DurableObject<Env> {
         players: this.getPlayerNames(),
         hostName: this.getHostName(),
         allPlayers: this.getAllPlayersWithStatus(),
+        isDM: session.isDM || undefined,
       },
       ws
     );
@@ -869,14 +896,14 @@ export class GameRoom extends DurableObject<Env> {
 
   private findDMBridgeWebSocket(): WebSocket | null {
     for (const [ws, session] of this.sessions.entries()) {
-      if (session.playerName === "DM") return ws;
+      if (session.isDM) return ws;
     }
     return null;
   }
 
   private getPlayerNames(): string[] {
     return Array.from(this.sessions.values())
-      .filter((s) => s.playerName && s.playerName !== "DM")
+      .filter((s) => s.playerName && !s.isDM)
       .map((s) => s.playerName);
   }
 

@@ -191,4 +191,5 @@ export interface PlayerInfo {
   name: string;
   online: boolean;
   isHost: boolean;
+  isDM?: boolean;
 }
