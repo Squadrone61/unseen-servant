@@ -301,7 +301,7 @@ function GameContent({
             if (msg.isTyping) {
               const tid = window.setTimeout(() => {
                 setTypingPlayers(p => { const n = new Map(p); n.delete(msg.playerName); return n; });
-              }, 5000);
+              }, 30000);
               next.set(msg.playerName, tid);
             } else {
               next.delete(msg.playerName);

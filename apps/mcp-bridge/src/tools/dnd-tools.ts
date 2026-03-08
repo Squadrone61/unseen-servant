@@ -21,6 +21,7 @@ export function registerDndTools(server: McpServer, wsClient: WSClient): void {
         .describe("Spell name, e.g. 'fireball', 'cure wounds', 'shield'"),
     },
     async ({ spell_name }) => {
+      wsClient.sendTypingIndicator(true);
       const spell = await lookupSpell(spell_name);
       if (!spell) {
         return {
@@ -49,6 +50,7 @@ export function registerDndTools(server: McpServer, wsClient: WSClient): void {
         ),
     },
     async ({ monster_name }) => {
+      wsClient.sendTypingIndicator(true);
       const monster = await lookupMonster(monster_name);
       if (!monster) {
         return {
@@ -79,6 +81,7 @@ export function registerDndTools(server: McpServer, wsClient: WSClient): void {
         ),
     },
     async ({ condition_name }) => {
+      wsClient.sendTypingIndicator(true);
       const condition = await lookupCondition(condition_name);
       if (!condition) {
         return {
@@ -150,6 +153,7 @@ If \`targetCharacter\` is provided → Mode 2/2b. Otherwise → Mode 1.`,
         .describe("Roll with disadvantage (roll 2d20, take lower)"),
     },
     async ({ notation, reason, targetCharacter, checkType, ability, skill, dc, advantage, disadvantage }) => {
+      wsClient.sendTypingIndicator(true);
       // Mode 2: Interactive player check
       if (targetCharacter) {
         if (!checkType) {
