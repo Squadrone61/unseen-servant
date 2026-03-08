@@ -1,7 +1,9 @@
 import type { RollResult } from "@aidnd/shared/types";
 import type { Components } from "react-markdown";
 import ReactMarkdown from "react-markdown";
+import rehypeRaw from "rehype-raw";
 import remarkGfm from "remark-gfm";
+import { preprocessEntityTags } from "../../utils/entity-tags";
 import type { DisplayMessage } from "./ChatPanel";
 import { useTTS } from "../../hooks/useTTS";
 
@@ -320,8 +322,8 @@ export function ChatMessage({ message, onRollDice, myCharacterName }: ChatMessag
             <TTSButton text={message.content} />
           </div>
           <div className="text-gray-200 leading-relaxed prose-invert max-w-none">
-            <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
-              {message.content}
+            <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} components={markdownComponents}>
+              {preprocessEntityTags(message.content)}
             </ReactMarkdown>
           </div>
         </div>

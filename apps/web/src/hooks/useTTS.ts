@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 
 function stripMarkdown(text: string): string {
   return text
+    .replace(/\{(?:place|npc|pc|item|faction):([^}]+)\}/g, "$1") // entity tags
     .replace(/#{1,6}\s+/g, "")       // headings
     .replace(/\*\*(.+?)\*\*/g, "$1")  // bold
     .replace(/\*(.+?)\*/g, "$1")      // italic

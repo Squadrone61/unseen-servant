@@ -107,7 +107,17 @@ export const DM_SKILL_NARRATION = `## Narrative Style
 - When players explore, describe the environment with enough detail to spark curiosity
 - Reward investigation and creative problem-solving
 - Use all five senses in descriptions — not just sight
-- Foreshadow upcoming encounters or story beats through environmental details`;
+- Foreshadow upcoming encounters or story beats through environmental details
+
+### Entity Highlighting
+When mentioning named entities, wrap them in tags for UI color-coding:
+- Places (cities, taverns, roads, mountains): {place:Waterdeep}, {place:The Yawning Portal}
+- NPCs and gods: {npc:Barthen}, {npc:Tiamat}
+- Player characters: {pc:Zara Stormweave}, {pc:Thorin}
+- Items (specific named items, not generic "a sword"): {item:Flame Tongue}, {item:Potion of Healing}
+- Factions (guilds, organizations, orders): {faction:Zhentarim}, {faction:Harpers}
+
+Only tag proper names and specific named entities. Do not tag generic references like "the city" or "a tavern".`;
 
 export const DM_SKILL_RULES = `## D&D 5e Rules Enforcement
 

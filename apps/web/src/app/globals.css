@@ -40,3 +40,10 @@ body {
   background: var(--color-gray-600);
   border-radius: 4px;
 }
+
+/* Entity color-coding for DM narrative tags */
+.entity-place { color: #fbbf24; }
+.entity-npc { color: #22d3ee; }
+.entity-pc { color: #a78bfa; }
+.entity-item { color: #34d399; }
+.entity-faction { color: #fb7185; }
