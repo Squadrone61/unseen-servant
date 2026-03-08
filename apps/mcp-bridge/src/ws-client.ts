@@ -202,6 +202,8 @@ export class WSClient {
         if (!msg.isDM) {
           this.gameStateManager.hostName = msg.hostName;
           this.gameStateManager.sendStateSyncTo(msg.playerName);
+          // Send saved notes if campaign is active
+          this.sendPlayerNotes(msg.playerName);
         }
         break;
       }
@@ -263,6 +265,10 @@ export class WSClient {
     }
     if (raw.action.type === "client:configure_campaign") {
       this.handleConfigureCampaign(raw.action);
+      return;
+    }
+    if (raw.action.type === "client:save_notes") {
+      this.handleSaveNotes(raw.playerName, raw.action.content);
       return;
     }
 
@@ -433,6 +439,9 @@ export class WSClient {
         supportsTools: true,
         campaigns: campaigns.length > 0 ? campaigns : undefined,
       });
+
+      // Send saved notes to all connected players
+      this.sendAllPlayerNotes();
     } catch (e) {
       console.error(`[ws-client] Campaign configure error: ${e instanceof Error ? e.message : String(e)}`);
     }
@@ -536,6 +545,9 @@ export class WSClient {
       // Broadcast game state sync so players get restored combat/encounter state
       this.gameStateManager.broadcastGameStateSync();
 
+      // Send saved notes to all connected players
+      this.sendAllPlayerNotes();
+
       console.error(
         `[ws-client] Session restored: ${snapshot.conversationHistory.length} messages, ` +
         `story=${snapshot.storyStarted}, combat=${!!snapshot.gameState.encounter?.combat}, ` +
@@ -545,6 +557,43 @@ export class WSClient {
       console.error(
         `[ws-client] Session restore error: ${e instanceof Error ? e.message : String(e)}`
       );
+    }
+  }
+
+  /** Save player notes to campaign (private, AI never sees these). */
+  private handleSaveNotes(playerName: string, content: string): void {
+    const cm = this.options.campaignManager;
+    if (!cm.activeSlug) return;
+
+    try {
+      cm.savePlayerNotes(playerName, content);
+    } catch (e) {
+      console.error(`[ws-client] Save notes error: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  }
+
+  /** Send saved notes to a specific player via targeted broadcast. */
+  private sendPlayerNotes(playerName: string): void {
+    const cm = this.options.campaignManager;
+    if (!cm.activeSlug) return;
+
+    try {
+      const notes = cm.loadPlayerNotes(playerName);
+      if (notes !== null) {
+        this.broadcastViaWorker(
+          { type: "server:player_notes_loaded", content: notes },
+          [playerName],
+        );
+      }
+    } catch (e) {
+      console.error(`[ws-client] Load notes error: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  }
+
+  /** Send saved notes to all connected players. */
+  private sendAllPlayerNotes(): void {
+    for (const player of this.players) {
+      this.sendPlayerNotes(player.name);
     }
   }
 

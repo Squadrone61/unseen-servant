@@ -391,6 +391,11 @@ export const clientTypingSchema = z.object({
   isTyping: z.boolean(),
 });
 
+export const clientSaveNotesSchema = z.object({
+  type: z.literal("client:save_notes"),
+  content: z.string().max(50000),
+});
+
 export const clientBroadcastSchema = z.object({
   type: z.literal("client:broadcast"),
   payload: z.any(), // ServerMessage validated at runtime
@@ -431,6 +436,7 @@ export const clientMessageSchema = z.discriminatedUnion("type", [
   clientBroadcastSchema,
   clientActionResultSchema,
   clientTypingSchema,
+  clientSaveNotesSchema,
 ]);
 
 // === Server → Client schemas ===
@@ -624,6 +630,11 @@ export const serverTypingSchema = z.object({
   isTyping: z.boolean(),
 });
 
+export const serverPlayerNotesLoadedSchema = z.object({
+  type: z.literal("server:player_notes_loaded"),
+  content: z.string(),
+});
+
 export const serverRoomDestroyedSchema = z.object({
   type: z.literal("server:room_destroyed"),
 });
@@ -654,4 +665,5 @@ export const serverMessageSchema = z.discriminatedUnion("type", [
   serverPlayerActionSchema,
   serverRoomDestroyedSchema,
   serverTypingSchema,
+  serverPlayerNotesLoadedSchema,
 ]);

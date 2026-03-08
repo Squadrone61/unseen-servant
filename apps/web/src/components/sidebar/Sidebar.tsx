@@ -31,6 +31,8 @@ interface SidebarProps {
   onDestroyRoom?: () => void;
   onSetPassword?: (password: string) => void;
   onOpenCampaignConfig?: () => void;
+  onToggleNotes?: () => void;
+  showNotes?: boolean;
 }
 
 export function Sidebar({
@@ -53,6 +55,8 @@ export function Sidebar({
   onDestroyRoom,
   onSetPassword,
   onOpenCampaignConfig,
+  onToggleNotes,
+  showNotes,
 }: SidebarProps) {
   const [logCollapsed, setLogCollapsed] = useState(false);
   const [eventLogCollapsed, setEventLogCollapsed] = useState(true);
@@ -321,6 +325,23 @@ export function Sidebar({
               {activeCampaignName}
             </span>
           </div>
+        </div>
+      )}
+
+      {/* Notes toggle (visible when campaign is active) */}
+      {activeCampaignName && onToggleNotes && (
+        <div className="px-4 py-2 border-b border-gray-700">
+          <button
+            onClick={onToggleNotes}
+            className={`w-full flex items-center gap-2 text-sm py-1.5 px-2 rounded-lg transition-colors ${
+              showNotes
+                ? "bg-purple-600/20 text-purple-400"
+                : "text-gray-400 hover:text-gray-200 hover:bg-gray-700/50"
+            }`}
+          >
+            <span className="text-base">&#128221;</span>
+            <span>Notes</span>
+          </button>
         </div>
       )}
 

@@ -282,6 +282,7 @@ export class GameRoom extends DurableObject<Env> {
       case "client:dm_override":
       case "client:set_campaign":
       case "client:configure_campaign":
+      case "client:save_notes":
         this.forwardToBridge(ws, msg);
         break;
 

@@ -9,6 +9,8 @@ import { useWebSocket } from "@/hooks/useWebSocket";
 import { InitiativeTracker } from "@/components/game/InitiativeTracker";
 import { BattleMap } from "@/components/game/BattleMap";
 import { CampaignConfigModal } from "@/components/sidebar/CampaignConfigModal";
+import { PlayerNotesPanel } from "@/components/notes/PlayerNotesPanel";
+import { usePlayerNotes } from "@/hooks/usePlayerNotes";
 import type {
   BattleMapState,
   CharacterData,
@@ -100,6 +102,7 @@ function GameContent({
   const [activeCampaignName, setActiveCampaignName] = useState<string | undefined>(undefined);
   const [campaignConfigured, setCampaignConfigured] = useState(false);
   const [showCampaignConfig, setShowCampaignConfig] = useState(false);
+  const [showNotes, setShowNotes] = useState(false);
   const [typingPlayers, setTypingPlayers] = useState<Map<string, number>>(new Map());
 
   // Join state — don't render game UI until successfully joined
@@ -120,6 +123,8 @@ function GameContent({
 
   // Track whether we've sent the initial character
   const sentCharacterRef = useRef(false);
+  // Ref for player notes loaded callback (set after useWebSocket)
+  const playerNotesLoadedRef = useRef<((content: string) => void) | null>(null);
 
   // Load all browser storage values after mount (avoids hydration mismatch)
   useEffect(() => {
@@ -306,6 +311,10 @@ function GameContent({
           break;
         }
 
+        case "server:player_notes_loaded":
+          playerNotesLoadedRef.current?.(msg.content);
+          break;
+
         case "server:check_request":
           // Append as-is — shows Roll button to target player
           setStoryMessages((prev) => [...prev, msg]);
@@ -397,6 +406,11 @@ function GameContent({
     onMessage: handleMessage,
     enabled: clientReady,
   });
+
+  // Player notes hook
+  const { notes: playerNotes, saveState: notesSaveState, updateNotes, handleNotesLoaded } =
+    usePlayerNotes({ send });
+  playerNotesLoadedRef.current = handleNotesLoaded;
 
   // Expose message handler for Playwright tests (zero cost, no-op in production)
   useEffect(() => {
@@ -632,7 +646,19 @@ function GameContent({
         onDestroyRoom={handleDestroyRoom}
         onSetPassword={handleSetPassword}
         onOpenCampaignConfig={() => setShowCampaignConfig(true)}
+        onToggleNotes={() => setShowNotes((v) => !v)}
+        showNotes={showNotes}
       />
+
+      {/* Player Notes Panel */}
+      {showNotes && (
+        <PlayerNotesPanel
+          notes={playerNotes}
+          saveState={notesSaveState}
+          onChange={updateNotes}
+          onClose={() => setShowNotes(false)}
+        />
+      )}
 
       {/* Campaign Config Modal */}
       {showCampaignConfig && (

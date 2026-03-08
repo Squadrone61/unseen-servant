@@ -205,6 +205,12 @@ export interface ClientTypingMessage {
   isTyping: boolean;
 }
 
+/** Player saving personal notes (private, AI DM cannot read) */
+export interface ClientSaveNotesMessage {
+  type: "client:save_notes";
+  content: string;
+}
+
 /** DM Bridge → Server: broadcast a ServerMessage payload to all (or targeted) players */
 export interface ClientBroadcastMessage {
   type: "client:broadcast";
@@ -246,7 +252,8 @@ export type ClientMessage =
   | ClientDMCheckResultMessage
   | ClientBroadcastMessage
   | ClientActionResultMessage
-  | ClientTypingMessage;
+  | ClientTypingMessage
+  | ClientSaveNotesMessage;
 
 // === Server → Client messages ===
 
@@ -446,6 +453,12 @@ export interface ServerTypingMessage {
   isTyping: boolean;
 }
 
+/** Player's saved notes loaded from campaign (private, AI DM cannot read) */
+export interface ServerPlayerNotesLoadedMessage {
+  type: "server:player_notes_loaded";
+  content: string;
+}
+
 /** Broadcast when host destroys the room — all clients should disconnect */
 export interface ServerRoomDestroyedMessage {
   type: "server:room_destroyed";
@@ -476,4 +489,5 @@ export type ServerMessage =
   | ServerDMRollRequestMessage
   | ServerPlayerActionMessage
   | ServerRoomDestroyedMessage
-  | ServerTypingMessage;
+  | ServerTypingMessage
+  | ServerPlayerNotesLoadedMessage;

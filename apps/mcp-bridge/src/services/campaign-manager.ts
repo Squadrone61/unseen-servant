@@ -498,6 +498,24 @@ export class CampaignManager {
     this.manifestDirty = true;
   }
 
+  /** Save a player's personal notes. Private — excluded from getStartupContext. */
+  savePlayerNotes(playerName: string, content: string): void {
+    if (!this.activeDir) throw new Error("No campaign loaded");
+    const notesDir = path.join(this.activeDir, "notes");
+    this.ensureDir(notesDir);
+    const slug = slugify(playerName);
+    fs.writeFileSync(path.join(notesDir, `${slug}.md`), content, "utf-8");
+  }
+
+  /** Load a player's personal notes. Returns null if none saved. */
+  loadPlayerNotes(playerName: string): string | null {
+    if (!this.activeDir) return null;
+    const slug = slugify(playerName);
+    const notesPath = path.join(this.activeDir, "notes", `${slug}.md`);
+    if (!fs.existsSync(notesPath)) return null;
+    return fs.readFileSync(notesPath, "utf-8");
+  }
+
   /** Update the players list in the manifest. */
   updatePlayers(playerNames: string[]): void {
     if (!this.cachedManifest) return;
