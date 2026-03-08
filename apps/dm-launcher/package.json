@@ -13,7 +13,6 @@
     "@modelcontextprotocol/sdk": "^1.12.1",
     "@types/node": "^20",
     "esbuild": "^0.25.0",
-    "ws": "^8.18.0",
     "zod": "^3.25.0"
   }
 }

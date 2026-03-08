@@ -32,7 +32,6 @@ import {
   DM_SKILL_RULES,
   DM_SKILL_PLAYER_IDENTITY,
   DM_SKILL_CAMPAIGN,
-  DM_SKILL_TOOLS,
 } from "@aidnd/shared";
 import type { MessageQueue } from "../message-queue.js";
 import type { CampaignManager } from "./campaign-manager.js";
@@ -139,9 +138,6 @@ export class GameStateManager {
     if (this.campaignManager.activeSlug) {
       sections.push(DM_SKILL_CAMPAIGN);
     }
-
-    // Tools reference always included
-    sections.push(DM_SKILL_TOOLS);
 
     // Host custom instructions appended last
     if (this.gameState.customSystemPrompt) {

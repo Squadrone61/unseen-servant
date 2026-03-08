@@ -10,12 +10,16 @@ import { spawn, execSync } from "child_process";
 import { randomBytes } from "crypto";
 import {
   DM_CORE_PROMPT,
-  DM_SKILL_COMBAT,
-  DM_SKILL_NARRATION,
-  DM_SKILL_RULES,
-  DM_SKILL_PLAYER_IDENTITY,
-  DM_SKILL_CAMPAIGN,
-  DM_SKILL_TOOLS,
+  NATIVE_SKILL_COMBAT_SETUP,
+  NATIVE_SKILL_SHORT_REST,
+  NATIVE_SKILL_LONG_REST,
+  NATIVE_SKILL_RECAP,
+  NATIVE_SKILL_NPC_VOICE,
+  NATIVE_SKILL_STORY_ARC,
+  NATIVE_SKILL_LOOT_DROP,
+  NATIVE_SKILL_TAVERN,
+  NATIVE_SKILL_LEVEL_UP,
+  NATIVE_SKILL_BATTLE_TACTICS,
 } from "@aidnd/shared";
 
 declare const AIDND_VERSION: string;
@@ -36,32 +40,18 @@ const BANNER = `
 ╚══════════════════════════════════════════════════╝
 `;
 
-/** Skill files written to tmpDir/skills/ for Claude Code to reference */
-const SKILL_FILES: Record<string, { description: string; content: string }> = {
-  "combat.md": {
-    description: "Combat workflow, battle map setup, turn management, attack resolution",
-    content: DM_SKILL_COMBAT,
-  },
-  "narration.md": {
-    description: "Narrative style, NPC voices, pacing, scene hooks, exploration",
-    content: DM_SKILL_NARRATION,
-  },
-  "rules.md": {
-    description: "D&D 5e enforcement — lookup tools, dice rolling, HP/spell slot tracking",
-    content: DM_SKILL_RULES,
-  },
-  "player-identity.md": {
-    description: "Character identity enforcement, action validation, when to respond vs acknowledge",
-    content: DM_SKILL_PLAYER_IDENTITY,
-  },
-  "campaign.md": {
-    description: "Note-taking protocol, session lifecycle, what/when to note",
-    content: DM_SKILL_CAMPAIGN,
-  },
-  "tools.md": {
-    description: "Complete MCP tool reference table",
-    content: DM_SKILL_TOOLS,
-  },
+/** Native Claude Code skills — user-invocable slash commands written to .claude/skills/ */
+const NATIVE_SKILLS: Record<string, string> = {
+  "combat-setup": NATIVE_SKILL_COMBAT_SETUP,
+  "short-rest": NATIVE_SKILL_SHORT_REST,
+  "long-rest": NATIVE_SKILL_LONG_REST,
+  "recap": NATIVE_SKILL_RECAP,
+  "npc-voice": NATIVE_SKILL_NPC_VOICE,
+  "story-arc": NATIVE_SKILL_STORY_ARC,
+  "loot-drop": NATIVE_SKILL_LOOT_DROP,
+  "tavern": NATIVE_SKILL_TAVERN,
+  "level-up": NATIVE_SKILL_LEVEL_UP,
+  "battle-tactics": NATIVE_SKILL_BATTLE_TACTICS,
 };
 
 function prompt(rl: readline.Interface, question: string): Promise<string> {
@@ -86,19 +76,26 @@ function checkClaudeCli(): boolean {
 }
 
 function buildClaudeMd(): string {
-  const skillIndex = Object.entries(SKILL_FILES)
-    .map(([file, { description }]) => `- \`skills/${file}\` — ${description}`)
-    .join("\n");
-
   return `${DM_CORE_PROMPT}
 
-## Skill Reference Files
+## Dynamic System Prompt
 
-Detailed rules are in the \`skills/\` directory. Refer to them as needed:
+The \`systemPrompt\` field in each \`wait_for_message\` response contains contextual DM instructions tailored to the current game state (combat vs exploration, campaign active, etc.). **Follow those instructions closely** — they are your primary behavioral guide.
 
-${skillIndex}
+## Slash Commands
 
-The system prompt delivered with each \`wait_for_message\` request includes the relevant skill content based on the current game state (combat vs exploration). Follow those instructions closely.`;
+Use these slash commands for common DM workflows:
+
+- \`/combat-setup\` — Guided encounter setup with monster lookup, battle map, and initiative
+- \`/short-rest\` — Hit Dice healing and class feature recovery
+- \`/long-rest\` — Full HP restore, spell slots, condition clearing
+- \`/recap\` — Narrate story-so-far from campaign notes
+- \`/npc-voice\` — Generate an NPC with personality, speech patterns, and secrets
+- \`/story-arc\` — Design a multi-session story arc (DM-only planning)
+- \`/loot-drop\` — Generate contextual loot for an encounter
+- \`/tavern\` — Generate a tavern or shop with NPCs, rumors, and atmosphere
+- \`/level-up\` — Level up assistant with growth narration
+- \`/battle-tactics\` — Monster AI tactical advisor (combat only, DM-only)`;
 }
 
 export async function startCli(): Promise<void> {
@@ -152,11 +149,11 @@ export async function startCli(): Promise<void> {
   const tmpDir = path.join(os.tmpdir(), `aidnd-dm-${tmpId}`);
   fs.mkdirSync(tmpDir, { recursive: true });
 
-  // Create skills directory and write skill files
-  const skillsDir = path.join(tmpDir, "skills");
-  fs.mkdirSync(skillsDir, { recursive: true });
-  for (const [filename, { content }] of Object.entries(SKILL_FILES)) {
-    fs.writeFileSync(path.join(skillsDir, filename), content);
+  // Create native Claude Code skills (.claude/skills/<name>/SKILL.md)
+  for (const [name, content] of Object.entries(NATIVE_SKILLS)) {
+    const skillDir = path.join(tmpDir, ".claude", "skills", name);
+    fs.mkdirSync(skillDir, { recursive: true });
+    fs.writeFileSync(path.join(skillDir, "SKILL.md"), content);
   }
 
   // Campaigns persist in ~/.aidnd/campaigns/ (not in the temp dir)

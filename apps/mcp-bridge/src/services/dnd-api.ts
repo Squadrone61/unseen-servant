@@ -9,7 +9,7 @@ const API_BASE = "https://www.dnd5eapi.co/api/2014";
 const cache = new Map<string, { data: unknown; timestamp: number }>();
 const CACHE_TTL = 1800_000; // 30 minutes
 
-export interface SpellData {
+interface SpellData {
   index: string;
   name: string;
   level: number;
@@ -38,7 +38,7 @@ export interface SpellData {
   classes?: Array<{ name: string }>;
 }
 
-export interface MonsterData {
+interface MonsterData {
   index: string;
   name: string;
   size: string;
@@ -70,7 +70,7 @@ export interface MonsterData {
   reactions?: Array<{ name: string; desc: string }>;
 }
 
-export interface ConditionData {
+interface ConditionData {
   index: string;
   name: string;
   desc: string[];
