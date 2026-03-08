@@ -26,6 +26,14 @@ import type {
   CreatureSize,
 } from "@aidnd/shared/types";
 import { rollCheck, rollDamage, rollInitiative, buildCheckLabel, computeCheckModifier } from "@aidnd/shared/utils";
+import {
+  DM_SKILL_COMBAT,
+  DM_SKILL_NARRATION,
+  DM_SKILL_RULES,
+  DM_SKILL_PLAYER_IDENTITY,
+  DM_SKILL_CAMPAIGN,
+  DM_SKILL_TOOLS,
+} from "@aidnd/shared";
 import type { MessageQueue } from "../message-queue.js";
 import type { CampaignManager } from "./campaign-manager.js";
 
@@ -111,10 +119,42 @@ export class GameStateManager {
     }
   }
 
+  /** Compose the system prompt dynamically based on current game state */
+  private composeContextualPrompt(): string {
+    const sections: string[] = [];
+
+    // Always include: player identity + rules
+    sections.push(DM_SKILL_PLAYER_IDENTITY);
+    sections.push(DM_SKILL_RULES);
+
+    // Combat and narration are mutually exclusive
+    const inCombat = !!this.gameState.encounter?.combat;
+    if (inCombat) {
+      sections.push(DM_SKILL_COMBAT);
+    } else {
+      sections.push(DM_SKILL_NARRATION);
+    }
+
+    // Campaign skill when campaign is active
+    if (this.campaignManager.activeSlug) {
+      sections.push(DM_SKILL_CAMPAIGN);
+    }
+
+    // Tools reference always included
+    sections.push(DM_SKILL_TOOLS);
+
+    // Host custom instructions appended last
+    if (this.gameState.customSystemPrompt) {
+      sections.push(`## Host Instructions\n\n${this.gameState.customSystemPrompt}`);
+    }
+
+    return sections.join("\n\n");
+  }
+
   /** Push a DM request with only new messages since last send */
   private pushDMRequest(): void {
     const requestId = crypto.randomUUID();
-    const systemPrompt = this.gameState.customSystemPrompt ?? "";
+    const systemPrompt = this.composeContextualPrompt();
     const newMessages = this.conversationHistory.slice(this.lastSentIndex);
     this.lastSentIndex = this.conversationHistory.length;
     this.messageQueue.push({ requestId, systemPrompt, messages: newMessages });
@@ -240,7 +280,6 @@ export class GameStateManager {
     });
 
     const userMsg = `The adventuring party has gathered: ${partyDescriptions.join(", ")}. Set the scene and introduce each character!`;
-    const systemPrompt = this.gameState.customSystemPrompt ?? "";
 
     this.conversationHistory.push({
       role: "user",

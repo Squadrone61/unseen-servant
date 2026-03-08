@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { DM_SYSTEM_PROMPT } from "@aidnd/shared";
 import type { EncounterLength, PacingProfile } from "@aidnd/shared/types";
 
 interface CampaignInfo {
@@ -33,13 +32,13 @@ export function CampaignConfigModal({
   );
   const [campaignName, setCampaignName] = useState("");
   const [selectedSlug, setSelectedSlug] = useState(campaigns[0]?.slug || "");
-  const [systemPrompt, setSystemPrompt] = useState(DM_SYSTEM_PROMPT);
+  const [systemPrompt, setSystemPrompt] = useState("");
   const [pacingProfile, setPacingProfile] = useState<PacingProfile>("balanced");
   const [encounterLength, setEncounterLength] =
     useState<EncounterLength>("standard");
   const [showPrompt, setShowPrompt] = useState(false);
 
-  const isCustomPrompt = systemPrompt.trim() !== DM_SYSTEM_PROMPT.trim();
+  const hasCustomPrompt = systemPrompt.trim().length > 0;
 
   // Close on Escape
   useEffect(() => {
@@ -61,7 +60,7 @@ export function CampaignConfigModal({
 
     onSubmit({
       campaignName: name,
-      systemPrompt: isCustomPrompt ? systemPrompt : undefined,
+      systemPrompt: hasCustomPrompt ? systemPrompt : undefined,
       pacingProfile,
       encounterLength,
       existingCampaignSlug: mode === "existing" ? selectedSlug : undefined,
@@ -194,7 +193,7 @@ export function CampaignConfigModal({
             </select>
           </div>
 
-          {/* System Prompt Toggle */}
+          {/* Custom DM Instructions Toggle */}
           <div>
             <button
               onClick={() => setShowPrompt(!showPrompt)}
@@ -205,38 +204,40 @@ export function CampaignConfigModal({
               >
                 &#9654;
               </span>
-              <span>System Prompt</span>
-              <span
-                className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
-                  isCustomPrompt
-                    ? "bg-yellow-600/20 text-yellow-400"
-                    : "bg-gray-700/50 text-gray-500"
-                }`}
-              >
-                {isCustomPrompt ? "Custom" : "Default"}
-              </span>
+              <span>Custom DM Instructions</span>
+              {hasCustomPrompt && (
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-yellow-600/20 text-yellow-400">
+                  Custom
+                </span>
+              )}
             </button>
             {showPrompt && (
               <div className="mt-2 space-y-2">
                 <textarea
                   value={systemPrompt}
                   onChange={(e) => setSystemPrompt(e.target.value)}
+                  placeholder="e.g. Use a dark gothic horror tone. NPCs speak in riddles. Be generous with loot..."
                   className="w-full h-48 bg-gray-900 border border-gray-700 rounded-lg px-3 py-2
                              text-sm text-gray-200 font-mono leading-relaxed resize-y
+                             placeholder-gray-600
                              focus:outline-none focus:ring-1 focus:ring-purple-500"
                   spellCheck={false}
                 />
                 <div className="flex items-center justify-between text-xs text-gray-500">
                   <span>{systemPrompt.length.toLocaleString()} characters</span>
-                  {isCustomPrompt && (
+                  {hasCustomPrompt && (
                     <button
-                      onClick={() => setSystemPrompt(DM_SYSTEM_PROMPT)}
+                      onClick={() => setSystemPrompt("")}
                       className="text-gray-400 hover:text-gray-200 transition-colors"
                     >
-                      Reset to Default
+                      Clear Custom Instructions
                     </button>
                   )}
                 </div>
+                <p className="text-[11px] text-gray-600 leading-relaxed">
+                  These are added on top of the default DM rules (combat, dice, identity, etc.).
+                  Leave empty to use defaults only.
+                </p>
               </div>
             )}
           </div>

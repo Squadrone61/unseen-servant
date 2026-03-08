@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { DM_SYSTEM_PROMPT } from "@aidnd/shared";
 
 interface SystemPromptModalProps {
   currentPrompt?: string;
@@ -14,8 +13,8 @@ export function SystemPromptModal({
   onSave,
   onClose,
 }: SystemPromptModalProps) {
-  const [text, setText] = useState(currentPrompt || DM_SYSTEM_PROMPT);
-  const isCustom = text !== DM_SYSTEM_PROMPT;
+  const [text, setText] = useState(currentPrompt || "");
+  const hasContent = text.trim().length > 0;
 
   // Close on Escape
   useEffect(() => {
@@ -27,17 +26,16 @@ export function SystemPromptModal({
   }, [onClose]);
 
   const handleSave = () => {
-    // If the text matches default, save as undefined (reset)
-    if (text.trim() === DM_SYSTEM_PROMPT.trim()) {
-      onSave(undefined);
-    } else {
+    if (hasContent) {
       onSave(text);
+    } else {
+      onSave(undefined);
     }
     onClose();
   };
 
-  const handleReset = () => {
-    setText(DM_SYSTEM_PROMPT);
+  const handleClear = () => {
+    setText("");
   };
 
   return (
@@ -52,10 +50,10 @@ export function SystemPromptModal({
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-700">
           <div>
             <h2 className="text-base font-semibold text-gray-200">
-              DM System Prompt
+              Custom DM Instructions
             </h2>
             <p className="text-xs text-gray-500 mt-0.5">
-              Customize the AI Dungeon Master&apos;s personality and style
+              Add custom instructions on top of the default DM rules
             </p>
           </div>
           <button
@@ -71,32 +69,34 @@ export function SystemPromptModal({
           <textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
+            placeholder="e.g. Use a dark gothic horror tone. NPCs speak in riddles. Be generous with loot..."
             className="w-full h-80 bg-gray-900 border border-gray-700 rounded-lg px-4 py-3
                        text-sm text-gray-200 font-mono leading-relaxed resize-y
+                       placeholder-gray-600
                        focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
             spellCheck={false}
           />
           <div className="flex items-center justify-between text-xs text-gray-500">
             <span>{text.length.toLocaleString()} characters</span>
-            {isCustom && (
-              <span className="text-yellow-500/80">Custom prompt</span>
+            {hasContent && (
+              <span className="text-yellow-500/80">Custom</span>
             )}
           </div>
           <p className="text-[11px] text-gray-600 leading-relaxed">
-            Technical instructions (structured output format, combat rules, few-shot examples)
-            are always appended automatically and cannot be edited here.
+            These instructions are added on top of the default DM rules (combat procedures,
+            dice rolling, player identity, etc.). Leave empty to use defaults only.
           </p>
         </div>
 
         {/* Footer */}
         <div className="flex items-center justify-between px-5 py-4 border-t border-gray-700">
           <button
-            onClick={handleReset}
-            disabled={!isCustom}
+            onClick={handleClear}
+            disabled={!hasContent}
             className="text-sm text-gray-400 hover:text-gray-200 disabled:text-gray-600
                        disabled:cursor-not-allowed transition-colors"
           >
-            Reset to Default
+            Clear Custom Instructions
           </button>
           <div className="flex gap-2">
             <button

@@ -8,7 +8,15 @@ import * as path from "path";
 import * as readline from "readline";
 import { spawn, execSync } from "child_process";
 import { randomBytes } from "crypto";
-import { DM_SYSTEM_PROMPT } from "@aidnd/shared";
+import {
+  DM_CORE_PROMPT,
+  DM_SKILL_COMBAT,
+  DM_SKILL_NARRATION,
+  DM_SKILL_RULES,
+  DM_SKILL_PLAYER_IDENTITY,
+  DM_SKILL_CAMPAIGN,
+  DM_SKILL_TOOLS,
+} from "@aidnd/shared";
 
 declare const AIDND_VERSION: string;
 declare const PRODUCTION_WORKER_URL: string;
@@ -27,6 +35,34 @@ const BANNER = `
 ║        D&D 5e — Powered by Claude Code           ║
 ╚══════════════════════════════════════════════════╝
 `;
+
+/** Skill files written to tmpDir/skills/ for Claude Code to reference */
+const SKILL_FILES: Record<string, { description: string; content: string }> = {
+  "combat.md": {
+    description: "Combat workflow, battle map setup, turn management, attack resolution",
+    content: DM_SKILL_COMBAT,
+  },
+  "narration.md": {
+    description: "Narrative style, NPC voices, pacing, scene hooks, exploration",
+    content: DM_SKILL_NARRATION,
+  },
+  "rules.md": {
+    description: "D&D 5e enforcement — lookup tools, dice rolling, HP/spell slot tracking",
+    content: DM_SKILL_RULES,
+  },
+  "player-identity.md": {
+    description: "Character identity enforcement, action validation, when to respond vs acknowledge",
+    content: DM_SKILL_PLAYER_IDENTITY,
+  },
+  "campaign.md": {
+    description: "Note-taking protocol, session lifecycle, what/when to note",
+    content: DM_SKILL_CAMPAIGN,
+  },
+  "tools.md": {
+    description: "Complete MCP tool reference table",
+    content: DM_SKILL_TOOLS,
+  },
+};
 
 function prompt(rl: readline.Interface, question: string): Promise<string> {
   return new Promise((resolve) => rl.question(question, resolve));
@@ -47,6 +83,22 @@ function checkClaudeCli(): boolean {
   } catch {
     return false;
   }
+}
+
+function buildClaudeMd(): string {
+  const skillIndex = Object.entries(SKILL_FILES)
+    .map(([file, { description }]) => `- \`skills/${file}\` — ${description}`)
+    .join("\n");
+
+  return `${DM_CORE_PROMPT}
+
+## Skill Reference Files
+
+Detailed rules are in the \`skills/\` directory. Refer to them as needed:
+
+${skillIndex}
+
+The system prompt delivered with each \`wait_for_message\` request includes the relevant skill content based on the current game state (combat vs exploration). Follow those instructions closely.`;
 }
 
 export async function startCli(): Promise<void> {
@@ -100,6 +152,13 @@ export async function startCli(): Promise<void> {
   const tmpDir = path.join(os.tmpdir(), `aidnd-dm-${tmpId}`);
   fs.mkdirSync(tmpDir, { recursive: true });
 
+  // Create skills directory and write skill files
+  const skillsDir = path.join(tmpDir, "skills");
+  fs.mkdirSync(skillsDir, { recursive: true });
+  for (const [filename, { content }] of Object.entries(SKILL_FILES)) {
+    fs.writeFileSync(path.join(skillsDir, filename), content);
+  }
+
   // Campaigns persist in ~/.aidnd/campaigns/ (not in the temp dir)
   const campaignsDir = path.join(os.homedir(), ".aidnd", "campaigns");
   fs.mkdirSync(campaignsDir, { recursive: true });
@@ -125,8 +184,8 @@ export async function startCli(): Promise<void> {
     JSON.stringify(mcpConfig, null, 2)
   );
 
-  // Write CLAUDE.md
-  fs.writeFileSync(path.join(tmpDir, "CLAUDE.md"), DM_SYSTEM_PROMPT);
+  // Write CLAUDE.md — slim core prompt + skill file index
+  fs.writeFileSync(path.join(tmpDir, "CLAUDE.md"), buildClaudeMd());
 
   console.log(`Room:       ${roomCode}`);
   console.log(`Model:      ${model}`);
@@ -136,7 +195,7 @@ export async function startCli(): Promise<void> {
   console.log("");
   console.log("Launching Claude Code...\n");
 
-  // Spawn Claude Code with full DM system prompt (replaces default coding assistant prompt)
+  // Spawn Claude Code with core DM system prompt (replaces default coding assistant prompt)
   // Auto-allow all aidnd-dm MCP tools so the DM can run without permission prompts
   const claude = spawn(
     "claude",
@@ -146,7 +205,7 @@ export async function startCli(): Promise<void> {
       "--model",
       model,
       "--system-prompt",
-      DM_SYSTEM_PROMPT,
+      DM_CORE_PROMPT,
       "--tools",
       "",
       "--allowedTools",
