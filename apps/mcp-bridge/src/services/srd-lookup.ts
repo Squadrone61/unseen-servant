@@ -1,5 +1,6 @@
 /**
- * Local SRD 5.2 lookup service — reads markdown files from disk.
+ * Local SRD lookup service — reads markdown files from disk.
+ * Supports both SRD 5.2 (2024) and SRD 5.1 (2014) directory layouts via SrdLayout config.
  * No external API calls, no JSON index — just filename-based lookup + content search.
  */
 
@@ -12,6 +13,35 @@ interface SearchResult {
   content: string;
 }
 
+interface SrdLayout {
+  /** Spell subdirectories. 5.2: ["Cantrip","Level 1",...]. 5.1: ["Cantrip","1st Level",...]. Empty = flat. */
+  spellSubDirs: string[];
+  /** Directory name for conditions. 5.2: "Glossary". 5.1: "Conditions". */
+  conditionDir: string;
+  /** Whether conditions use [Condition] tags (5.2) or are all conditions by default (5.1). */
+  conditionUseTags: boolean;
+  /** Magic item rarity subdirectories. */
+  magicItemSubDirs: string[];
+  /** Additional directories to warm for searchRules. */
+  extraDirs: string[];
+}
+
+const LAYOUT_52: SrdLayout = {
+  spellSubDirs: ["Cantrip", "Level 1", "Level 2", "Level 3", "Level 4", "Level 5", "Level 6", "Level 7", "Level 8", "Level 9"],
+  conditionDir: "Glossary",
+  conditionUseTags: true,
+  magicItemSubDirs: ["Common", "Uncommon", "Rare", "Very Rare", "Legendary", "Artifact", "Varies"],
+  extraDirs: ["Classes", "Equipment", "Backgrounds", "Species", "Playing", "Gameplay", "Services"],
+};
+
+export const LAYOUT_51: SrdLayout = {
+  spellSubDirs: ["Cantrip", "1st Level", "2nd Level", "3rd Level", "4th Level", "5th Level", "6th Level", "7th Level", "8th Level", "9th Level"],
+  conditionDir: "Conditions",
+  conditionUseTags: false,
+  magicItemSubDirs: ["Common", "Uncommon", "Rare", "Very Rare", "Legendary", "Artifact", "Varies"],
+  extraDirs: ["Combat", "Abilities", "Environment", "NPCs", "Spellcasting", "Resting", "Races", "Character", "Movement", "Between Adventures"],
+};
+
 export class SrdLookup {
   /** Cached directory listings: dir path → array of { name (without .md), fullPath } */
   private dirCache = new Map<string, Array<{ name: string; fullPath: string }>>();
@@ -19,17 +49,22 @@ export class SrdLookup {
   /** Cached file contents */
   private contentCache = new Map<string, string>();
 
-  constructor(private dataDir: string) {
+  private layout: SrdLayout;
+
+  constructor(private dataDir: string, layout?: SrdLayout) {
+    this.layout = layout ?? LAYOUT_52;
     this.warmCaches();
   }
 
   // ── Direct Lookups ───────────────────────────────────────────────
 
   lookupSpell(name: string): string | null {
-    // Spells are organized in subdirectories: Cantrip, Level 1, Level 2, etc.
     const spellsDir = join(this.dataDir, "Spells");
-    const subDirs = ["Cantrip", "Level 1", "Level 2", "Level 3", "Level 4", "Level 5", "Level 6", "Level 7", "Level 8", "Level 9"];
-    for (const sub of subDirs) {
+    if (this.layout.spellSubDirs.length === 0) {
+      // Flat layout — scan Spells/ directly
+      return this.findInDir(spellsDir, name);
+    }
+    for (const sub of this.layout.spellSubDirs) {
       const result = this.findInDir(join(spellsDir, sub), name);
       if (result) return result;
     }
@@ -41,11 +76,18 @@ export class SrdLookup {
   }
 
   lookupCondition(name: string): string | null {
-    // Conditions are in Glossary/ and tagged with [Condition] (markdown-escaped as \[Condition\])
-    const result = this.findInDir(join(this.dataDir, "Glossary"), name);
+    const condDir = join(this.dataDir, this.layout.conditionDir);
+
+    if (!this.layout.conditionUseTags) {
+      // 5.1: all files in Conditions/ are conditions — direct lookup
+      return this.findInDir(condDir, name);
+    }
+
+    // 5.2: Conditions are in Glossary/ and tagged with [Condition]
+    const result = this.findInDir(condDir, name);
     if (result && (result.includes("[Condition]") || result.includes("\\[Condition\\]"))) return result;
     // Try with common condition names that may not have exact filename match
-    return this.findInDirByContent(join(this.dataDir, "Glossary"), name, "Condition");
+    return this.findInDirByContent(condDir, name, "Condition");
   }
 
   lookupGlossary(name: string): string | null {
@@ -53,14 +95,12 @@ export class SrdLookup {
   }
 
   lookupMagicItem(name: string): string | null {
-    // Magic items are organized in rarity subdirectories
     const magicDir = join(this.dataDir, "Magic Items");
     // Try top-level first
     const top = this.findInDir(magicDir, name);
     if (top) return top;
-    // Scan rarity subdirs
-    const rarities = ["Common", "Uncommon", "Rare", "Very Rare", "Legendary", "Artifact", "Varies"];
-    for (const rarity of rarities) {
+    // Scan rarity subdirs from layout config
+    for (const rarity of this.layout.magicItemSubDirs) {
       const result = this.findInDir(join(magicDir, rarity), name);
       if (result) return result;
     }
@@ -124,23 +164,37 @@ export class SrdLookup {
   // ── Internal Helpers ─────────────────────────────────────────────
 
   private warmCaches(): void {
-    const topDirs = [
-      "Spells/Cantrip", "Spells/Level 1", "Spells/Level 2", "Spells/Level 3",
-      "Spells/Level 4", "Spells/Level 5", "Spells/Level 6", "Spells/Level 7",
-      "Spells/Level 8", "Spells/Level 9",
-      "Monsters", "Glossary", "Feats",
-      "Magic Items", "Magic Items/Common", "Magic Items/Uncommon", "Magic Items/Rare",
-      "Magic Items/Very Rare", "Magic Items/Legendary", "Magic Items/Artifact", "Magic Items/Varies",
-      "Classes", "Equipment", "Backgrounds", "Species",
-      "Playing", "Gameplay", "Services",
-    ];
+    const topDirs: string[] = [];
+
+    // Spell subdirs
+    if (this.layout.spellSubDirs.length === 0) {
+      topDirs.push("Spells");
+    } else {
+      for (const sub of this.layout.spellSubDirs) {
+        topDirs.push(`Spells/${sub}`);
+      }
+    }
+
+    // Core dirs
+    topDirs.push("Monsters", this.layout.conditionDir, "Feats");
+
+    // Magic item dirs
+    topDirs.push("Magic Items");
+    for (const rarity of this.layout.magicItemSubDirs) {
+      topDirs.push(`Magic Items/${rarity}`);
+    }
+
+    // Extra dirs from layout
+    for (const extra of this.layout.extraDirs) {
+      topDirs.push(extra);
+    }
 
     for (const rel of topDirs) {
       const dir = join(this.dataDir, rel);
       this.listDir(dir);
     }
 
-    console.error(`[srd-lookup] Warmed caches for ${this.dirCache.size} directories`);
+    console.error(`[srd-lookup] Warmed caches for ${this.dirCache.size} directories (${this.dataDir.includes("5.1") ? "5.1" : "5.2"})`);
   }
 
   private listDir(dir: string): Array<{ name: string; fullPath: string }> {
