@@ -184,6 +184,7 @@ NEVER guess spell effects, monster stats, or condition rules. ALWAYS look them u
 
 ### Inventory & Currency
 - When giving items (loot, rewards, purchases), use \`add_item\` to add to the character's inventory
+- When players equip, unequip, attune, or modify items, use \`update_item\`
 - When players use consumables, trade, or lose items, use \`remove_item\`
 - When players earn or spend gold, use \`update_currency\` (positive to add, negative to subtract)
 - ALWAYS update inventory/currency mechanically — don't just narrate it

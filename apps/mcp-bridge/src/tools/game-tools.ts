@@ -427,6 +427,41 @@ export function registerGameTools(
   );
 
   server.tool(
+    "update_item",
+    "Modify an existing item in a character's inventory — equip/unequip, toggle attunement, change quantity, update description, or set combat stats.",
+    {
+      character_name: z.string().describe("Character name"),
+      item_name: z.string().describe("Item name to update (lookup key)"),
+      equipped: z.boolean().optional().describe("Equip or unequip the item"),
+      quantity: z.number().optional().describe("Set exact quantity"),
+      is_attuned: z.boolean().optional().describe("Toggle attunement"),
+      description: z.string().optional().describe("Update description"),
+      damage: z.string().optional().describe("Update damage dice (e.g., '1d8', '2d6+1')"),
+      damage_type: z.string().optional().describe("Update damage type (e.g., 'slashing', 'fire')"),
+      properties: z.array(z.string()).optional().describe("Update item properties (e.g., ['Versatile', 'Light'])"),
+      armor_class: z.number().optional().describe("Update AC value"),
+      attack_bonus: z.number().optional().describe("Update attack bonus"),
+      range: z.string().optional().describe("Update range (e.g., '5 ft.', '20/60 ft.')"),
+    },
+    async ({ character_name, item_name, equipped, quantity, is_attuned, description, damage, damage_type, properties, armor_class, attack_bonus, range }) => {
+      wsClient.sendTypingIndicator(true);
+      const updates: Record<string, unknown> = {};
+      if (equipped !== undefined) updates.equipped = equipped;
+      if (quantity !== undefined) updates.quantity = quantity;
+      if (is_attuned !== undefined) updates.isAttuned = is_attuned;
+      if (description !== undefined) updates.description = description;
+      if (damage !== undefined) updates.damage = damage;
+      if (damage_type !== undefined) updates.damageType = damage_type;
+      if (properties !== undefined) updates.properties = properties;
+      if (armor_class !== undefined) updates.armorClass = armor_class;
+      if (attack_bonus !== undefined) updates.attackBonus = attack_bonus;
+      if (range !== undefined) updates.range = range;
+      const result = wsClient.gameStateManager.updateItem(character_name, item_name, updates);
+      return { content: [{ type: "text" as const, text: result }] };
+    }
+  );
+
+  server.tool(
     "update_currency",
     "Add or subtract currency for a character. Positive values add, negative values subtract. Floors at 0.",
     {

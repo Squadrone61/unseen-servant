@@ -91,7 +91,7 @@ pnpm deploy:web     # Deploy web only
 - `message-queue.ts` — Async queue: WS pushes player messages, wait_for_message pops
 - `services/game-state-manager.ts` — **Core game engine**: owns GameState, combat, dice, HP, conditions, spell slots, conversation history, check flow, battle map, rollback
 - `services/campaign-manager.ts` — Campaign persistence: create/load/list campaigns, save/read files, session management, character snapshots
-- `tools/game-tools.ts` — 19 MCP tools: wait_for_message, send_response, get_players, get_game_state, get_character, apply_damage, heal, set_hp, add_condition, remove_condition, start_combat, end_combat, advance_turn, add_combatant, remove_combatant, move_combatant, use_spell_slot, restore_spell_slot, update_battle_map, grant_inspiration, use_inspiration
+- `tools/game-tools.ts` — MCP tools: wait_for_message, send_response, get_players, get_game_state, get_character, apply_damage, heal, set_hp, add_condition, remove_condition, start_combat, end_combat, advance_turn, add_combatant, remove_combatant, move_combatant, use_spell_slot, restore_spell_slot, update_battle_map, add_item, update_item, remove_item, update_currency, grant_inspiration, use_inspiration, compact_history
 - `tools/dnd-tools.ts` — roll_dice (supports interactive player checks with targetCharacter)
 - `tools/srd-tools.ts` — SRD 5.2 lookup tools: lookup_spell, lookup_monster, lookup_condition, lookup_magic_item, lookup_feat, search_rules
 - `tools/campaign-tools.ts` — create_campaign, list_campaigns, load_campaign_context, save_campaign_file, read_campaign_file, list_campaign_files, end_session
@@ -182,6 +182,14 @@ pnpm deploy:web     # Deploy web only
 | Tool | Description |
 |------|-------------|
 | `update_battle_map` | Set/update grid with dimensions, terrain tiles, name. |
+
+### Inventory & Currency
+| Tool | Description |
+|------|-------------|
+| `add_item` | Add an item to a character's inventory (stacks if exists). |
+| `update_item` | Modify an existing item — equip/unequip, attune, change quantity, update stats. |
+| `remove_item` | Remove an item from inventory (decrement or remove entirely). |
+| `update_currency` | Add or subtract currency (positive adds, negative subtracts). |
 
 ### D&D Reference (SRD 5.2 — 2024 rules, local offline lookup)
 | Tool | Description |

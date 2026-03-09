@@ -1464,6 +1464,50 @@ export class GameStateManager {
     return `Character "${characterName}" not found`;
   }
 
+  /** Update properties of an existing inventory item */
+  updateItem(characterName: string, itemName: string, updates: Partial<Omit<import("@aidnd/shared/types").InventoryItem, "name">>): string {
+    for (const [pName, char] of Object.entries(this.characters)) {
+      if (char.static.name.toLowerCase() === characterName.toLowerCase()) {
+        const item = char.dynamic.inventory.find(
+          (i) => i.name.toLowerCase() === itemName.toLowerCase()
+        );
+        if (!item) {
+          return `Item "${itemName}" not found in ${char.static.name}'s inventory`;
+        }
+
+        // Build human-readable changes summary
+        const changesList: string[] = [];
+        if (updates.equipped !== undefined) changesList.push(updates.equipped ? "equipped" : "unequipped");
+        if (updates.isAttuned !== undefined) changesList.push(updates.isAttuned ? "attuned" : "unattuned");
+        if (updates.quantity !== undefined) changesList.push(`quantity → ${updates.quantity}`);
+        if (updates.description !== undefined) changesList.push("description updated");
+        if (updates.damage !== undefined) changesList.push(`damage → ${updates.damage}`);
+        if (updates.damageType !== undefined) changesList.push(`damage type → ${updates.damageType}`);
+        if (updates.properties !== undefined) changesList.push(`properties → [${updates.properties.join(", ")}]`);
+        if (updates.armorClass !== undefined) changesList.push(`AC → ${updates.armorClass}`);
+        if (updates.attackBonus !== undefined) changesList.push(`attack bonus → +${updates.attackBonus}`);
+        if (updates.range !== undefined) changesList.push(`range → ${updates.range}`);
+        if (updates.type !== undefined) changesList.push(`type → ${updates.type}`);
+        if (updates.rarity !== undefined) changesList.push(`rarity → ${updates.rarity}`);
+        if (updates.weight !== undefined) changesList.push(`weight → ${updates.weight} lb`);
+        if (updates.isMagicItem !== undefined) changesList.push(updates.isMagicItem ? "marked as magic item" : "unmarked as magic item");
+        if (updates.attunement !== undefined) changesList.push(updates.attunement ? "requires attunement" : "no attunement required");
+
+        Object.assign(item, updates);
+
+        this.broadcast({
+          type: "server:character_updated",
+          playerName: pName,
+          character: char,
+        });
+
+        const summary = changesList.length > 0 ? changesList.join(", ") : "no changes";
+        return `Updated ${item.name} for ${char.static.name}: ${summary}`;
+      }
+    }
+    return `Character "${characterName}" not found`;
+  }
+
   /** Update currency for a character (additive — positive adds, negative subtracts) */
   updateCurrency(characterName: string, changes: Partial<Record<"cp" | "sp" | "ep" | "gp" | "pp", number>>): string {
     for (const [pName, char] of Object.entries(this.characters)) {

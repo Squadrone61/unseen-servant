@@ -156,6 +156,7 @@ export type StateChange =
   | { type: "xp_gain"; target: string; amount: number }
   | { type: "item_add"; target: string; item: string; quantity: number }
   | { type: "item_remove"; target: string; item: string; quantity: number }
+  | { type: "item_update"; target: string; item: string; changes: string }
   | { type: "combatant_add"; combatant: Combatant }
   | { type: "combatant_remove"; combatantId: string }
   | { type: "initiative_set"; combatantId: string; value: number }
@@ -186,6 +187,7 @@ export type GameEventType =
   | "rest_long"
   | "item_added"
   | "item_removed"
+  | "item_updated"
   | "xp_gained"
   | "inspiration_granted"
   | "inspiration_used"
