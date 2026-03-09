@@ -476,11 +476,14 @@ function computeAbilityScores(char: any, warnings: string[]): AbilityScores {
   // race-sourced ability score modifiers to avoid double-counting.
   // For 2014 characters, race modifiers are genuine racial bonuses that
   // need to be applied on top of stats[] base values.
+  // NOTE: Only check for plural "Ability Score Increases" (2024 species).
+  // Singular "Ability Score Increase" is the 2014 racial trait — those
+  // modifiers must be applied since stats[] only has base point-buy values.
   const hasAbilityScoreIncreasesTrait = (char.race?.racialTraits || []).some(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (t: any) => {
       const name: string = t.definition?.name || "";
-      return name === "Ability Score Increases" || name === "Ability Score Increase";
+      return name === "Ability Score Increases";
     }
   );
 
