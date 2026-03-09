@@ -25279,7 +25279,8 @@ Your core loop is:
 2. **Start with wait_for_message** \u2014 don't try to send a response before receiving a request
 3. **Use the systemPrompt** \u2014 the systemPrompt in each request may contain game state, house rules, or host instructions. Follow it.
 4. **Stay in character** \u2014 you are the DM, not an AI assistant. Don't break the fourth wall.
-5. **Context management** \u2014 each wait_for_message response includes \`totalMessageCount\`. When it exceeds 80, call \`compact_history\` during a natural break (scene transition, rest, after combat) with a summary of older events to free context space.`;
+5. **Context management** \u2014 each wait_for_message response includes \`totalMessageCount\`. When it exceeds 80, call \`compact_history\` during a natural break (scene transition, rest, after combat) with a summary of older events to free context space.
+6. **Never output directly** \u2014 players CANNOT see text you write to the terminal. ALL narration, dialogue, and game content MUST go through \`send_response\` (or \`acknowledge\` to silently skip). If you output text without calling \`send_response\`, it is lost and players see nothing.`;
     DM_SKILL_COMBAT = `## Combat
 
 ### Combat Setup Checklist (MANDATORY)
@@ -45378,13 +45379,28 @@ var init_mcp = __esm({
 // ../mcp-bridge/src/services/srd-lookup.ts
 import { readdirSync as readdirSync2, readFileSync as readFileSync2, existsSync as existsSync2 } from "node:fs";
 import { join as join2, basename } from "node:path";
-var SrdLookup;
+var LAYOUT_52, LAYOUT_51, SrdLookup;
 var init_srd_lookup = __esm({
   "../mcp-bridge/src/services/srd-lookup.ts"() {
     "use strict";
+    LAYOUT_52 = {
+      spellSubDirs: ["Cantrip", "Level 1", "Level 2", "Level 3", "Level 4", "Level 5", "Level 6", "Level 7", "Level 8", "Level 9"],
+      conditionDir: "Glossary",
+      conditionUseTags: true,
+      magicItemSubDirs: ["Common", "Uncommon", "Rare", "Very Rare", "Legendary", "Artifact", "Varies"],
+      extraDirs: ["Classes", "Equipment", "Backgrounds", "Species", "Playing", "Gameplay", "Services"]
+    };
+    LAYOUT_51 = {
+      spellSubDirs: ["Cantrip", "1st Level", "2nd Level", "3rd Level", "4th Level", "5th Level", "6th Level", "7th Level", "8th Level", "9th Level"],
+      conditionDir: "Conditions",
+      conditionUseTags: false,
+      magicItemSubDirs: ["Common", "Uncommon", "Rare", "Very Rare", "Legendary", "Artifact", "Varies"],
+      extraDirs: ["Combat", "Abilities", "Environment", "NPCs", "Spellcasting", "Resting", "Races", "Character", "Movement", "Between Adventures"]
+    };
     SrdLookup = class {
-      constructor(dataDir) {
+      constructor(dataDir, layout) {
         this.dataDir = dataDir;
+        this.layout = layout ?? LAYOUT_52;
         this.warmCaches();
       }
       static {
@@ -45394,11 +45410,14 @@ var init_srd_lookup = __esm({
       dirCache = /* @__PURE__ */ new Map();
       /** Cached file contents */
       contentCache = /* @__PURE__ */ new Map();
+      layout;
       // ── Direct Lookups ───────────────────────────────────────────────
       lookupSpell(name) {
         const spellsDir = join2(this.dataDir, "Spells");
-        const subDirs = ["Cantrip", "Level 1", "Level 2", "Level 3", "Level 4", "Level 5", "Level 6", "Level 7", "Level 8", "Level 9"];
-        for (const sub of subDirs) {
+        if (this.layout.spellSubDirs.length === 0) {
+          return this.findInDir(spellsDir, name);
+        }
+        for (const sub of this.layout.spellSubDirs) {
           const result = this.findInDir(join2(spellsDir, sub), name);
           if (result) return result;
         }
@@ -45408,9 +45427,13 @@ var init_srd_lookup = __esm({
         return this.findInDir(join2(this.dataDir, "Monsters"), name);
       }
       lookupCondition(name) {
-        const result = this.findInDir(join2(this.dataDir, "Glossary"), name);
+        const condDir = join2(this.dataDir, this.layout.conditionDir);
+        if (!this.layout.conditionUseTags) {
+          return this.findInDir(condDir, name);
+        }
+        const result = this.findInDir(condDir, name);
         if (result && (result.includes("[Condition]") || result.includes("\\[Condition\\]"))) return result;
-        return this.findInDirByContent(join2(this.dataDir, "Glossary"), name, "Condition");
+        return this.findInDirByContent(condDir, name, "Condition");
       }
       lookupGlossary(name) {
         return this.findInDir(join2(this.dataDir, "Glossary"), name);
@@ -45419,8 +45442,7 @@ var init_srd_lookup = __esm({
         const magicDir = join2(this.dataDir, "Magic Items");
         const top = this.findInDir(magicDir, name);
         if (top) return top;
-        const rarities = ["Common", "Uncommon", "Rare", "Very Rare", "Legendary", "Artifact", "Varies"];
-        for (const rarity of rarities) {
+        for (const rarity of this.layout.magicItemSubDirs) {
           const result = this.findInDir(join2(magicDir, rarity), name);
           if (result) return result;
         }
@@ -45470,41 +45492,27 @@ var init_srd_lookup = __esm({
       }
       // ── Internal Helpers ─────────────────────────────────────────────
       warmCaches() {
-        const topDirs = [
-          "Spells/Cantrip",
-          "Spells/Level 1",
-          "Spells/Level 2",
-          "Spells/Level 3",
-          "Spells/Level 4",
-          "Spells/Level 5",
-          "Spells/Level 6",
-          "Spells/Level 7",
-          "Spells/Level 8",
-          "Spells/Level 9",
-          "Monsters",
-          "Glossary",
-          "Feats",
-          "Magic Items",
-          "Magic Items/Common",
-          "Magic Items/Uncommon",
-          "Magic Items/Rare",
-          "Magic Items/Very Rare",
-          "Magic Items/Legendary",
-          "Magic Items/Artifact",
-          "Magic Items/Varies",
-          "Classes",
-          "Equipment",
-          "Backgrounds",
-          "Species",
-          "Playing",
-          "Gameplay",
-          "Services"
-        ];
+        const topDirs = [];
+        if (this.layout.spellSubDirs.length === 0) {
+          topDirs.push("Spells");
+        } else {
+          for (const sub of this.layout.spellSubDirs) {
+            topDirs.push(`Spells/${sub}`);
+          }
+        }
+        topDirs.push("Monsters", this.layout.conditionDir, "Feats");
+        topDirs.push("Magic Items");
+        for (const rarity of this.layout.magicItemSubDirs) {
+          topDirs.push(`Magic Items/${rarity}`);
+        }
+        for (const extra of this.layout.extraDirs) {
+          topDirs.push(extra);
+        }
         for (const rel of topDirs) {
           const dir = join2(this.dataDir, rel);
           this.listDir(dir);
         }
-        console.error(`[srd-lookup] Warmed caches for ${this.dirCache.size} directories`);
+        console.error(`[srd-lookup] Warmed caches for ${this.dirCache.size} directories (${this.dataDir.includes("5.1") ? "5.1" : "5.2"})`);
       }
       listDir(dir) {
         const cached3 = this.dirCache.get(dir);
@@ -46092,10 +46100,12 @@ If \`targetCharacter\` is provided \u2192 Mode 2/2b. Otherwise \u2192 Mode 1.`,
           });
           const successStr = result.dc !== void 0 ? ` \u2014 ${result.success ? "SUCCESS" : "FAILURE"} (DC ${result.dc})` : "";
           const critStr2 = result.roll.criticalHit ? " CRITICAL HIT!" : result.roll.criticalFail ? " CRITICAL FAIL!" : "";
+          const naturalRoll = result.roll.rolls.length > 0 ? result.roll.rolls.length > 1 ? result.roll.advantage ? Math.max(...result.roll.rolls.map((r) => r.result)) : result.roll.disadvantage ? Math.min(...result.roll.rolls.map((r) => r.result)) : result.roll.rolls[0].result : result.roll.rolls[0].result : result.roll.total;
+          const modStr2 = result.roll.modifier !== 0 ? result.roll.modifier > 0 ? `+${result.roll.modifier}` : `${result.roll.modifier}` : "";
           return {
             content: [{
               type: "text",
-              text: `${result.characterName} rolled ${result.roll.total} on ${result.roll.label}${successStr}${critStr2}`
+              text: `${result.characterName} rolled d20(${naturalRoll})${modStr2} = ${result.roll.total} on ${result.roll.label}${successStr}${critStr2}`
             }]
           };
         } catch (error49) {
@@ -46134,149 +46144,181 @@ var init_dnd_tools = __esm({
 // ../mcp-bridge/src/tools/srd-tools.ts
 function logLookupFailure(wsClient, category, name) {
   wsClient.broadcastSystemEvent(
-    `[Rules] "${name}" not found in SRD 5.2 \u2014 DM is using training knowledge`
+    `[Rules] "${name}" not found in either SRD \u2014 DM is using training knowledge`
   );
-  console.error(`[srd-tools] ${category} lookup failed: "${name}"`);
+  console.error(`[srd-tools] ${category} lookup failed in both SRDs: "${name}"`);
 }
-function registerSrdTools(server, srd, wsClient) {
+function registerSrdTools(server, srd52, srd51, wsClient) {
   server.tool(
     "lookup_spell",
-    "Look up a spell from 2024 D&D rules (SRD 5.2). Returns full spell details including casting time, range, components, duration, damage, and higher-level effects. Call this BEFORE resolving any spell cast.",
+    "Look up a spell from D&D rules. Checks 2024 SRD 5.2 first, falls back to 2014 SRD 5.1. Returns full spell details including casting time, range, components, duration, damage, and higher-level effects. Call this BEFORE resolving any spell cast.",
     {
       spell_name: external_exports.string().describe("Spell name, e.g. 'Fireball', 'Cure Wounds', 'Shield'")
     },
     async ({ spell_name }) => {
       wsClient.sendTypingIndicator(true);
-      const content = srd.lookupSpell(spell_name);
-      if (!content) {
-        logLookupFailure(wsClient, "Spell", spell_name);
-        return {
-          content: [{
-            type: "text",
-            text: `\u26A0\uFE0F "${spell_name}" not found in SRD 5.2. It may be from a published sourcebook not in the SRD. Use your training knowledge as fallback.`
-          }]
-        };
+      const content = srd52.lookupSpell(spell_name);
+      if (content) {
+        return { content: [{ type: "text", text: content }] };
       }
-      return { content: [{ type: "text", text: content }] };
+      const fallback = srd51.lookupSpell(spell_name);
+      if (fallback) {
+        return { content: [{ type: "text", text: FALLBACK_PREFIX + fallback }] };
+      }
+      logLookupFailure(wsClient, "Spell", spell_name);
+      return {
+        content: [{
+          type: "text",
+          text: `\u26A0\uFE0F "${spell_name}" not found in either SRD. It may be from a published sourcebook not in the SRD. Use your training knowledge as fallback.`
+        }]
+      };
     }
   );
   server.tool(
     "lookup_monster",
-    "Look up a monster/creature stat block from 2024 D&D rules (SRD 5.2). Returns full stat block with AC, HP, speed, abilities, actions, and CR. Call this for every enemy type BEFORE combat.",
+    "Look up a monster/creature stat block from D&D rules. Checks 2024 SRD 5.2 first, falls back to 2014 SRD 5.1. Returns full stat block with AC, HP, speed, abilities, actions, and CR. Call this for every enemy type BEFORE combat.",
     {
-      monster_name: external_exports.string().describe("Monster name, e.g. 'Goblin', 'Adult Red Dragon', 'Beholder'")
+      monster_name: external_exports.string().describe("Monster name, e.g. 'Goblin', 'Adult Red Dragon', 'Bugbear'")
     },
     async ({ monster_name }) => {
       wsClient.sendTypingIndicator(true);
-      const content = srd.lookupMonster(monster_name);
-      if (!content) {
-        logLookupFailure(wsClient, "Monster", monster_name);
-        return {
-          content: [{
-            type: "text",
-            text: `\u26A0\uFE0F "${monster_name}" not found in SRD 5.2. Use your training knowledge for this creature's stats.`
-          }]
-        };
+      const content = srd52.lookupMonster(monster_name);
+      if (content) {
+        return { content: [{ type: "text", text: content }] };
       }
-      return { content: [{ type: "text", text: content }] };
+      const fallback = srd51.lookupMonster(monster_name);
+      if (fallback) {
+        return { content: [{ type: "text", text: FALLBACK_PREFIX + fallback }] };
+      }
+      logLookupFailure(wsClient, "Monster", monster_name);
+      return {
+        content: [{
+          type: "text",
+          text: `\u26A0\uFE0F "${monster_name}" not found in either SRD. Use your training knowledge for this creature's stats.`
+        }]
+      };
     }
   );
   server.tool(
     "lookup_condition",
-    "Look up the exact mechanical effects of a D&D 2024 condition from the SRD 5.2. Call this BEFORE applying any condition.",
+    "Look up the exact mechanical effects of a D&D condition. Checks 2024 SRD 5.2 first, falls back to 2014 SRD 5.1. Call this BEFORE applying any condition.",
     {
       condition_name: external_exports.string().describe("Condition name, e.g. 'Grappled', 'Stunned', 'Prone', 'Frightened'")
     },
     async ({ condition_name }) => {
       wsClient.sendTypingIndicator(true);
-      const content = srd.lookupCondition(condition_name);
-      if (!content) {
-        const glossary = srd.lookupGlossary(condition_name);
-        if (glossary) {
-          return { content: [{ type: "text", text: glossary }] };
-        }
-        logLookupFailure(wsClient, "Condition", condition_name);
-        return {
-          content: [{
-            type: "text",
-            text: `\u26A0\uFE0F Condition "${condition_name}" not found in SRD 5.2.`
-          }]
-        };
+      const content = srd52.lookupCondition(condition_name);
+      if (content) {
+        return { content: [{ type: "text", text: content }] };
       }
-      return { content: [{ type: "text", text: content }] };
+      const glossary = srd52.lookupGlossary(condition_name);
+      if (glossary) {
+        return { content: [{ type: "text", text: glossary }] };
+      }
+      const fallback = srd51.lookupCondition(condition_name);
+      if (fallback) {
+        return { content: [{ type: "text", text: FALLBACK_PREFIX + fallback }] };
+      }
+      logLookupFailure(wsClient, "Condition", condition_name);
+      return {
+        content: [{
+          type: "text",
+          text: `\u26A0\uFE0F Condition "${condition_name}" not found in either SRD.`
+        }]
+      };
     }
   );
   server.tool(
     "lookup_magic_item",
-    "Look up a magic item from 2024 D&D rules (SRD 5.2). Returns rarity, attunement, and full description.",
+    "Look up a magic item from D&D rules. Checks 2024 SRD 5.2 first, falls back to 2014 SRD 5.1. Returns rarity, attunement, and full description.",
     {
       item_name: external_exports.string().describe("Magic item name, e.g. 'Bag of Holding', 'Flame Tongue'")
     },
     async ({ item_name }) => {
       wsClient.sendTypingIndicator(true);
-      const content = srd.lookupMagicItem(item_name);
-      if (!content) {
-        logLookupFailure(wsClient, "Magic Item", item_name);
-        return {
-          content: [{
-            type: "text",
-            text: `\u26A0\uFE0F Magic item "${item_name}" not found in SRD 5.2. Use your training knowledge as fallback.`
-          }]
-        };
+      const content = srd52.lookupMagicItem(item_name);
+      if (content) {
+        return { content: [{ type: "text", text: content }] };
       }
-      return { content: [{ type: "text", text: content }] };
+      const fallback = srd51.lookupMagicItem(item_name);
+      if (fallback) {
+        return { content: [{ type: "text", text: FALLBACK_PREFIX + fallback }] };
+      }
+      logLookupFailure(wsClient, "Magic Item", item_name);
+      return {
+        content: [{
+          type: "text",
+          text: `\u26A0\uFE0F Magic item "${item_name}" not found in either SRD. Use your training knowledge as fallback.`
+        }]
+      };
     }
   );
   server.tool(
     "lookup_feat",
-    "Look up a feat from 2024 D&D rules (SRD 5.2). Returns prerequisites, description, and mechanical effects.",
+    "Look up a feat from D&D rules. Checks 2024 SRD 5.2 first, falls back to 2014 SRD 5.1. Returns prerequisites, description, and mechanical effects.",
     {
       feat_name: external_exports.string().describe("Feat name, e.g. 'Alert', 'Great Weapon Master'")
     },
     async ({ feat_name }) => {
       wsClient.sendTypingIndicator(true);
-      const content = srd.lookupFeat(feat_name);
-      if (!content) {
-        logLookupFailure(wsClient, "Feat", feat_name);
-        return {
-          content: [{
-            type: "text",
-            text: `\u26A0\uFE0F Feat "${feat_name}" not found in SRD 5.2. Use your training knowledge as fallback.`
-          }]
-        };
+      const content = srd52.lookupFeat(feat_name);
+      if (content) {
+        return { content: [{ type: "text", text: content }] };
       }
-      return { content: [{ type: "text", text: content }] };
+      const fallback = srd51.lookupFeat(feat_name);
+      if (fallback) {
+        return { content: [{ type: "text", text: FALLBACK_PREFIX + fallback }] };
+      }
+      logLookupFailure(wsClient, "Feat", feat_name);
+      return {
+        content: [{
+          type: "text",
+          text: `\u26A0\uFE0F Feat "${feat_name}" not found in either SRD. Use your training knowledge as fallback.`
+        }]
+      };
     }
   );
   server.tool(
     "search_rules",
-    "Search all 2024 D&D rules (SRD 5.2) for any topic: combat mechanics, class features, equipment, gameplay rules, etc. Returns the most relevant rule sections matching your query.",
+    "Search all D&D rules (2024 SRD 5.2 + 2014 SRD 5.1) for any topic: combat mechanics, class features, equipment, gameplay rules, etc. Returns the most relevant rule sections, preferring 2024 rules when available.",
     {
       query: external_exports.string().describe("Search query, e.g. 'opportunity attack', 'two-weapon fighting', 'death saving throw'"),
       limit: external_exports.number().optional().default(3).describe("Max results to return (default 3)")
     },
     async ({ query, limit }) => {
       wsClient.sendTypingIndicator(true);
-      const results = srd.searchRules(query, limit);
-      if (results.length === 0) {
+      const results52 = srd52.searchRules(query, limit);
+      const results51 = srd51.searchRules(query, limit);
+      const tagged51 = results51.map((r) => ({
+        ...r,
+        source: `${r.source} [2014 SRD 5.1]`
+      }));
+      const seen = new Set(results52.map((r) => r.name.toLowerCase()));
+      const merged = [
+        ...results52,
+        ...tagged51.filter((r) => !seen.has(r.name.toLowerCase()))
+      ].slice(0, limit);
+      if (merged.length === 0) {
         return {
           content: [{
             type: "text",
-            text: `No rules found matching "${query}" in SRD 5.2. Use your training knowledge as fallback.`
+            text: `No rules found matching "${query}" in either SRD. Use your training knowledge as fallback.`
           }]
         };
       }
-      const text = results.map((r, i) => `--- Result ${i + 1}: ${r.name} (${r.source}) ---
+      const text = merged.map((r, i) => `--- Result ${i + 1}: ${r.name} (${r.source}) ---
 ${r.content}`).join("\n\n");
       return { content: [{ type: "text", text }] };
     }
   );
 }
+var FALLBACK_PREFIX;
 var init_srd_tools = __esm({
   "../mcp-bridge/src/tools/srd-tools.ts"() {
     "use strict";
     init_zod();
     __name(logLookupFailure, "logLookupFailure");
+    FALLBACK_PREFIX = "\u26A0\uFE0F Using 2014 SRD 5.1 stats (not in 2024 SRD 5.2):\n\n";
     __name(registerSrdTools, "registerSrdTools");
   }
 });
@@ -46541,11 +46583,11 @@ function createMcpServer(messageQueue, wsClient, campaignManager) {
     name: "aidnd-dm",
     version: "1.0.0"
   });
-  const srdDataDir = resolve(__dirname, "../../../data/srd-5.2");
-  const srdLookup = new SrdLookup(srdDataDir);
+  const srd52 = new SrdLookup(resolve(__dirname, "../../../data/srd-5.2"));
+  const srd51 = new SrdLookup(resolve(__dirname, "../../../data/srd-5.1"), LAYOUT_51);
   registerGameTools(server, messageQueue, wsClient);
   registerDndTools(server, wsClient);
-  registerSrdTools(server, srdLookup, wsClient);
+  registerSrdTools(server, srd52, srd51, wsClient);
   registerCampaignTools(server, campaignManager, wsClient);
   return server;
 }
@@ -46784,7 +46826,7 @@ async function startCli() {
         "mcp__aidnd-dm__end_session"
       ].join(","),
       "--",
-      "Start the DM game loop. Call wait_for_message now and keep looping."
+      "Start the DM game loop. Call wait_for_message now and keep looping. ALL narrative output MUST go through send_response \u2014 never output text directly."
     ],
     {
       cwd: tmpDir,

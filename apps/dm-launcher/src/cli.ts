@@ -253,7 +253,7 @@ export async function startCli(): Promise<void> {
         "mcp__aidnd-dm__end_session",
       ].join(","),
       "--",
-      "Start the DM game loop. Call wait_for_message now and keep looping.",
+      "Start the DM game loop. Call wait_for_message now and keep looping. ALL narrative output MUST go through send_response — never output text directly.",
     ],
     {
       cwd: tmpDir,
