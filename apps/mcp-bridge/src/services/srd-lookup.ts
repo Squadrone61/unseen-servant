@@ -41,11 +41,11 @@ export class SrdLookup {
   }
 
   lookupCondition(name: string): string | null {
-    // Conditions are in Glossary/ and tagged with [Condition]
+    // Conditions are in Glossary/ and tagged with [Condition] (markdown-escaped as \[Condition\])
     const result = this.findInDir(join(this.dataDir, "Glossary"), name);
-    if (result && result.includes("[Condition]")) return result;
+    if (result && (result.includes("[Condition]") || result.includes("\\[Condition\\]"))) return result;
     // Try with common condition names that may not have exact filename match
-    return this.findInDirByContent(join(this.dataDir, "Glossary"), name, "[Condition]");
+    return this.findInDirByContent(join(this.dataDir, "Glossary"), name, "Condition");
   }
 
   lookupGlossary(name: string): string | null {
@@ -53,7 +53,18 @@ export class SrdLookup {
   }
 
   lookupMagicItem(name: string): string | null {
-    return this.findInDir(join(this.dataDir, "Magic Items"), name);
+    // Magic items are organized in rarity subdirectories
+    const magicDir = join(this.dataDir, "Magic Items");
+    // Try top-level first
+    const top = this.findInDir(magicDir, name);
+    if (top) return top;
+    // Scan rarity subdirs
+    const rarities = ["Common", "Uncommon", "Rare", "Very Rare", "Legendary", "Artifact", "Varies"];
+    for (const rarity of rarities) {
+      const result = this.findInDir(join(magicDir, rarity), name);
+      if (result) return result;
+    }
+    return null;
   }
 
   lookupFeat(name: string): string | null {
@@ -117,7 +128,9 @@ export class SrdLookup {
       "Spells/Cantrip", "Spells/Level 1", "Spells/Level 2", "Spells/Level 3",
       "Spells/Level 4", "Spells/Level 5", "Spells/Level 6", "Spells/Level 7",
       "Spells/Level 8", "Spells/Level 9",
-      "Monsters", "Glossary", "Feats", "Magic Items",
+      "Monsters", "Glossary", "Feats",
+      "Magic Items", "Magic Items/Common", "Magic Items/Uncommon", "Magic Items/Rare",
+      "Magic Items/Very Rare", "Magic Items/Legendary", "Magic Items/Artifact", "Magic Items/Varies",
       "Classes", "Equipment", "Backgrounds", "Species",
       "Playing", "Gameplay", "Services",
     ];
