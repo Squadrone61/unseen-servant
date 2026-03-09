@@ -86,10 +86,25 @@ If \`targetCharacter\` is provided → Mode 2/2b. Otherwise → Mode 1.`,
             : "";
           const critStr = result.roll.criticalHit ? " CRITICAL HIT!" : result.roll.criticalFail ? " CRITICAL FAIL!" : "";
 
+          // Extract natural d20 roll so Claude can report it accurately
+          const naturalRoll = result.roll.rolls.length > 0
+            ? result.roll.rolls.length > 1  // advantage/disadvantage: pick the used die
+              ? (result.roll.advantage
+                ? Math.max(...result.roll.rolls.map(r => r.result))
+                : result.roll.disadvantage
+                  ? Math.min(...result.roll.rolls.map(r => r.result))
+                  : result.roll.rolls[0].result)
+              : result.roll.rolls[0].result
+            : result.roll.total;
+
+          const modStr = result.roll.modifier !== 0
+            ? (result.roll.modifier > 0 ? `+${result.roll.modifier}` : `${result.roll.modifier}`)
+            : "";
+
           return {
             content: [{
               type: "text" as const,
-              text: `${result.characterName} rolled ${result.roll.total} on ${result.roll.label}${successStr}${critStr}`,
+              text: `${result.characterName} rolled d20(${naturalRoll})${modStr} = ${result.roll.total} on ${result.roll.label}${successStr}${critStr}`,
             }],
           };
         } catch (error) {
