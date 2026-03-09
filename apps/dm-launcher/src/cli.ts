@@ -210,6 +210,7 @@ export async function startCli(): Promise<void> {
         // Game communication
         "mcp__aidnd-dm__wait_for_message",
         "mcp__aidnd-dm__send_response",
+        "mcp__aidnd-dm__acknowledge",
         "mcp__aidnd-dm__get_players",
         "mcp__aidnd-dm__get_game_state",
         "mcp__aidnd-dm__get_character",
@@ -229,6 +230,10 @@ export async function startCli(): Promise<void> {
         // Spell slots
         "mcp__aidnd-dm__use_spell_slot",
         "mcp__aidnd-dm__restore_spell_slot",
+        // Inventory & currency
+        "mcp__aidnd-dm__add_item",
+        "mcp__aidnd-dm__remove_item",
+        "mcp__aidnd-dm__update_currency",
         // Battle map
         "mcp__aidnd-dm__update_battle_map",
         // D&D reference
@@ -236,6 +241,8 @@ export async function startCli(): Promise<void> {
         "mcp__aidnd-dm__lookup_monster",
         "mcp__aidnd-dm__lookup_condition",
         "mcp__aidnd-dm__roll_dice",
+        // Context management
+        "mcp__aidnd-dm__compact_history",
         // Campaign persistence
         "mcp__aidnd-dm__create_campaign",
         "mcp__aidnd-dm__list_campaigns",

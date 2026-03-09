@@ -16,6 +16,7 @@ export function registerGameTools(
     {},
     async () => {
       const msg = await messageQueue.waitForNext();
+      wsClient.sendTypingIndicator(true);
       return {
         content: [
           {
@@ -25,6 +26,7 @@ export function registerGameTools(
                 requestId: msg.requestId,
                 systemPrompt: msg.systemPrompt,
                 messages: msg.messages,
+                totalMessageCount: msg.totalMessageCount,
               },
               null,
               2
@@ -44,6 +46,7 @@ export function registerGameTools(
         .describe("The requestId from the dm_request to acknowledge"),
     },
     async ({ requestId }) => {
+      wsClient.sendTypingIndicator(false);
       return {
         content: [
           {
@@ -375,6 +378,89 @@ export function registerGameTools(
         tiles: mapTiles,
         name,
       });
+      return { content: [{ type: "text" as const, text: result }] };
+    }
+  );
+
+  // ─── Inventory & Currency ───
+
+  server.tool(
+    "add_item",
+    "Add an item to a character's inventory. Stacks by name if the item already exists.",
+    {
+      character_name: z.string().describe("Character name"),
+      name: z.string().describe("Item name"),
+      quantity: z.number().optional().describe("Quantity (default 1)"),
+      type: z.string().optional().describe("Item type (e.g., 'Weapon', 'Armor', 'Gear', 'Potion')"),
+      description: z.string().optional().describe("Item description"),
+      rarity: z.string().optional().describe("Rarity (Common, Uncommon, Rare, Very Rare, Legendary)"),
+      is_magic_item: z.boolean().optional().describe("Whether this is a magic item"),
+      damage: z.string().optional().describe("Damage dice (e.g., '1d8', '2d6')"),
+      damage_type: z.string().optional().describe("Damage type (e.g., 'slashing', 'fire')"),
+      properties: z.array(z.string()).optional().describe("Item properties (e.g., ['Versatile', 'Light'])"),
+      weight: z.number().optional().describe("Item weight in pounds"),
+    },
+    async ({ character_name, name, quantity, type, description, rarity, is_magic_item, damage, damage_type, properties, weight }) => {
+      wsClient.sendTypingIndicator(true);
+      const result = wsClient.gameStateManager.addItem(character_name, {
+        name, quantity, type, description, rarity,
+        isMagicItem: is_magic_item, damage, damageType: damage_type,
+        properties, weight,
+      });
+      return { content: [{ type: "text" as const, text: result }] };
+    }
+  );
+
+  server.tool(
+    "remove_item",
+    "Remove an item from a character's inventory. Decrements quantity or removes entirely.",
+    {
+      character_name: z.string().describe("Character name"),
+      item_name: z.string().describe("Item name to remove"),
+      quantity: z.number().optional().describe("Quantity to remove (default: all)"),
+    },
+    async ({ character_name, item_name, quantity }) => {
+      wsClient.sendTypingIndicator(true);
+      const result = wsClient.gameStateManager.removeItem(character_name, item_name, quantity);
+      return { content: [{ type: "text" as const, text: result }] };
+    }
+  );
+
+  server.tool(
+    "update_currency",
+    "Add or subtract currency for a character. Positive values add, negative values subtract. Floors at 0.",
+    {
+      character_name: z.string().describe("Character name"),
+      cp: z.number().optional().describe("Copper pieces to add/subtract"),
+      sp: z.number().optional().describe("Silver pieces to add/subtract"),
+      ep: z.number().optional().describe("Electrum pieces to add/subtract"),
+      gp: z.number().optional().describe("Gold pieces to add/subtract"),
+      pp: z.number().optional().describe("Platinum pieces to add/subtract"),
+    },
+    async ({ character_name, cp, sp, ep, gp, pp }) => {
+      wsClient.sendTypingIndicator(true);
+      const changes: Partial<Record<"cp" | "sp" | "ep" | "gp" | "pp", number>> = {};
+      if (cp !== undefined) changes.cp = cp;
+      if (sp !== undefined) changes.sp = sp;
+      if (ep !== undefined) changes.ep = ep;
+      if (gp !== undefined) changes.gp = gp;
+      if (pp !== undefined) changes.pp = pp;
+      const result = wsClient.gameStateManager.updateCurrency(character_name, changes);
+      return { content: [{ type: "text" as const, text: result }] };
+    }
+  );
+
+  // ─── Context Management ───
+
+  server.tool(
+    "compact_history",
+    "Compact conversation history to free context space. Replaces older messages with your summary, keeping recent messages. Call during natural breaks when totalMessageCount is high.",
+    {
+      keep_recent: z.number().default(30).describe("Number of recent messages to keep (default 30)"),
+      summary: z.string().describe("Your summary of the older events being compacted"),
+    },
+    async ({ keep_recent, summary }) => {
+      const result = wsClient.gameStateManager.compactHistory(keep_recent, summary);
       return { content: [{ type: "text" as const, text: result }] };
     }
   );

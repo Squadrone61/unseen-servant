@@ -6,6 +6,7 @@ export interface DMRequest {
   requestId: string;
   systemPrompt: string;
   messages: { role: "user" | "assistant"; content: string }[];
+  totalMessageCount: number;
 }
 
 export interface PlayerSummary {

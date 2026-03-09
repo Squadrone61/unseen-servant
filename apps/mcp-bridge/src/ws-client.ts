@@ -508,8 +508,19 @@ export class WSClient {
 
       const snapshot = JSON.parse(raw) as SessionStateSnapshot;
 
+      // Load chat history from separate file (backward compat: fall back to snapshot)
+      let chatHistory: { role: "user" | "assistant"; content: string }[] | undefined;
+      const chatRaw = cm.readFile("chat-history");
+      if (chatRaw) {
+        try {
+          chatHistory = JSON.parse(chatRaw);
+        } catch {
+          console.error(`[ws-client] Failed to parse chat-history.json, falling back to snapshot`);
+        }
+      }
+
       // Restore game state manager
-      this.gameStateManager.restoreSessionState(snapshot);
+      this.gameStateManager.restoreSessionState(snapshot, chatHistory);
       this.storyStarted = true;
 
       // Restore characters from campaign snapshots
@@ -548,8 +559,9 @@ export class WSClient {
       // Send saved notes to all connected players
       this.sendAllPlayerNotes();
 
+      const msgCount = chatHistory?.length ?? snapshot.conversationHistory?.length ?? 0;
       console.error(
-        `[ws-client] Session restored: ${snapshot.conversationHistory.length} messages, ` +
+        `[ws-client] Session restored: ${msgCount} messages, ` +
         `story=${snapshot.storyStarted}, combat=${!!snapshot.gameState.encounter?.combat}, ` +
         `saved at ${snapshot.savedAt}`
       );
