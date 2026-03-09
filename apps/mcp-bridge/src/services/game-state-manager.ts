@@ -668,6 +668,33 @@ export class GameStateManager {
     });
   }
 
+  // ─── Event Creation ───
+
+  private createEvent(type: GameEventType, description: string, changes: StateChange[]): void {
+    const characterSnapshots: Record<string, CharacterDynamicData> = {};
+    for (const [pName, char] of Object.entries(this.characters)) {
+      characterSnapshots[pName] = structuredClone(char.dynamic);
+    }
+    const combat = this.gameState.encounter?.combat;
+    const combatantSnapshots = combat ? structuredClone(combat.combatants) : undefined;
+
+    const event: GameEvent = {
+      id: crypto.randomUUID(),
+      type,
+      timestamp: Date.now(),
+      description,
+      stateBefore: { characters: characterSnapshots, combatants: combatantSnapshots },
+      conversationIndex: this.conversationHistory.length,
+      changes,
+    };
+
+    this.gameState.eventLog.push(event);
+    if (this.gameState.eventLog.length > 50) {
+      this.gameState.eventLog = this.gameState.eventLog.slice(-50);
+    }
+    this.broadcast({ type: "server:event_log", event });
+  }
+
   // ─── Settings ───
 
   handleSetSystemPrompt(playerName: string, prompt?: string): void {
@@ -731,6 +758,7 @@ export class GameStateManager {
 
     for (const [pName, char] of Object.entries(this.characters)) {
       if (char.static.name.toLowerCase() === characterName.toLowerCase()) {
+        this.createEvent("custom", `DM override on ${char.static.name}`, changes);
         for (const change of changes) {
           switch (change.type) {
             case "damage": {
@@ -870,6 +898,7 @@ export class GameStateManager {
         (c) => c.name.toLowerCase() === targetName.toLowerCase() && c.type !== "player"
       );
       if (combatant) {
+        this.createEvent("damage", `${combatant.name} takes ${dmg} damage`, [{ type: "damage", target: targetName, amount: dmg, damageType }]);
         let remaining = dmg;
         if ((combatant.tempHP ?? 0) > 0) {
           const absorbed = Math.min(combatant.tempHP!, remaining);
@@ -892,6 +921,7 @@ export class GameStateManager {
     // Check player characters
     for (const [pName, char] of Object.entries(this.characters)) {
       if (char.static.name.toLowerCase() === targetName.toLowerCase()) {
+        this.createEvent("damage", `${char.static.name} takes ${dmg} damage`, [{ type: "damage", target: targetName, amount: dmg, damageType }]);
         let remaining = dmg;
         if (char.dynamic.tempHP > 0) {
           const absorbed = Math.min(char.dynamic.tempHP, remaining);
@@ -924,6 +954,7 @@ export class GameStateManager {
         (c) => c.name.toLowerCase() === targetName.toLowerCase() && c.type !== "player"
       );
       if (combatant && combatant.maxHP) {
+        this.createEvent("healing", `${combatant.name} healed for ${healing}`, [{ type: "healing", target: targetName, amount: healing }]);
         combatant.currentHP = Math.min(combatant.maxHP, (combatant.currentHP ?? 0) + healing);
         this.broadcast({
           type: "server:combat_update",
@@ -938,6 +969,7 @@ export class GameStateManager {
     // Check player characters
     for (const [pName, char] of Object.entries(this.characters)) {
       if (char.static.name.toLowerCase() === targetName.toLowerCase()) {
+        this.createEvent("healing", `${char.static.name} healed for ${healing}`, [{ type: "healing", target: targetName, amount: healing }]);
         char.dynamic.currentHP = Math.min(char.static.maxHP, char.dynamic.currentHP + healing);
         this.broadcast({
           type: "server:character_updated",
@@ -960,6 +992,7 @@ export class GameStateManager {
         (c) => c.name.toLowerCase() === targetName.toLowerCase() && c.type !== "player"
       );
       if (combatant && combatant.maxHP) {
+        this.createEvent("hp_set", `${combatant.name} HP set to ${value}`, [{ type: "hp_set", target: targetName, value }]);
         combatant.currentHP = Math.max(0, Math.min(combatant.maxHP, value));
         this.broadcast({
           type: "server:combat_update",
@@ -973,6 +1006,7 @@ export class GameStateManager {
 
     for (const [pName, char] of Object.entries(this.characters)) {
       if (char.static.name.toLowerCase() === targetName.toLowerCase()) {
+        this.createEvent("hp_set", `${char.static.name} HP set to ${value}`, [{ type: "hp_set", target: targetName, value }]);
         char.dynamic.currentHP = Math.max(0, Math.min(char.static.maxHP, value));
         this.broadcast({
           type: "server:character_updated",
@@ -995,6 +1029,7 @@ export class GameStateManager {
         (c) => c.name.toLowerCase() === targetName.toLowerCase() && c.type !== "player"
       );
       if (combatant) {
+        this.createEvent("condition_added", `${combatant.name} is now ${condition}`, [{ type: "condition_add", target: targetName, condition }]);
         if (!combatant.conditions) combatant.conditions = [];
         if (!combatant.conditions.includes(condition)) {
           combatant.conditions.push(condition);
@@ -1011,6 +1046,7 @@ export class GameStateManager {
 
     for (const [pName, char] of Object.entries(this.characters)) {
       if (char.static.name.toLowerCase() === targetName.toLowerCase()) {
+        this.createEvent("condition_added", `${char.static.name} is now ${condition}`, [{ type: "condition_add", target: targetName, condition }]);
         if (!char.dynamic.conditions.includes(condition)) {
           char.dynamic.conditions.push(condition);
         }
@@ -1034,6 +1070,7 @@ export class GameStateManager {
         (c) => c.name.toLowerCase() === targetName.toLowerCase() && c.type !== "player"
       );
       if (combatant && combatant.conditions) {
+        this.createEvent("condition_removed", `${condition} removed from ${combatant.name}`, [{ type: "condition_remove", target: targetName, condition }]);
         combatant.conditions = combatant.conditions.filter((c) => c !== condition);
         this.broadcast({
           type: "server:combat_update",
@@ -1047,6 +1084,7 @@ export class GameStateManager {
 
     for (const [pName, char] of Object.entries(this.characters)) {
       if (char.static.name.toLowerCase() === targetName.toLowerCase()) {
+        this.createEvent("condition_removed", `${condition} removed from ${char.static.name}`, [{ type: "condition_remove", target: targetName, condition }]);
         char.dynamic.conditions = char.dynamic.conditions.filter((c) => c !== condition);
         this.broadcast({
           type: "server:character_updated",
@@ -1121,6 +1159,8 @@ export class GameStateManager {
     // Sort by initiative (highest first)
     initiativeOrder.sort((a, b) => b.initiative - a.initiative);
 
+    this.createEvent("combat_start", "Combat started", [{ type: "combat_phase", phase: "active" }]);
+
     const combat: CombatState = {
       phase: "active",
       round: 1,
@@ -1159,6 +1199,8 @@ export class GameStateManager {
     if (!this.gameState.encounter?.combat) {
       return "No active combat to end";
     }
+
+    this.createEvent("combat_end", "Combat ended", [{ type: "combat_phase", phase: "ended" }]);
 
     this.gameState.encounter.combat.phase = "ended";
     this.gameState.encounter.phase = "exploration";
@@ -1238,6 +1280,8 @@ export class GameStateManager {
 
     const initiative = rollInitiative(initMod);
 
+    this.createEvent("custom", `${c.name} joined combat`, []);
+
     combat.combatants[id] = {
       id,
       name: c.name,
@@ -1291,6 +1335,9 @@ export class GameStateManager {
     if (!entry) return `Combatant "${combatantName}" not found`;
 
     const [id] = entry;
+
+    this.createEvent("custom", `${combatantName} removed from combat`, [{ type: "combatant_remove", combatantId: id }]);
+
     const idx = combat.turnOrder.indexOf(id);
 
     delete combat.combatants[id];
@@ -1343,6 +1390,7 @@ export class GameStateManager {
   useSpellSlot(characterName: string, level: number): string {
     for (const [pName, char] of Object.entries(this.characters)) {
       if (char.static.name.toLowerCase() === characterName.toLowerCase()) {
+        this.createEvent("spell_slot_used", `${char.static.name} used level ${level} slot`, [{ type: "spell_slot_use", target: characterName, level }]);
         const slot = char.dynamic.spellSlotsUsed.find((s) => s.level === level);
         if (slot) {
           slot.used++;
@@ -1366,6 +1414,7 @@ export class GameStateManager {
   restoreSpellSlot(characterName: string, level: number): string {
     for (const [pName, char] of Object.entries(this.characters)) {
       if (char.static.name.toLowerCase() === characterName.toLowerCase()) {
+        this.createEvent("spell_slot_restored", `${char.static.name} restored level ${level} slot`, [{ type: "spell_slot_restore", target: characterName, level }]);
         const slot = char.dynamic.spellSlotsUsed.find((s) => s.level === level);
         if (slot && slot.used > 0) {
           slot.used--;
@@ -1400,6 +1449,7 @@ export class GameStateManager {
           return `${char.static.name} has no ${canonicalName} uses remaining (0/${resource.maxUses})`;
         }
 
+        this.createEvent("resource_used", `${char.static.name} used ${canonicalName}`, [{ type: "resource_use", target: characterName, resource: canonicalName }]);
         char.dynamic.resourcesUsed[canonicalName] = used + 1;
         const remaining = resource.maxUses - (used + 1);
 
@@ -1428,6 +1478,8 @@ export class GameStateManager {
 
         const canonicalName = resource.name;
         const used = char.dynamic.resourcesUsed[canonicalName] ?? 0;
+
+        this.createEvent("resource_restored", `${char.static.name} restored ${canonicalName}`, [{ type: "resource_restore", target: characterName, resource: canonicalName, amount }]);
 
         if (amount >= 999) {
           char.dynamic.resourcesUsed[canonicalName] = 0;
@@ -1465,6 +1517,7 @@ export class GameStateManager {
   }): string {
     for (const [pName, char] of Object.entries(this.characters)) {
       if (char.static.name.toLowerCase() === characterName.toLowerCase()) {
+        this.createEvent("item_added", `Added ${item.name} to ${char.static.name}`, [{ type: "item_add", target: characterName, item: item.name, quantity: item.quantity ?? 1 }]);
         const existing = char.dynamic.inventory.find(
           (i) => i.name.toLowerCase() === item.name.toLowerCase()
         );
@@ -1513,6 +1566,8 @@ export class GameStateManager {
         const existing = char.dynamic.inventory[idx];
         const removeQty = quantity ?? existing.quantity;
 
+        this.createEvent("item_removed", `Removed ${itemName} from ${char.static.name}`, [{ type: "item_remove", target: characterName, item: itemName, quantity: removeQty }]);
+
         if (removeQty >= existing.quantity) {
           char.dynamic.inventory.splice(idx, 1);
         } else {
@@ -1541,6 +1596,8 @@ export class GameStateManager {
         if (!item) {
           return `Item "${itemName}" not found in ${char.static.name}'s inventory`;
         }
+
+        this.createEvent("item_updated", `Updated ${itemName} for ${char.static.name}`, [{ type: "item_update", target: characterName, item: itemName, changes: JSON.stringify(updates) }]);
 
         // Build human-readable changes summary
         const changesList: string[] = [];
@@ -1579,6 +1636,7 @@ export class GameStateManager {
   updateCurrency(characterName: string, changes: Partial<Record<"cp" | "sp" | "ep" | "gp" | "pp", number>>): string {
     for (const [pName, char] of Object.entries(this.characters)) {
       if (char.static.name.toLowerCase() === characterName.toLowerCase()) {
+        this.createEvent("custom", `${char.static.name} currency updated`, []);
         for (const [coin, delta] of Object.entries(changes) as Array<["cp" | "sp" | "ep" | "gp" | "pp", number]>) {
           char.dynamic.currency[coin] = Math.max(0, char.dynamic.currency[coin] + delta);
         }
@@ -1603,6 +1661,7 @@ export class GameStateManager {
         if (char.dynamic.heroicInspiration) {
           return `${char.static.name} already has Heroic Inspiration`;
         }
+        this.createEvent("inspiration_granted", `${char.static.name} granted Heroic Inspiration`, []);
         char.dynamic.heroicInspiration = true;
 
         this.broadcast({
@@ -1624,6 +1683,7 @@ export class GameStateManager {
         if (!char.dynamic.heroicInspiration) {
           return `${char.static.name} does not have Heroic Inspiration to spend`;
         }
+        this.createEvent("inspiration_used", `${char.static.name} spent Heroic Inspiration`, []);
         char.dynamic.heroicInspiration = false;
 
         this.broadcast({
