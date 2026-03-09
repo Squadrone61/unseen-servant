@@ -6,7 +6,6 @@ import { ChatPanel } from "@/components/chat/ChatPanel";
 import { Sidebar } from "@/components/sidebar/Sidebar";
 import { LeftSidebar } from "@/components/character/LeftSidebar";
 import { useWebSocket } from "@/hooks/useWebSocket";
-import { InitiativeTracker } from "@/components/game/InitiativeTracker";
 import { BattleMap } from "@/components/game/BattleMap";
 import { CampaignConfigModal } from "@/components/sidebar/CampaignConfigModal";
 import { PlayerNotesPanel } from "@/components/notes/PlayerNotesPanel";
@@ -104,6 +103,8 @@ function GameContent({
   const [showCampaignConfig, setShowCampaignConfig] = useState(false);
   const [showNotes, setShowNotes] = useState(false);
   const [typingPlayers, setTypingPlayers] = useState<Map<string, number>>(new Map());
+  const [rightSidebarCollapsed, setRightSidebarCollapsed] = useState(false);
+  const [battleMapWidth, setBattleMapWidth] = useState(50);
 
   // Join state — don't render game UI until successfully joined
   const [joined, setJoined] = useState(false);
@@ -597,34 +598,39 @@ function GameContent({
         onCharacterImported={handleCharacterImported}
       />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {combatState && combatState.phase === "active" && (
-          <InitiativeTracker
-            combat={combatState}
-            onCombatantClick={setHighlightedCombatantId}
-          />
-        )}
-        {battleMap && combatState && combatState.phase === "active" && (
-          <BattleMap
-            map={battleMap}
-            combat={combatState}
+        {battleMap && combatState && combatState.phase === "active" ? (
+          <CombatLayout
+            battleMap={battleMap}
+            combatState={combatState}
             partyCharacters={partyCharacters}
             myCharacterName={myCharacter?.static.name}
             onMoveToken={handleMoveToken}
             onEndTurn={handleEndTurn}
+            onCombatantClick={setHighlightedCombatantId}
             highlightedCombatantId={highlightedCombatantId}
+            battleMapWidth={battleMapWidth}
+            onBattleMapWidthChange={setBattleMapWidth}
+            storyMessages={storyMessages}
+            onSend={handleSend}
+            connectionState={connectionState}
+            onRollDice={handleRollDice}
+            isMyTurn={isMyTurn}
+            typingPlayers={Array.from(typingPlayers.keys())}
+            onTypingChange={handleTypingChange}
+          />
+        ) : (
+          <ChatPanel
+            messages={storyMessages}
+            onSend={handleSend}
+            connectionState={connectionState}
+            onRollDice={handleRollDice}
+            myCharacterName={myCharacter?.static.name}
+            isMyTurn={isMyTurn}
+            onEndTurn={handleEndTurn}
+            typingPlayers={Array.from(typingPlayers.keys())}
+            onTypingChange={handleTypingChange}
           />
         )}
-        <ChatPanel
-          messages={storyMessages}
-          onSend={handleSend}
-          connectionState={connectionState}
-          onRollDice={handleRollDice}
-          myCharacterName={myCharacter?.static.name}
-          isMyTurn={isMyTurn}
-          onEndTurn={handleEndTurn}
-          typingPlayers={Array.from(typingPlayers.keys())}
-          onTypingChange={handleTypingChange}
-        />
       </div>
       <Sidebar
         roomCode={roomCode}
@@ -640,6 +646,9 @@ function GameContent({
         eventLog={eventLog}
         campaignConfigured={campaignConfigured}
         activeCampaignName={activeCampaignName}
+        connectionState={connectionState}
+        collapsed={rightSidebarCollapsed}
+        onToggleCollapse={() => setRightSidebarCollapsed((v) => !v)}
         onKick={handleKick}
         onStartStory={handleStartStory}
         onRollback={handleRollback}
@@ -657,6 +666,7 @@ function GameContent({
           saveState={notesSaveState}
           onChange={updateNotes}
           onClose={() => setShowNotes(false)}
+          sidebarCollapsed={rightSidebarCollapsed}
         />
       )}
 
@@ -668,6 +678,97 @@ function GameContent({
           onClose={() => setShowCampaignConfig(false)}
         />
       )}
+    </div>
+  );
+}
+
+// ─── Combat Layout (side-by-side BattleMap + ChatPanel with resizable divider) ───
+
+function CombatLayout({
+  battleMap,
+  combatState,
+  partyCharacters,
+  myCharacterName,
+  onMoveToken,
+  onEndTurn,
+  onCombatantClick,
+  highlightedCombatantId,
+  battleMapWidth,
+  onBattleMapWidthChange,
+  storyMessages,
+  onSend,
+  connectionState,
+  onRollDice,
+  isMyTurn,
+  typingPlayers,
+  onTypingChange,
+}: {
+  battleMap: import("@aidnd/shared/types").BattleMapState;
+  combatState: import("@aidnd/shared/types").CombatState;
+  partyCharacters: Record<string, import("@aidnd/shared/types").CharacterData>;
+  myCharacterName?: string;
+  onMoveToken: (to: { x: number; y: number }) => void;
+  onEndTurn: () => void;
+  onCombatantClick: (id: string) => void;
+  highlightedCombatantId: string | null;
+  battleMapWidth: number;
+  onBattleMapWidthChange: (w: number) => void;
+  storyMessages: DisplayMessage[];
+  onSend: (content: string) => void;
+  connectionState: import("@/hooks/useWebSocket").ConnectionState;
+  onRollDice: (id: string) => void;
+  isMyTurn: boolean;
+  typingPlayers: string[];
+  onTypingChange: (isTyping: boolean) => void;
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const draggingRef = useRef(false);
+
+  useEffect(() => {
+    const onMouseMove = (e: MouseEvent) => {
+      if (!draggingRef.current || !containerRef.current) return;
+      const rect = containerRef.current.getBoundingClientRect();
+      const pct = ((e.clientX - rect.left) / rect.width) * 100;
+      onBattleMapWidthChange(Math.min(75, Math.max(25, pct)));
+    };
+    const onMouseUp = () => { draggingRef.current = false; };
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
+    return () => {
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+    };
+  }, [onBattleMapWidthChange]);
+
+  return (
+    <div ref={containerRef} className="flex-1 flex flex-row min-h-0">
+      <BattleMap
+        map={battleMap}
+        combat={combatState}
+        partyCharacters={partyCharacters}
+        myCharacterName={myCharacterName}
+        onMoveToken={onMoveToken}
+        onEndTurn={onEndTurn}
+        onCombatantClick={onCombatantClick}
+        highlightedCombatantId={highlightedCombatantId}
+        style={{ width: `${battleMapWidth}%` }}
+      />
+      {/* Resize handle */}
+      <div
+        className="w-1 cursor-col-resize bg-gray-700 hover:bg-purple-500 active:bg-purple-400 transition-colors shrink-0"
+        onMouseDown={() => { draggingRef.current = true; }}
+      />
+      <ChatPanel
+        messages={storyMessages}
+        onSend={onSend}
+        connectionState={connectionState}
+        onRollDice={onRollDice}
+        myCharacterName={myCharacterName}
+        isMyTurn={isMyTurn}
+        onEndTurn={onEndTurn}
+        typingPlayers={typingPlayers}
+        onTypingChange={onTypingChange}
+      />
     </div>
   );
 }

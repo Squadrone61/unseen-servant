@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useCallback, useRef, useEffect } from "react";
+import { InitiativeTracker } from "./InitiativeTracker";
 import type {
   BattleMapState,
   CombatState,
@@ -15,6 +16,7 @@ import type {
 
 const TILE_SIZE = 40;
 const TILE_GAP = 1;
+const LABEL_SIZE = 18;
 
 const TILE_BG: Record<TileType, string> = {
   floor: "#26262c",
@@ -127,7 +129,10 @@ interface BattleMapProps {
   myCharacterName?: string;
   onMoveToken: (to: GridPosition) => void;
   onEndTurn: () => void;
+  onCombatantClick?: (combatantId: string) => void;
   highlightedCombatantId?: string | null;
+  style?: React.CSSProperties;
+  className?: string;
 }
 
 export function BattleMap({
@@ -137,9 +142,13 @@ export function BattleMap({
   myCharacterName,
   onMoveToken,
   onEndTurn,
+  onCombatantClick,
   highlightedCombatantId,
+  style,
+  className,
 }: BattleMapProps) {
   const [hovered, setHovered] = useState<string | null>(null);
+  const [zoom, setZoom] = useState(1);
   const gridRef = useRef<HTMLDivElement>(null);
 
   // My combatant
@@ -204,8 +213,17 @@ export function BattleMap({
 
   const movementLeft = myCombatant ? myCombatant.speed - myCombatant.movementUsed : 0;
 
+  // Column labels (A, B, C...)
+  const colLabels = useMemo(
+    () => Array.from({ length: map.width }, (_, i) => String.fromCharCode(65 + (i % 26))),
+    [map.width],
+  );
+
   return (
-    <div className="flex flex-col border-b border-gray-700/50 bg-[#111114] max-h-[50vh]">
+    <div className={`flex flex-col bg-[#111114] shrink-0 ${className ?? ""}`} style={style}>
+      {/* Initiative Tracker (merged) */}
+      <InitiativeTracker combat={combat} onCombatantClick={onCombatantClick} />
+
       {/* Your-turn banner */}
       {isMyTurn && (
         <div className="px-3 py-1.5 bg-amber-950/40 border-b border-amber-800/30 text-amber-300 text-xs font-medium tracking-wide flex items-center justify-between gap-2 shrink-0">
@@ -220,19 +238,80 @@ export function BattleMap({
       )}
 
       {/* Scrollable map area */}
-      <div className="flex-1 min-h-0 overflow-auto p-2 flex items-start justify-center">
-        {/* The grid itself */}
+      <div className="flex-1 min-h-0 overflow-auto p-2 relative">
+        {/* Zoom Controls */}
+        <div className="absolute top-2 right-2 z-10 bg-gray-800/80 rounded flex gap-1 p-1">
+          <button
+            onClick={() => setZoom((z) => Math.max(0.5, z - 0.25))}
+            className="w-6 h-6 flex items-center justify-center text-xs text-gray-400 hover:text-gray-200 rounded hover:bg-gray-700 transition-colors"
+            title="Zoom out"
+          >
+            -
+          </button>
+          <button
+            onClick={() => setZoom(1)}
+            className="px-1.5 h-6 flex items-center justify-center text-[10px] text-gray-400 hover:text-gray-200 rounded hover:bg-gray-700 transition-colors font-mono"
+            title="Reset zoom"
+          >
+            {Math.round(zoom * 100)}%
+          </button>
+          <button
+            onClick={() => setZoom((z) => Math.min(2, z + 0.25))}
+            className="w-6 h-6 flex items-center justify-center text-xs text-gray-400 hover:text-gray-200 rounded hover:bg-gray-700 transition-colors"
+            title="Zoom in"
+          >
+            +
+          </button>
+        </div>
+
+        {/* Labeled grid wrapper */}
         <div
-          ref={gridRef}
-          className="relative rounded-sm overflow-hidden"
           style={{
-            display: "grid",
-            gridTemplateColumns: `repeat(${map.width}, ${TILE_SIZE}px)`,
-            gridTemplateRows: `repeat(${map.height}, ${TILE_SIZE}px)`,
-            gap: TILE_GAP,
-            backgroundColor: "#1c1c20",
+            transform: `scale(${zoom})`,
+            transformOrigin: "top left",
+            display: "inline-block",
           }}
         >
+          {/* Column labels row */}
+          <div className="flex" style={{ marginLeft: LABEL_SIZE }}>
+            {colLabels.map((label, i) => (
+              <div
+                key={`cl-${i}`}
+                className="text-[9px] text-gray-600 flex items-center justify-center select-none"
+                style={{ width: TILE_SIZE + (i < map.width - 1 ? TILE_GAP : 0), height: LABEL_SIZE }}
+              >
+                {label}
+              </div>
+            ))}
+          </div>
+
+          {/* Row labels + grid */}
+          <div className="flex">
+            {/* Row labels column */}
+            <div className="flex flex-col" style={{ width: LABEL_SIZE }}>
+              {Array.from({ length: map.height }, (_, i) => (
+                <div
+                  key={`rl-${i}`}
+                  className="text-[9px] text-gray-600 flex items-center justify-center select-none"
+                  style={{ height: TILE_SIZE + (i < map.height - 1 ? TILE_GAP : 0), width: LABEL_SIZE }}
+                >
+                  {i + 1}
+                </div>
+              ))}
+            </div>
+
+            {/* The grid itself */}
+            <div
+              ref={gridRef}
+              className="relative rounded-sm overflow-hidden"
+              style={{
+                display: "grid",
+                gridTemplateColumns: `repeat(${map.width}, ${TILE_SIZE}px)`,
+                gridTemplateRows: `repeat(${map.height}, ${TILE_SIZE}px)`,
+                gap: TILE_GAP,
+                backgroundColor: "#1c1c20",
+              }}
+            >
               {/* ─── Layer 1: Tiles ─── */}
               {map.tiles.map((row, y) =>
                 row.map((tile, x) => {
@@ -331,9 +410,17 @@ export function BattleMap({
                       {initials}
                     </div>
 
+                    {/* Name label */}
+                    <div
+                      className="text-[7px] text-gray-400 truncate text-center leading-tight mt-px pointer-events-none"
+                      style={{ maxWidth: TILE_SIZE }}
+                    >
+                      {c.name}
+                    </div>
+
                     {/* Conditions */}
                     {c.conds.length > 0 && !isDead && (
-                      <div className="flex gap-px mt-0.5 flex-wrap justify-center max-w-full">
+                      <div className="flex gap-px flex-wrap justify-center max-w-full">
                         {c.conds.slice(0, 2).map((cond) => (
                           <span
                             key={cond}
@@ -356,6 +443,8 @@ export function BattleMap({
                   </div>
                 );
               })}
+            </div>
+          </div>
         </div>
       </div>
     </div>

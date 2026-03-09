@@ -5,6 +5,7 @@ interface PlayerNotesPanelProps {
   saveState: "saved" | "saving" | "unsaved";
   onChange: (content: string) => void;
   onClose: () => void;
+  sidebarCollapsed?: boolean;
 }
 
 export function PlayerNotesPanel({
@@ -12,10 +13,11 @@ export function PlayerNotesPanel({
   saveState,
   onChange,
   onClose,
+  sidebarCollapsed,
 }: PlayerNotesPanelProps) {
   return (
-    <div className="absolute bottom-4 right-76 z-40 w-80 max-h-[70vh] flex flex-col
-                    bg-gray-800/95 backdrop-blur-sm border border-gray-700 rounded-xl shadow-2xl">
+    <div className={`absolute bottom-4 ${sidebarCollapsed ? "right-14" : "right-76"} z-40 w-80 max-h-[70vh] flex flex-col
+                    bg-gray-800/95 backdrop-blur-sm border border-gray-700 rounded-xl shadow-2xl`}>
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-2.5 border-b border-gray-700">
         <div className="flex items-center gap-2">

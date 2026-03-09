@@ -104,36 +104,7 @@ export function ChatPanel({ messages, onSend, connectionState, onRollDice, myCha
   const isConnected = connectionState === "connected";
 
   return (
-    <div className="flex-1 flex flex-col min-h-0">
-      {/* Header */}
-      <div className="border-b border-gray-700 p-4 flex items-center gap-3 shrink-0">
-        <h2 className="text-lg font-semibold text-purple-400">
-          AI Dungeon Master
-        </h2>
-        <div className="flex items-center gap-1.5 ml-auto">
-          <div
-            className={`w-2 h-2 rounded-full ${
-              connectionState === "connected"
-                ? "bg-green-500"
-                : connectionState === "reconnecting"
-                  ? "bg-yellow-500 animate-pulse"
-                  : connectionState === "connecting"
-                    ? "bg-yellow-500 animate-pulse"
-                    : "bg-red-500"
-            }`}
-          />
-          <span className="text-sm text-gray-400">
-            {connectionState === "connected"
-              ? "Connected"
-              : connectionState === "reconnecting"
-                ? "Reconnecting..."
-                : connectionState === "connecting"
-                  ? "Connecting..."
-                  : "Disconnected"}
-          </span>
-        </div>
-      </div>
-
+    <div className="flex-1 flex flex-col min-h-0 min-w-0">
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-3 min-h-0">
         {messages.length === 0 && (

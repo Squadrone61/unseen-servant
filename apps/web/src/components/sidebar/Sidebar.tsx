@@ -26,6 +26,9 @@ interface SidebarProps {
   eventLog?: GameEvent[];
   campaignConfigured?: boolean;
   activeCampaignName?: string;
+  connectionState?: string;
+  collapsed?: boolean;
+  onToggleCollapse?: () => void;
   onKick: (playerName: string) => void;
   onStartStory: () => void;
   onRollback?: (eventId: string) => void;
@@ -50,6 +53,9 @@ export function Sidebar({
   eventLog,
   campaignConfigured,
   activeCampaignName,
+  connectionState,
+  collapsed,
+  onToggleCollapse,
   onKick,
   onStartStory,
   onRollback,
@@ -108,6 +114,41 @@ export function Sidebar({
           isHost: name === hostName,
         }));
 
+  // Collapsed sidebar — thin strip with expand button + DM status dot
+  if (collapsed) {
+    return (
+      <div className="w-10 border-l border-gray-700 flex flex-col items-center bg-gray-850 shrink-0 py-3 gap-3">
+        <button
+          onClick={onToggleCollapse}
+          className="text-gray-500 hover:text-gray-300 transition-colors"
+          title="Expand sidebar"
+        >
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M10 4L6 8L10 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+        <div
+          className={`w-2.5 h-2.5 rounded-full shrink-0 ${
+            dmConnected ? "bg-green-500" : "bg-yellow-500 animate-pulse"
+          }`}
+          title={dmConnected ? "DM Connected" : "Waiting for DM..."}
+        />
+        {connectionState && (
+          <div
+            className={`w-2 h-2 rounded-full shrink-0 ${
+              connectionState === "connected"
+                ? "bg-green-500"
+                : connectionState === "reconnecting" || connectionState === "connecting"
+                  ? "bg-yellow-500 animate-pulse"
+                  : "bg-red-500"
+            }`}
+            title={connectionState === "connected" ? "Connected" : connectionState === "reconnecting" ? "Reconnecting..." : connectionState === "connecting" ? "Connecting..." : "Disconnected"}
+          />
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="w-72 border-l border-gray-700 flex flex-col bg-gray-850 shrink-0">
       {/* Room Code */}
@@ -120,6 +161,17 @@ export function Sidebar({
             <span className="text-[10px] bg-purple-600/30 text-purple-400 px-1.5 py-0.5 rounded-full font-medium uppercase tracking-wider">
               Host
             </span>
+          )}
+          {onToggleCollapse && (
+            <button
+              onClick={onToggleCollapse}
+              className="ml-auto text-gray-500 hover:text-gray-300 transition-colors"
+              title="Collapse sidebar"
+            >
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M6 4L10 8L6 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
           )}
         </div>
         <button
@@ -421,8 +473,8 @@ export function Sidebar({
         </div>
       )}
 
-      {/* DM Status */}
-      <div className="px-4 py-3 border-t border-gray-700">
+      {/* DM Status + Connection */}
+      <div className="px-4 py-3 border-t border-gray-700 space-y-1.5">
         {dmConnected ? (
           <div className="text-sm text-green-400 flex items-center gap-1.5">
             <div className="w-2 h-2 rounded-full bg-green-500" />
@@ -432,6 +484,28 @@ export function Sidebar({
           <div className="text-sm text-yellow-400 flex items-center gap-1.5">
             <div className="w-2 h-2 rounded-full bg-yellow-500 animate-pulse" />
             <span>Waiting for DM...</span>
+          </div>
+        )}
+        {connectionState && (
+          <div className="flex items-center gap-1.5">
+            <div
+              className={`w-2 h-2 rounded-full ${
+                connectionState === "connected"
+                  ? "bg-green-500"
+                  : connectionState === "reconnecting" || connectionState === "connecting"
+                    ? "bg-yellow-500 animate-pulse"
+                    : "bg-red-500"
+              }`}
+            />
+            <span className="text-xs text-gray-500">
+              {connectionState === "connected"
+                ? "Connected"
+                : connectionState === "reconnecting"
+                  ? "Reconnecting..."
+                  : connectionState === "connecting"
+                    ? "Connecting..."
+                    : "Disconnected"}
+            </span>
           </div>
         )}
       </div>

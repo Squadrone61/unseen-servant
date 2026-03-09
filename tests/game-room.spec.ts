@@ -74,11 +74,6 @@ test.describe("Game Room", () => {
     // Host badge
     await expect(page.getByText("(host)")).toBeVisible();
 
-    // Chat panel header
-    await expect(
-      page.getByRole("heading", { name: "AI Dungeon Master" })
-    ).toBeVisible();
-
     // "Waiting for the adventure" message
     await expect(
       page.getByText("Waiting for the adventure to begin...")
@@ -122,11 +117,6 @@ test.describe("Game Room", () => {
       timeout: 15_000,
     });
 
-    // AI Dungeon Master config section should be visible for host
-    await expect(
-      page.getByText("AI Dungeon Master", { exact: false }).last()
-    ).toBeVisible();
-
     // DM status should show "Waiting for DM..."
     await expect(page.getByText("Waiting for DM...")).toBeVisible();
   });
@@ -148,7 +138,7 @@ test.describe("Game Room", () => {
 
     await page.goto(`/rooms/${roomCode}`);
 
-    // Wait for "Connected" text in chat panel header
+    // Wait for "Connected" text in sidebar status
     await expect(page.getByText("Connected")).toBeVisible({ timeout: 15_000 });
   });
 });

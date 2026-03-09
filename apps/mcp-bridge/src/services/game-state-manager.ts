@@ -42,7 +42,8 @@ interface ConversationMessage {
 }
 
 export interface SessionStateSnapshot {
-  conversationHistory: ConversationMessage[];
+  /** @deprecated Chat history now stored separately in chat-history.json */
+  conversationHistory?: ConversationMessage[];
   gameState: GameState;
   storyStarted: boolean;
   hostName: string;
@@ -88,7 +89,6 @@ export class GameStateManager {
 
   serializeSessionState(): SessionStateSnapshot {
     return {
-      conversationHistory: this.conversationHistory,
       gameState: this.gameState,
       storyStarted: this.storyStarted,
       hostName: this.hostName,
@@ -98,8 +98,9 @@ export class GameStateManager {
     };
   }
 
-  restoreSessionState(snapshot: SessionStateSnapshot): void {
-    this.conversationHistory = snapshot.conversationHistory;
+  restoreSessionState(snapshot: SessionStateSnapshot, chatHistory?: ConversationMessage[]): void {
+    // Chat history from separate file, or fall back to old format embedded in snapshot
+    this.conversationHistory = chatHistory ?? snapshot.conversationHistory ?? [];
     this.gameState = snapshot.gameState;
     this.storyStarted = snapshot.storyStarted;
     this.hostName = snapshot.hostName;
@@ -113,6 +114,7 @@ export class GameStateManager {
     try {
       const snapshot = this.serializeSessionState();
       this.campaignManager.writeFile("session-state.json", JSON.stringify(snapshot, null, 2));
+      this.campaignManager.writeFile("chat-history.json", JSON.stringify(this.conversationHistory, null, 2));
     } catch (e) {
       console.error(`[game-state] Failed to save session state: ${e instanceof Error ? e.message : String(e)}`);
     }
@@ -153,7 +155,7 @@ export class GameStateManager {
     const systemPrompt = this.composeContextualPrompt();
     const newMessages = this.conversationHistory.slice(this.lastSentIndex);
     this.lastSentIndex = this.conversationHistory.length;
-    this.messageQueue.push({ requestId, systemPrompt, messages: newMessages });
+    this.messageQueue.push({ requestId, systemPrompt, messages: newMessages, totalMessageCount: this.conversationHistory.length });
   }
 
   // ─── Player Action Dispatch ───
@@ -584,6 +586,13 @@ export class GameStateManager {
       map: this.gameState.encounter?.map ?? null,
       timestamp: Date.now(),
     });
+
+    // Notify AI of the movement
+    if (char) {
+      const systemMsg = `[System: ${char.static.name} moved from (${from.x},${from.y}) to (${to.x},${to.y}), ${distance}ft used (${combatant.speed - combatant.movementUsed}ft remaining)]`;
+      this.conversationHistory.push({ role: "user", content: systemMsg });
+      this.pushDMRequest();
+    }
   }
 
   // ─── Rollback ───
@@ -1136,11 +1145,12 @@ export class GameStateManager {
     this.gameState.encounter.phase = "exploration";
     const combat = this.gameState.encounter.combat;
     this.gameState.encounter.combat = undefined;
+    this.gameState.encounter.map = undefined;
 
     this.broadcast({
       type: "server:combat_update",
       combat: null,
-      map: this.gameState.encounter.map ?? null,
+      map: null,
       timestamp: Date.now(),
     });
 
@@ -1352,6 +1362,137 @@ export class GameStateManager {
       }
     }
     return `Character "${characterName}" not found`;
+  }
+
+  /** Add item to a character's inventory */
+  addItem(characterName: string, item: {
+    name: string;
+    quantity?: number;
+    type?: string;
+    description?: string;
+    rarity?: string;
+    isMagicItem?: boolean;
+    damage?: string;
+    damageType?: string;
+    properties?: string[];
+    weight?: number;
+  }): string {
+    for (const [pName, char] of Object.entries(this.characters)) {
+      if (char.static.name.toLowerCase() === characterName.toLowerCase()) {
+        const existing = char.dynamic.inventory.find(
+          (i) => i.name.toLowerCase() === item.name.toLowerCase()
+        );
+        if (existing) {
+          existing.quantity += item.quantity ?? 1;
+        } else {
+          char.dynamic.inventory.push({
+            name: item.name,
+            equipped: false,
+            quantity: item.quantity ?? 1,
+            type: item.type,
+            description: item.description,
+            rarity: item.rarity,
+            isMagicItem: item.isMagicItem,
+            damage: item.damage,
+            damageType: item.damageType,
+            properties: item.properties,
+            weight: item.weight,
+          });
+        }
+
+        this.broadcast({
+          type: "server:character_updated",
+          playerName: pName,
+          character: char,
+        });
+
+        const qty = existing ? existing.quantity : (item.quantity ?? 1);
+        return `Added ${item.name}${qty > 1 ? ` (x${qty})` : ""} to ${char.static.name}'s inventory`;
+      }
+    }
+    return `Character "${characterName}" not found`;
+  }
+
+  /** Remove item from a character's inventory */
+  removeItem(characterName: string, itemName: string, quantity?: number): string {
+    for (const [pName, char] of Object.entries(this.characters)) {
+      if (char.static.name.toLowerCase() === characterName.toLowerCase()) {
+        const idx = char.dynamic.inventory.findIndex(
+          (i) => i.name.toLowerCase() === itemName.toLowerCase()
+        );
+        if (idx === -1) {
+          return `Item "${itemName}" not found in ${char.static.name}'s inventory`;
+        }
+
+        const existing = char.dynamic.inventory[idx];
+        const removeQty = quantity ?? existing.quantity;
+
+        if (removeQty >= existing.quantity) {
+          char.dynamic.inventory.splice(idx, 1);
+        } else {
+          existing.quantity -= removeQty;
+        }
+
+        this.broadcast({
+          type: "server:character_updated",
+          playerName: pName,
+          character: char,
+        });
+
+        return `Removed ${removeQty}x ${itemName} from ${char.static.name}'s inventory`;
+      }
+    }
+    return `Character "${characterName}" not found`;
+  }
+
+  /** Update currency for a character (additive — positive adds, negative subtracts) */
+  updateCurrency(characterName: string, changes: Partial<Record<"cp" | "sp" | "ep" | "gp" | "pp", number>>): string {
+    for (const [pName, char] of Object.entries(this.characters)) {
+      if (char.static.name.toLowerCase() === characterName.toLowerCase()) {
+        for (const [coin, delta] of Object.entries(changes) as Array<["cp" | "sp" | "ep" | "gp" | "pp", number]>) {
+          char.dynamic.currency[coin] = Math.max(0, char.dynamic.currency[coin] + delta);
+        }
+
+        this.broadcast({
+          type: "server:character_updated",
+          playerName: pName,
+          character: char,
+        });
+
+        const { cp, sp, ep, gp, pp } = char.dynamic.currency;
+        return `${char.static.name}'s currency updated → ${gp}gp, ${sp}sp, ${cp}cp, ${ep}ep, ${pp}pp`;
+      }
+    }
+    return `Character "${characterName}" not found`;
+  }
+
+  /** Compact conversation history — replace older messages with a summary */
+  compactHistory(keepRecent: number, summary: string): string {
+    const totalBefore = this.conversationHistory.length;
+    if (totalBefore <= keepRecent) {
+      return `History only has ${totalBefore} messages — no compaction needed (threshold: ${keepRecent})`;
+    }
+
+    const recentMessages = this.conversationHistory.slice(-keepRecent);
+    const summaryMessage: ConversationMessage = {
+      role: "user",
+      content: `[System — Story Summary (compacted from ${totalBefore - keepRecent} messages)]: ${summary}`,
+    };
+
+    this.conversationHistory = [summaryMessage, ...recentMessages];
+    this.lastSentIndex = 0; // Reset so next pushDMRequest sends full compacted history
+
+    // Persist immediately
+    this.saveSessionStateToCampaign();
+
+    // Broadcast system message so players see the recap
+    this.broadcast({
+      type: "server:system",
+      content: `📜 The DM has compacted the story so far. Summary: ${summary}`,
+      timestamp: Date.now(),
+    });
+
+    return `Compacted history: ${totalBefore} → ${this.conversationHistory.length} messages (1 summary + ${keepRecent} recent)`;
   }
 
   /** Update/set the battle map */
