@@ -388,6 +388,7 @@ export class GameStateManager {
 
       const systemMsg = `[System: ${char.static.name} rolled ${roll.total} damage (${pendingCheck.notation}) for ${pendingCheck.reason}]`;
       this.conversationHistory.push({ role: "user", content: systemMsg });
+      this.pushDMRequest();
       return;
     }
 
@@ -441,6 +442,7 @@ export class GameStateManager {
     const systemMsg = `[System: ${char.static.name} rolled ${roll.total} on ${pendingCheck.reason}${dcStr} — ${resultLabel}${critStr}]`;
 
     this.conversationHistory.push({ role: "user", content: systemMsg });
+    this.pushDMRequest();
   }
 
   // ─── Combat Action ───
