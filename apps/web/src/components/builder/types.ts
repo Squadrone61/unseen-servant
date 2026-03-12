@@ -76,7 +76,11 @@ export interface EquipmentEntry {
   name: string;
   quantity: number;
   equipped: boolean;
-  source: "weapon" | "armor" | "gear" | "tool";
+  source: "weapon" | "armor" | "gear" | "tool" | "item";
+  // Custom item fields (only used when source === "item")
+  description?: string;
+  weight?: number;
+  itemType?: string;
 }
 
 // ─── Builder State ──────────────────────────────────────

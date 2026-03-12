@@ -98,10 +98,10 @@ export function CharacterBuilder({ editId }: CharacterBuilderProps) {
         ...saved.builderChoices,
         editingId: editId,
       };
-      // Populate name from character data if builder choices don't have it
+      // Ensure the name is visible on the species step (which shows first on edit)
       const charName = saved.character.static.name;
-      if (charName && !hydrated.name && !hydrated.nameFromSpeciesStep) {
-        hydrated.name = charName;
+      if (charName && !hydrated.nameFromSpeciesStep) {
+        hydrated.nameFromSpeciesStep = hydrated.name || charName;
       }
       dispatch({ type: "HYDRATE", state: hydrated });
     }

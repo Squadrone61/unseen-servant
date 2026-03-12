@@ -698,6 +698,12 @@ function equipmentToInventoryItem(entry: EquipmentEntry): InventoryItem {
       }
       break;
     }
+    case "item": {
+      item.type = entry.itemType || "Gear";
+      if (entry.weight) item.weight = entry.weight;
+      if (entry.description) item.description = entry.description;
+      break;
+    }
   }
 
   return item;
@@ -955,6 +961,19 @@ export function assembleIdentifiers(state: BuilderState): CharacterIdentifiers {
   // Deduplicate skills
   const uniqueSkills = [...new Set(allSkills)];
 
+  // Jack of All Trades: Bard level 2+ adds half-prof to non-proficient ability checks
+  let skillBonuses: Map<string, number> | undefined;
+  if (className.toLowerCase() === "bard" && state.level >= 2) {
+    const halfProf = Math.floor((Math.ceil(state.level / 4) + 1) / 2);
+    const profSet = new Set(uniqueSkills);
+    skillBonuses = new Map();
+    for (const skillSlug of Object.keys(SKILL_ABILITY_MAP)) {
+      if (!profSet.has(skillSlug)) {
+        skillBonuses.set(skillSlug, halfProf);
+      }
+    }
+  }
+
   return {
     name,
     race: speciesData?.name ?? state.species ?? "Unknown",
@@ -970,6 +989,7 @@ export function assembleIdentifiers(state: BuilderState): CharacterIdentifiers {
     maxHP: computeHP(className, state.level, conMod),
     skillProficiencies: uniqueSkills,
     skillExpertise: state.skillExpertise,
+    skillBonuses,
     saveProficiencies: [...new Set(saveProficiencies)],
     spells,
     equipment,

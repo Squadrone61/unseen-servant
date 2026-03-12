@@ -32,12 +32,13 @@ export function StepSkills({ state, dispatch }: StepProps) {
   );
   const maxClassPicks = cls?.skillChoices.count ?? 0;
 
-  // Expertise eligibility
+  // Expertise eligibility (2024 PHB levels)
   const canHaveExpertise = useMemo(() => {
     if (!state.className) return false;
     const lc = state.className.toLowerCase();
     if (lc === "rogue") return true;
-    if (lc === "bard" && state.level >= 3) return true;
+    if (lc === "bard" && state.level >= 2) return true;
+    if (lc === "ranger" && state.level >= 9) return true;
     return false;
   }, [state.className, state.level]);
 
@@ -45,11 +46,16 @@ export function StepSkills({ state, dispatch }: StepProps) {
     if (!state.className) return 0;
     const lc = state.className.toLowerCase();
     if (lc === "rogue") return state.level >= 6 ? 4 : 2;
-    if (lc === "bard" && state.level >= 3) return 2;
+    if (lc === "bard") return state.level >= 9 ? 4 : state.level >= 2 ? 2 : 0;
+    if (lc === "ranger" && state.level >= 9) return 2;
     return 0;
   }, [state.className, state.level]);
 
   const profBonus = Math.ceil(state.level / 4) + 1;
+
+  // Jack of All Trades: Bard level 2+ adds half-prof to non-proficient checks
+  const hasJackOfAllTrades = state.className?.toLowerCase() === "bard" && state.level >= 2;
+  const halfProfBonus = hasJackOfAllTrades ? Math.floor(profBonus / 2) : 0;
 
   // Group skills by ability
   const skillsByAbility = useMemo(() => {
@@ -111,6 +117,7 @@ export function StepSkills({ state, dispatch }: StepProps) {
                   let bonus = abilityMod;
                   if (isProficient) bonus += profBonus;
                   if (isExpertise) bonus += profBonus;
+                  if (!isProficient && halfProfBonus > 0) bonus += halfProfBonus;
 
                   return (
                     <div

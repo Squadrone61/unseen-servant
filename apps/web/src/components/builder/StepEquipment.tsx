@@ -1,15 +1,16 @@
 import { useMemo, useState } from "react";
 import { equipmentDb } from "@aidnd/shared/data";
 import type { WeaponData, ArmorData } from "@aidnd/shared/data";
-import type { StepProps, EquipmentEntry } from "./types";
+import type { StepProps, EquipmentEntry, BuilderAction } from "./types";
 
-type EquipmentTab = "weapon" | "armor" | "gear" | "tool";
+type EquipmentTab = "weapon" | "armor" | "gear" | "tool" | "item";
 
 const TABS: { value: EquipmentTab; label: string }[] = [
   { value: "weapon", label: "Weapons" },
   { value: "armor", label: "Armor" },
   { value: "gear", label: "Gear" },
   { value: "tool", label: "Tools" },
+  { value: "item", label: "Items" },
 ];
 
 // Category grouping definitions
@@ -76,16 +77,23 @@ export function StepEquipment({ state, dispatch }: StepProps) {
             ))}
           </div>
 
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder={`Search ${tab}s...`}
-            className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-gray-100 placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-          />
+          {tab !== "item" && (
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={`Search ${tab}s...`}
+              className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-gray-100 placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            />
+          )}
 
           <div className="max-h-[480px] overflow-y-auto">
-            {tab === "weapon" ? (
+            {tab === "item" ? (
+              <CustomItemsPanel
+                equipment={state.equipment}
+                dispatch={dispatch}
+              />
+            ) : tab === "weapon" ? (
               <GroupedWeapons
                 search={search}
                 equipment={state.equipment}
@@ -221,6 +229,136 @@ export function StepEquipment({ state, dispatch }: StepProps) {
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+// ─── Custom Items Panel ─────────────────────────────────
+
+function CustomItemsPanel({
+  equipment,
+  dispatch,
+}: {
+  equipment: EquipmentEntry[];
+  dispatch: React.Dispatch<BuilderAction>;
+}) {
+  const [name, setName] = useState("");
+  const [quantity, setQuantity] = useState(1);
+  const [description, setDescription] = useState("");
+  const [weight, setWeight] = useState("");
+  const [itemType, setItemType] = useState("");
+
+  const handleAdd = () => {
+    if (!name.trim()) return;
+    const entry: EquipmentEntry = {
+      name: name.trim(),
+      quantity,
+      equipped: false,
+      source: "item",
+      ...(description.trim() && { description: description.trim() }),
+      ...(weight && { weight: Number(weight) }),
+      ...(itemType.trim() && { itemType: itemType.trim() }),
+    };
+    dispatch({ type: "ADD_EQUIPMENT", entry });
+    setName("");
+    setQuantity(1);
+    setDescription("");
+    setWeight("");
+    setItemType("");
+  };
+
+  const customItems = equipment.filter((e) => e.source === "item");
+
+  return (
+    <div className="space-y-4">
+      <div className="bg-gray-800 border border-gray-700 rounded-lg p-3 space-y-2">
+        <div className="text-[10px] text-gray-500 font-medium uppercase tracking-wider">
+          Add Custom Item
+        </div>
+        <input
+          type="text"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="Item name *"
+          className="w-full bg-gray-900 border border-gray-700 rounded px-2.5 py-1.5 text-xs text-gray-100 placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-purple-500"
+          onKeyDown={(e) => e.key === "Enter" && handleAdd()}
+        />
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={itemType}
+            onChange={(e) => setItemType(e.target.value)}
+            placeholder="Type (e.g. Potion)"
+            className="flex-1 bg-gray-900 border border-gray-700 rounded px-2.5 py-1.5 text-xs text-gray-100 placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-purple-500"
+          />
+          <input
+            type="number"
+            min={0}
+            step={0.1}
+            value={weight}
+            onChange={(e) => setWeight(e.target.value)}
+            placeholder="Weight (lb.)"
+            className="w-24 bg-gray-900 border border-gray-700 rounded px-2.5 py-1.5 text-xs text-gray-100 placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-purple-500"
+          />
+          <input
+            type="number"
+            min={1}
+            value={quantity}
+            onChange={(e) => setQuantity(Math.max(1, Number(e.target.value) || 1))}
+            placeholder="Qty"
+            className="w-14 bg-gray-900 border border-gray-700 rounded px-2.5 py-1.5 text-xs text-gray-100 text-center placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-purple-500"
+          />
+        </div>
+        <textarea
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="Description (optional)"
+          rows={2}
+          className="w-full bg-gray-900 border border-gray-700 rounded px-2.5 py-1.5 text-xs text-gray-100 placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-purple-500 resize-none"
+        />
+        <button
+          onClick={handleAdd}
+          disabled={!name.trim()}
+          className="w-full py-1.5 text-xs font-medium rounded transition-colors bg-purple-600 hover:bg-purple-500 text-white disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          Add Item
+        </button>
+      </div>
+
+      {customItems.length > 0 && (
+        <div className="space-y-1">
+          <div className="text-[10px] text-gray-500 font-medium uppercase tracking-wider">
+            Custom Items
+          </div>
+          {customItems.map((entry) => (
+            <div
+              key={entry.name}
+              className="flex items-center justify-between px-2.5 py-1.5 rounded-lg border border-purple-500/20 bg-purple-600/5 text-xs"
+            >
+              <div className="min-w-0">
+                <div className="text-gray-200 truncate">{entry.name}</div>
+                <div className="text-[10px] text-gray-500">
+                  {entry.itemType && <span>{entry.itemType}</span>}
+                  {entry.weight != null && entry.weight > 0 && (
+                    <span>
+                      {entry.itemType ? " \u00b7 " : ""}{entry.weight} lb.
+                    </span>
+                  )}
+                  {entry.description && (
+                    <span>
+                      {(entry.itemType || (entry.weight != null && entry.weight > 0)) ? " \u00b7 " : ""}
+                      {entry.description}
+                    </span>
+                  )}
+                </div>
+              </div>
+              <span className="shrink-0 text-[10px] text-gray-500 ml-2">
+                x{entry.quantity}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
