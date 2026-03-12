@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useCharacterLibrary } from "@/hooks/useCharacterLibrary";
-import { formatClassString } from "@aidnd/shared/utils";
+import { formatClassString, getTotalLevel } from "@aidnd/shared/utils";
 
 export default function CharactersPage() {
   const { characters, deleteCharacter } = useCharacterLibrary();
@@ -33,7 +33,7 @@ export default function CharactersPage() {
           </Link>
           <Link
             href="/"
-            className="text-sm text-gray-500 hover:text-gray-300 transition-colors"
+            className="bg-gray-800 border border-gray-700 text-gray-400 hover:text-gray-200 px-4 py-2 rounded-lg text-sm transition-colors"
           >
             Back to Home
           </Link>
@@ -44,14 +44,22 @@ export default function CharactersPage() {
         <div className="text-center py-16">
           <div className="text-gray-600 text-lg mb-2">No characters yet</div>
           <p className="text-gray-500 text-sm mb-4">
-            Import a character from D&D Beyond to get started.
+            Create a character or import one from D&D Beyond to get started.
           </p>
-          <Link
-            href="/characters/create"
-            className="inline-block bg-purple-600 hover:bg-purple-700 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition-colors"
-          >
-            Import Your First Character
-          </Link>
+          <div className="flex items-center justify-center gap-3">
+            <Link
+              href="/characters/builder"
+              className="inline-block bg-purple-600 hover:bg-purple-700 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition-colors"
+            >
+              Create Character
+            </Link>
+            <Link
+              href="/characters/create"
+              className="inline-block bg-gray-700 hover:bg-gray-600 text-gray-300 px-5 py-2.5 rounded-lg text-sm font-medium transition-colors"
+            >
+              Import
+            </Link>
+          </div>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -62,12 +70,19 @@ export default function CharactersPage() {
             return (
               <div
                 key={saved.id}
-                className="bg-gray-800 border border-gray-700 rounded-lg p-4 hover:border-gray-600 transition-colors group relative"
+                className={`bg-gray-800 border border-gray-700 rounded-lg p-4 hover:border-purple-500/40 hover:shadow-lg hover:shadow-purple-900/10 transition-all duration-200 group relative border-l-2 ${
+                  ["border-l-purple-500", "border-l-blue-500", "border-l-green-500", "border-l-amber-500", "border-l-red-500", "border-l-cyan-500"][s.name.charCodeAt(0) % 6]
+                }`}
               >
                 <Link href={`/characters/${saved.id}`} className="block">
-                  <h3 className="text-sm font-bold text-purple-400 truncate mb-2">
-                    {s.name}
-                  </h3>
+                  <div className="flex items-center gap-2 mb-2">
+                    <h3 className="text-base font-bold text-purple-400 truncate">
+                      {s.name}
+                    </h3>
+                    <span className="text-[10px] bg-purple-600/20 text-purple-400 font-bold px-2 py-0.5 rounded-full">
+                      Lvl {getTotalLevel(s.classes)}
+                    </span>
+                  </div>
                   <div className="text-xs text-gray-400 mb-3">
                     {s.race} &middot; {formatClassString(s.classes)}
                   </div>

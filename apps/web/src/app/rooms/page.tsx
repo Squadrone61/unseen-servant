@@ -70,11 +70,13 @@ export default function RoomsPage() {
               <p className="text-sm text-gray-500 mt-1">
                 Join an active game session
               </p>
+              <span className="text-[11px] text-gray-600">Auto-refreshes every 15s</span>
             </div>
             <button
               onClick={() => fetchRooms(true)}
               disabled={refreshing}
-              className="mt-1 p-2 text-gray-500 hover:text-purple-400 transition-colors disabled:opacity-50"
+              className="mt-1 flex items-center gap-1.5 bg-gray-800 px-3 py-1.5 rounded-lg border border-gray-700
+                         text-gray-500 hover:text-purple-400 hover:border-purple-500/50 transition-all disabled:opacity-50"
               title="Refresh"
             >
               <svg
@@ -90,6 +92,7 @@ export default function RoomsPage() {
                   d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
                 />
               </svg>
+              <span className="text-xs">Refresh</span>
             </button>
           </div>
           <Link
@@ -110,13 +113,16 @@ export default function RoomsPage() {
           </div>
         ) : rooms.length === 0 ? (
           <div className="text-center py-16">
-            <p className="text-gray-500 mb-2">No active rooms</p>
-            <p className="text-sm text-gray-600">
-              Create one from the{" "}
-              <Link href="/" className="text-purple-400 hover:text-purple-300 underline">
-                home page
-              </Link>
+            <p className="text-lg text-gray-400 mb-2">No active rooms</p>
+            <p className="text-sm text-gray-600 mb-4">
+              Be the first to start an adventure.
             </p>
+            <Link
+              href="/"
+              className="inline-block mt-3 bg-purple-600 hover:bg-purple-700 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition-colors"
+            >
+              Create a Room
+            </Link>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

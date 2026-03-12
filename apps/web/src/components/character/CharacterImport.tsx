@@ -93,13 +93,14 @@ export function CharacterImport({
                 : "text-gray-500 hover:text-gray-300"
             }`}
           >
-            AIDND
+            File Import
           </button>
         )}
       </div>
 
       {tab === "ddb" && (
         <>
+          <p className="text-xs text-gray-500 mb-3">Paste your D&D Beyond character sheet URL to import stats, spells, and inventory.</p>
           {/* URL Import */}
           <div className="flex gap-2">
             <input
@@ -126,7 +127,7 @@ export function CharacterImport({
           {!showJson && (
             <button
               onClick={() => setShowJsonMode(true)}
-              className="text-[10px] text-gray-500 hover:text-gray-400 transition-colors"
+              className="text-xs text-gray-400 hover:text-purple-400 transition-colors"
             >
               Or paste character JSON...
             </button>
@@ -160,7 +161,7 @@ export function CharacterImport({
 
       {tab === "native" && onImportNative && (
         <div className="space-y-2">
-          <p className="text-[10px] text-gray-500 leading-relaxed">
+          <p className="text-xs text-gray-500 leading-relaxed">
             Import a character from a <code>.aidnd.json</code> file exported from this app.
           </p>
           <input

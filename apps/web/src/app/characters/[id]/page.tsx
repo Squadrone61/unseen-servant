@@ -62,26 +62,27 @@ export default function CharacterDetailPage() {
   return (
     <div className="min-h-screen flex flex-col">
       {/* Slim toolbar */}
-      <div className="bg-gray-800 border-b border-gray-700 px-6 py-2 shrink-0">
+      <div className="bg-gray-800 border-b border-gray-700 px-6 py-3 shrink-0">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <Link
             href="/characters"
-            className="text-xs text-gray-500 hover:text-gray-300 transition-colors"
+            className="text-sm px-4 py-2 text-gray-500 hover:text-gray-300 transition-colors"
           >
             &larr; All Characters
           </Link>
+          <span className="text-sm font-medium text-gray-300 truncate">{char.static.name}</span>
           <div className="flex items-center gap-2">
             {saved.builderChoices && (
               <Link
                 href={`/characters/builder?edit=${saved.id}`}
-                className="text-xs px-3 py-1.5 rounded bg-purple-600/20 text-purple-400 hover:bg-purple-600/30 transition-colors"
+                className="text-sm px-4 py-2 rounded bg-purple-600/20 text-purple-400 hover:bg-purple-600/30 transition-colors"
               >
                 Edit
               </Link>
             )}
             <button
               onClick={() => exportNative(char)}
-              className="text-xs px-3 py-1.5 rounded bg-gray-700 text-gray-300 hover:bg-emerald-600 transition-colors"
+              className="text-sm px-4 py-2 rounded bg-gray-700 text-gray-300 hover:bg-emerald-600 transition-colors"
             >
               Export
             </button>
@@ -89,13 +90,13 @@ export default function CharacterDetailPage() {
               <div className="flex items-center gap-1">
                 <button
                   onClick={handleDelete}
-                  className="text-xs px-3 py-1.5 rounded bg-red-600 text-white hover:bg-red-700 transition-colors"
+                  className="text-sm px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700 transition-colors"
                 >
                   Confirm
                 </button>
                 <button
                   onClick={() => setConfirmDelete(false)}
-                  className="text-xs px-2 py-1.5 text-gray-500 hover:text-gray-300 transition-colors"
+                  className="text-sm px-3 py-2 text-gray-500 hover:text-gray-300 transition-colors"
                 >
                   Cancel
                 </button>
@@ -103,7 +104,7 @@ export default function CharacterDetailPage() {
             ) : (
               <button
                 onClick={() => setConfirmDelete(true)}
-                className="text-xs px-3 py-1.5 rounded bg-gray-700 text-gray-400 hover:bg-red-900/50 hover:text-red-400 transition-colors"
+                className="text-sm px-4 py-2 rounded bg-gray-700 text-gray-400 hover:bg-red-900/50 hover:text-red-400 transition-colors"
               >
                 Delete
               </button>
@@ -114,7 +115,7 @@ export default function CharacterDetailPage() {
 
       {/* Character sheet */}
       <div className="flex-1 overflow-y-auto">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-4xl mx-auto py-4 px-6">
           <CharacterSheet character={char} />
         </div>
       </div>

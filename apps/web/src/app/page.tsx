@@ -75,7 +75,7 @@ function HomePageInner() {
 
   const handleCreate = async () => {
     if (!playerName.trim()) {
-      setError("Enter your character name");
+      setError("Enter your player name");
       return;
     }
     setLoading(true);
@@ -97,7 +97,7 @@ function HomePageInner() {
 
   const handleJoin = () => {
     if (!playerName.trim()) {
-      setError("Enter your character name");
+      setError("Enter your player name");
       return;
     }
     if (joinCode.trim().length !== 6) {
@@ -116,10 +116,11 @@ function HomePageInner() {
     <div className="min-h-screen flex items-center justify-center p-4">
       <div className="w-full max-w-2xl">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-purple-400 mb-2">
+          <h1 className="text-4xl font-bold text-purple-400 mb-2" style={{ textShadow: '0 0 40px rgba(192,132,252,0.3)' }}>
             AI Dungeon Master
           </h1>
-          <p className="text-gray-400">D&D 5e with an AI Game Master</p>
+          <p className="text-gray-500 tracking-wide uppercase text-xs font-medium">D&D 5e with an AI Game Master</p>
+          <div className="w-16 h-0.5 bg-purple-500/30 mx-auto mt-3" />
         </div>
 
         {/* Kick/Reject message */}
@@ -193,13 +194,13 @@ function HomePageInner() {
           {/* Character Name */}
           <div>
             <label className="block text-sm text-gray-400 mb-1">
-              Character Name
+              Player Name
             </label>
             <input
               type="text"
               value={playerName}
               onChange={(e) => setPlayerName(e.target.value)}
-              placeholder="Enter your name..."
+              placeholder="What should we call you?"
               maxLength={30}
               className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2.5
                          text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2
@@ -218,14 +219,15 @@ function HomePageInner() {
               </div>
 
               <p className="text-xs text-gray-500">
-                Create a room and start the MCP bridge to connect Claude Code as the AI Dungeon Master.
+                Start a new adventure as the host. An AI Dungeon Master will guide your story.
               </p>
 
               <button
                 onClick={handleCreate}
                 disabled={loading}
                 className="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-gray-700
-                           text-white py-2.5 rounded-lg font-medium transition-colors text-sm"
+                           text-white py-3 rounded-lg font-medium transition-colors text-sm
+                           shadow-[0_0_20px_rgba(147,51,234,0.15)]"
               >
                 {loading ? "Creating..." : "Create Room"}
               </button>
@@ -282,19 +284,18 @@ function HomePageInner() {
           </div>
 
           {/* Browse Rooms & Characters */}
-          <div className="pt-2 border-t border-gray-700 flex items-center justify-center gap-4">
+          <div className="pt-2 border-t border-gray-700 grid grid-cols-2 gap-3">
             <Link
               href="/rooms"
-              className="text-sm text-purple-400 hover:text-purple-300
-                         transition-colors py-2"
+              className="text-center py-2.5 rounded-lg border border-gray-700 text-sm text-gray-300
+                         hover:border-purple-500/50 hover:text-purple-400 transition-all"
             >
               Browse Rooms
             </Link>
-            <span className="text-gray-700">&middot;</span>
             <Link
               href="/characters"
-              className="text-sm text-purple-400 hover:text-purple-300
-                         transition-colors py-2"
+              className="text-center py-2.5 rounded-lg border border-gray-700 text-sm text-gray-300
+                         hover:border-purple-500/50 hover:text-purple-400 transition-all"
             >
               My Characters
             </Link>

@@ -46,8 +46,14 @@ export default function CreateCharacterPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen flex flex-col p-4">
+      <div className="px-6 py-3">
+        <Link href="/characters" className="text-sm text-gray-400 hover:text-gray-200 transition-colors">
+          &larr; Back to Characters
+        </Link>
+      </div>
+
+      <div className="w-full max-w-lg mx-auto pt-16">
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-purple-400 mb-1">
             Import Character
@@ -69,15 +75,6 @@ export default function CreateCharacterPage() {
             onImportNative={handleImportNative}
             onClear={clearCharacter}
           />
-        </div>
-
-        <div className="mt-4 text-center">
-          <Link
-            href="/characters"
-            className="text-sm text-gray-500 hover:text-gray-300 transition-colors"
-          >
-            Back to Characters
-          </Link>
         </div>
       </div>
     </div>
