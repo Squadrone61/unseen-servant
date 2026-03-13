@@ -1,14 +1,14 @@
 "use client";
 
-import { useReducer, useEffect, useCallback, useState, useRef } from "react";
+import { useReducer, useEffect, useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { motion, AnimatePresence } from "framer-motion";
 import { buildCharacter } from "@aidnd/shared/builders";
 import { useCharacterLibrary } from "@/hooks/useCharacterLibrary";
-import { useCharacterImport } from "@/hooks/useCharacterImport";
 import { CharacterImport } from "@/components/character/CharacterImport";
+import { useCharacterImport } from "@/hooks/useCharacterImport";
 import { builderReducer, createInitialState } from "./reducer";
-import { BuilderStepper } from "./BuilderStepper";
 import { StepSpecies } from "./StepSpecies";
 import { StepBackground } from "./StepBackground";
 import { StepClass } from "./StepClass";
@@ -19,8 +19,9 @@ import { StepSpells } from "./StepSpells";
 import { StepEquipment } from "./StepEquipment";
 import { StepDetails } from "./StepDetails";
 import { StepReview } from "./StepReview";
-import { BUILDER_STEPS, type BuilderStep, type BuilderState } from "./types";
-import { isStepValid, getStepsToSkip, assembleIdentifiers } from "./utils";
+import { BUILDER_STEPS, STEP_LABELS, type BuilderStep, type BuilderState } from "./types";
+import { isStepValid, isStepTouched, getStepsToSkip, assembleIdentifiers } from "./utils";
+import { stepTransition } from "./animations";
 import type { CharacterData } from "@aidnd/shared/types";
 
 interface CharacterBuilderProps {
@@ -39,29 +40,21 @@ export function CharacterBuilder({ editId }: CharacterBuilderProps) {
 
   // Import modal state
   const [showImportModal, setShowImportModal] = useState(false);
-  const freshImportRef = useRef(false);
-
-  const existingCharacter = editId ? getCharacter(editId)?.character ?? null : null;
 
   const {
     importState,
     character: importedCharacter,
     error: importError,
-    fallbackHint: importFallbackHint,
-    warnings: importWarnings,
-    importFromUrl,
-    importFromJson,
+    importFromFile,
     clearCharacter: clearImportedCharacter,
-    setFreshImport,
-  } = useCharacterImport({
-    existingCharacter: freshImportRef.current ? null : existingCharacter,
-  });
+  } = useCharacterImport();
 
-  // Handle native .aidnd.json import
-  const handleImportNative = useCallback((json: string) => {
+  // Handle file import — save and redirect
+  const handleFileImport = useCallback((json: string) => {
     try {
       const parsed = JSON.parse(json);
       if (parsed?.format !== "aidnd" || !parsed?.character) {
+        importFromFile(json); // let the hook handle the error
         return;
       }
       const char = parsed.character as CharacterData;
@@ -73,11 +66,11 @@ export function CharacterBuilder({ editId }: CharacterBuilderProps) {
         router.push(`/characters/${saved.id}`);
       }
     } catch {
-      // Invalid JSON silently ignored
+      importFromFile(json); // let the hook handle the error
     }
-  }, [editId, updateCharacter, saveCharacter, router]);
+  }, [editId, updateCharacter, saveCharacter, router, importFromFile]);
 
-  // When DDB import succeeds, save and redirect
+  // When import via hook succeeds, save and redirect
   useEffect(() => {
     if (importState !== "success" || !importedCharacter) return;
     if (editId) {
@@ -98,10 +91,44 @@ export function CharacterBuilder({ editId }: CharacterBuilderProps) {
         ...saved.builderChoices,
         editingId: editId,
       };
-      // Ensure the name is visible on the species step (which shows first on edit)
+
+      // Migration: convert old single-class state to multiclass format
+      const choices = saved.builderChoices as Record<string, unknown>;
+      if (choices.className && !choices.classes) {
+        hydrated.classes = [{
+          className: choices.className as string,
+          level: (choices.level as number) ?? 1,
+          subclass: (choices.subclass as string | null) ?? null,
+          optionalFeatureSelections: (choices.featureChoices as Record<string, string[]>) ?? {},
+          weaponMasteries: (choices.weaponMasteries as string[]) ?? [],
+        }];
+        hydrated.activeClassIndex = 0;
+      }
+
+      // Migration: convert old flat spell selections to per-class format
+      if (choices.selectedCantrips && !choices.spellSelections) {
+        const className = (hydrated.classes as { className: string }[])?.[0]?.className;
+        if (className) {
+          hydrated.spellSelections = {
+            [className]: {
+              cantrips: (choices.selectedCantrips as string[]) ?? [],
+              spells: (choices.selectedSpells as string[]) ?? [],
+            },
+          };
+        }
+      }
+
+      // Migration: convert old ASI selections without classIndex
+      if (Array.isArray(choices.asiSelections)) {
+        const asiSels = choices.asiSelections as { classIndex?: number; level: number }[];
+        if (asiSels.length > 0 && asiSels[0].classIndex === undefined) {
+          hydrated.asiSelections = asiSels.map(s => ({ ...s, classIndex: 0 })) as BuilderState["asiSelections"];
+        }
+      }
+
       const charName = saved.character.static.name;
       if (charName && !hydrated.nameFromSpeciesStep) {
-        hydrated.nameFromSpeciesStep = hydrated.name || charName;
+        hydrated.nameFromSpeciesStep = (hydrated as { name?: string }).name || charName;
       }
       dispatch({ type: "HYDRATE", state: hydrated });
     }
@@ -131,12 +158,11 @@ export function CharacterBuilder({ editId }: CharacterBuilderProps) {
   );
 
   const handleSave = useCallback(() => {
-    if (!state.className) return;
+    if (state.classes.length === 0) return;
 
     const ids = assembleIdentifiers(state);
     const { character } = buildCharacter(ids);
 
-    // Extract builder choices for edit mode persistence
     const { currentStep: _, editingId: __, ...builderChoices } = state;
 
     if (state.editingId) {
@@ -155,10 +181,9 @@ export function CharacterBuilder({ editId }: CharacterBuilderProps) {
     <div className="min-h-screen flex flex-col">
       {/* Header */}
       <div className="relative bg-gray-800/80 border-b border-gray-700/50 px-6 py-3 shrink-0 backdrop-blur-sm">
-        {/* Top accent line */}
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-amber-500/40 to-transparent" />
 
-        <div className="max-w-5xl mx-auto">
+        <div className="max-w-6xl mx-auto">
           <div className="flex items-center justify-between mb-3">
             <h1
               className="text-lg font-semibold tracking-wide text-amber-200/90"
@@ -167,23 +192,8 @@ export function CharacterBuilder({ editId }: CharacterBuilderProps) {
               {state.editingId ? "Edit Character" : "Create Character"}
             </h1>
             <div className="flex items-center gap-2">
-              {state.editingId && (
-                <button
-                  onClick={() => {
-                    freshImportRef.current = false;
-                    setFreshImport(false);
-                    clearImportedCharacter();
-                    setShowImportModal(true);
-                  }}
-                  className="text-[10px] px-3 py-1.5 rounded-md bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition-colors border border-blue-500/20"
-                >
-                  Update
-                </button>
-              )}
               <button
                 onClick={() => {
-                  freshImportRef.current = true;
-                  setFreshImport(true);
                   clearImportedCharacter();
                   setShowImportModal(true);
                 }}
@@ -199,21 +209,36 @@ export function CharacterBuilder({ editId }: CharacterBuilderProps) {
               </Link>
             </div>
           </div>
-          <BuilderStepper state={state} onStepClick={goToStep} />
+          <ProgressStepper
+            steps={visibleSteps}
+            currentStep={state.currentStep}
+            state={state}
+            onStepClick={goToStep}
+          />
         </div>
       </div>
 
       {/* Step Content */}
       <div className="flex-1 overflow-y-auto">
-        <div className="max-w-5xl mx-auto px-6 py-6">
-          {renderStep(state.currentStep, state, dispatch)}
+        <div className="max-w-6xl mx-auto px-6 py-6">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={state.currentStep}
+              variants={stepTransition}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+            >
+              {renderStep(state.currentStep, state, dispatch)}
+            </motion.div>
+          </AnimatePresence>
         </div>
       </div>
 
       {/* Footer Navigation */}
       <div className="relative bg-gray-800/80 border-t border-gray-700/50 px-6 py-3 shrink-0 backdrop-blur-sm">
         <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-amber-500/20 to-transparent" />
-        <div className="max-w-5xl mx-auto flex items-center justify-between">
+        <div className="max-w-6xl mx-auto flex items-center justify-between">
           <button
             onClick={goBack}
             disabled={currentIndex === 0}
@@ -255,7 +280,7 @@ export function CharacterBuilder({ editId }: CharacterBuilderProps) {
             <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-amber-500/30 to-transparent rounded-t-xl" />
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-semibold text-gray-200" style={{ fontFamily: "var(--font-cinzel)" }}>
-                {freshImportRef.current ? "Import Character" : "Update from D&D Beyond"}
+                Import Character
               </h3>
               <button
                 onClick={() => setShowImportModal(false)}
@@ -266,25 +291,96 @@ export function CharacterBuilder({ editId }: CharacterBuilderProps) {
                 </svg>
               </button>
             </div>
-            {!freshImportRef.current && (
-              <p className="text-[10px] text-gray-500 leading-relaxed">
-                Re-imports from D&D Beyond while preserving HP, conditions, and other in-game state.
-              </p>
-            )}
             <CharacterImport
               importState={importState}
               character={importedCharacter}
               error={importError}
-              fallbackHint={importFallbackHint}
-              warnings={importWarnings}
-              onImportUrl={importFromUrl}
-              onImportJson={importFromJson}
-              onImportNative={handleImportNative}
+              onImportFile={handleFileImport}
               onClear={clearImportedCharacter}
             />
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+// ─── Progress Stepper ───────────────────────────────────
+
+function ProgressStepper({
+  steps,
+  currentStep,
+  state,
+  onStepClick,
+}: {
+  steps: BuilderStep[];
+  currentStep: BuilderStep;
+  state: BuilderState;
+  onStepClick: (step: BuilderStep) => void;
+}) {
+  const currentIndex = steps.indexOf(currentStep);
+
+  return (
+    <div className="flex items-center gap-1">
+      {steps.map((step, i) => {
+        const isActive = step === currentStep;
+        const touched = isStepTouched(state, step);
+        const valid = isStepValid(state, step);
+        const isCompleted = !isActive && touched && valid;
+        const isPast = i < currentIndex;
+
+        return (
+          <div key={step} className="flex items-center flex-1 last:flex-none">
+            <button
+              onClick={() => onStepClick(step)}
+              className="group flex items-center gap-1.5 relative"
+              title={STEP_LABELS[step]}
+            >
+              {/* Step indicator */}
+              <div
+                className={`relative flex items-center justify-center w-6 h-6 rounded-full text-[10px] font-bold shrink-0 transition-all duration-300 ${
+                  isActive
+                    ? "bg-amber-500/25 text-amber-300 ring-2 ring-amber-400/60 shadow-[0_0_12px_rgba(245,158,11,0.35)]"
+                    : isCompleted
+                      ? "bg-emerald-600/25 text-emerald-400 ring-1 ring-emerald-500/40"
+                      : isPast
+                        ? "bg-gray-700/50 text-gray-500 ring-1 ring-gray-600/30"
+                        : "bg-gray-800/80 text-gray-600 group-hover:bg-gray-700/60 group-hover:text-gray-400"
+                }`}
+              >
+                {isCompleted ? (
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                  </svg>
+                ) : (
+                  i + 1
+                )}
+              </div>
+              <span
+                className={`hidden lg:inline text-[10px] font-medium whitespace-nowrap transition-colors ${
+                  isActive
+                    ? "text-amber-300"
+                    : isCompleted
+                      ? "text-emerald-400/70"
+                      : "text-gray-600 group-hover:text-gray-400"
+                }`}
+              >
+                {STEP_LABELS[step]}
+              </span>
+            </button>
+            {/* Connector */}
+            {i < steps.length - 1 && (
+              <div className="flex-1 mx-1.5 h-px min-w-2">
+                <div
+                  className={`h-full transition-colors duration-300 ${
+                    isCompleted || isPast ? "bg-emerald-500/30" : "bg-gray-700/40"
+                  }`}
+                />
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }

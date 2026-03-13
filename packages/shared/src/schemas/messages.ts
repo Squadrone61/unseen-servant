@@ -192,8 +192,6 @@ export const characterStaticDataSchema = z.object({
   advantages: z.array(advantageEntrySchema),
   traits: characterTraitsSchema,
   importedAt: z.number(),
-  sourceUrl: z.string().optional(),
-  ddbId: z.number().optional(),
 });
 
 export const characterDynamicDataSchema = z.object({

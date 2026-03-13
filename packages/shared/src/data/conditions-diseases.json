@@ -1,0 +1,799 @@
+{
+  "condition": [
+    {
+      "name": "Blinded",
+      "source": "XPHB",
+      "page": 361,
+      "srd52": true,
+      "basicRules2024": true,
+      "entries": [
+        "While you have the Blinded condition, you experience the following effects.",
+        {
+          "type": "entries",
+          "entries": [
+            {
+              "type": "entries",
+              "name": "Can't See",
+              "entries": [
+                "You can't see and automatically fail any ability check that requires sight."
+              ]
+            },
+            {
+              "type": "entries",
+              "name": "Attacks Affected",
+              "entries": [
+                "{@action Attack|XPHB} rolls against you have {@variantrule Advantage|XPHB}, and your attack rolls have {@variantrule Disadvantage|XPHB}."
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Charmed",
+      "source": "XPHB",
+      "page": 361,
+      "srd52": true,
+      "basicRules2024": true,
+      "entries": [
+        "While you have the Charmed condition, you experience the following effects.",
+        {
+          "type": "entries",
+          "entries": [
+            {
+              "type": "entries",
+              "name": "Can't Harm the Charmer",
+              "entries": [
+                "You can't attack the charmer or target the charmer with damaging abilities or {@variantrule Magical Effect|XPHB|magical effects}."
+              ]
+            },
+            {
+              "type": "entries",
+              "name": "Social Advantage",
+              "entries": [
+                "The charmer has {@variantrule Advantage|XPHB} on any ability check to interact with you socially."
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Deafened",
+      "source": "XPHB",
+      "page": 365,
+      "srd52": true,
+      "basicRules2024": true,
+      "entries": [
+        "While you have the Deafened condition, you experience the following effect.",
+        {
+          "type": "entries",
+          "entries": [
+            {
+              "type": "entries",
+              "name": "Can't Hear",
+              "entries": [
+                "You can't hear and automatically fail any ability check that requires hearing."
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Exhaustion",
+      "source": "XPHB",
+      "page": 365,
+      "srd52": true,
+      "basicRules2024": true,
+      "entries": [
+        "While you have the Exhaustion condition, you experience the following effects.",
+        {
+          "type": "entries",
+          "entries": [
+            {
+              "type": "entries",
+              "name": "Exhaustion Levels",
+              "entries": [
+                "This condition is cumulative. Each time you receive it, you gain 1 Exhaustion level. You die if your Exhaustion level is 6."
+              ]
+            },
+            {
+              "type": "entries",
+              "name": "D20 Tests Affected",
+              "entries": [
+                "When you make a D20 Test the roll is reduced by 2 times your Exhaustion level."
+              ]
+            },
+            {
+              "type": "entries",
+              "name": "Speed Reduced",
+              "entries": [
+                "Your {@variantrule Speed|XPHB} is reduced by a number of feet equal to 5 times your Exhaustion level."
+              ]
+            },
+            {
+              "type": "entries",
+              "name": "Removing Exhaustion Levels",
+              "entries": [
+                "Finishing a {@variantrule Long Rest|XPHB} removes 1 of your Exhaustion levels. When your Exhaustion level reaches 0, the condition ends."
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Frightened",
+      "source": "XPHB",
+      "page": 367,
+      "srd52": true,
+      "basicRules2024": true,
+      "entries": [
+        "While you have the Frightened condition, you experience the following effects.",
+        {
+          "type": "entries",
+          "entries": [
+            {
+              "type": "entries",
+              "name": "Ability Checks and Attacks Affected",
+              "entries": [
+                "You have {@variantrule Disadvantage|XPHB} on ability checks and attack rolls while the source of fear is within line of sight."
+              ]
+            },
+            {
+              "type": "entries",
+              "name": "Can't Approach",
+              "entries": [
+                "You can't willingly move closer to the source of fear."
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Grappled",
+      "source": "XPHB",
+      "page": 367,
+      "srd52": true,
+      "basicRules2024": true,
+      "entries": [
+        "While you have the Grappled condition, you experience the following effects.",
+        {
+          "type": "entries",
+          "entries": [
+            {
+              "type": "entries",
+              "name": "Speed 0",
+              "entries": [
+                "Your {@variantrule Speed|XPHB} is 0 and can't increase."
+              ]
+            },
+            {
+              "type": "entries",
+              "name": "Attacks Affected",
+              "entries": [
+                "You have {@variantrule Disadvantage|XPHB} on attack rolls against any target other than the grappler."
+              ]
+            },
+            {
+              "type": "entries",
+              "name": "Movable",
+              "entries": [
+                "The grappler can drag or carry you when it moves, but every foot of movement costs it 1 extra foot unless you are Tiny or two or more sizes smaller than it."
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Incapacitated",
+      "source": "XPHB",
+      "page": 369,
+      "srd52": true,
+      "basicRules2024": true,
+      "entries": [
+        "While you have the Incapacitated condition, you experience the following effects.",
+        {
+          "type": "entries",
+          "entries": [
+            {
+              "type": "entries",
+              "name": "Inactive",
+              "entries": [
+                "You can't take any {@variantrule Action|XPHB|action}, {@variantrule Bonus Action|XPHB}, or {@variantrule Reaction|XPHB}."
+              ]
+            },
+            {
+              "type": "entries",
+              "name": "No Concentration",
+              "entries": [
+                "Your {@status Concentration|XPHB} is broken."
+              ]
+            },
+            {
+              "type": "entries",
+              "name": "Speechless",
+              "entries": [
+                "You can't speak."
+              ]
+            },
+            {
+              "type": "entries",
+              "name": "Surprised",
+              "entries": [
+                "If you're Incapacitated when you roll {@variantrule Initiative|XPHB}, you have {@variantrule Disadvantage|XPHB} on the roll."
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Invisible",
+      "source": "XPHB",
+      "page": 370,
+      "srd52": true,
+      "basicRules2024": true,
+      "entries": [
+        "While you have the Invisible condition, you experience the following effects.",
+        {
+          "type": "entries",
+          "entries": [
+            {
+              "type": "entries",
+              "name": "Surprise",
+              "entries": [
+                "If you're Invisible when you roll {@variantrule Initiative|XPHB}, you have {@variantrule Advantage|XPHB} on the roll."
+              ]
+            },
+            {
+              "type": "entries",
+              "name": "Concealed",
+              "entries": [
+                "You aren't affected by any effect that requires its target to be seen unless the effect's creator can somehow see you. Any equipment you are wearing or carrying is also concealed."
+              ]
+            },
+            {
+              "type": "entries",
+              "name": "Attacks Affected",
+              "entries": [
+                "{@action Attack|XPHB} rolls against you have {@variantrule Disadvantage|XPHB}, and your attack rolls have {@variantrule Advantage|XPHB}. If a creature can somehow see you, you don't gain this benefit against that creature."
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Paralyzed",
+      "source": "XPHB",
+      "page": 371,
+      "srd52": true,
+      "basicRules2024": true,
+      "entries": [
+        "While you have the Paralyzed condition, you experience the following effects.",
+        {
+          "type": "entries",
+          "entries": [
+            {
+              "type": "entries",
+              "name": "Incapacitated",
+              "entries": [
+                "You have the {@condition Incapacitated|XPHB} condition."
+              ]
+            },
+            {
+              "type": "entries",
+              "name": "Speed 0",
+              "entries": [
+                "Your {@variantrule Speed|XPHB} is 0 and can't increase."
+              ]
+            },
+            {
+              "type": "entries",
+              "name": "Saving Throws Affected",
+              "entries": [
+                "You automatically fail Strength and Dexterity {@variantrule Saving Throw|XPHB|saving throws}."
+              ]
+            },
+            {
+              "type": "entries",
+              "name": "Attacks Affected",
+              "entries": [
+                "{@action Attack|XPHB} rolls against you have {@variantrule Advantage|XPHB}."
+              ]
+            },
+            {
+              "type": "entries",
+              "name": "Automatic Critical Hits",
+              "entries": [
+                "Any attack roll that hits you is a {@variantrule Critical Hit|XPHB} if the attacker is within 5 feet of you."
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Petrified",
+      "source": "XPHB",
+      "page": 372,
+      "srd52": true,
+      "basicRules2024": true,
+      "entries": [
+        "While you have the Petrified condition, you experience the following effects.",
+        {
+          "type": "entries",
+          "entries": [
+            {
+              "type": "entries",
+              "name": "Turned to Inanimate Substance",
+              "entries": [
+                "You are transformed, along with any nonmagical objects you are wearing and carrying, into a solid inanimate substance (usually stone). Your weight increases by a factor of ten, and you cease aging."
+              ]
+            },
+            {
+              "type": "entries",
+              "name": "Incapacitated",
+              "entries": [
+                "You have the {@condition Incapacitated|XPHB} condition."
+              ]
+            },
+            {
+              "type": "entries",
+              "name": "Speed 0",
+              "entries": [
+                "Your {@variantrule Speed|XPHB} is 0 and can't increase."
+              ]
+            },
+            {
+              "type": "entries",
+              "name": "Attacks Affected",
+              "entries": [
+                "{@action Attack|XPHB} rolls against you have {@variantrule Advantage|XPHB}."
+              ]
+            },
+            {
+              "type": "entries",
+              "name": "Saving Throws Affected",
+              "entries": [
+                "You automatically fail Strength and Dexterity {@variantrule Saving Throw|XPHB|saving throws}."
+              ]
+            },
+            {
+              "type": "entries",
+              "name": "Resist Damage",
+              "entries": [
+                "You have {@variantrule Resistance|XPHB} to all damage."
+              ]
+            },
+            {
+              "type": "entries",
+              "name": "Poison Immunity",
+              "entries": [
+                "You have {@variantrule Immunity|XPHB} to the {@condition Poisoned|XPHB} condition."
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Poisoned",
+      "source": "XPHB",
+      "page": 372,
+      "srd52": true,
+      "basicRules2024": true,
+      "entries": [
+        "While you have the Poisoned condition, you experience the following effect.",
+        {
+          "type": "entries",
+          "entries": [
+            {
+              "type": "entries",
+              "name": "Ability Checks and Attacks Affected",
+              "entries": [
+                "You have {@variantrule Disadvantage|XPHB} on attack rolls and ability checks."
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Prone",
+      "source": "XPHB",
+      "page": 372,
+      "srd52": true,
+      "basicRules2024": true,
+      "entries": [
+        "While you have the Prone condition, you experience the following effects.",
+        {
+          "type": "entries",
+          "entries": [
+            {
+              "type": "entries",
+              "name": "Restricted Movement",
+              "entries": [
+                "Your only movement options are to {@variantrule Crawling|XPHB|crawl} or to spend an amount of movement equal to half your {@variantrule Speed|XPHB} (round down) to right yourself and thereby end the condition. If your {@variantrule Speed|XPHB} is 0, you can't right yourself."
+              ]
+            },
+            {
+              "type": "entries",
+              "name": "Attacks Affected",
+              "entries": [
+                "You have {@variantrule Disadvantage|XPHB} on attack rolls. An attack roll against you has {@variantrule Advantage|XPHB} if the attacker is within 5 feet of you. Otherwise, that attack roll has {@variantrule Disadvantage|XPHB}."
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Restrained",
+      "source": "XPHB",
+      "page": 373,
+      "srd52": true,
+      "basicRules2024": true,
+      "entries": [
+        "While you have the Restrained condition, you experience the following effects.",
+        {
+          "type": "entries",
+          "entries": [
+            {
+              "type": "entries",
+              "name": "Speed 0",
+              "entries": [
+                "Your {@variantrule Speed|XPHB} is 0 and can't increase."
+              ]
+            },
+            {
+              "type": "entries",
+              "name": "Attacks Affected",
+              "entries": [
+                "{@action Attack|XPHB} rolls against you have {@variantrule Advantage|XPHB}, and your attack rolls have {@variantrule Disadvantage|XPHB}."
+              ]
+            },
+            {
+              "type": "entries",
+              "name": "Saving Throws Affected",
+              "entries": [
+                "You have {@variantrule Disadvantage|XPHB} on Dexterity {@variantrule Saving Throw|XPHB|saving throws}."
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Stunned",
+      "source": "XPHB",
+      "page": 376,
+      "srd52": true,
+      "basicRules2024": true,
+      "entries": [
+        "While you have the Stunned condition, you experience the following effects.",
+        {
+          "type": "entries",
+          "entries": [
+            {
+              "type": "entries",
+              "name": "Incapacitated",
+              "entries": [
+                "You have the {@condition Incapacitated|XPHB} condition."
+              ]
+            },
+            {
+              "type": "entries",
+              "name": "Saving Throws Affected",
+              "entries": [
+                "You automatically fail Strength and Dexterity {@variantrule Saving Throw|XPHB|saving throws}."
+              ]
+            },
+            {
+              "type": "entries",
+              "name": "Attacks Affected",
+              "entries": [
+                "{@action Attack|XPHB} rolls against you have {@variantrule Advantage|XPHB}."
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Unconscious",
+      "source": "XPHB",
+      "page": 376,
+      "srd52": true,
+      "basicRules2024": true,
+      "entries": [
+        "While you have the Unconscious condition, you experience the following effects.",
+        {
+          "type": "entries",
+          "entries": [
+            {
+              "type": "entries",
+              "name": "Inert",
+              "entries": [
+                "You have the {@condition Incapacitated|XPHB} and {@condition Prone|XPHB} conditions, and you drop whatever you're holding. When this condition ends, you remain {@condition Prone|XPHB}."
+              ]
+            },
+            {
+              "type": "entries",
+              "name": "Speed 0",
+              "entries": [
+                "Your {@variantrule Speed|XPHB} is 0 and can't increase."
+              ]
+            },
+            {
+              "type": "entries",
+              "name": "Attacks Affected",
+              "entries": [
+                "{@action Attack|XPHB} rolls against you have {@variantrule Advantage|XPHB}."
+              ]
+            },
+            {
+              "type": "entries",
+              "name": "Saving Throws Affected",
+              "entries": [
+                "You automatically fail Strength and Dexterity {@variantrule Saving Throw|XPHB|saving throws}."
+              ]
+            },
+            {
+              "type": "entries",
+              "name": "Automatic Critical Hits",
+              "entries": [
+                "Any attack roll that hits you is a {@variantrule Critical Hit|XPHB} if the attacker is within 5 feet of you."
+              ]
+            },
+            {
+              "type": "entries",
+              "name": "Unaware",
+              "entries": [
+                "You're unaware of your surroundings."
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "disease": [
+    {
+      "name": "Cackle Fever",
+      "source": "XDMG",
+      "page": 61,
+      "srd52": true,
+      "type": "Magical Contagion",
+      "entries": [
+        "Cheaply made potions and elixirs are sometimes tainted by Cackle Fever, which affects Humanoids only (gnomes are strangely immune). A creature suffers the following effects {@dice 1d4} days after infection:",
+        {
+          "type": "list",
+          "style": "list-hang-notitle",
+          "items": [
+            {
+              "type": "item",
+              "name": "Fever",
+              "entry": "The creature gains 1 {@condition Exhaustion|XPHB} level, which lasts until the contagion ends on the creature."
+            },
+            {
+              "type": "item",
+              "name": "Uncontrollable Laughter",
+              "entry": "While the creature has the {@condition Exhaustion|XPHB} condition, the creature makes a {@dc 13} Constitution saving throw each time it takes damage other than Psychic damage. On a failed save, the creature takes 5 ({@damage 1d10}) Psychic damage and has the {@condition Incapacitated|XPHB} condition as it laughs uncontrollably. At the end of each of its turns, the creature repeats the save, ending the effect on itself on a success. After 1 minute, it succeeds automatically."
+            }
+          ]
+        },
+        {
+          "type": "entries",
+          "entries": [
+            {
+              "type": "entries",
+              "name": "Fighting the Contagion",
+              "entries": [
+                "At the end of each Long Rest, an infected creature makes a {@dc 13} Constitution saving throw. After the creature succeeds on three of these saves, the contagion ends on it, and the creature is immune to Cackle Fever for 1 year."
+              ]
+            },
+            {
+              "type": "entries",
+              "name": "Spreading the Contagion",
+              "entries": [
+                "Any Humanoid (other than a gnome) that starts its turn within a 10-foot {@variantrule Emanation [Area of Effect]|XPHB|Emanation} originating from a creature infected with Cackle Fever must succeed on a {@dc 10} Constitution saving throw or also become infected with the contagion. On a successful save, the Humanoid can't catch the contagion from that particular infected creature for the next 24 hours."
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Sewer Plague",
+      "source": "XDMG",
+      "page": 61,
+      "srd52": true,
+      "type": "Magical Contagion",
+      "entries": [
+        "Fouled potions and alchemical waste can give rise to Sewer Plague, which incubates in sewers and refuse heaps and is sometimes transmitted by creatures that dwell in such areas, including otyughs and rats. Any Humanoid that is wounded by a creature that carries the contagion or that comes into contact with contaminated filth or offal must succeed on a {@dc 11} Constitution saving throw or become infected with Sewer Plague. A creature suffers the following effects {@dice 1d4} days after infection:",
+        {
+          "type": "list",
+          "style": "list-hang-notitle",
+          "items": [
+            {
+              "type": "item",
+              "name": "Fatigue",
+              "entry": "The creature gains 1 {@condition Exhaustion|XPHB} level."
+            },
+            {
+              "type": "item",
+              "name": "Weakness",
+              "entry": "While the creature has any Exhaustion levels, it regains only half the normal number of Hit Points from spending Hit Point Dice."
+            },
+            {
+              "type": "item",
+              "name": "Restlessness",
+              "entry": "While the creature has any Exhaustion levels, finishing a Long Rest neither restores lost Hit Points nor reduces the creature's Exhaustion level."
+            }
+          ]
+        },
+        {
+          "type": "entries",
+          "entries": [
+            {
+              "type": "entries",
+              "name": "Fighting the Contagion",
+              "entries": [
+                "Daily at dawn, an infected creature makes a {@dc 11} Constitution saving throw. On a failed save, the creature gains 1 {@condition Exhaustion|XPHB} level as its fatigue worsens. On a successful save, the creature's Exhaustion level decreases by 1. If the creature's Exhaustion level is reduced to 0, the contagion ends on the creature."
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Sight Rot",
+      "source": "XDMG",
+      "page": 61,
+      "srd52": true,
+      "type": "Magical Contagion",
+      "entries": [
+        "Any Beast or Humanoid that drinks water tainted by Sight Rot must succeed on a {@dc 15} Constitution saving throw or have the {@condition Blinded|XPHB} condition until the contagion ends.",
+        {
+          "type": "entries",
+          "entries": [
+            {
+              "type": "entries",
+              "name": "Fighting the Contagion",
+              "entries": [
+                "Magic such as a {@spell Heal|XPHB} or {@spell Lesser Restoration|XPHB} spell ends the contagion immediately. A character who is proficient with an {@item Herbalism Kit|XPHB} can use it to create one dose of nonmagical ointment, which takes 1 hour. When applied to the eyes of a creature suffering from Sight Rot, the ointment suppresses the contagion on that creature for 24 hours. If the contagion is suppressed in this way for a total of 72 hours (requiring three doses and applications of the ointment), the contagion ends on the creature."
+              ]
+            },
+            {
+              "type": "entries",
+              "name": "Spreading the Contagion",
+              "entries": [
+                "Any Humanoid that makes skin contact with a creature infected with Sight Rot must succeed on a {@dc 15} Constitution saving throw or also become infected with the contagion. On a successful save, the Humanoid can't catch the contagion from that particular infected creature for the next 24 hours."
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "status": [
+    {
+      "name": "Bloodied",
+      "source": "XPHB",
+      "page": 362,
+      "srd52": true,
+      "basicRules2024": true,
+      "entries": [
+        "A creature is Bloodied while it has half its {@variantrule Hit Points|XPHB} or fewer remaining."
+      ]
+    },
+    {
+      "name": "Concentration",
+      "source": "PHB",
+      "page": 203,
+      "srd": true,
+      "basicRules": true,
+      "reprintedAs": [
+        "Concentration|XPHB"
+      ],
+      "entries": [
+        "Some spells require you to maintain {@status concentration} in order to keep their magic active. If you lose {@status concentration}, such a spell ends.",
+        "If a spell must be maintained with {@status concentration}, that fact appears in its Duration entry, and the spell specifies how long you can concentrate on it. You can end {@status concentration} at any time (no action required).",
+        "Normal activity, such as moving and attacking, doesn't interfere with {@status concentration}. The following factors can break {@status concentration}:",
+        {
+          "type": "list",
+          "items": [
+            {
+              "type": "entries",
+              "name": "Casting another spell that requires concentration",
+              "entries": [
+                "You lose {@status concentration} on a spell if you cast another spell that requires {@status concentration}. You can't concentrate on two spells at once."
+              ]
+            },
+            {
+              "type": "entries",
+              "name": "Taking damage",
+              "entries": [
+                "Whenever you take damage while you are {@status concentration||concentrating} on a spell, you must make a Constitution saving throw to maintain your {@status concentration}. The DC equals 10 or half the damage you take, whichever number is higher. If you take damage from multiple sources, such as an arrow and a dragon's breath, you make a separate saving throw for each source of damage."
+              ]
+            },
+            {
+              "type": "entries",
+              "name": "Being incapacitated or killed",
+              "entries": [
+                "You lose {@status concentration} on a spell if you are {@condition incapacitated} or if you die."
+              ]
+            }
+          ]
+        },
+        "The DM might also decide that certain environmental phenomena, such as a wave crashing over you while you're on a storm-tossed ship, require you to succeed on a {@dc 10} Constitution saving throw to maintain {@status concentration} on a spell."
+      ]
+    },
+    {
+      "name": "Concentration",
+      "source": "XPHB",
+      "page": 363,
+      "srd52": true,
+      "basicRules2024": true,
+      "entries": [
+        "Some spells and other effects require Concentration to remain active, as specified in their descriptions. If the effect's creator loses Concentration, the effect ends. If the effect has a maximum duration, the effect's description specifies how long the creator can concentrate on it: up to 1 minute, 1 hour, or some other duration. The creator can end Concentration at any time (no action required). The following factors break Concentration.",
+        {
+          "type": "entries",
+          "entries": [
+            {
+              "type": "entries",
+              "name": "Another Concentration Effect",
+              "entries": [
+                "You lose Concentration on an effect the moment you start casting a spell that requires Concentration or activate another effect that requires Concentration."
+              ]
+            },
+            {
+              "type": "entries",
+              "name": "Damage",
+              "entries": [
+                "If you take damage, you must succeed on a Constitution {@variantrule Saving Throw|XPHB|saving throw} to maintain Concentration. The DC equals 10 or half the damage taken (round down), whichever number is higher, up to a maximum DC of 30."
+              ]
+            },
+            {
+              "type": "entries",
+              "name": "Incapacitated or Dead",
+              "entries": [
+                "Your Concentration ends if you have the {@condition Incapacitated|XPHB} condition or you die."
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Surprised",
+      "source": "PHB",
+      "page": 189,
+      "srd": true,
+      "basicRules": true,
+      "reprintedAs": [
+        "Surprised|XPHB"
+      ],
+      "entries": [
+        "A band of adventurers sneaks up on a bandit camp, springing from the trees to attack them. A {@creature gelatinous cube} glides down a dungeon passage, unnoticed by the adventurers until the cube engulfs one of them. In these situations, one side of the battle gains surprise over the other.",
+        "The DM determines who might be surprised. If neither side tries to be stealthy, they automatically notice each other. Otherwise, the DM compares the Dexterity ({@skill Stealth}) checks of anyone hiding with the passive Wisdom ({@skill Perception}) score of each creature on the opposing side. Any character or monster that doesn't notice a threat is {@status surprised} at the start of the encounter.",
+        "If you're surprised, you can't move or take an action on your first turn of the combat, and you can't take a reaction until that turn ends. A member of a group can be {@status surprised} even if the other members aren't."
+      ]
+    },
+    {
+      "name": "Surprised",
+      "source": "XPHB",
+      "page": 376,
+      "srd52": true,
+      "basicRules2024": true,
+      "entries": [
+        "If a creature is caught unawares by the start of combat, that creature is surprised, which causes it to have {@variantrule Disadvantage|XPHB} on its {@variantrule Initiative|XPHB} roll."
+      ]
+    }
+  ]
+}

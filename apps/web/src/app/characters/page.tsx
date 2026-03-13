@@ -50,7 +50,7 @@ export default function CharactersPage() {
         <div className="text-center py-16">
           <div className="text-gray-500 text-lg mb-2" style={{ fontFamily: "var(--font-cinzel)" }}>No characters yet</div>
           <p className="text-gray-500 text-sm mb-4">
-            Create a character or import one from D&D Beyond to get started.
+            Create a character or import one from a file to get started.
           </p>
           <div className="flex items-center justify-center gap-3">
             <Link

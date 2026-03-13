@@ -48,6 +48,7 @@ export const STEP_LABELS: Record<BuilderStep, string> = {
 // ─── ASI / Feat Selection at Class Levels ──────────────
 
 export interface ASISelection {
+  classIndex: number; // which class in classes[] this ASI belongs to
   level: number;
   type: "asi" | "feat";
   // ASI mode
@@ -76,7 +77,7 @@ export interface EquipmentEntry {
   name: string;
   quantity: number;
   equipped: boolean;
-  source: "weapon" | "armor" | "gear" | "tool" | "item";
+  source: "weapon" | "armor" | "gear" | "tool" | "magic-item" | "item";
   // Custom item fields (only used when source === "item")
   description?: string;
   weight?: number;
@@ -92,6 +93,18 @@ export interface EquipmentEntry {
   isMagicItem?: boolean;
 }
 
+// ─── Multiclass Class Entry ─────────────────────────────
+
+export interface ClassEntry {
+  className: string;
+  level: number;
+  subclass: string | null;
+  /** Optional feature selections keyed by feature type (e.g. "EI" → ["Agonizing Blast", ...]) */
+  optionalFeatureSelections: Record<string, string[]>;
+  /** Weapon masteries chosen for this class */
+  weaponMasteries: string[];
+}
+
 // ─── Builder State ──────────────────────────────────────
 
 export type AbilityMethod = "standard-array" | "point-buy" | "manual";
@@ -101,7 +114,7 @@ export type ASIMode = "two-one" | "three-ones";
 
 export interface TraitChoiceDefinition {
   traitName: string;
-  choiceType: "skill" | "skills" | "feat" | "lineage" | "ancestry" | "language";
+  choiceType: "skill" | "skills" | "feat" | "lineage" | "ancestry" | "language" | "resistance" | "size";
   count?: number;
   options?: string[];
   featCategory?: string;
@@ -110,17 +123,6 @@ export interface TraitChoiceDefinition {
     type: "spellcasting-ability";
     options: string[];
   };
-}
-
-// ─── Class Feature Choices ─────────────────────────────
-
-export interface FeatureChoiceDefinition {
-  className: string;
-  featureName: string;
-  level: number;
-  options: { name: string; description: string }[];
-  count: number;
-  countAtLevel?: Record<number, number>;
 }
 
 // ─── Builder State ──────────────────────────────────────
@@ -139,13 +141,11 @@ export interface BuilderState {
 
   // Step 2: Background
   background: string | null;
+  backgroundLanguages: string[];
 
-  // Step 3: Class
-  className: string | null;
-  level: number;
-  subclass: string | null;
-  featureChoices: Record<string, string[]>;
-  weaponMasteries: string[];
+  // Step 3: Class (MULTICLASS)
+  classes: ClassEntry[];
+  activeClassIndex: number;
 
   // Step 4: Abilities
   abilityMethod: AbilityMethod;
@@ -153,7 +153,7 @@ export interface BuilderState {
   asiMode: ASIMode;
   asiAssignments: Partial<Record<keyof AbilityScores, number>>;
 
-  // Step 4b: Feats (ASI at class levels)
+  // Step 4b: Feats (ASI at class levels — spans ALL classes)
   asiSelections: ASISelection[];
 
   // Step 4c: Origin feat overrides
@@ -163,11 +163,14 @@ export interface BuilderState {
   skillProficiencies: string[];
   skillExpertise: string[];
 
-  // Step 6: Spells
-  selectedCantrips: string[];
-  selectedSpells: string[];
+  // Step 6: Spells (per-class selections)
+  spellSelections: Record<string, {
+    cantrips: string[];
+    spells: string[];
+  }>;
 
   // Step 7: Equipment
+  startingEquipmentChoice: "A" | "B" | "custom";
   equipment: EquipmentEntry[];
   currency: Currency;
 
@@ -198,13 +201,17 @@ export type BuilderAction =
 
   // Background
   | { type: "SET_BACKGROUND"; background: string }
+  | { type: "SET_BACKGROUND_LANGUAGES"; languages: string[] }
 
-  // Class
-  | { type: "SET_CLASS"; className: string }
-  | { type: "SET_LEVEL"; level: number }
-  | { type: "SET_SUBCLASS"; subclass: string | null }
-  | { type: "SET_FEATURE_CHOICE"; featureName: string; selected: string[] }
-  | { type: "SET_WEAPON_MASTERIES"; weapons: string[] }
+  // Class (multiclass)
+  | { type: "ADD_CLASS"; className: string }
+  | { type: "REMOVE_CLASS"; index: number }
+  | { type: "SET_ACTIVE_CLASS"; index: number }
+  | { type: "SET_CLASS_NAME"; index: number; className: string }
+  | { type: "SET_CLASS_LEVEL"; index: number; level: number }
+  | { type: "SET_CLASS_SUBCLASS"; index: number; subclass: string | null }
+  | { type: "SET_OPTIONAL_FEATURE"; index: number; featureType: string; selected: string[] }
+  | { type: "SET_WEAPON_MASTERIES"; index: number; weapons: string[] }
 
   // Abilities
   | { type: "SET_ABILITY_METHOD"; method: AbilityMethod }
@@ -215,7 +222,7 @@ export type BuilderAction =
   | { type: "CLEAR_ASI" }
 
   // Feats (ASI at class levels)
-  | { type: "SET_ASI_SELECTION"; level: number; selection: ASISelection }
+  | { type: "SET_ASI_SELECTION"; classIndex: number; level: number; selection: ASISelection }
   | { type: "CLEAR_ASI_SELECTIONS" }
 
   // Origin feat overrides
@@ -226,12 +233,15 @@ export type BuilderAction =
   | { type: "TOGGLE_EXPERTISE"; skill: string }
   | { type: "RESET_SKILLS" }
 
-  // Spells
-  | { type: "TOGGLE_CANTRIP"; spell: string }
-  | { type: "TOGGLE_SPELL"; spell: string }
+  // Spells (per-class)
+  | { type: "TOGGLE_CANTRIP"; className: string; spell: string }
+  | { type: "TOGGLE_SPELL"; className: string; spell: string }
   | { type: "RESET_SPELLS" }
+  | { type: "RESET_CLASS_SPELLS"; className: string }
 
   // Equipment
+  | { type: "SET_STARTING_EQUIPMENT_CHOICE"; choice: "A" | "B" | "custom" }
+  | { type: "ADD_STARTING_EQUIPMENT"; items: EquipmentEntry[]; currency: import("@aidnd/shared/types").Currency }
   | { type: "ADD_EQUIPMENT"; entry: EquipmentEntry }
   | { type: "REMOVE_EQUIPMENT"; name: string }
   | { type: "SET_EQUIPMENT_QUANTITY"; name: string; quantity: number }

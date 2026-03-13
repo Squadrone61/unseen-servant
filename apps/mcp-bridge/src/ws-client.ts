@@ -626,7 +626,7 @@ export class WSClient {
           );
           summary.character = {
             name: char.static.name,
-            race: char.static.race,
+            race: char.static.species || char.static.race,
             classes: char.static.classes
               .map((c) => `${c.name} ${c.level}`)
               .join("/"),

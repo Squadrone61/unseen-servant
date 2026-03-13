@@ -78,8 +78,8 @@ export function LeftSidebar({ character, onCharacterImported }: LeftSidebarProps
         {character ? (
           <div className="flex flex-col flex-1 min-h-0">
             <CharacterSheet character={character} />
-            {/* Link to library */}
-            <div className="p-2 border-t border-gray-700/40 shrink-0">
+            {/* Actions */}
+            <div className="p-2 border-t border-gray-700/40 shrink-0 flex items-center justify-between">
               <Link
                 href="/characters"
                 target="_blank"
@@ -87,6 +87,19 @@ export function LeftSidebar({ character, onCharacterImported }: LeftSidebarProps
               >
                 View in library &rarr;
               </Link>
+              {(() => {
+                const saved = characters.find(c => c.character.static.name === character.static.name && c.builderChoices);
+                if (!saved) return null;
+                return (
+                  <Link
+                    href={`/characters/create?edit=${saved.id}`}
+                    target="_blank"
+                    className="text-[10px] text-amber-400/80 hover:text-amber-300 bg-amber-500/10 hover:bg-amber-500/15 border border-amber-500/20 rounded px-2 py-0.5 transition-colors"
+                  >
+                    Update Character
+                  </Link>
+                );
+              })()}
             </div>
           </div>
         ) : (
@@ -162,7 +175,7 @@ function CharacterPicker({
               {s.name}
             </div>
             <div className="text-[11px] text-gray-400 truncate">
-              {s.race} &middot; {formatClassString(s.classes)} &middot; Lvl{" "}
+              {s.species || s.race} &middot; {formatClassString(s.classes)} &middot; Lvl{" "}
               {getTotalLevel(s.classes)}
             </div>
           </button>

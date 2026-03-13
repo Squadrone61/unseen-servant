@@ -14,36 +14,18 @@ export default function CreateCharacterPage() {
   const {
     importState,
     character,
-    warnings,
     error,
-    fallbackHint,
-    importFromUrl,
-    importFromJson,
+    importFromFile,
     clearCharacter,
   } = useCharacterImport();
 
-  // On successful DDB import, save to library and redirect
+  // On successful import, save to library and redirect
   useEffect(() => {
     if (importState === "success" && character) {
       const saved = saveCharacter(character);
       router.push(`/characters/${saved.id}`);
     }
   }, [importState, character, saveCharacter, router]);
-
-  const handleImportNative = (jsonString: string) => {
-    try {
-      const data = JSON.parse(jsonString);
-      if (data.format !== "aidnd") {
-        throw new Error("Not a valid .aidnd.json file");
-      }
-      const saved = saveCharacter(data.character, {
-        builderChoices: data.builderChoices ?? undefined,
-      });
-      router.push(`/characters/${saved.id}`);
-    } catch (e) {
-      alert(e instanceof Error ? e.message : "Failed to import file");
-    }
-  };
 
   return (
     <div className="min-h-screen flex flex-col p-4">
@@ -62,7 +44,7 @@ export default function CreateCharacterPage() {
             Import Character
           </h1>
           <p className="text-xs text-gray-500">
-            Import from D&D Beyond or an .aidnd.json file.
+            Import a character from an .aidnd.json file.
           </p>
           <div className="h-px bg-gradient-to-r from-amber-500/30 via-gray-700/50 to-transparent mt-2" />
         </div>
@@ -72,11 +54,7 @@ export default function CreateCharacterPage() {
             importState={importState}
             character={character}
             error={error}
-            fallbackHint={fallbackHint}
-            warnings={warnings}
-            onImportUrl={importFromUrl}
-            onImportJson={importFromJson}
-            onImportNative={handleImportNative}
+            onImportFile={importFromFile}
             onClear={clearCharacter}
           />
         </div>

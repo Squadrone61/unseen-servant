@@ -1,6 +1,16 @@
-import type { AbilityScores } from "@aidnd/shared/types";
-import type { BuilderState, BuilderAction } from "./types";
-import { DEFAULT_ABILITIES, POINT_BUY_DEFAULT, STANDARD_ARRAY_DEFAULT, getASILevels } from "./utils";
+import type { AbilityScores, Currency } from "@aidnd/shared/types";
+import type { BuilderState, BuilderAction, ClassEntry, EquipmentEntry } from "./types";
+import { DEFAULT_ABILITIES, POINT_BUY_DEFAULT, STANDARD_ARRAY_DEFAULT, getASILevelsForClasses } from "./utils";
+
+function createEmptyClassEntry(className: string): ClassEntry {
+  return {
+    className,
+    level: 1,
+    subclass: null,
+    optionalFeatureSelections: {},
+    weaponMasteries: [],
+  };
+}
 
 export function createInitialState(editingId?: string | null): BuilderState {
   return {
@@ -10,11 +20,9 @@ export function createInitialState(editingId?: string | null): BuilderState {
     nameFromSpeciesStep: "",
     speciesChoices: {},
     background: null,
-    className: null,
-    level: 1,
-    subclass: null,
-    featureChoices: {},
-    weaponMasteries: [],
+    backgroundLanguages: [],
+    classes: [],
+    activeClassIndex: 0,
     abilityMethod: "standard-array",
     baseAbilities: { ...STANDARD_ARRAY_DEFAULT },
     asiMode: "two-one",
@@ -23,8 +31,8 @@ export function createInitialState(editingId?: string | null): BuilderState {
     originFeatOverrides: {},
     skillProficiencies: [],
     skillExpertise: [],
-    selectedCantrips: [],
-    selectedSpells: [],
+    spellSelections: {},
+    startingEquipmentChoice: "A",
     equipment: [],
     currency: { cp: 0, sp: 0, ep: 0, gp: 0, pp: 0 },
     name: "",
@@ -92,54 +100,157 @@ export function builderReducer(
         originFeatOverrides: {},
       };
 
-    // ─── Class ────────────────────────────────
-    case "SET_CLASS":
+    case "SET_BACKGROUND_LANGUAGES":
+      return { ...state, backgroundLanguages: action.languages };
+
+    // ─── Class (multiclass) ──────────────────
+    case "ADD_CLASS": {
+      // If there's already a single class, replace it (not multiclass)
+      if (state.classes.length === 1) {
+        // Same class: just make it active, don't reset anything
+        if (state.classes[0].className === action.className) {
+          return { ...state, activeClassIndex: 0 };
+        }
+        // Different class: replace it
+        const newEntry = createEmptyClassEntry(action.className);
+        return {
+          ...state,
+          classes: [newEntry],
+          activeClassIndex: 0,
+          skillProficiencies: [],
+          skillExpertise: [],
+          spellSelections: {},
+          equipment: [],
+          asiSelections: [],
+        };
+      }
+      // No class yet: add fresh
+      const newEntry = createEmptyClassEntry(action.className);
       return {
         ...state,
-        className: action.className,
-        subclass: null,
-        skillProficiencies: [],
-        skillExpertise: [],
-        selectedCantrips: [],
-        selectedSpells: [],
-        equipment: [],
-        featureChoices: {},
-        weaponMasteries: [],
-        asiSelections: [],
+        classes: [newEntry],
+        activeClassIndex: 0,
       };
-
-    case "SET_LEVEL": {
-      const newState: BuilderState = {
-        ...state,
-        level: action.level,
-      };
-      if (action.level < 3) {
-        newState.subclass = null;
-      }
-      newState.selectedCantrips = [];
-      newState.selectedSpells = [];
-      // Trim ASI selections to valid levels for new level
-      if (state.className) {
-        const validLevels = new Set(getASILevels(state.className, action.level));
-        newState.asiSelections = state.asiSelections.filter(s => validLevels.has(s.level));
-      }
-      return newState;
     }
 
-    case "SET_SUBCLASS":
-      return { ...state, subclass: action.subclass };
+    case "REMOVE_CLASS": {
+      if (state.classes.length <= 1) return state;
+      const newClasses = state.classes.filter((_, i) => i !== action.index);
+      const removedClassName = state.classes[action.index]?.className;
+      const newActiveIndex = Math.min(state.activeClassIndex, newClasses.length - 1);
 
-    case "SET_FEATURE_CHOICE":
+      // Remove spell selections for the removed class
+      const newSpellSelections = { ...state.spellSelections };
+      if (removedClassName) {
+        delete newSpellSelections[removedClassName];
+      }
+
+      // Trim ASI selections for the removed class
+      const newAsiSelections = state.asiSelections.filter(s => s.classIndex !== action.index)
+        .map(s => ({
+          ...s,
+          classIndex: s.classIndex > action.index ? s.classIndex - 1 : s.classIndex,
+        }));
+
       return {
         ...state,
-        featureChoices: {
-          ...state.featureChoices,
-          [action.featureName]: action.selected,
+        classes: newClasses,
+        activeClassIndex: newActiveIndex,
+        spellSelections: newSpellSelections,
+        asiSelections: newAsiSelections,
+        skillProficiencies: [],
+        skillExpertise: [],
+      };
+    }
+
+    case "SET_ACTIVE_CLASS":
+      return { ...state, activeClassIndex: action.index };
+
+    case "SET_CLASS_NAME": {
+      const newClasses = [...state.classes];
+      const oldClassName = newClasses[action.index]?.className;
+      newClasses[action.index] = createEmptyClassEntry(action.className);
+
+      // Remove old spell selections
+      const newSpellSelections = { ...state.spellSelections };
+      if (oldClassName) {
+        delete newSpellSelections[oldClassName];
+      }
+
+      return {
+        ...state,
+        classes: newClasses,
+        spellSelections: newSpellSelections,
+        skillProficiencies: [],
+        skillExpertise: [],
+        asiSelections: state.asiSelections.filter(s => s.classIndex !== action.index),
+        equipment: [],
+      };
+    }
+
+    case "SET_CLASS_LEVEL": {
+      const newClasses = [...state.classes];
+      const entry = { ...newClasses[action.index] };
+      entry.level = action.level;
+      if (action.level < 3) {
+        entry.subclass = null;
+      }
+      newClasses[action.index] = entry;
+
+      // Trim ASI selections for this class to valid levels
+      const validLevels = new Set(
+        getASILevelsForClasses(
+          [{ className: entry.className, level: action.level }]
+        ).filter(a => a.classIndex === action.index).map(a => a.level)
+      );
+      const trimmedAsi = state.asiSelections.filter(
+        s => s.classIndex !== action.index || validLevels.has(s.level)
+      );
+
+      // Reset spell selections for this class
+      const newSpellSelections = { ...state.spellSelections };
+      delete newSpellSelections[entry.className];
+
+      return {
+        ...state,
+        classes: newClasses,
+        asiSelections: trimmedAsi,
+        spellSelections: newSpellSelections,
+      };
+    }
+
+    case "SET_CLASS_SUBCLASS": {
+      const newClasses = [...state.classes];
+      newClasses[action.index] = { ...newClasses[action.index], subclass: action.subclass };
+
+      // Reset spell selections for this class (subclass may change always-prepared)
+      const className = newClasses[action.index].className;
+      const newSpellSelections = { ...state.spellSelections };
+      delete newSpellSelections[className];
+
+      return { ...state, classes: newClasses, spellSelections: newSpellSelections };
+    }
+
+    case "SET_OPTIONAL_FEATURE": {
+      const newClasses = [...state.classes];
+      newClasses[action.index] = {
+        ...newClasses[action.index],
+        optionalFeatureSelections: {
+          ...newClasses[action.index].optionalFeatureSelections,
+          [action.featureType]: action.selected,
         },
       };
+      return { ...state, classes: newClasses };
+    }
 
-    case "SET_WEAPON_MASTERIES":
-      return { ...state, weaponMasteries: action.weapons };
+    case "SET_WEAPON_MASTERIES": {
+      const newClasses = [...state.classes];
+      newClasses[action.index] = {
+        ...newClasses[action.index],
+        weaponMasteries: action.weapons,
+      };
+      return { ...state, classes: newClasses };
+    }
 
     // ─── Abilities ────────────────────────────
     case "SET_ABILITY_METHOD": {
@@ -185,10 +296,14 @@ export function builderReducer(
 
     // ─── Feats / ASI Selections ────────────────
     case "SET_ASI_SELECTION": {
-      const existing = state.asiSelections.filter(s => s.level !== action.level);
+      const existing = state.asiSelections.filter(
+        s => !(s.classIndex === action.classIndex && s.level === action.level)
+      );
       return {
         ...state,
-        asiSelections: [...existing, action.selection].sort((a, b) => a.level - b.level),
+        asiSelections: [...existing, action.selection].sort((a, b) =>
+          a.classIndex !== b.classIndex ? a.classIndex - b.classIndex : a.level - b.level
+        ),
       };
     }
 
@@ -228,31 +343,54 @@ export function builderReducer(
     case "RESET_SKILLS":
       return { ...state, skillProficiencies: [], skillExpertise: [] };
 
-    // ─── Spells ───────────────────────────────
+    // ─── Spells (per-class) ──────────────────
     case "TOGGLE_CANTRIP": {
-      const has = state.selectedCantrips.includes(action.spell);
+      const sel = state.spellSelections[action.className] ?? { cantrips: [], spells: [] };
+      const has = sel.cantrips.includes(action.spell);
       return {
         ...state,
-        selectedCantrips: has
-          ? state.selectedCantrips.filter((s) => s !== action.spell)
-          : [...state.selectedCantrips, action.spell],
+        spellSelections: {
+          ...state.spellSelections,
+          [action.className]: {
+            ...sel,
+            cantrips: has
+              ? sel.cantrips.filter(s => s !== action.spell)
+              : [...sel.cantrips, action.spell],
+          },
+        },
       };
     }
 
     case "TOGGLE_SPELL": {
-      const has = state.selectedSpells.includes(action.spell);
+      const sel = state.spellSelections[action.className] ?? { cantrips: [], spells: [] };
+      const has = sel.spells.includes(action.spell);
       return {
         ...state,
-        selectedSpells: has
-          ? state.selectedSpells.filter((s) => s !== action.spell)
-          : [...state.selectedSpells, action.spell],
+        spellSelections: {
+          ...state.spellSelections,
+          [action.className]: {
+            ...sel,
+            spells: has
+              ? sel.spells.filter(s => s !== action.spell)
+              : [...sel.spells, action.spell],
+          },
+        },
       };
     }
 
     case "RESET_SPELLS":
-      return { ...state, selectedCantrips: [], selectedSpells: [] };
+      return { ...state, spellSelections: {} };
+
+    case "RESET_CLASS_SPELLS": {
+      const newSel = { ...state.spellSelections };
+      delete newSel[action.className];
+      return { ...state, spellSelections: newSel };
+    }
 
     // ─── Equipment ────────────────────────────
+    case "SET_STARTING_EQUIPMENT_CHOICE":
+      return { ...state, startingEquipmentChoice: action.choice };
+
     case "ADD_EQUIPMENT": {
       const existing = state.equipment.find(
         (e) => e.name === action.entry.name && e.source === action.entry.source
@@ -291,6 +429,30 @@ export function builderReducer(
           e.name === action.name ? { ...e, equipped: !e.equipped } : e
         ),
       };
+
+    case "ADD_STARTING_EQUIPMENT": {
+      let newEquipment = [...state.equipment];
+      for (const item of action.items) {
+        const existing = newEquipment.find(e => e.name === item.name && e.source === item.source);
+        if (existing) {
+          newEquipment = newEquipment.map(e =>
+            e.name === item.name && e.source === item.source
+              ? { ...e, quantity: e.quantity + item.quantity }
+              : e
+          );
+        } else {
+          newEquipment.push(item);
+        }
+      }
+      const newCurrency: Currency = {
+        cp: state.currency.cp + action.currency.cp,
+        sp: state.currency.sp + action.currency.sp,
+        ep: state.currency.ep + action.currency.ep,
+        gp: state.currency.gp + action.currency.gp,
+        pp: state.currency.pp + action.currency.pp,
+      };
+      return { ...state, equipment: newEquipment, currency: newCurrency };
+    }
 
     case "SET_CURRENCY":
       return { ...state, currency: action.currency };

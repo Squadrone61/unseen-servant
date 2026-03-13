@@ -1,49 +1,102 @@
 import { useMemo, useState } from "react";
-import { equipmentDb } from "@aidnd/shared/data";
-import type { WeaponData, ArmorData } from "@aidnd/shared/data";
+import { baseItemsArray, allItemsArray } from "@aidnd/shared/data";
+import type { BaseItemData } from "@aidnd/shared/data";
+import { formatDamageType, decodeProperty, decodeMastery, formatItemCost, categorizeBaseItem } from "@aidnd/shared";
 import type { StepProps, EquipmentEntry, BuilderAction } from "./types";
+import { resolveStartingEquipment, getStartingEquipmentDescription } from "./utils";
 
-type EquipmentTab = "weapon" | "armor" | "gear" | "tool" | "item";
+type EquipmentTab = "weapon" | "armor" | "other" | "custom";
+
+const TAB_ICONS: Record<EquipmentTab, React.ReactNode> = {
+  weapon: (
+    <svg className="w-3 h-3" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+      <path d="M13.5 1.5a.5.5 0 0 0-.707 0L10.5 3.793 9.207 2.5a.5.5 0 0 0-.707.707L9.793 4.5 2.146 12.146a.5.5 0 0 0 0 .708l1 1a.5.5 0 0 0 .708 0L11.5 6.207l1.293 1.293a.5.5 0 0 0 .707-.707L12.207 5.5l2.293-2.293a.5.5 0 0 0 0-.707l-1-1z" />
+    </svg>
+  ),
+  armor: (
+    <svg className="w-3 h-3" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+      <path d="M8 .5a.5.5 0 0 1 .386.184l4 5A.5.5 0 0 1 12.5 6v4a.5.5 0 0 1-.076.268l-4 6a.5.5 0 0 1-.848 0l-4-6A.5.5 0 0 1 3.5 10V6a.5.5 0 0 1 .114-.316l4-5A.5.5 0 0 1 8 .5zm0 1.401L4.5 6.265V9.93l3.5 5.25 3.5-5.25V6.265L8 1.9z" />
+    </svg>
+  ),
+  other: (
+    <svg className="w-3 h-3" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+      <path d="M12 1a1 1 0 0 1 1 1v1.5h.5a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-.5.5H2.5A.5.5 0 0 1 2 11V4a.5.5 0 0 1 .5-.5H3V2a1 1 0 0 1 1-1h8zM4 3.5V2h8v1.5H4zM2.5 4.5v6h11v-6h-11z" />
+      <path d="M4 7a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7A.5.5 0 0 1 4 7zm0 2a.5.5 0 0 1 .5-.5h5a.5.5 0 0 1 0 1h-5A.5.5 0 0 1 4 9z" />
+    </svg>
+  ),
+  custom: (
+    <svg className="w-3 h-3" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+      <path d="M7.657 6.247c.11-.33.576-.33.686 0l.645 1.937a2.89 2.89 0 0 0 1.829 1.828l1.936.645c.33.11.33.576 0 .686l-1.937.645a2.89 2.89 0 0 0-1.828 1.829l-.645 1.936a.361.361 0 0 1-.686 0l-.645-1.937a2.89 2.89 0 0 0-1.828-1.828l-1.937-.645a.361.361 0 0 1 0-.686l1.937-.645a2.89 2.89 0 0 0 1.828-1.828l.645-1.937zM3.794 1.148a.217.217 0 0 1 .412 0l.387 1.162c.173.518.579.924 1.097 1.097l1.162.387a.217.217 0 0 1 0 .412l-1.162.387A1.734 1.734 0 0 0 4.593 5.69l-.387 1.162a.217.217 0 0 1-.412 0L3.407 5.69A1.734 1.734 0 0 0 2.31 4.593l-1.162-.387a.217.217 0 0 1 0-.412l1.162-.387A1.734 1.734 0 0 0 3.407 2.31l.387-1.162zM10.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.156 1.156 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.156 1.156 0 0 0-.732-.732L9.1 2.137a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732L10.863.1z" />
+    </svg>
+  ),
+};
 
 const TABS: { value: EquipmentTab; label: string }[] = [
   { value: "weapon", label: "Weapons" },
   { value: "armor", label: "Armor" },
-  { value: "gear", label: "Gear" },
-  { value: "tool", label: "Tools" },
-  { value: "item", label: "Items" },
+  { value: "other", label: "Other" },
+  { value: "custom", label: "Custom" },
 ];
 
 // Category grouping definitions
 const WEAPON_CATEGORIES = [
-  { label: "Simple Melee", filter: (w: WeaponData) => w.category === "simple" && w.type === "melee" },
-  { label: "Simple Ranged", filter: (w: WeaponData) => w.category === "simple" && w.type === "ranged" },
-  { label: "Martial Melee", filter: (w: WeaponData) => w.category === "martial" && w.type === "melee" },
-  { label: "Martial Ranged", filter: (w: WeaponData) => w.category === "martial" && w.type === "ranged" },
+  { label: "Simple Melee", filter: (w: BaseItemData) => w.weaponCategory === "simple" && w.type?.split("|")[0] === "M" },
+  { label: "Simple Ranged", filter: (w: BaseItemData) => w.weaponCategory === "simple" && w.type?.split("|")[0] === "R" },
+  { label: "Martial Melee", filter: (w: BaseItemData) => w.weaponCategory === "martial" && w.type?.split("|")[0] === "M" },
+  { label: "Martial Ranged", filter: (w: BaseItemData) => w.weaponCategory === "martial" && w.type?.split("|")[0] === "R" },
 ];
 
 const ARMOR_CATEGORIES = [
-  { label: "Light Armor", filter: (a: ArmorData) => a.category === "light" },
-  { label: "Medium Armor", filter: (a: ArmorData) => a.category === "medium" },
-  { label: "Heavy Armor", filter: (a: ArmorData) => a.category === "heavy" },
-  { label: "Shields", filter: (a: ArmorData) => a.category === "shield" },
+  { label: "Light Armor", filter: (a: BaseItemData) => a.type?.split("|")[0] === "LA" },
+  { label: "Medium Armor", filter: (a: BaseItemData) => a.type?.split("|")[0] === "MA" },
+  { label: "Heavy Armor", filter: (a: BaseItemData) => a.type?.split("|")[0] === "HA" },
+  { label: "Shields", filter: (a: BaseItemData) => a.type?.split("|")[0] === "S" },
 ];
+
+// Pre-categorized item lists
+const weaponItems = baseItemsArray.filter((item: BaseItemData) => item.weapon === true);
+const armorItems = baseItemsArray.filter((item: BaseItemData) =>
+  item.armor === true || item.type?.split("|")[0] === "S"
+);
+
+// "Other" tab: gear + tools from base items, plus ALL items from items.json
+// Deduplicate by name (base items take priority since they have richer data)
+const baseGearAndTools = baseItemsArray.filter((item: BaseItemData) => {
+  const cat = categorizeBaseItem(item);
+  return cat === "gear" || cat === "tool";
+});
+const baseItemNames = new Set(baseItemsArray.map((item: BaseItemData) => item.name.toLowerCase()));
+const allOtherItems = allItemsArray.filter(
+  (item: { name: string; type?: string }) => {
+    // Skip items already in base items (weapons, armor are shown in their own tabs)
+    if (baseItemNames.has(item.name.toLowerCase())) return false;
+    // Skip items that are clearly weapons/armor (handled by other tabs)
+    const typeCode = item.type?.split("|")[0] ?? "";
+    if (["M", "R", "LA", "MA", "HA"].includes(typeCode)) return false;
+    return true;
+  }
+);
+const otherItems = [
+  ...baseGearAndTools,
+  ...allOtherItems,
+].sort((a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name));
 
 export function StepEquipment({ state, dispatch }: StepProps) {
   const [tab, setTab] = useState<EquipmentTab>("weapon");
   const [search, setSearch] = useState("");
 
-  const addItem = (name: string) => {
+  const addItem = (name: string, source?: EquipmentEntry["source"]) => {
     const entry: EquipmentEntry = {
       name,
       quantity: 1,
       equipped: tab === "weapon" || tab === "armor",
-      source: tab,
+      source: source ?? (tab === "custom" ? "item" : tab === "other" ? "gear" : tab),
     };
     dispatch({ type: "ADD_EQUIPMENT", entry });
   };
 
-  // Parse mastery name from "Name|Source" format
-  const parseMastery = (mastery: string) => mastery.split("|")[0];
+  // Decode mastery name from "Name|Source" format
+  const parseMastery = (mastery: string) => decodeMastery(mastery);
 
   return (
     <div className="space-y-5">
@@ -54,6 +107,38 @@ export function StepEquipment({ state, dispatch }: StepProps) {
         <p className="text-xs text-gray-500">Add weapons, armor, gear, and tools to your inventory.</p>
         <div className="h-px bg-gradient-to-r from-amber-500/30 via-gray-700/50 to-transparent mt-2" />
       </div>
+
+      {/* Starting Equipment Presets */}
+      {state.classes.length > 0 && (() => {
+        const className = state.classes[0].className;
+        const desc = getStartingEquipmentDescription(className);
+        if (!desc) return null;
+        return (
+          <div className="bg-gray-800/60 border border-gray-700/40 rounded-lg p-3 space-y-2">
+            <div className="text-xs font-medium text-gray-300" style={{ fontFamily: "var(--font-cinzel)" }}>
+              Starting Equipment — {className}
+            </div>
+            <div className="flex gap-2">
+              {(["A", "B"] as const).map((choice) => (
+                <button
+                  key={choice}
+                  onClick={() => {
+                    const { items, currency } = resolveStartingEquipment(className, choice);
+                    dispatch({ type: "ADD_STARTING_EQUIPMENT", items, currency });
+                  }}
+                  className="flex-1 text-left px-3 py-2 rounded-lg border border-gray-700/50 bg-gray-900/40 hover:border-amber-500/40 hover:bg-amber-500/5 transition-all text-xs"
+                >
+                  <div className="font-medium text-amber-300/80 mb-0.5">Option {choice}</div>
+                  <div className="text-gray-500 text-[10px] leading-snug">{desc[choice]}</div>
+                </button>
+              ))}
+            </div>
+            <div className="text-[10px] text-gray-600">
+              Clicking a preset adds items to your inventory. You can still add more items below.
+            </div>
+          </div>
+        );
+      })()}
 
       <div className="flex gap-6">
         {/* Left: Browser */}
@@ -67,29 +152,30 @@ export function StepEquipment({ state, dispatch }: StepProps) {
                   setTab(t.value);
                   setSearch("");
                 }}
-                className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors ${
                   tab === t.value
                     ? "text-amber-300 border-b-2 border-amber-400/70"
                     : "text-gray-500 hover:text-gray-300"
                 }`}
               >
+                {TAB_ICONS[t.value]}
                 {t.label}
               </button>
             ))}
           </div>
 
-          {tab !== "item" && (
+          {tab !== "custom" && (
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder={`Search ${tab}s...`}
+              placeholder={`Search ${tab === "other" ? "items" : tab + "s"}...`}
               className="w-full bg-gray-900/60 border border-gray-700/60 rounded-lg px-3 py-1.5 text-sm text-gray-100 placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-amber-500/50 focus:border-amber-500/30"
             />
           )}
 
           <div className="max-h-[480px] overflow-y-auto">
-            {tab === "item" ? (
+            {tab === "custom" ? (
               <CustomItemsPanel
                 equipment={state.equipment}
                 dispatch={dispatch}
@@ -109,13 +195,8 @@ export function StepEquipment({ state, dispatch }: StepProps) {
               />
             ) : (
               <FlatList
-                items={
-                  tab === "gear"
-                    ? equipmentDb.gear
-                    : equipmentDb.tools
-                }
+                items={otherItems}
                 search={search}
-                tab={tab}
                 equipment={state.equipment}
                 onAdd={addItem}
               />
@@ -314,7 +395,6 @@ function CustomItemsPanel({
   const [rarity, setRarity] = useState("");
   const [attunement, setAttunement] = useState(false);
   const [isMagicItem, setIsMagicItem] = useState(false);
-  const [showMore, setShowMore] = useState(false);
 
   const resetForm = () => {
     setName("");
@@ -331,7 +411,6 @@ function CustomItemsPanel({
     setRarity("");
     setAttunement(false);
     setIsMagicItem(false);
-    setShowMore(false);
   };
 
   const handleAdd = () => {
@@ -521,84 +600,68 @@ function CustomItemsPanel({
             </div>
           )}
 
-          {/* ── More Options (expandable) ── */}
-          {!showMore ? (
+          {/* ── Rarity (colored dot pills) ── */}
+          <div className="space-y-2">
+            <SectionLabel>Rarity</SectionLabel>
+            <div className="flex flex-wrap gap-1.5">
+              {RARITIES.map((r) => {
+                const selected = rarity === r.name;
+                return (
+                  <button
+                    key={r.name}
+                    type="button"
+                    onClick={() => setRarity(selected ? "" : r.name)}
+                    className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium transition-all duration-150 ${
+                      selected
+                        ? `${r.bg}/20 ${r.color} ring-1 ${r.ring}/50`
+                        : "bg-gray-900/40 text-gray-600 hover:text-gray-400"
+                    }`}
+                  >
+                    <span className={`w-1.5 h-1.5 rounded-full ${selected ? r.bg : "bg-gray-700"}`} />
+                    {r.name}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* ── Magic + Attunement (toggle pills) ── */}
+          <div className="flex gap-2">
             <button
               type="button"
-              onClick={() => setShowMore(true)}
-              className="flex items-center gap-1.5 text-[10px] text-gray-600 hover:text-gray-400 transition-colors group"
+              onClick={() => setIsMagicItem(!isMagicItem)}
+              className={`px-2.5 py-1 rounded-md text-[10px] font-medium transition-all duration-150 ${
+                isMagicItem
+                  ? "bg-purple-600/20 text-purple-300 ring-1 ring-purple-500/40"
+                  : "bg-gray-900/40 text-gray-600 hover:text-gray-400 border border-gray-700/50"
+              }`}
             >
-              <span className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full border border-gray-700 group-hover:border-gray-500 transition-colors text-[8px]">
-                +
-              </span>
-              Rarity, magic, description
+              Magic Item
             </button>
-          ) : (
-            <div className="space-y-3">
-              {/* ── Rarity (colored dot pills) ── */}
-              <div className="space-y-2">
-                <SectionLabel>Rarity</SectionLabel>
-                <div className="flex flex-wrap gap-1.5">
-                  {RARITIES.map((r) => {
-                    const selected = rarity === r.name;
-                    return (
-                      <button
-                        key={r.name}
-                        type="button"
-                        onClick={() => setRarity(selected ? "" : r.name)}
-                        className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium transition-all duration-150 ${
-                          selected
-                            ? `${r.bg}/20 ${r.color} ring-1 ${r.ring}/50`
-                            : "bg-gray-900/40 text-gray-600 hover:text-gray-400"
-                        }`}
-                      >
-                        <span className={`w-1.5 h-1.5 rounded-full ${selected ? r.bg : "bg-gray-700"}`} />
-                        {r.name}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+            <button
+              type="button"
+              onClick={() => setAttunement(!attunement)}
+              className={`px-2.5 py-1 rounded-md text-[10px] font-medium transition-all duration-150 ${
+                attunement
+                  ? "bg-amber-600/20 text-amber-300 ring-1 ring-amber-500/40"
+                  : "bg-gray-900/40 text-gray-600 hover:text-gray-400 border border-gray-700/50"
+              }`}
+            >
+              Requires Attunement
+            </button>
+          </div>
 
-              {/* ── Magic + Attunement (toggle pills) ── */}
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => setIsMagicItem(!isMagicItem)}
-                  className={`px-2.5 py-1 rounded-md text-[10px] font-medium transition-all duration-150 ${
-                    isMagicItem
-                      ? "bg-purple-600/20 text-purple-300 ring-1 ring-purple-500/40"
-                      : "bg-gray-900/40 text-gray-600 hover:text-gray-400 border border-gray-700/50"
-                  }`}
-                >
-                  Magic Item
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setAttunement(!attunement)}
-                  className={`px-2.5 py-1 rounded-md text-[10px] font-medium transition-all duration-150 ${
-                    attunement
-                      ? "bg-amber-600/20 text-amber-300 ring-1 ring-amber-500/40"
-                      : "bg-gray-900/40 text-gray-600 hover:text-gray-400 border border-gray-700/50"
-                  }`}
-                >
-                  Requires Attunement
-                </button>
-              </div>
-
-              {/* ── Description ── */}
-              <div className="space-y-1">
-                <FieldLabel>Description</FieldLabel>
-                <textarea
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="A brief description of the item..."
-                  rows={2}
-                  className={inputCls + " resize-none"}
-                />
-              </div>
-            </div>
-          )}
+          {/* ── Description ── */}
+          <div className="space-y-1">
+            <FieldLabel>Description</FieldLabel>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="A brief description of the item..."
+              rows={2}
+              className={inputCls + " resize-none"}
+            />
+          </div>
 
           {/* ── Add Button ── */}
           <button
@@ -708,9 +771,9 @@ function GroupedWeapons({
   return (
     <div className="space-y-3">
       {WEAPON_CATEGORIES.map((cat) => {
-        let weapons = equipmentDb.weapons.filter(cat.filter);
+        let weapons = weaponItems.filter(cat.filter);
         if (search) {
-          weapons = weapons.filter((w) => w.name.toLowerCase().includes(q));
+          weapons = weapons.filter((w: BaseItemData) => w.name.toLowerCase().includes(q));
         }
         if (weapons.length === 0) return null;
 
@@ -736,12 +799,12 @@ function GroupedWeapons({
                     <div className="min-w-0">
                       <div className="text-gray-200 truncate">{item.name}</div>
                       <div className="text-[10px] text-gray-500">
-                        {item.damage} {item.damageType}
-                        {item.cost && <span> &middot; {item.cost}</span>}
-                        {item.weight > 0 && <span> &middot; {item.weight} lb.</span>}
-                        {item.mastery && (
+                        {item.dmg1} {item.dmgType ? formatDamageType(item.dmgType) : ""}
+                        {item.value ? <span> &middot; {formatItemCost(item.value)}</span> : null}
+                        {item.weight != null && item.weight > 0 && <span> &middot; {item.weight} lb.</span>}
+                        {item.mastery && item.mastery.length > 0 && (
                           <span className="ml-1 text-amber-400/60">
-                            [{parseMastery(item.mastery)}]
+                            [{item.mastery.map((m: string) => parseMastery(m)).join(", ")}]
                           </span>
                         )}
                       </div>
@@ -783,9 +846,9 @@ function GroupedArmor({
   return (
     <div className="space-y-3">
       {ARMOR_CATEGORIES.map((cat) => {
-        let armorList = equipmentDb.armor.filter(cat.filter);
+        let armorList = armorItems.filter(cat.filter);
         if (search) {
-          armorList = armorList.filter((a) => a.name.toLowerCase().includes(q));
+          armorList = armorList.filter((a: BaseItemData) => a.name.toLowerCase().includes(q));
         }
         if (armorList.length === 0) return null;
 
@@ -812,10 +875,10 @@ function GroupedArmor({
                       <div className="text-gray-200 truncate">{item.name}</div>
                       <div className="text-[10px] text-gray-500">
                         AC {item.ac}
-                        {item.dexCap !== undefined && <span> (max Dex +{item.dexCap})</span>}
-                        {item.stealthDisadvantage && <span> &middot; Stealth Disadv.</span>}
-                        {item.cost && <span> &middot; {item.cost}</span>}
-                        {item.weight > 0 && <span> &middot; {item.weight} lb.</span>}
+                        {item.stealth && <span> &middot; Stealth Disadv.</span>}
+                        {item.strength && <span> &middot; Str {item.strength}</span>}
+                        {item.value ? <span> &middot; {formatItemCost(item.value)}</span> : null}
+                        {item.weight != null && item.weight > 0 && <span> &middot; {item.weight} lb.</span>}
                       </div>
                     </div>
                     <button
@@ -841,19 +904,22 @@ function GroupedArmor({
 
 // ─── Flat List (gear/tools) ──────────────────────────────
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type OtherItem = { name: string; value?: number; weight?: number; rarity?: string; entries?: any[]; reqAttune?: unknown };
+
 function FlatList({
   items,
   search,
-  tab,
   equipment,
   onAdd,
 }: {
-  items: { name: string; cost: string; weight: number; description?: string }[];
+  items: OtherItem[];
   search: string;
-  tab: EquipmentTab;
   equipment: EquipmentEntry[];
   onAdd: (name: string) => void;
 }) {
+  const [expanded, setExpanded] = useState<string | null>(null);
+
   const filtered = useMemo(() => {
     if (!search) return items;
     const q = search.toLowerCase();
@@ -863,38 +929,86 @@ function FlatList({
   return (
     <div className="space-y-1">
       {filtered.map((item) => {
-        const alreadyAdded = equipment.some(
-          (e) => e.name === item.name && e.source === tab
-        );
+        const alreadyAdded = equipment.some((e) => e.name === item.name);
+        const isMagic = item.rarity && item.rarity !== "none";
+        const isExpanded = expanded === item.name;
+        const hasEntries = item.entries && item.entries.length > 0;
+        const briefDesc = hasEntries
+          ? item.entries!
+              .filter((e: unknown) => typeof e === "string")
+              .join(" ")
+              .replace(/\{@[^}]+\|?([^|}]*)}/g, "$1")
+              .slice(0, 120)
+          : null;
+
         return (
           <div
             key={item.name}
-            className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg border text-xs ${
+            className={`rounded-lg border text-xs transition-colors ${
               alreadyAdded
                 ? "border-amber-500/20 bg-amber-500/5"
                 : "border-gray-700/50 bg-gray-800/50"
             }`}
           >
-            <div className="min-w-0">
-              <div className="text-gray-200 truncate">{item.name}</div>
-              <div className="text-[10px] text-gray-500">
-                {item.cost}
-                {item.weight > 0 && <span> &middot; {item.weight} lb.</span>}
-              </div>
+            <div className="flex items-center justify-between px-2.5 py-1.5">
+              <button
+                type="button"
+                onClick={() => setExpanded(isExpanded ? null : item.name)}
+                className="min-w-0 text-left flex-1"
+              >
+                <div className="flex items-center gap-1.5">
+                  <span className="text-gray-200 truncate">{item.name}</span>
+                  {isMagic && (
+                    <span className={`text-[8px] px-1 py-px rounded shrink-0 ${RARITY_PILL[item.rarity!] ?? "bg-gray-700/50 text-gray-400"}`}>
+                      {item.rarity}
+                    </span>
+                  )}
+                  {!!item.reqAttune && (
+                    <span className="text-[8px] px-1 py-px rounded bg-amber-900/30 text-amber-500/70 shrink-0">Attune</span>
+                  )}
+                </div>
+                <div className="text-[10px] text-gray-500">
+                  {formatItemCost(item.value)}
+                  {item.weight != null && item.weight > 0 && <span> &middot; {item.weight} lb.</span>}
+                  {!isMagic && briefDesc && (
+                    <span className="ml-1 text-gray-600 truncate">&middot; {briefDesc}</span>
+                  )}
+                </div>
+              </button>
+              <button
+                onClick={() => onAdd(item.name)}
+                className={`shrink-0 text-[10px] px-2 py-1 rounded transition-colors ml-2 ${
+                  alreadyAdded
+                    ? "text-amber-300 bg-amber-500/10 hover:bg-amber-500/20"
+                    : "text-gray-400 bg-gray-700 hover:bg-gray-600"
+                }`}
+              >
+                {alreadyAdded ? "+1" : "Add"}
+              </button>
             </div>
-            <button
-              onClick={() => onAdd(item.name)}
-              className={`shrink-0 text-[10px] px-2 py-1 rounded transition-colors ${
-                alreadyAdded
-                  ? "text-amber-300 bg-amber-500/10 hover:bg-amber-500/20"
-                  : "text-gray-400 bg-gray-700 hover:bg-gray-600"
-              }`}
-            >
-              {alreadyAdded ? "+1" : "Add"}
-            </button>
+            {isExpanded && hasEntries && (
+              <div className="px-2.5 pb-2 text-[10px] text-gray-400 leading-relaxed border-t border-gray-700/30 pt-1.5">
+                {item.entries!
+                  .filter((e: unknown) => typeof e === "string")
+                  .map((e: string, i: number) => (
+                    <p key={i} className="mb-1">
+                      {e.replace(/\{@[^}]+\|?([^|}]*)}/g, "$1")}
+                    </p>
+                  ))}
+              </div>
+            )}
           </div>
         );
       })}
     </div>
   );
 }
+
+const RARITY_PILL: Record<string, string> = {
+  Common: "bg-gray-700/50 text-gray-400",
+  Uncommon: "bg-green-900/30 text-green-400",
+  Rare: "bg-blue-900/30 text-blue-400",
+  "Very Rare": "bg-purple-900/30 text-purple-400",
+  Legendary: "bg-amber-900/30 text-amber-400",
+  Artifact: "bg-red-900/30 text-red-400",
+};

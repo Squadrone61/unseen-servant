@@ -16,7 +16,7 @@ const SOURCE_COLORS: Record<
 
 const SOURCE_LABELS: Record<CharacterFeature["source"], string> = {
   class: "Class",
-  race: "Race",
+  race: "Species",
   feat: "Feat",
   background: "Background",
 };

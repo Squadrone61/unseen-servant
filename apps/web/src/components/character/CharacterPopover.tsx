@@ -25,7 +25,7 @@ export function CharacterPopover({
       <div className="mb-2">
         <div className="text-sm font-bold text-amber-300" style={{ fontFamily: "var(--font-cinzel)" }}>{s.name}</div>
         <div className="text-[10px] text-gray-400">
-          {s.race} &middot; {formatClassString(s.classes)} &middot; Lvl{" "}
+          {s.species || s.race} &middot; {formatClassString(s.classes)} &middot; Lvl{" "}
           {totalLevel}
         </div>
         <div className="text-[10px] text-gray-500">

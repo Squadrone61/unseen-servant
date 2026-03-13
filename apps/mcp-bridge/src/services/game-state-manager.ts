@@ -286,7 +286,7 @@ export class GameStateManager {
       const classes = char.static.classes
         .map((c) => `${c.name} ${c.level}`)
         .join("/");
-      return `${pName} (${char.static.name}, ${char.static.race} ${classes})`;
+      return `${pName} (${char.static.name}, ${char.static.species || char.static.race} ${classes})`;
     });
 
     const userMsg = `The adventuring party has gathered: ${partyDescriptions.join(", ")}. Set the scene and introduce each character!`;

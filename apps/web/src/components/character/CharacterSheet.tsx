@@ -157,7 +157,7 @@ export function CharacterSheet({ character }: CharacterSheetProps) {
         <div>
           <h2 className="text-lg font-bold text-amber-200/90" style={{ fontFamily: "var(--font-cinzel)" }}>{s.name}</h2>
           <div className="text-xs text-gray-400">
-            {s.race} &middot; {formatClassString(s.classes)} &middot; Lvl{" "}
+            {s.species || s.race} &middot; {formatClassString(s.classes)} &middot; Lvl{" "}
             {getTotalLevel(s.classes)}
           </div>
         </div>
@@ -227,7 +227,7 @@ export function CharacterSheet({ character }: CharacterSheetProps) {
               <div className="bg-gray-900/60 border border-gray-700/50 rounded py-1">
                 <div className="text-[10px] text-gray-500 uppercase">Passive</div>
                 <div className="text-base font-bold text-gray-200">
-                  {10 + getModifier(s.abilities.wisdom)}
+                  {parseInt(s.senses.find((sense) => sense.startsWith("Passive Perception"))?.split(" ").at(-1) ?? String(10 + getModifier(s.abilities.wisdom)), 10)}
                 </div>
               </div>
             </>
@@ -235,12 +235,18 @@ export function CharacterSheet({ character }: CharacterSheetProps) {
         </div>
 
         {/* Heroic Inspiration */}
-        {d.heroicInspiration && (
-          <div className="flex items-center gap-1.5 bg-yellow-900/20 border border-yellow-700/40 rounded px-2 py-1">
-            <span className="text-yellow-400 text-sm">&#9733;</span>
-            <span className="text-xs text-yellow-300 font-medium">Heroic Inspiration</span>
-          </div>
-        )}
+        <div className={`flex items-center gap-1.5 rounded px-2 py-1 ${
+          d.heroicInspiration
+            ? "bg-yellow-900/20 border border-yellow-700/40"
+            : "bg-gray-900/30 border border-gray-700/30"
+        }`}>
+          <span className={`text-sm ${d.heroicInspiration ? "text-yellow-400 drop-shadow-[0_0_4px_rgba(250,204,21,0.4)]" : "text-gray-600"}`}>
+            {d.heroicInspiration ? "\u2605" : "\u2606"}
+          </span>
+          <span className={`text-xs font-medium ${d.heroicInspiration ? "text-yellow-300" : "text-gray-600"}`}>
+            Heroic Inspiration
+          </span>
+        </div>
 
         {/* Conditions */}
         {d.conditions.length > 0 && (

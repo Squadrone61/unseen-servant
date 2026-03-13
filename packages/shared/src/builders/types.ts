@@ -66,10 +66,5 @@ export interface CharacterIdentifiers {
   speed?: number;
 
   // Import metadata
-  source: "ddb" | "builder";
-  sourceUrl?: string;
-  ddbId?: number;
-
-  // DDB initial dynamic state (current HP, used spell slots, etc.)
-  initialDynamic?: Partial<CharacterDynamicData>;
+  source: "builder";
 }

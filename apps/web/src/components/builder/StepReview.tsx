@@ -11,7 +11,7 @@ interface StepReviewProps extends StepProps {
 
 export function StepReview({ state }: StepReviewProps) {
   const result = useMemo(() => {
-    if (!state.className) return null;
+    if (state.classes.length === 0) return null;
     try {
       const ids = assembleIdentifiers(state);
       return buildCharacter(ids);

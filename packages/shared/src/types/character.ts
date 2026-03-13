@@ -139,12 +139,13 @@ export interface SavingThrowProficiency {
 }
 
 /**
- * Static data imported from D&D Beyond (or manual entry).
+ * Static data from the character builder.
  * Only changes when the character is re-imported.
  */
 export interface CharacterStaticData {
   name: string;
-  race: string;
+  species?: string; // species/race name (2024 terminology, optional for backward compat)
+  race: string; // primary species/race field
   classes: CharacterClass[];
   abilities: AbilityScores;
   maxHP: number;
@@ -166,9 +167,7 @@ export interface CharacterStaticData {
   traits: CharacterTraits;
   appearance?: CharacterAppearance;
   importedAt: number; // timestamp
-  source?: "ddb" | "builder"; // import source
-  sourceUrl?: string; // DDB URL if imported from URL
-  ddbId?: number; // DDB character ID
+  source?: "builder"; // import source
 }
 
 /**

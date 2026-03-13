@@ -60,7 +60,7 @@ function SpellRow({
         <span className="text-[8px] text-amber-400/70 shrink-0">{classBadge}</span>
       )}
       {spell.spellSource === "race" && (
-        <span className="text-[8px] text-emerald-400/70 shrink-0">Race</span>
+        <span className="text-[8px] text-emerald-400/70 shrink-0">Species</span>
       )}
       {spell.spellSource === "feat" && (
         <span className="text-[8px] text-amber-400/70 shrink-0">Feat</span>

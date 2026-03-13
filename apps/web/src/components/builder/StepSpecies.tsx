@@ -1,6 +1,9 @@
+"use client";
+
 import { useMemo, useState } from "react";
-import { getSpecies, featsArray } from "@aidnd/shared/data";
-import { Prose } from "../Prose";
+import { motion } from "framer-motion";
+import { getSpecies, featsArray, getSpellsByClass } from "@aidnd/shared/data";
+import { RichText } from "@/components/ui/RichText";
 import type { SpeciesData, FeatData } from "@aidnd/shared/data";
 import type { StepProps, TraitChoiceDefinition } from "./types";
 import {
@@ -9,6 +12,8 @@ import {
   formatSkillName,
   ALL_SKILLS,
 } from "./utils";
+import { formatSpeciesSize, getSpeciesSpeed, entriesToText, SIZE_MAP } from "@aidnd/shared";
+import { gridItem, cardHover } from "./animations";
 
 export function StepSpecies({ state, dispatch }: StepProps) {
   const allSpecies = useMemo(() => getFilteredSpecies(), []);
@@ -25,6 +30,17 @@ export function StepSpecies({ state, dispatch }: StepProps) {
     ? getSpeciesTraitChoices(state.species)
     : [];
 
+  function handleSpeciesClick(name: string) {
+    dispatch({ type: "SET_SPECIES", species: name });
+  }
+
+  // Source badge color mapping
+  function sourceBadgeClass(source: string) {
+    if (source === "XPHB") return "bg-amber-900/30 text-amber-400/80 border-amber-700/30";
+    if (source === "MPMM") return "bg-purple-900/30 text-purple-400/80 border-purple-700/30";
+    return "bg-gray-800/60 text-gray-500 border-gray-700/30";
+  }
+
   return (
     <div className="space-y-5">
       <StepHeader
@@ -34,8 +50,12 @@ export function StepSpecies({ state, dispatch }: StepProps) {
 
       {/* Character name (optional early entry) */}
       <div>
-        <label className="text-[10px] text-gray-500 uppercase tracking-wider block mb-1.5" style={{ fontFamily: "var(--font-cinzel)" }}>
-          Character Name <span className="normal-case tracking-normal text-gray-600">(optional)</span>
+        <label
+          className="text-[10px] text-gray-500 uppercase tracking-wider block mb-1.5"
+          style={{ fontFamily: "var(--font-cinzel)" }}
+        >
+          Character Name{" "}
+          <span className="normal-case tracking-normal text-gray-600">(optional)</span>
         </label>
         <input
           type="text"
@@ -46,60 +66,102 @@ export function StepSpecies({ state, dispatch }: StepProps) {
         />
       </div>
 
-      <div className="flex gap-6">
-        {/* Left: Grid */}
-        <div className="flex-1 min-w-0">
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search species..."
-            className="w-full bg-gray-900/60 border border-gray-700/60 rounded-lg px-3 py-2 text-sm text-gray-100 placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-amber-500/50 focus:border-amber-500/30 transition-colors mb-3"
-          />
-          <div className="max-h-[420px] overflow-y-auto pr-1">
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {filtered.map((sp) => (
-                <button
-                  key={sp.name}
-                  onClick={() => dispatch({ type: "SET_SPECIES", species: sp.name })}
-                  className={`text-left px-3 py-2.5 rounded-lg border text-sm transition-all duration-200 ${
-                    state.species === sp.name
-                      ? "border-amber-500/50 bg-amber-500/10 text-amber-200 shadow-[0_0_12px_rgba(245,158,11,0.08)]"
-                      : "border-gray-700/50 bg-gray-800/50 text-gray-300 hover:border-gray-600 hover:bg-gray-800"
-                  }`}
-                >
-                  <div className="font-medium truncate">{sp.name}</div>
-                  <div className="text-[10px] text-gray-500 mt-0.5">
-                    {sp.size.join("/")} &middot; {sp.speed} ft.
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
+      {/* Search */}
+      <input
+        type="text"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        placeholder="Search species..."
+        className="w-full bg-gray-900/60 border border-gray-700/60 rounded-lg px-3 py-2 text-sm text-gray-100 placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-amber-500/50 focus:border-amber-500/30 transition-colors"
+      />
 
-        {/* Right: Detail Panel */}
-        {selected && (
-          <div className="w-80 shrink-0">
-            <SpeciesDetail species={selected} />
-          </div>
-        )}
+      {/* Full-width grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-2">
+        {filtered.map((sp, i) => {
+          const isSelected = state.species === sp.name;
+          return (
+            <motion.button
+              key={sp.name}
+              custom={i}
+              variants={gridItem}
+              initial="initial"
+              animate="animate"
+              whileHover={cardHover}
+              onPointerDown={(e) => {
+                e.preventDefault();
+                handleSpeciesClick(sp.name);
+              }}
+              className={`text-left px-3 py-2.5 rounded-lg border text-sm transition-colors duration-200 ${
+                isSelected
+                  ? "border-amber-500/50 bg-amber-500/10 text-amber-200 shadow-[0_0_12px_rgba(245,158,11,0.12)]"
+                  : "border-gray-700/50 bg-gray-800/50 text-gray-300 hover:border-gray-600 hover:bg-gray-800"
+              }`}
+            >
+              <div
+                className="font-medium truncate text-xs leading-snug"
+                style={{ fontFamily: "var(--font-cinzel)" }}
+              >
+                {sp.name}
+              </div>
+              <div className="flex items-center gap-1 mt-1.5 flex-wrap">
+                <span className="text-[9px] bg-gray-900/60 border border-gray-700/40 rounded px-1.5 py-0.5 text-gray-400">
+                  {formatSpeciesSize(sp.size)}
+                </span>
+                <span className="text-[9px] bg-gray-900/60 border border-gray-700/40 rounded px-1.5 py-0.5 text-gray-400">
+                  {getSpeciesSpeed(sp)} ft.
+                </span>
+                {sp.source && (
+                  <span
+                    className={`text-[9px] border rounded px-1.5 py-0.5 ${sourceBadgeClass(sp.source)}`}
+                  >
+                    {sp.source}
+                  </span>
+                )}
+              </div>
+            </motion.button>
+          );
+        })}
       </div>
 
-      {/* Trait Choices */}
-      {selected && traitChoices.length > 0 && (
-        <div className="bg-gray-800/60 border-l-2 border-amber-500/60 border-y border-r border-gray-700/40 rounded-r-lg p-4 space-y-3">
-          <div className="text-xs font-medium text-amber-300/80" style={{ fontFamily: "var(--font-cinzel)" }}>
-            Trait Choices for {selected.name}
+      {/* Trait Choices + Species Detail — side by side */}
+      {selected && (
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-3">
+          {/* Left: Trait Choices */}
+          {traitChoices.length > 0 ? (
+            <div
+              key={state.species}
+              className="bg-gray-800/60 border-l-2 border-amber-500/60 border-y border-r border-gray-700/40 rounded-r-lg p-4 space-y-3"
+            >
+              <div
+                className="text-xs font-medium text-amber-300/80"
+                style={{ fontFamily: "var(--font-cinzel)" }}
+              >
+                Trait Choices for {selected.name}
+              </div>
+              {traitChoices.map((def) => (
+                <TraitChoicePicker
+                  key={def.traitName}
+                  definition={def}
+                  value={state.speciesChoices[def.traitName]}
+                  state={state}
+                  dispatch={dispatch}
+                />
+              ))}
+            </div>
+          ) : (
+            <div />
+          )}
+
+          {/* Right: Species Detail */}
+          <div className="bg-gray-800/60 border border-gray-700/40 rounded-lg p-4 self-start">
+            <h3
+              className="text-sm font-semibold text-amber-300/90 mb-3"
+              style={{ fontFamily: "var(--font-cinzel)" }}
+            >
+              {selected.name}
+            </h3>
+            <SpeciesDetail species={selected} />
           </div>
-          {traitChoices.map((def) => (
-            <TraitChoicePicker
-              key={def.traitName}
-              definition={def}
-              value={state.speciesChoices[def.traitName]}
-              dispatch={dispatch}
-            />
-          ))}
         </div>
       )}
     </div>
@@ -128,10 +190,12 @@ function StepHeader({ title, description }: { title: string; description: string
 function TraitChoicePicker({
   definition,
   value,
+  state,
   dispatch,
 }: {
   definition: TraitChoiceDefinition;
   value?: { selected: string | string[]; secondarySelected?: string };
+  state: StepProps["state"];
   dispatch: StepProps["dispatch"];
 }) {
   const { traitName, choiceType } = definition;
@@ -161,10 +225,51 @@ function TraitChoicePicker({
       )}
 
       {choiceType === "feat" && (
-        <FeatPicker
+        <>
+          <FeatPicker
+            traitName={traitName}
+            category={definition.featCategory!}
+            value={typeof value?.selected === "string" ? value.selected : ""}
+            dispatch={dispatch}
+          />
+          {/* Sub-choices for feats that need them */}
+          {typeof value?.selected === "string" && value.selected.toLowerCase() === "skilled" && (
+            <SpeciesSkilledChoices state={state} dispatch={dispatch} />
+          )}
+          {typeof value?.selected === "string" && value.selected.toLowerCase().startsWith("magic initiate") && (
+            <SpeciesMagicInitiateChoices featName={value.selected} state={state} dispatch={dispatch} />
+          )}
+        </>
+      )}
+
+      {choiceType === "size" && (
+        <div className="flex gap-1.5">
+          {(definition.options ?? []).map((sizeCode) => {
+            const label = SIZE_MAP[sizeCode] ?? sizeCode;
+            const isSelected = value?.selected === sizeCode;
+            return (
+              <button
+                key={sizeCode}
+                onClick={() => dispatch({ type: "SET_SPECIES_CHOICE", traitName, selected: sizeCode })}
+                className={`text-[10px] px-2.5 py-1 rounded-md border transition-all duration-150 ${
+                  isSelected
+                    ? "border-amber-500/50 bg-amber-500/10 text-amber-300"
+                    : "border-gray-700/60 bg-gray-900/40 text-gray-400 hover:border-gray-600"
+                }`}
+              >
+                {label}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {choiceType === "language" && (
+        <SkillPicker
           traitName={traitName}
-          category={definition.featCategory!}
-          value={typeof value?.selected === "string" ? value.selected : ""}
+          options={definition.options ?? []}
+          count={definition.count ?? 1}
+          value={Array.isArray(value?.selected) ? value.selected : value?.selected ? [value.selected] : []}
           dispatch={dispatch}
         />
       )}
@@ -266,9 +371,10 @@ function SkillPicker({
 
 // ─── Feat Picker ─────────────────────────────────────────
 
-/** Extract bold sub-benefit names from feat description like "**Initiative Proficiency.**" */
-function parseFeatBenefits(description: string): string[] {
-  const matches = description.match(/\*\*([^*]+?)\.?\*\*/g);
+/** Extract bold sub-benefit names from feat entries */
+function parseFeatBenefits(entries: import("@aidnd/shared/data").Entry[]): string[] {
+  const text = entriesToText(entries);
+  const matches = text.match(/\*\*([^*]+?)\.?\*\*/g);
   if (!matches) return [];
   return matches
     .map((m) => m.replace(/\*\*/g, "").replace(/\.$/, ""))
@@ -289,7 +395,9 @@ function FeatPicker({
   const [search, setSearch] = useState("");
   const [expanded, setExpanded] = useState<string | null>(null);
   const originFeats = useMemo(
-    () => featsArray.filter((f: FeatData) => f.category === category),
+    () => category
+      ? featsArray.filter((f: FeatData) => f.category === category)
+      : featsArray.filter((f: FeatData) => !!f.category),
     [category]
   );
 
@@ -312,7 +420,7 @@ function FeatPicker({
         {filtered.map((feat) => {
           const isSelected = value === feat.name;
           const isExpanded = expanded === feat.name;
-          const benefits = parseFeatBenefits(feat.description);
+          const benefits = parseFeatBenefits(feat.entries);
           return (
             <div
               key={feat.name}
@@ -368,12 +476,206 @@ function FeatPicker({
               </div>
               {isExpanded && (
                 <div className="px-2.5 pb-2 border-t border-gray-700/50 pt-1.5">
-                  <Prose className="text-xs text-gray-400">{feat.description}</Prose>
+                  <RichText entries={feat.entries} className="text-xs text-gray-400" />
                 </div>
               )}
             </div>
           );
         })}
+      </div>
+    </div>
+  );
+}
+
+// ─── Species Feat Sub-Choices ────────────────────────────
+
+function SpeciesSkilledChoices({ state, dispatch }: StepProps) {
+  const overrides = state.originFeatOverrides;
+  const selectedSkills = overrides.skillChoices ?? [];
+
+  return (
+    <div className="mt-2 space-y-2 border-t border-gray-700/50 pt-2">
+      <div className="text-[10px] text-gray-500 font-medium">
+        Skilled: Choose 3 skill proficiencies ({selectedSkills.length}/3)
+      </div>
+      <div className="flex flex-wrap gap-1">
+        {ALL_SKILLS.map((skill) => {
+          const isSelected = selectedSkills.includes(skill);
+          return (
+            <button
+              key={skill}
+              onClick={() => {
+                const next = isSelected
+                  ? selectedSkills.filter((s) => s !== skill)
+                  : selectedSkills.length < 3
+                    ? [...selectedSkills, skill]
+                    : selectedSkills;
+                dispatch({
+                  type: "SET_ORIGIN_FEAT_OVERRIDES",
+                  overrides: { skillChoices: next },
+                });
+              }}
+              disabled={!isSelected && selectedSkills.length >= 3}
+              className={`text-[10px] px-1.5 py-0.5 rounded-md transition-colors ${
+                isSelected
+                  ? "bg-purple-600/15 text-purple-400 border border-purple-500/30"
+                  : selectedSkills.length >= 3
+                    ? "text-gray-700 border border-gray-800"
+                    : "text-gray-400 border border-gray-700/60 hover:text-gray-200"
+              }`}
+            >
+              {formatSkillName(skill)}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+const MI_CLASSES = ["Cleric", "Druid", "Wizard"];
+
+function SpeciesMagicInitiateChoices({
+  featName,
+  state,
+  dispatch,
+}: { featName: string } & StepProps) {
+  const matchedClass = MI_CLASSES.find((c) =>
+    featName.toLowerCase().includes(c.toLowerCase())
+  );
+  const overrides = state.originFeatOverrides;
+  const spellClass = matchedClass ?? overrides.spellClass ?? "Druid";
+
+  const cantrips = useMemo(
+    () => getSpellsByClass(spellClass).filter((s) => s.level === 0),
+    [spellClass]
+  );
+  const level1Spells = useMemo(
+    () => getSpellsByClass(spellClass).filter((s) => s.level === 1),
+    [spellClass]
+  );
+
+  const selectedCantrips = overrides.cantrips ?? [];
+  const selectedSpell = overrides.spell ?? "";
+
+  return (
+    <div className="mt-2 space-y-2 border-t border-gray-700/50 pt-2">
+      <div className="text-[10px] text-gray-500 font-medium">Magic Initiate Choices</div>
+
+      {!matchedClass && (
+        <div>
+          <div className="text-[10px] text-gray-500 mb-1">Spell List</div>
+          <div className="flex gap-1">
+            {MI_CLASSES.map((c) => (
+              <button
+                key={c}
+                onClick={() =>
+                  dispatch({
+                    type: "SET_ORIGIN_FEAT_OVERRIDES",
+                    overrides: { spellClass: c, cantrips: [], spell: "" },
+                  })
+                }
+                className={`text-[10px] px-2.5 py-1 rounded-md transition-all duration-150 ${
+                  spellClass === c
+                    ? "bg-amber-500/15 text-amber-300 border border-amber-500/30"
+                    : "text-gray-500 border border-gray-700/60"
+                }`}
+              >
+                {c}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div>
+        <div className="text-[10px] text-gray-500 mb-1">Spellcasting Ability</div>
+        <div className="flex gap-1">
+          {["Intelligence", "Wisdom", "Charisma"].map((a) => (
+            <button
+              key={a}
+              onClick={() =>
+                dispatch({
+                  type: "SET_ORIGIN_FEAT_OVERRIDES",
+                  overrides: { abilityChoice: a },
+                })
+              }
+              className={`text-[10px] px-2.5 py-1 rounded-md transition-all duration-150 ${
+                (overrides.abilityChoice ?? "").toLowerCase() === a.toLowerCase()
+                  ? "bg-amber-500/15 text-amber-300 border border-amber-500/30"
+                  : "text-gray-500 border border-gray-700/60"
+              }`}
+            >
+              {a.slice(0, 3).toUpperCase()}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <div className="text-[10px] text-gray-500 mb-1">
+          Cantrips ({selectedCantrips.length}/2)
+        </div>
+        <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto">
+          {cantrips.map((s) => {
+            const isSelected = selectedCantrips.includes(s.name);
+            return (
+              <button
+                key={s.name}
+                onClick={() => {
+                  const next = isSelected
+                    ? selectedCantrips.filter((n) => n !== s.name)
+                    : selectedCantrips.length < 2
+                      ? [...selectedCantrips, s.name]
+                      : selectedCantrips;
+                  dispatch({
+                    type: "SET_ORIGIN_FEAT_OVERRIDES",
+                    overrides: { cantrips: next },
+                  });
+                }}
+                disabled={!isSelected && selectedCantrips.length >= 2}
+                className={`text-[10px] px-1.5 py-0.5 rounded-md transition-colors ${
+                  isSelected
+                    ? "bg-purple-600/15 text-purple-400 border border-purple-500/30"
+                    : selectedCantrips.length >= 2
+                      ? "text-gray-700 border border-gray-800"
+                      : "text-gray-400 border border-gray-700/60 hover:text-gray-200"
+                }`}
+              >
+                {s.name}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div>
+        <div className="text-[10px] text-gray-500 mb-1">
+          Level 1 Spell {selectedSpell ? `(${selectedSpell})` : "(pick one)"}
+        </div>
+        <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto">
+          {level1Spells.map((s) => {
+            const isSelected = selectedSpell === s.name;
+            return (
+              <button
+                key={s.name}
+                onClick={() =>
+                  dispatch({
+                    type: "SET_ORIGIN_FEAT_OVERRIDES",
+                    overrides: { spell: isSelected ? "" : s.name },
+                  })
+                }
+                className={`text-[10px] px-1.5 py-0.5 rounded-md transition-colors ${
+                  isSelected
+                    ? "bg-purple-600/15 text-purple-400 border border-purple-500/30"
+                    : "text-gray-400 border border-gray-700/60 hover:text-gray-200"
+                }`}
+              >
+                {s.name}
+              </button>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
@@ -409,7 +711,7 @@ function LineagePicker({
           <div className={`font-medium ${value === opt.name ? "text-amber-200" : "text-gray-200"}`}>
             {opt.name}
           </div>
-          <Prose className="text-gray-500 mt-0.5 text-xs">{opt.description}</Prose>
+          <div className="text-gray-500 mt-0.5 text-xs">{opt.description}</div>
         </button>
       ))}
     </div>
@@ -420,78 +722,105 @@ function LineagePicker({
 
 function SpeciesDetail({ species }: { species: SpeciesData }) {
   return (
-    <div className="bg-gray-800/60 border border-gray-700/40 rounded-lg p-4 space-y-3">
-      <h3
-        className="text-sm font-semibold text-amber-300/90"
-        style={{ fontFamily: "var(--font-cinzel)" }}
-      >
-        {species.name}
-      </h3>
-
+    <div className="space-y-3">
       {/* Stat badges */}
       <div className="flex flex-wrap gap-1.5">
-        <StatBadge label="Size" value={species.size.join("/")} />
-        <StatBadge label="Speed" value={`${species.speed} ft.`} />
-        {species.darkvision && (
+        <StatBadge label="Size" value={formatSpeciesSize(species.size)} />
+        <StatBadge label="Speed" value={`${getSpeciesSpeed(species)} ft.`} />
+        {species.darkvision && species.name !== "Custom Lineage" && (
           <StatBadge label="Darkvision" value={`${species.darkvision} ft.`} />
         )}
       </div>
 
       {/* Traits */}
-      {species.traits.length > 0 && (
+      {species.entries.length > 0 && (
         <div className="space-y-2">
           <div className="text-[10px] text-gray-500 font-medium uppercase tracking-wider">
             Traits
           </div>
-          {species.traits.map((t) => (
-            <div
-              key={t.name}
-              className="border-l-2 border-amber-500/30 pl-2.5"
-            >
-              <div className="text-xs font-medium text-gray-200">{t.name}</div>
-              <Prose className="text-xs text-gray-400 mt-0.5 line-clamp-4">{t.description}</Prose>
-            </div>
-          ))}
+          {species.entries.map((entry, i) => {
+            const entryObj = typeof entry === "object" && entry !== null ? entry as unknown as Record<string, unknown> : null;
+            const entryName = entryObj && "name" in entryObj ? entryObj.name as string : null;
+            // Plain string entries: render as description text without trait header
+            if (!entryName) {
+              return (
+                <div key={`desc-${i}`} className="pl-2.5">
+                  <RichText entries={[entry]} className="text-xs text-gray-500 italic" />
+                </div>
+              );
+            }
+            // Pass only child entries to RichText to avoid double-rendering the name
+            const childEntries = entryObj && "entries" in entryObj && Array.isArray(entryObj.entries)
+              ? entryObj.entries as import("@aidnd/shared/data").Entry[]
+              : [entry];
+            return (
+              <div
+                key={entryName}
+                className="border-l-2 border-amber-500/30 pl-2.5"
+              >
+                <div className="text-xs font-medium text-gray-200">{entryName}</div>
+                <div className="mt-0.5">
+                  <RichText entries={childEntries} className="text-xs text-gray-400" />
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
 
       {/* Resistances */}
-      {species.resistances && species.resistances.length > 0 && (
+      {species.resist && species.resist.length > 0 && (
         <div>
           <div className="text-[10px] text-gray-500 font-medium uppercase tracking-wider mb-1">
             Resistances
           </div>
           <div className="flex flex-wrap gap-1">
-            {species.resistances.map((r) => (
-              <span
-                key={r}
-                className="text-[10px] bg-red-900/20 text-red-400 border border-red-800/30 rounded-md px-1.5 py-0.5"
-              >
-                {r}
-              </span>
-            ))}
+            {species.resist.map((r, i) => {
+              if (typeof r === "string") {
+                return (
+                  <span
+                    key={r}
+                    className="text-[10px] bg-red-900/20 text-red-400 border border-red-800/30 rounded-md px-1.5 py-0.5"
+                  >
+                    {r}
+                  </span>
+                );
+              }
+              // Choice-based resistance (e.g., Tiefling: choose from poison, necrotic, fire)
+              return (
+                <span
+                  key={`choose-${i}`}
+                  className="text-[10px] bg-red-900/20 text-red-400 border border-red-800/30 rounded-md px-1.5 py-0.5"
+                >
+                  Choose: {r.choose.from.join(", ")}
+                </span>
+              );
+            })}
           </div>
         </div>
       )}
 
       {/* Languages */}
-      {species.languages && species.languages.length > 0 && (
-        <div>
-          <div className="text-[10px] text-gray-500 font-medium uppercase tracking-wider mb-1">
-            Languages
+      {(() => {
+        const languages = species.languageProficiencies?.flatMap(lp => Object.keys(lp).filter(k => lp[k] === true)) ?? [];
+        return languages.length > 0 ? (
+          <div>
+            <div className="text-[10px] text-gray-500 font-medium uppercase tracking-wider mb-1">
+              Languages
+            </div>
+            <div className="flex flex-wrap gap-1">
+              {languages.map((l) => (
+                <span
+                  key={l}
+                  className="text-[10px] bg-blue-900/20 text-blue-400 border border-blue-800/30 rounded-md px-1.5 py-0.5"
+                >
+                  {l.charAt(0).toUpperCase() + l.slice(1)}
+                </span>
+              ))}
+            </div>
           </div>
-          <div className="flex flex-wrap gap-1">
-            {species.languages.map((l) => (
-              <span
-                key={l}
-                className="text-[10px] bg-blue-900/20 text-blue-400 border border-blue-800/30 rounded-md px-1.5 py-0.5"
-              >
-                {l}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
+        ) : null;
+      })()}
 
       {/* Source */}
       <div className="text-[10px] text-gray-600">{species.source}</div>

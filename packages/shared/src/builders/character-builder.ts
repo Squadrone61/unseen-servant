@@ -23,13 +23,29 @@ import {
   getSpecies,
   getSpell,
   getFeat,
-  getArmor,
-  getClassSpellSlots,
+  getBaseItem,
   getClassFeatures,
   getCasterMultiplier,
+  getClassResources,
   THIRD_CASTER_SLOTS,
 } from "../data/index";
 import type { ClassResourceTemplate } from "../data/types";
+import {
+  formatSchool,
+  formatCastingTime,
+  formatRange,
+  formatComponents,
+  formatDuration,
+  isConcentration,
+  isRitual,
+  getArmorProfs,
+  getWeaponProfs,
+  getSpeciesSpeed,
+  getSpellSlotTable,
+  getPactSlotTable,
+  entriesToText,
+  stripTags,
+} from "../utils/5etools";
 
 // ─── Helpers ─────────────────────────────────────────────
 
@@ -89,6 +105,18 @@ const THIRD_CASTER_SUBCLASSES = new Set([
   "arcane trickster",
 ]);
 
+// Spellcasting ability by class name (derived from 5e.tools additionalSpells/casterProgression)
+const CLASS_SPELLCASTING_ABILITY: Record<string, keyof AbilityScores> = {
+  bard: "charisma",
+  cleric: "wisdom",
+  druid: "wisdom",
+  paladin: "charisma",
+  ranger: "wisdom",
+  sorcerer: "charisma",
+  warlock: "charisma",
+  wizard: "intelligence",
+};
+
 // ─── Main Builder ────────────────────────────────────────
 
 export function buildCharacter(
@@ -137,14 +165,14 @@ export function buildCharacter(
     if (dbSpell) {
       return {
         ...spell,
-        description: spell.description || dbSpell.description,
-        school: spell.school || dbSpell.school,
-        castingTime: spell.castingTime || dbSpell.castingTime,
-        range: spell.range || dbSpell.range,
-        components: spell.components || dbSpell.components,
-        duration: spell.duration || dbSpell.duration,
-        concentration: spell.concentration ?? dbSpell.concentration,
-        ritual: spell.ritual ?? dbSpell.ritual,
+        description: spell.description || entriesToText(dbSpell.entries),
+        school: spell.school || formatSchool(dbSpell.school),
+        castingTime: spell.castingTime || formatCastingTime(dbSpell),
+        range: spell.range || formatRange(dbSpell.range),
+        components: spell.components || formatComponents(dbSpell),
+        duration: spell.duration || formatDuration(dbSpell),
+        concentration: spell.concentration ?? isConcentration(dbSpell),
+        ritual: spell.ritual ?? isRitual(dbSpell),
       };
     }
     return spell;
@@ -162,9 +190,12 @@ export function buildCharacter(
   // === Senses ===
   const senses = computeSenses(ids, proficiencyBonus, skills);
 
+  const speciesName = ids.race;
+
   const staticData: CharacterStaticData = {
     name: ids.name,
-    race: ids.race,
+    species: speciesName,
+    race: speciesName, // legacy alias
     classes: ids.classes,
     abilities: ids.abilities,
     maxHP: Math.max(1, maxHP),
@@ -187,22 +218,20 @@ export function buildCharacter(
     appearance: ids.appearance,
     importedAt: Date.now(),
     source: ids.source,
-    sourceUrl: ids.sourceUrl,
-    ddbId: ids.ddbId,
   };
 
   const dynamicData: CharacterDynamicData = {
-    currentHP: ids.initialDynamic?.currentHP ?? staticData.maxHP,
-    tempHP: ids.initialDynamic?.tempHP ?? 0,
-    spellSlotsUsed: ids.initialDynamic?.spellSlotsUsed ?? regularSlots,
-    pactMagicSlots: ids.initialDynamic?.pactMagicSlots ?? pactSlots,
-    resourcesUsed: ids.initialDynamic?.resourcesUsed ?? {},
-    conditions: ids.initialDynamic?.conditions ?? [],
-    deathSaves: ids.initialDynamic?.deathSaves ?? { successes: 0, failures: 0 },
-    inventory: ids.initialDynamic?.inventory ?? ids.equipment,
-    currency: ids.initialDynamic?.currency ?? ids.currency ?? { cp: 0, sp: 0, ep: 0, gp: 0, pp: 0 },
-    xp: ids.initialDynamic?.xp ?? 0,
-    heroicInspiration: ids.initialDynamic?.heroicInspiration ?? false,
+    currentHP: staticData.maxHP,
+    tempHP: 0,
+    spellSlotsUsed: regularSlots,
+    pactMagicSlots: pactSlots,
+    resourcesUsed: {},
+    conditions: [],
+    deathSaves: { successes: 0, failures: 0 },
+    inventory: ids.equipment,
+    currency: ids.currency ?? { cp: 0, sp: 0, ep: 0, gp: 0, pp: 0 },
+    xp: 0,
+    heroicInspiration: false,
   };
 
   return {
@@ -230,21 +259,22 @@ function computeArmorClass(ids: CharacterIdentifiers): number {
       continue;
     }
     if (item.type === "Armor" && item.name) {
-      const armorData = getArmor(item.name);
-      if (armorData && armorData.category !== "shield") {
+      const baseItem = getBaseItem(item.name);
+      if (baseItem?.armor && baseItem.ac != null) {
         hasBodyArmor = true;
-        switch (armorData.category) {
-          case "light":
-            baseAC = armorData.ac + dexMod;
+        const typeCode = baseItem.type?.split("|")[0];
+        switch (typeCode) {
+          case "LA": // Light armor
+            baseAC = baseItem.ac + dexMod;
             break;
-          case "medium":
-            baseAC = armorData.ac + Math.min(dexMod, 2);
+          case "MA": // Medium armor
+            baseAC = baseItem.ac + Math.min(dexMod, 2);
             break;
-          case "heavy":
-            baseAC = armorData.ac;
+          case "HA": // Heavy armor
+            baseAC = baseItem.ac;
             break;
         }
-      } else if (!armorData && item.armorClass) {
+      } else if (!baseItem && item.armorClass) {
         // Fallback to item's AC if not found in DB
         hasBodyArmor = true;
         baseAC = item.armorClass + dexMod; // assume light
@@ -293,7 +323,8 @@ function computeArmorClass(ids: CharacterIdentifiers): number {
 function computeSpeed(ids: CharacterIdentifiers, featureNames: Set<string>): number {
   // Look up species base speed
   const speciesLower = ids.race.toLowerCase().replace(/\s*\(.*\)/, "");
-  let speed = getSpecies(speciesLower)?.speed ?? 30;
+  const speciesData = getSpecies(speciesLower);
+  let speed = speciesData ? getSpeciesSpeed(speciesData) : 30;
 
   const totalLevel = ids.classes.reduce((sum, c) => sum + c.level, 0);
   const classNames = ids.classes.map((c) => c.name.toLowerCase());
@@ -368,20 +399,25 @@ function computeSpellcasting(
 
   for (const cls of ids.classes) {
     const classData = getClass(cls.name);
-    if (!classData?.spellcastingAbility) {
-      // Check for third-caster subclasses
-      const subLc = (cls.subclass ?? "").toLowerCase();
-      if (THIRD_CASTER_SUBCLASSES.has(subLc)) {
-        if (cls.level > bestLevel) {
-          bestAbility = "intelligence";
-          bestLevel = cls.level;
-        }
+    const clsLower = cls.name.toLowerCase();
+
+    // Check for spellcasting ability from our map
+    const scAbility = CLASS_SPELLCASTING_ABILITY[clsLower];
+    if (scAbility && classData?.casterProgression) {
+      if (cls.level > bestLevel) {
+        bestAbility = scAbility;
+        bestLevel = cls.level;
       }
       continue;
     }
-    if (cls.level > bestLevel) {
-      bestAbility = classData.spellcastingAbility.toLowerCase() as keyof AbilityScores;
-      bestLevel = cls.level;
+
+    // Check for third-caster subclasses
+    const subLc = (cls.subclass ?? "").toLowerCase();
+    if (THIRD_CASTER_SUBCLASSES.has(subLc)) {
+      if (cls.level > bestLevel) {
+        bestAbility = "intelligence";
+        bestLevel = cls.level;
+      }
     }
   }
 
@@ -396,6 +432,31 @@ function computeSpellcasting(
 }
 
 // ─── Spell Slots ─────────────────────────────────────────
+
+function getClassSpellSlotsFromData(className: string, level: number): number[] {
+  const cls = getClass(className);
+  if (!cls) return [];
+
+  if (cls.casterProgression === "pact") {
+    const pactTable = getPactSlotTable(cls);
+    if (pactTable && level >= 1 && level <= pactTable.length) {
+      const entry = pactTable[level - 1];
+      const slots = new Array(9).fill(0);
+      if (entry.slotLevel >= 1) {
+        slots[entry.slotLevel - 1] = entry.slots;
+      }
+      return slots;
+    }
+    return [];
+  }
+
+  const slotTable = getSpellSlotTable(cls);
+  if (slotTable && level >= 1 && level <= slotTable.length) {
+    return slotTable[level - 1];
+  }
+
+  return [];
+}
 
 function computeSpellSlots(ids: CharacterIdentifiers): {
   regularSlots: SpellSlotLevel[];
@@ -416,14 +477,14 @@ function computeSpellSlots(ids: CharacterIdentifiers): {
     }
     const classData = getClass(cls.name);
     const subLc = (cls.subclass ?? "").toLowerCase();
-    if (classData?.casterType || THIRD_CASTER_SUBCLASSES.has(subLc)) {
+    if (classData?.casterProgression || THIRD_CASTER_SUBCLASSES.has(subLc)) {
       casterClasses.push(cls);
     }
   }
 
   // Warlock pact magic
   if (warlockLevel > 0) {
-    const slots = getClassSpellSlots("Warlock", warlockLevel);
+    const slots = getClassSpellSlotsFromData("Warlock", warlockLevel);
     if (slots && slots.length > 0) {
       for (let i = slots.length - 1; i >= 0; i--) {
         if (slots[i] > 0) {
@@ -443,13 +504,12 @@ function computeSpellSlots(ids: CharacterIdentifiers): {
   if (casterClasses.length === 1) {
     // Single caster class
     const cls = casterClasses[0];
-    const classData = getClass(cls.name);
     const subLc = (cls.subclass ?? "").toLowerCase();
 
     if (THIRD_CASTER_SUBCLASSES.has(subLc)) {
       slotRow = THIRD_CASTER_SLOTS[cls.level] ?? [];
-    } else if (classData?.casterType) {
-      slotRow = getClassSpellSlots(cls.name, cls.level);
+    } else {
+      slotRow = getClassSpellSlotsFromData(cls.name, cls.level);
     }
   } else {
     // Multiclass: compute weighted caster level
@@ -499,37 +559,35 @@ function computeFeatures(
     }
   }
 
-  // Class features from DB
+  // Class features from DB (now using Entry[] → text)
   for (const cls of ids.classes) {
     const dbFeatures = getClassFeatures(cls.name, cls.level);
     for (const dbf of dbFeatures) {
       addFeature({
         name: dbf.name,
-        description: dbf.description,
+        description: entriesToText(dbf.entries),
         source: "class",
         sourceLabel: cls.name,
         requiredLevel: dbf.level,
-        activationType: dbf.activationType,
       });
     }
 
-    // Subclass as a feature
+    // Subclass features from assembled data
     if (cls.subclass && !seen.has(cls.subclass)) {
-      // Check if DB has subclass features
       const classData = getClass(cls.name);
-      const subclassData = classData?.subclasses.find(
-        (s) => s.name.toLowerCase() === cls.subclass!.toLowerCase()
+      const subclassData = classData?.resolvedSubclasses.find(
+        (s) => s.name.toLowerCase() === cls.subclass!.toLowerCase() ||
+               s.shortName.toLowerCase() === cls.subclass!.toLowerCase()
       );
       if (subclassData) {
-        for (const sf of subclassData.features) {
+        for (const sf of subclassData.resolvedFeatures) {
           if (sf.level <= cls.level) {
             addFeature({
               name: sf.name,
-              description: sf.description,
+              description: entriesToText(sf.entries),
               source: "class",
               sourceLabel: `${cls.name} (${cls.subclass})`,
               requiredLevel: sf.level,
-              activationType: sf.activationType,
             });
           }
         }
@@ -553,23 +611,27 @@ function computeFeatures(
       // Enrich with DB description
       const idx = features.findIndex((f) => f.name === feat.name);
       if (idx >= 0) {
-        features[idx] = { ...features[idx], description: dbFeat.description };
+        features[idx] = { ...features[idx], description: entriesToText(dbFeat.entries) };
       }
     }
   }
 
-  // Species traits from DB
+  // Species traits from DB (now uses entries instead of traits array)
   const speciesLower = ids.race.toLowerCase().replace(/\s*\(.*\)/, "");
   const speciesData = getSpecies(speciesLower);
-  if (speciesData) {
-    for (const trait of speciesData.traits) {
-      addFeature({
-        name: trait.name,
-        description: trait.description,
-        source: "race",
-        sourceLabel: ids.race,
-        activationType: trait.activationType,
-      });
+  if (speciesData?.entries) {
+    for (const entry of speciesData.entries) {
+      if (typeof entry !== "string" && entry && typeof entry === "object" && "type" in entry) {
+        const e = entry as { type: string; name?: string; entries?: unknown[] };
+        if (e.type === "entries" && e.name && e.entries) {
+          addFeature({
+            name: e.name,
+            description: entriesToText(e.entries as import("../data/entry-types").Entry[]),
+            source: "race",
+            sourceLabel: ids.race,
+          });
+        }
+      }
     }
   }
 
@@ -585,10 +647,9 @@ function computeClassResources(ids: CharacterIdentifiers): ClassResource[] {
   const proficiencyBonus = Math.ceil(totalLevel / 4) + 1;
 
   for (const cls of ids.classes) {
-    const classData = getClass(cls.name);
-    if (!classData) continue;
+    const templates = getClassResources(cls.name);
 
-    for (const template of classData.resources) {
+    for (const template of templates) {
       if (cls.level < template.levelAvailable) continue;
       if (seen.has(template.name)) continue;
       seen.add(template.name);
@@ -660,15 +721,15 @@ function computeProficiencies(ids: CharacterIdentifiers): ProficiencyGroup {
     };
   }
 
-  // Compute from DB
+  // Compute from DB using 5e.tools utility functions
   const armorSet = new Set<string>();
   const weaponSet = new Set<string>();
 
   for (const cls of ids.classes) {
     const classData = getClass(cls.name);
     if (!classData) continue;
-    for (const a of classData.armorProficiencies) armorSet.add(a);
-    for (const w of classData.weaponProficiencies) weaponSet.add(w);
+    for (const a of getArmorProfs(classData)) armorSet.add(a);
+    for (const w of getWeaponProfs(classData)) weaponSet.add(w);
   }
 
   return {

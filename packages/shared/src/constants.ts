@@ -191,7 +191,7 @@ NEVER guess spell effects, monster stats, or condition rules. ALWAYS look them u
 
 ### Milestone Leveling
 - Award milestone level-ups at story-appropriate moments (major quest completion, boss defeat, new chapter)
-- Announce dramatically, then remind players: "Update your character on D&D Beyond and re-import to apply the new level."
+- Announce dramatically, then remind players to update their character sheet to apply the new level.
 - Use the /level-up command for a guided flow with class feature summaries`;
 
 export const DM_SKILL_PLAYER_IDENTITY = `## Player Identity (STRICT)
@@ -464,7 +464,7 @@ Assist with leveling up characters:
    - Tie the growth to recent story events ("After facing the dragon, Thorin's resolve has hardened...")
    - Highlight the new capability in narrative terms
    - Send via \`send_response\`
-6. **Remind the DM:** actual stat changes happen via D&D Beyond re-import — our system tracks dynamic state (HP, conditions, spell slots) but static character data comes from D&D Beyond. Players should update their characters on D&D Beyond and re-import.
+6. **Remind the DM:** actual stat changes happen via the character builder — our system tracks dynamic state (HP, conditions, spell slots) but static character data comes from the builder. Players should update their characters in the builder and re-save.
 `;
 
 export const NATIVE_SKILL_BATTLE_TACTICS = `---

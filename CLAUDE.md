@@ -1,7 +1,7 @@
 # AI Dungeon Master (AIDND)
 
 ## Project Overview
-AI-powered D&D 5e web app where an AI acts as the Dungeon Master. Players import D&D Beyond characters, join multiplayer rooms via WebSocket, and play through AI-generated campaigns. Claude Code acts as the AI DM via an MCP bridge that owns all game logic and connects to the game server as a participant.
+AI-powered D&D 5e web app where an AI acts as the Dungeon Master. Players create characters via the built-in character builder (powered by native 5e.tools data), join multiplayer rooms via WebSocket, and play through AI-generated campaigns. Claude Code acts as the AI DM via an MCP bridge that owns all game logic and connects to the game server as a participant.
 
 **Notion GDD:** https://www.notion.so/309fc254bf8381c18e37c2b5ee4d8641
 
@@ -40,7 +40,7 @@ packages/shared/   → Shared types (Zod 4 schemas), constants, utils, dice, che
 ### Key Patterns
 - **Discriminated unions** for all message types (ClientMessage/ServerMessage)
 - **Event sourcing** for game state changes (GameEvent log)
-- **CharacterData split:** `static` (from D&D Beyond import) + `dynamic` (HP, spell slots, conditions — owned by our system)
+- **CharacterData split:** `static` (from character builder) + `dynamic` (HP, spell slots, conditions — owned by our system)
 - **Bridge-owned game state:** GameStateManager in the MCP bridge owns all game logic — combat, dice, HP, conditions, conversation history, game state sync
 - **player_action/broadcast** WebSocket contract: worker forwards player actions to bridge as `server:player_action`, bridge processes and sends results back as `client:broadcast`
 - **MCP tool-use** for game state mutation (damage, combat, spell slots), D&D reference (spells, monsters, conditions), dice rolling, campaign persistence
@@ -114,7 +114,7 @@ pnpm deploy:web     # Deploy web only
 - `app/rooms/[roomCode]/page.tsx` — Game room page (handles campaign config, DM config updates, character restoration)
 - `hooks/useWebSocket.ts` — WebSocket lifecycle, reconnection, message validation
 - `hooks/useAuth.ts` — Google OAuth flow
-- `hooks/useCharacterImport.ts` — D&D Beyond character import
+- `hooks/useCharacterImport.ts` — Character file import (.aidnd.json)
 - `components/chat/ChatPanel.tsx` — Main chat interface
 - `components/character/CharacterSheet.tsx` — D&D character sheet display
 - `components/character/LeftSidebar.tsx` — Left sidebar with character details
@@ -240,7 +240,7 @@ pnpm deploy:web     # Deploy web only
 
 ## GDD Progress (Phase Completion)
 - Phase 1 (Foundation): COMPLETE — multiplayer chat, multi-provider AI, OAuth, reconnection
-- Phase 2 (Character Integration): COMPLETE — D&D Beyond import, character sheet, party list
+- Phase 2 (Character Integration): COMPLETE — character builder, character sheet, party list, native 5e.tools database
 - Phase 3 (Game State & Rules): COMPLETE — dice, spell tracking, HP, state resolver, initiative, skill check flow, event log with rollback, editable system prompt
 - Phase 4 (Battle Map): COMPLETE — CSS Grid map renderer, token placement, click-to-move with BFS range highlighting, conditions on tokens, InitiativeTracker integration. Architecture migration: extension → MCP bridge, worker → pure relay
 - Phase 5 (Campaign Persistence): IN PROGRESS — campaign config UI (CampaignConfigModal), local file persistence (.aidnd/campaigns/), campaign manifest with session tracking, character snapshots, system prompt persistence. D1 database NOT YET started
@@ -248,7 +248,7 @@ pnpm deploy:web     # Deploy web only
 
 ## Testing
 - **Automated tests** (Playwright) live in `tests/` and `playwright.config.ts` at the repo root — these are committed to the repo.
-- **Temporary test artifacts** (snapshots, reports, screenshots, DDB JSON dumps) go in `.testing/` which is gitignored. Always place disposable/generated test-related files here so they stay out of git.
+- **Temporary test artifacts** (snapshots, reports, screenshots) go in `.testing/` which is gitignored. Always place disposable/generated test-related files here so they stay out of git.
 - `pnpm test` — starts dev servers, runs all tests, then stops servers
 - `pnpm test:ui` — opens Playwright UI runner (servers must be running)
 

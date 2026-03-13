@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import type { AbilityScores } from "@aidnd/shared/types";
 import type { FeatData } from "@aidnd/shared/data";
 import { getFeat } from "@aidnd/shared/data";
 import type { StepProps, ASISelection } from "./types";
 import { getSpellsByClass } from "@aidnd/shared/data";
-import { getASILevels, getEligibleFeats, getFinalAbilities, getAbilityMod, getFeatAbilityChoices, ALL_SKILLS, formatSkillName } from "./utils";
+import { formatPrerequisite, entriesToText, formatFeatCategory } from "@aidnd/shared";
+import { getASILevelsForClasses, getEligibleFeats, getFinalAbilities, getAbilityMod, getFeatAbilityChoices, ALL_SKILLS, formatSkillName } from "./utils";
 import { ClassASIPicker } from "./ASIAbilityPicker";
-import { Prose } from "../Prose";
+import { RichText } from "@/components/ui/RichText";
 
 const ABILITY_KEYS: (keyof AbilityScores)[] = [
   "strength", "dexterity", "constitution", "intelligence", "wisdom", "charisma",
@@ -19,10 +21,13 @@ const ABILITY_ABBREV: Record<keyof AbilityScores, string> = {
 
 export function StepFeats({ state, dispatch }: StepProps) {
   const asiLevels = useMemo(
-    () => (state.className ? getASILevels(state.className, state.level) : []),
-    [state.className, state.level]
+    () => state.classes.length > 0
+      ? getASILevelsForClasses(state.classes.map((c, i) => ({ className: c.className, level: c.level, classIndex: i })))
+      : [],
+    [state.classes]
   );
 
+  const totalLevel = state.classes.reduce((sum, c) => sum + c.level, 0);
   const finalAbilities = useMemo(() => getFinalAbilities(state), [state]);
 
   return (
@@ -35,22 +40,41 @@ export function StepFeats({ state, dispatch }: StepProps) {
         <div className="h-px bg-gradient-to-r from-amber-500/30 via-gray-700/50 to-transparent mt-2" />
       </div>
 
-      {asiLevels.map((level) => {
-        const sel = state.asiSelections.find((s) => s.level === level);
-        return (
-          <ASICard
-            key={level}
-            level={level}
-            selection={sel ?? null}
-            allSelections={state.asiSelections}
-            currentScores={finalAbilities}
-            characterLevel={state.level}
-            onChange={(selection) =>
-              dispatch({ type: "SET_ASI_SELECTION", level, selection })
-            }
-          />
-        );
-      })}
+      <motion.div
+        className="space-y-4"
+        initial="hidden"
+        animate="visible"
+        variants={{
+          hidden: {},
+          visible: { transition: { staggerChildren: 0.07 } },
+        }}
+      >
+        {asiLevels.map((asi) => {
+          const sel = state.asiSelections.find((s) => s.classIndex === asi.classIndex && s.level === asi.level);
+          return (
+            <motion.div
+              key={`${asi.classIndex}-${asi.level}`}
+              variants={{
+                hidden: { opacity: 0, y: 12 },
+                visible: { opacity: 1, y: 0, transition: { duration: 0.25 } },
+              }}
+            >
+              <ASICard
+                classIndex={asi.classIndex}
+                dndClassName={asi.className}
+                level={asi.level}
+                selection={sel ?? null}
+                allSelections={state.asiSelections}
+                currentScores={finalAbilities}
+                characterLevel={totalLevel}
+                onChange={(selection) =>
+                  dispatch({ type: "SET_ASI_SELECTION", classIndex: asi.classIndex, level: asi.level, selection })
+                }
+              />
+            </motion.div>
+          );
+        })}
+      </motion.div>
 
       {/* Final Ability Score Preview */}
       <div className="bg-gray-800/40 border border-gray-700/40 rounded-lg p-4">
@@ -83,6 +107,8 @@ export function StepFeats({ state, dispatch }: StepProps) {
 }
 
 function ASICard({
+  classIndex,
+  dndClassName,
   level,
   selection,
   allSelections,
@@ -90,6 +116,8 @@ function ASICard({
   characterLevel,
   onChange,
 }: {
+  classIndex: number;
+  dndClassName: string;
   level: number;
   selection: ASISelection | null;
   allSelections: ASISelection[];
@@ -100,36 +128,41 @@ function ASICard({
   const type = selection?.type ?? "asi";
 
   return (
-    <div className="bg-gray-800/60 border border-gray-700/40 rounded-lg p-4 space-y-3">
+    <div className="bg-gray-800/60 border border-gray-700/40 rounded-xl p-4 space-y-3">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30 font-medium">
-            Level {level}
-          </span>
-          <span className="text-xs text-gray-400">
-            Ability Score Improvement
-          </span>
+        <div className="flex items-center gap-2.5">
+          {/* Class/level badge — more visually distinct */}
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-gradient-to-r from-amber-500/20 to-amber-600/10 border border-amber-500/40 shadow-[0_0_8px_rgba(251,191,36,0.08)]">
+            <svg className="w-3 h-3 text-amber-400/80" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+            </svg>
+            <span className="text-[11px] font-semibold text-amber-300 tracking-wide" style={{ fontFamily: "var(--font-cinzel)" }}>
+              {dndClassName}
+            </span>
+            <span className="text-[10px] text-amber-400/60">Lv {level}</span>
+          </div>
+          <span className="text-xs text-gray-500">ASI</span>
         </div>
         <div className="flex gap-1">
           <button
             onClick={() =>
-              onChange({ level, type: "asi", asiChoice: { mode: "two", abilities: {} } })
+              onChange({ classIndex, level, type: "asi", asiChoice: { mode: "two", abilities: {} } })
             }
-            className={`text-[10px] px-2.5 py-1 rounded transition-colors ${
+            className={`text-[10px] px-2.5 py-1 rounded-md transition-colors ${
               type === "asi"
                 ? "bg-amber-500/15 text-amber-300 border border-amber-500/30"
-                : "text-gray-500 border border-gray-700 hover:text-gray-300"
+                : "text-gray-500 border border-gray-700 hover:text-gray-300 hover:border-gray-600"
             }`}
           >
             Ability Score
           </button>
           <button
-            onClick={() => onChange({ level, type: "feat" })}
-            className={`text-[10px] px-2.5 py-1 rounded transition-colors ${
+            onClick={() => onChange({ classIndex, level, type: "feat" })}
+            className={`text-[10px] px-2.5 py-1 rounded-md transition-colors ${
               type === "feat"
                 ? "bg-amber-500/15 text-amber-300 border border-amber-500/30"
-                : "text-gray-500 border border-gray-700 hover:text-gray-300"
+                : "text-gray-500 border border-gray-700 hover:text-gray-300 hover:border-gray-600"
             }`}
           >
             Feat
@@ -137,34 +170,56 @@ function ASICard({
         </div>
       </div>
 
-      {/* Content */}
-      {type === "asi" ? (
-        <ASIContent
-          level={level}
-          selection={selection}
-          currentScores={currentScores}
-          onChange={onChange}
-        />
-      ) : (
-        <FeatContent
-          level={level}
-          selection={selection}
-          allSelections={allSelections}
-          characterLevel={characterLevel}
-          currentScores={currentScores}
-          onChange={onChange}
-        />
-      )}
+      {/* Content — animated swap between ASI and Feat */}
+      <AnimatePresence mode="wait">
+        {type === "asi" ? (
+          <motion.div
+            key="asi"
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.18 }}
+          >
+            <ASIContent
+              classIndex={classIndex}
+              level={level}
+              selection={selection}
+              currentScores={currentScores}
+              onChange={onChange}
+            />
+          </motion.div>
+        ) : (
+          <motion.div
+            key="feat"
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.18 }}
+          >
+            <FeatContent
+              classIndex={classIndex}
+              level={level}
+              selection={selection}
+              allSelections={allSelections}
+              characterLevel={characterLevel}
+              currentScores={currentScores}
+              onChange={onChange}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
 
 function ASIContent({
+  classIndex,
   level,
   selection,
   currentScores,
   onChange,
 }: {
+  classIndex: number;
   level: number;
   selection: ASISelection | null;
   currentScores: AbilityScores;
@@ -177,7 +232,7 @@ function ASIContent({
       <div className="flex gap-2">
         <button
           onClick={() =>
-            onChange({ level, type: "asi", asiChoice: { mode: "two", abilities: {} } })
+            onChange({ classIndex, level, type: "asi", asiChoice: { mode: "two", abilities: {} } })
           }
           className={`text-[10px] px-2 py-1 rounded ${
             mode === "two"
@@ -189,7 +244,7 @@ function ASIContent({
         </button>
         <button
           onClick={() =>
-            onChange({ level, type: "asi", asiChoice: { mode: "one-one", abilities: {} } })
+            onChange({ classIndex, level, type: "asi", asiChoice: { mode: "one-one", abilities: {} } })
           }
           className={`text-[10px] px-2 py-1 rounded ${
             mode === "one-one"
@@ -205,7 +260,7 @@ function ASIContent({
         mode={mode}
         assignments={selection?.asiChoice?.abilities ?? {}}
         onChange={(abilities) =>
-          onChange({ level, type: "asi", asiChoice: { mode, abilities } })
+          onChange({ classIndex, level, type: "asi", asiChoice: { mode, abilities } })
         }
         currentScores={currentScores}
       />
@@ -214,6 +269,7 @@ function ASIContent({
 }
 
 function FeatContent({
+  classIndex,
   level,
   selection,
   allSelections,
@@ -221,6 +277,7 @@ function FeatContent({
   currentScores,
   onChange,
 }: {
+  classIndex: number;
   level: number;
   selection: ASISelection | null;
   allSelections: ASISelection[];
@@ -229,18 +286,18 @@ function FeatContent({
   onChange: (selection: ASISelection) => void;
 }) {
   const [search, setSearch] = useState("");
-  const [category, setCategory] = useState<"all" | "general" | "epic-boon">("all");
+  const [category, setCategory] = useState<"all" | "G" | "EB">("all");
 
   // Feats already taken at other ASI levels (non-repeatable can't be picked again)
   const takenAtOtherLevels = useMemo(() => {
     const names = new Set<string>();
     for (const sel of allSelections) {
-      if (sel.type === "feat" && sel.featName && sel.level !== level) {
+      if (sel.type === "feat" && sel.featName && !(sel.classIndex === classIndex && sel.level === level)) {
         names.add(sel.featName.toLowerCase());
       }
     }
     return names;
-  }, [allSelections, level]);
+  }, [allSelections, classIndex, level]);
 
   const eligibleFeats = useMemo(
     () => getEligibleFeats(characterLevel),
@@ -261,7 +318,7 @@ function FeatContent({
       list = list.filter((f) => f.name.toLowerCase().includes(q));
     }
     return list;
-  }, [eligibleFeats, category, search]);
+  }, [eligibleFeats, category, search, takenAtOtherLevels]);
 
   const selectedFeat = selection?.featName
     ? getFeat(selection.featName)
@@ -279,17 +336,19 @@ function FeatContent({
           className="flex-1 bg-gray-900/60 border border-gray-700/60 rounded px-2.5 py-1.5 text-xs text-gray-100 placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-amber-500/50"
         />
         <div className="flex gap-1">
-          {(["all", "general", "epic-boon"] as const).map((cat) => (
+          {(["all", "G", "EB"] as const).map((cat) => (
             <button
               key={cat}
               onClick={() => setCategory(cat)}
-              className={`text-[10px] px-2 py-1 rounded whitespace-nowrap ${
+              className={`text-[10px] px-2 py-1 rounded whitespace-nowrap transition-colors ${
                 category === cat
-                  ? "bg-amber-500/15 text-amber-300 border border-amber-500/30"
-                  : "text-gray-500 border border-gray-700"
+                  ? cat === "EB"
+                    ? "bg-amber-600/20 text-amber-300 border border-amber-500/40"
+                    : "bg-amber-500/15 text-amber-300 border border-amber-500/30"
+                  : "text-gray-500 border border-gray-700 hover:text-gray-400 hover:border-gray-600"
               }`}
             >
-              {cat === "all" ? "All" : cat === "general" ? "General" : "Epic Boon"}
+              {cat === "all" ? "All" : formatFeatCategory(cat)}
             </button>
           ))}
         </div>
@@ -297,22 +356,29 @@ function FeatContent({
 
       {/* Feat List */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-64 overflow-y-auto pr-1">
-        {filtered.map((feat) => (
-          <FeatCard
+        {filtered.map((feat, i) => (
+          <motion.div
             key={feat.name}
-            feat={feat}
-            isSelected={selection?.featName === feat.name}
-            onSelect={() =>
-              onChange({
-                level,
-                type: "feat",
-                featName: feat.name,
-                featAbilityChoice: selection?.featName === feat.name
-                  ? selection?.featAbilityChoice
-                  : undefined,
-              })
-            }
-          />
+            initial={{ opacity: 0, scale: 0.97 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.15, delay: Math.min(i * 0.02, 0.3) }}
+          >
+            <FeatCard
+              feat={feat}
+              isSelected={selection?.featName === feat.name}
+              onSelect={() =>
+                onChange({
+                  classIndex,
+                  level,
+                  type: "feat",
+                  featName: feat.name,
+                  featAbilityChoice: selection?.featName === feat.name
+                    ? selection?.featAbilityChoice
+                    : undefined,
+                })
+              }
+            />
+          </motion.div>
         ))}
         {filtered.length === 0 && (
           <div className="col-span-2 text-xs text-gray-600 py-4 text-center">
@@ -322,16 +388,45 @@ function FeatContent({
       </div>
 
       {/* Selected Feat Detail */}
-      {selectedFeat && (
-        <SelectedFeatDetail
-          feat={selectedFeat}
-          selection={selection!}
-          level={level}
-          currentScores={currentScores}
-          onChange={onChange}
-        />
-      )}
+      <AnimatePresence>
+        {selectedFeat && (
+          <motion.div
+            key={selectedFeat.name}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2 }}
+          >
+            <SelectedFeatDetail
+              feat={selectedFeat}
+              selection={selection!}
+              classIndex={classIndex}
+              level={level}
+              currentScores={currentScores}
+              onChange={onChange}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
+  );
+}
+
+function CategoryBadge({ category }: { category: string }) {
+  if (category === "EB") {
+    return (
+      <span className="inline-flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded-full bg-amber-600/20 text-amber-300 border border-amber-500/35 font-medium uppercase tracking-wide">
+        <svg className="w-2 h-2 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
+          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+        </svg>
+        Epic Boon
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center text-[9px] px-1.5 py-0.5 rounded-full bg-gray-700/60 text-gray-400 border border-gray-600/40 font-medium uppercase tracking-wide">
+      General
+    </span>
   );
 }
 
@@ -349,26 +444,40 @@ function FeatCard({
   return (
     <button
       onClick={onSelect}
-      className={`text-left p-2.5 rounded-lg border transition-colors ${
+      className={`w-full text-left p-3 rounded-lg border transition-all ${
         isSelected
-          ? "border-amber-500/50 bg-amber-500/10 text-amber-200"
-          : "border-gray-700/50 bg-gray-900/60 text-gray-300 hover:border-gray-600"
+          ? "border-amber-500/50 bg-amber-500/10 shadow-[0_0_12px_rgba(251,191,36,0.08)]"
+          : "border-gray-700/50 bg-gray-900/60 hover:border-gray-600 hover:bg-gray-900/80"
       }`}
     >
-      <div className="text-xs font-medium truncate">{feat.name}</div>
+      {/* Name + category badge row */}
+      <div className="flex items-start justify-between gap-2 mb-1">
+        <span className={`text-sm font-semibold leading-tight ${isSelected ? "text-amber-200" : "text-gray-200"}`}>
+          {feat.name}
+        </span>
+        <CategoryBadge category={feat.category} />
+      </div>
+
+      {/* Prerequisite */}
       {feat.prerequisite && (
-        <div className="text-[10px] text-amber-500/80 mt-0.5 truncate">
-          {feat.prerequisite}
+        <div className="flex items-center gap-1 mt-1 mb-1">
+          <svg className="w-2.5 h-2.5 text-orange-400/80 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+          </svg>
+          <span className="text-[10px] text-orange-400/80">
+            {formatPrerequisite(feat.prerequisite)}
+          </span>
         </div>
       )}
-      <div className="text-[10px] text-gray-500 mt-0.5 line-clamp-2">
+
+      {/* Summary */}
+      <div className="text-[10px] text-gray-500 line-clamp-2 mt-0.5">
         {abilityChoices.length > 0 && (
-          <span className="text-emerald-500">
-            +1 {abilityChoices.map((a) => ABILITY_ABBREV[a]).join("/")}
-            {" · "}
+          <span className="text-emerald-500/90 mr-1">
+            +1 {abilityChoices.map((a) => ABILITY_ABBREV[a]).join("/")} ·
           </span>
         )}
-        {feat.description.slice(0, 100)}...
+        {entriesToText(feat.entries).slice(0, 100)}...
       </div>
     </button>
   );
@@ -377,12 +486,14 @@ function FeatCard({
 function SelectedFeatDetail({
   feat,
   selection,
+  classIndex,
   level,
   currentScores,
   onChange,
 }: {
   feat: FeatData;
   selection: ASISelection;
+  classIndex: number;
   level: number;
   currentScores: AbilityScores;
   onChange: (selection: ASISelection) => void;
@@ -391,27 +502,34 @@ function SelectedFeatDetail({
   const needsAbilityChoice = abilityChoices.length > 1;
 
   return (
-    <div className="bg-gray-900/60 border border-amber-500/20 rounded-lg p-3 space-y-2">
-      <div className="flex items-center justify-between">
-        <div className="text-sm font-medium text-amber-300/90" style={{ fontFamily: "var(--font-cinzel)" }}>{feat.name}</div>
-        <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-800 text-gray-500 capitalize">
-          {feat.category.replace("-", " ")}
-        </span>
+    <div className="bg-gray-900/70 border border-amber-500/30 rounded-xl p-4 space-y-2.5 shadow-[0_0_16px_rgba(251,191,36,0.07),inset_0_0_0_1px_rgba(251,191,36,0.04)]">
+      {/* Detail header */}
+      <div className="flex items-center justify-between gap-2">
+        <div className="text-sm font-semibold text-amber-200" style={{ fontFamily: "var(--font-cinzel)" }}>
+          {feat.name}
+        </div>
+        <CategoryBadge category={feat.category} />
       </div>
 
       {feat.prerequisite && (
-        <div className="text-[10px] text-amber-500/80">
-          Prerequisite: {feat.prerequisite}
+        <div className="flex items-center gap-1.5 px-2 py-1.5 rounded-md bg-orange-500/8 border border-orange-500/20">
+          <svg className="w-3 h-3 text-orange-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+          </svg>
+          <span className="text-[11px] text-orange-300/90">
+            <span className="text-orange-400/70 font-medium">Prerequisite:</span>{" "}
+            {formatPrerequisite(feat.prerequisite)}
+          </span>
         </div>
       )}
 
       <div className="line-clamp-6">
-        <Prose className="text-xs text-gray-400">{feat.description}</Prose>
+        <RichText entries={feat.entries} className="text-xs text-gray-400" />
       </div>
 
       {/* Ability Score Choice */}
       {abilityChoices.length > 0 && (
-        <div className="pt-1 border-t border-gray-800">
+        <div className="pt-2 border-t border-gray-800">
           <div className="text-[10px] text-gray-500 font-medium mb-1.5">
             {needsAbilityChoice
               ? "Choose +1 ability score:"
@@ -430,15 +548,17 @@ function SelectedFeatDetail({
                         featAbilityChoice: isChosen ? undefined : key,
                       })
                     }
-                    className={`text-[10px] px-2 py-1 rounded transition-colors ${
+                    className={`text-[10px] px-2.5 py-1 rounded-md transition-colors ${
                       isChosen
-                        ? "bg-amber-500/80 text-white"
-                        : "bg-gray-800 text-gray-400 hover:text-gray-200"
+                        ? "bg-amber-500/80 text-white shadow-[0_0_6px_rgba(251,191,36,0.3)]"
+                        : "bg-gray-800 text-gray-400 hover:text-gray-200 border border-gray-700 hover:border-gray-600"
                     }`}
                   >
                     {ABILITY_ABBREV[key]}
                     {currentScores[key] !== undefined && (
-                      <span className="ml-1 text-gray-500">({currentScores[key]})</span>
+                      <span className={`ml-1 ${isChosen ? "text-amber-200/70" : "text-gray-500"}`}>
+                        ({currentScores[key]})
+                      </span>
                     )}
                   </button>
                 );
@@ -456,16 +576,16 @@ function SelectedFeatDetail({
       )}
 
       {/* Proficiency grants */}
-      {feat.proficiencies && (
+      {(feat.armorProficiencies || feat.weaponProficiencies || feat.toolProficiencies) && (
         <div className="text-[10px] text-gray-500">
-          {feat.proficiencies.armor && (
-            <span>Armor: {feat.proficiencies.armor.join(", ")} · </span>
+          {feat.armorProficiencies && (
+            <span>Armor: {feat.armorProficiencies.flatMap(p => Object.keys(p).filter(k => p[k])).join(", ")} · </span>
           )}
-          {feat.proficiencies.weapons && (
-            <span>Weapons: {feat.proficiencies.weapons.join(", ")} · </span>
+          {feat.weaponProficiencies && (
+            <span>Weapons: {feat.weaponProficiencies.flatMap(p => Object.keys(p).filter(k => p[k])).join(", ")} · </span>
           )}
-          {feat.proficiencies.tools && (
-            <span>Tools: {feat.proficiencies.tools.join(", ")}</span>
+          {feat.toolProficiencies && (
+            <span>Tools: {feat.toolProficiencies.flatMap(p => Object.keys(p).filter(k => p[k])).join(", ")}</span>
           )}
         </div>
       )}
@@ -473,7 +593,7 @@ function SelectedFeatDetail({
       {/* Speed bonus */}
       {feat.speed && (
         <div className="text-[10px] text-emerald-500">
-          +{feat.speed} ft. speed
+          +{typeof feat.speed === "number" ? feat.speed : Object.values(feat.speed)[0]} ft. speed
         </div>
       )}
 

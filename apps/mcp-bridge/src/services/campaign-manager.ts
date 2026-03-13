@@ -390,7 +390,7 @@ export class CampaignManager {
               ?.map((c: { name: string; level: number }) => `${c.name} ${c.level}`)
               .join("/");
             charSummaries.push(
-              `- **${s.name}** (${s.race} ${classes}) — HP ${d.currentHP}/${s.maxHP}, AC ${s.armorClass}`
+              `- **${s.name}** (${s.species || s.race} ${classes}) — HP ${d.currentHP}/${s.maxHP}, AC ${s.armorClass}`
             );
           } catch {
             // skip

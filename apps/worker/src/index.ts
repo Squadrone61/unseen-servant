@@ -1,8 +1,6 @@
 import { GameRoom } from "./durable-objects/game-room";
 import { getGoogleAuthURL, handleGoogleCallback } from "./auth/google";
 import { verifyJWT } from "./auth/jwt";
-import { parseDDBCharacter } from "./services/ddb-parser";
-import { extractDDBCharacterId, fetchDDBCharacter, DDBFetchError } from "./services/ddb-fetcher";
 import type { Env, RoomMeta } from "./types";
 
 export { GameRoom };
@@ -143,85 +141,6 @@ export default {
       const roomId = env.GAME_ROOM.idFromName(roomCode);
       const room = env.GAME_ROOM.get(roomId);
       return room.fetch(request);
-    }
-
-    // POST /api/character/import — parse a DDB character from URL or JSON
-    if (url.pathname === "/api/character/import" && request.method === "POST") {
-      try {
-        const body = (await request.json()) as {
-          mode: "url" | "json";
-          url?: string;
-          json?: unknown;
-        };
-
-        if (body.mode === "url") {
-          if (!body.url) {
-            return new Response(
-              JSON.stringify({ error: "URL is required", code: "MISSING_URL" }),
-              { status: 400, headers: { "Content-Type": "application/json", ...cors } }
-            );
-          }
-
-          const characterId = extractDDBCharacterId(body.url);
-          if (!characterId) {
-            return new Response(
-              JSON.stringify({
-                error: "Invalid D&D Beyond URL. Expected format: dndbeyond.com/characters/12345678",
-                code: "INVALID_URL",
-              }),
-              { status: 400, headers: { "Content-Type": "application/json", ...cors } }
-            );
-          }
-
-          try {
-            const rawData = await fetchDDBCharacter(characterId);
-            const { character, warnings } = parseDDBCharacter(rawData);
-            character.static.sourceUrl = body.url;
-            return new Response(
-              JSON.stringify({ character, warnings }),
-              { headers: { "Content-Type": "application/json", ...cors } }
-            );
-          } catch (e) {
-            if (e instanceof DDBFetchError) {
-              return new Response(
-                JSON.stringify({
-                  error: e.message,
-                  code: e.code,
-                  fallbackHint: "Try using JSON paste mode instead.",
-                }),
-                { status: 422, headers: { "Content-Type": "application/json", ...cors } }
-              );
-            }
-            throw e;
-          }
-        }
-
-        if (body.mode === "json") {
-          if (!body.json) {
-            return new Response(
-              JSON.stringify({ error: "JSON data is required", code: "MISSING_JSON" }),
-              { status: 400, headers: { "Content-Type": "application/json", ...cors } }
-            );
-          }
-
-          const { character, warnings } = parseDDBCharacter(body.json);
-          return new Response(
-            JSON.stringify({ character, warnings }),
-            { headers: { "Content-Type": "application/json", ...cors } }
-          );
-        }
-
-        return new Response(
-          JSON.stringify({ error: "Mode must be 'url' or 'json'", code: "INVALID_MODE" }),
-          { status: 400, headers: { "Content-Type": "application/json", ...cors } }
-        );
-      } catch (e) {
-        const message = e instanceof Error ? e.message : "Failed to import character";
-        return new Response(
-          JSON.stringify({ error: message, code: "PARSE_ERROR" }),
-          { status: 422, headers: { "Content-Type": "application/json", ...cors } }
-        );
-      }
     }
 
     // GET /api/health

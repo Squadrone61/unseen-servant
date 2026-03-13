@@ -1,9 +1,25 @@
+"use client";
+
 import { useMemo, useState } from "react";
-import { backgroundsArray, getBackground, getFeat, getSpellsByClass } from "@aidnd/shared/data";
+import { motion } from "framer-motion";
+import { backgroundsArray, getBackground, getFeat, getSpellsByClass, languagesArray } from "@aidnd/shared/data";
 import type { BackgroundData } from "@aidnd/shared/data";
 import type { StepProps } from "./types";
-import { parseBackgroundFeat, parseBackgroundAbilityScores, formatSkillName, ALL_SKILLS } from "./utils";
-import { Prose } from "../Prose";
+import { formatSkillName, ALL_SKILLS } from "./utils";
+import {
+  getBackgroundSkills,
+  getBackgroundTools,
+  getBackgroundFeat,
+  getBackgroundAbilityScores,
+  ABILITY_MAP,
+} from "@aidnd/shared";
+import { RichText } from "@/components/ui/RichText";
+import { gridItem, cardHover } from "./animations";
+
+const STANDARD_LANGUAGES = languagesArray
+  .filter((l) => l.type === "standard" && l.name !== "Common")
+  .map((l) => l.name);
+const BACKGROUND_LANG_COUNT = 2;
 
 export function StepBackground({ state, dispatch }: StepProps) {
   const [search, setSearch] = useState("");
@@ -15,6 +31,10 @@ export function StepBackground({ state, dispatch }: StepProps) {
   }, [search]);
 
   const selected = state.background ? getBackground(state.background) : null;
+
+  function handleSelect(bgName: string) {
+    dispatch({ type: "SET_BACKGROUND", background: bgName });
+  }
 
   return (
     <div className="space-y-5">
@@ -31,73 +51,149 @@ export function StepBackground({ state, dispatch }: StepProps) {
         <div className="h-px bg-gradient-to-r from-amber-500/30 via-gray-700/50 to-transparent mt-2" />
       </div>
 
-      <div className="flex gap-6">
-        {/* Left: Grid */}
-        <div className="flex-1 min-w-0">
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search backgrounds..."
-            className="w-full bg-gray-900/60 border border-gray-700/60 rounded-lg px-3 py-2 text-sm text-gray-100 placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-amber-500/50 focus:border-amber-500/30 transition-colors mb-3"
-          />
-          <div className="max-h-[420px] overflow-y-auto pr-1">
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {filtered.map((bg) => (
-                <button
-                  key={bg.name}
-                  onClick={() =>
-                    dispatch({ type: "SET_BACKGROUND", background: bg.name })
-                  }
-                  className={`text-left px-3 py-2.5 rounded-lg border text-sm transition-all duration-200 ${
-                    state.background === bg.name
-                      ? "border-amber-500/50 bg-amber-500/10 text-amber-200 shadow-[0_0_12px_rgba(245,158,11,0.08)]"
-                      : "border-gray-700/50 bg-gray-800/50 text-gray-300 hover:border-gray-600 hover:bg-gray-800"
-                  }`}
-                >
-                  <div className="font-medium truncate">{bg.name}</div>
-                  <div className="text-[10px] text-gray-500 mt-0.5 truncate">
-                    {bg.skillProficiencies.map(formatSkillName).join(", ")}
-                  </div>
-                </button>
-              ))}
+      <input
+        type="text"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        placeholder="Search backgrounds..."
+        className="w-full bg-gray-900/60 border border-gray-700/60 rounded-lg px-3 py-2 text-sm text-gray-100 placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-amber-500/50 focus:border-amber-500/30 transition-colors"
+      />
+
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-2">
+        {filtered.map((bg, i) => {
+          const isSelected = state.background === bg.name;
+          const skillList = getBackgroundSkills(bg);
+          const featName = getBackgroundFeat(bg);
+
+          return (
+            <motion.button
+              key={bg.name}
+              custom={i}
+              variants={gridItem}
+              initial="initial"
+              animate="animate"
+              whileHover={cardHover}
+              onPointerDown={() => handleSelect(bg.name)}
+              className={`text-left px-3 py-2.5 rounded-lg border text-sm transition-all duration-200 ${
+                isSelected
+                  ? "border-amber-500/60 bg-amber-500/10 text-amber-200 shadow-[0_0_14px_rgba(245,158,11,0.12)]"
+                  : "border-gray-700/50 bg-gray-800/50 text-gray-300 hover:border-gray-600 hover:bg-gray-800"
+              }`}
+            >
+              <div className="font-medium truncate text-sm">{bg.name}</div>
+
+              {skillList.length > 0 && (
+                <div className="flex flex-wrap gap-0.5 mt-1">
+                  {skillList.map((s) => (
+                    <span
+                      key={s}
+                      className="text-[9px] bg-purple-900/20 text-purple-400 border border-purple-800/30 rounded px-1 py-0.5 leading-none"
+                    >
+                      {formatSkillName(s)}
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              {featName && (
+                <div className="text-[9px] text-amber-500/70 mt-1 truncate">
+                  {featName}
+                </div>
+              )}
+            </motion.button>
+          );
+        })}
+      </div>
+
+      {/* Inline detail + language picker */}
+      {selected && (
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-3">
+          {/* Left: Language picker + feat choices */}
+          <div className="space-y-3">
+            <LanguagePicker state={state} dispatch={dispatch} />
+            <BackgroundDetailContent bg={selected} state={state} dispatch={dispatch} />
+          </div>
+
+          {/* Right: Background detail panel */}
+          <div className="bg-gray-800/60 border border-gray-700/40 rounded-lg p-4 self-start">
+            <div className="text-sm font-medium text-amber-200/90 mb-2" style={{ fontFamily: "var(--font-cinzel)" }}>
+              {selected.name}
             </div>
+            <BackgroundSummary bg={selected} />
           </div>
         </div>
+      )}
+    </div>
+  );
+}
 
-        {/* Right: Detail Panel */}
-        {selected && <BackgroundDetail bg={selected} state={state} dispatch={dispatch} />}
+// ─── Language Picker ────────────────────────────────────
+
+function LanguagePicker({ state, dispatch }: StepProps) {
+  const selected = state.backgroundLanguages ?? [];
+
+  function toggle(lang: string) {
+    const has = selected.includes(lang);
+    const next = has
+      ? selected.filter((l) => l !== lang)
+      : selected.length < BACKGROUND_LANG_COUNT
+        ? [...selected, lang]
+        : selected;
+    dispatch({ type: "SET_BACKGROUND_LANGUAGES", languages: next });
+  }
+
+  return (
+    <div className="bg-gray-800/40 border border-gray-700/40 rounded-lg p-3">
+      <div className="text-[10px] text-gray-500 font-medium uppercase tracking-wider mb-1.5">
+        Languages — Common + {BACKGROUND_LANG_COUNT} of your choice ({selected.length}/{BACKGROUND_LANG_COUNT})
+      </div>
+      <div className="flex flex-wrap gap-1.5">
+        <span className="text-[10px] bg-emerald-900/20 text-emerald-400 border border-emerald-800/30 rounded-md px-2 py-0.5">
+          Common (always)
+        </span>
+        {STANDARD_LANGUAGES.map((lang) => {
+          const isSelected = selected.includes(lang);
+          return (
+            <button
+              key={lang}
+              onClick={() => toggle(lang)}
+              disabled={!isSelected && selected.length >= BACKGROUND_LANG_COUNT}
+              className={`text-[10px] px-2 py-0.5 rounded-md transition-colors ${
+                isSelected
+                  ? "bg-emerald-600/15 text-emerald-400 border border-emerald-500/30"
+                  : selected.length >= BACKGROUND_LANG_COUNT
+                    ? "text-gray-700 border border-gray-800"
+                    : "text-gray-400 border border-gray-700/60 hover:text-gray-200"
+              }`}
+            >
+              {lang}
+            </button>
+          );
+        })}
       </div>
     </div>
   );
 }
 
-function BackgroundDetail({ bg, state, dispatch }: { bg: BackgroundData } & StepProps) {
-  const featName = bg.feat ? parseBackgroundFeat(bg.feat) : null;
-  const featData = featName ? getFeat(featName) : null;
+// ─── Background Summary (right panel) ───────────────────
 
-  // Use explicit abilityScores if available, otherwise parse from description
-  const abilityScores =
-    bg.abilityScores && bg.abilityScores.length > 0
-      ? bg.abilityScores
-      : parseBackgroundAbilityScores(bg.description);
+function BackgroundSummary({ bg }: { bg: BackgroundData }) {
+  const featName = getBackgroundFeat(bg) ?? null;
+  const featData = featName ? getFeat(featName) : null;
+  const abilityInfo = getBackgroundAbilityScores(bg);
+  const abilityScores = abilityInfo
+    ? abilityInfo.from.map((k) => ABILITY_MAP[k] ?? k)
+    : [];
 
   return (
-    <div className="w-72 shrink-0 bg-gray-800/60 border border-gray-700/40 rounded-lg p-4 space-y-3 self-start">
-      <h3
-        className="text-sm font-semibold text-amber-300/90"
-        style={{ fontFamily: "var(--font-cinzel)" }}
-      >
-        {bg.name}
-      </h3>
-
+    <div className="space-y-3">
       {/* Skill Proficiencies */}
       <div>
         <div className="text-[10px] text-gray-500 font-medium uppercase tracking-wider mb-1">
           Skill Proficiencies
         </div>
         <div className="flex flex-wrap gap-1">
-          {bg.skillProficiencies.map((s) => (
+          {getBackgroundSkills(bg).map((s) => (
             <span
               key={s}
               className="text-[10px] bg-purple-900/20 text-purple-400 border border-purple-800/30 rounded-md px-1.5 py-0.5"
@@ -109,14 +205,21 @@ function BackgroundDetail({ bg, state, dispatch }: { bg: BackgroundData } & Step
       </div>
 
       {/* Tool Proficiency */}
-      {bg.toolProficiency && (
+      {getBackgroundTools(bg).length > 0 && (
         <div>
           <div className="text-[10px] text-gray-500 font-medium uppercase tracking-wider mb-1">
             Tool Proficiency
           </div>
-          <span className="text-[10px] bg-gray-900/60 text-gray-300 border border-gray-700/50 rounded-md px-1.5 py-0.5">
-            {bg.toolProficiency}
-          </span>
+          <div className="flex flex-wrap gap-1">
+            {getBackgroundTools(bg).map((t) => (
+              <span
+                key={t}
+                className="text-[10px] bg-gray-900/60 text-gray-300 border border-gray-700/50 rounded-md px-1.5 py-0.5"
+              >
+                {t}
+              </span>
+            ))}
+          </div>
         </div>
       )}
 
@@ -139,8 +242,8 @@ function BackgroundDetail({ bg, state, dispatch }: { bg: BackgroundData } & Step
         </div>
       )}
 
-      {/* Feat */}
-      {featName ? (
+      {/* Feat preview */}
+      {featName && (
         <div>
           <div className="text-[10px] text-gray-500 font-medium uppercase tracking-wider mb-1">
             Origin Feat
@@ -149,26 +252,40 @@ function BackgroundDetail({ bg, state, dispatch }: { bg: BackgroundData } & Step
             <div className="text-xs font-medium text-gray-200">{featName}</div>
             {featData && (
               <div className="line-clamp-4 mt-0.5">
-                <Prose className="text-xs text-gray-400">{featData.description}</Prose>
+                <RichText entries={featData.entries} className="text-xs text-gray-400" />
               </div>
             )}
           </div>
-          {/* Origin feat choices */}
-          {featName.toLowerCase().startsWith("magic initiate") && (
-            <MagicInitiateChoices
-              featName={featName}
-              state={state}
-              dispatch={dispatch}
-            />
-          )}
-          {featName.toLowerCase() === "skilled" && (
-            <SkilledChoices state={state} dispatch={dispatch} />
-          )}
         </div>
-      ) : bg.feat === undefined || bg.feat === "" ? null : null}
+      )}
 
       {/* Source */}
       <div className="text-[10px] text-gray-600">{bg.source}</div>
+    </div>
+  );
+}
+
+// ─── Origin Feat Choices (left panel) ───────────────────
+
+function BackgroundDetailContent({ bg, state, dispatch }: { bg: BackgroundData } & StepProps) {
+  const featName = getBackgroundFeat(bg) ?? null;
+
+  if (!featName) return null;
+
+  const needsChoices =
+    featName.toLowerCase().startsWith("magic initiate") ||
+    featName.toLowerCase() === "skilled";
+
+  if (!needsChoices) return null;
+
+  return (
+    <div className="bg-gray-800/40 border border-gray-700/40 rounded-lg p-3">
+      {featName.toLowerCase().startsWith("magic initiate") && (
+        <MagicInitiateChoices featName={featName} state={state} dispatch={dispatch} />
+      )}
+      {featName.toLowerCase() === "skilled" && (
+        <SkilledChoices state={state} dispatch={dispatch} />
+      )}
     </div>
   );
 }
