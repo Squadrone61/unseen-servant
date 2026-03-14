@@ -36,7 +36,7 @@ export function PlayerNotesPanel({
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium text-gray-200 font-cinzel tracking-wide">Notes</span>
           <span
-            className={`text-[10px] px-1.5 py-0.5 rounded-full ${
+            className={`text-xs px-1.5 py-0.5 rounded-full ${
               saveState === "saved"
                 ? "text-green-400/70 bg-green-400/10"
                 : saveState === "saving"

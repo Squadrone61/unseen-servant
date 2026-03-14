@@ -45,7 +45,7 @@ export function StepBackground({ state, dispatch }: StepProps) {
         >
           Choose Your Background
         </h2>
-        <p className="text-xs text-gray-500">
+        <p className="text-sm text-gray-500">
           Your background provides skill proficiencies, a tool proficiency, an origin feat, and ability score increases.
         </p>
         <div className="h-px bg-gradient-to-r from-amber-500/30 via-gray-700/50 to-transparent mt-2" />
@@ -87,7 +87,7 @@ export function StepBackground({ state, dispatch }: StepProps) {
                   {skillList.map((s) => (
                     <span
                       key={s}
-                      className="text-[9px] bg-purple-900/20 text-purple-400 border border-purple-800/30 rounded px-1 py-0.5 leading-none"
+                      className="text-xs bg-purple-900/20 text-purple-400 border border-purple-800/30 rounded px-1 py-0.5 leading-none"
                     >
                       {formatSkillName(s)}
                     </span>
@@ -96,7 +96,7 @@ export function StepBackground({ state, dispatch }: StepProps) {
               )}
 
               {featName && (
-                <div className="text-[9px] text-amber-500/70 mt-1 truncate">
+                <div className="text-xs text-amber-500/70 mt-1 truncate">
                   {featName}
                 </div>
               )}
@@ -144,11 +144,11 @@ function LanguagePicker({ state, dispatch }: StepProps) {
 
   return (
     <div className="bg-gray-800/40 border border-gray-700/40 rounded-lg p-3">
-      <div className="text-[10px] text-gray-500 font-medium uppercase tracking-wider mb-1.5">
+      <div className="text-sm text-gray-500 font-medium uppercase tracking-wider mb-1.5">
         Languages — Common + {BACKGROUND_LANG_COUNT} of your choice ({selected.length}/{BACKGROUND_LANG_COUNT})
       </div>
       <div className="flex flex-wrap gap-1.5">
-        <span className="text-[10px] bg-emerald-900/20 text-emerald-400 border border-emerald-800/30 rounded-md px-2 py-0.5">
+        <span className="text-xs bg-emerald-900/20 text-emerald-400 border border-emerald-800/30 rounded-md px-2 py-0.5">
           Common (always)
         </span>
         {STANDARD_LANGUAGES.map((lang) => {
@@ -158,7 +158,7 @@ function LanguagePicker({ state, dispatch }: StepProps) {
               key={lang}
               onClick={() => toggle(lang)}
               disabled={!isSelected && selected.length >= BACKGROUND_LANG_COUNT}
-              className={`text-[10px] px-2 py-0.5 rounded-md transition-colors ${
+              className={`text-xs px-2 py-0.5 rounded-md transition-colors ${
                 isSelected
                   ? "bg-emerald-600/15 text-emerald-400 border border-emerald-500/30"
                   : selected.length >= BACKGROUND_LANG_COUNT
@@ -189,14 +189,14 @@ function BackgroundSummary({ bg }: { bg: BackgroundData }) {
     <div className="space-y-3">
       {/* Skill Proficiencies */}
       <div>
-        <div className="text-[10px] text-gray-500 font-medium uppercase tracking-wider mb-1">
+        <div className="text-sm text-gray-500 font-medium uppercase tracking-wider mb-1">
           Skill Proficiencies
         </div>
         <div className="flex flex-wrap gap-1">
           {getBackgroundSkills(bg).map((s) => (
             <span
               key={s}
-              className="text-[10px] bg-purple-900/20 text-purple-400 border border-purple-800/30 rounded-md px-1.5 py-0.5"
+              className="text-xs bg-purple-900/20 text-purple-400 border border-purple-800/30 rounded-md px-1.5 py-0.5"
             >
               {formatSkillName(s)}
             </span>
@@ -207,14 +207,14 @@ function BackgroundSummary({ bg }: { bg: BackgroundData }) {
       {/* Tool Proficiency */}
       {getBackgroundTools(bg).length > 0 && (
         <div>
-          <div className="text-[10px] text-gray-500 font-medium uppercase tracking-wider mb-1">
+          <div className="text-sm text-gray-500 font-medium uppercase tracking-wider mb-1">
             Tool Proficiency
           </div>
           <div className="flex flex-wrap gap-1">
             {getBackgroundTools(bg).map((t) => (
               <span
                 key={t}
-                className="text-[10px] bg-gray-900/60 text-gray-300 border border-gray-700/50 rounded-md px-1.5 py-0.5"
+                className="text-xs bg-gray-900/60 text-gray-300 border border-gray-700/50 rounded-md px-1.5 py-0.5"
               >
                 {t}
               </span>
@@ -226,14 +226,14 @@ function BackgroundSummary({ bg }: { bg: BackgroundData }) {
       {/* Ability Scores */}
       {abilityScores.length > 0 && (
         <div>
-          <div className="text-[10px] text-gray-500 font-medium uppercase tracking-wider mb-1">
+          <div className="text-sm text-gray-500 font-medium uppercase tracking-wider mb-1">
             Ability Score Increases
           </div>
           <div className="flex flex-wrap gap-1">
             {abilityScores.map((a) => (
               <span
                 key={a}
-                className="text-[10px] bg-blue-900/20 text-blue-400 border border-blue-800/30 rounded-md px-1.5 py-0.5 capitalize"
+                className="text-xs bg-blue-900/20 text-blue-400 border border-blue-800/30 rounded-md px-1.5 py-0.5 capitalize"
               >
                 {a}
               </span>
@@ -245,11 +245,11 @@ function BackgroundSummary({ bg }: { bg: BackgroundData }) {
       {/* Feat preview */}
       {featName && (
         <div>
-          <div className="text-[10px] text-gray-500 font-medium uppercase tracking-wider mb-1">
+          <div className="text-sm text-gray-500 font-medium uppercase tracking-wider mb-1">
             Origin Feat
           </div>
           <div className="border-l-2 border-amber-500/30 pl-2.5">
-            <div className="text-xs font-medium text-gray-200">{featName}</div>
+            <div className="text-sm font-medium text-gray-200">{featName}</div>
             {featData && (
               <div className="line-clamp-4 mt-0.5">
                 <RichText entries={featData.entries} className="text-xs text-gray-400" />
@@ -260,7 +260,7 @@ function BackgroundSummary({ bg }: { bg: BackgroundData }) {
       )}
 
       {/* Source */}
-      <div className="text-[10px] text-gray-600">{bg.source}</div>
+      <div className="text-xs text-gray-600">{bg.source}</div>
     </div>
   );
 }
@@ -321,11 +321,11 @@ function MagicInitiateChoices({
 
   return (
     <div className="mt-2 space-y-2 border-t border-gray-700/50 pt-2">
-      <div className="text-[10px] text-gray-500 font-medium">Magic Initiate Choices</div>
+      <div className="text-xs text-gray-500 font-medium">Magic Initiate Choices</div>
 
       {!matchedClass && (
         <div>
-          <div className="text-[10px] text-gray-500 mb-1">Spell List</div>
+          <div className="text-xs text-gray-500 mb-1">Spell List</div>
           <div className="flex gap-1">
             {MI_CLASSES.map((c) => (
               <button
@@ -336,7 +336,7 @@ function MagicInitiateChoices({
                     overrides: { spellClass: c, cantrips: [], spell: "" },
                   })
                 }
-                className={`text-[10px] px-2.5 py-1 rounded-md transition-all duration-150 ${
+                className={`text-xs px-2.5 py-1 rounded-md transition-all duration-150 ${
                   spellClass === c
                     ? "bg-amber-500/15 text-amber-300 border border-amber-500/30"
                     : "text-gray-500 border border-gray-700/60"
@@ -350,7 +350,7 @@ function MagicInitiateChoices({
       )}
 
       <div>
-        <div className="text-[10px] text-gray-500 mb-1">Spellcasting Ability</div>
+        <div className="text-xs text-gray-500 mb-1">Spellcasting Ability</div>
         <div className="flex gap-1">
           {["Intelligence", "Wisdom", "Charisma"].map((a) => (
             <button
@@ -361,7 +361,7 @@ function MagicInitiateChoices({
                   overrides: { abilityChoice: a },
                 })
               }
-              className={`text-[10px] px-2.5 py-1 rounded-md transition-all duration-150 ${
+              className={`text-xs px-2.5 py-1 rounded-md transition-all duration-150 ${
                 (overrides.abilityChoice ?? "").toLowerCase() === a.toLowerCase()
                   ? "bg-amber-500/15 text-amber-300 border border-amber-500/30"
                   : "text-gray-500 border border-gray-700/60"
@@ -374,7 +374,7 @@ function MagicInitiateChoices({
       </div>
 
       <div>
-        <div className="text-[10px] text-gray-500 mb-1">
+        <div className="text-xs text-gray-500 mb-1">
           Cantrips ({selectedCantrips.length}/2)
         </div>
         <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto">
@@ -395,7 +395,7 @@ function MagicInitiateChoices({
                   });
                 }}
                 disabled={!isSelected && selectedCantrips.length >= 2}
-                className={`text-[10px] px-1.5 py-0.5 rounded-md transition-colors ${
+                className={`text-xs px-1.5 py-0.5 rounded-md transition-colors ${
                   isSelected
                     ? "bg-purple-600/15 text-purple-400 border border-purple-500/30"
                     : selectedCantrips.length >= 2
@@ -411,7 +411,7 @@ function MagicInitiateChoices({
       </div>
 
       <div>
-        <div className="text-[10px] text-gray-500 mb-1">
+        <div className="text-xs text-gray-500 mb-1">
           Level 1 Spell {selectedSpell ? `(${selectedSpell})` : "(pick one)"}
         </div>
         <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto">
@@ -426,7 +426,7 @@ function MagicInitiateChoices({
                     overrides: { spell: isSelected ? "" : s.name },
                   })
                 }
-                className={`text-[10px] px-1.5 py-0.5 rounded-md transition-colors ${
+                className={`text-xs px-1.5 py-0.5 rounded-md transition-colors ${
                   isSelected
                     ? "bg-purple-600/15 text-purple-400 border border-purple-500/30"
                     : "text-gray-400 border border-gray-700/60 hover:text-gray-200"
@@ -450,7 +450,7 @@ function SkilledChoices({ state, dispatch }: StepProps) {
 
   return (
     <div className="mt-2 space-y-2 border-t border-gray-700/50 pt-2">
-      <div className="text-[10px] text-gray-500 font-medium">
+      <div className="text-xs text-gray-500 font-medium">
         Skilled: Choose 3 skill proficiencies ({selectedSkills.length}/3)
       </div>
       <div className="flex flex-wrap gap-1">
@@ -471,7 +471,7 @@ function SkilledChoices({ state, dispatch }: StepProps) {
                 });
               }}
               disabled={!isSelected && selectedSkills.length >= 3}
-              className={`text-[10px] px-1.5 py-0.5 rounded-md transition-colors ${
+              className={`text-xs px-1.5 py-0.5 rounded-md transition-colors ${
                 isSelected
                   ? "bg-purple-600/15 text-purple-400 border border-purple-500/30"
                   : selectedSkills.length >= 3

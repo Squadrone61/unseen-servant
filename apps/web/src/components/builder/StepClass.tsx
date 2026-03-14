@@ -99,7 +99,7 @@ export function StepClass({ state, dispatch }: StepProps) {
         <h2 className="text-xl font-semibold text-amber-200/90 tracking-wide" style={{ fontFamily: "var(--font-cinzel)" }}>
           Choose Your Class
         </h2>
-        <p className="text-xs text-gray-500">
+        <p className="text-sm text-gray-500">
           Your class determines your hit dice, proficiencies, features, and spellcasting ability.
         </p>
         <div className="h-px bg-gradient-to-r from-amber-500/30 via-gray-700/50 to-transparent mt-2" />
@@ -141,16 +141,16 @@ export function StepClass({ state, dispatch }: StepProps) {
               <div className="font-medium truncate">{cls.name}</div>
               <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
                 {/* Hit die badge */}
-                <span className="text-[9px] px-1.5 py-0.5 rounded bg-gray-700/80 text-gray-400 border border-gray-600/40 font-mono">
+                <span className="text-xs px-1.5 py-0.5 rounded bg-gray-700/80 text-gray-400 border border-gray-600/40 font-mono">
                   d{hitDice}
                 </span>
                 {/* Caster type badge */}
                 {caster ? (
-                  <span className={`text-[9px] px-1.5 py-0.5 rounded ${caster.badgeClass}`}>
+                  <span className={`text-xs px-1.5 py-0.5 rounded ${caster.badgeClass}`}>
                     {caster.label}
                   </span>
                 ) : (
-                  <span className="text-[9px] px-1.5 py-0.5 rounded bg-gray-800 text-gray-500 border border-gray-700/40">
+                  <span className="text-xs px-1.5 py-0.5 rounded bg-gray-800 text-gray-500 border border-gray-700/40">
                     Non-caster
                   </span>
                 )}
@@ -172,7 +172,7 @@ export function StepClass({ state, dispatch }: StepProps) {
                   onClick={() =>
                     dispatch({ type: "SET_CLASS_LEVEL", index: state.activeClassIndex, level: l })
                   }
-                  className={`shrink-0 w-7 h-7 rounded-full text-[10px] font-medium transition-all ${
+                  className={`shrink-0 w-7 h-7 rounded-full text-xs font-medium transition-all ${
                     activeClass.level === l
                       ? "bg-amber-500/80 text-white shadow-[0_0_8px_rgba(245,158,11,0.3)]"
                       : "bg-gray-800 text-gray-500 hover:bg-gray-700 hover:text-gray-300"
@@ -299,8 +299,8 @@ function FeatureChoicePicker({
   return (
     <div className="bg-gray-800/60 border border-gray-700/40 rounded-lg p-3 space-y-2">
       <div className="flex items-center justify-between">
-        <div className="text-xs font-medium text-gray-200">{featureName}</div>
-        <div className="text-[10px] text-gray-500">
+        <div className="text-sm font-medium text-gray-200">{featureName}</div>
+        <div className="text-xs text-gray-500">
           {selected.length}/{maxCount}
         </div>
       </div>
@@ -315,7 +315,7 @@ function FeatureChoicePicker({
               key={opt.name}
               onClick={() => toggle(opt.name)}
               disabled={atMax}
-              className={`text-[10px] px-2.5 py-1 rounded-md border transition-all duration-150 ${
+              className={`text-xs px-2.5 py-1 rounded-md border transition-all duration-150 ${
                 isSelected
                   ? "border-amber-500/40 bg-amber-500/15 text-amber-300 font-medium"
                   : atMax
@@ -340,7 +340,7 @@ function FeatureChoicePicker({
         return (
           <div className="border-t border-gray-700/40 pt-2 mt-1">
             <div className="flex items-center justify-between mb-1">
-              <span className="text-[10px] font-medium text-amber-300/80">{detailOpt.name}</span>
+              <span className="text-xs font-medium text-amber-300/80">{detailOpt.name}</span>
               {expanded && (
                 <button onClick={() => setExpanded(null)} className="text-gray-600 hover:text-gray-400">
                   <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -355,7 +355,7 @@ function FeatureChoicePicker({
       })()}
       {/* Hint */}
       {selected.length === 0 && !expanded && (
-        <div className="text-[9px] text-gray-600">Click to select &middot; Right-click for details</div>
+        <div className="text-xs text-gray-600">Click to select &middot; Right-click for details</div>
       )}
     </div>
   );
@@ -381,7 +381,7 @@ function WeaponMasteryPicker({
     // BUG #11: Filter out modern/sci-fi weapons
     weapons = weapons.filter((w) => !MODERN_WEAPON_PATTERNS.test(w.name));
     if (config.restriction === "melee") {
-      weapons = weapons.filter((w) => w.type === "M");
+      weapons = weapons.filter((w) => w.type?.startsWith("M"));
     }
     if (search) {
       const q = search.toLowerCase();
@@ -402,12 +402,12 @@ function WeaponMasteryPicker({
   return (
     <div className="bg-gray-800/60 border border-gray-700/40 rounded-lg p-3 space-y-2">
       <div className="flex items-center justify-between">
-        <div className="text-xs font-medium text-gray-200">Weapon Mastery</div>
-        <div className="text-[10px] text-gray-500">
+        <div className="text-sm font-medium text-gray-200">Weapon Mastery</div>
+        <div className="text-xs text-gray-500">
           {selected.length}/{config.count}
         </div>
       </div>
-      <p className="text-[10px] text-gray-500">
+      <p className="text-sm text-gray-500">
         Choose {config.count} weapon{config.count > 1 ? "s" : ""} to master
         {config.restriction === "melee" ? " (melee only)" : ""}.
       </p>
@@ -416,7 +416,7 @@ function WeaponMasteryPicker({
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         placeholder="Search weapons..."
-        className="w-full bg-gray-900/60 border border-gray-700/60 rounded px-2 py-1 text-[10px] text-gray-100 placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-amber-500/50 focus:border-amber-500/30"
+        className="w-full bg-gray-900/60 border border-gray-700/60 rounded px-2 py-1 text-xs text-gray-100 placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-amber-500/50 focus:border-amber-500/30"
       />
       <div className="max-h-64 overflow-y-auto space-y-0.5">
         {eligibleWeapons.map((w) => {
@@ -427,7 +427,7 @@ function WeaponMasteryPicker({
               key={w.name}
               onClick={() => toggle(w.name)}
               disabled={atMax}
-              className={`w-full text-left flex items-center justify-between px-2 py-1 rounded text-[10px] transition-colors ${
+              className={`w-full text-left flex items-center justify-between px-2 py-1 rounded text-xs transition-colors ${
                 isSelected
                   ? "bg-amber-500/15 text-amber-300 border border-amber-500/30"
                   : atMax
@@ -438,7 +438,7 @@ function WeaponMasteryPicker({
               <span>{w.name}</span>
               {w.mastery.length > 0 && (
                 <span
-                  className={`text-[9px] px-1.5 py-0.5 rounded ${
+                  className={`text-xs px-1.5 py-0.5 rounded ${
                     isSelected ? "bg-purple-900/30 text-purple-400" : "bg-gray-700 text-gray-500"
                   }`}
                 >
@@ -478,16 +478,16 @@ function ClassDetail({
       {/* Core stat badges */}
       <div className="flex flex-wrap gap-1.5">
         <div className="bg-gray-900 border border-gray-700 rounded px-2 py-1">
-          <div className="text-[9px] text-gray-500 uppercase">Hit Dice</div>
+          <div className="text-xs text-gray-500 uppercase">Hit Dice</div>
           <div className="text-xs text-gray-200 font-medium font-mono">d{hitDice}</div>
         </div>
         <div className="bg-gray-900 border border-gray-700 rounded px-2 py-1">
-          <div className="text-[9px] text-gray-500 uppercase">Primary</div>
+          <div className="text-xs text-gray-500 uppercase">Primary</div>
           <div className="text-xs text-gray-200 font-medium">{primaryAbilities.join(", ")}</div>
         </div>
         {caster && (
           <div className={`rounded px-2 py-1 ${caster.badgeClass}`}>
-            <div className="text-[9px] uppercase opacity-70">Casting</div>
+            <div className="text-xs uppercase opacity-70">Casting</div>
             <div className="text-xs font-medium">{caster.label}</div>
           </div>
         )}
@@ -495,7 +495,7 @@ function ClassDetail({
 
       {/* Saving Throws */}
       <div>
-        <div className="text-[10px] text-gray-500 font-medium uppercase tracking-wider mb-1">
+        <div className="text-sm text-gray-500 font-medium uppercase tracking-wider mb-1">
           Saving Throws
         </div>
         <div className="text-xs text-gray-300">
@@ -506,7 +506,7 @@ function ClassDetail({
       {/* Armor Proficiencies */}
       {armorProfs.length > 0 && (
         <div>
-          <div className="text-[10px] text-gray-500 font-medium uppercase tracking-wider mb-1">
+          <div className="text-sm text-gray-500 font-medium uppercase tracking-wider mb-1">
             Armor
           </div>
           <div className="text-xs text-gray-300">
@@ -518,7 +518,7 @@ function ClassDetail({
       {/* Weapon Proficiencies — BUG #12: strip {@filter} tags */}
       {weaponProfs.length > 0 && (
         <div>
-          <div className="text-[10px] text-gray-500 font-medium uppercase tracking-wider mb-1">
+          <div className="text-sm text-gray-500 font-medium uppercase tracking-wider mb-1">
             Weapons
           </div>
           <div className="text-xs text-gray-300">
@@ -530,14 +530,14 @@ function ClassDetail({
       {/* Skill Choices */}
       {skillChoices && (
         <div>
-          <div className="text-[10px] text-gray-500 font-medium uppercase tracking-wider mb-1">
+          <div className="text-sm text-gray-500 font-medium uppercase tracking-wider mb-1">
             Skill Choices ({skillChoices.count})
           </div>
           <div className="flex flex-wrap gap-1">
             {skillChoices.from.map((s: string) => (
               <span
                 key={s}
-                className="text-[10px] bg-purple-900/20 text-purple-400 border border-purple-800/30 rounded px-1.5 py-0.5"
+                className="text-xs bg-purple-900/20 text-purple-400 border border-purple-800/30 rounded px-1.5 py-0.5"
               >
                 {formatSkillName(s)}
               </span>
@@ -551,7 +551,7 @@ function ClassDetail({
         <SpellSlotTable slots={spellSlotTable} currentLevel={level} />
       )}
 
-      <div className="text-[10px] text-gray-600">{cls.source}</div>
+      <div className="text-xs text-gray-600">{cls.source}</div>
     </div>
   );
 }
@@ -604,9 +604,9 @@ function ClassFeaturesSection({
 
   return (
     <div className="bg-gray-800/60 border border-gray-700/40 rounded-lg p-3 space-y-2">
-      <div className="text-xs font-medium text-gray-200">
+      <div className="text-sm font-medium text-gray-200">
         Class Features
-        <span className="text-[10px] text-gray-500 font-normal ml-2">
+        <span className="text-xs text-gray-500 font-normal ml-2">
           Lv 1–{level} &middot; {totalCount}
         </span>
       </div>
@@ -617,7 +617,7 @@ function ClassFeaturesSection({
           .sort(([a], [b]) => a - b)
           .map(([lv, features]) => (
             <div key={lv} className="flex items-start gap-2">
-              <span className="text-[9px] text-gray-600 font-mono w-5 shrink-0 pt-0.5 text-right">{lv}</span>
+              <span className="text-xs text-gray-600 font-mono w-5 shrink-0 pt-0.5 text-right">{lv}</span>
               <div className="flex flex-wrap gap-1">
                 {features.class.map((f) => {
                   const key = `${f.name}-${f.level}`;
@@ -626,7 +626,7 @@ function ClassFeaturesSection({
                     <button
                       key={key}
                       onClick={() => setExpandedFeature(isExpanded ? null : key)}
-                      className={`text-[10px] px-2 py-0.5 rounded border transition-colors ${
+                      className={`text-xs px-2 py-0.5 rounded border transition-colors ${
                         isExpanded
                           ? "border-amber-500/30 bg-amber-500/10 text-amber-300"
                           : "border-gray-700/50 bg-gray-900/40 text-gray-300 hover:border-gray-600 hover:text-gray-200"
@@ -643,7 +643,7 @@ function ClassFeaturesSection({
                     <button
                       key={key}
                       onClick={() => setExpandedFeature(isExpanded ? null : key)}
-                      className={`text-[10px] px-2 py-0.5 rounded border transition-colors ${
+                      className={`text-xs px-2 py-0.5 rounded border transition-colors ${
                         isExpanded
                           ? "border-purple-500/30 bg-purple-500/10 text-purple-300"
                           : "border-purple-800/30 bg-purple-900/20 text-purple-400/80 hover:border-purple-700/50 hover:text-purple-300"
@@ -662,7 +662,7 @@ function ClassFeaturesSection({
       {expandedOpt && (
         <div className="border-t border-gray-700/40 pt-2">
           <div className="flex items-center justify-between mb-1">
-            <span className="text-[10px] font-medium text-amber-300/80">{expandedOpt.name}</span>
+            <span className="text-xs font-medium text-amber-300/80">{expandedOpt.name}</span>
             <button onClick={() => setExpandedFeature(null)} className="text-gray-600 hover:text-gray-400">
               <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -693,7 +693,7 @@ function SpellSlotTable({
 
   return (
     <div>
-      <div className="text-[10px] text-gray-500 font-medium uppercase tracking-wider mb-1">
+      <div className="text-sm text-gray-500 font-medium uppercase tracking-wider mb-1">
         Spell Slots (Level {currentLevel})
       </div>
       <div className="flex gap-1">
@@ -702,8 +702,8 @@ function SpellSlotTable({
             key={i}
             className="bg-gray-900 border border-gray-700 rounded px-1.5 py-0.5 text-center"
           >
-            <div className="text-[8px] text-gray-600">{ordinal(i + 1)}</div>
-            <div className="text-[10px] text-gray-300 font-medium">{count}</div>
+            <div className="text-xs text-gray-600">{ordinal(i + 1)}</div>
+            <div className="text-xs text-gray-300 font-medium">{count}</div>
           </div>
         ))}
       </div>

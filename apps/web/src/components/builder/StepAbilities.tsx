@@ -75,7 +75,7 @@ export function StepAbilities({ state, dispatch }: StepProps) {
         <h2 className="text-xl font-semibold text-amber-200/90 tracking-wide" style={{ fontFamily: "var(--font-cinzel)" }}>
           Ability Scores
         </h2>
-        <p className="text-xs text-gray-500">Set your base ability scores, then apply your background ability score increases.</p>
+        <p className="text-sm text-gray-500">Set your base ability scores, then apply your background ability score increases.</p>
         <div className="h-px bg-gradient-to-r from-amber-500/30 via-gray-700/50 to-transparent mt-2" />
       </div>
 
@@ -122,7 +122,7 @@ export function StepAbilities({ state, dispatch }: StepProps) {
             />
           </div>
           {pointBuyOverBudget && (
-            <p className="text-[10px] text-red-400">Over budget by {pointsUsed - POINT_BUY_POOL} point{pointsUsed - POINT_BUY_POOL !== 1 ? "s" : ""}. Lower some scores.</p>
+            <p className="text-xs text-red-400">Over budget by {pointsUsed - POINT_BUY_POOL} point{pointsUsed - POINT_BUY_POOL !== 1 ? "s" : ""}. Lower some scores.</p>
           )}
         </div>
       )}
@@ -130,7 +130,7 @@ export function StepAbilities({ state, dispatch }: StepProps) {
       {/* Standard Array available values */}
       {state.abilityMethod === "standard-array" && (
         <div className="space-y-1.5">
-          <div className="text-[10px] text-gray-500 uppercase tracking-wider">Available Values</div>
+          <div className="text-sm text-gray-500 uppercase tracking-wider">Available Values</div>
           <div className="flex flex-wrap gap-1.5">
             {STANDARD_ARRAY.map((v, i) => {
               const assignedCount = countInArray(Object.values(state.baseAbilities), v);
@@ -174,7 +174,7 @@ export function StepAbilities({ state, dispatch }: StepProps) {
               className="bg-gray-800/60 border border-gray-700/40 rounded-lg p-3 text-center flex flex-col gap-2"
             >
               {/* Ability label */}
-              <div className="text-[10px] text-gray-500 font-medium uppercase tracking-wider leading-none">
+              <div className="text-xs text-gray-500 font-medium uppercase tracking-wider leading-none">
                 {ABILITY_SHORT[ability]}
               </div>
 
@@ -256,7 +256,7 @@ export function StepAbilities({ state, dispatch }: StepProps) {
               )}
 
               {/* Modifier badge */}
-              <div className="text-[11px] font-medium tabular-nums leading-none">
+              <div className="text-xs font-medium tabular-nums leading-none">
                 {mod !== null ? (
                   <span className={mod >= 0 ? "text-amber-300/90" : "text-gray-500"}>
                     {mod >= 0 ? "+" : ""}{mod}
@@ -284,10 +284,10 @@ export function StepAbilities({ state, dispatch }: StepProps) {
       <div className="bg-gray-800/40 border border-gray-700/40 rounded-lg p-4 space-y-3">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <div className="text-xs font-medium text-gray-200">
+            <div className="text-sm font-medium text-gray-200">
               Background Ability Score Increases
             </div>
-            <div className="text-[10px] text-gray-500 mt-0.5">
+            <div className="text-sm text-gray-500 mt-0.5">
               PHB 2024: Choose +2/+1 to two different abilities, or +1/+1/+1 to three.
             </div>
           </div>
@@ -318,7 +318,7 @@ export function StepAbilities({ state, dispatch }: StepProps) {
             {Object.keys(state.asiAssignments).length > 0 && (
               <button
                 onClick={() => dispatch({ type: "CLEAR_ASI" })}
-                className="px-2 py-1.5 text-[10px] text-gray-500 hover:text-gray-300 transition-colors"
+                className="px-2 py-1.5 text-xs text-gray-500 hover:text-gray-300 transition-colors"
               >
                 Clear
               </button>
@@ -336,17 +336,17 @@ export function StepAbilities({ state, dispatch }: StepProps) {
 
       {/* Final Scores Table */}
       <div className="space-y-2">
-        <div className="text-xs text-amber-200/70 font-medium" style={{ fontFamily: "var(--font-cinzel)" }}>
+        <div className="text-sm text-amber-200/70 font-medium" style={{ fontFamily: "var(--font-cinzel)" }}>
           Final Ability Scores
         </div>
         <div className="bg-gray-900/40 border border-gray-700/40 rounded-lg overflow-hidden">
           {/* Table header */}
           <div className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-x-3 px-3 py-1.5 border-b border-gray-700/40 bg-gray-800/40">
-            <div className="text-[10px] text-gray-600 uppercase tracking-wider">Ability</div>
-            <div className="text-[10px] text-gray-600 uppercase tracking-wider text-center w-10">Base</div>
-            <div className="text-[10px] text-gray-600 uppercase tracking-wider text-center w-10">ASI</div>
-            <div className="text-[10px] text-gray-600 uppercase tracking-wider text-center w-12">Total</div>
-            <div className="text-[10px] text-gray-600 uppercase tracking-wider text-center w-10">Mod</div>
+            <div className="text-xs text-gray-600 uppercase tracking-wider">Ability</div>
+            <div className="text-xs text-gray-600 uppercase tracking-wider text-center w-10">Base</div>
+            <div className="text-xs text-gray-600 uppercase tracking-wider text-center w-10">ASI</div>
+            <div className="text-xs text-gray-600 uppercase tracking-wider text-center w-12">Total</div>
+            <div className="text-xs text-gray-600 uppercase tracking-wider text-center w-10">Mod</div>
           </div>
           {/* Table rows */}
           {ABILITY_KEYS.map((ability, i) => {
@@ -370,7 +370,7 @@ export function StepAbilities({ state, dispatch }: StepProps) {
               >
                 {/* Ability name */}
                 <div className="text-xs text-gray-400">
-                  <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide mr-1.5">
+                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide mr-1.5">
                     {ABILITY_SHORT[ability]}
                   </span>
                   <span className="hidden sm:inline text-gray-600">{ABILITY_FULL[ability]}</span>

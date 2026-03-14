@@ -67,7 +67,7 @@ export function FeaturesTab({ character, onFeatureClick }: FeaturesTabProps) {
       {groups.map((group) => (
         <div key={group.key}>
           {group.label && (
-            <div className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-0.5 px-1.5" style={{ fontFamily: "var(--font-cinzel)" }}>
+            <div className="text-sm text-gray-500 uppercase tracking-wider font-medium mb-0.5 px-1.5" style={{ fontFamily: "var(--font-cinzel)" }}>
               {group.label} ({group.features.length})
             </div>
           )}
@@ -88,7 +88,7 @@ export function FeaturesTab({ character, onFeatureClick }: FeaturesTabProps) {
               >
                 <span className="truncate">{feat.name}</span>
                 {feat.source === "class" && feat.sourceLabel && (
-                  <span className="text-[9px] text-amber-400/60 shrink-0">
+                  <span className="text-xs text-amber-400/60 shrink-0">
                     {feat.sourceLabel}
                   </span>
                 )}
@@ -123,7 +123,7 @@ export function FeaturesTab({ character, onFeatureClick }: FeaturesTabProps) {
                 <div className="mt-1 space-y-1 px-1.5">
                   {s.traits.personalityTraits && (
                     <div>
-                      <div className="text-[10px] text-gray-500">
+                      <div className="text-xs text-gray-500">
                         Personality
                       </div>
                       <div className="text-xs text-gray-300">
@@ -133,7 +133,7 @@ export function FeaturesTab({ character, onFeatureClick }: FeaturesTabProps) {
                   )}
                   {s.traits.ideals && (
                     <div>
-                      <div className="text-[10px] text-gray-500">Ideals</div>
+                      <div className="text-xs text-gray-500">Ideals</div>
                       <div className="text-xs text-gray-300">
                         {s.traits.ideals}
                       </div>
@@ -141,7 +141,7 @@ export function FeaturesTab({ character, onFeatureClick }: FeaturesTabProps) {
                   )}
                   {s.traits.bonds && (
                     <div>
-                      <div className="text-[10px] text-gray-500">Bonds</div>
+                      <div className="text-xs text-gray-500">Bonds</div>
                       <div className="text-xs text-gray-300">
                         {s.traits.bonds}
                       </div>
@@ -149,7 +149,7 @@ export function FeaturesTab({ character, onFeatureClick }: FeaturesTabProps) {
                   )}
                   {s.traits.flaws && (
                     <div>
-                      <div className="text-[10px] text-gray-500">Flaws</div>
+                      <div className="text-xs text-gray-500">Flaws</div>
                       <div className="text-xs text-gray-300">
                         {s.traits.flaws}
                       </div>
@@ -176,43 +176,43 @@ export function FeaturesTab({ character, onFeatureClick }: FeaturesTabProps) {
                 <div className="mt-1 grid grid-cols-2 gap-x-3 gap-y-0.5 px-1.5">
                   {s.appearance.gender && (
                     <div>
-                      <span className="text-[10px] text-gray-500">Gender </span>
+                      <span className="text-xs text-gray-500">Gender </span>
                       <span className="text-xs text-gray-300">{s.appearance.gender}</span>
                     </div>
                   )}
                   {s.appearance.age && (
                     <div>
-                      <span className="text-[10px] text-gray-500">Age </span>
+                      <span className="text-xs text-gray-500">Age </span>
                       <span className="text-xs text-gray-300">{s.appearance.age}</span>
                     </div>
                   )}
                   {s.appearance.height && (
                     <div>
-                      <span className="text-[10px] text-gray-500">Height </span>
+                      <span className="text-xs text-gray-500">Height </span>
                       <span className="text-xs text-gray-300">{s.appearance.height}</span>
                     </div>
                   )}
                   {s.appearance.weight && (
                     <div>
-                      <span className="text-[10px] text-gray-500">Weight </span>
+                      <span className="text-xs text-gray-500">Weight </span>
                       <span className="text-xs text-gray-300">{s.appearance.weight}</span>
                     </div>
                   )}
                   {s.appearance.hair && (
                     <div>
-                      <span className="text-[10px] text-gray-500">Hair </span>
+                      <span className="text-xs text-gray-500">Hair </span>
                       <span className="text-xs text-gray-300">{s.appearance.hair}</span>
                     </div>
                   )}
                   {s.appearance.eyes && (
                     <div>
-                      <span className="text-[10px] text-gray-500">Eyes </span>
+                      <span className="text-xs text-gray-500">Eyes </span>
                       <span className="text-xs text-gray-300">{s.appearance.eyes}</span>
                     </div>
                   )}
                   {s.appearance.skin && (
                     <div>
-                      <span className="text-[10px] text-gray-500">Skin </span>
+                      <span className="text-xs text-gray-500">Skin </span>
                       <span className="text-xs text-gray-300">{s.appearance.skin}</span>
                     </div>
                   )}

@@ -158,6 +158,7 @@ export interface BuilderState {
 
   // Step 4c: Origin feat overrides
   originFeatOverrides: OriginFeatOverrides;
+  speciesOriginFeatOverrides: OriginFeatOverrides;
 
   // Step 5: Skills
   skillProficiencies: string[];
@@ -227,6 +228,7 @@ export type BuilderAction =
 
   // Origin feat overrides
   | { type: "SET_ORIGIN_FEAT_OVERRIDES"; overrides: Partial<OriginFeatOverrides> }
+  | { type: "SET_SPECIES_ORIGIN_FEAT_OVERRIDES"; overrides: Partial<OriginFeatOverrides> }
 
   // Skills
   | { type: "TOGGLE_SKILL"; skill: string }

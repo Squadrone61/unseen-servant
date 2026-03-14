@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/Button";
 
 const VOLUME_KEY = "aidnd-tts-volume";
 
@@ -70,12 +71,9 @@ export function SettingsModal({ onClose, isHost, onSetPassword, onDestroyRoom }:
           >
             Settings
           </h2>
-          <button
-            onClick={onClose}
-            className="text-gray-500 hover:text-gray-300 transition-colors text-lg leading-none px-1"
-          >
-            &times;
-          </button>
+          <Button variant="icon" onClick={onClose}>
+            <span className="text-lg leading-none">&times;</span>
+          </Button>
         </div>
 
         {/* Body */}
@@ -107,14 +105,14 @@ export function SettingsModal({ onClose, isHost, onSetPassword, onDestroyRoom }:
             <>
               <div className="flex items-center gap-3">
                 <div className="flex-1 h-px bg-gradient-to-r from-transparent via-amber-500/20 to-transparent" />
-                <span className="text-[10px] text-gray-500 uppercase tracking-wider" style={{ fontFamily: "var(--font-cinzel)" }}>Host</span>
+                <span className="text-sm text-gray-500 uppercase tracking-wider" style={{ fontFamily: "var(--font-cinzel)" }}>Host</span>
                 <div className="flex-1 h-px bg-gradient-to-r from-transparent via-amber-500/20 to-transparent" />
               </div>
 
               {/* Room Password */}
               {onSetPassword && (
                 <div>
-                  <div className="text-xs text-gray-500 uppercase tracking-wider mb-2">
+                  <div className="text-sm text-gray-500 uppercase tracking-wider mb-2">
                     Room Password
                   </div>
                   {passwordSet ? (
@@ -123,12 +121,13 @@ export function SettingsModal({ onClose, isHost, onSetPassword, onDestroyRoom }:
                         <span>&#128274;</span>
                         <span>Password set</span>
                       </div>
-                      <button
+                      <Button
+                        variant="danger"
+                        size="xs"
                         onClick={handleRemovePassword}
-                        className="text-xs text-red-400/60 hover:text-red-400 transition-colors"
                       >
                         Remove
-                      </button>
+                      </Button>
                     </div>
                   ) : (
                     <div className="flex gap-2">
@@ -142,15 +141,13 @@ export function SettingsModal({ onClose, isHost, onSetPassword, onDestroyRoom }:
                                    text-sm text-gray-100 placeholder-gray-500 focus:outline-none
                                    focus:ring-1 focus:ring-amber-500/50 focus:border-amber-500/30 min-w-0"
                       />
-                      <button
+                      <Button
+                        size="xs"
                         onClick={handleSetPassword}
                         disabled={!passwordInput.trim()}
-                        className="text-xs bg-amber-600/80 text-amber-50 hover:bg-amber-500/80
-                                   disabled:opacity-30 disabled:hover:bg-amber-600/80
-                                   px-2.5 py-1.5 rounded transition-colors shrink-0"
                       >
                         Set
-                      </button>
+                      </Button>
                     </div>
                   )}
                 </div>
@@ -158,7 +155,10 @@ export function SettingsModal({ onClose, isHost, onSetPassword, onDestroyRoom }:
 
               {/* Destroy Room */}
               {onDestroyRoom && (
-                <button
+                <Button
+                  variant="danger"
+                  size="md"
+                  fullWidth
                   onClick={() => {
                     if (
                       window.confirm(
@@ -168,10 +168,9 @@ export function SettingsModal({ onClose, isHost, onSetPassword, onDestroyRoom }:
                       onDestroyRoom();
                     }
                   }}
-                  className="w-full px-3 py-2 text-sm font-medium text-red-400 bg-red-950/40 border border-red-800/50 rounded-lg hover:bg-red-900/50 hover:text-red-300 transition-colors"
                 >
                   Destroy Room
-                </button>
+                </Button>
               )}
             </>
           )}

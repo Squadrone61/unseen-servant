@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { ChatMessage } from "./ChatMessage";
+import { Button } from "@/components/ui/Button";
 import type { ServerMessage, CheckRequest, CheckResult, RollResult } from "@aidnd/shared/types";
 import type { ConnectionState } from "@/hooks/useWebSocket";
 
@@ -141,24 +142,21 @@ export function ChatPanel({ messages, onSend, connectionState, onRollDice, myCha
                        focus:ring-amber-500/50 focus:border-amber-500/30 disabled:opacity-50"
           />
           {isMyTurn && onEndTurn && (
-            <button
+            <Button
               type="button"
               onClick={onEndTurn}
-              className="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2.5 rounded-lg
-                         font-medium transition-colors whitespace-nowrap"
+              size="md"
             >
               End Turn
-            </button>
+            </Button>
           )}
-          <button
+          <Button
             type="submit"
             disabled={!isConnected || !input.trim()}
-            className="bg-amber-600/80 hover:bg-amber-600 disabled:bg-gray-700
-                       disabled:text-gray-500 text-white px-6 py-2.5 rounded-lg
-                       font-medium transition-colors"
+            size="md"
           >
             Send
-          </button>
+          </Button>
         </div>
       </form>
     </div>

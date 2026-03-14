@@ -54,7 +54,7 @@ export function StepReview({ state }: StepReviewProps) {
         <h2 className="text-xl font-semibold text-amber-200/90 tracking-wide" style={{ fontFamily: "var(--font-cinzel)" }}>
           Review Your Character
         </h2>
-        <p className="text-xs text-gray-500">Review your character below. Click "Save Character" when you're ready.</p>
+        <p className="text-sm text-gray-500">Review your character below. Click "Save Character" when you're ready.</p>
         <div className="h-px bg-gradient-to-r from-amber-500/30 via-gray-700/50 to-transparent mt-2" />
       </div>
 
@@ -62,12 +62,12 @@ export function StepReview({ state }: StepReviewProps) {
       {(warnings.length > 0 || validationIssues.length > 0) && (
         <div className="bg-yellow-900/10 border border-yellow-800/20 rounded-lg p-3">
           {validationIssues.map((issue: string, i: number) => (
-            <div key={`v${i}`} className="text-[10px] text-yellow-500">
+            <div key={`v${i}`} className="text-xs text-yellow-500">
               {issue}
             </div>
           ))}
           {warnings.map((w: string, i: number) => (
-            <div key={`w${i}`} className="text-[10px] text-yellow-500">
+            <div key={`w${i}`} className="text-xs text-yellow-500">
               {w}
             </div>
           ))}

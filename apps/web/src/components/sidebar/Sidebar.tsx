@@ -10,6 +10,7 @@ import type {
   ServerMessage,
 } from "@aidnd/shared/types";
 import { CharacterPopover } from "@/components/character/CharacterPopover";
+import { Button } from "@/components/ui/Button";
 import { SettingsModal } from "./SettingsModal";
 
 interface SidebarProps {
@@ -118,15 +119,11 @@ export function Sidebar({
   if (collapsed) {
     return (
       <div className="w-10 border-l border-gray-700/40 flex flex-col items-center bg-gray-800/60 shrink-0 py-3 gap-3">
-        <button
-          onClick={onToggleCollapse}
-          className="text-gray-500 hover:text-gray-300 transition-colors"
-          title="Expand sidebar"
-        >
+        <Button variant="icon" onClick={onToggleCollapse} title="Expand sidebar">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
             <path d="M10 4L6 8L10 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
-        </button>
+        </Button>
         <div
           className={`w-2.5 h-2.5 rounded-full shrink-0 ${
             dmConnected ? "bg-green-500" : "bg-yellow-500 animate-pulse"
@@ -154,24 +151,20 @@ export function Sidebar({
       {/* Room Code */}
       <div className="p-4 border-b border-gray-700/40">
         <div className="flex items-center gap-2">
-          <div className="text-xs text-gray-500 uppercase tracking-wider" style={{ fontFamily: "var(--font-cinzel)" }}>
+          <div className="text-sm text-gray-500 uppercase tracking-wider" style={{ fontFamily: "var(--font-cinzel)" }}>
             Room Code
           </div>
           {isHost && (
-            <span className="text-[10px] bg-amber-500/10 text-amber-300 border border-amber-500/50 px-1.5 py-0.5 rounded-full font-medium uppercase tracking-wider">
+            <span className="text-xs bg-amber-500/10 text-amber-300 border border-amber-500/50 px-1.5 py-0.5 rounded-full font-medium uppercase tracking-wider">
               Host
             </span>
           )}
           {onToggleCollapse && (
-            <button
-              onClick={onToggleCollapse}
-              className="ml-auto text-gray-500 hover:text-gray-300 transition-colors"
-              title="Collapse sidebar"
-            >
+            <Button variant="icon" onClick={onToggleCollapse} title="Collapse sidebar" className="ml-auto">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                 <path d="M6 4L10 8L6 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
-            </button>
+            </Button>
           )}
         </div>
         <button
@@ -190,7 +183,7 @@ export function Sidebar({
 
       {/* Players */}
       <div className="p-4 border-b border-gray-700/40">
-        <div className="text-xs text-gray-500 uppercase tracking-wider mb-3" style={{ fontFamily: "var(--font-cinzel)" }}>
+        <div className="text-sm text-gray-500 uppercase tracking-wider mb-3" style={{ fontFamily: "var(--font-cinzel)" }}>
           Party ({displayPlayers.length})
         </div>
         {displayPlayers.length === 0 ? (
@@ -221,19 +214,19 @@ export function Sidebar({
                         {player.name}
                       </span>
                       {player.isHost && (
-                        <span className="text-[10px] text-amber-300 shrink-0">
+                        <span className="text-xs text-amber-300 shrink-0">
                           (host)
                         </span>
                       )}
                       {!player.online && (
-                        <span className="text-[10px] text-gray-600 shrink-0">
+                        <span className="text-xs text-gray-600 shrink-0">
                           (offline)
                         </span>
                       )}
                     </div>
                     {charData && (
                       <div
-                        className={`text-[10px] ${
+                        className={`text-xs ${
                           player.online ? "text-gray-500" : "text-gray-600"
                         }`}
                       >
@@ -291,7 +284,7 @@ export function Sidebar({
                     <span className="text-lg">&#9876;</span>
                     Begin the Adventure
                   </button>
-                  <p className="text-[10px] text-gray-600 text-center">
+                  <p className="text-xs text-gray-600 text-center">
                     This will introduce the party and start the story
                   </p>
                 </>
@@ -310,7 +303,7 @@ export function Sidebar({
                 Configure Campaign
               </button>
               {!dmConnected && (
-                <p className="text-[10px] text-gray-600 text-center">
+                <p className="text-xs text-gray-600 text-center">
                   Waiting for DM to connect...
                 </p>
               )}
@@ -374,15 +367,15 @@ export function Sidebar({
           className="flex items-center gap-1 p-4 pb-2 w-full text-left"
         >
           <span
-            className={`text-[10px] text-gray-600 transition-transform ${logCollapsed ? "" : "rotate-90"}`}
+            className={`text-xs text-gray-600 transition-transform ${logCollapsed ? "" : "rotate-90"}`}
           >
             &#9654;
           </span>
-          <span className="text-xs text-gray-500 uppercase tracking-wider" style={{ fontFamily: "var(--font-cinzel)" }}>
+          <span className="text-sm text-gray-500 uppercase tracking-wider" style={{ fontFamily: "var(--font-cinzel)" }}>
             Activity Log
           </span>
           {logMessages.length > 0 && (
-            <span className="text-[10px] text-gray-600 ml-auto">
+            <span className="text-xs text-gray-600 ml-auto">
               {logMessages.length}
             </span>
           )}
@@ -422,14 +415,14 @@ export function Sidebar({
             className="flex items-center gap-1 p-4 pb-2 w-full text-left"
           >
             <span
-              className={`text-[10px] text-gray-600 transition-transform ${eventLogCollapsed ? "" : "rotate-90"}`}
+              className={`text-xs text-gray-600 transition-transform ${eventLogCollapsed ? "" : "rotate-90"}`}
             >
               &#9654;
             </span>
-            <span className="text-xs text-gray-500 uppercase tracking-wider" style={{ fontFamily: "var(--font-cinzel)" }}>
+            <span className="text-sm text-gray-500 uppercase tracking-wider" style={{ fontFamily: "var(--font-cinzel)" }}>
               Event Log
             </span>
-            <span className="text-[10px] text-gray-600 ml-auto">
+            <span className="text-xs text-gray-600 ml-auto">
               {eventLog.length}
             </span>
           </button>
@@ -452,13 +445,13 @@ export function Sidebar({
                       <div className="flex items-center gap-1 shrink-0">
                         <button
                           onClick={() => handleRollbackConfirm(event.id)}
-                          className="text-[10px] text-red-400 font-medium shrink-0"
+                          className="text-xs text-red-400 font-medium shrink-0"
                         >
                           Confirm?
                         </button>
                         <button
                           onClick={handleRollbackCancel}
-                          className="text-[10px] text-gray-500 hover:text-gray-300 shrink-0"
+                          className="text-xs text-gray-500 hover:text-gray-300 shrink-0"
                           title="Cancel rollback"
                         >
                           &times;
@@ -467,7 +460,7 @@ export function Sidebar({
                     ) : (
                       <button
                         onClick={() => handleRollbackClick(event.id)}
-                        className="text-[10px] text-red-400/60 hover:text-red-400
+                        className="text-xs text-red-400/60 hover:text-red-400
                                    opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
                         title="Rollback to before this event"
                       >

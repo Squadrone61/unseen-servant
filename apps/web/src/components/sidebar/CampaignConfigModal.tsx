@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/Button";
 import type { EncounterLength, PacingProfile } from "@aidnd/shared/types";
 
 interface CampaignInfo {
@@ -89,12 +90,9 @@ export function CampaignConfigModal({
               Set up your campaign before starting the adventure
             </p>
           </div>
-          <button
-            onClick={onClose}
-            className="text-gray-500 hover:text-gray-300 transition-colors text-lg leading-none px-1"
-          >
-            &times;
-          </button>
+          <Button variant="icon" onClick={onClose}>
+            <span className="text-lg leading-none">&times;</span>
+          </Button>
         </div>
 
         {/* Body */}
@@ -141,7 +139,7 @@ export function CampaignConfigModal({
               </select>
             ) : (
               <div>
-                <label className="text-[10px] text-gray-500 uppercase tracking-wider block mb-1" style={{ fontFamily: "var(--font-cinzel)" }}>
+                <label className="text-sm text-gray-500 uppercase tracking-wider block mb-1" style={{ fontFamily: "var(--font-cinzel)" }}>
                   Campaign Name
                 </label>
                 <input
@@ -163,7 +161,7 @@ export function CampaignConfigModal({
 
           {/* Pacing */}
           <div>
-            <label className="text-[10px] text-gray-500 uppercase tracking-wider block mb-1" style={{ fontFamily: "var(--font-cinzel)" }}>
+            <label className="text-sm text-gray-500 uppercase tracking-wider block mb-1" style={{ fontFamily: "var(--font-cinzel)" }}>
               Pacing
             </label>
             <select
@@ -182,7 +180,7 @@ export function CampaignConfigModal({
 
           {/* Encounter Length */}
           <div>
-            <label className="text-[10px] text-gray-500 uppercase tracking-wider block mb-1" style={{ fontFamily: "var(--font-cinzel)" }}>
+            <label className="text-sm text-gray-500 uppercase tracking-wider block mb-1" style={{ fontFamily: "var(--font-cinzel)" }}>
               Encounter Length
             </label>
             <select
@@ -206,13 +204,13 @@ export function CampaignConfigModal({
               className="flex items-center gap-2 text-sm text-gray-400 hover:text-gray-200 transition-colors"
             >
               <span
-                className={`text-[10px] text-gray-600 transition-transform ${showPrompt ? "rotate-90" : ""}`}
+                className={`text-xs text-gray-600 transition-transform ${showPrompt ? "rotate-90" : ""}`}
               >
                 &#9654;
               </span>
               <span>Custom DM Instructions</span>
               {hasCustomPrompt && (
-                <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-yellow-600/20 text-yellow-400">
+                <span className="text-xs px-1.5 py-0.5 rounded-full font-medium bg-yellow-600/20 text-yellow-400">
                   Custom
                 </span>
               )}
@@ -232,15 +230,12 @@ export function CampaignConfigModal({
                 <div className="flex items-center justify-between text-xs text-gray-500">
                   <span>{systemPrompt.length.toLocaleString()} characters</span>
                   {hasCustomPrompt && (
-                    <button
-                      onClick={() => setSystemPrompt("")}
-                      className="text-gray-400 hover:text-gray-200 transition-colors"
-                    >
+                    <Button variant="ghost" size="xs" onClick={() => setSystemPrompt("")}>
                       Clear Custom Instructions
-                    </button>
+                    </Button>
                   )}
                 </div>
-                <p className="text-[11px] text-gray-600 leading-relaxed">
+                <p className="text-xs text-gray-600 leading-relaxed">
                   These are added on top of the default DM rules (combat, dice, identity, etc.).
                   Leave empty to use defaults only.
                 </p>
@@ -251,21 +246,16 @@ export function CampaignConfigModal({
 
         {/* Footer */}
         <div className="flex items-center justify-end gap-2 px-5 py-4 border-t border-gray-700/40">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 text-sm text-gray-400 hover:text-gray-200 transition-colors"
-          >
+          <Button variant="ghost" size="md" onClick={onClose}>
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
+            size="md"
             onClick={handleSubmit}
             disabled={mode === "new" && !campaignName.trim()}
-            className="px-5 py-2 bg-amber-600/80 hover:bg-amber-500/80 disabled:opacity-40
-                       disabled:hover:bg-amber-600/80 text-amber-50 text-sm rounded-lg
-                       font-medium transition-colors"
           >
             Configure
-          </button>
+          </Button>
         </div>
       </div>
     </div>

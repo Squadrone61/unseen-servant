@@ -1171,25 +1171,33 @@ export function assembleIdentifiers(state: BuilderState): CharacterIdentifiers {
   const versatileChoice = state.speciesChoices["Versatile"];
   if (versatileChoice && typeof versatileChoice.selected === "string" && versatileChoice.selected) {
     const speciesFeat = versatileChoice.selected;
-    if (!originFeatNames.some((n) => n.toLowerCase() === speciesFeat.toLowerCase())) {
+    const isDuplicate = originFeatNames.some((n) => n.toLowerCase() === speciesFeat.toLowerCase());
+    if (!isDuplicate || getFeat(speciesFeat)?.repeatable) {
       originFeatNames.push(speciesFeat);
     }
   }
 
+  // Track occurrences so repeatable feats use the correct overrides
+  const featOccurrences: Record<string, number> = {};
   for (const originFeatName of originFeatNames) {
+    const lowerFeat = originFeatName.toLowerCase();
+    featOccurrences[lowerFeat] = (featOccurrences[lowerFeat] ?? 0) + 1;
+    const occurrence = featOccurrences[lowerFeat];
+    // First occurrence = background overrides, second = species overrides
+    const overrides = occurrence === 1 ? state.originFeatOverrides : state.speciesOriginFeatOverrides;
+
     const originFeat = getFeat(originFeatName);
     if (originFeat) {
       additionalFeatures.push({
         name: originFeatName,
         description: entriesToText(originFeat.entries),
         source: "feat",
-        sourceLabel: bgData?.name ?? "Background",
+        sourceLabel: occurrence === 1 ? (bgData?.name ?? "Background") : (state.species ?? "Species"),
       });
     }
 
-    const lowerFeat = originFeatName.toLowerCase();
-    if (lowerFeat.startsWith("magic initiate") && state.originFeatOverrides.cantrips) {
-      for (const cantripName of state.originFeatOverrides.cantrips) {
+    if (lowerFeat.startsWith("magic initiate") && overrides.cantrips) {
+      for (const cantripName of overrides.cantrips) {
         const db = getSpell(cantripName);
         if (db) {
           spells.push(spellFromDb(db, {
@@ -1198,22 +1206,22 @@ export function assembleIdentifiers(state: BuilderState): CharacterIdentifiers {
           }));
         }
       }
-      if (state.originFeatOverrides.spell) {
-        const db = getSpell(state.originFeatOverrides.spell);
+      if (overrides.spell) {
+        const db = getSpell(overrides.spell);
         if (db) {
           spells.push(spellFromDb(db, {
-            name: state.originFeatOverrides.spell, level: 1, prepared: true,
+            name: overrides.spell, level: 1, prepared: true,
             alwaysPrepared: true, spellSource: "feat" as const, knownByClass: false,
           }));
         }
       }
     }
-    if (lowerFeat === "skilled" && state.originFeatOverrides.skillChoices) {
-      allSkills.push(...state.originFeatOverrides.skillChoices);
+    if (lowerFeat === "skilled" && overrides.skillChoices) {
+      allSkills.push(...overrides.skillChoices);
     }
     if ((lowerFeat === "skilled" || lowerFeat === "crafter" || lowerFeat === "musician") &&
-        state.originFeatOverrides.toolChoices) {
-      toolProficiencies.push(...state.originFeatOverrides.toolChoices);
+        overrides.toolChoices) {
+      toolProficiencies.push(...overrides.toolChoices);
     }
   }
 

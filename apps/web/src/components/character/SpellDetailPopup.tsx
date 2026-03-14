@@ -76,7 +76,7 @@ export function SpellDetailPopup({ spell, onClose, position }: SpellDetailPopupP
         {/* Description */}
         {spell.description && (
           <div>
-            <div className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-1" style={{ fontFamily: "var(--font-cinzel)" }}>
+            <div className="text-sm text-gray-500 uppercase tracking-wider font-medium mb-1" style={{ fontFamily: "var(--font-cinzel)" }}>
               Description
             </div>
             <Prose className="text-gray-300">

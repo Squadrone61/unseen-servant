@@ -104,7 +104,7 @@ export function StepEquipment({ state, dispatch }: StepProps) {
         <h2 className="text-xl font-semibold text-amber-200/90 tracking-wide" style={{ fontFamily: "var(--font-cinzel)" }}>
           Equipment
         </h2>
-        <p className="text-xs text-gray-500">Add weapons, armor, gear, and tools to your inventory.</p>
+        <p className="text-sm text-gray-500">Add weapons, armor, gear, and tools to your inventory.</p>
         <div className="h-px bg-gradient-to-r from-amber-500/30 via-gray-700/50 to-transparent mt-2" />
       </div>
 
@@ -115,7 +115,7 @@ export function StepEquipment({ state, dispatch }: StepProps) {
         if (!desc) return null;
         return (
           <div className="bg-gray-800/60 border border-gray-700/40 rounded-lg p-3 space-y-2">
-            <div className="text-xs font-medium text-gray-300" style={{ fontFamily: "var(--font-cinzel)" }}>
+            <div className="text-sm font-medium text-gray-300" style={{ fontFamily: "var(--font-cinzel)" }}>
               Starting Equipment — {className}
             </div>
             <div className="flex gap-2">
@@ -129,11 +129,11 @@ export function StepEquipment({ state, dispatch }: StepProps) {
                   className="flex-1 text-left px-3 py-2 rounded-lg border border-gray-700/50 bg-gray-900/40 hover:border-amber-500/40 hover:bg-amber-500/5 transition-all text-xs"
                 >
                   <div className="font-medium text-amber-300/80 mb-0.5">Option {choice}</div>
-                  <div className="text-gray-500 text-[10px] leading-snug">{desc[choice]}</div>
+                  <div className="text-gray-500 text-xs leading-snug">{desc[choice]}</div>
                 </button>
               ))}
             </div>
-            <div className="text-[10px] text-gray-600">
+            <div className="text-xs text-gray-600">
               Clicking a preset adds items to your inventory. You can still add more items below.
             </div>
           </div>
@@ -207,9 +207,9 @@ export function StepEquipment({ state, dispatch }: StepProps) {
         {/* Right: Inventory */}
         <div className="w-64 shrink-0 space-y-4">
           <div className="bg-gray-800/60 border border-gray-700/40 rounded-lg p-4 space-y-2">
-            <div className="text-xs font-medium text-gray-300">Inventory</div>
+            <div className="text-sm font-medium text-gray-300">Inventory</div>
             {state.equipment.length === 0 ? (
-              <div className="text-[10px] text-gray-600 text-center py-4">
+              <div className="text-xs text-gray-600 text-center py-4">
                 No items added
               </div>
             ) : (
@@ -217,7 +217,7 @@ export function StepEquipment({ state, dispatch }: StepProps) {
                 {state.equipment.map((entry) => (
                   <div
                     key={`${entry.source}-${entry.name}`}
-                    className="flex items-center gap-2 text-[10px]"
+                    className="flex items-center gap-2 text-xs"
                   >
                     <button
                       onClick={() =>
@@ -283,11 +283,11 @@ export function StepEquipment({ state, dispatch }: StepProps) {
 
           {/* Currency */}
           <div className="bg-gray-800/60 border border-gray-700/40 rounded-lg p-4 space-y-2">
-            <div className="text-xs font-medium text-gray-300">Currency</div>
+            <div className="text-sm font-medium text-gray-300">Currency</div>
             <div className="grid grid-cols-5 gap-1">
               {(["cp", "sp", "ep", "gp", "pp"] as const).map((coin) => (
                 <div key={coin} className="text-center">
-                  <div className="text-[9px] text-gray-500 uppercase">
+                  <div className="text-xs text-gray-500 uppercase">
                     {coin}
                   </div>
                   <input
@@ -303,7 +303,7 @@ export function StepEquipment({ state, dispatch }: StepProps) {
                         },
                       })
                     }
-                    className="w-full bg-gray-900 border border-gray-700 rounded px-1 py-0.5 text-[10px] text-center text-gray-100 focus:outline-none focus:ring-1 focus:ring-amber-500/50"
+                    className="w-full bg-gray-900 border border-gray-700 rounded px-1 py-0.5 text-xs text-center text-gray-100 focus:outline-none focus:ring-1 focus:ring-amber-500/50"
                   />
                 </div>
               ))}
@@ -360,7 +360,7 @@ const selectCls = "w-full bg-gray-900/80 border border-gray-700/80 rounded-md px
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex items-center gap-2 pt-1">
-      <span className="text-[10px] text-gray-500 font-semibold uppercase tracking-widest shrink-0">
+      <span className="text-xs text-gray-500 font-semibold uppercase tracking-widest shrink-0">
         {children}
       </span>
       <div className="h-px flex-1 bg-gradient-to-r from-gray-700 to-transparent" />
@@ -370,7 +370,7 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
   return (
-    <span className="text-[10px] text-gray-500 leading-none">{children}</span>
+    <span className="text-xs text-gray-500 leading-none">{children}</span>
   );
 }
 
@@ -477,7 +477,7 @@ function CustomItemsPanel({
                         key={t}
                         type="button"
                         onClick={() => setItemType(selected ? "" : t)}
-                        className={`px-2 py-0.5 rounded-full text-[10px] font-medium transition-all duration-150 ${
+                        className={`px-2 py-0.5 rounded-full text-xs font-medium transition-all duration-150 ${
                           selected
                             ? "bg-amber-500/80 text-amber-50 shadow-[0_0_8px_rgba(245,158,11,0.3)]"
                             : "bg-gray-900/60 text-gray-500 hover:text-gray-300 hover:bg-gray-700/60"
@@ -611,7 +611,7 @@ function CustomItemsPanel({
                     key={r.name}
                     type="button"
                     onClick={() => setRarity(selected ? "" : r.name)}
-                    className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-medium transition-all duration-150 ${
+                    className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium transition-all duration-150 ${
                       selected
                         ? `${r.bg}/20 ${r.color} ring-1 ${r.ring}/50`
                         : "bg-gray-900/40 text-gray-600 hover:text-gray-400"
@@ -630,7 +630,7 @@ function CustomItemsPanel({
             <button
               type="button"
               onClick={() => setIsMagicItem(!isMagicItem)}
-              className={`px-2.5 py-1 rounded-md text-[10px] font-medium transition-all duration-150 ${
+              className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all duration-150 ${
                 isMagicItem
                   ? "bg-purple-600/20 text-purple-300 ring-1 ring-purple-500/40"
                   : "bg-gray-900/40 text-gray-600 hover:text-gray-400 border border-gray-700/50"
@@ -641,7 +641,7 @@ function CustomItemsPanel({
             <button
               type="button"
               onClick={() => setAttunement(!attunement)}
-              className={`px-2.5 py-1 rounded-md text-[10px] font-medium transition-all duration-150 ${
+              className={`px-2.5 py-1 rounded-md text-xs font-medium transition-all duration-150 ${
                 attunement
                   ? "bg-amber-600/20 text-amber-300 ring-1 ring-amber-500/40"
                   : "bg-gray-900/40 text-gray-600 hover:text-gray-400 border border-gray-700/50"
@@ -705,40 +705,40 @@ function CustomItemsPanel({
                     <div className="flex items-center gap-1.5">
                       <span className="text-gray-200 font-medium truncate">{entry.name}</span>
                       {entry.quantity > 1 && (
-                        <span className="text-[9px] text-gray-500 tabular-nums">x{entry.quantity}</span>
+                        <span className="text-xs text-gray-500 tabular-nums">x{entry.quantity}</span>
                       )}
                     </div>
                     {/* Tags row */}
                     <div className="flex items-center gap-1 flex-wrap">
                       {entry.itemType && (
-                        <span className="text-[9px] px-1.5 py-px rounded bg-gray-700/50 text-gray-500">
+                        <span className="text-xs px-1.5 py-px rounded bg-gray-700/50 text-gray-500">
                           {entry.itemType}
                         </span>
                       )}
                       {rarityData && (
-                        <span className={`text-[9px] px-1.5 py-px rounded ${rarityData.bg}/15 ${rarityData.color}`}>
+                        <span className={`text-xs px-1.5 py-px rounded ${rarityData.bg}/15 ${rarityData.color}`}>
                           {entry.rarity}
                         </span>
                       )}
                       {entry.isMagicItem && (
-                        <span className="text-[9px] px-1.5 py-px rounded bg-purple-500/15 text-purple-400">
+                        <span className="text-xs px-1.5 py-px rounded bg-purple-500/15 text-purple-400">
                           Magic
                         </span>
                       )}
                       {entry.attunement && (
-                        <span className="text-[9px] px-1.5 py-px rounded bg-amber-500/15 text-amber-400">
+                        <span className="text-xs px-1.5 py-px rounded bg-amber-500/15 text-amber-400">
                           Attunement
                         </span>
                       )}
                     </div>
                     {/* Stats line */}
                     {stats.length > 0 && (
-                      <div className="text-[10px] text-gray-500 truncate">
+                      <div className="text-xs text-gray-500 truncate">
                         {stats.join(" \u00b7 ")}
                       </div>
                     )}
                     {entry.description && (
-                      <div className="text-[10px] text-gray-600 line-clamp-1 italic">
+                      <div className="text-xs text-gray-600 line-clamp-1 italic">
                         {entry.description}
                       </div>
                     )}
@@ -779,7 +779,7 @@ function GroupedWeapons({
 
         return (
           <div key={cat.label}>
-            <div className="text-[10px] text-gray-500 font-medium uppercase tracking-wider mb-1 sticky top-0 bg-gray-900 py-0.5">
+            <div className="text-sm text-gray-500 font-medium uppercase tracking-wider mb-1 sticky top-0 bg-gray-900 py-0.5">
               {cat.label}
             </div>
             <div className="space-y-1">
@@ -798,7 +798,7 @@ function GroupedWeapons({
                   >
                     <div className="min-w-0">
                       <div className="text-gray-200 truncate">{item.name}</div>
-                      <div className="text-[10px] text-gray-500">
+                      <div className="text-xs text-gray-500">
                         {item.dmg1} {item.dmgType ? formatDamageType(item.dmgType) : ""}
                         {item.value ? <span> &middot; {formatItemCost(item.value)}</span> : null}
                         {item.weight != null && item.weight > 0 && <span> &middot; {item.weight} lb.</span>}
@@ -811,7 +811,7 @@ function GroupedWeapons({
                     </div>
                     <button
                       onClick={() => onAdd(item.name)}
-                      className={`shrink-0 text-[10px] px-2 py-1 rounded transition-colors ${
+                      className={`shrink-0 text-xs px-2 py-1 rounded transition-colors ${
                         alreadyAdded
                           ? "text-amber-300 bg-amber-500/10 hover:bg-amber-500/20"
                           : "text-gray-400 bg-gray-700 hover:bg-gray-600"
@@ -854,7 +854,7 @@ function GroupedArmor({
 
         return (
           <div key={cat.label}>
-            <div className="text-[10px] text-gray-500 font-medium uppercase tracking-wider mb-1 sticky top-0 bg-gray-900 py-0.5">
+            <div className="text-sm text-gray-500 font-medium uppercase tracking-wider mb-1 sticky top-0 bg-gray-900 py-0.5">
               {cat.label}
             </div>
             <div className="space-y-1">
@@ -873,7 +873,7 @@ function GroupedArmor({
                   >
                     <div className="min-w-0">
                       <div className="text-gray-200 truncate">{item.name}</div>
-                      <div className="text-[10px] text-gray-500">
+                      <div className="text-xs text-gray-500">
                         AC {item.ac}
                         {item.stealth && <span> &middot; Stealth Disadv.</span>}
                         {item.strength && <span> &middot; Str {item.strength}</span>}
@@ -883,7 +883,7 @@ function GroupedArmor({
                     </div>
                     <button
                       onClick={() => onAdd(item.name)}
-                      className={`shrink-0 text-[10px] px-2 py-1 rounded transition-colors ${
+                      className={`shrink-0 text-xs px-2 py-1 rounded transition-colors ${
                         alreadyAdded
                           ? "text-amber-300 bg-amber-500/10 hover:bg-amber-500/20"
                           : "text-gray-400 bg-gray-700 hover:bg-gray-600"
@@ -959,15 +959,15 @@ function FlatList({
                 <div className="flex items-center gap-1.5">
                   <span className="text-gray-200 truncate">{item.name}</span>
                   {isMagic && (
-                    <span className={`text-[8px] px-1 py-px rounded shrink-0 ${RARITY_PILL[item.rarity!] ?? "bg-gray-700/50 text-gray-400"}`}>
+                    <span className={`text-xs px-1 py-px rounded shrink-0 ${RARITY_PILL[item.rarity!] ?? "bg-gray-700/50 text-gray-400"}`}>
                       {item.rarity}
                     </span>
                   )}
                   {!!item.reqAttune && (
-                    <span className="text-[8px] px-1 py-px rounded bg-amber-900/30 text-amber-500/70 shrink-0">Attune</span>
+                    <span className="text-xs px-1 py-px rounded bg-amber-900/30 text-amber-500/70 shrink-0">Attune</span>
                   )}
                 </div>
-                <div className="text-[10px] text-gray-500">
+                <div className="text-xs text-gray-500">
                   {formatItemCost(item.value)}
                   {item.weight != null && item.weight > 0 && <span> &middot; {item.weight} lb.</span>}
                   {!isMagic && briefDesc && (
@@ -977,7 +977,7 @@ function FlatList({
               </button>
               <button
                 onClick={() => onAdd(item.name)}
-                className={`shrink-0 text-[10px] px-2 py-1 rounded transition-colors ml-2 ${
+                className={`shrink-0 text-xs px-2 py-1 rounded transition-colors ml-2 ${
                   alreadyAdded
                     ? "text-amber-300 bg-amber-500/10 hover:bg-amber-500/20"
                     : "text-gray-400 bg-gray-700 hover:bg-gray-600"
@@ -987,7 +987,7 @@ function FlatList({
               </button>
             </div>
             {isExpanded && hasEntries && (
-              <div className="px-2.5 pb-2 text-[10px] text-gray-400 leading-relaxed border-t border-gray-700/30 pt-1.5">
+              <div className="px-2.5 pb-2 text-xs text-gray-400 leading-relaxed border-t border-gray-700/30 pt-1.5">
                 {item.entries!
                   .filter((e: unknown) => typeof e === "string")
                   .map((e: string, i: number) => (

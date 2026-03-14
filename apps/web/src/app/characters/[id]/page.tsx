@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { Breadcrumb } from "@/components/ui/Breadcrumb";
+import { Button } from "@/components/ui/Button";
 import { CharacterSheet } from "@/components/character/CharacterSheet";
 import { useCharacterLibrary } from "@/hooks/useCharacterLibrary";
 
@@ -61,60 +63,55 @@ export default function CharacterDetailPage() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Slim toolbar */}
+      {/* Toolbar */}
       <div className="bg-gray-800/60 border-b border-gray-700/40 px-6 py-3 shrink-0">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <Link
-            href="/characters"
-            className="text-sm px-4 py-2 text-amber-400/70 hover:text-amber-300 transition-colors"
+        <div className="max-w-4xl mx-auto">
+          <Breadcrumb
+            items={[{ label: "Home", href: "/" }, { label: "Characters", href: "/characters" }]}
+            current={char.static.name}
           >
-            &larr; All Characters
-          </Link>
-          <span
-            className="text-sm font-medium text-amber-200/90 truncate"
-            style={{ fontFamily: "var(--font-cinzel)" }}
-          >
-            {char.static.name}
-          </span>
-          <div className="flex items-center gap-2">
             {saved.builderChoices && (
-              <Link
-                href={`/characters/builder?edit=${saved.id}`}
-                className="text-sm px-4 py-2 rounded bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 border border-amber-500/50 transition-colors"
+              <Button
+                size="sm"
+                href={`/characters/${saved.id}/edit`}
               >
                 Edit
-              </Link>
+              </Button>
             )}
-            <button
+            <Button
+              variant="secondary"
+              size="sm"
               onClick={() => exportNative(char)}
-              className="text-sm px-4 py-2 rounded bg-gray-800/60 text-gray-300 hover:bg-emerald-600 border border-gray-700/50 transition-colors"
             >
               Export
-            </button>
+            </Button>
             {confirmDelete ? (
               <div className="flex items-center gap-1">
-                <button
+                <Button
+                  variant="danger"
+                  size="sm"
                   onClick={handleDelete}
-                  className="text-sm px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700 transition-colors"
                 >
                   Confirm
-                </button>
-                <button
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
                   onClick={() => setConfirmDelete(false)}
-                  className="text-sm px-3 py-2 text-gray-500 hover:text-gray-300 transition-colors"
                 >
                   Cancel
-                </button>
+                </Button>
               </div>
             ) : (
-              <button
+              <Button
+                variant="danger"
+                size="sm"
                 onClick={() => setConfirmDelete(true)}
-                className="text-sm px-4 py-2 rounded bg-gray-800/60 text-gray-400 hover:bg-red-900/50 hover:text-red-400 border border-gray-700/50 transition-colors"
               >
                 Delete
-              </button>
+              </Button>
             )}
-          </div>
+          </Breadcrumb>
         </div>
       </div>
 

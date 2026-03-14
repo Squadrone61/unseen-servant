@@ -776,7 +776,8 @@ function formatAtkTag(code: string): string {
  * Recursively flatten Entry[] to plain readable text.
  * Strips all tags and flattens nested structures.
  */
-export function entriesToText(entries: Entry[], depth: number = 0): string {
+export function entriesToText(entries: Entry[] | undefined | null, depth: number = 0): string {
+  if (!entries) return "";
   const lines: string[] = [];
   const indent = "  ".repeat(depth);
 

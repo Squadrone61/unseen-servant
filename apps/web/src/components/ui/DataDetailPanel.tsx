@@ -278,9 +278,9 @@ function MonsterContent({ name, onTagClick }: { name: string; onTagClick: (t: Pa
       <div className="grid grid-cols-6 gap-1 text-center">
         {abilities.map((ab) => (
           <div key={ab} className="bg-gray-800/40 rounded px-1 py-1 border border-gray-700/30">
-            <div className="text-[9px] text-gray-500 uppercase">{ab}</div>
+            <div className="text-xs text-gray-500 uppercase">{ab}</div>
             <div className="text-sm text-gray-200 font-medium">{m[ab]}</div>
-            <div className="text-[10px] text-gray-400">{formatAbilityMod(m[ab])}</div>
+            <div className="text-xs text-gray-400">{formatAbilityMod(m[ab])}</div>
           </div>
         ))}
       </div>
@@ -468,7 +468,7 @@ function Badge({ color, children }: { color: string; children: React.ReactNode }
 function StatBox({ label, value }: { label: string; value: string }) {
   return (
     <div className="bg-gray-800/40 border border-gray-700/30 rounded px-2.5 py-1.5">
-      <div className="text-[10px] text-gray-500 uppercase tracking-wider">{label}</div>
+      <div className="text-sm text-gray-500 uppercase tracking-wider">{label}</div>
       <div className="text-sm text-gray-300">{value}</div>
     </div>
   );
@@ -477,7 +477,7 @@ function StatBox({ label, value }: { label: string; value: string }) {
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
     <div
-      className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-1"
+      className="text-sm text-gray-500 uppercase tracking-wider font-medium mb-1"
       style={{ fontFamily: "var(--font-cinzel)" }}
     >
       {children}
@@ -497,7 +497,7 @@ function DetailLine({ label, value }: { label: string; value: string }) {
 function SourceLine({ source, page }: { source?: string; page?: number }) {
   if (!source) return null;
   return (
-    <div className="text-[10px] text-gray-600 pt-1 border-t border-gray-800/50">
+    <div className="text-xs text-gray-600 pt-1 border-t border-gray-800/50">
       Source: {source}{page ? `, p. ${page}` : ""}
     </div>
   );

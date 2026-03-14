@@ -71,7 +71,7 @@ export function AbilityDetailPopup({
 
         {/* Saving Throw */}
         <div>
-          <div className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-1.5" style={{ fontFamily: "var(--font-cinzel)" }}>
+          <div className="text-sm text-gray-500 uppercase tracking-wider font-medium mb-1.5" style={{ fontFamily: "var(--font-cinzel)" }}>
             Saving Throw
           </div>
           <div className="flex items-center gap-2 bg-gray-900/50 border border-gray-700 rounded px-3 py-2">
@@ -94,7 +94,7 @@ export function AbilityDetailPopup({
         {/* Related Skills */}
         {relatedSkills.length > 0 && (
           <div>
-            <div className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-1.5" style={{ fontFamily: "var(--font-cinzel)" }}>
+            <div className="text-sm text-gray-500 uppercase tracking-wider font-medium mb-1.5" style={{ fontFamily: "var(--font-cinzel)" }}>
               Related Skills
             </div>
             <div className="space-y-1">
@@ -122,7 +122,7 @@ export function AbilityDetailPopup({
                       {SKILL_DISPLAY_NAMES[skill.name] || skill.name}
                     </span>
                     {skill.expertise && (
-                      <span className="text-[9px] text-yellow-500 font-medium uppercase">
+                      <span className="text-xs text-yellow-500 font-medium uppercase">
                         exp
                       </span>
                     )}

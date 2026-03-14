@@ -74,10 +74,10 @@ function AdvMarker({
   return (
     <span className={`shrink-0 ${className}`} title={tooltip}>
       {hasAdv && (
-        <span className="text-[9px] text-green-400 font-bold">▲</span>
+        <span className="text-xs text-green-400 font-bold">▲</span>
       )}
       {hasDisadv && (
-        <span className="text-[9px] text-red-400 font-bold">▼</span>
+        <span className="text-xs text-red-400 font-bold">▼</span>
       )}
     </span>
   );
@@ -168,19 +168,19 @@ export function CharacterSheet({ character }: CharacterSheetProps) {
         {/* Stat Boxes — 3-column grid, 2 rows */}
         <div className="grid grid-cols-3 gap-1.5 text-center">
           <div className="bg-gray-900/60 border border-gray-700/50 rounded py-1">
-            <div className="text-[10px] text-gray-500 uppercase">AC</div>
+            <div className="text-xs text-gray-500 uppercase">AC</div>
             <div className="text-base font-bold text-gray-200">
               {s.armorClass}
             </div>
           </div>
           <div className="bg-gray-900/60 border border-gray-700/50 rounded py-1">
-            <div className="text-[10px] text-gray-500 uppercase">Speed</div>
+            <div className="text-xs text-gray-500 uppercase">Speed</div>
             <div className="text-base font-bold text-gray-200">
               {s.speed} ft
             </div>
           </div>
           <div className="bg-gray-900/60 border border-gray-700/50 rounded py-1">
-            <div className="text-[10px] text-gray-500 uppercase">Prof</div>
+            <div className="text-xs text-gray-500 uppercase">Prof</div>
             <div className="text-base font-bold text-gray-200">
               +{s.proficiencyBonus}
             </div>
@@ -188,7 +188,7 @@ export function CharacterSheet({ character }: CharacterSheetProps) {
           {isCaster ? (
             <>
               <div className="bg-gray-900/60 border border-gray-700/50 rounded py-1">
-                <div className="text-[10px] text-gray-500 uppercase">
+                <div className="text-xs text-gray-500 uppercase">
                   Spell DC
                 </div>
                 <div className="text-base font-bold text-gray-200">
@@ -196,7 +196,7 @@ export function CharacterSheet({ character }: CharacterSheetProps) {
                 </div>
               </div>
               <div className="bg-gray-900/60 border border-gray-700/50 rounded py-1">
-                <div className="text-[10px] text-gray-500 uppercase">
+                <div className="text-xs text-gray-500 uppercase">
                   Spell Atk
                 </div>
                 <div className="text-base font-bold text-gray-200">
@@ -204,7 +204,7 @@ export function CharacterSheet({ character }: CharacterSheetProps) {
                 </div>
               </div>
               <div className="bg-gray-900/60 border border-gray-700/50 rounded py-1">
-                <div className="text-[10px] text-gray-500 uppercase">Init</div>
+                <div className="text-xs text-gray-500 uppercase">Init</div>
                 <div className="text-base font-bold text-gray-200">
                   {formatBonus(getModifier(s.abilities.dexterity))}
                 </div>
@@ -213,19 +213,19 @@ export function CharacterSheet({ character }: CharacterSheetProps) {
           ) : (
             <>
               <div className="bg-gray-900/60 border border-gray-700/50 rounded py-1">
-                <div className="text-[10px] text-gray-500 uppercase">Init</div>
+                <div className="text-xs text-gray-500 uppercase">Init</div>
                 <div className="text-base font-bold text-gray-200">
                   {formatBonus(getModifier(s.abilities.dexterity))}
                 </div>
               </div>
               <div className="bg-gray-900/60 border border-gray-700/50 rounded py-1">
-                <div className="text-[10px] text-gray-500 uppercase">Hit Dice</div>
+                <div className="text-xs text-gray-500 uppercase">Hit Dice</div>
                 <div className="text-base font-bold text-gray-200">
                   {getTotalLevel(s.classes)}
                 </div>
               </div>
               <div className="bg-gray-900/60 border border-gray-700/50 rounded py-1">
-                <div className="text-[10px] text-gray-500 uppercase">Passive</div>
+                <div className="text-xs text-gray-500 uppercase">Passive</div>
                 <div className="text-base font-bold text-gray-200">
                   {parseInt(s.senses.find((sense) => sense.startsWith("Passive Perception"))?.split(" ").at(-1) ?? String(10 + getModifier(s.abilities.wisdom)), 10)}
                 </div>
@@ -251,14 +251,14 @@ export function CharacterSheet({ character }: CharacterSheetProps) {
         {/* Conditions */}
         {d.conditions.length > 0 && (
           <div>
-            <div className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-1" style={{ fontFamily: "var(--font-cinzel)" }}>
+            <div className="text-sm text-gray-500 uppercase tracking-wider font-medium mb-1" style={{ fontFamily: "var(--font-cinzel)" }}>
               Conditions
             </div>
             <div className="flex flex-wrap gap-1">
               {d.conditions.map((c, i) => (
                 <span
                   key={i}
-                  className="bg-red-900/30 text-red-400 text-[10px] px-2 py-0.5 rounded-full border border-red-800/50"
+                  className="bg-red-900/30 text-red-400 text-xs px-2 py-0.5 rounded-full border border-red-800/50"
                 >
                   {c}
                 </span>
@@ -271,7 +271,7 @@ export function CharacterSheet({ character }: CharacterSheetProps) {
         {(d.deathSaves.successes > 0 || d.deathSaves.failures > 0) && (
           <div className="flex gap-4">
             <div>
-              <span className="text-[10px] text-gray-500">Saves: </span>
+              <span className="text-xs text-gray-500">Saves: </span>
               {Array.from({ length: 3 }, (_, i) => (
                 <span
                   key={i}
@@ -284,7 +284,7 @@ export function CharacterSheet({ character }: CharacterSheetProps) {
               ))}
             </div>
             <div>
-              <span className="text-[10px] text-gray-500">Fails: </span>
+              <span className="text-xs text-gray-500">Fails: </span>
               {Array.from({ length: 3 }, (_, i) => (
                 <span
                   key={i}
@@ -327,7 +327,7 @@ export function CharacterSheet({ character }: CharacterSheetProps) {
                 className="bg-gray-900/60 border border-gray-700/50 rounded p-1 py-1.5 text-center relative cursor-pointer hover:border-amber-500/50 hover:bg-gray-900/70 transition-colors"
                 onClick={(e) => setPopup({ type: "ability", id: key, position: { x: e.clientX, y: e.clientY } })}
               >
-                <div className="text-[9px] text-gray-500 uppercase tracking-wider font-medium">
+                <div className="text-xs text-gray-500 uppercase tracking-wider font-medium">
                   {label}
                 </div>
                 <div
@@ -341,19 +341,19 @@ export function CharacterSheet({ character }: CharacterSheetProps) {
                 >
                   {modStr}
                 </div>
-                <div className="text-[10px] text-gray-500">{score}</div>
+                <div className="text-xs text-gray-500">{score}</div>
                 {(hasAdv || hasDisadv) && (
                   <span
                     className="absolute top-0.5 right-0.5"
                     title={advTooltip}
                   >
                     {hasAdv && (
-                      <span className="text-[8px] text-green-400 font-bold">
+                      <span className="text-xs text-green-400 font-bold">
                         ▲
                       </span>
                     )}
                     {hasDisadv && (
-                      <span className="text-[8px] text-red-400 font-bold">
+                      <span className="text-xs text-red-400 font-bold">
                         ▼
                       </span>
                     )}
@@ -366,7 +366,7 @@ export function CharacterSheet({ character }: CharacterSheetProps) {
 
         {/* Saving Throws */}
         <div>
-          <div className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-1.5" style={{ fontFamily: "var(--font-cinzel)" }}>
+          <div className="text-sm text-gray-500 uppercase tracking-wider font-medium mb-1.5" style={{ fontFamily: "var(--font-cinzel)" }}>
             Saving Throws
           </div>
           <div className="grid grid-cols-2 gap-x-2 gap-y-0.5">
@@ -423,7 +423,7 @@ export function CharacterSheet({ character }: CharacterSheetProps) {
           if (globalAdvs.length === 0) return null;
           return (
             <div className="space-y-0.5">
-              <div className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-1" style={{ fontFamily: "var(--font-cinzel)" }}>
+              <div className="text-sm text-gray-500 uppercase tracking-wider font-medium mb-1" style={{ fontFamily: "var(--font-cinzel)" }}>
                 Advantages &amp; Disadvantages
               </div>
               {globalAdvs.map((a, i) => {
@@ -434,7 +434,7 @@ export function CharacterSheet({ character }: CharacterSheetProps) {
                     className="flex items-start gap-1.5 px-2 py-0.5 text-xs"
                   >
                     <span
-                      className={`shrink-0 text-[9px] font-bold mt-0.5 ${
+                      className={`shrink-0 text-xs font-bold mt-0.5 ${
                         isAdv ? "text-green-400" : "text-red-400"
                       }`}
                     >
@@ -458,7 +458,7 @@ export function CharacterSheet({ character }: CharacterSheetProps) {
           <div>
             <button
               onClick={() => setSkillsOpen(!skillsOpen)}
-              className="flex items-center justify-between w-full text-[10px] text-gray-500 uppercase tracking-wider font-medium"
+              className="flex items-center justify-between w-full text-sm text-gray-500 uppercase tracking-wider font-medium"
               style={{ fontFamily: "var(--font-cinzel)" }}
             >
               <span>
@@ -510,7 +510,7 @@ export function CharacterSheet({ character }: CharacterSheetProps) {
                         {SKILL_DISPLAY_NAMES[skill.name] || skill.name}
                       </span>
                       {skill.expertise && (
-                        <span className="text-[8px] text-yellow-500 font-bold uppercase">
+                        <span className="text-xs text-yellow-500 font-bold uppercase">
                           E
                         </span>
                       )}
@@ -542,7 +542,7 @@ export function CharacterSheet({ character }: CharacterSheetProps) {
           <div>
             <button
               onClick={() => setProfsOpen(!profsOpen)}
-              className="flex items-center justify-between w-full text-[10px] text-gray-500 uppercase tracking-wider font-medium"
+              className="flex items-center justify-between w-full text-sm text-gray-500 uppercase tracking-wider font-medium"
               style={{ fontFamily: "var(--font-cinzel)" }}
             >
               <span>Proficiencies</span>
@@ -554,7 +554,7 @@ export function CharacterSheet({ character }: CharacterSheetProps) {
               <div className="mt-1.5 space-y-1.5">
                 {s.proficiencies.armor.length > 0 && (
                   <div>
-                    <div className="text-[10px] text-gray-500 font-medium">
+                    <div className="text-sm text-gray-500 font-medium">
                       Armor
                     </div>
                     <div className="text-xs text-gray-300">
@@ -564,7 +564,7 @@ export function CharacterSheet({ character }: CharacterSheetProps) {
                 )}
                 {s.proficiencies.weapons.length > 0 && (
                   <div>
-                    <div className="text-[10px] text-gray-500 font-medium">
+                    <div className="text-sm text-gray-500 font-medium">
                       Weapons
                     </div>
                     <div className="text-xs text-gray-300">
@@ -574,7 +574,7 @@ export function CharacterSheet({ character }: CharacterSheetProps) {
                 )}
                 {s.proficiencies.tools.length > 0 && (
                   <div>
-                    <div className="text-[10px] text-gray-500 font-medium">
+                    <div className="text-sm text-gray-500 font-medium">
                       Tools
                     </div>
                     <div className="text-xs text-gray-300">
@@ -584,7 +584,7 @@ export function CharacterSheet({ character }: CharacterSheetProps) {
                 )}
                 {s.proficiencies.other.length > 0 && (
                   <div>
-                    <div className="text-[10px] text-gray-500 font-medium">
+                    <div className="text-sm text-gray-500 font-medium">
                       Other
                     </div>
                     <div className="text-xs text-gray-300">
@@ -602,7 +602,7 @@ export function CharacterSheet({ character }: CharacterSheetProps) {
           <div className="space-y-1.5">
             {s.languages.length > 0 && (
               <div>
-                <div className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-0.5" style={{ fontFamily: "var(--font-cinzel)" }}>
+                <div className="text-sm text-gray-500 uppercase tracking-wider font-medium mb-0.5" style={{ fontFamily: "var(--font-cinzel)" }}>
                   Languages
                 </div>
                 <div className="text-xs text-gray-300">
@@ -612,7 +612,7 @@ export function CharacterSheet({ character }: CharacterSheetProps) {
             )}
             {s.senses.length > 0 && (
               <div>
-                <div className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-0.5" style={{ fontFamily: "var(--font-cinzel)" }}>
+                <div className="text-sm text-gray-500 uppercase tracking-wider font-medium mb-0.5" style={{ fontFamily: "var(--font-cinzel)" }}>
                   Senses
                 </div>
                 <div className="text-xs text-gray-300">

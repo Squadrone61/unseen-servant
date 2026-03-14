@@ -88,7 +88,7 @@ export function ItemDetailPopup({ item, onClose, position }: ItemDetailPopupProp
         {/* Properties */}
         {item.properties && item.properties.length > 0 && (
           <div>
-            <div className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-1" style={{ fontFamily: "var(--font-cinzel)" }}>
+            <div className="text-sm text-gray-500 uppercase tracking-wider font-medium mb-1" style={{ fontFamily: "var(--font-cinzel)" }}>
               Properties
             </div>
             <div className="flex flex-wrap gap-1">
@@ -107,7 +107,7 @@ export function ItemDetailPopup({ item, onClose, position }: ItemDetailPopupProp
         {/* Description */}
         {item.description && (
           <div>
-            <div className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-1" style={{ fontFamily: "var(--font-cinzel)" }}>
+            <div className="text-sm text-gray-500 uppercase tracking-wider font-medium mb-1" style={{ fontFamily: "var(--font-cinzel)" }}>
               Description
             </div>
             <Prose className="text-gray-300">

@@ -51,7 +51,7 @@ export function StepSpecies({ state, dispatch }: StepProps) {
       {/* Character name (optional early entry) */}
       <div>
         <label
-          className="text-[10px] text-gray-500 uppercase tracking-wider block mb-1.5"
+          className="text-sm text-gray-500 uppercase tracking-wider block mb-1.5"
           style={{ fontFamily: "var(--font-cinzel)" }}
         >
           Character Name{" "}
@@ -104,15 +104,15 @@ export function StepSpecies({ state, dispatch }: StepProps) {
                 {sp.name}
               </div>
               <div className="flex items-center gap-1 mt-1.5 flex-wrap">
-                <span className="text-[9px] bg-gray-900/60 border border-gray-700/40 rounded px-1.5 py-0.5 text-gray-400">
+                <span className="text-xs bg-gray-900/60 border border-gray-700/40 rounded px-1.5 py-0.5 text-gray-400">
                   {formatSpeciesSize(sp.size)}
                 </span>
-                <span className="text-[9px] bg-gray-900/60 border border-gray-700/40 rounded px-1.5 py-0.5 text-gray-400">
+                <span className="text-xs bg-gray-900/60 border border-gray-700/40 rounded px-1.5 py-0.5 text-gray-400">
                   {getSpeciesSpeed(sp)} ft.
                 </span>
                 {sp.source && (
                   <span
-                    className={`text-[9px] border rounded px-1.5 py-0.5 ${sourceBadgeClass(sp.source)}`}
+                    className={`text-xs border rounded px-1.5 py-0.5 ${sourceBadgeClass(sp.source)}`}
                   >
                     {sp.source}
                   </span>
@@ -133,7 +133,7 @@ export function StepSpecies({ state, dispatch }: StepProps) {
               className="bg-gray-800/60 border-l-2 border-amber-500/60 border-y border-r border-gray-700/40 rounded-r-lg p-4 space-y-3"
             >
               <div
-                className="text-xs font-medium text-amber-300/80"
+                className="text-sm font-medium text-amber-300/80"
                 style={{ fontFamily: "var(--font-cinzel)" }}
               >
                 Trait Choices for {selected.name}
@@ -179,7 +179,7 @@ function StepHeader({ title, description }: { title: string; description: string
       >
         {title}
       </h2>
-      <p className="text-xs text-gray-500">{description}</p>
+      <p className="text-sm text-gray-500">{description}</p>
       <div className="h-px bg-gradient-to-r from-amber-500/30 via-gray-700/50 to-transparent mt-2" />
     </div>
   );
@@ -202,7 +202,7 @@ function TraitChoicePicker({
 
   return (
     <div className="space-y-1.5">
-      <div className="text-xs font-medium text-gray-200">{traitName}</div>
+      <div className="text-sm font-medium text-gray-200">{traitName}</div>
 
       {choiceType === "skill" && (
         <SkillPicker
@@ -251,7 +251,7 @@ function TraitChoicePicker({
               <button
                 key={sizeCode}
                 onClick={() => dispatch({ type: "SET_SPECIES_CHOICE", traitName, selected: sizeCode })}
-                className={`text-[10px] px-2.5 py-1 rounded-md border transition-all duration-150 ${
+                className={`text-xs px-2.5 py-1 rounded-md border transition-all duration-150 ${
                   isSelected
                     ? "border-amber-500/50 bg-amber-500/10 text-amber-300"
                     : "border-gray-700/60 bg-gray-900/40 text-gray-400 hover:border-gray-600"
@@ -285,7 +285,7 @@ function TraitChoicePicker({
 
       {definition.secondaryChoice && (
         <div className="mt-1.5">
-          <div className="text-[10px] text-gray-500 mb-1">Spellcasting Ability</div>
+          <div className="text-xs text-gray-500 mb-1">Spellcasting Ability</div>
           <div className="flex gap-1.5">
             {definition.secondaryChoice.options.map((opt) => (
               <button
@@ -297,7 +297,7 @@ function TraitChoicePicker({
                     selected: opt,
                   })
                 }
-                className={`text-[10px] px-2.5 py-1 rounded-md border transition-all duration-150 ${
+                className={`text-xs px-2.5 py-1 rounded-md border transition-all duration-150 ${
                   value?.secondarySelected === opt
                     ? "border-amber-500/50 bg-amber-500/10 text-amber-300"
                     : "border-gray-700 bg-gray-900/60 text-gray-400 hover:border-gray-600"
@@ -350,7 +350,7 @@ function SkillPicker({
             key={skill}
             onClick={() => toggle(skill)}
             disabled={atMax}
-            className={`text-[10px] px-2.5 py-1 rounded-md border transition-all duration-150 ${
+            className={`text-xs px-2.5 py-1 rounded-md border transition-all duration-150 ${
               isSelected
                 ? "border-emerald-500/50 bg-emerald-500/10 text-emerald-300"
                 : atMax
@@ -362,7 +362,7 @@ function SkillPicker({
           </button>
         );
       })}
-      <div className="text-[10px] text-gray-600 self-center ml-1">
+      <div className="text-xs text-gray-600 self-center ml-1">
         {value.length}/{count}
       </div>
     </div>
@@ -414,7 +414,7 @@ function FeatPicker({
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         placeholder="Search feats..."
-        className="w-full bg-gray-900/60 border border-gray-700/60 rounded-md px-2.5 py-1.5 text-[10px] text-gray-100 placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-amber-500/50"
+        className="w-full bg-gray-900/60 border border-gray-700/60 rounded-md px-2.5 py-1.5 text-xs text-gray-100 placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-amber-500/50"
       />
       <div className="max-h-64 overflow-y-auto space-y-1">
         {filtered.map((feat) => {
@@ -457,7 +457,7 @@ function FeatPicker({
                     {feat.name}
                   </span>
                   {benefits.length > 0 && (
-                    <span className="text-[10px] text-gray-500 ml-1.5">
+                    <span className="text-xs text-gray-500 ml-1.5">
                       {benefits.join(", ")}
                     </span>
                   )}
@@ -490,12 +490,12 @@ function FeatPicker({
 // ─── Species Feat Sub-Choices ────────────────────────────
 
 function SpeciesSkilledChoices({ state, dispatch }: StepProps) {
-  const overrides = state.originFeatOverrides;
+  const overrides = state.speciesOriginFeatOverrides;
   const selectedSkills = overrides.skillChoices ?? [];
 
   return (
     <div className="mt-2 space-y-2 border-t border-gray-700/50 pt-2">
-      <div className="text-[10px] text-gray-500 font-medium">
+      <div className="text-xs text-gray-500 font-medium">
         Skilled: Choose 3 skill proficiencies ({selectedSkills.length}/3)
       </div>
       <div className="flex flex-wrap gap-1">
@@ -511,12 +511,12 @@ function SpeciesSkilledChoices({ state, dispatch }: StepProps) {
                     ? [...selectedSkills, skill]
                     : selectedSkills;
                 dispatch({
-                  type: "SET_ORIGIN_FEAT_OVERRIDES",
+                  type: "SET_SPECIES_ORIGIN_FEAT_OVERRIDES",
                   overrides: { skillChoices: next },
                 });
               }}
               disabled={!isSelected && selectedSkills.length >= 3}
-              className={`text-[10px] px-1.5 py-0.5 rounded-md transition-colors ${
+              className={`text-xs px-1.5 py-0.5 rounded-md transition-colors ${
                 isSelected
                   ? "bg-purple-600/15 text-purple-400 border border-purple-500/30"
                   : selectedSkills.length >= 3
@@ -543,7 +543,7 @@ function SpeciesMagicInitiateChoices({
   const matchedClass = MI_CLASSES.find((c) =>
     featName.toLowerCase().includes(c.toLowerCase())
   );
-  const overrides = state.originFeatOverrides;
+  const overrides = state.speciesOriginFeatOverrides;
   const spellClass = matchedClass ?? overrides.spellClass ?? "Druid";
 
   const cantrips = useMemo(
@@ -560,22 +560,22 @@ function SpeciesMagicInitiateChoices({
 
   return (
     <div className="mt-2 space-y-2 border-t border-gray-700/50 pt-2">
-      <div className="text-[10px] text-gray-500 font-medium">Magic Initiate Choices</div>
+      <div className="text-xs text-gray-500 font-medium">Magic Initiate Choices</div>
 
       {!matchedClass && (
         <div>
-          <div className="text-[10px] text-gray-500 mb-1">Spell List</div>
+          <div className="text-xs text-gray-500 mb-1">Spell List</div>
           <div className="flex gap-1">
             {MI_CLASSES.map((c) => (
               <button
                 key={c}
                 onClick={() =>
                   dispatch({
-                    type: "SET_ORIGIN_FEAT_OVERRIDES",
+                    type: "SET_SPECIES_ORIGIN_FEAT_OVERRIDES",
                     overrides: { spellClass: c, cantrips: [], spell: "" },
                   })
                 }
-                className={`text-[10px] px-2.5 py-1 rounded-md transition-all duration-150 ${
+                className={`text-xs px-2.5 py-1 rounded-md transition-all duration-150 ${
                   spellClass === c
                     ? "bg-amber-500/15 text-amber-300 border border-amber-500/30"
                     : "text-gray-500 border border-gray-700/60"
@@ -589,18 +589,18 @@ function SpeciesMagicInitiateChoices({
       )}
 
       <div>
-        <div className="text-[10px] text-gray-500 mb-1">Spellcasting Ability</div>
+        <div className="text-xs text-gray-500 mb-1">Spellcasting Ability</div>
         <div className="flex gap-1">
           {["Intelligence", "Wisdom", "Charisma"].map((a) => (
             <button
               key={a}
               onClick={() =>
                 dispatch({
-                  type: "SET_ORIGIN_FEAT_OVERRIDES",
+                  type: "SET_SPECIES_ORIGIN_FEAT_OVERRIDES",
                   overrides: { abilityChoice: a },
                 })
               }
-              className={`text-[10px] px-2.5 py-1 rounded-md transition-all duration-150 ${
+              className={`text-xs px-2.5 py-1 rounded-md transition-all duration-150 ${
                 (overrides.abilityChoice ?? "").toLowerCase() === a.toLowerCase()
                   ? "bg-amber-500/15 text-amber-300 border border-amber-500/30"
                   : "text-gray-500 border border-gray-700/60"
@@ -613,7 +613,7 @@ function SpeciesMagicInitiateChoices({
       </div>
 
       <div>
-        <div className="text-[10px] text-gray-500 mb-1">
+        <div className="text-xs text-gray-500 mb-1">
           Cantrips ({selectedCantrips.length}/2)
         </div>
         <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto">
@@ -629,12 +629,12 @@ function SpeciesMagicInitiateChoices({
                       ? [...selectedCantrips, s.name]
                       : selectedCantrips;
                   dispatch({
-                    type: "SET_ORIGIN_FEAT_OVERRIDES",
+                    type: "SET_SPECIES_ORIGIN_FEAT_OVERRIDES",
                     overrides: { cantrips: next },
                   });
                 }}
                 disabled={!isSelected && selectedCantrips.length >= 2}
-                className={`text-[10px] px-1.5 py-0.5 rounded-md transition-colors ${
+                className={`text-xs px-1.5 py-0.5 rounded-md transition-colors ${
                   isSelected
                     ? "bg-purple-600/15 text-purple-400 border border-purple-500/30"
                     : selectedCantrips.length >= 2
@@ -650,7 +650,7 @@ function SpeciesMagicInitiateChoices({
       </div>
 
       <div>
-        <div className="text-[10px] text-gray-500 mb-1">
+        <div className="text-xs text-gray-500 mb-1">
           Level 1 Spell {selectedSpell ? `(${selectedSpell})` : "(pick one)"}
         </div>
         <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto">
@@ -661,11 +661,11 @@ function SpeciesMagicInitiateChoices({
                 key={s.name}
                 onClick={() =>
                   dispatch({
-                    type: "SET_ORIGIN_FEAT_OVERRIDES",
+                    type: "SET_SPECIES_ORIGIN_FEAT_OVERRIDES",
                     overrides: { spell: isSelected ? "" : s.name },
                   })
                 }
-                className={`text-[10px] px-1.5 py-0.5 rounded-md transition-colors ${
+                className={`text-xs px-1.5 py-0.5 rounded-md transition-colors ${
                   isSelected
                     ? "bg-purple-600/15 text-purple-400 border border-purple-500/30"
                     : "text-gray-400 border border-gray-700/60 hover:text-gray-200"
@@ -702,7 +702,7 @@ function LineagePicker({
           onClick={() =>
             dispatch({ type: "SET_SPECIES_CHOICE", traitName, selected: opt.name })
           }
-          className={`w-full text-left px-2.5 py-1.5 rounded-lg border text-[10px] transition-all duration-150 ${
+          className={`w-full text-left px-2.5 py-1.5 rounded-lg border text-xs transition-all duration-150 ${
             value === opt.name
               ? "border-amber-500/30 bg-amber-500/5"
               : "border-gray-700/50 bg-gray-900/40 hover:border-gray-600"
@@ -735,7 +735,7 @@ function SpeciesDetail({ species }: { species: SpeciesData }) {
       {/* Traits */}
       {species.entries.length > 0 && (
         <div className="space-y-2">
-          <div className="text-[10px] text-gray-500 font-medium uppercase tracking-wider">
+          <div className="text-sm text-gray-500 font-medium uppercase tracking-wider">
             Traits
           </div>
           {species.entries.map((entry, i) => {
@@ -758,7 +758,7 @@ function SpeciesDetail({ species }: { species: SpeciesData }) {
                 key={entryName}
                 className="border-l-2 border-amber-500/30 pl-2.5"
               >
-                <div className="text-xs font-medium text-gray-200">{entryName}</div>
+                <div className="text-sm font-medium text-gray-200">{entryName}</div>
                 <div className="mt-0.5">
                   <RichText entries={childEntries} className="text-xs text-gray-400" />
                 </div>
@@ -771,7 +771,7 @@ function SpeciesDetail({ species }: { species: SpeciesData }) {
       {/* Resistances */}
       {species.resist && species.resist.length > 0 && (
         <div>
-          <div className="text-[10px] text-gray-500 font-medium uppercase tracking-wider mb-1">
+          <div className="text-sm text-gray-500 font-medium uppercase tracking-wider mb-1">
             Resistances
           </div>
           <div className="flex flex-wrap gap-1">
@@ -780,7 +780,7 @@ function SpeciesDetail({ species }: { species: SpeciesData }) {
                 return (
                   <span
                     key={r}
-                    className="text-[10px] bg-red-900/20 text-red-400 border border-red-800/30 rounded-md px-1.5 py-0.5"
+                    className="text-xs bg-red-900/20 text-red-400 border border-red-800/30 rounded-md px-1.5 py-0.5"
                   >
                     {r}
                   </span>
@@ -790,7 +790,7 @@ function SpeciesDetail({ species }: { species: SpeciesData }) {
               return (
                 <span
                   key={`choose-${i}`}
-                  className="text-[10px] bg-red-900/20 text-red-400 border border-red-800/30 rounded-md px-1.5 py-0.5"
+                  className="text-xs bg-red-900/20 text-red-400 border border-red-800/30 rounded-md px-1.5 py-0.5"
                 >
                   Choose: {r.choose.from.join(", ")}
                 </span>
@@ -805,14 +805,14 @@ function SpeciesDetail({ species }: { species: SpeciesData }) {
         const languages = species.languageProficiencies?.flatMap(lp => Object.keys(lp).filter(k => lp[k] === true)) ?? [];
         return languages.length > 0 ? (
           <div>
-            <div className="text-[10px] text-gray-500 font-medium uppercase tracking-wider mb-1">
+            <div className="text-sm text-gray-500 font-medium uppercase tracking-wider mb-1">
               Languages
             </div>
             <div className="flex flex-wrap gap-1">
               {languages.map((l) => (
                 <span
                   key={l}
-                  className="text-[10px] bg-blue-900/20 text-blue-400 border border-blue-800/30 rounded-md px-1.5 py-0.5"
+                  className="text-xs bg-blue-900/20 text-blue-400 border border-blue-800/30 rounded-md px-1.5 py-0.5"
                 >
                   {l.charAt(0).toUpperCase() + l.slice(1)}
                 </span>
@@ -823,7 +823,7 @@ function SpeciesDetail({ species }: { species: SpeciesData }) {
       })()}
 
       {/* Source */}
-      <div className="text-[10px] text-gray-600">{species.source}</div>
+      <div className="text-xs text-gray-600">{species.source}</div>
     </div>
   );
 }
@@ -831,7 +831,7 @@ function SpeciesDetail({ species }: { species: SpeciesData }) {
 function StatBadge({ label, value }: { label: string; value: string }) {
   return (
     <div className="bg-gray-900/60 border border-gray-700/40 rounded-md px-2 py-1">
-      <div className="text-[9px] text-gray-500 uppercase">{label}</div>
+      <div className="text-xs text-gray-500 uppercase">{label}</div>
       <div className="text-xs text-gray-200 font-medium">{value}</div>
     </div>
   );

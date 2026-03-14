@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { CharacterData } from "@aidnd/shared/types";
 import { formatClassString, getTotalLevel } from "@aidnd/shared/utils";
 import { CharacterSheet } from "./CharacterSheet";
+import { Button } from "@/components/ui/Button";
 import { useCharacterLibrary } from "@/hooks/useCharacterLibrary";
 import Link from "next/link";
 
@@ -19,9 +20,9 @@ export function LeftSidebar({ character, onCharacterImported }: LeftSidebarProps
   if (collapsed) {
     return (
       <div className="w-10 bg-gray-800/60 border-r border-gray-700/40 flex flex-col items-center pt-3 shrink-0">
-        <button
+        <Button
+          variant="icon"
           onClick={() => setCollapsed(false)}
-          className="text-gray-500 hover:text-gray-300 transition-colors p-1"
           title="Show character sheet"
         >
           <svg
@@ -37,7 +38,7 @@ export function LeftSidebar({ character, onCharacterImported }: LeftSidebarProps
               d="M9 5l7 7-7 7"
             />
           </svg>
-        </button>
+        </Button>
       </div>
     );
   }
@@ -46,15 +47,12 @@ export function LeftSidebar({ character, onCharacterImported }: LeftSidebarProps
     <div className="w-80 bg-gray-800/60 border-r border-gray-700/40 flex flex-col shrink-0 relative">
       {/* Top bar */}
       <div className="flex items-center justify-between px-3 py-1.5 border-b border-gray-700/40 shrink-0">
-        <Link
-          href="/"
-          className="text-xs text-gray-500 hover:text-gray-300 transition-colors"
-        >
-          &larr; Home
-        </Link>
-        <button
+        <Button variant="danger" size="xs" href="/">
+          &larr; Quit
+        </Button>
+        <Button
+          variant="icon"
           onClick={() => setCollapsed(true)}
-          className="text-gray-500 hover:text-gray-300 transition-colors p-1"
           title="Collapse"
         >
           <svg
@@ -70,7 +68,7 @@ export function LeftSidebar({ character, onCharacterImported }: LeftSidebarProps
               d="M15 19l-7-7 7-7"
             />
           </svg>
-        </button>
+        </Button>
       </div>
 
       {/* Content */}
@@ -80,24 +78,21 @@ export function LeftSidebar({ character, onCharacterImported }: LeftSidebarProps
             <CharacterSheet character={character} />
             {/* Actions */}
             <div className="p-2 border-t border-gray-700/40 shrink-0 flex items-center justify-between">
-              <Link
-                href="/characters"
-                target="_blank"
-                className="text-[10px] text-gray-500 hover:text-amber-300 transition-colors"
-              >
+              <Button variant="ghost" size="xs" href="/characters" target="_blank">
                 View in library &rarr;
-              </Link>
+              </Button>
               {(() => {
                 const saved = characters.find(c => c.character.static.name === character.static.name && c.builderChoices);
                 if (!saved) return null;
                 return (
-                  <Link
-                    href={`/characters/create?edit=${saved.id}`}
+                  <Button
+                    variant="secondary"
+                    size="xs"
+                    href={`/characters/${saved.id}/edit`}
                     target="_blank"
-                    className="text-[10px] text-amber-400/80 hover:text-amber-300 bg-amber-500/10 hover:bg-amber-500/15 border border-amber-500/20 rounded px-2 py-0.5 transition-colors"
                   >
                     Update Character
-                  </Link>
+                  </Button>
                 );
               })()}
             </div>
@@ -132,35 +127,23 @@ function CharacterPicker({
           Create or import a character to get started.
         </p>
         <div className="flex flex-col gap-2">
-          <Link
-            href="/characters/builder"
-            target="_blank"
-            className="inline-block bg-amber-600/80 hover:bg-amber-500/80 text-amber-50 px-4 py-2 rounded-lg text-xs font-medium transition-colors"
-          >
+          <Button size="xs" href="/characters/create" target="_blank" fullWidth>
             Create Character
-          </Link>
-          <Link
-            href="/characters/create"
-            target="_blank"
-            className="inline-block bg-gray-800/60 hover:bg-gray-700/60 border border-gray-700/40 text-gray-300 px-4 py-2 rounded-lg text-xs font-medium transition-colors"
-          >
+          </Button>
+          <Button variant="secondary" size="xs" href="/characters/import" target="_blank" fullWidth>
             Import
-          </Link>
+          </Button>
         </div>
-        <Link
-          href="/characters"
-          target="_blank"
-          className="text-xs text-gray-500 hover:text-amber-300 transition-colors"
-        >
+        <Button variant="ghost" size="xs" href="/characters" target="_blank">
           Manage Characters &rarr;
-        </Link>
+        </Button>
       </div>
     );
   }
 
   return (
     <div className="p-3 space-y-2 overflow-y-auto">
-      <div className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-2" style={{ fontFamily: "var(--font-cinzel)" }}>
+      <div className="text-sm text-gray-500 uppercase tracking-wider font-medium mb-2" style={{ fontFamily: "var(--font-cinzel)" }}>
         Select a character
       </div>
       {characters.map((saved) => {
@@ -174,7 +157,7 @@ function CharacterPicker({
             <div className="text-sm font-medium text-amber-300 truncate" style={{ fontFamily: "var(--font-cinzel)" }}>
               {s.name}
             </div>
-            <div className="text-[11px] text-gray-400 truncate">
+            <div className="text-xs text-gray-400 truncate">
               {s.species || s.race} &middot; {formatClassString(s.classes)} &middot; Lvl{" "}
               {getTotalLevel(s.classes)}
             </div>
@@ -182,13 +165,9 @@ function CharacterPicker({
         );
       })}
       <div className="pt-1">
-        <Link
-          href="/characters"
-          target="_blank"
-          className="text-xs text-gray-500 hover:text-gray-300 transition-colors"
-        >
+        <Button variant="ghost" size="xs" href="/characters" target="_blank">
           Manage Characters &rarr;
-        </Link>
+        </Button>
       </div>
     </div>
   );

@@ -29,6 +29,7 @@ export function createInitialState(editingId?: string | null): BuilderState {
     asiAssignments: {},
     asiSelections: [],
     originFeatOverrides: {},
+    speciesOriginFeatOverrides: {},
     skillProficiencies: [],
     skillExpertise: [],
     spellSelections: {},
@@ -61,6 +62,7 @@ export function builderReducer(
         ...state,
         species: action.species,
         speciesChoices: {},
+        speciesOriginFeatOverrides: {},
       };
 
     case "SET_NAME_EARLY":
@@ -314,6 +316,12 @@ export function builderReducer(
       return {
         ...state,
         originFeatOverrides: { ...state.originFeatOverrides, ...action.overrides },
+      };
+
+    case "SET_SPECIES_ORIGIN_FEAT_OVERRIDES":
+      return {
+        ...state,
+        speciesOriginFeatOverrides: { ...state.speciesOriginFeatOverrides, ...action.overrides },
       };
 
     // ─── Skills ───────────────────────────────

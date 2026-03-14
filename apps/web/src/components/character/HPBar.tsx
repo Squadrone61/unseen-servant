@@ -25,7 +25,7 @@ export function HPBar({ current, max, temp = 0 }: HPBarProps) {
       />
       {/* Content */}
       <div className="relative">
-        <div className="text-[10px] text-gray-500 uppercase">HP</div>
+        <div className="text-xs text-gray-500 uppercase">HP</div>
         <div className="text-base font-bold text-gray-200">
           {current}/{max}
           {temp > 0 && (

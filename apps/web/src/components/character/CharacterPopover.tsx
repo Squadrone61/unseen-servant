@@ -24,11 +24,11 @@ export function CharacterPopover({
       {/* Header */}
       <div className="mb-2">
         <div className="text-sm font-bold text-amber-300" style={{ fontFamily: "var(--font-cinzel)" }}>{s.name}</div>
-        <div className="text-[10px] text-gray-400">
+        <div className="text-xs text-gray-400">
           {s.species || s.race} &middot; {formatClassString(s.classes)} &middot; Lvl{" "}
           {totalLevel}
         </div>
-        <div className="text-[10px] text-gray-500">
+        <div className="text-xs text-gray-500">
           Played by{" "}
           <span className={online ? "text-green-400" : "text-gray-500"}>
             {playerName}
@@ -40,7 +40,7 @@ export function CharacterPopover({
       {/* Key Stats */}
       <div className="grid grid-cols-3 gap-1.5 mb-2">
         <div className="bg-gray-900/50 rounded px-2 py-1 text-center">
-          <div className="text-[9px] text-gray-500">HP</div>
+          <div className="text-xs text-gray-500">HP</div>
           <div
             className={`text-xs font-bold ${
               hpPercent > 50
@@ -54,11 +54,11 @@ export function CharacterPopover({
           </div>
         </div>
         <div className="bg-gray-900/50 rounded px-2 py-1 text-center">
-          <div className="text-[9px] text-gray-500">AC</div>
+          <div className="text-xs text-gray-500">AC</div>
           <div className="text-xs font-bold text-gray-200">{s.armorClass}</div>
         </div>
         <div className="bg-gray-900/50 rounded px-2 py-1 text-center">
-          <div className="text-[9px] text-gray-500">Speed</div>
+          <div className="text-xs text-gray-500">Speed</div>
           <div className="text-xs font-bold text-gray-200">{s.speed} ft</div>
         </div>
       </div>
@@ -68,8 +68,8 @@ export function CharacterPopover({
         {(Object.entries(ABILITY_NAMES) as [keyof typeof s.abilities, string][]).map(
           ([key, label]) => (
             <div key={key} className="text-center">
-              <div className="text-[8px] text-gray-500">{label}</div>
-              <div className="text-[10px] font-medium text-gray-300">
+              <div className="text-xs text-gray-500">{label}</div>
+              <div className="text-xs font-medium text-gray-300">
                 {formatModifier(s.abilities[key])}
               </div>
             </div>
@@ -83,7 +83,7 @@ export function CharacterPopover({
           {d.conditions.map((c, i) => (
             <span
               key={i}
-              className="bg-red-900/30 text-red-400 text-[9px] px-1.5 py-0.5 rounded-full"
+              className="bg-red-900/30 text-red-400 text-xs px-1.5 py-0.5 rounded-full"
             >
               {c}
             </span>

@@ -234,7 +234,7 @@ export function StepSpells({ state, dispatch }: StepProps) {
         <h2 className="text-xl font-semibold text-amber-200/90 tracking-wide" style={{ fontFamily: "var(--font-cinzel)" }}>
           Spells
         </h2>
-        <p className="text-xs text-gray-500">
+        <p className="text-sm text-gray-500">
           Select your cantrips and {spellInfo.type === "known" ? "known" : "prepared"} spells.
           {castingAbility && (
             <span className="ml-1 text-amber-300">
@@ -246,7 +246,7 @@ export function StepSpells({ state, dispatch }: StepProps) {
         </p>
         <div className="h-px bg-gradient-to-r from-amber-500/30 via-gray-700/50 to-transparent mt-2" />
         {isRitualCaster && (
-          <p className="text-[10px] text-gray-600 mt-0.5">
+          <p className="text-xs text-gray-600 mt-0.5">
             {isWizard
               ? "As a Wizard, you can ritual cast any spell in your spellbook with the Ritual tag without preparing it."
               : "You can ritual cast prepared spells with the Ritual tag without expending a spell slot."}
@@ -286,7 +286,7 @@ export function StepSpells({ state, dispatch }: StepProps) {
                 <SelectionPill current={selectedCantrips.length} max={maxCantrips} />
               </div>
               {!cantripsExpanded && selectedCantrips.length > 0 && (
-                <span className="text-[10px] text-amber-400/70 truncate max-w-[60%] text-right">
+                <span className="text-xs text-amber-400/70 truncate max-w-[60%] text-right">
                   {selectedCantrips.join(", ")}
                 </span>
               )}
@@ -337,7 +337,7 @@ export function StepSpells({ state, dispatch }: StepProps) {
                   <div className="flex gap-1">
                     <button
                       onClick={() => setLevelFilter(null)}
-                      className={`text-[10px] px-1.5 py-0.5 rounded ${
+                      className={`text-xs px-1.5 py-0.5 rounded ${
                         levelFilter === null
                           ? "bg-amber-500/15 text-amber-300"
                           : "text-gray-500 hover:text-gray-300"
@@ -350,7 +350,7 @@ export function StepSpells({ state, dispatch }: StepProps) {
                         <button
                           key={l}
                           onClick={() => setLevelFilter(l)}
-                          className={`text-[10px] px-1.5 py-0.5 rounded ${
+                          className={`text-xs px-1.5 py-0.5 rounded ${
                             levelFilter === l
                               ? "bg-amber-500/15 text-amber-300"
                               : "text-gray-500 hover:text-gray-300"
@@ -363,7 +363,7 @@ export function StepSpells({ state, dispatch }: StepProps) {
                     {isRitualCaster && (
                       <button
                         onClick={() => setRitualOnly(!ritualOnly)}
-                        className={`text-[10px] px-1.5 py-0.5 rounded ml-1 ${
+                        className={`text-xs px-1.5 py-0.5 rounded ml-1 ${
                           ritualOnly
                             ? "bg-cyan-600/20 text-cyan-400"
                             : "text-gray-500 hover:text-gray-300"
@@ -443,7 +443,7 @@ function SelectionPill({
   const full = current >= max && max > 0;
   return (
     <span
-      className={`inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-medium transition-colors ${
+      className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium transition-colors ${
         full
           ? "bg-emerald-900/40 text-emerald-300 border border-emerald-700/40"
           : "bg-gray-800/70 text-gray-400 border border-gray-700/40"
@@ -558,20 +558,20 @@ function SpellRow({
           <span className={`text-xs ${disabled && !selected ? "text-gray-500" : "text-gray-200"}`}>
             {spell.name}
           </span>
-          <span className={`text-[10px] ${schoolStyle.text}`}>
+          <span className={`text-xs ${schoolStyle.text}`}>
             {formatSchool(spell.school)}
           </span>
 
           {/* Concentration badge */}
           {concentration && (
-            <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-violet-900/40 text-violet-300 border border-violet-700/40 font-medium leading-none">
+            <span className="text-xs px-1.5 py-0.5 rounded-full bg-violet-900/40 text-violet-300 border border-violet-700/40 font-medium leading-none">
               C
             </span>
           )}
 
           {/* Ritual badge */}
           {ritual && (
-            <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium leading-none ${
+            <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium leading-none ${
               isRitualCaster
                 ? "bg-cyan-900/40 text-cyan-300 border border-cyan-700/40"
                 : "bg-gray-800/50 text-gray-600 border border-gray-700/40"
@@ -582,12 +582,12 @@ function SpellRow({
 
           {/* Always prepared badge */}
           {locked && (
-            <span className="text-[9px] px-1 text-amber-500/80">always</span>
+            <span className="text-xs px-1 text-amber-500/80">always</span>
           )}
         </div>
 
         {/* Level label */}
-        <span className="text-[10px] text-gray-600 shrink-0">
+        <span className="text-xs text-gray-600 shrink-0">
           {isCantrip ? "Cantrip" : `Lv.${spell.level}`}
         </span>
 
@@ -609,7 +609,7 @@ function SpellRow({
 
       {expanded && (
         <div className="px-2.5 pb-2 border-t border-gray-700/50 pt-1.5 space-y-1">
-          <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[10px] text-gray-500">
+          <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-gray-500">
             <span>{formatCastingTime(spell)}</span>
             <span>{formatRange(spell.range)}</span>
             <span>{formatDuration(spell)}</span>
@@ -644,9 +644,9 @@ function SidebarSpellEntry({ name }: { name: string }) {
   return (
     <div className="flex items-center gap-1.5 py-0.5 group">
       <div className={`w-1 h-1 rounded-full shrink-0 ${schoolStyle.dot} opacity-70`} />
-      <span className="text-[10px] text-gray-300 leading-tight truncate flex-1">{name}</span>
+      <span className="text-xs text-gray-300 leading-tight truncate flex-1">{name}</span>
       {spell && (
-        <span className={`text-[9px] shrink-0 ${schoolStyle.text} opacity-70`}>
+        <span className={`text-xs shrink-0 ${schoolStyle.text} opacity-70`}>
           {formatSchool(spell.school).slice(0, 3)}
         </span>
       )}
@@ -712,12 +712,12 @@ function SelectedSpellsSidebar({
           <svg className="w-3.5 h-3.5 text-amber-400/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
           </svg>
-          <span className="text-xs font-medium text-gray-200" style={{ fontFamily: "var(--font-cinzel)" }}>
+          <span className="text-sm font-medium text-gray-200" style={{ fontFamily: "var(--font-cinzel)" }}>
             Spellbook
           </span>
         </div>
         {totalCount > 0 && (
-          <span className="text-[10px] bg-amber-900/30 text-amber-300 border border-amber-700/30 px-1.5 py-0.5 rounded-full">
+          <span className="text-xs bg-amber-900/30 text-amber-300 border border-amber-700/30 px-1.5 py-0.5 rounded-full">
             {totalCount}
           </span>
         )}
@@ -726,18 +726,18 @@ function SelectedSpellsSidebar({
       {/* Content */}
       <div className="bg-gray-900/60 border border-t-0 border-gray-700/40 rounded-b-lg p-3 space-y-3 max-h-[560px] overflow-y-auto">
         {!hasSpells ? (
-          <p className="text-[10px] text-gray-600 text-center py-2">No spells selected yet.</p>
+          <p className="text-xs text-gray-600 text-center py-2">No spells selected yet.</p>
         ) : (
           <>
             {/* Always-Prepared spells grouped by level */}
             {sortedAlwaysLevels.length > 0 && (
               <div className="space-y-1.5">
-                <div className="text-[9px] font-medium text-amber-500/80 uppercase tracking-widest">
+                <div className="text-sm font-medium text-amber-500/80 uppercase tracking-widest">
                   Always Prepared
                 </div>
                 {sortedAlwaysLevels.map((lvl) => (
                   <div key={lvl}>
-                    <div className="text-[9px] text-gray-600 uppercase tracking-wider mb-0.5 pl-2.5">
+                    <div className="text-xs text-gray-600 uppercase tracking-wider mb-0.5 pl-2.5">
                       {SPELL_LEVEL_LABELS[lvl] ?? `Level ${lvl}`}
                     </div>
                     <div className="pl-2">
@@ -754,7 +754,7 @@ function SelectedSpellsSidebar({
             {/* Cantrips */}
             {selectedCantrips.length > 0 && (
               <div className="space-y-0.5">
-                <div className="text-[9px] font-medium text-indigo-400/70 uppercase tracking-widest mb-1">
+                <div className="text-sm font-medium text-indigo-400/70 uppercase tracking-widest mb-1">
                   Cantrips
                 </div>
                 <div className="pl-2">
@@ -771,7 +771,7 @@ function SelectedSpellsSidebar({
               <div className="space-y-2">
                 {sortedLevels.map((lvl) => (
                   <div key={lvl}>
-                    <div className="text-[9px] text-gray-500 uppercase tracking-wider mb-0.5 font-medium">
+                    <div className="text-sm text-gray-500 uppercase tracking-wider mb-0.5 font-medium">
                       {SPELL_LEVEL_LABELS[lvl] ?? `Level ${lvl}`}
                     </div>
                     <div className="pl-2">

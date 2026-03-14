@@ -75,7 +75,7 @@ function TwoOnePicker({
         const isDisabled = allowedAbilities && allowedAbilities.length > 0 && !allowedAbilities.includes(ability);
         return (
           <div key={ability} className={`text-center space-y-1 ${isDisabled ? "opacity-30" : ""}`}>
-            <div className="text-[10px] text-gray-500 uppercase">
+            <div className="text-xs text-gray-500 uppercase">
               {ABILITY_SHORT[ability]}
             </div>
             {currentScores && (
@@ -99,7 +99,7 @@ function TwoOnePicker({
                   }
                   onChange(next);
                 }}
-                className={`text-[10px] px-1 py-0.5 rounded transition-colors ${
+                className={`text-xs px-1 py-0.5 rounded transition-colors ${
                   is2
                     ? "bg-amber-500/80 text-white"
                     : isDisabled
@@ -120,7 +120,7 @@ function TwoOnePicker({
                   }
                   onChange(next);
                 }}
-                className={`text-[10px] px-1 py-0.5 rounded transition-colors ${
+                className={`text-xs px-1 py-0.5 rounded transition-colors ${
                   is1
                     ? "bg-amber-500/60 text-white"
                     : isDisabled
@@ -160,7 +160,7 @@ function ThreeOnesPicker({
         const isDisabled = allowedAbilities && allowedAbilities.length > 0 && !allowedAbilities.includes(ability);
         return (
           <div key={ability} className={`text-center space-y-1 ${isDisabled ? "opacity-30" : ""}`}>
-            <div className="text-[10px] text-gray-500 uppercase">
+            <div className="text-xs text-gray-500 uppercase">
               {ABILITY_SHORT[ability]}
             </div>
             {currentScores && (
@@ -183,7 +183,7 @@ function ThreeOnesPicker({
                 }
               }}
               disabled={isDisabled || (!isSelected && selected.length >= 3)}
-              className={`text-[10px] px-2 py-1 rounded w-full transition-colors ${
+              className={`text-xs px-2 py-1 rounded w-full transition-colors ${
                 isSelected
                   ? "bg-amber-500/60 text-white"
                   : isDisabled
@@ -238,11 +238,11 @@ export function ClassASIPicker({
                   : "border-gray-700/50 bg-gray-800/50 text-gray-400 hover:border-gray-600"
               }`}
             >
-              <div className="text-[10px] text-gray-500 uppercase">{ABILITY_SHORT[ability]}</div>
+              <div className="text-xs text-gray-500 uppercase">{ABILITY_SHORT[ability]}</div>
               {score !== undefined && (
                 <div className="text-sm font-medium">{score}</div>
               )}
-              <div className={`text-[10px] ${isSelected ? "text-amber-400" : "text-gray-600"}`}>
+              <div className={`text-xs ${isSelected ? "text-amber-400" : "text-gray-600"}`}>
                 +2
               </div>
             </button>
@@ -283,11 +283,11 @@ export function ClassASIPicker({
                   : "border-gray-700/50 bg-gray-800/50 text-gray-400 hover:border-gray-600"
             }`}
           >
-            <div className="text-[10px] text-gray-500 uppercase">{ABILITY_SHORT[ability]}</div>
+            <div className="text-xs text-gray-500 uppercase">{ABILITY_SHORT[ability]}</div>
             {score !== undefined && (
               <div className="text-sm font-medium">{score}</div>
             )}
-            <div className={`text-[10px] ${isSelected ? "text-amber-400" : "text-gray-600"}`}>
+            <div className={`text-xs ${isSelected ? "text-amber-400" : "text-gray-600"}`}>
               +1
             </div>
           </button>

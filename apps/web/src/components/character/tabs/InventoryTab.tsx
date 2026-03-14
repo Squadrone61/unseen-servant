@@ -57,7 +57,7 @@ export function InventoryTab({ character, onItemClick }: InventoryTabProps) {
       {/* Currency */}
       {hasCurrency && (
         <div className="px-1.5 pb-1 border-b border-gray-700/40">
-          <div className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-0.5" style={{ fontFamily: "var(--font-cinzel)" }}>
+          <div className="text-sm text-gray-500 uppercase tracking-wider font-medium mb-0.5" style={{ fontFamily: "var(--font-cinzel)" }}>
             Currency
           </div>
           <div className="flex flex-wrap gap-2 text-xs">
@@ -123,7 +123,7 @@ export function InventoryTab({ character, onItemClick }: InventoryTabProps) {
               {/* Attunement indicator */}
               {item.attunement && (
                 <span
-                  className={`text-[9px] shrink-0 ${
+                  className={`text-xs shrink-0 ${
                     item.isAttuned ? "text-amber-400" : "text-gray-600"
                   }`}
                   title={item.isAttuned ? "Attuned" : "Requires attunement"}
@@ -134,14 +134,14 @@ export function InventoryTab({ character, onItemClick }: InventoryTabProps) {
 
               {/* Quantity */}
               {item.quantity > 1 && (
-                <span className="text-gray-500 text-[10px] shrink-0">
+                <span className="text-gray-500 text-xs shrink-0">
                   ×{item.quantity}
                 </span>
               )}
 
               {/* Type badge */}
               {item.type && (
-                <span className="text-[9px] text-gray-600 shrink-0">
+                <span className="text-xs text-gray-600 shrink-0">
                   {item.type}
                 </span>
               )}

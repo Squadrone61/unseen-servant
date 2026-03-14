@@ -418,7 +418,7 @@ function RenderTable({ entry, onTagClick, depth }: { entry: EntryTable; onTagCli
               {entry.colLabels.map((label, i) => (
                 <th
                   key={i}
-                  className="text-left text-gray-400 font-medium px-2 py-1.5 uppercase tracking-wider text-[10px]"
+                  className="text-left text-gray-400 font-medium px-2 py-1.5 uppercase tracking-wider text-xs"
                 >
                   <RenderTaggedText text={label} onTagClick={onTagClick} />
                 </th>

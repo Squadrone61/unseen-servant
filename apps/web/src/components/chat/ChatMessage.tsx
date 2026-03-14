@@ -86,7 +86,7 @@ function DieBadges({ roll }: { roll: RollResult }) {
     <span className="inline-flex items-center gap-1 flex-wrap">
       {roll.rolls.map((r, i) => (
         <span key={i} className="inline-flex items-center gap-0.5">
-          <span className="text-gray-500 text-[10px]">d{r.die}</span>
+          <span className="text-gray-500 text-xs">d{r.die}</span>
           <span className="bg-gray-700/80 text-gray-200 text-xs font-mono font-semibold px-1.5 py-0.5 rounded">
             {r.result}
           </span>
@@ -140,7 +140,7 @@ function ResultBadge({ success, isCrit, isFail, pending }: {
 }) {
   if (pending) {
     return (
-      <span className="text-[11px] font-semibold uppercase px-2 py-0.5 rounded-full bg-gray-600/50 text-gray-400 animate-pulse">
+      <span className="text-xs font-semibold uppercase px-2 py-0.5 rounded-full bg-gray-600/50 text-gray-400 animate-pulse">
         Resolving...
       </span>
     );
@@ -148,7 +148,7 @@ function ResultBadge({ success, isCrit, isFail, pending }: {
 
   if (isCrit) {
     return (
-      <span className="text-[11px] font-bold uppercase px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">
+      <span className="text-xs font-bold uppercase px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">
         Critical!
       </span>
     );
@@ -156,18 +156,18 @@ function ResultBadge({ success, isCrit, isFail, pending }: {
 
   if (isFail) {
     return (
-      <span className="text-[11px] font-bold uppercase px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 border border-red-500/30">
+      <span className="text-xs font-bold uppercase px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 border border-red-500/30">
         Critical Fail!
       </span>
     );
   }
 
   return success ? (
-    <span className="text-[11px] font-bold uppercase px-2 py-0.5 rounded-full bg-green-500/20 text-green-400 border border-green-500/30">
+    <span className="text-xs font-bold uppercase px-2 py-0.5 rounded-full bg-green-500/20 text-green-400 border border-green-500/30">
       Success
     </span>
   ) : (
-    <span className="text-[11px] font-bold uppercase px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 border border-red-500/30">
+    <span className="text-xs font-bold uppercase px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 border border-red-500/30">
       Failure
     </span>
   );
@@ -241,7 +241,7 @@ function CheckCard({ message, onRollDice, myCharacterName }: {
             {isDamage ? "Damage Roll" : checkLabel}
           </span>
           {!isDamage && request.dc !== undefined && (
-            <span className="text-[11px] font-mono bg-gray-700/60 text-gray-300 px-1.5 py-0.5 rounded">
+            <span className="text-xs font-mono bg-gray-700/60 text-gray-300 px-1.5 py-0.5 rounded">
               DC {request.dc}
             </span>
           )}
@@ -267,10 +267,10 @@ function CheckCard({ message, onRollDice, myCharacterName }: {
       {(request.advantage || request.disadvantage) && (
         <div className="mb-1.5">
           {request.advantage && (
-            <span className="text-[11px] text-green-400 bg-green-500/10 px-1.5 py-0.5 rounded mr-1">Advantage</span>
+            <span className="text-xs text-green-400 bg-green-500/10 px-1.5 py-0.5 rounded mr-1">Advantage</span>
           )}
           {request.disadvantage && (
-            <span className="text-[11px] text-red-400 bg-red-500/10 px-1.5 py-0.5 rounded mr-1">Disadvantage</span>
+            <span className="text-xs text-red-400 bg-red-500/10 px-1.5 py-0.5 rounded mr-1">Disadvantage</span>
           )}
         </div>
       )}
@@ -316,7 +316,7 @@ export function ChatMessage({ message, onRollDice, myCharacterName }: ChatMessag
       return (
         <div className="bg-amber-900/20 border-l-4 border-amber-500 p-3 rounded-r-lg">
           <div className="flex items-center justify-between mb-1">
-            <div className="text-xs text-amber-400 font-semibold" style={{ fontFamily: "var(--font-cinzel)" }}>
+            <div className="text-sm text-amber-400 font-semibold" style={{ fontFamily: "var(--font-cinzel)" }}>
               Dungeon Master
             </div>
             <TTSButton text={message.content} />

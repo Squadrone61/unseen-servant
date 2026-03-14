@@ -3,6 +3,8 @@
 import { useReducer, useEffect, useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { Breadcrumb } from "@/components/ui/Breadcrumb";
+import { Button } from "@/components/ui/Button";
 import { motion, AnimatePresence } from "framer-motion";
 import { buildCharacter } from "@aidnd/shared/builders";
 import { useCharacterLibrary } from "@/hooks/useCharacterLibrary";
@@ -184,31 +186,49 @@ export function CharacterBuilder({ editId }: CharacterBuilderProps) {
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-amber-500/40 to-transparent" />
 
         <div className="max-w-6xl mx-auto">
-          <div className="flex items-center justify-between mb-3">
-            <h1
-              className="text-lg font-semibold tracking-wide text-amber-200/90"
-              style={{ fontFamily: "var(--font-cinzel)" }}
+          {editId ? (
+            <Breadcrumb
+              items={[
+                { label: "Home", href: "/" },
+                { label: "Characters", href: "/characters" },
+                { label: getCharacter(editId)?.character.static.name ?? "Character", href: `/characters/${editId}` },
+              ]}
+              current="Edit"
             >
-              {state.editingId ? "Edit Character" : "Create Character"}
-            </h1>
-            <div className="flex items-center gap-2">
-              <button
+              <Button
+                variant="secondary"
+                size="sm"
                 onClick={() => {
                   clearImportedCharacter();
                   setShowImportModal(true);
                 }}
-                className="text-[10px] px-3 py-1.5 rounded-md bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 transition-colors border border-amber-500/30"
               >
                 Import
-              </button>
-              <Link
-                href="/characters"
-                className="text-[10px] text-gray-500 hover:text-gray-300 transition-colors"
-              >
+              </Button>
+              <Button variant="ghost" size="sm" href={`/characters/${editId}`}>
                 Cancel
-              </Link>
-            </div>
-          </div>
+              </Button>
+            </Breadcrumb>
+          ) : (
+            <Breadcrumb
+              items={[
+                { label: "Home", href: "/" },
+                { label: "Characters", href: "/characters" },
+              ]}
+              current="Create"
+            >
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  clearImportedCharacter();
+                  setShowImportModal(true);
+                }}
+              >
+                Import
+              </Button>
+            </Breadcrumb>
+          )}
           <ProgressStepper
             steps={visibleSteps}
             currentStep={state.currentStep}
@@ -239,32 +259,34 @@ export function CharacterBuilder({ editId }: CharacterBuilderProps) {
       <div className="relative bg-gray-800/80 border-t border-gray-700/50 px-6 py-3 shrink-0 backdrop-blur-sm">
         <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-amber-500/20 to-transparent" />
         <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <button
+          <Button
+            variant="secondary"
+            size="sm"
             onClick={goBack}
             disabled={currentIndex === 0}
-            className="text-sm px-4 py-2 rounded-lg bg-gray-700/50 text-gray-300 hover:bg-gray-600/50 disabled:opacity-20 disabled:cursor-not-allowed transition-all duration-200 border border-gray-600/30"
           >
             Back
-          </button>
-          <div className="text-[10px] text-gray-600 tracking-wider uppercase" style={{ fontFamily: "var(--font-cinzel)" }}>
+          </Button>
+          <div className="text-sm text-gray-600 tracking-wider uppercase" style={{ fontFamily: "var(--font-cinzel)" }}>
             Step {currentIndex + 1} of {visibleSteps.length}
           </div>
           {isLastStep ? (
-            <button
+            <Button
+              variant="success"
+              size="md"
               onClick={handleSave}
               disabled={!canGoNext}
-              className="text-sm px-6 py-2 rounded-lg bg-emerald-600/90 text-white hover:bg-emerald-500 disabled:opacity-20 disabled:cursor-not-allowed transition-all duration-200 font-medium shadow-[0_0_16px_rgba(16,185,129,0.15)] hover:shadow-[0_0_20px_rgba(16,185,129,0.25)]"
             >
               {state.editingId ? "Save Changes" : "Save Character"}
-            </button>
+            </Button>
           ) : (
-            <button
+            <Button
+              size="md"
               onClick={goNext}
               disabled={!canGoNext}
-              className="text-sm px-6 py-2 rounded-lg bg-amber-600/80 text-amber-50 hover:bg-amber-500/80 disabled:opacity-20 disabled:cursor-not-allowed transition-all duration-200 font-medium shadow-[0_0_16px_rgba(245,158,11,0.15)] hover:shadow-[0_0_20px_rgba(245,158,11,0.25)]"
             >
               Next
-            </button>
+            </Button>
           )}
         </div>
       </div>
@@ -282,14 +304,14 @@ export function CharacterBuilder({ editId }: CharacterBuilderProps) {
               <h3 className="text-sm font-semibold text-gray-200" style={{ fontFamily: "var(--font-cinzel)" }}>
                 Import Character
               </h3>
-              <button
+              <Button
+                variant="icon"
                 onClick={() => setShowImportModal(false)}
-                className="text-gray-500 hover:text-gray-300 transition-colors"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
-              </button>
+              </Button>
             </div>
             <CharacterImport
               importState={importState}
@@ -338,7 +360,7 @@ function ProgressStepper({
             >
               {/* Step indicator */}
               <div
-                className={`relative flex items-center justify-center w-6 h-6 rounded-full text-[10px] font-bold shrink-0 transition-all duration-300 ${
+                className={`relative flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold shrink-0 transition-all duration-300 ${
                   isActive
                     ? "bg-amber-500/25 text-amber-300 ring-2 ring-amber-400/60 shadow-[0_0_12px_rgba(245,158,11,0.35)]"
                     : isCompleted
@@ -357,7 +379,7 @@ function ProgressStepper({
                 )}
               </div>
               <span
-                className={`hidden lg:inline text-[10px] font-medium whitespace-nowrap transition-colors ${
+                className={`hidden lg:inline text-xs font-medium whitespace-nowrap transition-colors ${
                   isActive
                     ? "text-amber-300"
                     : isCompleted

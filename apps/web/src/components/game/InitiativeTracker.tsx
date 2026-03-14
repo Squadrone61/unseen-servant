@@ -33,7 +33,7 @@ export function InitiativeTracker({ combat, onCombatantClick }: InitiativeTracke
                   backgroundImage: extra,
                 }}
               />
-              <span className="text-[9px] text-gray-500">{label}</span>
+              <span className="text-xs text-gray-500">{label}</span>
             </div>
           ))}
         </div>
@@ -83,14 +83,14 @@ export function InitiativeTracker({ combat, onCombatantClick }: InitiativeTracke
               />
               {/* Name */}
               <div
-                className={`text-[10px] font-medium truncate max-w-[68px] ${
+                className={`text-xs font-medium truncate max-w-[68px] ${
                   isActive ? "text-amber-300" : "text-gray-300"
                 }`}
               >
                 {combatant.name}
               </div>
               {/* Initiative */}
-              <div className="text-[9px] text-gray-600">{combatant.initiative}</div>
+              <div className="text-xs text-gray-600">{combatant.initiative}</div>
               {/* HP bar for non-players */}
               {hpPercent !== null && (
                 <div className="w-full h-1 bg-gray-700 rounded-full mt-0.5 overflow-hidden">
@@ -108,7 +108,7 @@ export function InitiativeTracker({ combat, onCombatantClick }: InitiativeTracke
               )}
               {/* Conditions */}
               {combatant.conditions && combatant.conditions.length > 0 && (
-                <div className="text-[8px] text-orange-400 mt-0.5 truncate max-w-[68px]">
+                <div className="text-xs text-orange-400 mt-0.5 truncate max-w-[68px]">
                   {combatant.conditions.length} cond.
                 </div>
               )}

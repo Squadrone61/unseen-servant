@@ -4,6 +4,7 @@ import { Suspense, useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
+import { Button } from "@/components/ui/Button";
 
 function getWorkerUrl(): string {
   return process.env.NEXT_PUBLIC_WORKER_URL || "http://localhost:8787";
@@ -122,7 +123,7 @@ function HomePageInner() {
           >
             AI Dungeon Master
           </h1>
-          <p className="text-gray-500 tracking-wide uppercase text-xs font-medium">D&D 5e with an AI Game Master</p>
+          <p className="text-gray-500 tracking-wide uppercase text-sm font-medium">D&D 5e with an AI Game Master</p>
           <div className="w-24 h-px bg-gradient-to-r from-transparent via-amber-500/40 to-transparent mx-auto mt-4" />
         </div>
 
@@ -161,12 +162,9 @@ function HomePageInner() {
             )}
 
             {user ? (
-              <button
-                onClick={logout}
-                className="text-xs text-gray-500 hover:text-gray-300 transition-colors"
-              >
+              <Button variant="ghost" size="xs" onClick={logout}>
                 Sign out
-              </button>
+              </Button>
             ) : (
               <button
                 onClick={login}
@@ -198,7 +196,7 @@ function HomePageInner() {
 
           {/* Character Name */}
           <div>
-            <label className="block text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-1.5" style={{ fontFamily: "var(--font-cinzel)" }}>
+            <label className="block text-sm text-gray-500 uppercase tracking-wider font-medium mb-1.5" style={{ fontFamily: "var(--font-cinzel)" }}>
               Player Name
             </label>
             <input
@@ -219,28 +217,27 @@ function HomePageInner() {
           <div className="grid grid-cols-2 gap-6 pt-1">
             {/* Left column: Create Room */}
             <div className="space-y-3">
-              <div className="text-[10px] text-amber-200/50 uppercase tracking-wider font-medium" style={{ fontFamily: "var(--font-cinzel)" }}>
+              <div className="text-sm text-amber-200/50 uppercase tracking-wider font-medium" style={{ fontFamily: "var(--font-cinzel)" }}>
                 Create Room
               </div>
 
-              <p className="text-xs text-gray-500">
+              <p className="text-sm text-gray-500">
                 Start a new adventure as the host. An AI Dungeon Master will guide your story.
               </p>
 
-              <button
+              <Button
                 onClick={handleCreate}
                 disabled={loading}
-                className="w-full bg-amber-600/80 hover:bg-amber-500/80 disabled:bg-gray-700
-                           text-amber-50 py-3 rounded-lg font-medium transition-colors text-sm
-                           shadow-[0_0_12px_rgba(245,158,11,0.15)]"
+                size="lg"
+                fullWidth
               >
                 {loading ? "Creating..." : "Create Room"}
-              </button>
+              </Button>
             </div>
 
             {/* Right column: Join Room */}
             <div className="space-y-3">
-              <div className="text-[10px] text-amber-200/50 uppercase tracking-wider font-medium" style={{ fontFamily: "var(--font-cinzel)" }}>
+              <div className="text-sm text-amber-200/50 uppercase tracking-wider font-medium" style={{ fontFamily: "var(--font-cinzel)" }}>
                 Join Room
               </div>
 
@@ -278,32 +275,25 @@ function HomePageInner() {
                 />
               </div>
 
-              <button
+              <Button
+                variant="secondary"
+                size="md"
+                fullWidth
                 onClick={handleJoin}
-                className="w-full bg-gray-800/60 hover:bg-gray-700/60 border border-gray-600/50 hover:border-amber-500/30
-                           text-gray-200 py-2.5 rounded-lg font-medium transition-all text-sm"
               >
                 Join Room
-              </button>
+              </Button>
             </div>
           </div>
 
           {/* Browse Rooms & Characters */}
           <div className="pt-2 border-t border-gray-700/40 grid grid-cols-2 gap-3">
-            <Link
-              href="/rooms"
-              className="text-center py-2.5 rounded-lg border border-gray-700/50 text-sm text-gray-300
-                         hover:border-amber-500/50 hover:text-amber-300 transition-all"
-            >
+            <Button variant="secondary" size="md" href="/rooms">
               Browse Rooms
-            </Link>
-            <Link
-              href="/characters"
-              className="text-center py-2.5 rounded-lg border border-gray-700/50 text-sm text-gray-300
-                         hover:border-amber-500/50 hover:text-amber-300 transition-all"
-            >
+            </Button>
+            <Button variant="secondary" size="md" href="/characters">
               My Characters
-            </Link>
+            </Button>
           </div>
         </div>
       </div>

@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
+import { Breadcrumb } from "@/components/ui/Breadcrumb";
+import { Button } from "@/components/ui/Button";
 
 interface RoomMeta {
   roomCode: string;
@@ -63,51 +64,29 @@ export default function RoomsPage() {
   return (
     <div className="min-h-screen p-6">
       <div className="max-w-4xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <div>
-              <h1
-                className="text-2xl font-bold text-amber-200/90"
-                style={{ fontFamily: "var(--font-cinzel)" }}
-              >
-                Browse Rooms
-              </h1>
-              <p className="text-xs text-gray-500 mt-1">
-                Join an active game session
-              </p>
-              <div className="h-px bg-gradient-to-r from-amber-500/30 via-gray-700/50 to-transparent mt-2" />
-              <span className="text-[11px] text-gray-600">Auto-refreshes every 15s</span>
-            </div>
-            <button
-              onClick={() => fetchRooms(true)}
-              disabled={refreshing}
-              className="mt-1 flex items-center gap-1.5 bg-gray-800/60 px-3 py-1.5 rounded-lg border border-gray-700/50
-                         text-gray-500 hover:text-amber-300 hover:border-amber-500/50 transition-all disabled:opacity-50"
-              title="Refresh"
-            >
-              <svg
-                className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                />
-              </svg>
-              <span className="text-xs">Refresh</span>
-            </button>
-          </div>
-          <Link
-            href="/"
-            className="text-sm text-amber-400/70 hover:text-amber-300 transition-colors"
+        <Breadcrumb items={[{ label: "Home", href: "/" }]} current="Browse Rooms">
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => fetchRooms(true)}
+            disabled={refreshing}
           >
-            &larr; Back to Home
-          </Link>
-        </div>
+            <svg
+              className={`w-3.5 h-3.5 ${refreshing ? "animate-spin" : ""}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+              />
+            </svg>
+            <span>Refresh</span>
+          </Button>
+        </Breadcrumb>
 
         {loading ? (
           <div className="text-center py-16">
@@ -123,12 +102,9 @@ export default function RoomsPage() {
             <p className="text-sm text-gray-600 mb-4">
               Be the first to start an adventure.
             </p>
-            <Link
-              href="/"
-              className="inline-block mt-3 bg-amber-600/80 hover:bg-amber-500/80 text-amber-50 px-5 py-2.5 rounded-lg text-sm font-medium transition-colors"
-            >
+            <Button size="md" href="/">
               Create a Room
-            </Link>
+            </Button>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

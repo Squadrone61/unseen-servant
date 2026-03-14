@@ -250,7 +250,7 @@ export function BattleMap({
           </button>
           <button
             onClick={() => setZoom(1)}
-            className="px-1.5 h-6 flex items-center justify-center text-[10px] text-gray-400 hover:text-gray-200 rounded hover:bg-gray-700/60 transition-colors font-mono"
+            className="px-1.5 h-6 flex items-center justify-center text-xs text-gray-400 hover:text-gray-200 rounded hover:bg-gray-700/60 transition-colors font-mono"
             title="Reset zoom"
           >
             {Math.round(zoom * 100)}%
@@ -277,7 +277,7 @@ export function BattleMap({
             {colLabels.map((label, i) => (
               <div
                 key={`cl-${i}`}
-                className="text-[9px] text-gray-600 flex items-center justify-center select-none"
+                className="text-xs text-gray-600 flex items-center justify-center select-none"
                 style={{ width: TILE_SIZE + (i < map.width - 1 ? TILE_GAP : 0), height: LABEL_SIZE }}
               >
                 {label}
@@ -292,7 +292,7 @@ export function BattleMap({
               {Array.from({ length: map.height }, (_, i) => (
                 <div
                   key={`rl-${i}`}
-                  className="text-[9px] text-gray-600 flex items-center justify-center select-none"
+                  className="text-xs text-gray-600 flex items-center justify-center select-none"
                   style={{ height: TILE_SIZE + (i < map.height - 1 ? TILE_GAP : 0), width: LABEL_SIZE }}
                 >
                   {i + 1}
@@ -412,7 +412,7 @@ export function BattleMap({
 
                     {/* Name label */}
                     <div
-                      className="text-[7px] text-gray-400 truncate text-center leading-tight mt-px pointer-events-none"
+                      className="text-xs text-gray-400 truncate text-center leading-tight mt-px pointer-events-none"
                       style={{ maxWidth: TILE_SIZE }}
                     >
                       {c.name}

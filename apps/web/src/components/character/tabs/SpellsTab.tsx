@@ -57,26 +57,26 @@ function SpellRow({
 
       {/* Source badges */}
       {classBadge && (
-        <span className="text-[8px] text-amber-400/70 shrink-0">{classBadge}</span>
+        <span className="text-xs text-amber-400/70 shrink-0">{classBadge}</span>
       )}
       {spell.spellSource === "race" && (
-        <span className="text-[8px] text-emerald-400/70 shrink-0">Species</span>
+        <span className="text-xs text-emerald-400/70 shrink-0">Species</span>
       )}
       {spell.spellSource === "feat" && (
-        <span className="text-[8px] text-amber-400/70 shrink-0">Feat</span>
+        <span className="text-xs text-amber-400/70 shrink-0">Feat</span>
       )}
       {spell.spellSource === "item" && (
-        <span className="text-[8px] text-cyan-400/70 shrink-0">Item</span>
+        <span className="text-xs text-cyan-400/70 shrink-0">Item</span>
       )}
 
       {/* Concentration & Ritual badges */}
       {spell.concentration && (
-        <span className="text-[9px] text-yellow-500 font-semibold shrink-0">
+        <span className="text-xs text-yellow-500 font-semibold shrink-0">
           C
         </span>
       )}
       {spell.ritual && (
-        <span className="text-[9px] text-blue-400 font-semibold shrink-0">
+        <span className="text-xs text-blue-400 font-semibold shrink-0">
           R
         </span>
       )}
@@ -136,7 +136,7 @@ export function SpellsTab({ character, onSpellClick }: SpellsTabProps) {
       {/* Class Resources (Channel Divinity, Ki, Rage, etc.) */}
       {classResources.length > 0 && (
         <div className="space-y-1 pb-2 border-b border-gray-700/40">
-          <div className="text-[10px] text-gray-500 uppercase tracking-wider font-medium px-1.5" style={{ fontFamily: "var(--font-cinzel)" }}>
+          <div className="text-sm text-gray-500 uppercase tracking-wider font-medium px-1.5" style={{ fontFamily: "var(--font-cinzel)" }}>
             Class Resources
           </div>
           {classResources.map((resource) => {
@@ -150,7 +150,7 @@ export function SpellsTab({ character, onSpellClick }: SpellsTabProps) {
                 <span className="text-gray-300 truncate flex-1">
                   {resource.name}
                 </span>
-                <span className="text-[9px] text-gray-500">
+                <span className="text-xs text-gray-500">
                   {resource.resetType === "short" ? "SR" : "LR"}
                 </span>
                 <span className="text-amber-400/80 shrink-0">
@@ -165,16 +165,16 @@ export function SpellsTab({ character, onSpellClick }: SpellsTabProps) {
       {/* Pact Magic Slots (Warlock) */}
       {pactSlots.length > 0 && (
         <div className="flex items-center gap-2 text-xs px-1.5 py-1 bg-amber-500/10 border border-gray-700/50 rounded">
-          <span className="text-amber-400 font-medium text-[10px]">Pact Slots</span>
+          <span className="text-amber-400 font-medium text-xs">Pact Slots</span>
           {pactSlots.map((sl) => (
             <span key={sl.level} className="text-gray-300">
-              <span className="text-gray-500 text-[10px]">Lvl {sl.level}:</span>{" "}
+              <span className="text-gray-500 text-xs">Lvl {sl.level}:</span>{" "}
               <span className="text-amber-400/80">
                 {sl.total - sl.used}/{sl.total}
               </span>
             </span>
           ))}
-          <span className="text-[9px] text-gray-600 ml-auto">short rest</span>
+          <span className="text-xs text-gray-600 ml-auto">short rest</span>
         </div>
       )}
 
@@ -195,7 +195,7 @@ export function SpellsTab({ character, onSpellClick }: SpellsTabProps) {
 
           return (
             <div key={lvl}>
-              <div className="text-[10px] text-gray-500 mb-0.5 flex items-center gap-1.5 px-1.5">
+              <div className="text-xs text-gray-500 mb-0.5 flex items-center gap-1.5 px-1.5">
                 <span className="font-medium">
                   {lvl === 0 ? "Cantrips" : `Level ${lvl}`}
                 </span>

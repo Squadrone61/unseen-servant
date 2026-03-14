@@ -46,13 +46,23 @@ export function StepSkills({ state, dispatch }: StepProps) {
   const bg = state.background ? getBackground(state.background) : null;
   const finalAbilities = useMemo(() => getFinalAbilities(state), [state]);
 
-  const bgSkills = useMemo(() => new Set(bg ? getBackgroundSkills(bg) : []), [bg]);
-  const speciesSkills = useMemo(() => new Set(getSpeciesSkills(state)), [state]);
+  const bgSkills = useMemo(() => {
+    const skills = bg ? getBackgroundSkills(bg) : [];
+    // Include Skilled feat skill choices from background origin feat
+    if (state.originFeatOverrides.skillChoices) {
+      skills.push(...state.originFeatOverrides.skillChoices);
+    }
+    return new Set(skills);
+  }, [bg, state.originFeatOverrides.skillChoices]);
+  const speciesSkills = useMemo(() => {
+    const skills = getSpeciesSkills(state);
+    // Include Skilled feat skill choices from species origin feat
+    if (state.speciesOriginFeatOverrides.skillChoices) {
+      skills.push(...state.speciesOriginFeatOverrides.skillChoices);
+    }
+    return new Set(skills);
+  }, [state]);
   const classSkillChoices = cls ? getSkillChoices(cls) : undefined;
-  const classSkillPool = useMemo(
-    () => new Set(classSkillChoices?.from ?? []),
-    [classSkillChoices]
-  );
   const maxClassPicks = classSkillChoices?.count ?? 0;
 
   // Expertise eligibility (2024 PHB levels) — check across all classes
@@ -111,9 +121,9 @@ export function StepSkills({ state, dispatch }: StepProps) {
         >
           Skill Proficiencies
         </h2>
-        <p className="text-xs text-gray-500">
-          Background and species skills are automatically included. Choose your
-          class skills from the available options.
+        <p className="text-sm text-gray-500">
+          Background and species skills are automatically included. Choose {maxClassPicks > 0 ? maxClassPicks : "your"} additional
+          skill proficiencies.
         </p>
         <div className="h-px bg-gradient-to-r from-amber-500/30 via-gray-700/50 to-transparent mt-2" />
       </div>
@@ -163,7 +173,7 @@ export function StepSkills({ state, dispatch }: StepProps) {
             </div>
           )}
           {hasJackOfAllTrades && (
-            <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-blue-700/30 bg-blue-900/10 text-[10px] text-blue-400/70">
+            <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-blue-700/30 bg-blue-900/10 text-xs text-blue-400/70">
               <span>Jack of All Trades</span>
               <span className="text-blue-500/50">(+{halfProfBonus})</span>
             </div>
@@ -193,12 +203,12 @@ export function StepSkills({ state, dispatch }: StepProps) {
               {/* Ability group header */}
               <div className="flex items-center gap-2 mb-2">
                 <div className={`w-0.5 h-4 rounded-full ${accentColor}`} />
-                <span className="text-[10px] font-semibold uppercase tracking-widest text-gray-400">
+                <span className="text-xs font-semibold uppercase tracking-widest text-gray-400">
                   {ABILITY_ABBREV[ability]}
                 </span>
-                <span className="text-[10px] text-gray-600">·</span>
+                <span className="text-xs text-gray-600">·</span>
                 <span
-                  className={`text-[10px] font-mono font-bold tabular-nums ${
+                  className={`text-xs font-mono font-bold tabular-nums ${
                     abilityMod > 0
                       ? "text-green-400"
                       : abilityMod < 0
@@ -219,7 +229,6 @@ export function StepSkills({ state, dispatch }: StepProps) {
                   const isClassPick = state.skillProficiencies.includes(skill);
                   const isProficient = isGranted || isClassPick;
                   const isExpertise = state.skillExpertise.includes(skill);
-                  const inClassPool = classSkillPool.has(skill);
                   const atMax = state.skillProficiencies.length >= maxClassPicks;
 
                   let bonus = abilityMod;
@@ -279,11 +288,11 @@ export function StepSkills({ state, dispatch }: StepProps) {
                       ) : (
                         <button
                           onClick={() => dispatch({ type: "TOGGLE_SKILL", skill })}
-                          disabled={!inClassPool || (!isClassPick && atMax)}
+                          disabled={!isClassPick && atMax}
                           className={`w-4 h-4 rounded border shrink-0 flex items-center justify-center transition-colors ${
                             isClassPick
                               ? "border-amber-500 bg-amber-500/80"
-                              : !inClassPool || atMax
+                              : atMax
                                 ? "border-gray-700 bg-gray-900 opacity-30"
                                 : "border-gray-600 bg-gray-900 hover:border-amber-600/60 hover:bg-amber-900/10"
                           }`}
@@ -314,14 +323,14 @@ export function StepSkills({ state, dispatch }: StepProps) {
                               ? "text-emerald-200/90"
                               : "text-amber-200/90"
                             : "text-gray-500"
-                        } ${!inClassPool && !isGranted ? "opacity-40" : ""}`}
+                        }`}
                       >
                         {formatSkillName(skill)}
                       </span>
 
                       {/* Source tag for species skills */}
                       {isSpeciesSkill && !isBgSkill && (
-                        <span className="text-[8px] px-1 py-0.5 rounded bg-emerald-900/30 text-emerald-600/70 border border-emerald-800/30 shrink-0">
+                        <span className="text-xs px-1 py-0.5 rounded bg-emerald-900/30 text-emerald-600/70 border border-emerald-800/30 shrink-0">
                           SP
                         </span>
                       )}
@@ -365,7 +374,7 @@ export function StepSkills({ state, dispatch }: StepProps) {
       </div>
 
       {/* Legend */}
-      <div className="flex items-center gap-4 text-[10px] text-gray-600 flex-wrap">
+      <div className="flex items-center gap-4 text-xs text-gray-600 flex-wrap">
         <span className="flex items-center gap-1.5">
           <span className="w-2.5 h-2.5 rounded bg-emerald-700/50 border border-emerald-700/40 inline-block" />
           Background / Species
@@ -419,7 +428,7 @@ function ExpertiseBadge({
   return (
     <span
       title={active ? "Expertise" : "Click to grant expertise"}
-      className={`inline-flex items-center gap-0.5 rounded px-1 py-0.5 text-[8px] font-bold tracking-wide leading-none border transition-colors ${
+      className={`inline-flex items-center gap-0.5 rounded px-1 py-0.5 text-xs font-bold tracking-wide leading-none border transition-colors ${
         active
           ? "border-yellow-500/60 bg-yellow-900/40 text-yellow-400 shadow-[0_0_6px_rgba(234,179,8,0.15)]"
           : "border-yellow-800/30 bg-yellow-900/10 text-yellow-700/50"

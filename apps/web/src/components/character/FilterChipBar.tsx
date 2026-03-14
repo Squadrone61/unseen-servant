@@ -23,7 +23,7 @@ export function FilterChipBar({
           <button
             key={chip.id}
             onClick={() => onSelect(chip.id)}
-            className={`shrink-0 px-2 py-0.5 rounded-full text-[10px] font-medium transition-colors ${
+            className={`shrink-0 px-2 py-0.5 rounded-full text-xs font-medium transition-colors ${
               isActive
                 ? "bg-amber-500/80 text-white"
                 : "bg-gray-700/40 text-gray-400 hover:text-gray-300 hover:bg-gray-700/60"

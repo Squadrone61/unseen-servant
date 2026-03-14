@@ -35,7 +35,7 @@ export function BuilderStepper({ state, onStepClick }: BuilderStepperProps) {
               }`}
             >
               <span
-                className={`relative flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold shrink-0 transition-all duration-200 ${
+                className={`relative flex items-center justify-center w-5 h-5 rounded-full text-xs font-bold shrink-0 transition-all duration-200 ${
                   isActive
                     ? "bg-amber-500/20 text-amber-300 ring-1 ring-amber-400/50 shadow-[0_0_8px_rgba(245,158,11,0.3)]"
                     : isInvalid

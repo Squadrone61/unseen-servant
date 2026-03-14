@@ -146,7 +146,7 @@ export function ActionsTab({
       {/* Weapon attacks */}
       {showWeapons && weapons.length > 0 && (
         <div>
-          <div className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-0.5 px-1.5" style={{ fontFamily: "var(--font-cinzel)" }}>
+          <div className="text-sm text-gray-500 uppercase tracking-wider font-medium mb-0.5 px-1.5" style={{ fontFamily: "var(--font-cinzel)" }}>
             Weapons
           </div>
           <div className="space-y-0.5">
@@ -159,7 +159,7 @@ export function ActionsTab({
                 <span className="text-gray-200 group-hover:text-amber-300 transition-colors truncate flex-1">
                   {action.name}
                 </span>
-                <span className="text-gray-500 shrink-0 text-[10px]">
+                <span className="text-gray-500 shrink-0 text-xs">
                   {action.detail}
                 </span>
               </div>
@@ -171,7 +171,7 @@ export function ActionsTab({
       {/* Feature-based actions grouped by type */}
       {visibleGroups.map((group) => (
         <div key={group.id}>
-          <div className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-0.5 px-1.5" style={{ fontFamily: "var(--font-cinzel)" }}>
+          <div className="text-sm text-gray-500 uppercase tracking-wider font-medium mb-0.5 px-1.5" style={{ fontFamily: "var(--font-cinzel)" }}>
             {group.label}
           </div>
           <div className="space-y-0.5">
@@ -185,7 +185,7 @@ export function ActionsTab({
                   {feature.name}
                 </span>
                 <span
-                  className={`text-[8px] shrink-0 ${SOURCE_BADGE_STYLES[feature.source] || "text-gray-500"}`}
+                  className={`text-xs shrink-0 ${SOURCE_BADGE_STYLES[feature.source] || "text-gray-500"}`}
                 >
                   {feature.sourceLabel}
                 </span>
@@ -203,7 +203,7 @@ export function ActionsTab({
 
       {/* Standard combat actions (reference) */}
       <div className="border-t border-gray-700/40 pt-2 mt-2">
-        <div className="text-[10px] text-gray-500 uppercase tracking-wider font-medium mb-0.5 px-1.5" style={{ fontFamily: "var(--font-cinzel)" }}>
+        <div className="text-sm text-gray-500 uppercase tracking-wider font-medium mb-0.5 px-1.5" style={{ fontFamily: "var(--font-cinzel)" }}>
           Standard Actions
         </div>
         <div className="space-y-0.5">
@@ -213,7 +213,7 @@ export function ActionsTab({
               className="flex items-center gap-1.5 text-xs px-1.5 py-0.5 text-gray-600"
             >
               <span className="truncate flex-1">{sa.name}</span>
-              <span className="text-[10px] shrink-0">{sa.detail}</span>
+              <span className="text-xs shrink-0">{sa.detail}</span>
             </div>
           ))}
         </div>

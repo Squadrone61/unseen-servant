@@ -2,10 +2,10 @@ import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { AbilityScores } from "@aidnd/shared/types";
 import type { FeatData } from "@aidnd/shared/data";
-import { getFeat } from "@aidnd/shared/data";
+import { getFeat, getBackground } from "@aidnd/shared/data";
 import type { StepProps, ASISelection } from "./types";
 import { getSpellsByClass } from "@aidnd/shared/data";
-import { formatPrerequisite, entriesToText, formatFeatCategory } from "@aidnd/shared";
+import { formatPrerequisite, entriesToText, formatFeatCategory, getBackgroundFeat } from "@aidnd/shared";
 import { getASILevelsForClasses, getEligibleFeats, getFinalAbilities, getAbilityMod, getFeatAbilityChoices, ALL_SKILLS, formatSkillName } from "./utils";
 import { ClassASIPicker } from "./ASIAbilityPicker";
 import { RichText } from "@/components/ui/RichText";
@@ -30,13 +30,26 @@ export function StepFeats({ state, dispatch }: StepProps) {
   const totalLevel = state.classes.reduce((sum, c) => sum + c.level, 0);
   const finalAbilities = useMemo(() => getFinalAbilities(state), [state]);
 
+  // Collect origin feat names for dedup in ASI feat picker
+  const originFeatNames = useMemo(() => {
+    const names: string[] = [];
+    const bgData = state.background ? getBackground(state.background) : null;
+    const bgFeat = bgData ? getBackgroundFeat(bgData) : null;
+    if (bgFeat) names.push(bgFeat.toLowerCase());
+    const versatileChoice = state.speciesChoices["Versatile"];
+    if (versatileChoice && typeof versatileChoice.selected === "string" && versatileChoice.selected) {
+      names.push(versatileChoice.selected.toLowerCase());
+    }
+    return names;
+  }, [state.background, state.speciesChoices]);
+
   return (
     <div className="space-y-6">
       <div className="space-y-1">
         <h2 className="text-xl font-semibold text-amber-200/90 tracking-wide" style={{ fontFamily: "var(--font-cinzel)" }}>
           Ability Score Improvements &amp; Feats
         </h2>
-        <p className="text-xs text-gray-500">At certain class levels, you can increase your ability scores or take a feat.</p>
+        <p className="text-sm text-gray-500">At certain class levels, you can increase your ability scores or take a feat.</p>
         <div className="h-px bg-gradient-to-r from-amber-500/30 via-gray-700/50 to-transparent mt-2" />
       </div>
 
@@ -67,6 +80,7 @@ export function StepFeats({ state, dispatch }: StepProps) {
                 allSelections={state.asiSelections}
                 currentScores={finalAbilities}
                 characterLevel={totalLevel}
+                originFeatNames={originFeatNames}
                 onChange={(selection) =>
                   dispatch({ type: "SET_ASI_SELECTION", classIndex: asi.classIndex, level: asi.level, selection })
                 }
@@ -78,7 +92,7 @@ export function StepFeats({ state, dispatch }: StepProps) {
 
       {/* Final Ability Score Preview */}
       <div className="bg-gray-800/40 border border-gray-700/40 rounded-lg p-4">
-        <div className="text-xs text-amber-200/70 font-medium mb-2" style={{ fontFamily: "var(--font-cinzel)" }}>
+        <div className="text-sm text-amber-200/70 font-medium mb-2" style={{ fontFamily: "var(--font-cinzel)" }}>
           Final Ability Scores (with all ASI/feat bonuses)
         </div>
         <div className="grid grid-cols-6 gap-3">
@@ -90,7 +104,7 @@ export function StepFeats({ state, dispatch }: StepProps) {
                 key={ability}
                 className="bg-gray-900/60 border border-gray-700/40 rounded-lg p-2 text-center"
               >
-                <div className="text-[10px] text-gray-500 uppercase">
+                <div className="text-xs text-gray-500 uppercase">
                   {ABILITY_ABBREV[ability]}
                 </div>
                 <div className="text-lg font-bold text-gray-100">{score}</div>
@@ -114,6 +128,7 @@ function ASICard({
   allSelections,
   currentScores,
   characterLevel,
+  originFeatNames,
   onChange,
 }: {
   classIndex: number;
@@ -123,6 +138,7 @@ function ASICard({
   allSelections: ASISelection[];
   currentScores: AbilityScores;
   characterLevel: number;
+  originFeatNames: string[];
   onChange: (selection: ASISelection) => void;
 }) {
   const type = selection?.type ?? "asi";
@@ -137,10 +153,10 @@ function ASICard({
             <svg className="w-3 h-3 text-amber-400/80" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
             </svg>
-            <span className="text-[11px] font-semibold text-amber-300 tracking-wide" style={{ fontFamily: "var(--font-cinzel)" }}>
+            <span className="text-xs font-semibold text-amber-300 tracking-wide" style={{ fontFamily: "var(--font-cinzel)" }}>
               {dndClassName}
             </span>
-            <span className="text-[10px] text-amber-400/60">Lv {level}</span>
+            <span className="text-xs text-amber-400/60">Lv {level}</span>
           </div>
           <span className="text-xs text-gray-500">ASI</span>
         </div>
@@ -149,7 +165,7 @@ function ASICard({
             onClick={() =>
               onChange({ classIndex, level, type: "asi", asiChoice: { mode: "two", abilities: {} } })
             }
-            className={`text-[10px] px-2.5 py-1 rounded-md transition-colors ${
+            className={`text-xs px-2.5 py-1 rounded-md transition-colors ${
               type === "asi"
                 ? "bg-amber-500/15 text-amber-300 border border-amber-500/30"
                 : "text-gray-500 border border-gray-700 hover:text-gray-300 hover:border-gray-600"
@@ -159,7 +175,7 @@ function ASICard({
           </button>
           <button
             onClick={() => onChange({ classIndex, level, type: "feat" })}
-            className={`text-[10px] px-2.5 py-1 rounded-md transition-colors ${
+            className={`text-xs px-2.5 py-1 rounded-md transition-colors ${
               type === "feat"
                 ? "bg-amber-500/15 text-amber-300 border border-amber-500/30"
                 : "text-gray-500 border border-gray-700 hover:text-gray-300 hover:border-gray-600"
@@ -203,6 +219,7 @@ function ASICard({
               allSelections={allSelections}
               characterLevel={characterLevel}
               currentScores={currentScores}
+              originFeatNames={originFeatNames}
               onChange={onChange}
             />
           </motion.div>
@@ -234,7 +251,7 @@ function ASIContent({
           onClick={() =>
             onChange({ classIndex, level, type: "asi", asiChoice: { mode: "two", abilities: {} } })
           }
-          className={`text-[10px] px-2 py-1 rounded ${
+          className={`text-xs px-2 py-1 rounded ${
             mode === "two"
               ? "bg-amber-500/15 text-amber-300 border border-amber-500/30"
               : "text-gray-500 border border-gray-700"
@@ -246,7 +263,7 @@ function ASIContent({
           onClick={() =>
             onChange({ classIndex, level, type: "asi", asiChoice: { mode: "one-one", abilities: {} } })
           }
-          className={`text-[10px] px-2 py-1 rounded ${
+          className={`text-xs px-2 py-1 rounded ${
             mode === "one-one"
               ? "bg-amber-500/15 text-amber-300 border border-amber-500/30"
               : "text-gray-500 border border-gray-700"
@@ -275,6 +292,7 @@ function FeatContent({
   allSelections,
   characterLevel,
   currentScores,
+  originFeatNames,
   onChange,
 }: {
   classIndex: number;
@@ -283,12 +301,13 @@ function FeatContent({
   allSelections: ASISelection[];
   characterLevel: number;
   currentScores: AbilityScores;
+  originFeatNames: string[];
   onChange: (selection: ASISelection) => void;
 }) {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<"all" | "G" | "EB">("all");
 
-  // Feats already taken at other ASI levels (non-repeatable can't be picked again)
+  // Feats already taken at other ASI levels or as origin feats (non-repeatable can't be picked again)
   const takenAtOtherLevels = useMemo(() => {
     const names = new Set<string>();
     for (const sel of allSelections) {
@@ -296,8 +315,11 @@ function FeatContent({
         names.add(sel.featName.toLowerCase());
       }
     }
+    for (const name of originFeatNames) {
+      names.add(name);
+    }
     return names;
-  }, [allSelections, classIndex, level]);
+  }, [allSelections, classIndex, level, originFeatNames]);
 
   const eligibleFeats = useMemo(
     () => getEligibleFeats(characterLevel),
@@ -340,7 +362,7 @@ function FeatContent({
             <button
               key={cat}
               onClick={() => setCategory(cat)}
-              className={`text-[10px] px-2 py-1 rounded whitespace-nowrap transition-colors ${
+              className={`text-xs px-2 py-1 rounded whitespace-nowrap transition-colors ${
                 category === cat
                   ? cat === "EB"
                     ? "bg-amber-600/20 text-amber-300 border border-amber-500/40"
@@ -415,7 +437,7 @@ function FeatContent({
 function CategoryBadge({ category }: { category: string }) {
   if (category === "EB") {
     return (
-      <span className="inline-flex items-center gap-1 text-[9px] px-1.5 py-0.5 rounded-full bg-amber-600/20 text-amber-300 border border-amber-500/35 font-medium uppercase tracking-wide">
+      <span className="inline-flex items-center gap-1 text-xs px-1.5 py-0.5 rounded-full bg-amber-600/20 text-amber-300 border border-amber-500/35 font-medium uppercase tracking-wide">
         <svg className="w-2 h-2 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
           <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
         </svg>
@@ -424,7 +446,7 @@ function CategoryBadge({ category }: { category: string }) {
     );
   }
   return (
-    <span className="inline-flex items-center text-[9px] px-1.5 py-0.5 rounded-full bg-gray-700/60 text-gray-400 border border-gray-600/40 font-medium uppercase tracking-wide">
+    <span className="inline-flex items-center text-xs px-1.5 py-0.5 rounded-full bg-gray-700/60 text-gray-400 border border-gray-600/40 font-medium uppercase tracking-wide">
       General
     </span>
   );
@@ -464,14 +486,14 @@ function FeatCard({
           <svg className="w-2.5 h-2.5 text-orange-400/80 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
           </svg>
-          <span className="text-[10px] text-orange-400/80">
+          <span className="text-xs text-orange-400/80">
             {formatPrerequisite(feat.prerequisite)}
           </span>
         </div>
       )}
 
       {/* Summary */}
-      <div className="text-[10px] text-gray-500 line-clamp-2 mt-0.5">
+      <div className="text-xs text-gray-500 line-clamp-2 mt-0.5">
         {abilityChoices.length > 0 && (
           <span className="text-emerald-500/90 mr-1">
             +1 {abilityChoices.map((a) => ABILITY_ABBREV[a]).join("/")} ·
@@ -516,7 +538,7 @@ function SelectedFeatDetail({
           <svg className="w-3 h-3 text-orange-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
           </svg>
-          <span className="text-[11px] text-orange-300/90">
+          <span className="text-xs text-orange-300/90">
             <span className="text-orange-400/70 font-medium">Prerequisite:</span>{" "}
             {formatPrerequisite(feat.prerequisite)}
           </span>
@@ -530,7 +552,7 @@ function SelectedFeatDetail({
       {/* Ability Score Choice */}
       {abilityChoices.length > 0 && (
         <div className="pt-2 border-t border-gray-800">
-          <div className="text-[10px] text-gray-500 font-medium mb-1.5">
+          <div className="text-xs text-gray-500 font-medium mb-1.5">
             {needsAbilityChoice
               ? "Choose +1 ability score:"
               : `+1 ${ABILITY_ABBREV[abilityChoices[0]]}`}
@@ -548,7 +570,7 @@ function SelectedFeatDetail({
                         featAbilityChoice: isChosen ? undefined : key,
                       })
                     }
-                    className={`text-[10px] px-2.5 py-1 rounded-md transition-colors ${
+                    className={`text-xs px-2.5 py-1 rounded-md transition-colors ${
                       isChosen
                         ? "bg-amber-500/80 text-white shadow-[0_0_6px_rgba(251,191,36,0.3)]"
                         : "bg-gray-800 text-gray-400 hover:text-gray-200 border border-gray-700 hover:border-gray-600"
@@ -577,7 +599,7 @@ function SelectedFeatDetail({
 
       {/* Proficiency grants */}
       {(feat.armorProficiencies || feat.weaponProficiencies || feat.toolProficiencies) && (
-        <div className="text-[10px] text-gray-500">
+        <div className="text-xs text-gray-500">
           {feat.armorProficiencies && (
             <span>Armor: {feat.armorProficiencies.flatMap(p => Object.keys(p).filter(k => p[k])).join(", ")} · </span>
           )}
@@ -592,7 +614,7 @@ function SelectedFeatDetail({
 
       {/* Speed bonus */}
       {feat.speed && (
-        <div className="text-[10px] text-emerald-500">
+        <div className="text-xs text-emerald-500">
           +{typeof feat.speed === "number" ? feat.speed : Object.values(feat.speed)[0]} ft. speed
         </div>
       )}
@@ -633,7 +655,7 @@ function FeatSubChoices({
     const selected = subChoices["skills"] ?? [];
     return (
       <div className="pt-1 border-t border-gray-800 space-y-1">
-        <div className="text-[10px] text-gray-500 font-medium">
+        <div className="text-xs text-gray-500 font-medium">
           Choose 3 skill proficiencies ({selected.length}/3)
         </div>
         <div className="flex flex-wrap gap-1 max-h-28 overflow-y-auto">
@@ -653,7 +675,7 @@ function FeatSubChoices({
                   )
                 }
                 disabled={!isSelected && selected.length >= 3}
-                className={`text-[10px] px-1.5 py-0.5 rounded ${
+                className={`text-xs px-1.5 py-0.5 rounded ${
                   isSelected
                     ? "bg-amber-500/15 text-amber-300 border border-amber-500/30"
                     : selected.length >= 3
@@ -675,7 +697,7 @@ function FeatSubChoices({
     const selected = subChoices["skills"] ?? [];
     return (
       <div className="pt-1 border-t border-gray-800 space-y-1">
-        <div className="text-[10px] text-gray-500 font-medium">
+        <div className="text-xs text-gray-500 font-medium">
           Choose 1 skill proficiency
         </div>
         <div className="flex flex-wrap gap-1">
@@ -687,7 +709,7 @@ function FeatSubChoices({
                 onClick={() =>
                   updateSubChoices("skills", isSelected ? [] : [skill])
                 }
-                className={`text-[10px] px-1.5 py-0.5 rounded ${
+                className={`text-xs px-1.5 py-0.5 rounded ${
                   isSelected
                     ? "bg-amber-500/15 text-amber-300 border border-amber-500/30"
                     : "text-gray-400 border border-gray-700 hover:text-gray-200"
@@ -713,7 +735,7 @@ function FeatSubChoices({
 
     return (
       <div className="pt-1 border-t border-gray-800 space-y-2">
-        <div className="text-[10px] text-gray-500 font-medium">Magic Initiate Choices</div>
+        <div className="text-xs text-gray-500 font-medium">Magic Initiate Choices</div>
 
         {/* Spell class */}
         <div className="flex gap-1">
@@ -726,7 +748,7 @@ function FeatSubChoices({
                   featSubChoices: { ...subChoices, class: [c], cantrips: [], spells: [] },
                 })
               }
-              className={`text-[10px] px-2 py-0.5 rounded ${
+              className={`text-xs px-2 py-0.5 rounded ${
                 spellClass === c
                   ? "bg-amber-500/15 text-amber-300 border border-amber-500/30"
                   : "text-gray-500 border border-gray-700"
@@ -739,7 +761,7 @@ function FeatSubChoices({
 
         {/* 2 Cantrips */}
         <div>
-          <div className="text-[10px] text-gray-500 mb-1">Cantrips ({selectedCantrips.length}/2)</div>
+          <div className="text-xs text-gray-500 mb-1">Cantrips ({selectedCantrips.length}/2)</div>
           <div className="flex flex-wrap gap-1 max-h-20 overflow-y-auto">
             {cantrips.map((s) => {
               const isSel = selectedCantrips.includes(s.name);
@@ -757,7 +779,7 @@ function FeatSubChoices({
                     )
                   }
                   disabled={!isSel && selectedCantrips.length >= 2}
-                  className={`text-[10px] px-1.5 py-0.5 rounded ${
+                  className={`text-xs px-1.5 py-0.5 rounded ${
                     isSel
                       ? "bg-amber-500/15 text-amber-300 border border-amber-500/30"
                       : selectedCantrips.length >= 2
@@ -774,7 +796,7 @@ function FeatSubChoices({
 
         {/* 1 Level 1 Spell */}
         <div>
-          <div className="text-[10px] text-gray-500 mb-1">
+          <div className="text-xs text-gray-500 mb-1">
             Level 1 Spell {selectedSpell && `(${selectedSpell})`}
           </div>
           <div className="flex flex-wrap gap-1 max-h-20 overflow-y-auto">
@@ -786,7 +808,7 @@ function FeatSubChoices({
                   onClick={() =>
                     updateSubChoices("spells", isSel ? [] : [s.name])
                   }
-                  className={`text-[10px] px-1.5 py-0.5 rounded ${
+                  className={`text-xs px-1.5 py-0.5 rounded ${
                     isSel
                       ? "bg-amber-500/15 text-amber-300 border border-amber-500/30"
                       : "text-gray-400 border border-gray-700 hover:text-gray-200"
