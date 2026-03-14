@@ -1,4 +1,4 @@
-# AI Dungeon Master (AIDND)
+# Unseen Servant
 
 ## Project Overview
 AI-powered D&D 5e web app where an AI acts as the Dungeon Master. Players create characters via the built-in character builder (powered by native 5e.tools data), join multiplayer rooms via WebSocket, and play through AI-generated campaigns. Claude Code acts as the AI DM via an MCP bridge that owns all game logic and connects to the game server as a participant.
@@ -52,9 +52,9 @@ packages/shared/   → Shared types (Zod 4 schemas), constants, utils, dice, che
 pnpm dev:all        # Run both web (port 3000) and worker (port 8787)
 pnpm dev:web        # Next.js dev server only (port 3000)
 pnpm dev:worker     # Wrangler dev server only (port 8787)
-pnpm dev:mcp        # Run MCP bridge (needs AIDND_ROOM_CODE env var)
+pnpm dev:mcp        # Run MCP bridge (needs UNSEEN_ROOM_CODE env var)
 pnpm build          # Build all packages
-pnpm build:dm       # Build dm-launcher (production, points to aidnd-api.safaakyuz.com)
+pnpm build:dm       # Build dm-launcher (production, points to unseenservant-api.safaakyuz.com)
 pnpm dev:dm         # Build + launch DM pointed at localhost:8787
 pnpm type-check     # TypeScript type checking
 pnpm dead-code      # Run knip dead code detection
@@ -66,7 +66,7 @@ pnpm deploy:web     # Deploy web only
 ### Running a Game Session
 1. `pnpm dev:all` — start web + worker
 2. Create a room in the browser, note the room code
-3. Set room code in `.mcp.json` → `AIDND_ROOM_CODE`
+3. Set room code in `.mcp.json` → `UNSEEN_ROOM_CODE`
 4. Claude Code connects via MCP, bridge joins the room as "DM"
 5. Players join, host configures campaign (name, pacing, encounter length) via Campaign Config modal
 6. Host clicks "Begin the Adventure"
@@ -75,12 +75,12 @@ pnpm deploy:web     # Deploy web only
 ## Environment
 - **Web dev:** http://localhost:3000
 - **Worker dev:** http://localhost:8787
-- **Production web:** https://aidnd.safaakyuz.com
-- **Production worker:** https://aidnd-api.safaakyuz.com
+- **Production web:** https://unseenservant.safaakyuz.com
+- **Production worker:** https://unseenservant-api.safaakyuz.com
 - Worker env vars: `ENVIRONMENT`, `FRONTEND_URL`
 - Secrets: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` (set via `wrangler secret put`)
 - Frontend env: `NEXT_PUBLIC_WORKER_URL` (defaults to http://localhost:8787)
-- MCP Bridge env: `AIDND_ROOM_CODE` (required), `AIDND_WORKER_URL` (defaults to http://localhost:8787)
+- MCP Bridge env: `UNSEEN_ROOM_CODE` (required), `UNSEEN_WORKER_URL` (defaults to http://localhost:8787)
 
 ## Critical Files
 
@@ -105,7 +105,7 @@ pnpm deploy:web     # Deploy web only
 ### Backend (apps/worker/src/)
 - `index.ts` — HTTP router + WebSocket upgrade endpoint
 - `durable-objects/game-room.ts` — Pure multiplayer relay: forwards player_action to bridge, broadcasts bridge responses via client:broadcast
-- `services/dice.ts` — Re-exports shared dice utils from `@aidnd/shared/utils`
+- `services/dice.ts` — Re-exports shared dice utils from `@unseen-servant/shared/utils`
 - `auth/google.ts` — OAuth endpoints
 - `auth/jwt.ts` — JWT signing/verification
 
@@ -114,7 +114,7 @@ pnpm deploy:web     # Deploy web only
 - `app/rooms/[roomCode]/page.tsx` — Game room page (handles campaign config, DM config updates, character restoration)
 - `hooks/useWebSocket.ts` — WebSocket lifecycle, reconnection, message validation
 - `hooks/useAuth.ts` — Google OAuth flow
-- `hooks/useCharacterImport.ts` — Character file import (.aidnd.json)
+- `hooks/useCharacterImport.ts` — Character file import (.unseen.json)
 - `components/chat/ChatPanel.tsx` — Main chat interface
 - `components/character/CharacterSheet.tsx` — D&D character sheet display
 - `components/character/LeftSidebar.tsx` — Left sidebar with character details
@@ -243,7 +243,7 @@ pnpm deploy:web     # Deploy web only
 - Phase 2 (Character Integration): COMPLETE — character builder, character sheet, party list, native 5e.tools database
 - Phase 3 (Game State & Rules): COMPLETE — dice, spell tracking, HP, state resolver, initiative, skill check flow, event log with rollback, editable system prompt
 - Phase 4 (Battle Map): COMPLETE — CSS Grid map renderer, token placement, click-to-move with BFS range highlighting, conditions on tokens, InitiativeTracker integration. Architecture migration: extension → MCP bridge, worker → pure relay
-- Phase 5 (Campaign Persistence): IN PROGRESS — campaign config UI (CampaignConfigModal), local file persistence (.aidnd/campaigns/), campaign manifest with session tracking, character snapshots, system prompt persistence. D1 database NOT YET started
+- Phase 5 (Campaign Persistence): IN PROGRESS — campaign config UI (CampaignConfigModal), local file persistence (.unseen/campaigns/), campaign manifest with session tracking, character snapshots, system prompt persistence. D1 database NOT YET started
 - Phase 6 (Polish): NOT STARTED
 
 ## Testing

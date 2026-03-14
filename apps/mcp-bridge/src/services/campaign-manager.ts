@@ -3,7 +3,7 @@ import * as path from "path";
 import { campaignManifestSchema } from "../types.js";
 import type { CampaignManifest, CampaignSummary } from "../types.js";
 
-const CAMPAIGNS_ROOT = process.env.AIDND_CAMPAIGNS_DIR || path.join(process.cwd(), ".aidnd", "campaigns");
+const CAMPAIGNS_ROOT = process.env.UNSEEN_CAMPAIGNS_DIR || path.join(process.cwd(), ".unseen", "campaigns");
 
 /** Slugify a campaign name: lowercase, hyphens, no special chars. */
 function slugify(name: string): string {
@@ -16,7 +16,7 @@ function slugify(name: string): string {
 
 /**
  * Manages campaign persistence on the local filesystem.
- * Each campaign is a folder under `.aidnd/campaigns/{slug}/`.
+ * Each campaign is a folder under `.unseen/campaigns/{slug}/`.
  */
 export class CampaignManager {
   private activeCampaignSlug: string | null = null;

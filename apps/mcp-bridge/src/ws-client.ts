@@ -12,7 +12,7 @@ import type {
   PlayerInfo,
   GameState,
   RollResult,
-} from "@aidnd/shared/types";
+} from "@unseen-servant/shared/types";
 
 interface WSClientOptions {
   workerUrl: string;
@@ -71,7 +71,7 @@ export class WSClient {
         type: "client:join",
         playerName: "DM",
         roomCode: this.options.roomCode,
-        guestId: "aidnd-dm-bridge",
+        guestId: "unseen-servant-bridge",
         isDM: true,
       });
 
@@ -419,8 +419,8 @@ export class WSClient {
       }
 
       // Update game state manager
-      this.gameStateManager.gameState.pacingProfile = msg.pacingProfile as import("@aidnd/shared/types").PacingProfile;
-      this.gameStateManager.gameState.encounterLength = msg.encounterLength as import("@aidnd/shared/types").EncounterLength;
+      this.gameStateManager.gameState.pacingProfile = msg.pacingProfile as import("@unseen-servant/shared/types").PacingProfile;
+      this.gameStateManager.gameState.encounterLength = msg.encounterLength as import("@unseen-servant/shared/types").EncounterLength;
 
       this.send({
         type: "client:campaign_configured_ack",
@@ -539,10 +539,10 @@ export class WSClient {
 
       // Restore pacing/encounterLength from manifest
       if (manifest.pacingProfile) {
-        this.gameStateManager.gameState.pacingProfile = manifest.pacingProfile as import("@aidnd/shared/types").PacingProfile;
+        this.gameStateManager.gameState.pacingProfile = manifest.pacingProfile as import("@unseen-servant/shared/types").PacingProfile;
       }
       if (manifest.encounterLength) {
-        this.gameStateManager.gameState.encounterLength = manifest.encounterLength as import("@aidnd/shared/types").EncounterLength;
+        this.gameStateManager.gameState.encounterLength = manifest.encounterLength as import("@unseen-servant/shared/types").EncounterLength;
       }
 
       // Notify worker that campaign is loaded

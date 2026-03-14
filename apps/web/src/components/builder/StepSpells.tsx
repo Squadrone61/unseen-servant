@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect } from "react";
-import { getSpellsByClass, getSpell } from "@aidnd/shared/data";
-import type { SpellData } from "@aidnd/shared/data";
+import { getSpellsByClass, getSpell } from "@unseen-servant/shared/data";
+import type { SpellData } from "@unseen-servant/shared/data";
 import type { StepProps } from "./types";
 import { RichText } from "@/components/ui/RichText";
 import {
@@ -21,7 +21,7 @@ import {
   formatDuration,
   formatComponents,
   formatSchool,
-} from "@aidnd/shared";
+} from "@unseen-servant/shared";
 
 // ─── School color system ──────────────────────────────────────────────────────
 

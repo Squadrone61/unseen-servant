@@ -75,6 +75,6 @@ test.describe("Room Browser", () => {
     await page.getByRole("link", { name: /Back to Home/ }).click();
 
     await page.waitForURL("/", { timeout: 5_000 });
-    await expect(page.locator("h1")).toHaveText("AI Dungeon Master");
+    await expect(page.locator("h1")).toHaveText("Unseen Servant");
   });
 });

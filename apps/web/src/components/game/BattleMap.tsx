@@ -10,7 +10,7 @@ import type {
   Combatant,
   TileType,
   CreatureSize,
-} from "@aidnd/shared/types";
+} from "@unseen-servant/shared/types";
 
 // ─── Constants ───
 

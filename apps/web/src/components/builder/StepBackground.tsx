@@ -2,8 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { backgroundsArray, getBackground, getFeat, getSpellsByClass, languagesArray } from "@aidnd/shared/data";
-import type { BackgroundData } from "@aidnd/shared/data";
+import { backgroundsArray, getBackground, getFeat, getSpellsByClass, languagesArray } from "@unseen-servant/shared/data";
+import type { BackgroundData } from "@unseen-servant/shared/data";
 import type { StepProps } from "./types";
 import { formatSkillName, ALL_SKILLS } from "./utils";
 import {
@@ -12,7 +12,7 @@ import {
   getBackgroundFeat,
   getBackgroundAbilityScores,
   ABILITY_MAP,
-} from "@aidnd/shared";
+} from "@unseen-servant/shared";
 import { RichText } from "@/components/ui/RichText";
 import { gridItem, cardHover } from "./animations";
 

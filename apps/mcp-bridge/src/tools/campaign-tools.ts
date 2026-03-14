@@ -27,7 +27,7 @@ export function registerCampaignTools(
           content: [
             {
               type: "text" as const,
-              text: `Campaign "${manifest.name}" created (slug: ${manifest.slug}).\n\nFolder structure initialized at .aidnd/campaigns/${manifest.slug}/`,
+              text: `Campaign "${manifest.name}" created (slug: ${manifest.slug}).\n\nFolder structure initialized at .unseen/campaigns/${manifest.slug}/`,
             },
           ],
         };

@@ -1,4 +1,4 @@
-import type { AbilityScores } from "@aidnd/shared/types";
+import type { AbilityScores } from "@unseen-servant/shared/types";
 import { getAbilityMod } from "./utils";
 
 const ABILITY_KEYS: (keyof AbilityScores)[] = [

@@ -1,7 +1,7 @@
 "use client";
 
-import type { CharacterData } from "@aidnd/shared/types";
-import type { AbilityScores } from "@aidnd/shared/types";
+import type { CharacterData } from "@unseen-servant/shared/types";
+import type { AbilityScores } from "@unseen-servant/shared/types";
 import {
   ABILITY_FULL_NAMES,
   SKILL_DISPLAY_NAMES,
@@ -10,7 +10,7 @@ import {
   formatBonus,
   getSkillModifier,
   getSavingThrowModifier,
-} from "@aidnd/shared/utils";
+} from "@unseen-servant/shared/utils";
 import { DetailPopover } from "./DetailPopover";
 
 interface AbilityDetailPopupProps {

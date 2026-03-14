@@ -13,7 +13,7 @@ if (isDev) console.log("Building in DEV mode (localhost:8787)\n");
 
 const result = await esbuild.build({
   entryPoints: [path.join(__dirname, "src/entry.ts")],
-  outfile: path.join(__dirname, isDev ? "dist/aidnd-dm-dev.mjs" : "dist/aidnd-dm.mjs"),
+  outfile: path.join(__dirname, isDev ? "dist/unseen-servant-dev.mjs" : "dist/unseen-servant.mjs"),
   bundle: true,
   platform: "node",
   format: "esm",
@@ -38,15 +38,15 @@ const result = await esbuild.build({
 
   // Resolve workspace dependency at build time
   alias: {
-    "@aidnd/shared": path.resolve(__dirname, "../../packages/shared/src"),
+    "@unseen-servant/shared": path.resolve(__dirname, "../../packages/shared/src"),
   },
 
   // Inject build-time constants
   define: {
     ...(isDev
       ? {} // no PRODUCTION_WORKER_URL → falls back to localhost:8787
-      : { PRODUCTION_WORKER_URL: JSON.stringify("https://aidnd-api.safaakyuz.com") }),
-    AIDND_VERSION: JSON.stringify(pkg.version),
+      : { PRODUCTION_WORKER_URL: JSON.stringify("https://unseenservant-api.safaakyuz.com") }),
+    UNSEEN_VERSION: JSON.stringify(pkg.version),
   },
 
   banner: {
@@ -62,7 +62,7 @@ const result = await esbuild.build({
   logLevel: "info",
 });
 
-const outPath = path.join(__dirname, isDev ? "dist/aidnd-dm-dev.mjs" : "dist/aidnd-dm.mjs");
+const outPath = path.join(__dirname, isDev ? "dist/unseen-servant-dev.mjs" : "dist/unseen-servant.mjs");
 const stat = fs.statSync(outPath);
 const sizeKB = (stat.size / 1024).toFixed(0);
-console.log(`\n✓ Built ${isDev ? "dist/aidnd-dm-dev.mjs" : "dist/aidnd-dm.mjs"} (${sizeKB} KB)`);
+console.log(`\n✓ Built ${isDev ? "dist/unseen-servant-dev.mjs" : "dist/unseen-servant.mjs"} (${sizeKB} KB)`);

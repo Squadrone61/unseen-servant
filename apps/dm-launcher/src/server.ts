@@ -12,16 +12,16 @@ import { createMcpServer } from "../../mcp-bridge/src/mcp-server.js";
 declare const PRODUCTION_WORKER_URL: string;
 
 export async function startServer(): Promise<void> {
-  const roomCode = process.env.AIDND_ROOM_CODE;
+  const roomCode = process.env.UNSEEN_ROOM_CODE;
   const workerUrl =
-    process.env.AIDND_WORKER_URL ||
+    process.env.UNSEEN_WORKER_URL ||
     (typeof PRODUCTION_WORKER_URL !== "undefined"
       ? PRODUCTION_WORKER_URL
       : "http://127.0.0.1:8787");
 
   if (!roomCode) {
     console.error(
-      "Error: AIDND_ROOM_CODE environment variable is required.\n" +
+      "Error: UNSEEN_ROOM_CODE environment variable is required.\n" +
         "This is set automatically by the CLI launcher."
     );
     process.exit(1);
@@ -45,6 +45,6 @@ export async function startServer(): Promise<void> {
   await mcpServer.connect(transport);
 
   console.error(
-    `[aidnd-dm] MCP server started, connected to room ${roomCode} via ${workerUrl}`
+    `[unseen-servant] MCP server started, connected to room ${roomCode} via ${workerUrl}`
   );
 }

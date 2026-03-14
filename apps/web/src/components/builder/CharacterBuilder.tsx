@@ -6,7 +6,7 @@ import Link from "next/link";
 import { Breadcrumb } from "@/components/ui/Breadcrumb";
 import { Button } from "@/components/ui/Button";
 import { motion, AnimatePresence } from "framer-motion";
-import { buildCharacter } from "@aidnd/shared/builders";
+import { buildCharacter } from "@unseen-servant/shared/builders";
 import { useCharacterLibrary } from "@/hooks/useCharacterLibrary";
 import { CharacterImport } from "@/components/character/CharacterImport";
 import { useCharacterImport } from "@/hooks/useCharacterImport";
@@ -24,7 +24,7 @@ import { StepReview } from "./StepReview";
 import { BUILDER_STEPS, STEP_LABELS, type BuilderStep, type BuilderState } from "./types";
 import { isStepValid, isStepTouched, getStepsToSkip, assembleIdentifiers } from "./utils";
 import { stepTransition } from "./animations";
-import type { CharacterData } from "@aidnd/shared/types";
+import type { CharacterData } from "@unseen-servant/shared/types";
 
 interface CharacterBuilderProps {
   editId: string | null;
@@ -55,7 +55,7 @@ export function CharacterBuilder({ editId }: CharacterBuilderProps) {
   const handleFileImport = useCallback((json: string) => {
     try {
       const parsed = JSON.parse(json);
-      if (parsed?.format !== "aidnd" || !parsed?.character) {
+      if (parsed?.format !== "unseen" || !parsed?.character) {
         importFromFile(json); // let the hook handle the error
         return;
       }

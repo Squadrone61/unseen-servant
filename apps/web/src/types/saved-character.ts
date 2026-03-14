@@ -1,4 +1,4 @@
-import type { CharacterData } from "@aidnd/shared/types";
+import type { CharacterData } from "@unseen-servant/shared/types";
 import type { BuilderChoices } from "@/components/builder/types";
 
 export interface SavedCharacter {

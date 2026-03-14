@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
-import type { ClientMessage } from "@aidnd/shared/types";
+import type { ClientMessage } from "@unseen-servant/shared/types";
 
 interface UsePlayerNotesOptions {
   send: (msg: ClientMessage) => void;

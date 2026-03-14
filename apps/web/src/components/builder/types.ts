@@ -3,7 +3,7 @@ import type {
   CharacterAppearance,
   CharacterTraits,
   Currency,
-} from "@aidnd/shared/types";
+} from "@unseen-servant/shared/types";
 
 // ─── Step Types ─────────────────────────────────────────
 
@@ -243,7 +243,7 @@ export type BuilderAction =
 
   // Equipment
   | { type: "SET_STARTING_EQUIPMENT_CHOICE"; choice: "A" | "B" | "custom" }
-  | { type: "ADD_STARTING_EQUIPMENT"; items: EquipmentEntry[]; currency: import("@aidnd/shared/types").Currency }
+  | { type: "ADD_STARTING_EQUIPMENT"; items: EquipmentEntry[]; currency: import("@unseen-servant/shared/types").Currency }
   | { type: "ADD_EQUIPMENT"; entry: EquipmentEntry }
   | { type: "REMOVE_EQUIPMENT"; name: string }
   | { type: "SET_EQUIPMENT_QUANTITY"; name: string; quantity: number }

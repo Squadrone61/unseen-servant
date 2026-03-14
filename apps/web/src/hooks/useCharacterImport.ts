@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import type { CharacterData } from "@aidnd/shared/types";
+import type { CharacterData } from "@unseen-servant/shared/types";
 
 type ImportState = "idle" | "success" | "error";
 
@@ -22,8 +22,8 @@ export function useCharacterImport(): UseCharacterImportResult {
     setError("");
     try {
       const parsed = JSON.parse(jsonString);
-      if (parsed?.format !== "aidnd" || !parsed?.character) {
-        setError("Not a valid .aidnd.json file.");
+      if (parsed?.format !== "unseen" || !parsed?.character) {
+        setError("Not a valid .unseen.json file.");
         setImportState("error");
         return;
       }

@@ -13,7 +13,7 @@ export async function createMcpServer(
   campaignManager: CampaignManager
 ): Promise<McpServer> {
   const server = new McpServer({
-    name: "aidnd-dm",
+    name: "unseen-servant",
     version: "1.0.0",
   });
 

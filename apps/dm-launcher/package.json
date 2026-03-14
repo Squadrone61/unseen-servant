@@ -1,5 +1,5 @@
 {
-  "name": "@aidnd/dm-launcher",
+  "name": "@unseen-servant/dm-launcher",
   "version": "0.10.0",
   "private": true,
   "type": "module",
@@ -9,7 +9,7 @@
     "type-check": "tsc --noEmit"
   },
   "devDependencies": {
-    "@aidnd/shared": "workspace:*",
+    "@unseen-servant/shared": "workspace:*",
     "@modelcontextprotocol/sdk": "^1.12.1",
     "@types/node": "^20",
     "esbuild": "^0.25.0",

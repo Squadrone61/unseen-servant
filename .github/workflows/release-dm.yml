@@ -1,4 +1,4 @@
-name: Release AI DM Launcher
+name: Release Unseen Servant Launcher
 
 on:
   push:
@@ -34,13 +34,13 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          name: "AI DM Launcher v${{ steps.version.outputs.version }}"
+          name: "Unseen Servant Launcher v${{ steps.version.outputs.version }}"
           body: |
-            ## AI Dungeon Master — Standalone Launcher
+            ## Unseen Servant — Standalone Launcher
 
-            Download `aidnd-dm.mjs` and run:
+            Download `unseen-servant.mjs` and run:
             ```bash
-            node aidnd-dm.mjs
+            node unseen-servant.mjs
             ```
 
             ### Requirements
@@ -50,9 +50,9 @@ jobs:
             ### Usage
             ```bash
             # Interactive mode
-            node aidnd-dm.mjs
+            node unseen-servant.mjs
 
             # With arguments
-            node aidnd-dm.mjs --room ABC123 --model sonnet
+            node unseen-servant.mjs --room ABC123 --model sonnet
             ```
-          files: apps/dm-launcher/dist/aidnd-dm.mjs
+          files: apps/dm-launcher/dist/unseen-servant.mjs

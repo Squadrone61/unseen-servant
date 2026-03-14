@@ -1,8 +1,8 @@
 import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { classesArray, getClass, baseItemsArray } from "@aidnd/shared/data";
-import type { ClassAssembled, ClassFeatureRaw, SubclassFeatureRaw } from "@aidnd/shared/data";
-import type { BaseItemData, OptionalFeatureData } from "@aidnd/shared/data";
+import { classesArray, getClass, baseItemsArray } from "@unseen-servant/shared/data";
+import type { ClassAssembled, ClassFeatureRaw, SubclassFeatureRaw } from "@unseen-servant/shared/data";
+import type { BaseItemData, OptionalFeatureData } from "@unseen-servant/shared/data";
 import {
   getHitDiceFaces,
   getCasterType,
@@ -13,7 +13,7 @@ import {
   getSpellSlotTable,
   ABILITY_MAP,
   decodeMastery,
-} from "@aidnd/shared";
+} from "@unseen-servant/shared";
 import type { StepProps } from "./types";
 import { RichText } from "../ui/RichText";
 import {

@@ -1,4 +1,4 @@
-import type { RollResult } from "@aidnd/shared/types";
+import type { RollResult } from "@unseen-servant/shared/types";
 import type { Components } from "react-markdown";
 import ReactMarkdown from "react-markdown";
 import rehypeRaw from "rehype-raw";

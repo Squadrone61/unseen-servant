@@ -13,7 +13,7 @@ test.describe("Home Page", () => {
 
   test("renders all core elements", async ({ page }) => {
     // Title
-    await expect(page.locator("h1")).toHaveText("AI Dungeon Master");
+    await expect(page.locator("h1")).toHaveText("Unseen Servant");
 
     // Subtitle
     await expect(page.getByText("D&D 5e with an AI Game Master")).toBeVisible();

@@ -3,7 +3,7 @@ import type {
   CharacterData,
   CharacterFeature,
   InventoryItem,
-} from "@aidnd/shared/types";
+} from "@unseen-servant/shared/types";
 import { FilterChipBar } from "../FilterChipBar";
 
 interface ActionEntry {

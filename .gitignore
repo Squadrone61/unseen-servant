@@ -10,7 +10,7 @@ dist
 .dev.vars
 worker-configuration.d.ts
 .claude
-.aidnd
+.unseen
 .testing
 test-results
 playwright-report

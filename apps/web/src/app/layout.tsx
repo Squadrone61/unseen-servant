@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "AI Dungeon Master",
+  title: "Unseen Servant",
   description: "D&D 5e with an AI Game Master",
 };
 

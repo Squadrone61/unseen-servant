@@ -2,9 +2,9 @@
 
 import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { getSpecies, featsArray, getSpellsByClass } from "@aidnd/shared/data";
+import { getSpecies, featsArray, getSpellsByClass } from "@unseen-servant/shared/data";
 import { RichText } from "@/components/ui/RichText";
-import type { SpeciesData, FeatData } from "@aidnd/shared/data";
+import type { SpeciesData, FeatData } from "@unseen-servant/shared/data";
 import type { StepProps, TraitChoiceDefinition } from "./types";
 import {
   getFilteredSpecies,
@@ -12,7 +12,7 @@ import {
   formatSkillName,
   ALL_SKILLS,
 } from "./utils";
-import { formatSpeciesSize, getSpeciesSpeed, entriesToText, SIZE_MAP } from "@aidnd/shared";
+import { formatSpeciesSize, getSpeciesSpeed, entriesToText, SIZE_MAP } from "@unseen-servant/shared";
 import { gridItem, cardHover } from "./animations";
 
 export function StepSpecies({ state, dispatch }: StepProps) {
@@ -372,7 +372,7 @@ function SkillPicker({
 // ─── Feat Picker ─────────────────────────────────────────
 
 /** Extract bold sub-benefit names from feat entries */
-function parseFeatBenefits(entries: import("@aidnd/shared/data").Entry[]): string[] {
+function parseFeatBenefits(entries: import("@unseen-servant/shared/data").Entry[]): string[] {
   const text = entriesToText(entries);
   const matches = text.match(/\*\*([^*]+?)\.?\*\*/g);
   if (!matches) return [];
@@ -751,7 +751,7 @@ function SpeciesDetail({ species }: { species: SpeciesData }) {
             }
             // Pass only child entries to RichText to avoid double-rendering the name
             const childEntries = entryObj && "entries" in entryObj && Array.isArray(entryObj.entries)
-              ? entryObj.entries as import("@aidnd/shared/data").Entry[]
+              ? entryObj.entries as import("@unseen-servant/shared/data").Entry[]
               : [entry];
             return (
               <div

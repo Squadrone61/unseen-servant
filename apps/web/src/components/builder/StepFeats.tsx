@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import type { AbilityScores } from "@aidnd/shared/types";
-import type { FeatData } from "@aidnd/shared/data";
-import { getFeat, getBackground } from "@aidnd/shared/data";
+import type { AbilityScores } from "@unseen-servant/shared/types";
+import type { FeatData } from "@unseen-servant/shared/data";
+import { getFeat, getBackground } from "@unseen-servant/shared/data";
 import type { StepProps, ASISelection } from "./types";
-import { getSpellsByClass } from "@aidnd/shared/data";
-import { formatPrerequisite, entriesToText, formatFeatCategory, getBackgroundFeat } from "@aidnd/shared";
+import { getSpellsByClass } from "@unseen-servant/shared/data";
+import { formatPrerequisite, entriesToText, formatFeatCategory, getBackgroundFeat } from "@unseen-servant/shared";
 import { getASILevelsForClasses, getEligibleFeats, getFinalAbilities, getAbilityMod, getFeatAbilityChoices, ALL_SKILLS, formatSkillName } from "./utils";
 import { ClassASIPicker } from "./ASIAbilityPicker";
 import { RichText } from "@/components/ui/RichText";

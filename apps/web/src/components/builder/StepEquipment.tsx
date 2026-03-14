@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
-import { baseItemsArray, allItemsArray } from "@aidnd/shared/data";
-import type { BaseItemData } from "@aidnd/shared/data";
-import { formatDamageType, decodeProperty, decodeMastery, formatItemCost, categorizeBaseItem } from "@aidnd/shared";
+import { baseItemsArray, allItemsArray } from "@unseen-servant/shared/data";
+import type { BaseItemData } from "@unseen-servant/shared/data";
+import { formatDamageType, decodeProperty, decodeMastery, formatItemCost, categorizeBaseItem } from "@unseen-servant/shared";
 import type { StepProps, EquipmentEntry, BuilderAction } from "./types";
 import { resolveStartingEquipment, getStartingEquipmentDescription } from "./utils";
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import type { AuthUser } from "@aidnd/shared/types";
+import type { AuthUser } from "@unseen-servant/shared/types";
 
 function getWorkerUrl(): string {
   return process.env.NEXT_PUBLIC_WORKER_URL || "http://localhost:8787";

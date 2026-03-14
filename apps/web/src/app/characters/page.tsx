@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Breadcrumb } from "@/components/ui/Breadcrumb";
 import { Button } from "@/components/ui/Button";
 import { useCharacterLibrary } from "@/hooks/useCharacterLibrary";
-import { formatClassString, getTotalLevel } from "@aidnd/shared/utils";
+import { formatClassString, getTotalLevel } from "@unseen-servant/shared/utils";
 
 export default function CharactersPage() {
   const { characters, deleteCharacter } = useCharacterLibrary();

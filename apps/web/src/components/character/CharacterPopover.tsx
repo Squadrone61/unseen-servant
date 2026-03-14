@@ -1,7 +1,7 @@
 "use client";
 
-import type { CharacterData } from "@aidnd/shared/types";
-import { formatClassString, getTotalLevel, formatModifier, ABILITY_NAMES } from "@aidnd/shared/utils";
+import type { CharacterData } from "@unseen-servant/shared/types";
+import { formatClassString, getTotalLevel, formatModifier, ABILITY_NAMES } from "@unseen-servant/shared/utils";
 
 interface CharacterPopoverProps {
   character: CharacterData;

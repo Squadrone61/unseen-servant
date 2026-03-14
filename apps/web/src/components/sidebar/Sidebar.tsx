@@ -1,14 +1,14 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { formatClassString, getTotalLevel } from "@aidnd/shared/utils";
+import { formatClassString, getTotalLevel } from "@unseen-servant/shared/utils";
 import type {
   CharacterData,
   CombatState,
   GameEvent,
   PlayerInfo,
   ServerMessage,
-} from "@aidnd/shared/types";
+} from "@unseen-servant/shared/types";
 import { CharacterPopover } from "@/components/character/CharacterPopover";
 import { Button } from "@/components/ui/Button";
 interface SidebarProps {
@@ -456,7 +456,7 @@ export function Sidebar({
             <div className="w-2 h-2 rounded-full bg-green-500" />
             <span>DM Connected</span>
             <a
-              href="https://github.com/Squadrone61/AIDND/releases"
+              href="https://github.com/Squadrone61/unseen-servant/releases"
               target="_blank"
               rel="noopener noreferrer"
               className="text-xs text-gray-500 hover:text-gray-300 underline ml-auto"
@@ -469,7 +469,7 @@ export function Sidebar({
             <div className="w-2 h-2 rounded-full bg-yellow-500 animate-pulse" />
             <span>Waiting for DM...</span>
             <a
-              href="https://github.com/Squadrone61/AIDND/releases"
+              href="https://github.com/Squadrone61/unseen-servant/releases"
               target="_blank"
               rel="noopener noreferrer"
               className="text-xs text-gray-500 hover:text-gray-300 underline ml-auto"

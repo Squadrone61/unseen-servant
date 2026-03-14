@@ -8,7 +8,7 @@ import type {
   AdvantageEntry,
   InventoryItem,
   AbilityScores,
-} from "@aidnd/shared/types";
+} from "@unseen-servant/shared/types";
 import {
   ABILITY_NAMES,
   formatBonus,
@@ -16,7 +16,7 @@ import {
   getTotalLevel,
   getModifier,
   formatModifier,
-} from "@aidnd/shared/utils";
+} from "@unseen-servant/shared/utils";
 import { HPBar } from "./HPBar";
 import { AbilityDetailPopup } from "./AbilityDetailPopup";
 import { SpellDetailPopup } from "./SpellDetailPopup";

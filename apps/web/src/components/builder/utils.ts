@@ -1,6 +1,6 @@
-import type { AbilityScores, CharacterSpell, InventoryItem, Currency, CharacterFeature } from "@aidnd/shared/types";
-import type { CharacterIdentifiers } from "@aidnd/shared/builders";
-import type { SpeciesData, FeatData, SpellData, ClassAssembled, OptionalFeatureData } from "@aidnd/shared/data";
+import type { AbilityScores, CharacterSpell, InventoryItem, Currency, CharacterFeature } from "@unseen-servant/shared/types";
+import type { CharacterIdentifiers } from "@unseen-servant/shared/builders";
+import type { SpeciesData, FeatData, SpellData, ClassAssembled, OptionalFeatureData } from "@unseen-servant/shared/data";
 import {
   getClass,
   getSpecies,
@@ -14,7 +14,7 @@ import {
   languagesArray,
   getClassFeatures,
   getOptionalFeaturesByType,
-} from "@aidnd/shared/data";
+} from "@unseen-servant/shared/data";
 import {
   formatSchool,
   formatCastingTime,
@@ -35,7 +35,7 @@ import {
   getHitDiceFaces,
   getBackgroundSkills,
   getBackgroundTools,
-} from "@aidnd/shared";
+} from "@unseen-servant/shared";
 import type { BuilderState, BuilderStep, EquipmentEntry, TraitChoiceDefinition, ClassEntry } from "./types";
 
 // ─── Ability Score Helpers ──────────────────────────────

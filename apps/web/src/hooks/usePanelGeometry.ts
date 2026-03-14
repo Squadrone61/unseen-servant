@@ -12,7 +12,7 @@ interface Geometry {
   height: number;
 }
 
-const STORAGE_KEY = "aidnd-notes-panel-geometry";
+const STORAGE_KEY = "unseen-notes-panel-geometry";
 const MIN_WIDTH = 280;
 const MIN_HEIGHT = 200;
 const VISIBLE_PX = 40;

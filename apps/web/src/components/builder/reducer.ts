@@ -1,4 +1,4 @@
-import type { AbilityScores, Currency } from "@aidnd/shared/types";
+import type { AbilityScores, Currency } from "@unseen-servant/shared/types";
 import type { BuilderState, BuilderAction, ClassEntry, EquipmentEntry } from "./types";
 import { DEFAULT_ABILITIES, POINT_BUY_DEFAULT, STANDARD_ARRAY_DEFAULT, getASILevelsForClasses } from "./utils";
 

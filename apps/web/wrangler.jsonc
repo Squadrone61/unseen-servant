@@ -1,5 +1,5 @@
 {
-  "name": "aidnd-web",
+  "name": "unseen-servant-web",
   "main": ".open-next/worker.js",
   "assets": {
     "directory": ".open-next/assets"

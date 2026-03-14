@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/Button";
-import type { EncounterLength, PacingProfile } from "@aidnd/shared/types";
+import type { EncounterLength, PacingProfile } from "@unseen-servant/shared/types";
 
 interface CampaignInfo {
   slug: string;

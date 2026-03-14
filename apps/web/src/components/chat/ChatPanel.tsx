@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { ChatMessage } from "./ChatMessage";
 import { Button } from "@/components/ui/Button";
-import type { ServerMessage, CheckRequest, CheckResult, RollResult } from "@aidnd/shared/types";
+import type { ServerMessage, CheckRequest, CheckResult, RollResult } from "@unseen-servant/shared/types";
 import type { ConnectionState } from "@/hooks/useWebSocket";
 
 // Merged check: all 3 messages resolved (check_request + dice_roll + check_result)

@@ -1,4 +1,4 @@
-import type { CombatState, TileType } from "@aidnd/shared/types";
+import type { CombatState, TileType } from "@unseen-servant/shared/types";
 
 const LEGEND_ITEMS: Array<{ type: TileType; label: string; bg: string; extra?: string }> = [
   { type: "floor", label: "Floor", bg: "#26262c" },

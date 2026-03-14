@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import type { CharacterData, InventoryItem } from "@aidnd/shared/types";
+import type { CharacterData, InventoryItem } from "@unseen-servant/shared/types";
 import { FilterChipBar } from "../FilterChipBar";
 import { RARITY_COLORS } from "../utils";
 

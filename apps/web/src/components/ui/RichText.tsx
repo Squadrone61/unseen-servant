@@ -32,8 +32,8 @@ import type {
   EntryOptionalFeature,
   EntryClassFeature,
   EntrySubclassFeature,
-} from "@aidnd/shared/data";
-import { parseTags, type ParsedTag } from "@aidnd/shared";
+} from "@unseen-servant/shared/data";
+import { parseTags, type ParsedTag } from "@unseen-servant/shared";
 
 // ─── Tag type → style mapping ────────────────────────────
 

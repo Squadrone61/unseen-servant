@@ -1,7 +1,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { WSClient } from "../ws-client.js";
-import { rollDamage } from "@aidnd/shared/utils";
+import { rollDamage } from "@unseen-servant/shared/utils";
 
 export function registerDndTools(server: McpServer, wsClient: WSClient): void {
   server.tool(

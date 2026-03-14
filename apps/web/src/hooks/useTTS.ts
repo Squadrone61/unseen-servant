@@ -21,8 +21,8 @@ function stripMarkdown(text: string): string {
     .trim();
 }
 
-const VOICE_KEY = "aidnd-tts-voice";
-const VOLUME_KEY = "aidnd-tts-volume";
+const VOICE_KEY = "unseen-tts-voice";
+const VOLUME_KEY = "unseen-tts-volume";
 
 export function useTTS() {
   const [isSpeaking, setIsSpeaking] = useState(false);

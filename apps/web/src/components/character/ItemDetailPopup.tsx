@@ -1,6 +1,6 @@
 "use client";
 
-import type { InventoryItem } from "@aidnd/shared/types";
+import type { InventoryItem } from "@unseen-servant/shared/types";
 import { DetailPopover } from "./DetailPopover";
 import { Prose } from "../Prose";
 import { RARITY_COLORS } from "./utils";

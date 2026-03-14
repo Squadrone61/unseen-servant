@@ -1,12 +1,13 @@
-# AI Dungeon Master
+# Unseen Servant
 
-A multiplayer D&D 5e web app where an AI plays the Dungeon Master. Players import their D&D Beyond characters, join a shared room, and play through AI-generated campaigns with tactical combat — no human GM required.
+A multiplayer D&D 5e web app where an AI plays the Dungeon Master. Players create characters with the built-in character builder, join a shared room, and play through AI-generated campaigns with tactical combat — no human GM required.
 
 - **AI Dungeon Master** — Claude Code acts as the DM via MCP bridge, narrating the story, running combat, adjudicating rules, and adapting to player choices
 - **No API Keys** — AI runs through Claude Code's MCP protocol, no provider config needed
-- **D&D Beyond Import** — Paste a character URL or JSON. Stats, spells, inventory, proficiencies, and class features are all parsed
+- **Native Character Builder** — Create D&D 2024 characters from scratch with species, class, background, abilities, spells, feats, and equipment — all powered by a built-in 5e.tools database
+- **Character Import/Export** — Save characters as `.unseen.json` files and import them across sessions
 - **Multiplayer** — Real-time WebSocket rooms with shared game state
-- **D&D 5e Rules** — Spells, monsters, and conditions looked up from the SRD in real time (5,849 spells, 11,463 monsters, 15,749 items)
+- **D&D 2024 Database** — 490 spells, 580 monsters, 563 magic items, 103 feats, 12 classes, 28 species, 27 backgrounds — all searchable by the DM in real time
 - **Battle Map** — Tactical grid with tokens, click-to-move, range highlighting, terrain, and conditions
 - **Combat** — Initiative, turn order, attack rolls, saving throws, HP/damage/healing, spell slots
 - **Campaign Persistence** — Save progress between sessions (campaign notes, character snapshots, system prompt)
@@ -18,15 +19,15 @@ A multiplayer D&D 5e web app where an AI plays the Dungeon Master. Players impor
 
 ## How to Play
 
-### Step 1: Download the DM Launcher
+### Step 1: Download the Launcher
 
-Grab `aidnd-dm.mjs` from the [latest release](https://github.com/Squadrone61/AIDND/releases).
+Grab `unseen-servant.mjs` from the [latest release](https://github.com/Squadrone61/unseen-servant/releases).
 
 This is a single-file launcher that configures and spawns Claude Code as your AI Dungeon Master. No repo clone needed — just download and run.
 
 ### Step 2: Create a Room
 
-1. Go to **https://aidnd.safaakyuz.com**
+1. Go to **https://unseenservant.safaakyuz.com**
 2. Enter your name and click **Create Room**
 3. A 6-character room code appears in the right sidebar (click it to copy)
 4. Share this code with your players
@@ -35,60 +36,38 @@ This is a single-file launcher that configures and spawns Claude Code as your AI
 
 ### Step 3: Players Join
 
-1. Players go to **https://aidnd.safaakyuz.com**
+1. Players go to **https://unseenservant.safaakyuz.com**
 2. Enter their name and the room code, then click **Join Room**
 3. Each player appears in the party list in the right sidebar
 
 Players can sign in with Google for a persistent identity, or join as guests.
 
-### Step 4: Import Characters
+### Step 4: Create or Import Characters
 
-Each player imports their D&D Beyond character:
+Each player needs a character. There are two options:
+
+**Option A: Built-in Character Builder** (recommended)
+
+1. Go to **My Characters** from the home page
+2. Click **Create New Character**
+3. Walk through the step-by-step builder: species, background, class, abilities, feats, skills, spells, equipment, and details
+4. Your character is saved to the browser's local library
+5. In the game room, click **Select Character** to use it
+
+**Option B: Import a `.unseen.json` file**
+
+If you have a character exported from a previous session:
 
 1. Click **Import Character** in the left sidebar
-2. Choose one of two methods:
-
-**Option A: D&D Beyond URL** (easiest)
-
-Paste your character's URL from D&D Beyond:
-
-```
-https://www.dndbeyond.com/characters/123456789
-```
-
-To find it: go to your character on [dndbeyond.com](https://www.dndbeyond.com), and copy the URL from the browser address bar. The URL just needs to contain `/characters/` followed by your character's numeric ID.
-
-> **Note:** The D&D Beyond API sometimes blocks server-side requests (403 error). If URL import fails, the app will automatically suggest switching to JSON paste.
-
-**Option B: Character JSON** (always works)
-
-If URL import fails, paste the raw JSON from D&D Beyond's character API:
-
-1. Open your character page on [dndbeyond.com](https://www.dndbeyond.com)
-2. Open your browser's Developer Tools (press **F12** or **Ctrl+Shift+I**)
-3. Go to the **Network** tab
-4. Reload the page
-5. In the network request list, look for a request to `character-service.dndbeyond.com` — it will contain `/character/v5/character/` in the URL
-6. Click that request, go to the **Response** tab
-7. Copy the entire JSON response (**Ctrl+A** to select all, **Ctrl+C** to copy)
-8. Paste it into the JSON text area in the app
-
-The app accepts both the full API response (with the `"data"` wrapper) and the unwrapped character object directly.
-
----
-
+2. Upload the `.unseen.json` file
 3. Your character sheet appears with stats, spells, inventory, and class features
 
-**Updating characters:** Click **Update** to re-import after leveling up on D&D Beyond. This refreshes your static data (stats, spells, features) while preserving in-game state (current HP, conditions, spent spell slots).
-
-**Switching characters:** Click **Change** to swap to an entirely different character.
-
-### Step 5: Launch the AI DM
+### Step 5: Launch the DM
 
 In your terminal, run:
 
 ```bash
-node aidnd-dm.mjs
+node unseen-servant.mjs
 ```
 
 The launcher prompts for:
@@ -98,7 +77,7 @@ The launcher prompts for:
 Or skip the prompts with CLI flags:
 
 ```bash
-node aidnd-dm.mjs --room ABC123 --model sonnet
+node unseen-servant.mjs --room ABC123 --model sonnet
 ```
 
 Once connected, players will see the DM status indicator in the sidebar change from a yellow pulsing dot to a solid green **DM Connected**.
@@ -154,8 +133,8 @@ For contributors or anyone running the full stack locally.
 ### Install
 
 ```bash
-git clone https://github.com/Squadrone61/AIDND.git
-cd AIDND
+git clone https://github.com/Squadrone61/unseen-servant.git
+cd unseen-servant
 pnpm install
 ```
 
@@ -176,7 +155,7 @@ pnpm dev:dm    # builds dev bundle + launches DM pointed at localhost:8787
 **Option B: Using `.mcp.json` with Claude Code**
 
 1. Open `http://localhost:3000`, create a room, note the room code
-2. Set the room code in `.mcp.json` → `AIDND_ROOM_CODE`
+2. Set the room code in `.mcp.json` → `UNSEEN_ROOM_CODE`
 3. Claude Code connects via MCP — the bridge joins the room as "DM"
 
 Then: players join, host configures campaign, clicks "Begin the Adventure".
@@ -188,12 +167,12 @@ The `.mcp.json` at the repo root configures the MCP bridge for local development
 ```json
 {
   "mcpServers": {
-    "aidnd-dm": {
+    "unseen-servant": {
       "command": "npx",
       "args": ["tsx", "apps/mcp-bridge/src/index.ts"],
       "env": {
-        "AIDND_ROOM_CODE": "<your-room-code>",
-        "AIDND_WORKER_URL": "http://localhost:8787"
+        "UNSEEN_ROOM_CODE": "<your-room-code>",
+        "UNSEEN_WORKER_URL": "http://localhost:8787"
       }
     }
   }
@@ -212,7 +191,6 @@ pnpm dev:dm         # Build + launch DM pointed at localhost:8787
 pnpm type-check     # TypeScript checking
 pnpm dead-code      # Knip dead code detection
 pnpm test           # Start servers + run Playwright tests
-pnpm test:only      # Run tests (servers already running)
 pnpm test:ui        # Playwright UI runner
 pnpm deploy         # Deploy all to Cloudflare
 pnpm deploy:worker  # Worker only
@@ -240,7 +218,7 @@ apps/web/          — Next.js frontend (React 19, Tailwind CSS 4)
 apps/worker/       — Cloudflare Worker (Durable Objects, KV) — multiplayer relay + auth
 apps/mcp-bridge/   — Game engine: GameStateManager + MCP tools + WebSocket client
 apps/dm-launcher/  — Standalone CLI to launch Claude Code as DM
-packages/shared/   — Shared types, schemas, constants, dice/check utilities
+packages/shared/   — Shared types, schemas, constants, dice/check utilities, D&D 2024 database
 tests/             — Playwright E2E tests
 ```
 
@@ -253,6 +231,7 @@ Claude Code has access to these tools when acting as DM:
 |------|-------------|
 | `wait_for_message` | Blocks until a player message arrives (main loop driver) |
 | `send_response` | Sends DM narrative back to all players |
+| `acknowledge` | Silently observe a message without responding |
 | `get_players` | Current player list with character summaries |
 | `get_game_state` | Full game state snapshot |
 | `get_character` | Specific character's full data by name |
@@ -265,6 +244,8 @@ Claude Code has access to these tools when acting as DM:
 | `set_hp` | Set exact HP |
 | `add_condition` / `remove_condition` | Manage conditions (poisoned, stunned, etc.) |
 | `use_spell_slot` / `restore_spell_slot` | Manage spell slots |
+| `use_class_resource` / `restore_class_resource` | Manage class resources (Rage, Ki, etc.) |
+| `grant_inspiration` / `use_inspiration` | Heroic Inspiration |
 
 ### Combat & Battle Map
 | Tool | Description |
@@ -275,12 +256,22 @@ Claude Code has access to these tools when acting as DM:
 | `move_combatant` | Move token on battle map |
 | `update_battle_map` | Set/update the tactical grid |
 
+### Inventory & Currency
+| Tool | Description |
+|------|-------------|
+| `add_item` / `update_item` / `remove_item` | Manage character inventory |
+| `update_currency` | Add or subtract gold/silver/etc. |
+
 ### D&D Reference
 | Tool | Description |
 |------|-------------|
-| `lookup_spell` | Spell details from D&D 5e SRD |
-| `lookup_monster` | Monster stat blocks |
-| `lookup_condition` | Condition effects |
+| `lookup_spell` | Spell details (490 spells) |
+| `lookup_monster` | Monster stat blocks (580 monsters) |
+| `lookup_condition` | Condition effects (15 conditions) |
+| `lookup_magic_item` | Magic items (563 items) |
+| `lookup_feat` | Feat details (103 feats) |
+| `lookup_class` / `lookup_species` / `lookup_background` | Class, species, background data |
+| `search_rules` | Search across all D&D data categories |
 | `roll_dice` | Direct rolls or interactive player checks |
 
 ### Campaign Persistence

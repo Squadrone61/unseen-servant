@@ -1,5 +1,5 @@
 import { DurableObject } from "cloudflare:workers";
-import { clientMessageSchema } from "@aidnd/shared/schemas";
+import { clientMessageSchema } from "@unseen-servant/shared/schemas";
 import type {
   AuthUser,
   CharacterData,
@@ -8,8 +8,8 @@ import type {
   DMBridgeConfig,
   PlayerInfo,
   ServerMessage,
-} from "@aidnd/shared/types";
-import { MAX_PLAYERS_PER_ROOM } from "@aidnd/shared";
+} from "@unseen-servant/shared/types";
+import { MAX_PLAYERS_PER_ROOM } from "@unseen-servant/shared";
 import { verifyJWT } from "../auth/jwt";
 import type { Env, RoomMeta } from "../types";
 
@@ -213,7 +213,7 @@ export class GameRoom extends DurableObject<Env> {
           : "";
         this.broadcast({
           type: "server:system",
-          content: `DM connected (${msg.provider}). The AI Dungeon Master is ready!${campaignInfo}`,
+          content: `DM connected (${msg.provider}). The Unseen Servant is ready!${campaignInfo}`,
           timestamp: Date.now(),
         });
         this.broadcast({

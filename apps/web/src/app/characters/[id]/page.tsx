@@ -19,7 +19,7 @@ export default function CharacterDetailPage() {
 
   const exportNative = (character: typeof char) => {
     const data = {
-      format: "aidnd",
+      format: "unseen",
       version: 1,
       exportedAt: new Date().toISOString(),
       character: character,
@@ -31,7 +31,7 @@ export default function CharacterDetailPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${character.static.name.replace(/[^a-zA-Z0-9-_ ]/g, "")}.aidnd.json`;
+    a.download = `${character.static.name.replace(/[^a-zA-Z0-9-_ ]/g, "")}.unseen.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

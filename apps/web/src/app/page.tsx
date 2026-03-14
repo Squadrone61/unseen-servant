@@ -121,7 +121,7 @@ function HomePageInner() {
             className="text-4xl font-bold text-amber-200/90 mb-2"
             style={{ fontFamily: "var(--font-cinzel)", textShadow: '0 0 40px rgba(245,158,11,0.25)' }}
           >
-            AI Dungeon Master
+            Unseen Servant
           </h1>
           <p className="text-gray-500 tracking-wide uppercase text-sm font-medium">D&D 5e with an AI Game Master</p>
           <div className="w-24 h-px bg-gradient-to-r from-transparent via-amber-500/40 to-transparent mx-auto mt-4" />
@@ -222,7 +222,7 @@ function HomePageInner() {
               </div>
 
               <p className="text-sm text-gray-500">
-                Start a new adventure as the host. An AI Dungeon Master will guide your story.
+                Start a new adventure as the host. An unseen force will guide your story.
               </p>
 
               <Button

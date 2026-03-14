@@ -22,13 +22,13 @@ import {
   NATIVE_SKILL_TAVERN,
   NATIVE_SKILL_LEVEL_UP,
   NATIVE_SKILL_BATTLE_TACTICS,
-} from "@aidnd/shared";
+} from "@unseen-servant/shared";
 
-declare const AIDND_VERSION: string;
+declare const UNSEEN_VERSION: string;
 declare const PRODUCTION_WORKER_URL: string;
 
 const VERSION =
-  typeof AIDND_VERSION !== "undefined" ? AIDND_VERSION : "dev";
+  typeof UNSEEN_VERSION !== "undefined" ? UNSEEN_VERSION : "dev";
 
 const DEFAULT_WORKER_URL =
   typeof PRODUCTION_WORKER_URL !== "undefined"
@@ -37,7 +37,7 @@ const DEFAULT_WORKER_URL =
 
 const BANNER = `
 ╔══════════════════════════════════════════════════╗
-║          AI Dungeon Master  v${VERSION.padEnd(10)}          ║
+║          Unseen Servant  v${VERSION.padEnd(10)}          ║
 ║        D&D 5e — Powered by Claude Code           ║
 ╚══════════════════════════════════════════════════╝
 `;
@@ -120,7 +120,7 @@ export async function startCli(): Promise<void> {
   // Get room code and model from args or interactive prompt
   let roomCode = findArg("--room");
   let model = findArg("--model") || "sonnet";
-  const workerUrl = findArg("--worker-url") || process.env.AIDND_WORKER_URL || DEFAULT_WORKER_URL;
+  const workerUrl = findArg("--worker-url") || process.env.UNSEEN_WORKER_URL || DEFAULT_WORKER_URL;
 
   if (!roomCode) {
     const rl = readline.createInterface({
@@ -152,7 +152,7 @@ export async function startCli(): Promise<void> {
 
   // Create temp working directory
   const tmpId = randomBytes(4).toString("hex");
-  const tmpDir = path.join(os.tmpdir(), `aidnd-dm-${tmpId}`);
+  const tmpDir = path.join(os.tmpdir(), `unseen-servant-${tmpId}`);
   fs.mkdirSync(tmpDir, { recursive: true });
 
   // Create native Claude Code skills (.claude/skills/<name>/SKILL.md)
@@ -162,21 +162,21 @@ export async function startCli(): Promise<void> {
     fs.writeFileSync(path.join(skillDir, "SKILL.md"), content);
   }
 
-  // Campaigns persist in ~/.aidnd/campaigns/ (not in the temp dir)
-  const campaignsDir = path.join(os.homedir(), ".aidnd", "campaigns");
+  // Campaigns persist in ~/.unseen/campaigns/ (not in the temp dir)
+  const campaignsDir = path.join(os.homedir(), ".unseen", "campaigns");
   fs.mkdirSync(campaignsDir, { recursive: true });
 
   // Write .mcp.json — command points to this script with --serve
   // Note: always use "node" directly, not "cmd /c node" — cmd eats stdin
   const mcpConfig = {
     mcpServers: {
-      "aidnd-dm": {
+      "unseen-servant": {
         command: "node",
         args: [scriptPath, "--serve"],
         env: {
-          AIDND_ROOM_CODE: roomCode,
-          AIDND_CAMPAIGNS_DIR: campaignsDir,
-          AIDND_WORKER_URL: workerUrl,
+          UNSEEN_ROOM_CODE: roomCode,
+          UNSEEN_CAMPAIGNS_DIR: campaignsDir,
+          UNSEEN_WORKER_URL: workerUrl,
         },
       },
     },
@@ -199,7 +199,7 @@ export async function startCli(): Promise<void> {
   console.log("Launching Claude Code...\n");
 
   // Spawn Claude Code with core DM system prompt (replaces default coding assistant prompt)
-  // Auto-allow all aidnd-dm MCP tools so the DM can run without permission prompts
+  // Auto-allow all unseen-servant MCP tools so the DM can run without permission prompts
   const claude = spawn(
     "claude",
     [
@@ -208,67 +208,67 @@ export async function startCli(): Promise<void> {
       "--model",
       model,
       "--system-prompt",
-      "You are the AI Dungeon Master. Follow all instructions in CLAUDE.md. Begin by calling wait_for_message.",
+      "You are the Unseen Servant. Follow all instructions in CLAUDE.md. Begin by calling wait_for_message.",
       "--tools",
       "",
       "--allowedTools",
       [
         // Game communication
-        "mcp__aidnd-dm__wait_for_message",
-        "mcp__aidnd-dm__send_response",
-        "mcp__aidnd-dm__acknowledge",
-        "mcp__aidnd-dm__get_players",
-        "mcp__aidnd-dm__get_game_state",
-        "mcp__aidnd-dm__get_character",
+        "mcp__unseen-servant__wait_for_message",
+        "mcp__unseen-servant__send_response",
+        "mcp__unseen-servant__acknowledge",
+        "mcp__unseen-servant__get_players",
+        "mcp__unseen-servant__get_game_state",
+        "mcp__unseen-servant__get_character",
         // HP & conditions
-        "mcp__aidnd-dm__apply_damage",
-        "mcp__aidnd-dm__heal",
-        "mcp__aidnd-dm__set_hp",
-        "mcp__aidnd-dm__add_condition",
-        "mcp__aidnd-dm__remove_condition",
+        "mcp__unseen-servant__apply_damage",
+        "mcp__unseen-servant__heal",
+        "mcp__unseen-servant__set_hp",
+        "mcp__unseen-servant__add_condition",
+        "mcp__unseen-servant__remove_condition",
         // Combat management
-        "mcp__aidnd-dm__start_combat",
-        "mcp__aidnd-dm__end_combat",
-        "mcp__aidnd-dm__advance_turn",
-        "mcp__aidnd-dm__add_combatant",
-        "mcp__aidnd-dm__remove_combatant",
-        "mcp__aidnd-dm__move_combatant",
+        "mcp__unseen-servant__start_combat",
+        "mcp__unseen-servant__end_combat",
+        "mcp__unseen-servant__advance_turn",
+        "mcp__unseen-servant__add_combatant",
+        "mcp__unseen-servant__remove_combatant",
+        "mcp__unseen-servant__move_combatant",
         // Spell slots & class resources
-        "mcp__aidnd-dm__use_spell_slot",
-        "mcp__aidnd-dm__restore_spell_slot",
-        "mcp__aidnd-dm__use_class_resource",
-        "mcp__aidnd-dm__restore_class_resource",
+        "mcp__unseen-servant__use_spell_slot",
+        "mcp__unseen-servant__restore_spell_slot",
+        "mcp__unseen-servant__use_class_resource",
+        "mcp__unseen-servant__restore_class_resource",
         // Heroic Inspiration
-        "mcp__aidnd-dm__grant_inspiration",
-        "mcp__aidnd-dm__use_inspiration",
+        "mcp__unseen-servant__grant_inspiration",
+        "mcp__unseen-servant__use_inspiration",
         // Inventory & currency
-        "mcp__aidnd-dm__add_item",
-        "mcp__aidnd-dm__update_item",
-        "mcp__aidnd-dm__remove_item",
-        "mcp__aidnd-dm__update_currency",
+        "mcp__unseen-servant__add_item",
+        "mcp__unseen-servant__update_item",
+        "mcp__unseen-servant__remove_item",
+        "mcp__unseen-servant__update_currency",
         // Battle map
-        "mcp__aidnd-dm__update_battle_map",
+        "mcp__unseen-servant__update_battle_map",
         // D&D reference
-        "mcp__aidnd-dm__lookup_spell",
-        "mcp__aidnd-dm__lookup_monster",
-        "mcp__aidnd-dm__lookup_condition",
-        "mcp__aidnd-dm__lookup_magic_item",
-        "mcp__aidnd-dm__lookup_feat",
-        "mcp__aidnd-dm__lookup_class",
-        "mcp__aidnd-dm__lookup_species",
-        "mcp__aidnd-dm__lookup_background",
-        "mcp__aidnd-dm__search_rules",
-        "mcp__aidnd-dm__roll_dice",
+        "mcp__unseen-servant__lookup_spell",
+        "mcp__unseen-servant__lookup_monster",
+        "mcp__unseen-servant__lookup_condition",
+        "mcp__unseen-servant__lookup_magic_item",
+        "mcp__unseen-servant__lookup_feat",
+        "mcp__unseen-servant__lookup_class",
+        "mcp__unseen-servant__lookup_species",
+        "mcp__unseen-servant__lookup_background",
+        "mcp__unseen-servant__search_rules",
+        "mcp__unseen-servant__roll_dice",
         // Context management
-        "mcp__aidnd-dm__compact_history",
+        "mcp__unseen-servant__compact_history",
         // Campaign persistence
-        "mcp__aidnd-dm__create_campaign",
-        "mcp__aidnd-dm__list_campaigns",
-        "mcp__aidnd-dm__load_campaign_context",
-        "mcp__aidnd-dm__save_campaign_file",
-        "mcp__aidnd-dm__read_campaign_file",
-        "mcp__aidnd-dm__list_campaign_files",
-        "mcp__aidnd-dm__end_session",
+        "mcp__unseen-servant__create_campaign",
+        "mcp__unseen-servant__list_campaigns",
+        "mcp__unseen-servant__load_campaign_context",
+        "mcp__unseen-servant__save_campaign_file",
+        "mcp__unseen-servant__read_campaign_file",
+        "mcp__unseen-servant__list_campaign_files",
+        "mcp__unseen-servant__end_session",
       ].join(","),
       "--",
       "Start the DM game loop. Call wait_for_message now and keep looping. ALL narrative output MUST go through send_response — never output text directly.",

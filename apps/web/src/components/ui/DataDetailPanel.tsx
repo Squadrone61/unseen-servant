@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useCallback, useRef, useState } from "react";
-import type { ParsedTag } from "@aidnd/shared";
+import type { ParsedTag } from "@unseen-servant/shared";
 import {
   getSpell, getMonster, getCondition, getDisease, getStatus,
   getMagicItem, getFeat, getOptionalFeature, getAction,
@@ -11,12 +11,12 @@ import {
   formatMonsterSpeed, formatMonsterCr, formatAbilityMod, formatSaves,
   formatSkills, flattenResistances, flattenConditionImmunities, crToXp,
   formatFeatCategory, formatPrerequisite,
-} from "@aidnd/shared";
+} from "@unseen-servant/shared";
 import type {
   SpellData, MonsterData, ConditionData, MagicItemData,
   FeatData, OptionalFeatureData, ActionData, DiseaseData, StatusData,
   Entry,
-} from "@aidnd/shared/data";
+} from "@unseen-servant/shared/data";
 import { RichText } from "./RichText";
 
 // ─── Types ──────────────────────────────────────────────

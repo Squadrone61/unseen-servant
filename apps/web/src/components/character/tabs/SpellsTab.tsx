@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
-import type { CharacterData, CharacterSpell } from "@aidnd/shared/types";
-import { getSpellAvailability } from "@aidnd/shared/utils";
-import type { SpellAvailability } from "@aidnd/shared/utils";
+import type { CharacterData, CharacterSpell } from "@unseen-servant/shared/types";
+import { getSpellAvailability } from "@unseen-servant/shared/utils";
+import type { SpellAvailability } from "@unseen-servant/shared/utils";
 import { FilterChipBar } from "../FilterChipBar";
 
 interface SpellsTabProps {

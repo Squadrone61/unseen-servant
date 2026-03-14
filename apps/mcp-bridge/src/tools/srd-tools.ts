@@ -14,7 +14,7 @@ import {
   type SpellData, type MonsterData, type ConditionData, type MagicItemData, type FeatData,
   type ClassAssembled, type SpeciesData, type BackgroundData, type OptionalFeatureData,
   type ActionData, type LanguageData, type DiseaseData,
-} from "@aidnd/shared/data";
+} from "@unseen-servant/shared/data";
 import {
   formatSchool, formatCastingTime, formatRange, formatComponents, formatDuration,
   isConcentration, isRitual, formatSpellLevel,
@@ -30,7 +30,7 @@ import {
   formatOptionalFeatureType,
   entriesToText, stripTags,
   ABILITY_MAP,
-} from "@aidnd/shared";
+} from "@unseen-servant/shared";
 
 // ─── Formatting Helpers ─────────────────────────────────────
 

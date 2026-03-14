@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import type { CharacterData } from "@aidnd/shared/types";
-import { formatClassString, getTotalLevel } from "@aidnd/shared/utils";
+import type { CharacterData } from "@unseen-servant/shared/types";
+import { formatClassString, getTotalLevel } from "@unseen-servant/shared/utils";
 import { CharacterSheet } from "./CharacterSheet";
 import { Button } from "@/components/ui/Button";
 import { useCharacterLibrary } from "@/hooks/useCharacterLibrary";

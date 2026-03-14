@@ -4,13 +4,13 @@ import { WSClient } from "./ws-client.js";
 import { CampaignManager } from "./services/campaign-manager.js";
 import { createMcpServer } from "./mcp-server.js";
 
-const roomCode = process.env.AIDND_ROOM_CODE;
-const workerUrl = process.env.AIDND_WORKER_URL || "http://127.0.0.1:8787";
+const roomCode = process.env.UNSEEN_ROOM_CODE;
+const workerUrl = process.env.UNSEEN_WORKER_URL || "http://127.0.0.1:8787";
 
 if (!roomCode) {
   console.error(
-    "Error: AIDND_ROOM_CODE environment variable is required.\n" +
-      "Usage: AIDND_ROOM_CODE=ABC123 npx tsx apps/mcp-bridge/src/index.ts"
+    "Error: UNSEEN_ROOM_CODE environment variable is required.\n" +
+      "Usage: UNSEEN_ROOM_CODE=ABC123 npx tsx apps/mcp-bridge/src/index.ts"
   );
   process.exit(1);
 }

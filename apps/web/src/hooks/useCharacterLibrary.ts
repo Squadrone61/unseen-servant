@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import type { CharacterData } from "@aidnd/shared/types";
+import type { CharacterData } from "@unseen-servant/shared/types";
 import type { SavedCharacter } from "@/types/saved-character";
 import type { BuilderChoices } from "@/components/builder/types";
 

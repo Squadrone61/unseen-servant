@@ -1,6 +1,6 @@
 "use client";
 
-import type { CharacterSpell } from "@aidnd/shared/types";
+import type { CharacterSpell } from "@unseen-servant/shared/types";
 import { DetailPopover } from "./DetailPopover";
 import { Prose } from "../Prose";
 

@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { motion } from "framer-motion";
-import type { AbilityScores } from "@aidnd/shared/types";
-import { getBackground } from "@aidnd/shared/data";
+import type { AbilityScores } from "@unseen-servant/shared/types";
+import { getBackground } from "@unseen-servant/shared/data";
 import type { StepProps, AbilityMethod, ASIMode } from "./types";
 import {
   STANDARD_ARRAY,

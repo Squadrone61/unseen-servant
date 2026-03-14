@@ -12,7 +12,7 @@ import { SettingsModal } from "@/components/sidebar/SettingsModal";
 import { PlayerNotesPanel } from "@/components/notes/PlayerNotesPanel";
 import { usePlayerNotes } from "@/hooks/usePlayerNotes";
 import { useCharacterLibrary } from "@/hooks/useCharacterLibrary";
-import { mergeReimport } from "@aidnd/shared/utils";
+import { mergeReimport } from "@unseen-servant/shared/utils";
 import type {
   BattleMapState,
   CharacterData,
@@ -22,7 +22,7 @@ import type {
   PacingProfile,
   PlayerInfo,
   ServerMessage,
-} from "@aidnd/shared/types";
+} from "@unseen-servant/shared/types";
 import type { DisplayMessage } from "@/components/chat/ChatPanel";
 
 /** Messages that belong in the main story chat */
@@ -164,7 +164,7 @@ function GameContent({
   }, []);
 
   // Refs for reconciliation (avoid stale closures in handleMessage)
-  const sendRef = useRef<(msg: import("@aidnd/shared/types").ClientMessage) => void>(() => {});
+  const sendRef = useRef<(msg: import("@unseen-servant/shared/types").ClientMessage) => void>(() => {});
   const myCharacterRef = useRef<CharacterData | null>(null);
   myCharacterRef.current = myCharacter;
 
@@ -811,9 +811,9 @@ function CombatLayout({
   typingPlayers,
   onTypingChange,
 }: {
-  battleMap: import("@aidnd/shared/types").BattleMapState;
-  combatState: import("@aidnd/shared/types").CombatState;
-  partyCharacters: Record<string, import("@aidnd/shared/types").CharacterData>;
+  battleMap: import("@unseen-servant/shared/types").BattleMapState;
+  combatState: import("@unseen-servant/shared/types").CombatState;
+  partyCharacters: Record<string, import("@unseen-servant/shared/types").CharacterData>;
   myCharacterName?: string;
   onMoveToken: (to: { x: number; y: number }) => void;
   onEndTurn: () => void;

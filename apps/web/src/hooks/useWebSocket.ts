@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import { serverMessageSchema } from "@aidnd/shared/schemas";
-import type { ClientMessage, ServerMessage } from "@aidnd/shared/types";
+import { serverMessageSchema } from "@unseen-servant/shared/schemas";
+import type { ClientMessage, ServerMessage } from "@unseen-servant/shared/types";
 
 export type ConnectionState =
   | "connecting"

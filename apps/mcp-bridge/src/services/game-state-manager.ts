@@ -24,13 +24,13 @@ import type {
   RollResult,
   EncounterState,
   CreatureSize,
-} from "@aidnd/shared/types";
-import { rollCheck, rollDamage, rollInitiative, buildCheckLabel, computeCheckModifier } from "@aidnd/shared/utils";
+} from "@unseen-servant/shared/types";
+import { rollCheck, rollDamage, rollInitiative, buildCheckLabel, computeCheckModifier } from "@unseen-servant/shared/utils";
 import {
   DM_SKILL_COMBAT,
   DM_SKILL_NARRATION,
   DM_SKILL_CAMPAIGN,
-} from "@aidnd/shared";
+} from "@unseen-servant/shared";
 import type { MessageQueue } from "../message-queue.js";
 import type { CampaignManager } from "./campaign-manager.js";
 
@@ -1582,7 +1582,7 @@ export class GameStateManager {
   }
 
   /** Update properties of an existing inventory item */
-  updateItem(characterName: string, itemName: string, updates: Partial<Omit<import("@aidnd/shared/types").InventoryItem, "name">>): string {
+  updateItem(characterName: string, itemName: string, updates: Partial<Omit<import("@unseen-servant/shared/types").InventoryItem, "name">>): string {
     for (const [pName, char] of Object.entries(this.characters)) {
       if (char.static.name.toLowerCase() === characterName.toLowerCase()) {
         const item = char.dynamic.inventory.find(

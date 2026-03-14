@@ -1,8 +1,8 @@
 /**
- * AI Dungeon Master Launcher — dual-mode single file.
+ * Unseen Servant Launcher — dual-mode single file.
  *
- * `node aidnd-dm.mjs`          → CLI mode: prompts for room code, spawns Claude Code
- * `node aidnd-dm.mjs --serve`  → Server mode: runs MCP bridge (stdio)
+ * `node unseen-servant.mjs`          → CLI mode: prompts for room code, spawns Claude Code
+ * `node unseen-servant.mjs --serve`  → Server mode: runs MCP bridge (stdio)
  */
 
 export {};

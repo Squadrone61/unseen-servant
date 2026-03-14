@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/Button";
 
-const VOLUME_KEY = "aidnd-tts-volume";
+const VOLUME_KEY = "unseen-tts-volume";
 
 function loadVolume(): number {
   if (typeof window === "undefined") return 1.0;

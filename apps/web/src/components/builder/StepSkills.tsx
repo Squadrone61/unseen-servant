@@ -1,8 +1,8 @@
 import { useMemo } from "react";
 import { motion } from "framer-motion";
-import { getClass, getBackground } from "@aidnd/shared/data";
-import { getSkillChoices, getBackgroundSkills } from "@aidnd/shared";
-import type { AbilityScores } from "@aidnd/shared/types";
+import { getClass, getBackground } from "@unseen-servant/shared/data";
+import { getSkillChoices, getBackgroundSkills } from "@unseen-servant/shared";
+import type { AbilityScores } from "@unseen-servant/shared/types";
 import type { StepProps } from "./types";
 import {
   SKILL_ABILITY_MAP,

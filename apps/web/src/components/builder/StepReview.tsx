@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { buildCharacter } from "@aidnd/shared/builders";
+import { buildCharacter } from "@unseen-servant/shared/builders";
 import { CharacterSheet } from "@/components/character/CharacterSheet";
 import type { StepProps } from "./types";
 import { assembleIdentifiers, isStepValid } from "./utils";

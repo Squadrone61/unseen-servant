@@ -1,8 +1,8 @@
 "use client";
 
 import { useRef } from "react";
-import type { CharacterData } from "@aidnd/shared/types";
-import { formatClassString, getTotalLevel } from "@aidnd/shared/utils";
+import type { CharacterData } from "@unseen-servant/shared/types";
+import { formatClassString, getTotalLevel } from "@unseen-servant/shared/utils";
 
 interface CharacterImportProps {
   importState: "idle" | "success" | "error";
@@ -49,12 +49,12 @@ export function CharacterImport({
   return (
     <div className="space-y-2">
       <p className="text-xs text-gray-500 leading-relaxed">
-        Import a character from a <code className="text-gray-400">.aidnd.json</code> file exported from this app.
+        Import a character from a <code className="text-gray-400">.unseen.json</code> file exported from this app.
       </p>
       <input
         ref={fileInputRef}
         type="file"
-        accept=".json,.aidnd.json"
+        accept=".json,.unseen.json"
         onChange={(e) => {
           const file = e.target.files?.[0];
           if (!file) return;
@@ -72,7 +72,7 @@ export function CharacterImport({
         onClick={() => fileInputRef.current?.click()}
         className="w-full bg-amber-600/80 hover:bg-amber-500/80 text-amber-50 py-1.5 rounded-lg text-sm font-medium transition-colors"
       >
-        Upload .aidnd.json
+        Upload .unseen.json
       </button>
 
       {error && (

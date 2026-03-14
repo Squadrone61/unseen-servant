@@ -1,6 +1,6 @@
 "use client";
 
-import type { CharacterFeature } from "@aidnd/shared/types";
+import type { CharacterFeature } from "@unseen-servant/shared/types";
 import { DetailPopover } from "./DetailPopover";
 import { Prose } from "../Prose";
 

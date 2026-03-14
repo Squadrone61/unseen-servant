@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import type { CharacterData, CharacterFeature } from "@aidnd/shared/types";
+import type { CharacterData, CharacterFeature } from "@unseen-servant/shared/types";
 import { FilterChipBar } from "../FilterChipBar";
 
 interface FeaturesTabProps {

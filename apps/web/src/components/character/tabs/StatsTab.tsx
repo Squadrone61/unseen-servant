@@ -1,13 +1,13 @@
 "use client";
 
-import type { CharacterData, AdvantageEntry } from "@aidnd/shared/types";
+import type { CharacterData, AdvantageEntry } from "@unseen-servant/shared/types";
 import {
   ABILITY_FULL_NAMES,
   SKILL_DISPLAY_NAMES,
   formatBonus,
   getSkillModifier,
   getSavingThrowModifier,
-} from "@aidnd/shared/utils";
+} from "@unseen-servant/shared/utils";
 
 // ─── Constants ───
 
