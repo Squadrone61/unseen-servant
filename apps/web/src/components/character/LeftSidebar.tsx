@@ -11,9 +11,10 @@ import Link from "next/link";
 interface LeftSidebarProps {
   character: CharacterData | null;
   onCharacterImported: (character: CharacterData) => void;
+  onOpenSettings: () => void;
 }
 
-export function LeftSidebar({ character, onCharacterImported }: LeftSidebarProps) {
+export function LeftSidebar({ character, onCharacterImported, onOpenSettings }: LeftSidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const { characters, touchCharacter } = useCharacterLibrary();
 
@@ -47,9 +48,36 @@ export function LeftSidebar({ character, onCharacterImported }: LeftSidebarProps
     <div className="w-80 bg-gray-800/60 border-r border-gray-700/40 flex flex-col shrink-0 relative">
       {/* Top bar */}
       <div className="flex items-center justify-between px-3 py-1.5 border-b border-gray-700/40 shrink-0">
-        <Button variant="danger" size="xs" href="/">
-          &larr; Quit
-        </Button>
+        <div className="flex items-center gap-1">
+          <Button variant="danger" size="xs" href="/">
+            Quit
+          </Button>
+          <Button
+            variant="icon"
+            onClick={onOpenSettings}
+            title="Settings"
+          >
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.573-1.066z"
+              />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+              />
+            </svg>
+          </Button>
+        </div>
         <Button
           variant="icon"
           onClick={() => setCollapsed(true)}

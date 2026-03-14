@@ -11,8 +11,6 @@ import type {
 } from "@aidnd/shared/types";
 import { CharacterPopover } from "@/components/character/CharacterPopover";
 import { Button } from "@/components/ui/Button";
-import { SettingsModal } from "./SettingsModal";
-
 interface SidebarProps {
   roomCode: string;
   players: string[];
@@ -33,8 +31,6 @@ interface SidebarProps {
   onKick: (playerName: string) => void;
   onStartStory: () => void;
   onRollback?: (eventId: string) => void;
-  onDestroyRoom?: () => void;
-  onSetPassword?: (password: string) => void;
   onOpenCampaignConfig?: () => void;
   onToggleNotes?: () => void;
   showNotes?: boolean;
@@ -60,13 +56,10 @@ export function Sidebar({
   onKick,
   onStartStory,
   onRollback,
-  onDestroyRoom,
-  onSetPassword,
   onOpenCampaignConfig,
   onToggleNotes,
   showNotes,
 }: SidebarProps) {
-  const [showSettings, setShowSettings] = useState(false);
   const [logCollapsed, setLogCollapsed] = useState(false);
   const [eventLogCollapsed, setEventLogCollapsed] = useState(true);
   const [copied, setCopied] = useState(false);
@@ -339,25 +332,6 @@ export function Sidebar({
             <span>Notes</span>
           </button>
         </div>
-      )}
-
-      {/* Settings */}
-      <div className="px-4 py-2 border-b border-gray-700/40">
-        <button
-          onClick={() => setShowSettings(true)}
-          className="w-full flex items-center gap-2 text-sm py-1.5 px-2 rounded-lg transition-colors text-gray-400 hover:text-amber-300 hover:bg-gray-700/50"
-        >
-          <span className="text-base">&#9881;</span>
-          <span>Settings</span>
-        </button>
-      </div>
-      {showSettings && (
-        <SettingsModal
-          onClose={() => setShowSettings(false)}
-          isHost={isHost}
-          onSetPassword={onSetPassword}
-          onDestroyRoom={onDestroyRoom}
-        />
       )}
 
       {/* Activity Log */}

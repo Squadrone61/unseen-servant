@@ -8,6 +8,7 @@ import { LeftSidebar } from "@/components/character/LeftSidebar";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { BattleMap } from "@/components/game/BattleMap";
 import { CampaignConfigModal } from "@/components/sidebar/CampaignConfigModal";
+import { SettingsModal } from "@/components/sidebar/SettingsModal";
 import { PlayerNotesPanel } from "@/components/notes/PlayerNotesPanel";
 import { usePlayerNotes } from "@/hooks/usePlayerNotes";
 import { useCharacterLibrary } from "@/hooks/useCharacterLibrary";
@@ -103,6 +104,7 @@ function GameContent({
   const [activeCampaignName, setActiveCampaignName] = useState<string | undefined>(undefined);
   const [campaignConfigured, setCampaignConfigured] = useState(false);
   const [showCampaignConfig, setShowCampaignConfig] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [showNotes, setShowNotes] = useState(false);
   const [typingPlayers, setTypingPlayers] = useState<Map<string, number>>(new Map());
   const [rightSidebarCollapsed, setRightSidebarCollapsed] = useState(false);
@@ -693,6 +695,7 @@ function GameContent({
       <LeftSidebar
         character={myCharacter}
         onCharacterImported={handleCharacterImported}
+        onOpenSettings={() => setShowSettings(true)}
       />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {battleMap && combatState && combatState.phase === "active" ? (
@@ -749,8 +752,6 @@ function GameContent({
         onKick={handleKick}
         onStartStory={handleStartStory}
         onRollback={handleRollback}
-        onDestroyRoom={handleDestroyRoom}
-        onSetPassword={handleSetPassword}
         onOpenCampaignConfig={() => setShowCampaignConfig(true)}
         onToggleNotes={() => setShowNotes((v) => !v)}
         showNotes={showNotes}
@@ -764,6 +765,16 @@ function GameContent({
           onChange={updateNotes}
           onClose={() => setShowNotes(false)}
 
+        />
+      )}
+
+      {/* Settings Modal */}
+      {showSettings && (
+        <SettingsModal
+          onClose={() => setShowSettings(false)}
+          isHost={isHost}
+          onSetPassword={handleSetPassword}
+          onDestroyRoom={handleDestroyRoom}
         />
       )}
 
