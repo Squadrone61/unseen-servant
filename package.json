@@ -10,7 +10,7 @@
     "build:web": "cd apps/web && npx @opennextjs/cloudflare build",
     "deploy": "turbo deploy",
     "deploy:web": "cd apps/web && npx @opennextjs/cloudflare deploy",
-    "deploy:worker": "cd apps/worker && npx wrangler deploy --env production",
+    "deploy:worker": "cd apps/worker && wrangler deploy --env production",
     "test": "node scripts/test.mjs",
     "build:dm": "cd apps/dm-launcher && node build.mjs",
     "dead-code": "knip"
