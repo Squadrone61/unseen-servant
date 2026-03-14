@@ -6,19 +6,13 @@
     "dev": "turbo dev",
     "lint": "turbo lint",
     "type-check": "turbo type-check",
-    "dev:web": "turbo dev --filter=@unseen-servant/web",
-    "dev:worker": "turbo dev --filter=@unseen-servant/worker",
     "dev:all": "turbo dev --filter=@unseen-servant/web --filter=@unseen-servant/worker",
     "build:web": "cd apps/web && npx @opennextjs/cloudflare build",
-    "build:worker": "echo 'No build step — wrangler compiles TypeScript directly'",
     "deploy": "turbo deploy",
     "deploy:web": "cd apps/web && npx @opennextjs/cloudflare deploy",
-    "deploy:worker": "cd apps/worker && wrangler deploy --env production",
+    "deploy:worker": "cd apps/worker && npx wrangler deploy --env production",
     "test": "node scripts/test.mjs",
-    "test:ui": "playwright test --ui",
-    "dev:mcp": "tsx apps/mcp-bridge/src/index.ts",
     "build:dm": "cd apps/dm-launcher && node build.mjs",
-    "dev:dm": "cd apps/dm-launcher && node build.mjs --dev && node dist/unseen-servant-dev.mjs",
     "dead-code": "knip"
   },
   "devDependencies": {
@@ -26,7 +20,8 @@
     "knip": "^5.85.0",
     "tsx": "^4.19.4",
     "turbo": "^2",
-    "typescript": "^5.9"
+    "typescript": "^5.9",
+    "wrangler": "^4"
   },
   "packageManager": "pnpm@10.4.1",
   "pnpm": {
