@@ -88,6 +88,7 @@ function GameContent({
   const [isHost, setIsHost] = useState(false);
   const [hostName, setHostName] = useState<string>("");
   const [myCharacter, setMyCharacter] = useState<CharacterData | null>(null);
+  const [myCharacterLibraryId, setMyCharacterLibraryId] = useState<string | null>(null);
   const [partyCharacters, setPartyCharacters] = useState<
     Record<string, CharacterData>
   >({});
@@ -167,12 +168,15 @@ function GameContent({
   const sendRef = useRef<(msg: import("@unseen-servant/shared/types").ClientMessage) => void>(() => {});
   const myCharacterRef = useRef<CharacterData | null>(null);
   myCharacterRef.current = myCharacter;
+  const myCharacterLibraryIdRef = useRef<string | null>(null);
+  myCharacterLibraryIdRef.current = myCharacterLibraryId;
 
   // Reconcile a server-restored character with the local library
   const reconcileWithLibrary = useCallback(
     (restoredChar: CharacterData, campaignSlug?: string) => {
       const libEntry = libFindByNameRef.current(restoredChar.static.name);
       if (libEntry) {
+        setMyCharacterLibraryId(libEntry.id);
         // Check if library version is newer (level-up between sessions)
         const libImportedAt = libEntry.character.static.importedAt ?? 0;
         const restoredImportedAt = restoredChar.static.importedAt ?? 0;
@@ -196,10 +200,11 @@ function GameContent({
         libTouchCharacter(libEntry.id);
       } else {
         // Character not in library — add it (different browser scenario)
-        libSaveCharacter(restoredChar, {
+        const saved = libSaveCharacter(restoredChar, {
           campaignSlug,
           roomCode,
         });
+        setMyCharacterLibraryId(saved.id);
       }
     },
     [roomCode, libUpdateCharacter, libBindToCampaign, libTouchCharacter, libSaveCharacter]
@@ -247,7 +252,7 @@ function GameContent({
           if (msg.isDM) setDmConnected(false);
           break;
 
-        case "server:character_updated":
+        case "server:character_updated": {
           setPartyCharacters((prev) => ({
             ...prev,
             [msg.playerName]: msg.character,
@@ -260,7 +265,15 @@ function GameContent({
               libUpdateCharacter(libEntry.id, msg.character);
             }
           }
+          // Activity log entry confirming the update
+          const lvl = msg.character.static.classes.reduce((s, c) => s + c.level, 0);
+          setLogMessages((prev) => [...prev, {
+            type: "server:system",
+            content: `${msg.playerName} updated character "${msg.character.static.name}" (Lvl ${lvl}, HP ${msg.character.dynamic.currentHP}/${msg.character.static.maxHP}).`,
+            timestamp: Date.now(),
+          } as ServerMessage]);
           break;
+        }
 
         case "server:kicked":
           sessionStorage.setItem("kick_message", msg.reason);
@@ -481,10 +494,10 @@ function GameContent({
       if (e.key !== "character_library" || !myCharacterRef.current) return;
       try {
         const lib = e.newValue ? JSON.parse(e.newValue) : [];
+        const libId = myCharacterLibraryIdRef.current;
         const entry = lib.find(
-          (c: { character: CharacterData }) =>
-            c.character.static.name.toLowerCase() ===
-            myCharacterRef.current!.static.name.toLowerCase()
+          (c: { id: string; character: CharacterData }) =>
+            libId ? c.id === libId : c.character.static.name.toLowerCase() === myCharacterRef.current!.static.name.toLowerCase()
         );
         if (!entry) return;
         const libImportedAt = entry.character.static.importedAt ?? 0;
@@ -595,8 +608,9 @@ function GameContent({
   };
 
   const handleCharacterImported = useCallback(
-    (character: CharacterData) => {
+    (character: CharacterData, libraryId: string) => {
       setMyCharacter(character);
+      setMyCharacterLibraryId(libraryId);
       send({ type: "client:set_character", character });
     },
     [send]
@@ -694,6 +708,7 @@ function GameContent({
     <div className="flex h-screen">
       <LeftSidebar
         character={myCharacter}
+        libraryId={myCharacterLibraryId}
         onCharacterImported={handleCharacterImported}
         onOpenSettings={() => setShowSettings(true)}
       />

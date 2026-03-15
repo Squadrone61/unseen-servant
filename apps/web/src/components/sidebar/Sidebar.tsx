@@ -382,7 +382,7 @@ export function Sidebar({
       </div>
 
       {/* Event Log (Host only) */}
-      {isHost && eventLog && eventLog.length > 0 && (
+      {eventLog && eventLog.length > 0 && (
         <div className="border-b border-gray-700/40 flex flex-col min-h-0">
           <button
             onClick={() => setEventLogCollapsed(!eventLogCollapsed)}

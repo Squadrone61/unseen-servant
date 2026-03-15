@@ -7,6 +7,7 @@ import { Breadcrumb } from "@/components/ui/Breadcrumb";
 import { Button } from "@/components/ui/Button";
 import { motion, AnimatePresence } from "framer-motion";
 import { buildCharacter } from "@unseen-servant/shared/builders";
+import { mergeReimport } from "@unseen-servant/shared/utils";
 import { useCharacterLibrary } from "@/hooks/useCharacterLibrary";
 import { CharacterImport } from "@/components/character/CharacterImport";
 import { useCharacterImport } from "@/hooks/useCharacterImport";
@@ -202,18 +203,23 @@ export function CharacterBuilder({ editId }: CharacterBuilderProps) {
     if (state.classes.length === 0) return;
 
     const ids = assembleIdentifiers(state);
-    const { character } = buildCharacter(ids);
+    const { character: built } = buildCharacter(ids);
 
     const { currentStep: _, editingId: __, ...builderChoices } = state;
 
     if (state.editingId) {
+      // Preserve gameplay dynamic state (HP, conditions, spell slots, etc.)
+      const existing = getCharacter(state.editingId);
+      const character = existing
+        ? mergeReimport(existing.character, built.static, built.dynamic)
+        : built;
       updateCharacter(state.editingId, character, builderChoices);
       router.push(`/characters/${state.editingId}`);
     } else {
-      const saved = saveCharacter(character, { builderChoices });
+      const saved = saveCharacter(built, { builderChoices });
       router.push(`/characters/${saved.id}`);
     }
-  }, [state, saveCharacter, updateCharacter, router]);
+  }, [state, saveCharacter, updateCharacter, getCharacter, router]);
 
   const canGoNext = isStepValid(state, state.currentStep);
   const isLastStep = state.currentStep === "review";

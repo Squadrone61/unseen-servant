@@ -3,11 +3,9 @@
  */
 
 import * as fs from "fs";
-import * as os from "os";
 import * as path from "path";
 import * as readline from "readline";
 import { spawn, execSync } from "child_process";
-import { randomBytes } from "crypto";
 import {
   DM_CORE_PROMPT,
   DM_SKILL_PLAYER_IDENTITY,
@@ -149,21 +147,21 @@ export async function startCli(): Promise<void> {
 
   // Resolve the path to this script (the bundled .mjs file)
   const scriptPath = path.resolve(process.argv[1]);
+  const scriptDir = path.dirname(scriptPath);
 
-  // Create temp working directory
-  const tmpId = randomBytes(4).toString("hex");
-  const tmpDir = path.join(os.tmpdir(), `unseen-servant-${tmpId}`);
-  fs.mkdirSync(tmpDir, { recursive: true });
+  // Use the script's directory as the working directory
+  // Campaigns, Claude sessions, and skills all persist here
+  const workDir = scriptDir;
 
   // Create native Claude Code skills (.claude/skills/<name>/SKILL.md)
   for (const [name, content] of Object.entries(NATIVE_SKILLS)) {
-    const skillDir = path.join(tmpDir, ".claude", "skills", name);
+    const skillDir = path.join(workDir, ".claude", "skills", name);
     fs.mkdirSync(skillDir, { recursive: true });
     fs.writeFileSync(path.join(skillDir, "SKILL.md"), content);
   }
 
-  // Campaigns persist in ~/.unseen/campaigns/ (not in the temp dir)
-  const campaignsDir = path.join(os.homedir(), ".unseen", "campaigns");
+  // Campaigns persist alongside the launcher
+  const campaignsDir = path.join(workDir, ".unseen", "campaigns");
   fs.mkdirSync(campaignsDir, { recursive: true });
 
   // Write .mcp.json — command points to this script with --serve
@@ -183,18 +181,18 @@ export async function startCli(): Promise<void> {
   };
 
   fs.writeFileSync(
-    path.join(tmpDir, ".mcp.json"),
+    path.join(workDir, ".mcp.json"),
     JSON.stringify(mcpConfig, null, 2)
   );
 
   // Write CLAUDE.md — slim core prompt + skill file index
-  fs.writeFileSync(path.join(tmpDir, "CLAUDE.md"), buildClaudeMd());
+  fs.writeFileSync(path.join(workDir, "CLAUDE.md"), buildClaudeMd());
 
   console.log(`Room:       ${roomCode}`);
   console.log(`Model:      ${model}`);
   console.log(`Worker:     ${workerUrl}`);
   console.log(`Campaigns:  ${campaignsDir}`);
-  console.log(`Temp dir:   ${tmpDir}`);
+  console.log(`Work dir:   ${workDir}`);
   console.log("");
   console.log("Launching Claude Code...\n");
 
@@ -204,7 +202,7 @@ export async function startCli(): Promise<void> {
     "claude",
     [
       "--mcp-config",
-      path.join(tmpDir, ".mcp.json"),
+      path.join(workDir, ".mcp.json"),
       "--model",
       model,
       "--system-prompt",
@@ -274,22 +272,12 @@ export async function startCli(): Promise<void> {
       "Start the DM game loop. Call wait_for_message now and keep looping. ALL narrative output MUST go through send_response — never output text directly.",
     ],
     {
-      cwd: tmpDir,
+      cwd: workDir,
       stdio: "inherit",
     }
   );
 
-  // Clean up on exit
-  const cleanup = () => {
-    try {
-      fs.rmSync(tmpDir, { recursive: true, force: true });
-    } catch {
-      // ignore — temp dir may already be gone
-    }
-  };
-
   claude.on("exit", (code) => {
-    cleanup();
     process.exit(code ?? 0);
   });
 
@@ -299,6 +287,5 @@ export async function startCli(): Promise<void> {
 
   process.on("SIGTERM", () => {
     claude.kill("SIGTERM");
-    cleanup();
   });
 }

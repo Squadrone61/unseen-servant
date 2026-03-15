@@ -6,15 +6,15 @@ import { formatClassString, getTotalLevel } from "@unseen-servant/shared/utils";
 import { CharacterSheet } from "./CharacterSheet";
 import { Button } from "@/components/ui/Button";
 import { useCharacterLibrary } from "@/hooks/useCharacterLibrary";
-import Link from "next/link";
 
 interface LeftSidebarProps {
   character: CharacterData | null;
-  onCharacterImported: (character: CharacterData) => void;
+  libraryId: string | null;
+  onCharacterImported: (character: CharacterData, libraryId: string) => void;
   onOpenSettings: () => void;
 }
 
-export function LeftSidebar({ character, onCharacterImported, onOpenSettings }: LeftSidebarProps) {
+export function LeftSidebar({ character, libraryId, onCharacterImported, onOpenSettings }: LeftSidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const { characters, touchCharacter } = useCharacterLibrary();
 
@@ -77,6 +77,19 @@ export function LeftSidebar({ character, onCharacterImported, onOpenSettings }: 
               />
             </svg>
           </Button>
+          {character && libraryId && characters.find(c => c.id === libraryId && c.builderChoices) && (
+            <Button
+              variant="ghost"
+              size="xs"
+              href={`/characters/${libraryId}/edit`}
+              target="_blank"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+              Update Character
+            </Button>
+          )}
         </div>
         <Button
           variant="icon"
@@ -102,35 +115,13 @@ export function LeftSidebar({ character, onCharacterImported, onOpenSettings }: 
       {/* Content */}
       <div className="flex-1 overflow-hidden flex flex-col">
         {character ? (
-          <div className="flex flex-col flex-1 min-h-0">
-            <CharacterSheet character={character} />
-            {/* Actions */}
-            <div className="p-2 border-t border-gray-700/40 shrink-0 flex items-center justify-between">
-              <Button variant="ghost" size="xs" href="/characters" target="_blank">
-                View in library &rarr;
-              </Button>
-              {(() => {
-                const saved = characters.find(c => c.character.static.name === character.static.name && c.builderChoices);
-                if (!saved) return null;
-                return (
-                  <Button
-                    variant="secondary"
-                    size="xs"
-                    href={`/characters/${saved.id}/edit`}
-                    target="_blank"
-                  >
-                    Update Character
-                  </Button>
-                );
-              })()}
-            </div>
-          </div>
+          <CharacterSheet character={character} />
         ) : (
           <CharacterPicker
             characters={characters}
             onSelect={(saved) => {
               touchCharacter(saved.id);
-              onCharacterImported(saved.character);
+              onCharacterImported(saved.character, saved.id);
             }}
           />
         )}

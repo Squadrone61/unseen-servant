@@ -379,6 +379,10 @@ export class GameStateManager {
         this.gameState.pendingCheck = undefined;
       }
 
+      this.createEvent("check_resolved",
+        `${char.static.name} rolled ${roll.total} damage (${pendingCheck.notation}) for ${pendingCheck.reason}`,
+        []);
+
       const systemMsg = `[System: ${char.static.name} rolled ${roll.total} damage (${pendingCheck.notation}) for ${pendingCheck.reason}]`;
       this.conversationHistory.push({ role: "user", content: systemMsg });
       this.pushDMRequest();
@@ -428,10 +432,15 @@ export class GameStateManager {
       this.gameState.pendingCheck = undefined;
     }
 
-    // Inject result into conversation and trigger AI follow-up
+    // Log event for the event log
     const resultLabel = success === true ? "Success" : success === false ? "Failure" : "Result";
     const dcStr = pendingCheck.dc !== undefined ? ` (DC ${pendingCheck.dc})` : "";
     const critStr = roll.criticalHit ? " (Critical!)" : roll.criticalFail ? " (Critical Fail!)" : "";
+    this.createEvent("check_resolved",
+      `${char.static.name} rolled ${roll.total}${dcStr} — ${resultLabel}${critStr} (${pendingCheck.reason})`,
+      []);
+
+    // Inject result into conversation and trigger AI follow-up
     const systemMsg = `[System: ${char.static.name} rolled ${roll.total} on ${pendingCheck.reason}${dcStr} — ${resultLabel}${critStr}]`;
 
     this.conversationHistory.push({ role: "user", content: systemMsg });

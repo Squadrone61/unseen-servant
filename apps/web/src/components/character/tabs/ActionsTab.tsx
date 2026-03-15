@@ -4,6 +4,8 @@ import type {
   CharacterFeature,
   InventoryItem,
 } from "@unseen-servant/shared/types";
+import { actionsArray } from "@unseen-servant/shared/data";
+import { entriesToText } from "@unseen-servant/shared";
 import { FilterChipBar } from "../FilterChipBar";
 
 interface ActionEntry {
@@ -18,19 +20,22 @@ interface ActionsTabProps {
   onFeatureClick: (feature: CharacterFeature, e: React.MouseEvent) => void;
 }
 
-// Standard D&D combat actions — always shown as a reference
-const STANDARD_ACTIONS = [
-  { name: "Attack", detail: "Melee or ranged attack" },
-  { name: "Cast a Spell", detail: "Use an action spell" },
-  { name: "Dash", detail: "Double movement speed" },
-  { name: "Disengage", detail: "No opportunity attacks" },
-  { name: "Dodge", detail: "Attacks have disadvantage" },
-  { name: "Help", detail: "Give ally advantage" },
-  { name: "Hide", detail: "Stealth check" },
-  { name: "Ready", detail: "Prepare a reaction" },
-  { name: "Search", detail: "Perception/Investigation" },
-  { name: "Use an Object", detail: "Interact with object" },
-];
+// Standard D&D combat actions from database, grouped by activation type
+const STANDARD_ACTION_GROUPS = (() => {
+  const actions: { name: string; unit: string; description: string }[] = [];
+  const bonusActions: { name: string; unit: string; description: string }[] = [];
+  const reactions: { name: string; unit: string; description: string }[] = [];
+
+  for (const a of actionsArray) {
+    const unit = a.time?.[0]?.unit ?? "";
+    const desc = entriesToText(a.entries);
+    const entry = { name: a.name, unit, description: desc };
+    if (unit === "bonus") bonusActions.push(entry);
+    else if (unit === "reaction") reactions.push(entry);
+    else actions.push(entry);
+  }
+  return { actions, bonusActions, reactions };
+})();
 
 type GroupId = "weapons" | "actions" | "bonus" | "reactions" | "other";
 
@@ -201,22 +206,48 @@ export function ActionsTab({
         </div>
       )}
 
-      {/* Standard combat actions (reference) */}
-      <div className="border-t border-gray-700/40 pt-2 mt-2">
-        <div className="text-sm text-gray-500 uppercase tracking-wider font-medium mb-0.5 px-1.5" style={{ fontFamily: "var(--font-cinzel)" }}>
-          Standard Actions
-        </div>
-        <div className="space-y-0.5">
-          {STANDARD_ACTIONS.map((sa) => (
+      {/* Standard combat actions (from D&D database) */}
+      <StandardActionsSection label="Standard Actions" items={STANDARD_ACTION_GROUPS.actions} />
+      {STANDARD_ACTION_GROUPS.bonusActions.length > 0 && (
+        <StandardActionsSection label="Bonus Actions" items={STANDARD_ACTION_GROUPS.bonusActions} />
+      )}
+      {STANDARD_ACTION_GROUPS.reactions.length > 0 && (
+        <StandardActionsSection label="Reactions" items={STANDARD_ACTION_GROUPS.reactions} />
+      )}
+    </div>
+  );
+}
+
+function StandardActionsSection({ label, items }: { label: string; items: { name: string; description: string }[] }) {
+  const [expanded, setExpanded] = useState<string | null>(null);
+
+  return (
+    <div className="border-t border-gray-700/40 pt-2 mt-2">
+      <div className="text-sm text-gray-500 uppercase tracking-wider font-medium mb-0.5 px-1.5" style={{ fontFamily: "var(--font-cinzel)" }}>
+        {label}
+      </div>
+      <div className="space-y-0.5">
+        {items.map((sa) => (
+          <div key={sa.name}>
             <div
-              key={sa.name}
-              className="flex items-center gap-1.5 text-xs px-1.5 py-0.5 text-gray-600"
+              className="flex items-center gap-1.5 text-xs px-1.5 py-1 rounded cursor-pointer hover:bg-gray-800/60 transition-colors text-gray-500 hover:text-gray-300"
+              onClick={() => setExpanded(expanded === sa.name ? null : sa.name)}
             >
+              <svg
+                className={`w-2.5 h-2.5 shrink-0 transition-transform ${expanded === sa.name ? "rotate-90" : ""}`}
+                fill="none" stroke="currentColor" viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
               <span className="truncate flex-1">{sa.name}</span>
-              <span className="text-xs shrink-0">{sa.detail}</span>
             </div>
-          ))}
-        </div>
+            {expanded === sa.name && (
+              <div className="text-xs text-gray-500 px-1.5 pl-6 pb-1 leading-relaxed">
+                {sa.description}
+              </div>
+            )}
+          </div>
+        ))}
       </div>
     </div>
   );
