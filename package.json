@@ -13,13 +13,37 @@
     "deploy:worker": "cd apps/worker && wrangler deploy --env production",
     "test": "node scripts/test.mjs",
     "build:dm": "cd apps/dm-launcher && node build.mjs",
-    "dead-code": "knip"
+    "dead-code": "knip",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --fix --no-warn-ignored",
+      "prettier --write"
+    ],
+    "*.{js,mjs,cjs}": [
+      "prettier --write"
+    ],
+    "*.{md,yml,yaml,css}": [
+      "prettier --write"
+    ]
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@next/eslint-plugin-next": "^16.1.6",
     "@playwright/test": "^1.58.2",
+    "eslint": "^9",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "husky": "^9.1.7",
     "knip": "^5.85.0",
+    "lint-staged": "^16.4.0",
+    "prettier": "^3.8.1",
     "turbo": "^2",
     "typescript": "^5.9",
+    "typescript-eslint": "^8.57.0",
     "wrangler": "^4"
   },
   "packageManager": "pnpm@10.4.1",

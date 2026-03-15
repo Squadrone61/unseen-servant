@@ -1,0 +1,9 @@
+node_modules
+.next
+.open-next
+dist
+.wrangler
+.turbo
+.testing
+pnpm-lock.yaml
+packages/shared/src/data/*.json

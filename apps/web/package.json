@@ -10,7 +10,7 @@
     "preview": "npx @opennextjs/cloudflare dev",
     "start": "next start",
     "type-check": "tsc --noEmit",
-    "lint": "echo 'lint placeholder'"
+    "lint": "eslint ."
   },
   "dependencies": {
     "@unseen-servant/shared": "workspace:*",

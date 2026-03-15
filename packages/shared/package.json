@@ -13,7 +13,7 @@
   },
   "scripts": {
     "type-check": "tsc --noEmit",
-    "lint": "echo 'lint placeholder'"
+    "lint": "eslint ."
   },
   "devDependencies": {
     "typescript": "^5.9"

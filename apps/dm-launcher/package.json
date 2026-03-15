@@ -6,7 +6,8 @@
   "scripts": {
     "build": "node build.mjs",
     "dev": "node build.mjs --dev",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "lint": "eslint ."
   },
   "devDependencies": {
     "@unseen-servant/shared": "workspace:*",
