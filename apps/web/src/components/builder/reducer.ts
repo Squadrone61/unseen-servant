@@ -1,6 +1,11 @@
 import type { AbilityScores, Currency } from "@unseen-servant/shared/types";
-import type { BuilderState, BuilderAction, ClassEntry, EquipmentEntry } from "./types";
-import { DEFAULT_ABILITIES, POINT_BUY_DEFAULT, STANDARD_ARRAY_DEFAULT, getASILevelsForClasses } from "./utils";
+import type { BuilderState, BuilderAction, ClassEntry } from "./types";
+import {
+  DEFAULT_ABILITIES,
+  POINT_BUY_DEFAULT,
+  STANDARD_ARRAY_DEFAULT,
+  getASILevelsForClasses,
+} from "./utils";
 
 function createEmptyClassEntry(className: string): ClassEntry {
   return {
@@ -44,10 +49,7 @@ export function createInitialState(editingId?: string | null): BuilderState {
   };
 }
 
-export function builderReducer(
-  state: BuilderState,
-  action: BuilderAction
-): BuilderState {
+export function builderReducer(state: BuilderState, action: BuilderAction): BuilderState {
   switch (action.type) {
     // ─── Navigation ───────────────────────────
     case "SET_STEP":
@@ -148,8 +150,9 @@ export function builderReducer(
       }
 
       // Trim ASI selections for the removed class
-      const newAsiSelections = state.asiSelections.filter(s => s.classIndex !== action.index)
-        .map(s => ({
+      const newAsiSelections = state.asiSelections
+        .filter((s) => s.classIndex !== action.index)
+        .map((s) => ({
           ...s,
           classIndex: s.classIndex > action.index ? s.classIndex - 1 : s.classIndex,
         }));
@@ -185,7 +188,7 @@ export function builderReducer(
         spellSelections: newSpellSelections,
         skillProficiencies: [],
         skillExpertise: [],
-        asiSelections: state.asiSelections.filter(s => s.classIndex !== action.index),
+        asiSelections: state.asiSelections.filter((s) => s.classIndex !== action.index),
         equipment: [],
       };
     }
@@ -201,12 +204,12 @@ export function builderReducer(
 
       // Trim ASI selections for this class to valid levels
       const validLevels = new Set(
-        getASILevelsForClasses(
-          [{ className: entry.className, level: action.level }]
-        ).filter(a => a.classIndex === action.index).map(a => a.level)
+        getASILevelsForClasses([{ className: entry.className, level: action.level }])
+          .filter((a) => a.classIndex === action.index)
+          .map((a) => a.level),
       );
       const trimmedAsi = state.asiSelections.filter(
-        s => s.classIndex !== action.index || validLevels.has(s.level)
+        (s) => s.classIndex !== action.index || validLevels.has(s.level),
       );
 
       // Reset spell selections for this class
@@ -299,12 +302,12 @@ export function builderReducer(
     // ─── Feats / ASI Selections ────────────────
     case "SET_ASI_SELECTION": {
       const existing = state.asiSelections.filter(
-        s => !(s.classIndex === action.classIndex && s.level === action.level)
+        (s) => !(s.classIndex === action.classIndex && s.level === action.level),
       );
       return {
         ...state,
         asiSelections: [...existing, action.selection].sort((a, b) =>
-          a.classIndex !== b.classIndex ? a.classIndex - b.classIndex : a.level - b.level
+          a.classIndex !== b.classIndex ? a.classIndex - b.classIndex : a.level - b.level,
         ),
       };
     }
@@ -362,7 +365,7 @@ export function builderReducer(
           [action.className]: {
             ...sel,
             cantrips: has
-              ? sel.cantrips.filter(s => s !== action.spell)
+              ? sel.cantrips.filter((s) => s !== action.spell)
               : [...sel.cantrips, action.spell],
           },
         },
@@ -379,7 +382,7 @@ export function builderReducer(
           [action.className]: {
             ...sel,
             spells: has
-              ? sel.spells.filter(s => s !== action.spell)
+              ? sel.spells.filter((s) => s !== action.spell)
               : [...sel.spells, action.spell],
           },
         },
@@ -401,7 +404,7 @@ export function builderReducer(
 
     case "ADD_EQUIPMENT": {
       const existing = state.equipment.find(
-        (e) => e.name === action.entry.name && e.source === action.entry.source
+        (e) => e.name === action.entry.name && e.source === action.entry.source,
       );
       if (existing) {
         return {
@@ -409,7 +412,7 @@ export function builderReducer(
           equipment: state.equipment.map((e) =>
             e.name === action.entry.name && e.source === action.entry.source
               ? { ...e, quantity: e.quantity + action.entry.quantity }
-              : e
+              : e,
           ),
         };
       }
@@ -426,7 +429,7 @@ export function builderReducer(
       return {
         ...state,
         equipment: state.equipment.map((e) =>
-          e.name === action.name ? { ...e, quantity: action.quantity } : e
+          e.name === action.name ? { ...e, quantity: action.quantity } : e,
         ),
       };
 
@@ -434,19 +437,19 @@ export function builderReducer(
       return {
         ...state,
         equipment: state.equipment.map((e) =>
-          e.name === action.name ? { ...e, equipped: !e.equipped } : e
+          e.name === action.name ? { ...e, equipped: !e.equipped } : e,
         ),
       };
 
     case "ADD_STARTING_EQUIPMENT": {
       let newEquipment = [...state.equipment];
       for (const item of action.items) {
-        const existing = newEquipment.find(e => e.name === item.name && e.source === item.source);
+        const existing = newEquipment.find((e) => e.name === item.name && e.source === item.source);
         if (existing) {
-          newEquipment = newEquipment.map(e =>
+          newEquipment = newEquipment.map((e) =>
             e.name === item.name && e.source === item.source
               ? { ...e, quantity: e.quantity + item.quantity }
-              : e
+              : e,
           );
         } else {
           newEquipment.push(item);

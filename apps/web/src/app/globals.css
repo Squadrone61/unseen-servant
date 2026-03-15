@@ -22,13 +22,16 @@
   --color-red-400: #f87171;
   --color-red-500: #ef4444;
   --color-red-900: #7f1d1d;
-  --font-cinzel: 'Cinzel', serif;
+  --font-cinzel: "Cinzel", serif;
 }
 
 body {
   background: var(--color-gray-900);
   color: var(--color-gray-100);
-  font-family: system-ui, -apple-system, sans-serif;
+  font-family:
+    system-ui,
+    -apple-system,
+    sans-serif;
 }
 
 ::-webkit-scrollbar {
@@ -43,8 +46,18 @@ body {
 }
 
 /* Entity color-coding for DM narrative tags */
-.entity-place { color: #fbbf24; }
-.entity-npc { color: #22d3ee; }
-.entity-pc { color: #a78bfa; }
-.entity-item { color: #34d399; }
-.entity-faction { color: #fb7185; }
+.entity-place {
+  color: #fbbf24;
+}
+.entity-npc {
+  color: #22d3ee;
+}
+.entity-pc {
+  color: #a78bfa;
+}
+.entity-item {
+  color: #34d399;
+}
+.entity-faction {
+  color: #fb7185;
+}

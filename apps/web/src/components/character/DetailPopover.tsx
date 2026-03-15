@@ -9,12 +9,7 @@ interface DetailPopoverProps {
   position: { x: number; y: number };
 }
 
-export function DetailPopover({
-  title,
-  onClose,
-  children,
-  position,
-}: DetailPopoverProps) {
+export function DetailPopover({ title, onClose, children, position }: DetailPopoverProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [coords, setCoords] = useState<{ left: number; top: number } | null>(null);
 
@@ -22,7 +17,7 @@ export function DetailPopover({
     (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     },
-    [onClose]
+    [onClose],
   );
 
   useEffect(() => {
@@ -89,19 +84,17 @@ export function DetailPopover({
     >
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-700/40 shrink-0">
-        <h3 className="text-base font-semibold text-amber-200/90 truncate pr-2" style={{ fontFamily: "var(--font-cinzel)" }}>
+        <h3
+          className="text-base font-semibold text-amber-200/90 truncate pr-2"
+          style={{ fontFamily: "var(--font-cinzel)" }}
+        >
           {title}
         </h3>
         <button
           onClick={onClose}
           className="text-gray-500 hover:text-gray-300 transition-colors shrink-0"
         >
-          <svg
-            className="w-4 h-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               strokeLinecap="round"
               strokeLinejoin="round"

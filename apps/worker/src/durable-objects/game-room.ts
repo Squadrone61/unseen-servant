@@ -63,15 +63,19 @@ export class GameRoom extends DurableObject<Env> {
       }
     }
 
-    this.ctx.setWebSocketAutoResponse(
-      new WebSocketRequestResponsePair("ping", "pong")
-    );
+    this.ctx.setWebSocketAutoResponse(new WebSocketRequestResponsePair("ping", "pong"));
 
     this.ctx.blockConcurrencyWhile(async () => {
       const [
-        chatLog, roomCode,
-        hostPlayerName, characters, allPlayerRecords, storyStarted,
-        created, password, createdAt,
+        chatLog,
+        roomCode,
+        hostPlayerName,
+        characters,
+        allPlayerRecords,
+        storyStarted,
+        created,
+        password,
+        createdAt,
         dmBridgeConfig,
         campaignConfigured,
         activeCampaignSlug,
@@ -164,10 +168,7 @@ export class GameRoom extends DurableObject<Env> {
     return new Response(null, { status: 101, webSocket: client });
   }
 
-  async webSocketMessage(
-    ws: WebSocket,
-    message: string | ArrayBuffer
-  ): Promise<void> {
+  async webSocketMessage(ws: WebSocket, message: string | ArrayBuffer): Promise<void> {
     if (typeof message !== "string") {
       this.sendTo(ws, {
         type: "server:error",
@@ -263,11 +264,14 @@ export class GameRoom extends DurableObject<Env> {
       case "client:typing": {
         const session = this.sessions.get(ws);
         if (session?.playerName) {
-          this.broadcastToApproved({
-            type: "server:typing",
-            playerName: session.playerName,
-            isTyping: msg.isTyping,
-          }, ws);
+          this.broadcastToApproved(
+            {
+              type: "server:typing",
+              playerName: session.playerName,
+              isTyping: msg.isTyping,
+            },
+            ws,
+          );
         }
         break;
       }
@@ -302,11 +306,7 @@ export class GameRoom extends DurableObject<Env> {
     }
   }
 
-  async webSocketClose(
-    ws: WebSocket,
-    code: number,
-    _reason: string
-  ): Promise<void> {
+  async webSocketClose(ws: WebSocket, code: number, _reason: string): Promise<void> {
     const session = this.sessions.get(ws);
     this.sessions.delete(ws);
     ws.close(code, "Connection closed");
@@ -382,13 +382,15 @@ export class GameRoom extends DurableObject<Env> {
 
     const requestId = crypto.randomUUID();
     try {
-      dmWs.send(JSON.stringify({
-        type: "server:player_action",
-        playerName: session.playerName,
-        userId: session.userId,
-        action: msg,
-        requestId,
-      }));
+      dmWs.send(
+        JSON.stringify({
+          type: "server:player_action",
+          playerName: session.playerName,
+          userId: session.userId,
+          action: msg,
+          requestId,
+        }),
+      );
     } catch {
       this.sendTo(ws, {
         type: "server:error",
@@ -426,13 +428,15 @@ export class GameRoom extends DurableObject<Env> {
     if (!dmWs) return;
     const requestId = crypto.randomUUID();
     try {
-      dmWs.send(JSON.stringify({
-        type: "server:player_action",
-        playerName: session.playerName,
-        userId: session.userId,
-        action: msg,
-        requestId,
-      }));
+      dmWs.send(
+        JSON.stringify({
+          type: "server:player_action",
+          playerName: session.playerName,
+          userId: session.userId,
+          action: msg,
+          requestId,
+        }),
+      );
     } catch {
       // Bridge disconnected — chat still works
     }
@@ -458,7 +462,7 @@ export class GameRoom extends DurableObject<Env> {
    */
   private handleBroadcast(
     ws: WebSocket,
-    msg: Extract<ClientMessage, { type: "client:broadcast" }>
+    msg: Extract<ClientMessage, { type: "client:broadcast" }>,
   ): void {
     const session = this.sessions.get(ws);
     if (!session?.isDM) {
@@ -502,10 +506,7 @@ export class GameRoom extends DurableObject<Env> {
         }
       }
       // Still persist chat messages
-      if (
-        payload.type !== "server:player_joined" &&
-        payload.type !== "server:player_left"
-      ) {
+      if (payload.type !== "server:player_joined" && payload.type !== "server:player_left") {
         this.appendToChatLog(payload);
       }
     } else {
@@ -518,7 +519,7 @@ export class GameRoom extends DurableObject<Env> {
 
   private async handleJoin(
     ws: WebSocket,
-    msg: Extract<ClientMessage, { type: "client:join" }>
+    msg: Extract<ClientMessage, { type: "client:join" }>,
   ): Promise<void> {
     if (!this.created) {
       this.sendTo(ws, {
@@ -619,8 +620,7 @@ export class GameRoom extends DurableObject<Env> {
     }
 
     let status: PlayerStatus;
-    const isReconnect =
-      this.approvedUserIds.has(userId) || this.hostUserId === userId;
+    const isReconnect = this.approvedUserIds.has(userId) || this.hostUserId === userId;
 
     if (!this.hostUserId) {
       status = "host";
@@ -656,7 +656,7 @@ export class GameRoom extends DurableObject<Env> {
     session: SessionData,
     roomCode: string,
     isReconnect: boolean,
-    authUser?: AuthUser
+    authUser?: AuthUser,
   ): void {
     if (!this.allPlayerRecords.has(session.userId) && !session.isDM) {
       this.allPlayerRecords.set(session.userId, {
@@ -710,7 +710,7 @@ export class GameRoom extends DurableObject<Env> {
         allPlayers: this.getAllPlayersWithStatus(),
         isDM: session.isDM || undefined,
       },
-      ws
+      ws,
     );
 
     if (!isReconnect) {
@@ -734,7 +734,7 @@ export class GameRoom extends DurableObject<Env> {
 
   private async handleCampaignConfiguredAck(
     ws: WebSocket,
-    msg: Extract<ClientMessage, { type: "client:campaign_configured_ack" }>
+    msg: Extract<ClientMessage, { type: "client:campaign_configured_ack" }>,
   ): Promise<void> {
     this.campaignConfigured = true;
     this.activeCampaignSlug = msg.campaignSlug;
@@ -748,7 +748,10 @@ export class GameRoom extends DurableObject<Env> {
       for (const [playerName, charData] of Object.entries(msg.restoredCharacters)) {
         // Try matching by stable userId first (survives name changes)
         const savedUserId = userIdMap[playerName];
-        if (savedUserId && (this.allPlayerRecords.has(savedUserId) || this.approvedUserIds.has(savedUserId))) {
+        if (
+          savedUserId &&
+          (this.allPlayerRecords.has(savedUserId) || this.approvedUserIds.has(savedUserId))
+        ) {
           this.characters.set(savedUserId, charData);
           continue;
         }
@@ -784,7 +787,7 @@ export class GameRoom extends DurableObject<Env> {
 
   private async handleSetPassword(
     ws: WebSocket,
-    msg: Extract<ClientMessage, { type: "client:set_password" }>
+    msg: Extract<ClientMessage, { type: "client:set_password" }>,
   ): Promise<void> {
     const session = this.sessions.get(ws);
     if (!session || session.status !== "host") {
@@ -802,16 +805,14 @@ export class GameRoom extends DurableObject<Env> {
 
     this.broadcast({
       type: "server:system",
-      content: this.password
-        ? "Room password has been set."
-        : "Room password has been removed.",
+      content: this.password ? "Room password has been set." : "Room password has been removed.",
       timestamp: Date.now(),
     });
   }
 
   private async handleKickPlayer(
     ws: WebSocket,
-    msg: Extract<ClientMessage, { type: "client:kick_player" }>
+    msg: Extract<ClientMessage, { type: "client:kick_player" }>,
   ): Promise<void> {
     const session = this.sessions.get(ws);
     if (!session || session.status !== "host") {
@@ -932,7 +933,7 @@ export class GameRoom extends DurableObject<Env> {
 
   private async handleSetCharacter(
     ws: WebSocket,
-    msg: Extract<ClientMessage, { type: "client:set_character" }>
+    msg: Extract<ClientMessage, { type: "client:set_character" }>,
   ): Promise<void> {
     const session = this.sessions.get(ws);
     if (!session?.playerName) {
@@ -978,18 +979,14 @@ export class GameRoom extends DurableObject<Env> {
     return this.hostPlayerName;
   }
 
-  private findSessionByName(
-    playerName: string
-  ): [WebSocket, SessionData] | null {
+  private findSessionByName(playerName: string): [WebSocket, SessionData] | null {
     for (const [ws, session] of this.sessions.entries()) {
       if (session.playerName === playerName) return [ws, session];
     }
     return null;
   }
 
-  private findSessionByUserId(
-    userId: string
-  ): [WebSocket, SessionData] | null {
+  private findSessionByUserId(userId: string): [WebSocket, SessionData] | null {
     for (const [ws, session] of this.sessions.entries()) {
       if (session.userId === userId) return [ws, session];
     }
@@ -1001,10 +998,7 @@ export class GameRoom extends DurableObject<Env> {
   }
 
   private broadcast(message: ServerMessage): void {
-    if (
-      message.type !== "server:player_joined" &&
-      message.type !== "server:player_left"
-    ) {
+    if (message.type !== "server:player_joined" && message.type !== "server:player_left") {
       this.appendToChatLog(message);
     }
 
@@ -1019,10 +1013,7 @@ export class GameRoom extends DurableObject<Env> {
     }
   }
 
-  private broadcastToApproved(
-    message: ServerMessage,
-    excluded?: WebSocket
-  ): void {
+  private broadcastToApproved(message: ServerMessage, excluded?: WebSocket): void {
     const json = JSON.stringify(message);
     for (const [ws, session] of this.sessions.entries()) {
       if (ws === excluded) continue;
@@ -1062,16 +1053,10 @@ export class GameRoom extends DurableObject<Env> {
   }
 
   private persistCharacters(): void {
-    this.ctx.storage.put(
-      "characters",
-      Object.fromEntries(this.characters.entries())
-    );
+    this.ctx.storage.put("characters", Object.fromEntries(this.characters.entries()));
   }
 
   private persistAllPlayerRecords(): void {
-    this.ctx.storage.put(
-      "allPlayerRecords",
-      Object.fromEntries(this.allPlayerRecords.entries())
-    );
+    this.ctx.storage.put("allPlayerRecords", Object.fromEntries(this.allPlayerRecords.entries()));
   }
 }

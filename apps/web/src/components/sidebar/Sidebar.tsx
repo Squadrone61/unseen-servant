@@ -46,7 +46,7 @@ export function Sidebar({
   logMessages,
   partyCharacters,
   storyStarted,
-  combatState,
+  combatState: _combatState,
   eventLog,
   campaignConfigured,
   activeCampaignName,
@@ -114,7 +114,13 @@ export function Sidebar({
       <div className="w-10 border-l border-gray-700/40 flex flex-col items-center bg-gray-800/60 shrink-0 py-3 gap-3">
         <Button variant="icon" onClick={onToggleCollapse} title="Expand sidebar">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <path d="M10 4L6 8L10 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            <path
+              d="M10 4L6 8L10 12"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
           </svg>
         </Button>
         <div
@@ -132,7 +138,15 @@ export function Sidebar({
                   ? "bg-yellow-500 animate-pulse"
                   : "bg-red-500"
             }`}
-            title={connectionState === "connected" ? "Connected" : connectionState === "reconnecting" ? "Reconnecting..." : connectionState === "connecting" ? "Connecting..." : "Disconnected"}
+            title={
+              connectionState === "connected"
+                ? "Connected"
+                : connectionState === "reconnecting"
+                  ? "Reconnecting..."
+                  : connectionState === "connecting"
+                    ? "Connecting..."
+                    : "Disconnected"
+            }
           />
         )}
       </div>
@@ -144,7 +158,10 @@ export function Sidebar({
       {/* Room Code */}
       <div className="p-4 border-b border-gray-700/40">
         <div className="flex items-center gap-2">
-          <div className="text-sm text-gray-500 uppercase tracking-wider" style={{ fontFamily: "var(--font-cinzel)" }}>
+          <div
+            className="text-sm text-gray-500 uppercase tracking-wider"
+            style={{ fontFamily: "var(--font-cinzel)" }}
+          >
             Room Code
           </div>
           {isHost && (
@@ -153,9 +170,20 @@ export function Sidebar({
             </span>
           )}
           {onToggleCollapse && (
-            <Button variant="icon" onClick={onToggleCollapse} title="Collapse sidebar" className="ml-auto">
+            <Button
+              variant="icon"
+              onClick={onToggleCollapse}
+              title="Collapse sidebar"
+              className="ml-auto"
+            >
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <path d="M6 4L10 8L6 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                <path
+                  d="M6 4L10 8L6 12"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
               </svg>
             </Button>
           )}
@@ -168,15 +196,16 @@ export function Sidebar({
         >
           {roomCode}
         </button>
-        {copied && (
-          <span className="text-xs text-green-400 ml-2">Copied!</span>
-        )}
+        {copied && <span className="text-xs text-green-400 ml-2">Copied!</span>}
         <div className="h-px bg-gradient-to-r from-amber-500/30 via-gray-700/50 to-transparent mt-2" />
       </div>
 
       {/* Players */}
       <div className="p-4 border-b border-gray-700/40">
-        <div className="text-sm text-gray-500 uppercase tracking-wider mb-3" style={{ fontFamily: "var(--font-cinzel)" }}>
+        <div
+          className="text-sm text-gray-500 uppercase tracking-wider mb-3"
+          style={{ fontFamily: "var(--font-cinzel)" }}
+        >
           Party ({displayPlayers.length})
         </div>
         {displayPlayers.length === 0 ? (
@@ -200,31 +229,23 @@ export function Sidebar({
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">
                       <span
-                        className={`truncate ${
-                          player.online ? "text-gray-200" : "text-gray-500"
-                        }`}
+                        className={`truncate ${player.online ? "text-gray-200" : "text-gray-500"}`}
                       >
                         {player.name}
                       </span>
                       {player.isHost && (
-                        <span className="text-xs text-amber-300 shrink-0">
-                          (host)
-                        </span>
+                        <span className="text-xs text-amber-300 shrink-0">(host)</span>
                       )}
                       {!player.online && (
-                        <span className="text-xs text-gray-600 shrink-0">
-                          (offline)
-                        </span>
+                        <span className="text-xs text-gray-600 shrink-0">(offline)</span>
                       )}
                     </div>
                     {charData && (
                       <div
-                        className={`text-xs ${
-                          player.online ? "text-gray-500" : "text-gray-600"
-                        }`}
+                        className={`text-xs ${player.online ? "text-gray-500" : "text-gray-600"}`}
                       >
-                        {formatClassString(charData.static.classes)} &middot;
-                        Lvl {getTotalLevel(charData.static.classes)}
+                        {formatClassString(charData.static.classes)} &middot; Lvl{" "}
+                        {getTotalLevel(charData.static.classes)}
                       </div>
                     )}
                   </div>
@@ -296,9 +317,7 @@ export function Sidebar({
                 Configure Campaign
               </button>
               {!dmConnected && (
-                <p className="text-xs text-gray-600 text-center">
-                  Waiting for DM to connect...
-                </p>
+                <p className="text-xs text-gray-600 text-center">Waiting for DM to connect...</p>
               )}
             </>
           )}
@@ -345,13 +364,14 @@ export function Sidebar({
           >
             &#9654;
           </span>
-          <span className="text-sm text-gray-500 uppercase tracking-wider" style={{ fontFamily: "var(--font-cinzel)" }}>
+          <span
+            className="text-sm text-gray-500 uppercase tracking-wider"
+            style={{ fontFamily: "var(--font-cinzel)" }}
+          >
             Activity Log
           </span>
           {logMessages.length > 0 && (
-            <span className="text-xs text-gray-600 ml-auto">
-              {logMessages.length}
-            </span>
+            <span className="text-xs text-gray-600 ml-auto">{logMessages.length}</span>
           )}
         </button>
         {!logCollapsed && (
@@ -363,9 +383,7 @@ export function Sidebar({
                 <div
                   key={i}
                   className={`text-xs ${
-                    msg.type === "server:error"
-                      ? "text-red-400"
-                      : "text-gray-500"
+                    msg.type === "server:error" ? "text-red-400" : "text-gray-500"
                   }`}
                 >
                   {msg.type === "server:error" && "message" in msg
@@ -393,29 +411,25 @@ export function Sidebar({
             >
               &#9654;
             </span>
-            <span className="text-sm text-gray-500 uppercase tracking-wider" style={{ fontFamily: "var(--font-cinzel)" }}>
+            <span
+              className="text-sm text-gray-500 uppercase tracking-wider"
+              style={{ fontFamily: "var(--font-cinzel)" }}
+            >
               Event Log
             </span>
-            <span className="text-xs text-gray-600 ml-auto">
-              {eventLog.length}
-            </span>
+            <span className="text-xs text-gray-600 ml-auto">{eventLog.length}</span>
           </button>
           {!eventLogCollapsed && (
             <div className="px-4 pb-3 overflow-y-auto max-h-48 space-y-1.5">
               {eventLog.slice(-20).map((event) => (
-                <div
-                  key={event.id}
-                  className="flex items-start gap-1.5 text-xs group"
-                >
+                <div key={event.id} className="flex items-start gap-1.5 text-xs group">
                   <div className="flex-1 text-gray-400 min-w-0">
-                    <span className="text-gray-600">
-                      {event.type.replace(/_/g, " ")}
-                    </span>
+                    <span className="text-gray-600">{event.type.replace(/_/g, " ")}</span>
                     {" — "}
                     <span>{event.description}</span>
                   </div>
-                  {onRollback && (
-                    confirmingRollbackId === event.id ? (
+                  {onRollback &&
+                    (confirmingRollbackId === event.id ? (
                       <div className="flex items-center gap-1 shrink-0">
                         <button
                           onClick={() => handleRollbackConfirm(event.id)}
@@ -440,8 +454,7 @@ export function Sidebar({
                       >
                         Undo
                       </button>
-                    )
-                  )}
+                    ))}
                 </div>
               ))}
             </div>
@@ -501,7 +514,6 @@ export function Sidebar({
           </div>
         )}
       </div>
-
     </div>
   );
 }

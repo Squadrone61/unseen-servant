@@ -34,9 +34,7 @@ export function StepReview({ state }: StepReviewProps) {
   if (!result || "error" in result) {
     return (
       <div className="text-center py-12">
-        <div className="text-red-400 text-sm mb-2">
-          Could not build character
-        </div>
+        <div className="text-red-400 text-sm mb-2">Could not build character</div>
         <p className="text-xs text-gray-500">
           {"error" in (result ?? {})
             ? (result as { error: string }).error
@@ -51,10 +49,15 @@ export function StepReview({ state }: StepReviewProps) {
   return (
     <div className="space-y-4">
       <div className="space-y-1">
-        <h2 className="text-xl font-semibold text-amber-200/90 tracking-wide" style={{ fontFamily: "var(--font-cinzel)" }}>
+        <h2
+          className="text-xl font-semibold text-amber-200/90 tracking-wide"
+          style={{ fontFamily: "var(--font-cinzel)" }}
+        >
           Review Your Character
         </h2>
-        <p className="text-sm text-gray-500">Review your character below. Click "Save Character" when you're ready.</p>
+        <p className="text-sm text-gray-500">
+          Review your character below. Click "Save Character" when you're ready.
+        </p>
         <div className="h-px bg-gradient-to-r from-amber-500/30 via-gray-700/50 to-transparent mt-2" />
       </div>
 

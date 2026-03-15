@@ -19,4 +19,3 @@ export const cardHover: TargetAndTransition = {
   scale: 1.02,
   transition: { duration: 0.15, ease: "easeOut" as const },
 };
-

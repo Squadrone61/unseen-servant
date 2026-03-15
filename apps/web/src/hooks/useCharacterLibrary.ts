@@ -45,13 +45,13 @@ export function useCharacterLibrary() {
     (id: string): SavedCharacter | null => {
       return characters.find((c) => c.id === id) ?? null;
     },
-    [characters]
+    [characters],
   );
 
   const saveCharacter = useCallback(
     (
       char: CharacterData,
-      opts?: { campaignSlug?: string; roomCode?: string; builderChoices?: BuilderChoices }
+      opts?: { campaignSlug?: string; roomCode?: string; builderChoices?: BuilderChoices },
     ): SavedCharacter => {
       const now = Date.now();
       const saved: SavedCharacter = {
@@ -69,7 +69,7 @@ export function useCharacterLibrary() {
       setCharacters(updated);
       return saved;
     },
-    []
+    [],
   );
 
   const updateCharacter = useCallback(
@@ -86,7 +86,7 @@ export function useCharacterLibrary() {
       writeLibrary(lib);
       setCharacters(lib);
     },
-    []
+    [],
   );
 
   const deleteCharacter = useCallback((id: string) => {
@@ -104,36 +104,29 @@ export function useCharacterLibrary() {
     setCharacters(lib);
   }, []);
 
-  const bindToCampaign = useCallback(
-    (id: string, campaignSlug: string, roomCode: string) => {
-      const lib = readLibrary();
-      const idx = lib.findIndex((c) => c.id === id);
-      if (idx === -1) return;
-      lib[idx] = { ...lib[idx], campaignSlug, roomCode };
-      writeLibrary(lib);
-      setCharacters(lib);
-    },
-    []
-  );
+  const bindToCampaign = useCallback((id: string, campaignSlug: string, roomCode: string) => {
+    const lib = readLibrary();
+    const idx = lib.findIndex((c) => c.id === id);
+    if (idx === -1) return;
+    lib[idx] = { ...lib[idx], campaignSlug, roomCode };
+    writeLibrary(lib);
+    setCharacters(lib);
+  }, []);
 
   const findByName = useCallback(
     (name: string): SavedCharacter | null => {
       return (
-        characters.find(
-          (c) => c.character.static.name.toLowerCase() === name.toLowerCase()
-        ) ?? null
+        characters.find((c) => c.character.static.name.toLowerCase() === name.toLowerCase()) ?? null
       );
     },
-    [characters]
+    [characters],
   );
 
   const findByCampaign = useCallback(
     (campaignSlug: string): SavedCharacter | null => {
-      return (
-        characters.find((c) => c.campaignSlug === campaignSlug) ?? null
-      );
+      return characters.find((c) => c.campaignSlug === campaignSlug) ?? null;
     },
-    [characters]
+    [characters],
   );
 
   return {

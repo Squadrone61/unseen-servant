@@ -35,20 +35,20 @@ function condAbbr(c: string): string {
 
 function sizeSpan(s: CreatureSize): number {
   switch (s) {
-    case "large": return 2;
-    case "huge": return 3;
-    case "gargantuan": return 4;
-    default: return 1;
+    case "large":
+      return 2;
+    case "huge":
+      return 3;
+    case "gargantuan":
+      return 4;
+    default:
+      return 1;
   }
 }
 
 // ─── BFS reachable tiles ───
 
-function getReachableTiles(
-  from: GridPosition,
-  budgetFt: number,
-  map: BattleMapState,
-): Set<string> {
+function getReachableTiles(from: GridPosition, budgetFt: number, map: BattleMapState): Set<string> {
   const reachable = new Set<string>();
   if (budgetFt <= 0) return reachable;
 
@@ -59,8 +59,14 @@ function getReachableTiles(
   // 0-1 BFS with deque (5ft = 0-cost bucket, 10ft = 1-cost bucket)
   const deque: { x: number; y: number; cost: number }[] = [{ x: from.x, y: from.y, cost: 0 }];
   const dirs = [
-    { dx: 0, dy: -1 }, { dx: 1, dy: 0 }, { dx: 0, dy: 1 }, { dx: -1, dy: 0 },
-    { dx: 1, dy: -1 }, { dx: 1, dy: 1 }, { dx: -1, dy: 1 }, { dx: -1, dy: -1 },
+    { dx: 0, dy: -1 },
+    { dx: 1, dy: 0 },
+    { dx: 0, dy: 1 },
+    { dx: -1, dy: 0 },
+    { dx: 1, dy: -1 },
+    { dx: 1, dy: 1 },
+    { dx: -1, dy: 1 },
+    { dx: -1, dy: -1 },
   ];
 
   while (deque.length > 0) {
@@ -121,7 +127,7 @@ export function BattleMap({
   partyCharacters,
   myCharacterName,
   onMoveToken,
-  onEndTurn,
+  onEndTurn: _onEndTurn,
   onCombatantClick,
   highlightedCombatantId,
   style,
@@ -135,9 +141,11 @@ export function BattleMap({
   const myCombatant = useMemo(() => {
     if (!myCharacterName) return null;
     const lcName = myCharacterName.toLowerCase();
-    return Object.values(combat.combatants).find(
-      (c) => c.type === "player" && c.name.toLowerCase() === lcName,
-    ) ?? null;
+    return (
+      Object.values(combat.combatants).find(
+        (c) => c.type === "player" && c.name.toLowerCase() === lcName,
+      ) ?? null
+    );
   }, [combat.combatants, myCharacterName]);
 
   // Is it my turn?
@@ -210,9 +218,7 @@ export function BattleMap({
           <div className="flex items-center gap-2">
             <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
             Your turn &mdash; click a highlighted tile to move
-            <span className="text-amber-500/70 font-mono ml-1">
-              {movementLeft}ft remaining
-            </span>
+            <span className="text-amber-500/70 font-mono ml-1">{movementLeft}ft remaining</span>
           </div>
         </div>
       )}
@@ -258,7 +264,10 @@ export function BattleMap({
               <div
                 key={`cl-${i}`}
                 className="text-xs text-gray-600 flex items-center justify-center select-none"
-                style={{ width: TILE_SIZE + (i < map.width - 1 ? TILE_GAP : 0), height: LABEL_SIZE }}
+                style={{
+                  width: TILE_SIZE + (i < map.width - 1 ? TILE_GAP : 0),
+                  height: LABEL_SIZE,
+                }}
               >
                 {label}
               </div>
@@ -273,7 +282,10 @@ export function BattleMap({
                 <div
                   key={`rl-${i}`}
                   className="text-xs text-gray-600 flex items-center justify-center select-none"
-                  style={{ height: TILE_SIZE + (i < map.height - 1 ? TILE_GAP : 0), width: LABEL_SIZE }}
+                  style={{
+                    height: TILE_SIZE + (i < map.height - 1 ? TILE_GAP : 0),
+                    width: LABEL_SIZE,
+                  }}
                 >
                   {i + 1}
                 </div>
@@ -311,33 +323,54 @@ export function BattleMap({
                         position: "relative",
                       }}
                       onClick={() => handleClick(x, y)}
-                      onKeyDown={(e) => { if (e.key === "Enter") handleClick(x, y); }}
-                      onMouseEnter={() => { if (isReach) setHovered(key); }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") handleClick(x, y);
+                      }}
+                      onMouseEnter={() => {
+                        if (isReach) setHovered(key);
+                      }}
                       onMouseLeave={() => setHovered(null)}
                     >
                       {/* Terrain textures */}
                       {tile.type === "difficult_terrain" && (
-                        <div className="absolute inset-0 opacity-20 pointer-events-none"
-                          style={{ backgroundImage: "repeating-linear-gradient(45deg, transparent 0 3px, rgba(180,140,60,.3) 3px 4px)" }} />
+                        <div
+                          className="absolute inset-0 opacity-20 pointer-events-none"
+                          style={{
+                            backgroundImage:
+                              "repeating-linear-gradient(45deg, transparent 0 3px, rgba(180,140,60,.3) 3px 4px)",
+                          }}
+                        />
                       )}
                       {tile.type === "water" && (
-                        <div className="absolute inset-0 opacity-20 pointer-events-none"
-                          style={{ backgroundImage: "repeating-linear-gradient(160deg, transparent 0 5px, rgba(60,140,200,.25) 5px 6px)" }} />
+                        <div
+                          className="absolute inset-0 opacity-20 pointer-events-none"
+                          style={{
+                            backgroundImage:
+                              "repeating-linear-gradient(160deg, transparent 0 5px, rgba(60,140,200,.25) 5px 6px)",
+                          }}
+                        />
                       )}
                       {tile.type === "stairs" && (
-                        <div className="absolute inset-0 opacity-25 pointer-events-none"
-                          style={{ backgroundImage: "repeating-linear-gradient(0deg, transparent 0 6px, rgba(200,200,220,.12) 6px 7px)" }} />
+                        <div
+                          className="absolute inset-0 opacity-25 pointer-events-none"
+                          style={{
+                            backgroundImage:
+                              "repeating-linear-gradient(0deg, transparent 0 6px, rgba(200,200,220,.12) 6px 7px)",
+                          }}
+                        />
                       )}
                       {tile.type === "door" && (
                         <div className="absolute inset-[28%] rounded-sm border border-amber-800/40 bg-amber-900/15 pointer-events-none" />
                       )}
                       {/* Movement range overlay */}
                       {isReach && (
-                        <div className={`absolute inset-0 pointer-events-none transition-colors duration-75 ${
-                          isHover
-                            ? "bg-emerald-400/25 ring-1 ring-inset ring-emerald-400/40"
-                            : "bg-emerald-500/10 ring-1 ring-inset ring-emerald-600/20"
-                        }`} />
+                        <div
+                          className={`absolute inset-0 pointer-events-none transition-colors duration-75 ${
+                            isHover
+                              ? "bg-emerald-400/25 ring-1 ring-inset ring-emerald-400/40"
+                              : "bg-emerald-500/10 ring-1 ring-inset ring-emerald-600/20"
+                          }`}
+                        />
                       )}
                     </div>
                   );
@@ -352,9 +385,11 @@ export function BattleMap({
                 const isEnemy = c.type === "enemy";
                 const isDead = c.type !== "player" && c.currentHP !== undefined && c.currentHP <= 0;
 
-                const color = c.tokenColor ?? (isPlayer ? "#4a7cf7" : isEnemy ? "#dc3545" : "#3ea864");
+                const color =
+                  c.tokenColor ?? (isPlayer ? "#4a7cf7" : isEnemy ? "#dc3545" : "#3ea864");
                 const size = c.span * TILE_SIZE + (c.span - 1) * TILE_GAP - 8;
-                const initials = c.name.length <= 2 ? c.name.toUpperCase() : c.name.slice(0, 2).toUpperCase();
+                const initials =
+                  c.name.length <= 2 ? c.name.toUpperCase() : c.name.slice(0, 2).toUpperCase();
 
                 return (
                   <div

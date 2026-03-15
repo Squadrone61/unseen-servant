@@ -2,8 +2,8 @@
   "name": "unseen-servant-web",
   "main": ".open-next/worker.js",
   "assets": {
-    "directory": ".open-next/assets"
+    "directory": ".open-next/assets",
   },
   "compatibility_date": "2025-12-01",
-  "compatibility_flags": ["nodejs_compat"]
+  "compatibility_flags": ["nodejs_compat"],
 }

@@ -98,10 +98,10 @@ export default function RoomsPage() {
           </div>
         ) : rooms.length === 0 ? (
           <div className="text-center py-16">
-            <p className="text-lg text-gray-400 mb-2" style={{ fontFamily: "var(--font-cinzel)" }}>No active rooms</p>
-            <p className="text-sm text-gray-600 mb-4">
-              Be the first to start an adventure.
+            <p className="text-lg text-gray-400 mb-2" style={{ fontFamily: "var(--font-cinzel)" }}>
+              No active rooms
             </p>
+            <p className="text-sm text-gray-600 mb-4">Be the first to start an adventure.</p>
             <Button size="md" href="/">
               Create a Room
             </Button>
@@ -129,15 +129,12 @@ export default function RoomsPage() {
                 <div className="space-y-1.5">
                   <div className="text-sm text-gray-300">
                     {room.hostName || (
-                      <span className="text-gray-600 italic">
-                        Waiting for host
-                      </span>
+                      <span className="text-gray-600 italic">Waiting for host</span>
                     )}
                   </div>
                   <div className="flex items-center justify-between text-xs text-gray-500">
                     <span>
-                      {room.playerCount}{" "}
-                      {room.playerCount === 1 ? "player" : "players"}
+                      {room.playerCount} {room.playerCount === 1 ? "player" : "players"}
                     </span>
                     <span>{timeAgo(room.createdAt)}</span>
                   </div>

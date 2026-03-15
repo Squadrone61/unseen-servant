@@ -9,12 +9,20 @@ const procs = [];
 
 function cleanup() {
   for (const p of procs) {
-    try { p.kill(); } catch {}
+    try {
+      p.kill();
+    } catch {}
   }
 }
 process.on("exit", cleanup);
-process.on("SIGINT", () => { cleanup(); process.exit(1); });
-process.on("SIGTERM", () => { cleanup(); process.exit(1); });
+process.on("SIGINT", () => {
+  cleanup();
+  process.exit(1);
+});
+process.on("SIGTERM", () => {
+  cleanup();
+  process.exit(1);
+});
 
 function startProc(cmd, cmdArgs) {
   const p = spawn(cmd, cmdArgs, { stdio: "inherit", shell: true });

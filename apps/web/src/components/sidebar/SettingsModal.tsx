@@ -22,7 +22,12 @@ interface SettingsModalProps {
   onDestroyRoom?: () => void;
 }
 
-export function SettingsModal({ onClose, isHost, onSetPassword, onDestroyRoom }: SettingsModalProps) {
+export function SettingsModal({
+  onClose,
+  isHost,
+  onSetPassword,
+  onDestroyRoom,
+}: SettingsModalProps) {
   const [volume, setVolume] = useState(loadVolume);
   const [passwordInput, setPasswordInput] = useState("");
   const [passwordSet, setPasswordSet] = useState(false);
@@ -81,9 +86,7 @@ export function SettingsModal({ onClose, isHost, onSetPassword, onDestroyRoom }:
           {/* Narration Volume */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="text-sm text-gray-300 font-medium">
-                Narration Volume
-              </label>
+              <label className="text-sm text-gray-300 font-medium">Narration Volume</label>
               <span className="text-xs text-gray-500 font-mono tabular-nums">
                 {Math.round(volume * 100)}%
               </span>
@@ -105,7 +108,12 @@ export function SettingsModal({ onClose, isHost, onSetPassword, onDestroyRoom }:
             <>
               <div className="flex items-center gap-3">
                 <div className="flex-1 h-px bg-gradient-to-r from-transparent via-amber-500/20 to-transparent" />
-                <span className="text-sm text-gray-500 uppercase tracking-wider" style={{ fontFamily: "var(--font-cinzel)" }}>Host</span>
+                <span
+                  className="text-sm text-gray-500 uppercase tracking-wider"
+                  style={{ fontFamily: "var(--font-cinzel)" }}
+                >
+                  Host
+                </span>
                 <div className="flex-1 h-px bg-gradient-to-r from-transparent via-amber-500/20 to-transparent" />
               </div>
 
@@ -121,11 +129,7 @@ export function SettingsModal({ onClose, isHost, onSetPassword, onDestroyRoom }:
                         <span>&#128274;</span>
                         <span>Password set</span>
                       </div>
-                      <Button
-                        variant="danger"
-                        size="xs"
-                        onClick={handleRemovePassword}
-                      >
+                      <Button variant="danger" size="xs" onClick={handleRemovePassword}>
                         Remove
                       </Button>
                     </div>
@@ -162,7 +166,7 @@ export function SettingsModal({ onClose, isHost, onSetPassword, onDestroyRoom }:
                   onClick={() => {
                     if (
                       window.confirm(
-                        "Are you sure you want to destroy this room? All data will be permanently deleted and all players will be disconnected."
+                        "Are you sure you want to destroy this room? All data will be permanently deleted and all players will be disconnected.",
                       )
                     ) {
                       onDestroyRoom();

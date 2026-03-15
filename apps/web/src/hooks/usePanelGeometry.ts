@@ -146,18 +146,15 @@ export function usePanelGeometry() {
     return () => window.removeEventListener("resize", onResize);
   }, [persist]);
 
-  const startInteraction = useCallback(
-    (mode: InteractionMode, e: React.MouseEvent) => {
-      e.preventDefault();
-      modeRef.current = mode;
-      startMouseRef.current = { x: e.clientX, y: e.clientY };
-      setGeometry((g) => {
-        startGeoRef.current = g;
-        return g;
-      });
-    },
-    [],
-  );
+  const startInteraction = useCallback((mode: InteractionMode, e: React.MouseEvent) => {
+    e.preventDefault();
+    modeRef.current = mode;
+    startMouseRef.current = { x: e.clientX, y: e.clientY };
+    setGeometry((g) => {
+      startGeoRef.current = g;
+      return g;
+    });
+  }, []);
 
   const dragHandleProps = {
     onMouseDown: (e: React.MouseEvent) => startInteraction("dragging", e),

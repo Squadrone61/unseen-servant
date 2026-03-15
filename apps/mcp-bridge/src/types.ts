@@ -45,4 +45,3 @@ export interface CampaignSummary {
   lastPlayedAt: string;
   sessionCount: number;
 }
-

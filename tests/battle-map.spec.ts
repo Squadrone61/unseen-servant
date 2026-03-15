@@ -6,26 +6,20 @@ import { test, expect } from "@playwright/test";
  */
 async function createRoomAndSetup(
   page: import("@playwright/test").Page,
-  playerName: string
+  playerName: string,
 ): Promise<string> {
   const res = await page.request.post("http://localhost:8787/api/rooms/create");
   const { roomCode } = await res.json();
 
-  await page.addInitScript(
-    (name) => {
-      localStorage.setItem("playerName", name);
-    },
-    playerName
-  );
+  await page.addInitScript((name) => {
+    localStorage.setItem("playerName", name);
+  }, playerName);
 
   return roomCode;
 }
 
 /** Wait for room to fully load and initial server sync to complete. */
-async function waitForRoom(
-  page: import("@playwright/test").Page,
-  roomCode: string
-) {
+async function waitForRoom(page: import("@playwright/test").Page, roomCode: string) {
   await expect(page.getByText(roomCode).first()).toBeVisible({
     timeout: 15_000,
   });
@@ -33,7 +27,7 @@ async function waitForRoom(
   await page.waitForFunction(
     () => typeof (window as any).__testInjectMessage === "function",
     null,
-    { timeout: 15_000 }
+    { timeout: 15_000 },
   );
 }
 
@@ -44,7 +38,7 @@ async function waitForRoom(
  */
 async function injectServerMessage(
   page: import("@playwright/test").Page,
-  message: Record<string, unknown>
+  message: Record<string, unknown>,
 ) {
   await page.evaluate((msg) => {
     (window as any).__testInjectMessage(msg);
@@ -169,7 +163,14 @@ function buildCharacterUpdate(playerName: string, charName: string) {
         name: charName,
         race: "Elf",
         classes: [{ name: "Wizard", level: 5 }],
-        abilities: { strength: 8, dexterity: 16, constitution: 12, intelligence: 18, wisdom: 14, charisma: 10 },
+        abilities: {
+          strength: 8,
+          dexterity: 16,
+          constitution: 12,
+          intelligence: 18,
+          wisdom: 14,
+          charisma: 10,
+        },
         maxHP: 30,
         armorClass: 15,
         proficiencyBonus: 3,
@@ -218,9 +219,7 @@ test.describe("Battle Map", () => {
     await expect(page.locator("text=Combat").first()).not.toBeVisible();
   });
 
-  test("renders battle map grid when combat state is injected", async ({
-    page,
-  }) => {
+  test("renders battle map grid when combat state is injected", async ({ page }) => {
     const roomCode = await createRoomAndSetup(page, "GridHost");
     await page.goto(`/rooms/${roomCode}`);
     await waitForRoom(page, roomCode);
@@ -336,9 +335,7 @@ test.describe("Battle Map", () => {
     await expect(page.getByText("30ft remaining")).toBeVisible();
   });
 
-  test("movement range tiles are highlighted on player turn", async ({
-    page,
-  }) => {
+  test("movement range tiles are highlighted on player turn", async ({ page }) => {
     const roomCode = await createRoomAndSetup(page, "MoveHost");
     await page.goto(`/rooms/${roomCode}`);
     await waitForRoom(page, roomCode);
@@ -397,9 +394,7 @@ test.describe("Battle Map", () => {
     await expect(page.getByText("Combat").first()).toBeVisible({ timeout: 5_000 });
 
     // Goblin with "poisoned" condition shows "1 cond." in the tracker
-    await expect(
-      page.locator("button").filter({ hasText: "Goblin" })
-    ).toBeVisible();
+    await expect(page.locator("button").filter({ hasText: "Goblin" })).toBeVisible();
     await expect(page.getByText("1 cond.")).toBeVisible();
   });
 

@@ -27,10 +27,7 @@ import type { DisplayMessage } from "@/components/chat/ChatPanel";
 
 /** Messages that belong in the main story chat */
 function isStoryMessage(msg: ServerMessage): boolean {
-  return (
-    msg.type === "server:chat" ||
-    msg.type === "server:ai"
-  );
+  return msg.type === "server:chat" || msg.type === "server:ai";
 }
 
 /** Messages that belong in the sidebar activity log */
@@ -42,9 +39,7 @@ export default function GamePage() {
   const { roomCode } = useParams<{ roomCode: string }>();
   const router = useRouter();
   // Start as undefined (matches server render), then read sessionStorage after mount
-  const [playerName, setPlayerName] = useState<string | null | undefined>(
-    undefined
-  );
+  const [playerName, setPlayerName] = useState<string | null | undefined>(undefined);
 
   // Read player name from localStorage after hydration
   useEffect(() => {
@@ -64,21 +59,10 @@ export default function GamePage() {
     return null;
   }
 
-  return (
-    <GameContent
-      roomCode={roomCode}
-      playerName={playerName}
-    />
-  );
+  return <GameContent roomCode={roomCode} playerName={playerName} />;
 }
 
-function GameContent({
-  roomCode,
-  playerName,
-}: {
-  roomCode: string;
-  playerName: string;
-}) {
+function GameContent({ roomCode, playerName }: { roomCode: string; playerName: string }) {
   const router = useRouter();
   const [storyMessages, setStoryMessages] = useState<DisplayMessage[]>([]);
   const [logMessages, setLogMessages] = useState<ServerMessage[]>([]);
@@ -89,18 +73,18 @@ function GameContent({
   const [hostName, setHostName] = useState<string>("");
   const [myCharacter, setMyCharacter] = useState<CharacterData | null>(null);
   const [myCharacterLibraryId, setMyCharacterLibraryId] = useState<string | null>(null);
-  const [partyCharacters, setPartyCharacters] = useState<
-    Record<string, CharacterData>
-  >({});
+  const [partyCharacters, setPartyCharacters] = useState<Record<string, CharacterData>>({});
   const [storyStarted, setStoryStarted] = useState(false);
   const [combatState, setCombatState] = useState<CombatState | null>(null);
   const [battleMap, setBattleMap] = useState<BattleMapState | null>(null);
   const [eventLog, setEventLog] = useState<GameEvent[]>([]);
-  const [pacingProfile, setPacingProfile] = useState<PacingProfile>("balanced");
-  const [encounterLength, setEncounterLength] = useState<EncounterLength>("standard");
-  const [customSystemPrompt, setCustomSystemPrompt] = useState<string | undefined>(undefined);
+  const [_pacingProfile, setPacingProfile] = useState<PacingProfile>("balanced");
+  const [_encounterLength, setEncounterLength] = useState<EncounterLength>("standard");
+  const [_customSystemPrompt, setCustomSystemPrompt] = useState<string | undefined>(undefined);
   const [highlightedCombatantId, setHighlightedCombatantId] = useState<string | null>(null);
-  const [campaigns, setCampaigns] = useState<{ slug: string; name: string; lastPlayedAt: string; sessionCount: number }[]>([]);
+  const [campaigns, setCampaigns] = useState<
+    { slug: string; name: string; lastPlayedAt: string; sessionCount: number }[]
+  >([]);
   const [activeCampaignSlug, setActiveCampaignSlug] = useState<string | undefined>(undefined);
   const [activeCampaignName, setActiveCampaignName] = useState<string | undefined>(undefined);
   const [campaignConfigured, setCampaignConfigured] = useState(false);
@@ -118,9 +102,7 @@ function GameContent({
   const [passwordRequired, setPasswordRequired] = useState(false);
   const [passwordInput, setPasswordInput] = useState("");
   const [passwordError, setPasswordError] = useState("");
-  const [roomPassword, setRoomPassword] = useState<string | undefined>(
-    undefined
-  );
+  const [roomPassword, setRoomPassword] = useState<string | undefined>(undefined);
 
   // Client-only state: browser storage values loaded after mount
   const [clientReady, setClientReady] = useState(false);
@@ -165,7 +147,9 @@ function GameContent({
   }, []);
 
   // Refs for reconciliation (avoid stale closures in handleMessage)
-  const sendRef = useRef<(msg: import("@unseen-servant/shared/types").ClientMessage) => void>(() => {});
+  const sendRef = useRef<(msg: import("@unseen-servant/shared/types").ClientMessage) => void>(
+    () => {},
+  );
   const myCharacterRef = useRef<CharacterData | null>(null);
   myCharacterRef.current = myCharacter;
   const myCharacterLibraryIdRef = useRef<string | null>(null);
@@ -185,7 +169,7 @@ function GameContent({
           const merged = mergeReimport(
             restoredChar,
             libEntry.character.static,
-            libEntry.character.dynamic
+            libEntry.character.dynamic,
           );
           setMyCharacter(merged);
           sendRef.current({ type: "client:set_character", character: merged });
@@ -207,7 +191,7 @@ function GameContent({
         setMyCharacterLibraryId(saved.id);
       }
     },
-    [roomCode, libUpdateCharacter, libBindToCampaign, libTouchCharacter, libSaveCharacter]
+    [roomCode, libUpdateCharacter, libBindToCampaign, libTouchCharacter, libSaveCharacter],
   );
 
   const handleMessage = useCallback(
@@ -272,11 +256,14 @@ function GameContent({
           }
           // Activity log entry confirming the update
           const lvl = msg.character.static.classes.reduce((s, c) => s + c.level, 0);
-          setLogMessages((prev) => [...prev, {
-            type: "server:system",
-            content: `${msg.playerName} updated character "${msg.character.static.name}" (Lvl ${lvl}, HP ${msg.character.dynamic.currentHP}/${msg.character.static.maxHP}).`,
-            timestamp: Date.now(),
-          } as ServerMessage]);
+          setLogMessages((prev) => [
+            ...prev,
+            {
+              type: "server:system",
+              content: `${msg.playerName} updated character "${msg.character.static.name}" (Lvl ${lvl}, HP ${msg.character.dynamic.currentHP}/${msg.character.static.maxHP}).`,
+              timestamp: Date.now(),
+            } as ServerMessage,
+          ]);
           break;
         }
 
@@ -378,14 +365,18 @@ function GameContent({
           break;
 
         case "server:typing": {
-          setTypingPlayers(prev => {
+          setTypingPlayers((prev) => {
             const next = new Map(prev);
             const existing = next.get(msg.playerName);
             if (existing) clearTimeout(existing);
 
             if (msg.isTyping) {
               const tid = window.setTimeout(() => {
-                setTypingPlayers(p => { const n = new Map(p); n.delete(msg.playerName); return n; });
+                setTypingPlayers((p) => {
+                  const n = new Map(p);
+                  n.delete(msg.playerName);
+                  return n;
+                });
               }, 30000);
               next.set(msg.playerName, tid);
             } else {
@@ -412,16 +403,17 @@ function GameContent({
               const idx = prev.findLastIndex(
                 (m) =>
                   (m.type === "server:check_request" && m.check.id === msg.checkRequestId) ||
-                  (m.type === "merged_check_pending" && m.request.id === msg.checkRequestId)
+                  (m.type === "merged_check_pending" && m.request.id === msg.checkRequestId),
               );
               if (idx === -1) {
                 // No matching request found — append as standalone
                 return [...prev, msg];
               }
               const existing = prev[idx];
-              const request = existing.type === "server:check_request"
-                ? existing.check
-                : (existing as Extract<DisplayMessage, { type: "merged_check_pending" }>).request;
+              const request =
+                existing.type === "server:check_request"
+                  ? existing.check
+                  : (existing as Extract<DisplayMessage, { type: "merged_check_pending" }>).request;
               const updated: DisplayMessage[] = [...prev];
               updated[idx] = {
                 type: "merged_check_pending",
@@ -444,19 +436,21 @@ function GameContent({
             const idx = prev.findLastIndex(
               (m) =>
                 (m.type === "server:check_request" && m.check.id === msg.result.requestId) ||
-                (m.type === "merged_check_pending" && m.request.id === msg.result.requestId)
+                (m.type === "merged_check_pending" && m.request.id === msg.result.requestId),
             );
             if (idx === -1) {
               // No matching request — append as standalone fallback
               return [...prev, msg];
             }
             const existing = prev[idx];
-            const request = existing.type === "server:check_request"
-              ? existing.check
-              : (existing as Extract<DisplayMessage, { type: "merged_check_pending" }>).request;
-            const roll = existing.type === "merged_check_pending"
-              ? (existing as Extract<DisplayMessage, { type: "merged_check_pending" }>).roll
-              : msg.result.roll;
+            const request =
+              existing.type === "server:check_request"
+                ? existing.check
+                : (existing as Extract<DisplayMessage, { type: "merged_check_pending" }>).request;
+            const roll =
+              existing.type === "merged_check_pending"
+                ? (existing as Extract<DisplayMessage, { type: "merged_check_pending" }>).roll
+                : msg.result.roll;
             const updated: DisplayMessage[] = [...prev];
             updated[idx] = {
               type: "merged_check",
@@ -479,7 +473,7 @@ function GameContent({
           break;
       }
     },
-    [router, playerName]
+    [router, playerName],
   );
 
   const { send, connectionState } = useWebSocket({
@@ -500,9 +494,11 @@ function GameContent({
       try {
         const lib = e.newValue ? JSON.parse(e.newValue) : [];
         const libId = myCharacterLibraryIdRef.current;
-        const entry = lib.find(
-          (c: { id: string; character: CharacterData }) =>
-            libId ? c.id === libId : c.character.static.name.toLowerCase() === myCharacterRef.current!.static.name.toLowerCase()
+        const entry = lib.find((c: { id: string; character: CharacterData }) =>
+          libId
+            ? c.id === libId
+            : c.character.static.name.toLowerCase() ===
+              myCharacterRef.current!.static.name.toLowerCase(),
         );
         if (!entry) return;
         const libImportedAt = entry.character.static.importedAt ?? 0;
@@ -511,27 +507,35 @@ function GameContent({
           const merged = mergeReimport(
             myCharacterRef.current,
             entry.character.static,
-            entry.character.dynamic
+            entry.character.dynamic,
           );
           setMyCharacter(merged);
           send({ type: "client:set_character", character: merged });
         }
-      } catch { /* ignore parse errors */ }
+      } catch {
+        /* ignore parse errors */
+      }
     };
     window.addEventListener("storage", handler);
     return () => window.removeEventListener("storage", handler);
   }, [send]);
 
   // Player notes hook
-  const { notes: playerNotes, saveState: notesSaveState, updateNotes, handleNotesLoaded } =
-    usePlayerNotes({ send });
+  const {
+    notes: playerNotes,
+    saveState: notesSaveState,
+    updateNotes,
+    handleNotesLoaded,
+  } = usePlayerNotes({ send });
   playerNotesLoadedRef.current = handleNotesLoaded;
 
   // Expose message handler for Playwright tests (zero cost, no-op in production)
   useEffect(() => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (window as any).__testInjectMessage = handleMessage;
-    return () => { delete (window as any).__testInjectMessage; };
+    return () => {
+      delete (window as any).__testInjectMessage;
+    };
   }, [handleMessage]);
 
   // Flag that initial game state sync has been received (for test timing)
@@ -544,11 +548,7 @@ function GameContent({
 
   // Send initial character data after connection
   useEffect(() => {
-    if (
-      connectionState === "connected" &&
-      myCharacter &&
-      !sentCharacterRef.current
-    ) {
+    if (connectionState === "connected" && myCharacter && !sentCharacterRef.current) {
       send({ type: "client:set_character", character: myCharacter });
       sentCharacterRef.current = true;
     }
@@ -602,9 +602,12 @@ function GameContent({
     send({ type: "client:set_password", password });
   };
 
-  const handleTypingChange = useCallback((isTyping: boolean) => {
-    send({ type: "client:typing", isTyping });
-  }, [send]);
+  const handleTypingChange = useCallback(
+    (isTyping: boolean) => {
+      send({ type: "client:typing", isTyping });
+    },
+    [send],
+  );
 
   const handleConfigureCampaign = (config: {
     campaignName: string;
@@ -622,7 +625,7 @@ function GameContent({
       setMyCharacterLibraryId(libraryId);
       send({ type: "client:set_character", character });
     },
-    [send]
+    [send],
   );
 
   const handlePasswordSubmit = () => {
@@ -658,14 +661,12 @@ function GameContent({
               Room Password Required
             </h2>
             <p className="text-sm text-gray-500 mt-1">
-              Room <span className="font-mono text-amber-300">{roomCode}</span>{" "}
-              is password protected
+              Room <span className="font-mono text-amber-300">{roomCode}</span> is password
+              protected
             </p>
           </div>
 
-          {passwordError && (
-            <p className="text-red-400 text-sm text-center">{passwordError}</p>
-          )}
+          {passwordError && <p className="text-red-400 text-sm text-center">{passwordError}</p>}
 
           <input
             type="password"
@@ -788,7 +789,6 @@ function GameContent({
           saveState={notesSaveState}
           onChange={updateNotes}
           onClose={() => setShowNotes(false)}
-
         />
       )}
 
@@ -863,7 +863,9 @@ function CombatLayout({
       const pct = ((e.clientX - rect.left) / rect.width) * 100;
       onBattleMapWidthChange(Math.min(75, Math.max(25, pct)));
     };
-    const onMouseUp = () => { draggingRef.current = false; };
+    const onMouseUp = () => {
+      draggingRef.current = false;
+    };
     window.addEventListener("mousemove", onMouseMove);
     window.addEventListener("mouseup", onMouseUp);
     return () => {
@@ -888,7 +890,9 @@ function CombatLayout({
       {/* Resize handle */}
       <div
         className="w-1 cursor-col-resize bg-gray-700/50 hover:bg-amber-500/50 active:bg-amber-400/60 transition-colors shrink-0"
-        onMouseDown={() => { draggingRef.current = true; }}
+        onMouseDown={() => {
+          draggingRef.current = true;
+        }}
       />
       <ChatPanel
         messages={storyMessages}

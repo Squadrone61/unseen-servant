@@ -7,7 +7,7 @@ import { test, expect } from "@playwright/test";
  */
 async function createRoomAndSetup(
   page: import("@playwright/test").Page,
-  playerName: string
+  playerName: string,
 ): Promise<string> {
   // Create room via API
   const res = await page.request.post("http://localhost:8787/api/rooms/create");
@@ -15,12 +15,9 @@ async function createRoomAndSetup(
 
   // addInitScript runs before page JS on every navigation —
   // guarantees localStorage is set before React reads it
-  await page.addInitScript(
-    (name) => {
-      localStorage.setItem("playerName", name);
-    },
-    playerName
-  );
+  await page.addInitScript((name) => {
+    localStorage.setItem("playerName", name);
+  }, playerName);
 
   return roomCode;
 }
@@ -28,9 +25,7 @@ async function createRoomAndSetup(
 test.describe("Game Room", () => {
   test("redirects to home when no playerName is set", async ({ page }) => {
     // Create a room first
-    const res = await page.request.post(
-      "http://localhost:8787/api/rooms/create"
-    );
+    const res = await page.request.post("http://localhost:8787/api/rooms/create");
     const { roomCode } = await res.json();
 
     // Ensure localStorage is cleared before page JS runs
@@ -75,9 +70,7 @@ test.describe("Game Room", () => {
     await expect(page.getByText("(host)")).toBeVisible();
 
     // "Waiting for the adventure" message
-    await expect(
-      page.getByText("Waiting for the adventure to begin...")
-    ).toBeVisible();
+    await expect(page.getByText("Waiting for the adventure to begin...")).toBeVisible();
 
     // Chat input
     await expect(page.getByPlaceholder("What do you do?")).toBeVisible();

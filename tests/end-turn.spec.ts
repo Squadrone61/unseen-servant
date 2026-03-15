@@ -14,38 +14,32 @@ import { test, expect } from "@playwright/test";
 
 async function createRoomAndSetup(
   page: import("@playwright/test").Page,
-  playerName: string
+  playerName: string,
 ): Promise<string> {
   const res = await page.request.post("http://localhost:8787/api/rooms/create");
   const { roomCode } = await res.json();
 
-  await page.addInitScript(
-    (name) => {
-      localStorage.setItem("playerName", name);
-    },
-    playerName
-  );
+  await page.addInitScript((name) => {
+    localStorage.setItem("playerName", name);
+  }, playerName);
 
   return roomCode;
 }
 
-async function waitForRoom(
-  page: import("@playwright/test").Page,
-  roomCode: string
-) {
+async function waitForRoom(page: import("@playwright/test").Page, roomCode: string) {
   await expect(page.getByText(roomCode).first()).toBeVisible({
     timeout: 15_000,
   });
   await page.waitForFunction(
     () => typeof (window as any).__testInjectMessage === "function",
     null,
-    { timeout: 15_000 }
+    { timeout: 15_000 },
   );
 }
 
 async function injectServerMessage(
   page: import("@playwright/test").Page,
-  message: Record<string, unknown>
+  message: Record<string, unknown>,
 ) {
   await page.evaluate((msg) => {
     (window as any).__testInjectMessage(msg);
@@ -130,7 +124,14 @@ function buildCharacterUpdate(playerName: string, charName: string) {
         name: charName,
         race: "Dwarf",
         classes: [{ name: "Fighter", level: 5 }],
-        abilities: { strength: 18, dexterity: 14, constitution: 16, intelligence: 10, wisdom: 12, charisma: 8 },
+        abilities: {
+          strength: 18,
+          dexterity: 14,
+          constitution: 16,
+          intelligence: 10,
+          wisdom: 12,
+          charisma: 8,
+        },
         maxHP: 44,
         armorClass: 18,
         proficiencyBonus: 3,
@@ -222,7 +223,9 @@ test.describe("End Turn", () => {
 
       // Find the active WebSocket and intercept send
       const origSend = WebSocket.prototype.send;
-      WebSocket.prototype.send = function (data: string | ArrayBufferLike | Blob | ArrayBufferView) {
+      WebSocket.prototype.send = function (
+        data: string | ArrayBufferLike | Blob | ArrayBufferView,
+      ) {
         if (typeof data === "string") {
           messages.push(data);
         }

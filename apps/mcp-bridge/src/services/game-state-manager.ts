@@ -21,16 +21,16 @@ import type {
   EncounterLength,
   ServerMessage,
   StateChange,
-  RollResult,
-  EncounterState,
   CreatureSize,
 } from "@unseen-servant/shared/types";
-import { rollCheck, rollDamage, rollInitiative, buildCheckLabel, computeCheckModifier } from "@unseen-servant/shared/utils";
 import {
-  DM_SKILL_COMBAT,
-  DM_SKILL_NARRATION,
-  DM_SKILL_CAMPAIGN,
-} from "@unseen-servant/shared";
+  rollCheck,
+  rollDamage,
+  rollInitiative,
+  buildCheckLabel,
+  computeCheckModifier,
+} from "@unseen-servant/shared/utils";
+import { DM_SKILL_COMBAT, DM_SKILL_NARRATION, DM_SKILL_CAMPAIGN } from "@unseen-servant/shared";
 import type { MessageQueue } from "../message-queue.js";
 import type { CampaignManager } from "./campaign-manager.js";
 
@@ -115,9 +115,14 @@ export class GameStateManager {
     try {
       const snapshot = this.serializeSessionState();
       this.campaignManager.writeFile("session-state.json", JSON.stringify(snapshot, null, 2));
-      this.campaignManager.writeFile("chat-history.json", JSON.stringify(this.conversationHistory, null, 2));
+      this.campaignManager.writeFile(
+        "chat-history.json",
+        JSON.stringify(this.conversationHistory, null, 2),
+      );
     } catch (e) {
-      console.error(`[game-state] Failed to save session state: ${e instanceof Error ? e.message : String(e)}`);
+      console.error(
+        `[game-state] Failed to save session state: ${e instanceof Error ? e.message : String(e)}`,
+      );
     }
   }
 
@@ -154,7 +159,10 @@ export class GameStateManager {
     const promptHash = this.simpleHash(fullPrompt);
 
     let systemPrompt: string;
-    if (promptHash !== this.lastPromptHash || this.turnsSinceFullPrompt >= this.FULL_PROMPT_INTERVAL) {
+    if (
+      promptHash !== this.lastPromptHash ||
+      this.turnsSinceFullPrompt >= this.FULL_PROMPT_INTERVAL
+    ) {
       systemPrompt = fullPrompt;
       this.lastPromptHash = promptHash;
       this.turnsSinceFullPrompt = 0;
@@ -165,13 +173,18 @@ export class GameStateManager {
 
     const newMessages = this.conversationHistory.slice(this.lastSentIndex);
     this.lastSentIndex = this.conversationHistory.length;
-    this.messageQueue.push({ requestId, systemPrompt, messages: newMessages, totalMessageCount: this.conversationHistory.length });
+    this.messageQueue.push({
+      requestId,
+      systemPrompt,
+      messages: newMessages,
+      totalMessageCount: this.conversationHistory.length,
+    });
   }
 
   private simpleHash(str: string): string {
     let hash = 0;
     for (let i = 0; i < str.length; i++) {
-      hash = ((hash << 5) - hash) + str.charCodeAt(i);
+      hash = (hash << 5) - hash + str.charCodeAt(i);
       hash |= 0;
     }
     return hash.toString(36);
@@ -179,7 +192,7 @@ export class GameStateManager {
 
   // ─── Player Action Dispatch ───
 
-  handlePlayerAction(playerName: string, action: ClientMessage, requestId: string): void {
+  handlePlayerAction(playerName: string, action: ClientMessage, _requestId: string): void {
     switch (action.type) {
       case "client:chat":
         this.handleChat(playerName, action.content);
@@ -246,20 +259,26 @@ export class GameStateManager {
 
   handleStartStory(playerName: string): void {
     if (playerName !== this.hostName) {
-      this.broadcast({
-        type: "server:error",
-        message: "Only the host can start the story",
-        code: "NOT_HOST",
-      }, [playerName]);
+      this.broadcast(
+        {
+          type: "server:error",
+          message: "Only the host can start the story",
+          code: "NOT_HOST",
+        },
+        [playerName],
+      );
       return;
     }
 
     if (this.storyStarted) {
-      this.broadcast({
-        type: "server:error",
-        message: "Story has already started",
-        code: "ALREADY_STARTED",
-      }, [playerName]);
+      this.broadcast(
+        {
+          type: "server:error",
+          message: "Story has already started",
+          code: "ALREADY_STARTED",
+        },
+        [playerName],
+      );
       return;
     }
 
@@ -283,9 +302,7 @@ export class GameStateManager {
 
     // Build greeting dm_request
     const partyDescriptions = Object.entries(this.characters).map(([pName, char]) => {
-      const classes = char.static.classes
-        .map((c) => `${c.name} ${c.level}`)
-        .join("/");
+      const classes = char.static.classes.map((c) => `${c.name} ${c.level}`).join("/");
       return `${pName} (${char.static.name}, ${char.static.species || char.static.race} ${classes})`;
     });
 
@@ -325,22 +342,28 @@ export class GameStateManager {
     const pendingCheck = combat?.pendingCheck ?? this.gameState.pendingCheck;
 
     if (!pendingCheck || pendingCheck.id !== checkRequestId) {
-      this.broadcast({
-        type: "server:error",
-        message: "No matching pending check",
-        code: "NO_PENDING_CHECK",
-      }, [playerName]);
+      this.broadcast(
+        {
+          type: "server:error",
+          message: "No matching pending check",
+          code: "NO_PENDING_CHECK",
+        },
+        [playerName],
+      );
       return;
     }
 
     // Find character for this player
     const char = this.findCharacterByPlayerName(playerName);
     if (!char || char.static.name.toLowerCase() !== pendingCheck.targetCharacter.toLowerCase()) {
-      this.broadcast({
-        type: "server:error",
-        message: "This check is not for your character",
-        code: "WRONG_CHARACTER",
-      }, [playerName]);
+      this.broadcast(
+        {
+          type: "server:error",
+          message: "This check is not for your character",
+          code: "WRONG_CHARACTER",
+        },
+        [playerName],
+      );
       return;
     }
 
@@ -379,9 +402,11 @@ export class GameStateManager {
         this.gameState.pendingCheck = undefined;
       }
 
-      this.createEvent("check_resolved",
+      this.createEvent(
+        "check_resolved",
         `${char.static.name} rolled ${roll.total} damage (${pendingCheck.notation}) for ${pendingCheck.reason}`,
-        []);
+        [],
+      );
 
       const systemMsg = `[System: ${char.static.name} rolled ${roll.total} damage (${pendingCheck.notation}) for ${pendingCheck.reason}]`;
       this.conversationHistory.push({ role: "user", content: systemMsg });
@@ -435,10 +460,16 @@ export class GameStateManager {
     // Log event for the event log
     const resultLabel = success === true ? "Success" : success === false ? "Failure" : "Result";
     const dcStr = pendingCheck.dc !== undefined ? ` (DC ${pendingCheck.dc})` : "";
-    const critStr = roll.criticalHit ? " (Critical!)" : roll.criticalFail ? " (Critical Fail!)" : "";
-    this.createEvent("check_resolved",
+    const critStr = roll.criticalHit
+      ? " (Critical!)"
+      : roll.criticalFail
+        ? " (Critical Fail!)"
+        : "";
+    this.createEvent(
+      "check_resolved",
       `${char.static.name} rolled ${roll.total}${dcStr} — ${resultLabel}${critStr} (${pendingCheck.reason})`,
-      []);
+      [],
+    );
 
     // Inject result into conversation and trigger AI follow-up
     const systemMsg = `[System: ${char.static.name} rolled ${roll.total} on ${pendingCheck.reason}${dcStr} — ${resultLabel}${critStr}]`;
@@ -452,11 +483,14 @@ export class GameStateManager {
   handleCombatAction(playerName: string, action: string): void {
     const combat = this.gameState.encounter?.combat;
     if (!combat || combat.phase !== "active") {
-      this.broadcast({
-        type: "server:error",
-        message: "Not in active combat",
-        code: "NOT_IN_COMBAT",
-      }, [playerName]);
+      this.broadcast(
+        {
+          type: "server:error",
+          message: "Not in active combat",
+          code: "NOT_IN_COMBAT",
+        },
+        [playerName],
+      );
       return;
     }
 
@@ -466,11 +500,14 @@ export class GameStateManager {
     if (activeCombatant?.type === "player") {
       const char = this.findCharacterByPlayerName(playerName);
       if (!char || char.static.name.toLowerCase() !== activeCombatant.name.toLowerCase()) {
-        this.broadcast({
-          type: "server:error",
-          message: "It's not your turn",
-          code: "NOT_YOUR_TURN",
-        }, [playerName]);
+        this.broadcast(
+          {
+            type: "server:error",
+            message: "It's not your turn",
+            code: "NOT_YOUR_TURN",
+          },
+          [playerName],
+        );
         return;
       }
     }
@@ -499,11 +536,14 @@ export class GameStateManager {
   handleEndTurn(playerName: string): void {
     const combat = this.gameState.encounter?.combat;
     if (!combat || combat.phase !== "active") {
-      this.broadcast({
-        type: "server:error",
-        message: "Not in active combat",
-        code: "NOT_IN_COMBAT",
-      }, [playerName]);
+      this.broadcast(
+        {
+          type: "server:error",
+          message: "Not in active combat",
+          code: "NOT_IN_COMBAT",
+        },
+        [playerName],
+      );
       return;
     }
 
@@ -511,26 +551,32 @@ export class GameStateManager {
     const char = this.findCharacterByPlayerName(playerName);
     const combatant = char
       ? Object.values(combat.combatants).find(
-          (c) => c.type === "player" && c.name.toLowerCase() === char.static.name.toLowerCase()
+          (c) => c.type === "player" && c.name.toLowerCase() === char.static.name.toLowerCase(),
         )
       : null;
 
     if (!combatant) {
-      this.broadcast({
-        type: "server:error",
-        message: "No combatant found for your character",
-        code: "NO_COMBATANT",
-      }, [playerName]);
+      this.broadcast(
+        {
+          type: "server:error",
+          message: "No combatant found for your character",
+          code: "NO_COMBATANT",
+        },
+        [playerName],
+      );
       return;
     }
 
     const activeId = combat.turnOrder[combat.turnIndex];
     if (activeId !== combatant.id) {
-      this.broadcast({
-        type: "server:error",
-        message: "It's not your turn",
-        code: "NOT_YOUR_TURN",
-      }, [playerName]);
+      this.broadcast(
+        {
+          type: "server:error",
+          message: "It's not your turn",
+          code: "NOT_YOUR_TURN",
+        },
+        [playerName],
+      );
       return;
     }
 
@@ -552,37 +598,46 @@ export class GameStateManager {
   handleMoveToken(playerName: string, to: GridPosition): void {
     const combat = this.gameState.encounter?.combat;
     if (!combat || combat.phase !== "active") {
-      this.broadcast({
-        type: "server:error",
-        message: "Not in active combat",
-        code: "NOT_IN_COMBAT",
-      }, [playerName]);
+      this.broadcast(
+        {
+          type: "server:error",
+          message: "Not in active combat",
+          code: "NOT_IN_COMBAT",
+        },
+        [playerName],
+      );
       return;
     }
 
     const char = this.findCharacterByPlayerName(playerName);
     const combatant = char
       ? Object.values(combat.combatants).find(
-          (c) => c.type === "player" && c.name.toLowerCase() === char.static.name.toLowerCase()
+          (c) => c.type === "player" && c.name.toLowerCase() === char.static.name.toLowerCase(),
         )
       : null;
 
     if (!combatant) {
-      this.broadcast({
-        type: "server:error",
-        message: "No combatant found for your character",
-        code: "NO_COMBATANT",
-      }, [playerName]);
+      this.broadcast(
+        {
+          type: "server:error",
+          message: "No combatant found for your character",
+          code: "NO_COMBATANT",
+        },
+        [playerName],
+      );
       return;
     }
 
     const activeId = combat.turnOrder[combat.turnIndex];
     if (activeId !== combatant.id) {
-      this.broadcast({
-        type: "server:error",
-        message: "It's not your turn",
-        code: "NOT_YOUR_TURN",
-      }, [playerName]);
+      this.broadcast(
+        {
+          type: "server:error",
+          message: "It's not your turn",
+          code: "NOT_YOUR_TURN",
+        },
+        [playerName],
+      );
       return;
     }
 
@@ -592,11 +647,14 @@ export class GameStateManager {
     const distance = Math.max(dx, dy) * 5;
 
     if (combatant.movementUsed + distance > combatant.speed) {
-      this.broadcast({
-        type: "server:error",
-        message: "Not enough movement remaining",
-        code: "NO_MOVEMENT",
-      }, [playerName]);
+      this.broadcast(
+        {
+          type: "server:error",
+          message: "Not enough movement remaining",
+          code: "NO_MOVEMENT",
+        },
+        [playerName],
+      );
       return;
     }
 
@@ -622,21 +680,27 @@ export class GameStateManager {
 
   handleRollback(playerName: string, eventId: string): void {
     if (playerName !== this.hostName) {
-      this.broadcast({
-        type: "server:error",
-        message: "Only the host can rollback",
-        code: "NOT_HOST",
-      }, [playerName]);
+      this.broadcast(
+        {
+          type: "server:error",
+          message: "Only the host can rollback",
+          code: "NOT_HOST",
+        },
+        [playerName],
+      );
       return;
     }
 
     const eventIdx = this.gameState.eventLog.findIndex((e) => e.id === eventId);
     if (eventIdx === -1) {
-      this.broadcast({
-        type: "server:error",
-        message: "Event not found",
-        code: "EVENT_NOT_FOUND",
-      }, [playerName]);
+      this.broadcast(
+        {
+          type: "server:error",
+          message: "Event not found",
+          code: "EVENT_NOT_FOUND",
+        },
+        [playerName],
+      );
       return;
     }
 
@@ -703,11 +767,14 @@ export class GameStateManager {
 
   handleSetSystemPrompt(playerName: string, prompt?: string): void {
     if (playerName !== this.hostName) {
-      this.broadcast({
-        type: "server:error",
-        message: "Only the host can change the system prompt",
-        code: "NOT_HOST",
-      }, [playerName]);
+      this.broadcast(
+        {
+          type: "server:error",
+          message: "Only the host can change the system prompt",
+          code: "NOT_HOST",
+        },
+        [playerName],
+      );
       return;
     }
 
@@ -730,13 +797,20 @@ export class GameStateManager {
     });
   }
 
-  handleSetPacing(playerName: string, profile: PacingProfile, encounterLength: EncounterLength): void {
+  handleSetPacing(
+    playerName: string,
+    profile: PacingProfile,
+    encounterLength: EncounterLength,
+  ): void {
     if (playerName !== this.hostName) {
-      this.broadcast({
-        type: "server:error",
-        message: "Only the host can change pacing",
-        code: "NOT_HOST",
-      }, [playerName]);
+      this.broadcast(
+        {
+          type: "server:error",
+          message: "Only the host can change pacing",
+          code: "NOT_HOST",
+        },
+        [playerName],
+      );
       return;
     }
 
@@ -752,11 +826,14 @@ export class GameStateManager {
 
   handleDMOverride(playerName: string, characterName: string, changes: StateChange[]): void {
     if (playerName !== this.hostName) {
-      this.broadcast({
-        type: "server:error",
-        message: "Only the host can use DM overrides",
-        code: "NOT_HOST",
-      }, [playerName]);
+      this.broadcast(
+        {
+          type: "server:error",
+          message: "Only the host can use DM overrides",
+          code: "NOT_HOST",
+        },
+        [playerName],
+      );
       return;
     }
 
@@ -777,7 +854,10 @@ export class GameStateManager {
               break;
             }
             case "healing":
-              char.dynamic.currentHP = Math.min(char.static.maxHP, char.dynamic.currentHP + Math.max(0, change.amount));
+              char.dynamic.currentHP = Math.min(
+                char.static.maxHP,
+                char.dynamic.currentHP + Math.max(0, change.amount),
+              );
               break;
             case "hp_set":
               char.dynamic.currentHP = Math.max(0, Math.min(char.static.maxHP, change.value));
@@ -791,7 +871,9 @@ export class GameStateManager {
               }
               break;
             case "condition_remove":
-              char.dynamic.conditions = char.dynamic.conditions.filter((c) => c !== change.condition);
+              char.dynamic.conditions = char.dynamic.conditions.filter(
+                (c) => c !== change.condition,
+              );
               break;
           }
         }
@@ -899,10 +981,12 @@ export class GameStateManager {
     const combat = this.gameState.encounter?.combat;
     if (combat) {
       const combatant = Object.values(combat.combatants).find(
-        (c) => c.name.toLowerCase() === targetName.toLowerCase() && c.type !== "player"
+        (c) => c.name.toLowerCase() === targetName.toLowerCase() && c.type !== "player",
       );
       if (combatant) {
-        this.createEvent("damage", `${combatant.name} takes ${dmg} damage`, [{ type: "damage", target: targetName, amount: dmg, damageType }]);
+        this.createEvent("damage", `${combatant.name} takes ${dmg} damage`, [
+          { type: "damage", target: targetName, amount: dmg, damageType },
+        ]);
         let remaining = dmg;
         if ((combatant.tempHP ?? 0) > 0) {
           const absorbed = Math.min(combatant.tempHP!, remaining);
@@ -925,7 +1009,9 @@ export class GameStateManager {
     // Check player characters
     for (const [pName, char] of Object.entries(this.characters)) {
       if (char.static.name.toLowerCase() === targetName.toLowerCase()) {
-        this.createEvent("damage", `${char.static.name} takes ${dmg} damage`, [{ type: "damage", target: targetName, amount: dmg, damageType }]);
+        this.createEvent("damage", `${char.static.name} takes ${dmg} damage`, [
+          { type: "damage", target: targetName, amount: dmg, damageType },
+        ]);
         let remaining = dmg;
         if (char.dynamic.tempHP > 0) {
           const absorbed = Math.min(char.dynamic.tempHP, remaining);
@@ -955,10 +1041,12 @@ export class GameStateManager {
     const combat = this.gameState.encounter?.combat;
     if (combat) {
       const combatant = Object.values(combat.combatants).find(
-        (c) => c.name.toLowerCase() === targetName.toLowerCase() && c.type !== "player"
+        (c) => c.name.toLowerCase() === targetName.toLowerCase() && c.type !== "player",
       );
       if (combatant && combatant.maxHP) {
-        this.createEvent("healing", `${combatant.name} healed for ${healing}`, [{ type: "healing", target: targetName, amount: healing }]);
+        this.createEvent("healing", `${combatant.name} healed for ${healing}`, [
+          { type: "healing", target: targetName, amount: healing },
+        ]);
         combatant.currentHP = Math.min(combatant.maxHP, (combatant.currentHP ?? 0) + healing);
         this.broadcast({
           type: "server:combat_update",
@@ -973,7 +1061,9 @@ export class GameStateManager {
     // Check player characters
     for (const [pName, char] of Object.entries(this.characters)) {
       if (char.static.name.toLowerCase() === targetName.toLowerCase()) {
-        this.createEvent("healing", `${char.static.name} healed for ${healing}`, [{ type: "healing", target: targetName, amount: healing }]);
+        this.createEvent("healing", `${char.static.name} healed for ${healing}`, [
+          { type: "healing", target: targetName, amount: healing },
+        ]);
         char.dynamic.currentHP = Math.min(char.static.maxHP, char.dynamic.currentHP + healing);
         this.broadcast({
           type: "server:character_updated",
@@ -993,10 +1083,12 @@ export class GameStateManager {
     const combat = this.gameState.encounter?.combat;
     if (combat) {
       const combatant = Object.values(combat.combatants).find(
-        (c) => c.name.toLowerCase() === targetName.toLowerCase() && c.type !== "player"
+        (c) => c.name.toLowerCase() === targetName.toLowerCase() && c.type !== "player",
       );
       if (combatant && combatant.maxHP) {
-        this.createEvent("hp_set", `${combatant.name} HP set to ${value}`, [{ type: "hp_set", target: targetName, value }]);
+        this.createEvent("hp_set", `${combatant.name} HP set to ${value}`, [
+          { type: "hp_set", target: targetName, value },
+        ]);
         combatant.currentHP = Math.max(0, Math.min(combatant.maxHP, value));
         this.broadcast({
           type: "server:combat_update",
@@ -1010,7 +1102,9 @@ export class GameStateManager {
 
     for (const [pName, char] of Object.entries(this.characters)) {
       if (char.static.name.toLowerCase() === targetName.toLowerCase()) {
-        this.createEvent("hp_set", `${char.static.name} HP set to ${value}`, [{ type: "hp_set", target: targetName, value }]);
+        this.createEvent("hp_set", `${char.static.name} HP set to ${value}`, [
+          { type: "hp_set", target: targetName, value },
+        ]);
         char.dynamic.currentHP = Math.max(0, Math.min(char.static.maxHP, value));
         this.broadcast({
           type: "server:character_updated",
@@ -1030,10 +1124,12 @@ export class GameStateManager {
     const combat = this.gameState.encounter?.combat;
     if (combat) {
       const combatant = Object.values(combat.combatants).find(
-        (c) => c.name.toLowerCase() === targetName.toLowerCase() && c.type !== "player"
+        (c) => c.name.toLowerCase() === targetName.toLowerCase() && c.type !== "player",
       );
       if (combatant) {
-        this.createEvent("condition_added", `${combatant.name} is now ${condition}`, [{ type: "condition_add", target: targetName, condition }]);
+        this.createEvent("condition_added", `${combatant.name} is now ${condition}`, [
+          { type: "condition_add", target: targetName, condition },
+        ]);
         if (!combatant.conditions) combatant.conditions = [];
         if (!combatant.conditions.includes(condition)) {
           combatant.conditions.push(condition);
@@ -1050,7 +1146,9 @@ export class GameStateManager {
 
     for (const [pName, char] of Object.entries(this.characters)) {
       if (char.static.name.toLowerCase() === targetName.toLowerCase()) {
-        this.createEvent("condition_added", `${char.static.name} is now ${condition}`, [{ type: "condition_add", target: targetName, condition }]);
+        this.createEvent("condition_added", `${char.static.name} is now ${condition}`, [
+          { type: "condition_add", target: targetName, condition },
+        ]);
         if (!char.dynamic.conditions.includes(condition)) {
           char.dynamic.conditions.push(condition);
         }
@@ -1071,10 +1169,12 @@ export class GameStateManager {
     const combat = this.gameState.encounter?.combat;
     if (combat) {
       const combatant = Object.values(combat.combatants).find(
-        (c) => c.name.toLowerCase() === targetName.toLowerCase() && c.type !== "player"
+        (c) => c.name.toLowerCase() === targetName.toLowerCase() && c.type !== "player",
       );
       if (combatant && combatant.conditions) {
-        this.createEvent("condition_removed", `${condition} removed from ${combatant.name}`, [{ type: "condition_remove", target: targetName, condition }]);
+        this.createEvent("condition_removed", `${condition} removed from ${combatant.name}`, [
+          { type: "condition_remove", target: targetName, condition },
+        ]);
         combatant.conditions = combatant.conditions.filter((c) => c !== condition);
         this.broadcast({
           type: "server:combat_update",
@@ -1088,7 +1188,9 @@ export class GameStateManager {
 
     for (const [pName, char] of Object.entries(this.characters)) {
       if (char.static.name.toLowerCase() === targetName.toLowerCase()) {
-        this.createEvent("condition_removed", `${condition} removed from ${char.static.name}`, [{ type: "condition_remove", target: targetName, condition }]);
+        this.createEvent("condition_removed", `${condition} removed from ${char.static.name}`, [
+          { type: "condition_remove", target: targetName, condition },
+        ]);
         char.dynamic.conditions = char.dynamic.conditions.filter((c) => c !== condition);
         this.broadcast({
           type: "server:character_updated",
@@ -1103,18 +1205,20 @@ export class GameStateManager {
   }
 
   /** Start combat */
-  startCombat(combatants: Array<{
-    name: string;
-    type: "player" | "npc" | "enemy";
-    initiativeModifier?: number;
-    speed?: number;
-    maxHP?: number;
-    currentHP?: number;
-    armorClass?: number;
-    position?: GridPosition;
-    size?: CreatureSize;
-    tokenColor?: string;
-  }>): string {
+  startCombat(
+    combatants: Array<{
+      name: string;
+      type: "player" | "npc" | "enemy";
+      initiativeModifier?: number;
+      speed?: number;
+      maxHP?: number;
+      currentHP?: number;
+      armorClass?: number;
+      position?: GridPosition;
+      size?: CreatureSize;
+      tokenColor?: string;
+    }>,
+  ): string {
     const combatantMap: Record<string, Combatant> = {};
     const initiativeOrder: Array<{ id: string; initiative: number }> = [];
 
@@ -1127,7 +1231,7 @@ export class GameStateManager {
 
       if (c.type === "player") {
         const charEntry = Object.entries(this.characters).find(
-          ([, ch]) => ch.static.name.toLowerCase() === c.name.toLowerCase()
+          ([, ch]) => ch.static.name.toLowerCase() === c.name.toLowerCase(),
         );
         if (charEntry) {
           linkedPlayerId = charEntry[0];
@@ -1208,7 +1312,7 @@ export class GameStateManager {
 
     this.gameState.encounter.combat.phase = "ended";
     this.gameState.encounter.phase = "exploration";
-    const combat = this.gameState.encounter.combat;
+    const _combat = this.gameState.encounter.combat;
     this.gameState.encounter.combat = undefined;
     this.gameState.encounter.map = undefined;
 
@@ -1274,7 +1378,7 @@ export class GameStateManager {
     let initMod = c.initiativeModifier ?? 0;
     if (c.type === "player") {
       const charEntry = Object.entries(this.characters).find(
-        ([, ch]) => ch.static.name.toLowerCase() === c.name.toLowerCase()
+        ([, ch]) => ch.static.name.toLowerCase() === c.name.toLowerCase(),
       );
       if (charEntry) {
         const dex = charEntry[1].static.abilities.dexterity;
@@ -1306,7 +1410,7 @@ export class GameStateManager {
 
     // Insert into turn order by initiative
     const insertIdx = combat.turnOrder.findIndex(
-      (tid) => combat.combatants[tid].initiative < initiative
+      (tid) => combat.combatants[tid].initiative < initiative,
     );
     if (insertIdx === -1) {
       combat.turnOrder.push(id);
@@ -1334,13 +1438,15 @@ export class GameStateManager {
     if (!combat) return "No active combat";
 
     const entry = Object.entries(combat.combatants).find(
-      ([, c]) => c.name.toLowerCase() === combatantName.toLowerCase()
+      ([, c]) => c.name.toLowerCase() === combatantName.toLowerCase(),
     );
     if (!entry) return `Combatant "${combatantName}" not found`;
 
     const [id] = entry;
 
-    this.createEvent("custom", `${combatantName} removed from combat`, [{ type: "combatant_remove", combatantId: id }]);
+    this.createEvent("custom", `${combatantName} removed from combat`, [
+      { type: "combatant_remove", combatantId: id },
+    ]);
 
     const idx = combat.turnOrder.indexOf(id);
 
@@ -1374,7 +1480,7 @@ export class GameStateManager {
     if (!combat) return "No active combat";
 
     const combatant = Object.values(combat.combatants).find(
-      (c) => c.name.toLowerCase() === combatantName.toLowerCase()
+      (c) => c.name.toLowerCase() === combatantName.toLowerCase(),
     );
     if (!combatant) return `Combatant "${combatantName}" not found`;
 
@@ -1394,7 +1500,9 @@ export class GameStateManager {
   useSpellSlot(characterName: string, level: number): string {
     for (const [pName, char] of Object.entries(this.characters)) {
       if (char.static.name.toLowerCase() === characterName.toLowerCase()) {
-        this.createEvent("spell_slot_used", `${char.static.name} used level ${level} slot`, [{ type: "spell_slot_use", target: characterName, level }]);
+        this.createEvent("spell_slot_used", `${char.static.name} used level ${level} slot`, [
+          { type: "spell_slot_use", target: characterName, level },
+        ]);
         const slot = char.dynamic.spellSlotsUsed.find((s) => s.level === level);
         if (slot) {
           slot.used++;
@@ -1418,7 +1526,11 @@ export class GameStateManager {
   restoreSpellSlot(characterName: string, level: number): string {
     for (const [pName, char] of Object.entries(this.characters)) {
       if (char.static.name.toLowerCase() === characterName.toLowerCase()) {
-        this.createEvent("spell_slot_restored", `${char.static.name} restored level ${level} slot`, [{ type: "spell_slot_restore", target: characterName, level }]);
+        this.createEvent(
+          "spell_slot_restored",
+          `${char.static.name} restored level ${level} slot`,
+          [{ type: "spell_slot_restore", target: characterName, level }],
+        );
         const slot = char.dynamic.spellSlotsUsed.find((s) => s.level === level);
         if (slot && slot.used > 0) {
           slot.used--;
@@ -1441,7 +1553,7 @@ export class GameStateManager {
     for (const [pName, char] of Object.entries(this.characters)) {
       if (char.static.name.toLowerCase() === characterName.toLowerCase()) {
         const resource = char.static.classResources.find(
-          (r) => r.name.toLowerCase() === resourceName.toLowerCase()
+          (r) => r.name.toLowerCase() === resourceName.toLowerCase(),
         );
         if (!resource) {
           return `Resource "${resourceName}" not found on ${char.static.name}. Available: ${char.static.classResources.map((r) => r.name).join(", ") || "none"}`;
@@ -1453,7 +1565,9 @@ export class GameStateManager {
           return `${char.static.name} has no ${canonicalName} uses remaining (0/${resource.maxUses})`;
         }
 
-        this.createEvent("resource_used", `${char.static.name} used ${canonicalName}`, [{ type: "resource_use", target: characterName, resource: canonicalName }]);
+        this.createEvent("resource_used", `${char.static.name} used ${canonicalName}`, [
+          { type: "resource_use", target: characterName, resource: canonicalName },
+        ]);
         char.dynamic.resourcesUsed[canonicalName] = used + 1;
         const remaining = resource.maxUses - (used + 1);
 
@@ -1474,7 +1588,7 @@ export class GameStateManager {
     for (const [pName, char] of Object.entries(this.characters)) {
       if (char.static.name.toLowerCase() === characterName.toLowerCase()) {
         const resource = char.static.classResources.find(
-          (r) => r.name.toLowerCase() === resourceName.toLowerCase()
+          (r) => r.name.toLowerCase() === resourceName.toLowerCase(),
         );
         if (!resource) {
           return `Resource "${resourceName}" not found on ${char.static.name}. Available: ${char.static.classResources.map((r) => r.name).join(", ") || "none"}`;
@@ -1483,7 +1597,9 @@ export class GameStateManager {
         const canonicalName = resource.name;
         const used = char.dynamic.resourcesUsed[canonicalName] ?? 0;
 
-        this.createEvent("resource_restored", `${char.static.name} restored ${canonicalName}`, [{ type: "resource_restore", target: characterName, resource: canonicalName, amount }]);
+        this.createEvent("resource_restored", `${char.static.name} restored ${canonicalName}`, [
+          { type: "resource_restore", target: characterName, resource: canonicalName, amount },
+        ]);
 
         if (amount >= 999) {
           char.dynamic.resourcesUsed[canonicalName] = 0;
@@ -1507,23 +1623,33 @@ export class GameStateManager {
   }
 
   /** Add item to a character's inventory */
-  addItem(characterName: string, item: {
-    name: string;
-    quantity?: number;
-    type?: string;
-    description?: string;
-    rarity?: string;
-    isMagicItem?: boolean;
-    damage?: string;
-    damageType?: string;
-    properties?: string[];
-    weight?: number;
-  }): string {
+  addItem(
+    characterName: string,
+    item: {
+      name: string;
+      quantity?: number;
+      type?: string;
+      description?: string;
+      rarity?: string;
+      isMagicItem?: boolean;
+      damage?: string;
+      damageType?: string;
+      properties?: string[];
+      weight?: number;
+    },
+  ): string {
     for (const [pName, char] of Object.entries(this.characters)) {
       if (char.static.name.toLowerCase() === characterName.toLowerCase()) {
-        this.createEvent("item_added", `Added ${item.name} to ${char.static.name}`, [{ type: "item_add", target: characterName, item: item.name, quantity: item.quantity ?? 1 }]);
+        this.createEvent("item_added", `Added ${item.name} to ${char.static.name}`, [
+          {
+            type: "item_add",
+            target: characterName,
+            item: item.name,
+            quantity: item.quantity ?? 1,
+          },
+        ]);
         const existing = char.dynamic.inventory.find(
-          (i) => i.name.toLowerCase() === item.name.toLowerCase()
+          (i) => i.name.toLowerCase() === item.name.toLowerCase(),
         );
         if (existing) {
           existing.quantity += item.quantity ?? 1;
@@ -1561,7 +1687,7 @@ export class GameStateManager {
     for (const [pName, char] of Object.entries(this.characters)) {
       if (char.static.name.toLowerCase() === characterName.toLowerCase()) {
         const idx = char.dynamic.inventory.findIndex(
-          (i) => i.name.toLowerCase() === itemName.toLowerCase()
+          (i) => i.name.toLowerCase() === itemName.toLowerCase(),
         );
         if (idx === -1) {
           return `Item "${itemName}" not found in ${char.static.name}'s inventory`;
@@ -1570,7 +1696,9 @@ export class GameStateManager {
         const existing = char.dynamic.inventory[idx];
         const removeQty = quantity ?? existing.quantity;
 
-        this.createEvent("item_removed", `Removed ${itemName} from ${char.static.name}`, [{ type: "item_remove", target: characterName, item: itemName, quantity: removeQty }]);
+        this.createEvent("item_removed", `Removed ${itemName} from ${char.static.name}`, [
+          { type: "item_remove", target: characterName, item: itemName, quantity: removeQty },
+        ]);
 
         if (removeQty >= existing.quantity) {
           char.dynamic.inventory.splice(idx, 1);
@@ -1591,35 +1719,53 @@ export class GameStateManager {
   }
 
   /** Update properties of an existing inventory item */
-  updateItem(characterName: string, itemName: string, updates: Partial<Omit<import("@unseen-servant/shared/types").InventoryItem, "name">>): string {
+  updateItem(
+    characterName: string,
+    itemName: string,
+    updates: Partial<Omit<import("@unseen-servant/shared/types").InventoryItem, "name">>,
+  ): string {
     for (const [pName, char] of Object.entries(this.characters)) {
       if (char.static.name.toLowerCase() === characterName.toLowerCase()) {
         const item = char.dynamic.inventory.find(
-          (i) => i.name.toLowerCase() === itemName.toLowerCase()
+          (i) => i.name.toLowerCase() === itemName.toLowerCase(),
         );
         if (!item) {
           return `Item "${itemName}" not found in ${char.static.name}'s inventory`;
         }
 
-        this.createEvent("item_updated", `Updated ${itemName} for ${char.static.name}`, [{ type: "item_update", target: characterName, item: itemName, changes: JSON.stringify(updates) }]);
+        this.createEvent("item_updated", `Updated ${itemName} for ${char.static.name}`, [
+          {
+            type: "item_update",
+            target: characterName,
+            item: itemName,
+            changes: JSON.stringify(updates),
+          },
+        ]);
 
         // Build human-readable changes summary
         const changesList: string[] = [];
-        if (updates.equipped !== undefined) changesList.push(updates.equipped ? "equipped" : "unequipped");
-        if (updates.isAttuned !== undefined) changesList.push(updates.isAttuned ? "attuned" : "unattuned");
+        if (updates.equipped !== undefined)
+          changesList.push(updates.equipped ? "equipped" : "unequipped");
+        if (updates.isAttuned !== undefined)
+          changesList.push(updates.isAttuned ? "attuned" : "unattuned");
         if (updates.quantity !== undefined) changesList.push(`quantity → ${updates.quantity}`);
         if (updates.description !== undefined) changesList.push("description updated");
         if (updates.damage !== undefined) changesList.push(`damage → ${updates.damage}`);
-        if (updates.damageType !== undefined) changesList.push(`damage type → ${updates.damageType}`);
-        if (updates.properties !== undefined) changesList.push(`properties → [${updates.properties.join(", ")}]`);
+        if (updates.damageType !== undefined)
+          changesList.push(`damage type → ${updates.damageType}`);
+        if (updates.properties !== undefined)
+          changesList.push(`properties → [${updates.properties.join(", ")}]`);
         if (updates.armorClass !== undefined) changesList.push(`AC → ${updates.armorClass}`);
-        if (updates.attackBonus !== undefined) changesList.push(`attack bonus → +${updates.attackBonus}`);
+        if (updates.attackBonus !== undefined)
+          changesList.push(`attack bonus → +${updates.attackBonus}`);
         if (updates.range !== undefined) changesList.push(`range → ${updates.range}`);
         if (updates.type !== undefined) changesList.push(`type → ${updates.type}`);
         if (updates.rarity !== undefined) changesList.push(`rarity → ${updates.rarity}`);
         if (updates.weight !== undefined) changesList.push(`weight → ${updates.weight} lb`);
-        if (updates.isMagicItem !== undefined) changesList.push(updates.isMagicItem ? "marked as magic item" : "unmarked as magic item");
-        if (updates.attunement !== undefined) changesList.push(updates.attunement ? "requires attunement" : "no attunement required");
+        if (updates.isMagicItem !== undefined)
+          changesList.push(updates.isMagicItem ? "marked as magic item" : "unmarked as magic item");
+        if (updates.attunement !== undefined)
+          changesList.push(updates.attunement ? "requires attunement" : "no attunement required");
 
         Object.assign(item, updates);
 
@@ -1637,11 +1783,16 @@ export class GameStateManager {
   }
 
   /** Update currency for a character (additive — positive adds, negative subtracts) */
-  updateCurrency(characterName: string, changes: Partial<Record<"cp" | "sp" | "ep" | "gp" | "pp", number>>): string {
+  updateCurrency(
+    characterName: string,
+    changes: Partial<Record<"cp" | "sp" | "ep" | "gp" | "pp", number>>,
+  ): string {
     for (const [pName, char] of Object.entries(this.characters)) {
       if (char.static.name.toLowerCase() === characterName.toLowerCase()) {
         this.createEvent("custom", `${char.static.name} currency updated`, []);
-        for (const [coin, delta] of Object.entries(changes) as Array<["cp" | "sp" | "ep" | "gp" | "pp", number]>) {
+        for (const [coin, delta] of Object.entries(changes) as Array<
+          ["cp" | "sp" | "ep" | "gp" | "pp", number]
+        >) {
           char.dynamic.currency[coin] = Math.max(0, char.dynamic.currency[coin] + delta);
         }
 
@@ -1665,7 +1816,11 @@ export class GameStateManager {
         if (char.dynamic.heroicInspiration) {
           return `${char.static.name} already has Heroic Inspiration`;
         }
-        this.createEvent("inspiration_granted", `${char.static.name} granted Heroic Inspiration`, []);
+        this.createEvent(
+          "inspiration_granted",
+          `${char.static.name} granted Heroic Inspiration`,
+          [],
+        );
         char.dynamic.heroicInspiration = true;
 
         this.broadcast({
@@ -1766,7 +1921,7 @@ export class GameStateManager {
   }): string {
     // Verify target character exists
     const charEntry = Object.entries(this.characters).find(
-      ([, c]) => c.static.name.toLowerCase() === params.targetCharacter.toLowerCase()
+      ([, c]) => c.static.name.toLowerCase() === params.targetCharacter.toLowerCase(),
     );
     if (!charEntry) {
       return `Character "${params.targetCharacter}" not found`;
@@ -1807,10 +1962,13 @@ export class GameStateManager {
 
   /** Send game state sync to a specific player (on join/reconnect) */
   sendStateSyncTo(playerName: string): void {
-    this.broadcast({
-      type: "server:game_state_sync",
-      gameState: this.gameState,
-    }, [playerName]);
+    this.broadcast(
+      {
+        type: "server:game_state_sync",
+        gameState: this.gameState,
+      },
+      [playerName],
+    );
   }
 
   /** Broadcast game state sync to all players (on session restore) */

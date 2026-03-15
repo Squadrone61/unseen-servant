@@ -2,7 +2,13 @@
 
 import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { backgroundsArray, getBackground, getFeat, getSpellsByClass, languagesArray } from "@unseen-servant/shared/data";
+import {
+  backgroundsArray,
+  getBackground,
+  getFeat,
+  getSpellsByClass,
+  languagesArray,
+} from "@unseen-servant/shared/data";
 import type { BackgroundData } from "@unseen-servant/shared/data";
 import type { StepProps } from "./types";
 import { formatSkillName, ALL_SKILLS, getFeatToolChoiceInfo } from "./utils";
@@ -46,7 +52,8 @@ export function StepBackground({ state, dispatch }: StepProps) {
           Choose Your Background
         </h2>
         <p className="text-sm text-gray-500">
-          Your background provides skill proficiencies, a tool proficiency, an origin feat, and ability score increases.
+          Your background provides skill proficiencies, a tool proficiency, an origin feat, and
+          ability score increases.
         </p>
         <div className="h-px bg-gradient-to-r from-amber-500/30 via-gray-700/50 to-transparent mt-2" />
       </div>
@@ -96,9 +103,7 @@ export function StepBackground({ state, dispatch }: StepProps) {
               )}
 
               {featName && (
-                <div className="text-xs text-amber-500/70 mt-1 truncate">
-                  {featName}
-                </div>
+                <div className="text-xs text-amber-500/70 mt-1 truncate">{featName}</div>
               )}
             </motion.button>
           );
@@ -116,7 +121,10 @@ export function StepBackground({ state, dispatch }: StepProps) {
 
           {/* Right: Background detail panel */}
           <div className="bg-gray-800/60 border border-gray-700/40 rounded-lg p-4 self-start">
-            <div className="text-sm font-medium text-amber-200/90 mb-2" style={{ fontFamily: "var(--font-cinzel)" }}>
+            <div
+              className="text-sm font-medium text-amber-200/90 mb-2"
+              style={{ fontFamily: "var(--font-cinzel)" }}
+            >
               {selected.name}
             </div>
             <BackgroundSummary bg={selected} />
@@ -145,7 +153,8 @@ function LanguagePicker({ state, dispatch }: StepProps) {
   return (
     <div className="bg-gray-800/40 border border-gray-700/40 rounded-lg p-3">
       <div className="text-sm text-gray-500 font-medium uppercase tracking-wider mb-1.5">
-        Languages — Common + {BACKGROUND_LANG_COUNT} of your choice ({selected.length}/{BACKGROUND_LANG_COUNT})
+        Languages — Common + {BACKGROUND_LANG_COUNT} of your choice ({selected.length}/
+        {BACKGROUND_LANG_COUNT})
       </div>
       <div className="flex flex-wrap gap-1.5">
         <span className="text-xs bg-emerald-900/20 text-emerald-400 border border-emerald-800/30 rounded-md px-2 py-0.5">
@@ -181,9 +190,7 @@ function BackgroundSummary({ bg }: { bg: BackgroundData }) {
   const featName = getBackgroundFeat(bg) ?? null;
   const featData = featName ? getFeat(featName) : null;
   const abilityInfo = getBackgroundAbilityScores(bg);
-  const abilityScores = abilityInfo
-    ? abilityInfo.from.map((k) => ABILITY_MAP[k] ?? k)
-    : [];
+  const abilityScores = abilityInfo ? abilityInfo.from.map((k) => ABILITY_MAP[k] ?? k) : [];
 
   return (
     <div className="space-y-3">
@@ -285,9 +292,7 @@ function BackgroundDetailContent({ bg, state, dispatch }: { bg: BackgroundData }
       {featName.toLowerCase().startsWith("magic initiate") && (
         <MagicInitiateChoices featName={featName} state={state} dispatch={dispatch} />
       )}
-      {featName.toLowerCase() === "skilled" && (
-        <SkilledChoices state={state} dispatch={dispatch} />
-      )}
+      {featName.toLowerCase() === "skilled" && <SkilledChoices state={state} dispatch={dispatch} />}
       {toolInfo && (
         <ToolChoices featName={featName} toolInfo={toolInfo} state={state} dispatch={dispatch} />
       )}
@@ -306,19 +311,17 @@ function MagicInitiateChoices({
 }: {
   featName: string;
 } & StepProps) {
-  const matchedClass = MI_CLASSES.find((c) =>
-    featName.toLowerCase().includes(c.toLowerCase())
-  );
+  const matchedClass = MI_CLASSES.find((c) => featName.toLowerCase().includes(c.toLowerCase()));
   const overrides = state.originFeatOverrides;
   const spellClass = matchedClass ?? overrides.spellClass ?? "Druid";
 
   const cantrips = useMemo(
     () => getSpellsByClass(spellClass).filter((s) => s.level === 0),
-    [spellClass]
+    [spellClass],
   );
   const level1Spells = useMemo(
     () => getSpellsByClass(spellClass).filter((s) => s.level === 1),
-    [spellClass]
+    [spellClass],
   );
 
   const selectedCantrips = overrides.cantrips ?? [];
@@ -379,9 +382,7 @@ function MagicInitiateChoices({
       </div>
 
       <div>
-        <div className="text-xs text-gray-500 mb-1">
-          Cantrips ({selectedCantrips.length}/2)
-        </div>
+        <div className="text-xs text-gray-500 mb-1">Cantrips ({selectedCantrips.length}/2)</div>
         <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto">
           {cantrips.map((s) => {
             const isSelected = selectedCantrips.includes(s.name);
@@ -510,7 +511,8 @@ function ToolChoices({
   return (
     <div className="mt-2 space-y-2 border-t border-gray-700/50 pt-2">
       <div className="text-xs text-gray-500 font-medium">
-        {featName}: Choose {toolInfo.count} tool proficiencies ({selectedTools.length}/{toolInfo.count})
+        {featName}: Choose {toolInfo.count} tool proficiencies ({selectedTools.length}/
+        {toolInfo.count})
       </div>
       <div className="flex flex-wrap gap-1">
         {toolInfo.options.map((tool) => {

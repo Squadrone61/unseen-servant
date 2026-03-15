@@ -1,6 +1,7 @@
 # Unseen Servant
 
 ## Project Overview
+
 AI-powered D&D 5e web app where an AI acts as the Dungeon Master. Players create characters via the built-in character builder (powered by native 5e.tools data), join multiplayer rooms via WebSocket, and play through AI-generated campaigns. Claude Code acts as the AI DM via an MCP bridge that owns all game logic and connects to the game server as a participant.
 
 **Notion GDD:** https://www.notion.so/309fc254bf8381c18e37c2b5ee4d8641
@@ -18,6 +19,7 @@ AI-powered D&D 5e web app where an AI acts as the Dungeon Master. Players create
 **Key principle:** The MCP bridge owns ALL game logic (combat, dice, HP, conditions, spell slots, conversation history). The worker is a **pure multiplayer relay** — it forwards player actions to the bridge and broadcasts bridge responses to clients.
 
 ### Monorepo Structure (pnpm workspaces + Turborepo)
+
 ```
 apps/web/          → Next.js 16.1 frontend (React 19, Tailwind CSS 4)
 apps/worker/       → Cloudflare Worker (Durable Objects, KV) — pure multiplayer relay + auth
@@ -27,6 +29,7 @@ packages/shared/   → Shared types (Zod 4 schemas), constants, utils, dice, che
 ```
 
 ### Tech Stack
+
 - **Frontend:** Next.js 16.1, React 19, TypeScript 5.9, Tailwind CSS 4
 - **Backend:** Cloudflare Workers + Durable Objects (stateful game rooms) + KV (room metadata)
 - **Real-time:** Native WebSocket over Durable Objects (no Socket.io)
@@ -38,6 +41,7 @@ packages/shared/   → Shared types (Zod 4 schemas), constants, utils, dice, che
 - **Deploy:** Cloudflare Pages (web) + Cloudflare Workers (worker)
 
 ### Key Patterns
+
 - **Discriminated unions** for all message types (ClientMessage/ServerMessage)
 - **Event sourcing** for game state changes (GameEvent log)
 - **CharacterData split:** `static` (from character builder) + `dynamic` (HP, spell slots, conditions — owned by our system)
@@ -48,6 +52,7 @@ packages/shared/   → Shared types (Zod 4 schemas), constants, utils, dice, che
 - **WebSocket Hibernation API** for Durable Objects (persistent connections survive hibernation)
 
 ## Dev Commands
+
 ```bash
 pnpm dev:all        # Run both web (port 3000) and worker (port 8787)
 pnpm dev:web        # Next.js dev server only (port 3000)
@@ -64,6 +69,7 @@ pnpm deploy:web     # Deploy web only
 ```
 
 ### Running a Game Session
+
 1. `pnpm dev:all` — start web + worker
 2. Create a room in the browser, note the room code
 3. Set room code in `.mcp.json` → `UNSEEN_ROOM_CODE`
@@ -73,6 +79,7 @@ pnpm deploy:web     # Deploy web only
 7. Claude Code receives player messages via `wait_for_message`, responds via `send_response`
 
 ## Environment
+
 - **Web dev:** http://localhost:3000
 - **Worker dev:** http://localhost:8787
 - **Production web:** https://unseenservant.safaakyuz.com
@@ -85,6 +92,7 @@ pnpm deploy:web     # Deploy web only
 ## Critical Files
 
 ### MCP Bridge (apps/mcp-bridge/src/)
+
 - `index.ts` — Entry: starts WS client + MCP stdio server
 - `mcp-server.ts` — MCP tool/resource registration
 - `ws-client.ts` — WebSocket client to worker, owns GameStateManager, handles player_action dispatch + broadcast relay
@@ -98,11 +106,13 @@ pnpm deploy:web     # Deploy web only
 - `types.ts` — Bridge message types, CampaignManifest, CampaignSummary
 
 ### DM Launcher (apps/dm-launcher/src/)
+
 - `entry.ts` — npm bin entry point
 - `cli.ts` — Spawns Claude Code with MCP config, writes DM_SYSTEM_PROMPT as CLAUDE.md
 - `server.ts` — Express server for OAuth callback handling
 
 ### Backend (apps/worker/src/)
+
 - `index.ts` — HTTP router + WebSocket upgrade endpoint
 - `durable-objects/game-room.ts` — Pure multiplayer relay: forwards player_action to bridge, broadcasts bridge responses via client:broadcast
 - `services/dice.ts` — Re-exports shared dice utils from `@unseen-servant/shared/utils`
@@ -110,6 +120,7 @@ pnpm deploy:web     # Deploy web only
 - `auth/jwt.ts` — JWT signing/verification
 
 ### Frontend (apps/web/src/)
+
 - `app/page.tsx` — Home: create/join room
 - `app/rooms/[roomCode]/page.tsx` — Game room page (handles campaign config, DM config updates, character restoration)
 - `hooks/useWebSocket.ts` — WebSocket lifecycle, reconnection, message validation
@@ -125,6 +136,7 @@ pnpm deploy:web     # Deploy web only
 - `components/sidebar/SystemPromptModal.tsx` — Standalone system prompt editor
 
 ### Shared (packages/shared/src/)
+
 - `types/messages.ts` — ClientMessage/ServerMessage unions (WebSocket protocol) — includes player_action, broadcast, campaign config messages
 - `types/character.ts` — CharacterData, CharacterStaticData, CharacterDynamicData
 - `types/game-state.ts` — GameState, CombatState, GameEvent, EncounterState, CampaignJournal
@@ -140,96 +152,108 @@ pnpm deploy:web     # Deploy web only
 ## MCP Tools (exposed to Claude Code)
 
 ### Game Communication
-| Tool | Description |
-|------|-------------|
-| `wait_for_message` | Blocks until a player message arrives. Returns `{ requestId, systemPrompt, messages }`. Main loop driver. |
-| `acknowledge` | Silently observe a player message without responding. Use when players are talking to each other or roleplaying among themselves. |
-| `send_response` | Sends DM narrative back, stores in conversation history, broadcasts to all players. |
-| `get_players` | Returns current player list with character summaries. |
-| `get_game_state` | Full game state snapshot (combat, encounter, checks, events, characters). |
-| `get_character` | Specific character's full data (static + dynamic) by name. |
+
+| Tool               | Description                                                                                                                       |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------------------- |
+| `wait_for_message` | Blocks until a player message arrives. Returns `{ requestId, systemPrompt, messages }`. Main loop driver.                         |
+| `acknowledge`      | Silently observe a player message without responding. Use when players are talking to each other or roleplaying among themselves. |
+| `send_response`    | Sends DM narrative back, stores in conversation history, broadcasts to all players.                                               |
+| `get_players`      | Returns current player list with character summaries.                                                                             |
+| `get_game_state`   | Full game state snapshot (combat, encounter, checks, events, characters).                                                         |
+| `get_character`    | Specific character's full data (static + dynamic) by name.                                                                        |
 
 ### HP & Conditions
-| Tool | Description |
-|------|-------------|
-| `apply_damage` | Deal damage to a character/combatant (handles temp HP absorption). |
-| `heal` | Restore HP (capped at max). |
-| `set_hp` | Set exact HP value. |
-| `add_condition` | Add condition (poisoned, stunned, etc.) with optional duration. |
-| `remove_condition` | Remove a condition. |
+
+| Tool               | Description                                                        |
+| ------------------ | ------------------------------------------------------------------ |
+| `apply_damage`     | Deal damage to a character/combatant (handles temp HP absorption). |
+| `heal`             | Restore HP (capped at max).                                        |
+| `set_hp`           | Set exact HP value.                                                |
+| `add_condition`    | Add condition (poisoned, stunned, etc.) with optional duration.    |
+| `remove_condition` | Remove a condition.                                                |
 
 ### Combat Management
-| Tool | Description |
-|------|-------------|
-| `start_combat` | Initialize combat, auto-roll initiative, create turn order. |
-| `end_combat` | End combat, return to exploration phase. |
-| `advance_turn` | Next combatant's turn, increment round counter. |
-| `add_combatant` | Add mid-fight reinforcements. |
-| `remove_combatant` | Remove dead/fled/dismissed combatant. |
-| `move_combatant` | Move token on battle map. |
+
+| Tool               | Description                                                 |
+| ------------------ | ----------------------------------------------------------- |
+| `start_combat`     | Initialize combat, auto-roll initiative, create turn order. |
+| `end_combat`       | End combat, return to exploration phase.                    |
+| `advance_turn`     | Next combatant's turn, increment round counter.             |
+| `add_combatant`    | Add mid-fight reinforcements.                               |
+| `remove_combatant` | Remove dead/fled/dismissed combatant.                       |
+| `move_combatant`   | Move token on battle map.                                   |
 
 ### Spell Slots
-| Tool | Description |
-|------|-------------|
-| `use_spell_slot` | Expend a spell slot at a given level. |
+
+| Tool                 | Description                                         |
+| -------------------- | --------------------------------------------------- |
+| `use_spell_slot`     | Expend a spell slot at a given level.               |
 | `restore_spell_slot` | Restore a slot (short rest, Arcane Recovery, etc.). |
 
 ### Heroic Inspiration
-| Tool | Description |
-|------|-------------|
-| `grant_inspiration` | Grant Heroic Inspiration to a character (binary flag). |
-| `use_inspiration` | Spend a character's Heroic Inspiration for advantage on a d20 roll. |
+
+| Tool                | Description                                                         |
+| ------------------- | ------------------------------------------------------------------- |
+| `grant_inspiration` | Grant Heroic Inspiration to a character (binary flag).              |
+| `use_inspiration`   | Spend a character's Heroic Inspiration for advantage on a d20 roll. |
 
 ### Battle Map
-| Tool | Description |
-|------|-------------|
+
+| Tool                | Description                                           |
+| ------------------- | ----------------------------------------------------- |
 | `update_battle_map` | Set/update grid with dimensions, terrain tiles, name. |
 
 ### Inventory & Currency
-| Tool | Description |
-|------|-------------|
-| `add_item` | Add an item to a character's inventory (stacks if exists). |
-| `update_item` | Modify an existing item — equip/unequip, attune, change quantity, update stats. |
-| `remove_item` | Remove an item from inventory (decrement or remove entirely). |
-| `update_currency` | Add or subtract currency (positive adds, negative subtracts). |
+
+| Tool              | Description                                                                     |
+| ----------------- | ------------------------------------------------------------------------------- |
+| `add_item`        | Add an item to a character's inventory (stacks if exists).                      |
+| `update_item`     | Modify an existing item — equip/unequip, attune, change quantity, update stats. |
+| `remove_item`     | Remove an item from inventory (decrement or remove entirely).                   |
+| `update_currency` | Add or subtract currency (positive adds, negative subtracts).                   |
 
 ### Class Resources
-| Tool | Description |
-|------|-------------|
-| `use_class_resource` | Expend a use of a class resource (Bardic Inspiration, Channel Divinity, Rage, Ki Points, etc.) |
-| `restore_class_resource` | Restore uses of a class resource (e.g., after rest). Use amount=999 to fully restore. |
+
+| Tool                     | Description                                                                                    |
+| ------------------------ | ---------------------------------------------------------------------------------------------- |
+| `use_class_resource`     | Expend a use of a class resource (Bardic Inspiration, Channel Divinity, Rage, Ki Points, etc.) |
+| `restore_class_resource` | Restore uses of a class resource (e.g., after rest). Use amount=999 to fully restore.          |
 
 ### D&D Reference (Unified 2024 Database)
-| Tool | Description |
-|------|-------------|
-| `lookup_spell` | Look up spell details from D&D 2024 database (490 spells). |
-| `lookup_monster` | Look up monster stat block from D&D 2024 database (580 monsters). |
-| `lookup_condition` | Look up condition effects from D&D 2024 database (15 conditions). |
-| `lookup_magic_item` | Look up a magic item from D&D 2024 database (563 items). |
-| `lookup_feat` | Look up a feat from D&D 2024 database (103 feats). |
-| `lookup_class` | Look up class details from D&D 2024 database (12 classes with subclasses). |
-| `lookup_species` | Look up species from D&D 2024 database (28 species). |
-| `lookup_background` | Look up background from D&D 2024 database (27 backgrounds). |
-| `search_rules` | Search across all D&D data categories by keyword. |
-| `roll_dice` | Roll dice — direct DM rolls (notation only) or interactive player checks (with targetCharacter, checkType, ability, skill, dc) |
+
+| Tool                | Description                                                                                                                    |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `lookup_spell`      | Look up spell details from D&D 2024 database (490 spells).                                                                     |
+| `lookup_monster`    | Look up monster stat block from D&D 2024 database (580 monsters).                                                              |
+| `lookup_condition`  | Look up condition effects from D&D 2024 database (15 conditions).                                                              |
+| `lookup_magic_item` | Look up a magic item from D&D 2024 database (563 items).                                                                       |
+| `lookup_feat`       | Look up a feat from D&D 2024 database (103 feats).                                                                             |
+| `lookup_class`      | Look up class details from D&D 2024 database (12 classes with subclasses).                                                     |
+| `lookup_species`    | Look up species from D&D 2024 database (28 species).                                                                           |
+| `lookup_background` | Look up background from D&D 2024 database (27 backgrounds).                                                                    |
+| `search_rules`      | Search across all D&D data categories by keyword.                                                                              |
+| `roll_dice`         | Roll dice — direct DM rolls (notation only) or interactive player checks (with targetCharacter, checkType, ability, skill, dc) |
 
 ### Campaign Persistence
-| Tool | Description |
-|------|-------------|
-| `create_campaign` | Create a new campaign directory with manifest |
-| `list_campaigns` | List all campaigns with metadata |
+
+| Tool                    | Description                                                                                         |
+| ----------------------- | --------------------------------------------------------------------------------------------------- |
+| `create_campaign`       | Create a new campaign directory with manifest                                                       |
+| `list_campaigns`        | List all campaigns with metadata                                                                    |
 | `load_campaign_context` | Load full campaign context (manifest + system prompt + active context + session notes + characters) |
-| `save_campaign_file` | Save/update a campaign file (notes, context, characters) |
-| `read_campaign_file` | Read a specific campaign file |
-| `list_campaign_files` | List all files in current campaign |
-| `end_session` | End session workflow (save summary, update context, snapshot characters, increment count) |
+| `save_campaign_file`    | Save/update a campaign file (notes, context, characters)                                            |
+| `read_campaign_file`    | Read a specific campaign file                                                                       |
+| `list_campaign_files`   | List all files in current campaign                                                                  |
+| `end_session`           | End session workflow (save summary, update context, snapshot characters, increment count)           |
 
 ## WebSocket Protocol
+
 - **Client→Server (browser):** chat, join, set_character, start_story, roll_dice, combat_action, move_token, end_turn, rollback, set_system_prompt, set_pacing, dm_override, set_password, kick_player, destroy_room, configure_campaign
 - **Client→Server (bridge):** broadcast, dm_response, campaign_loaded, campaign_configured_ack, action_result
 - **Server→Client:** chat, ai, system, error, room_joined, player_joined, player_left, character_updated, check_request, check_result, dice_roll, combat_update, game_state_sync, rollback, event_log, dm_config_update, campaign_loaded, campaign_configured, player_action, dm_roll_request, room_destroyed
 
 ## Message Flow (per DM turn)
+
 1. Player types message → WebSocket → Worker broadcasts chat to all + forwards as `server:player_action` to bridge
 2. Bridge's GameStateManager processes the action (adds to conversation history, creates dm_request)
 3. Message queue resolves `wait_for_message` → Claude Code receives `{ requestId, systemPrompt, messages }`
@@ -239,6 +263,7 @@ pnpm deploy:web     # Deploy web only
 7. Worker receives `client:broadcast` → relays AI narrative to all players
 
 ## GDD Progress (Phase Completion)
+
 - Phase 1 (Foundation): COMPLETE — multiplayer chat, multi-provider AI, OAuth, reconnection
 - Phase 2 (Character Integration): COMPLETE — character builder, character sheet, party list, native 5e.tools database
 - Phase 3 (Game State & Rules): COMPLETE — dice, spell tracking, HP, state resolver, initiative, skill check flow, event log with rollback, editable system prompt
@@ -247,12 +272,14 @@ pnpm deploy:web     # Deploy web only
 - Phase 6 (Polish): NOT STARTED
 
 ## Testing
+
 - **Automated tests** (Playwright) live in `tests/` and `playwright.config.ts` at the repo root — these are committed to the repo.
 - **Temporary test artifacts** (snapshots, reports, screenshots) go in `.testing/` which is gitignored. Always place disposable/generated test-related files here so they stay out of git.
 - `pnpm test` — starts dev servers, runs all tests, then stops servers
 - `pnpm test:ui` — opens Playwright UI runner (servers must be running)
 
 ## Coding Conventions
+
 - TypeScript strict mode everywhere
 - ESM modules (type: "module" in worker and mcp-bridge)
 - No external LLM SDKs — AI runs through Claude Code MCP

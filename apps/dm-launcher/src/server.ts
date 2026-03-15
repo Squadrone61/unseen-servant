@@ -22,7 +22,7 @@ export async function startServer(): Promise<void> {
   if (!roomCode) {
     console.error(
       "Error: UNSEEN_ROOM_CODE environment variable is required.\n" +
-        "This is set automatically by the CLI launcher."
+        "This is set automatically by the CLI launcher.",
     );
     process.exit(1);
   }
@@ -45,6 +45,6 @@ export async function startServer(): Promise<void> {
   await mcpServer.connect(transport);
 
   console.error(
-    `[unseen-servant] MCP server started, connected to room ${roomCode} via ${workerUrl}`
+    `[unseen-servant] MCP server started, connected to room ${roomCode} via ${workerUrl}`,
   );
 }

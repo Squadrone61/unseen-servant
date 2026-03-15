@@ -59,13 +59,7 @@ export interface GridPosition {
   y: number;
 }
 
-export type CreatureSize =
-  | "tiny"
-  | "small"
-  | "medium"
-  | "large"
-  | "huge"
-  | "gargantuan";
+export type CreatureSize = "tiny" | "small" | "medium" | "large" | "huge" | "gargantuan";
 
 // ─── Combatant ───
 // Player combatants bind to CharacterDynamicData — HP, conditions, etc. are
@@ -120,14 +114,7 @@ export interface EncounterState {
 
 // ─── Battle Map ───
 
-export type TileType =
-  | "floor"
-  | "wall"
-  | "difficult_terrain"
-  | "water"
-  | "pit"
-  | "door"
-  | "stairs";
+export type TileType = "floor" | "wall" | "difficult_terrain" | "water" | "pit" | "door" | "stairs";
 
 export interface MapTile {
   type: TileType;

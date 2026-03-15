@@ -139,12 +139,7 @@ export const battleMapStateSchema = z.object({
 
 // ─── Encounter ───
 
-export const encounterPhaseSchema = z.enum([
-  "exploration",
-  "combat",
-  "social",
-  "rest",
-]);
+export const encounterPhaseSchema = z.enum(["exploration", "combat", "social", "rest"]);
 
 export const encounterStateSchema = z.object({
   id: z.string(),
@@ -155,18 +150,19 @@ export const encounterStateSchema = z.object({
 
 // ─── Pacing ───
 
-export const pacingProfileSchema = z.enum([
-  "story-heavy",
-  "balanced",
-  "combat-heavy",
-]);
+export const pacingProfileSchema = z.enum(["story-heavy", "balanced", "combat-heavy"]);
 
 export const encounterLengthSchema = z.enum(["quick", "standard", "epic"]);
 
 // ─── State Changes ───
 
 export const stateChangeSchema = z.union([
-  z.object({ type: z.literal("damage"), target: z.string(), amount: z.number(), damageType: z.string().optional() }),
+  z.object({
+    type: z.literal("damage"),
+    target: z.string(),
+    amount: z.number(),
+    damageType: z.string().optional(),
+  }),
   z.object({ type: z.literal("healing"), target: z.string(), amount: z.number() }),
   z.object({ type: z.literal("temp_hp"), target: z.string(), amount: z.number() }),
   z.object({ type: z.literal("hp_set"), target: z.string(), value: z.number() }),
@@ -175,16 +171,41 @@ export const stateChangeSchema = z.union([
   z.object({ type: z.literal("spell_slot_use"), target: z.string(), level: z.number() }),
   z.object({ type: z.literal("spell_slot_restore"), target: z.string(), level: z.number() }),
   z.object({ type: z.literal("resource_use"), target: z.string(), resource: z.string() }),
-  z.object({ type: z.literal("resource_restore"), target: z.string(), resource: z.string(), amount: z.number() }),
+  z.object({
+    type: z.literal("resource_restore"),
+    target: z.string(),
+    resource: z.string(),
+    amount: z.number(),
+  }),
   z.object({ type: z.literal("death_save"), target: z.string(), success: z.boolean() }),
   z.object({ type: z.literal("xp_gain"), target: z.string(), amount: z.number() }),
-  z.object({ type: z.literal("item_add"), target: z.string(), item: z.string(), quantity: z.number() }),
-  z.object({ type: z.literal("item_remove"), target: z.string(), item: z.string(), quantity: z.number() }),
-  z.object({ type: z.literal("item_update"), target: z.string(), item: z.string(), changes: z.string() }),
+  z.object({
+    type: z.literal("item_add"),
+    target: z.string(),
+    item: z.string(),
+    quantity: z.number(),
+  }),
+  z.object({
+    type: z.literal("item_remove"),
+    target: z.string(),
+    item: z.string(),
+    quantity: z.number(),
+  }),
+  z.object({
+    type: z.literal("item_update"),
+    target: z.string(),
+    item: z.string(),
+    changes: z.string(),
+  }),
   z.object({ type: z.literal("combatant_add"), combatant: combatantSchema }),
   z.object({ type: z.literal("combatant_remove"), combatantId: z.string() }),
   z.object({ type: z.literal("initiative_set"), combatantId: z.string(), value: z.number() }),
-  z.object({ type: z.literal("move"), combatantId: z.string(), from: gridPositionSchema, to: gridPositionSchema }),
+  z.object({
+    type: z.literal("move"),
+    combatantId: z.string(),
+    from: gridPositionSchema,
+    to: gridPositionSchema,
+  }),
   z.object({ type: z.literal("combat_phase"), phase: combatPhaseSchema }),
   z.object({ type: z.literal("encounter_phase"), phase: encounterPhaseSchema }),
 ]);
@@ -192,14 +213,34 @@ export const stateChangeSchema = z.union([
 // ─── Event Log ───
 
 export const gameEventTypeSchema = z.enum([
-  "damage", "healing", "condition_added", "condition_removed",
-  "spell_slot_used", "spell_slot_restored", "resource_used", "resource_restored",
-  "hp_set", "temp_hp_set",
-  "death_save", "combat_start", "combat_end", "turn_start", "turn_end",
-  "check_requested", "check_resolved", "initiative_rolled",
-  "rest_short", "rest_long", "item_added", "item_removed", "item_updated",
-  "xp_gained", "inspiration_granted", "inspiration_used",
-  "ai_response", "custom",
+  "damage",
+  "healing",
+  "condition_added",
+  "condition_removed",
+  "spell_slot_used",
+  "spell_slot_restored",
+  "resource_used",
+  "resource_restored",
+  "hp_set",
+  "temp_hp_set",
+  "death_save",
+  "combat_start",
+  "combat_end",
+  "turn_start",
+  "turn_end",
+  "check_requested",
+  "check_resolved",
+  "initiative_rolled",
+  "rest_short",
+  "rest_long",
+  "item_added",
+  "item_removed",
+  "item_updated",
+  "xp_gained",
+  "inspiration_granted",
+  "inspiration_used",
+  "ai_response",
+  "custom",
 ]);
 
 // Note: We use z.any() for the stateBefore snapshot since it contains
@@ -248,4 +289,3 @@ export const gameStateSchema = z.object({
   pendingCheck: checkRequestSchema.optional(),
   journal: campaignJournalSchema.optional(),
 });
-

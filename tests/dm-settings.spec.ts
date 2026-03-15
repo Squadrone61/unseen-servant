@@ -6,26 +6,20 @@ import { test, expect } from "@playwright/test";
  */
 async function createRoomAndSetup(
   page: import("@playwright/test").Page,
-  playerName: string
+  playerName: string,
 ): Promise<string> {
   const res = await page.request.post("http://localhost:8787/api/rooms/create");
   const { roomCode } = await res.json();
 
-  await page.addInitScript(
-    (name) => {
-      localStorage.setItem("playerName", name);
-    },
-    playerName
-  );
+  await page.addInitScript((name) => {
+    localStorage.setItem("playerName", name);
+  }, playerName);
 
   return roomCode;
 }
 
 /** Wait for room to fully load (room code visible in sidebar). */
-async function waitForRoom(
-  page: import("@playwright/test").Page,
-  roomCode: string
-) {
+async function waitForRoom(page: import("@playwright/test").Page, roomCode: string) {
   await expect(page.getByText(roomCode).first()).toBeVisible({
     timeout: 15_000,
   });
@@ -64,17 +58,13 @@ test.describe("Sidebar", () => {
     await expect(page.getByText("Narration Volume")).not.toBeVisible();
   });
 
-  test("non-host player does not see Configure Campaign", async ({
-    browser,
-  }) => {
+  test("non-host player does not see Configure Campaign", async ({ browser }) => {
     const ctx1 = await browser.newContext();
     const ctx2 = await browser.newContext();
     const host = await ctx1.newPage();
     const player = await ctx2.newPage();
 
-    const res = await host.request.post(
-      "http://localhost:8787/api/rooms/create"
-    );
+    const res = await host.request.post("http://localhost:8787/api/rooms/create");
     const { roomCode } = await res.json();
 
     await host.addInitScript(() => {
@@ -94,9 +84,7 @@ test.describe("Sidebar", () => {
     await waitForRoom(player, roomCode);
 
     // Player should NOT see Configure Campaign
-    await expect(
-      player.getByText("Configure Campaign")
-    ).not.toBeVisible();
+    await expect(player.getByText("Configure Campaign")).not.toBeVisible();
 
     await ctx1.close();
     await ctx2.close();

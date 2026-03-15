@@ -30,41 +30,8 @@ import { StatsTab } from "./tabs/StatsTab";
 
 // ─── Helpers ───
 
-function findAdvantages(
-  advantages: AdvantageEntry[],
-  ...subTypes: string[]
-): AdvantageEntry[] {
+function findAdvantages(advantages: AdvantageEntry[], ...subTypes: string[]): AdvantageEntry[] {
   return advantages.filter((a) => subTypes.includes(a.subType));
-}
-
-function AdvMarker({
-  entries,
-  className = "",
-}: {
-  entries: AdvantageEntry[];
-  className?: string;
-}) {
-  if (entries.length === 0) return null;
-
-  const hasAdv = entries.some((e) => e.type === "advantage");
-  const hasDisadv = entries.some((e) => e.type === "disadvantage");
-
-  const tooltipLines = entries.map((e) => {
-    const prefix = e.type === "advantage" ? "ADV" : "DIS";
-    return e.restriction ? `${prefix}: ${e.restriction}` : prefix;
-  });
-  const tooltip = tooltipLines.join("\n");
-
-  return (
-    <span className={`shrink-0 ${className}`} title={tooltip}>
-      {hasAdv && (
-        <span className="text-xs text-green-400 font-bold">▲</span>
-      )}
-      {hasDisadv && (
-        <span className="text-xs text-red-400 font-bold">▼</span>
-      )}
-    </span>
-  );
 }
 
 // ─── Types ───
@@ -138,7 +105,12 @@ export function CharacterSheet({ character }: CharacterSheetProps) {
       <div className="shrink-0 p-3 space-y-3">
         {/* Character Identity */}
         <div>
-          <h2 className="text-lg font-bold text-amber-200/90" style={{ fontFamily: "var(--font-cinzel)" }}>{s.name}</h2>
+          <h2
+            className="text-lg font-bold text-amber-200/90"
+            style={{ fontFamily: "var(--font-cinzel)" }}
+          >
+            {s.name}
+          </h2>
           <div className="text-xs text-gray-400">
             {s.species || s.race} &middot; {formatClassString(s.classes)} &middot; Lvl{" "}
             {getTotalLevel(s.classes)}
@@ -152,36 +124,24 @@ export function CharacterSheet({ character }: CharacterSheetProps) {
         <div className="grid grid-cols-3 gap-1.5 text-center">
           <div className="bg-gray-900/60 border border-gray-700/50 rounded py-1">
             <div className="text-xs text-gray-500 uppercase">AC</div>
-            <div className="text-base font-bold text-gray-200">
-              {s.armorClass}
-            </div>
+            <div className="text-base font-bold text-gray-200">{s.armorClass}</div>
           </div>
           <div className="bg-gray-900/60 border border-gray-700/50 rounded py-1">
             <div className="text-xs text-gray-500 uppercase">Speed</div>
-            <div className="text-base font-bold text-gray-200">
-              {s.speed} ft
-            </div>
+            <div className="text-base font-bold text-gray-200">{s.speed} ft</div>
           </div>
           <div className="bg-gray-900/60 border border-gray-700/50 rounded py-1">
             <div className="text-xs text-gray-500 uppercase">Prof</div>
-            <div className="text-base font-bold text-gray-200">
-              +{s.proficiencyBonus}
-            </div>
+            <div className="text-base font-bold text-gray-200">+{s.proficiencyBonus}</div>
           </div>
           {isCaster ? (
             <>
               <div className="bg-gray-900/60 border border-gray-700/50 rounded py-1">
-                <div className="text-xs text-gray-500 uppercase">
-                  Spell DC
-                </div>
-                <div className="text-base font-bold text-gray-200">
-                  {s.spellSaveDC}
-                </div>
+                <div className="text-xs text-gray-500 uppercase">Spell DC</div>
+                <div className="text-base font-bold text-gray-200">{s.spellSaveDC}</div>
               </div>
               <div className="bg-gray-900/60 border border-gray-700/50 rounded py-1">
-                <div className="text-xs text-gray-500 uppercase">
-                  Spell Atk
-                </div>
+                <div className="text-xs text-gray-500 uppercase">Spell Atk</div>
                 <div className="text-base font-bold text-gray-200">
                   {formatBonus(s.spellAttackBonus ?? 0)}
                 </div>
@@ -203,14 +163,18 @@ export function CharacterSheet({ character }: CharacterSheetProps) {
               </div>
               <div className="bg-gray-900/60 border border-gray-700/50 rounded py-1">
                 <div className="text-xs text-gray-500 uppercase">Hit Dice</div>
-                <div className="text-base font-bold text-gray-200">
-                  {getTotalLevel(s.classes)}
-                </div>
+                <div className="text-base font-bold text-gray-200">{getTotalLevel(s.classes)}</div>
               </div>
               <div className="bg-gray-900/60 border border-gray-700/50 rounded py-1">
                 <div className="text-xs text-gray-500 uppercase">Passive</div>
                 <div className="text-base font-bold text-gray-200">
-                  {parseInt(s.senses.find((sense) => sense.startsWith("Passive Perception"))?.split(" ").at(-1) ?? String(10 + getModifier(s.abilities.wisdom)), 10)}
+                  {parseInt(
+                    s.senses
+                      .find((sense) => sense.startsWith("Passive Perception"))
+                      ?.split(" ")
+                      .at(-1) ?? String(10 + getModifier(s.abilities.wisdom)),
+                    10,
+                  )}
                 </div>
               </div>
             </>
@@ -218,15 +182,21 @@ export function CharacterSheet({ character }: CharacterSheetProps) {
         </div>
 
         {/* Heroic Inspiration */}
-        <div className={`flex items-center gap-1.5 rounded px-2 py-0.5 ${
-          d.heroicInspiration
-            ? "bg-yellow-900/20 border border-yellow-700/40"
-            : "bg-gray-900/30 border border-gray-700/30"
-        }`}>
-          <span className={`text-sm ${d.heroicInspiration ? "text-yellow-400 drop-shadow-[0_0_4px_rgba(250,204,21,0.4)]" : "text-gray-600"}`}>
+        <div
+          className={`flex items-center gap-1.5 rounded px-2 py-0.5 ${
+            d.heroicInspiration
+              ? "bg-yellow-900/20 border border-yellow-700/40"
+              : "bg-gray-900/30 border border-gray-700/30"
+          }`}
+        >
+          <span
+            className={`text-sm ${d.heroicInspiration ? "text-yellow-400 drop-shadow-[0_0_4px_rgba(250,204,21,0.4)]" : "text-gray-600"}`}
+          >
             {d.heroicInspiration ? "\u2605" : "\u2606"}
           </span>
-          <span className={`text-xs font-medium ${d.heroicInspiration ? "text-yellow-300" : "text-gray-600"}`}>
+          <span
+            className={`text-xs font-medium ${d.heroicInspiration ? "text-yellow-300" : "text-gray-600"}`}
+          >
             Heroic Inspiration
           </span>
         </div>
@@ -234,7 +204,10 @@ export function CharacterSheet({ character }: CharacterSheetProps) {
         {/* Conditions */}
         {d.conditions.length > 0 && (
           <div>
-            <div className="text-sm text-gray-500 uppercase tracking-wider font-medium mb-1" style={{ fontFamily: "var(--font-cinzel)" }}>
+            <div
+              className="text-sm text-gray-500 uppercase tracking-wider font-medium mb-1"
+              style={{ fontFamily: "var(--font-cinzel)" }}
+            >
               Conditions
             </div>
             <div className="flex flex-wrap gap-1">
@@ -259,9 +232,7 @@ export function CharacterSheet({ character }: CharacterSheetProps) {
                 <span
                   key={i}
                   className={`inline-block w-2 h-2 rounded-full mx-0.5 ${
-                    i < d.deathSaves.successes
-                      ? "bg-green-500"
-                      : "bg-gray-700"
+                    i < d.deathSaves.successes ? "bg-green-500" : "bg-gray-700"
                   }`}
                 />
               ))}
@@ -282,71 +253,50 @@ export function CharacterSheet({ character }: CharacterSheetProps) {
 
         {/* Ability Scores — compact 6-column row */}
         <div className="grid grid-cols-6 gap-1">
-          {(
-            Object.entries(ABILITY_NAMES) as [keyof AbilityScores, string][]
-          ).map(([key, label]) => {
-            const score = s.abilities[key];
-            const mod = getModifier(score);
-            const modStr = formatModifier(score);
-            const abilityAdvs = findAdvantages(
-              s.advantages,
-              `${key}-ability-checks`
-            );
-            const hasAdv = abilityAdvs.some((a) => a.type === "advantage");
-            const hasDisadv = abilityAdvs.some(
-              (a) => a.type === "disadvantage"
-            );
-            const advTooltip = abilityAdvs
-              .map((a) => {
-                const prefix = a.type === "advantage" ? "ADV" : "DIS";
-                return a.restriction
-                  ? `${prefix}: ${a.restriction}`
-                  : prefix;
-              })
-              .join("\n");
-            return (
-              <div
-                key={key}
-                className="bg-gray-900/60 border border-gray-700/50 rounded p-1 py-1.5 text-center relative cursor-pointer hover:border-amber-500/50 hover:bg-gray-900/70 transition-colors"
-                onClick={(e) => setPopup({ type: "ability", id: key, position: { x: e.clientX, y: e.clientY } })}
-              >
-                <div className="text-xs text-gray-500 uppercase tracking-wider font-medium">
-                  {label}
-                </div>
+          {(Object.entries(ABILITY_NAMES) as [keyof AbilityScores, string][]).map(
+            ([key, label]) => {
+              const score = s.abilities[key];
+              const mod = getModifier(score);
+              const modStr = formatModifier(score);
+              const abilityAdvs = findAdvantages(s.advantages, `${key}-ability-checks`);
+              const hasAdv = abilityAdvs.some((a) => a.type === "advantage");
+              const hasDisadv = abilityAdvs.some((a) => a.type === "disadvantage");
+              const advTooltip = abilityAdvs
+                .map((a) => {
+                  const prefix = a.type === "advantage" ? "ADV" : "DIS";
+                  return a.restriction ? `${prefix}: ${a.restriction}` : prefix;
+                })
+                .join("\n");
+              return (
                 <div
-                  className={`text-sm font-bold ${
-                    mod > 0
-                      ? "text-green-400"
-                      : mod < 0
-                      ? "text-red-400"
-                      : "text-gray-300"
-                  }`}
+                  key={key}
+                  className="bg-gray-900/60 border border-gray-700/50 rounded p-1 py-1.5 text-center relative cursor-pointer hover:border-amber-500/50 hover:bg-gray-900/70 transition-colors"
+                  onClick={(e) =>
+                    setPopup({ type: "ability", id: key, position: { x: e.clientX, y: e.clientY } })
+                  }
                 >
-                  {modStr}
-                </div>
-                <div className="text-xs text-gray-500">{score}</div>
-                {(hasAdv || hasDisadv) && (
-                  <span
-                    className="absolute top-0.5 right-0.5"
-                    title={advTooltip}
+                  <div className="text-xs text-gray-500 uppercase tracking-wider font-medium">
+                    {label}
+                  </div>
+                  <div
+                    className={`text-sm font-bold ${
+                      mod > 0 ? "text-green-400" : mod < 0 ? "text-red-400" : "text-gray-300"
+                    }`}
                   >
-                    {hasAdv && (
-                      <span className="text-xs text-green-400 font-bold">
-                        ▲
-                      </span>
-                    )}
-                    {hasDisadv && (
-                      <span className="text-xs text-red-400 font-bold">
-                        ▼
-                      </span>
-                    )}
-                  </span>
-                )}
-              </div>
-            );
-          })}
+                    {modStr}
+                  </div>
+                  <div className="text-xs text-gray-500">{score}</div>
+                  {(hasAdv || hasDisadv) && (
+                    <span className="absolute top-0.5 right-0.5" title={advTooltip}>
+                      {hasAdv && <span className="text-xs text-green-400 font-bold">▲</span>}
+                      {hasDisadv && <span className="text-xs text-red-400 font-bold">▼</span>}
+                    </span>
+                  )}
+                </div>
+              );
+            },
+          )}
         </div>
-
       </div>
 
       {/* ═══ TAB BAR ═══ */}
@@ -358,13 +308,13 @@ export function CharacterSheet({ character }: CharacterSheetProps) {
 
       {/* ═══ TAB CONTENT (scrollable, fills remaining space) ═══ */}
       <div className="flex-1 overflow-y-auto p-3">
-        {activeTab === "stats" && (
-          <StatsTab character={character} />
-        )}
+        {activeTab === "stats" && <StatsTab character={character} />}
         {activeTab === "actions" && (
           <ActionsTab
             character={character}
-            onItemClick={(item, e) => setPopup({ type: "item", item, position: { x: e.clientX, y: e.clientY } })}
+            onItemClick={(item, e) =>
+              setPopup({ type: "item", item, position: { x: e.clientX, y: e.clientY } })
+            }
             onFeatureClick={(feature, e) =>
               setPopup({ type: "feature", feature, position: { x: e.clientX, y: e.clientY } })
             }
@@ -381,7 +331,9 @@ export function CharacterSheet({ character }: CharacterSheetProps) {
         {activeTab === "inventory" && (
           <InventoryTab
             character={character}
-            onItemClick={(item, e) => setPopup({ type: "item", item, position: { x: e.clientX, y: e.clientY } })}
+            onItemClick={(item, e) =>
+              setPopup({ type: "item", item, position: { x: e.clientX, y: e.clientY } })
+            }
           />
         )}
         {activeTab === "features" && (

@@ -54,10 +54,7 @@ export function FeaturesTab({ character, onFeatureClick }: FeaturesTabProps) {
   }, [filtered, filter]);
 
   const hasTraits =
-    s.traits.personalityTraits ||
-    s.traits.ideals ||
-    s.traits.bonds ||
-    s.traits.flaws;
+    s.traits.personalityTraits || s.traits.ideals || s.traits.bonds || s.traits.flaws;
 
   return (
     <div className="space-y-2">
@@ -67,7 +64,10 @@ export function FeaturesTab({ character, onFeatureClick }: FeaturesTabProps) {
       {groups.map((group) => (
         <div key={group.key}>
           {group.label && (
-            <div className="text-sm text-gray-500 uppercase tracking-wider font-medium mb-0.5 px-1.5" style={{ fontFamily: "var(--font-cinzel)" }}>
+            <div
+              className="text-sm text-gray-500 uppercase tracking-wider font-medium mb-0.5 px-1.5"
+              style={{ fontFamily: "var(--font-cinzel)" }}
+            >
               {group.label} ({group.features.length})
             </div>
           )}
@@ -80,17 +80,11 @@ export function FeaturesTab({ character, onFeatureClick }: FeaturesTabProps) {
                     ? "text-gray-300 cursor-pointer hover:text-amber-300 hover:bg-gray-800/60 transition-colors"
                     : "text-gray-400"
                 }`}
-                onClick={
-                  feat.description
-                    ? (e) => onFeatureClick(feat, e)
-                    : undefined
-                }
+                onClick={feat.description ? (e) => onFeatureClick(feat, e) : undefined}
               >
                 <span className="truncate">{feat.name}</span>
                 {feat.source === "class" && feat.sourceLabel && (
-                  <span className="text-xs text-amber-400/60 shrink-0">
-                    {feat.sourceLabel}
-                  </span>
+                  <span className="text-xs text-amber-400/60 shrink-0">{feat.sourceLabel}</span>
                 )}
               </div>
             ))}
@@ -99,9 +93,7 @@ export function FeaturesTab({ character, onFeatureClick }: FeaturesTabProps) {
       ))}
 
       {s.features.length === 0 && (
-        <div className="text-xs text-gray-600 text-center py-4">
-          No features
-        </div>
+        <div className="text-xs text-gray-600 text-center py-4">No features</div>
       )}
 
       {/* Divider — traits & appearance */}
@@ -115,44 +107,32 @@ export function FeaturesTab({ character, onFeatureClick }: FeaturesTabProps) {
                 className="flex items-center justify-between w-full text-xs text-gray-400 font-medium px-1.5"
               >
                 <span>Traits</span>
-                <span className="text-gray-600">
-                  {traitsOpen ? "\u2212" : "+"}
-                </span>
+                <span className="text-gray-600">{traitsOpen ? "\u2212" : "+"}</span>
               </button>
               {traitsOpen && (
                 <div className="mt-1 space-y-1 px-1.5">
                   {s.traits.personalityTraits && (
                     <div>
-                      <div className="text-xs text-gray-500">
-                        Personality
-                      </div>
-                      <div className="text-xs text-gray-300">
-                        {s.traits.personalityTraits}
-                      </div>
+                      <div className="text-xs text-gray-500">Personality</div>
+                      <div className="text-xs text-gray-300">{s.traits.personalityTraits}</div>
                     </div>
                   )}
                   {s.traits.ideals && (
                     <div>
                       <div className="text-xs text-gray-500">Ideals</div>
-                      <div className="text-xs text-gray-300">
-                        {s.traits.ideals}
-                      </div>
+                      <div className="text-xs text-gray-300">{s.traits.ideals}</div>
                     </div>
                   )}
                   {s.traits.bonds && (
                     <div>
                       <div className="text-xs text-gray-500">Bonds</div>
-                      <div className="text-xs text-gray-300">
-                        {s.traits.bonds}
-                      </div>
+                      <div className="text-xs text-gray-300">{s.traits.bonds}</div>
                     </div>
                   )}
                   {s.traits.flaws && (
                     <div>
                       <div className="text-xs text-gray-500">Flaws</div>
-                      <div className="text-xs text-gray-300">
-                        {s.traits.flaws}
-                      </div>
+                      <div className="text-xs text-gray-300">{s.traits.flaws}</div>
                     </div>
                   )}
                 </div>
@@ -168,9 +148,7 @@ export function FeaturesTab({ character, onFeatureClick }: FeaturesTabProps) {
                 className="flex items-center justify-between w-full text-xs text-gray-400 font-medium px-1.5"
               >
                 <span>Appearance</span>
-                <span className="text-gray-600">
-                  {appearanceOpen ? "\u2212" : "+"}
-                </span>
+                <span className="text-gray-600">{appearanceOpen ? "\u2212" : "+"}</span>
               </button>
               {appearanceOpen && (
                 <div className="mt-1 grid grid-cols-2 gap-x-3 gap-y-0.5 px-1.5">

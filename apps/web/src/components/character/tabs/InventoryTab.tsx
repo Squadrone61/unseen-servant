@@ -57,25 +57,18 @@ export function InventoryTab({ character, onItemClick }: InventoryTabProps) {
       {/* Currency */}
       {hasCurrency && (
         <div className="px-1.5 pb-1 border-b border-gray-700/40">
-          <div className="text-sm text-gray-500 uppercase tracking-wider font-medium mb-0.5" style={{ fontFamily: "var(--font-cinzel)" }}>
+          <div
+            className="text-sm text-gray-500 uppercase tracking-wider font-medium mb-0.5"
+            style={{ fontFamily: "var(--font-cinzel)" }}
+          >
             Currency
           </div>
           <div className="flex flex-wrap gap-2 text-xs">
-            {d.currency.pp > 0 && (
-              <span className="text-gray-300">{d.currency.pp} PP</span>
-            )}
-            {d.currency.gp > 0 && (
-              <span className="text-yellow-400">{d.currency.gp} GP</span>
-            )}
-            {d.currency.ep > 0 && (
-              <span className="text-gray-300">{d.currency.ep} EP</span>
-            )}
-            {d.currency.sp > 0 && (
-              <span className="text-gray-400">{d.currency.sp} SP</span>
-            )}
-            {d.currency.cp > 0 && (
-              <span className="text-orange-400">{d.currency.cp} CP</span>
-            )}
+            {d.currency.pp > 0 && <span className="text-gray-300">{d.currency.pp} PP</span>}
+            {d.currency.gp > 0 && <span className="text-yellow-400">{d.currency.gp} GP</span>}
+            {d.currency.ep > 0 && <span className="text-gray-300">{d.currency.ep} EP</span>}
+            {d.currency.sp > 0 && <span className="text-gray-400">{d.currency.sp} SP</span>}
+            {d.currency.cp > 0 && <span className="text-orange-400">{d.currency.cp} CP</span>}
           </div>
         </div>
       )}
@@ -83,9 +76,7 @@ export function InventoryTab({ character, onItemClick }: InventoryTabProps) {
       <FilterChipBar chips={chips} activeChipId={filter} onSelect={setFilter} />
 
       {sorted.length === 0 && (
-        <div className="text-xs text-gray-600 text-center py-4">
-          No items
-        </div>
+        <div className="text-xs text-gray-600 text-center py-4">No items</div>
       )}
 
       <div className="space-y-0.5">
@@ -94,8 +85,8 @@ export function InventoryTab({ character, onItemClick }: InventoryTabProps) {
             item.rarity && RARITY_COLORS[item.rarity]
               ? RARITY_COLORS[item.rarity]
               : item.equipped
-              ? "text-gray-200"
-              : "text-gray-400";
+                ? "text-gray-200"
+                : "text-gray-400";
 
           return (
             <div
@@ -115,9 +106,7 @@ export function InventoryTab({ character, onItemClick }: InventoryTabProps) {
                 className={`truncate flex-1 group-hover:text-amber-300 transition-colors ${rarityColor}`}
               >
                 {item.name}
-                {item.isMagicItem && (
-                  <span className="text-amber-400 ml-0.5">✦</span>
-                )}
+                {item.isMagicItem && <span className="text-amber-400 ml-0.5">✦</span>}
               </span>
 
               {/* Attunement indicator */}
@@ -134,17 +123,11 @@ export function InventoryTab({ character, onItemClick }: InventoryTabProps) {
 
               {/* Quantity */}
               {item.quantity > 1 && (
-                <span className="text-gray-500 text-xs shrink-0">
-                  ×{item.quantity}
-                </span>
+                <span className="text-gray-500 text-xs shrink-0">×{item.quantity}</span>
               )}
 
               {/* Type badge */}
-              {item.type && (
-                <span className="text-xs text-gray-600 shrink-0">
-                  {item.type}
-                </span>
-              )}
+              {item.type && <span className="text-xs text-gray-600 shrink-0">{item.type}</span>}
             </div>
           );
         })}

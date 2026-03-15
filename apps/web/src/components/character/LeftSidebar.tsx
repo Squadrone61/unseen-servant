@@ -14,30 +14,21 @@ interface LeftSidebarProps {
   onOpenSettings: () => void;
 }
 
-export function LeftSidebar({ character, libraryId, onCharacterImported, onOpenSettings }: LeftSidebarProps) {
+export function LeftSidebar({
+  character,
+  libraryId,
+  onCharacterImported,
+  onOpenSettings,
+}: LeftSidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const { characters, touchCharacter } = useCharacterLibrary();
 
   if (collapsed) {
     return (
       <div className="w-10 bg-gray-800/60 border-r border-gray-700/40 flex flex-col items-center pt-3 shrink-0">
-        <Button
-          variant="icon"
-          onClick={() => setCollapsed(false)}
-          title="Show character sheet"
-        >
-          <svg
-            className="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M9 5l7 7-7 7"
-            />
+        <Button variant="icon" onClick={() => setCollapsed(false)} title="Show character sheet">
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>
         </Button>
       </div>
@@ -52,17 +43,8 @@ export function LeftSidebar({ character, libraryId, onCharacterImported, onOpenS
           <Button variant="danger" size="xs" href="/">
             Quit
           </Button>
-          <Button
-            variant="icon"
-            onClick={onOpenSettings}
-            title="Settings"
-          >
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
+          <Button variant="icon" onClick={onOpenSettings} title="Settings">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -77,31 +59,29 @@ export function LeftSidebar({ character, libraryId, onCharacterImported, onOpenS
               />
             </svg>
           </Button>
-          {character && libraryId && characters.find(c => c.id === libraryId && c.builderChoices) && (
-            <Button
-              variant="ghost"
-              size="xs"
-              href={`/characters/${libraryId}/edit`}
-              target="_blank"
-            >
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-              </svg>
-              Update Character
-            </Button>
-          )}
+          {character &&
+            libraryId &&
+            characters.find((c) => c.id === libraryId && c.builderChoices) && (
+              <Button
+                variant="ghost"
+                size="xs"
+                href={`/characters/${libraryId}/edit`}
+                target="_blank"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                  />
+                </svg>
+                Update Character
+              </Button>
+            )}
         </div>
-        <Button
-          variant="icon"
-          onClick={() => setCollapsed(true)}
-          title="Collapse"
-        >
-          <svg
-            className="w-4 h-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
+        <Button variant="icon" onClick={() => setCollapsed(true)} title="Collapse">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -140,11 +120,11 @@ function CharacterPicker({
   if (characters.length === 0) {
     return (
       <div className="p-4 text-center space-y-3">
-        <div className="text-gray-400 text-sm" style={{ fontFamily: "var(--font-cinzel)" }}>No characters</div>
+        <div className="text-gray-400 text-sm" style={{ fontFamily: "var(--font-cinzel)" }}>
+          No characters
+        </div>
         <div className="w-12 h-px bg-gradient-to-r from-transparent via-amber-500/30 to-transparent mx-auto" />
-        <p className="text-gray-600 text-xs">
-          Create or import a character to get started.
-        </p>
+        <p className="text-gray-600 text-xs">Create or import a character to get started.</p>
         <div className="flex flex-col gap-2">
           <Button size="xs" href="/characters/create" target="_blank" fullWidth>
             Create Character
@@ -162,7 +142,10 @@ function CharacterPicker({
 
   return (
     <div className="p-3 space-y-2 overflow-y-auto">
-      <div className="text-sm text-gray-500 uppercase tracking-wider font-medium mb-2" style={{ fontFamily: "var(--font-cinzel)" }}>
+      <div
+        className="text-sm text-gray-500 uppercase tracking-wider font-medium mb-2"
+        style={{ fontFamily: "var(--font-cinzel)" }}
+      >
         Select a character
       </div>
       {characters.map((saved) => {
@@ -173,7 +156,10 @@ function CharacterPicker({
             onClick={() => onSelect(saved)}
             className="w-full text-left bg-gray-900/50 hover:bg-gray-700/50 border border-gray-700/40 hover:border-gray-600/60 rounded-lg p-2.5 transition-colors"
           >
-            <div className="text-sm font-medium text-amber-300 truncate" style={{ fontFamily: "var(--font-cinzel)" }}>
+            <div
+              className="text-sm font-medium text-amber-300 truncate"
+              style={{ fontFamily: "var(--font-cinzel)" }}
+            >
               {s.name}
             </div>
             <div className="text-xs text-gray-400 truncate">

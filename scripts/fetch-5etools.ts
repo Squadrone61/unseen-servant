@@ -13,8 +13,7 @@ import { fileURLToPath } from "url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const RAW_DIR = join(__dirname, "5etools-raw");
-const BASE_URL =
-  "https://raw.githubusercontent.com/5etools-mirror-3/5etools-src/main/data";
+const BASE_URL = "https://raw.githubusercontent.com/5etools-mirror-3/5etools-src/main/data";
 
 // Indexed categories: fetched per-source
 const INDEXED_SPELLS = ["spells-xphb", "spells-tce", "spells-xge"];
@@ -94,14 +93,12 @@ async function main() {
   const needed = allFiles.filter((f) => !alreadyCached(f));
 
   if (needed.length === 0) {
-    console.log(
-      "All files already cached in 5etools-raw/. Delete the directory to re-fetch."
-    );
+    console.log("All files already cached in 5etools-raw/. Delete the directory to re-fetch.");
     return;
   }
 
   console.log(
-    `Fetching ${needed.length} files (${allFiles.length - needed.length} already cached)...`
+    `Fetching ${needed.length} files (${allFiles.length - needed.length} already cached)...`,
   );
 
   // Fetch indexed spell files

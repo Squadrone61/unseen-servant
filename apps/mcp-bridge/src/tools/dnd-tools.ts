@@ -19,9 +19,7 @@ Include \`targetCharacter\` + \`checkType: "damage"\` + full \`notation\`. The p
 
 If \`targetCharacter\` is provided → Mode 2/2b. Otherwise → Mode 1.`,
     {
-      notation: z
-        .string()
-        .describe("Dice notation, e.g. '2d6+3', 'd20', '4d8', '1d20+5'"),
+      notation: z.string().describe("Dice notation, e.g. '2d6+3', 'd20', '4d8', '1d20+5'"),
       reason: z
         .string()
         .optional()
@@ -33,7 +31,9 @@ If \`targetCharacter\` is provided → Mode 2/2b. Otherwise → Mode 1.`,
       checkType: z
         .enum(["ability", "skill", "saving_throw", "attack", "custom", "damage"])
         .optional()
-        .describe("Type of check (required when targetCharacter is set). Use 'damage' for interactive player damage rolls."),
+        .describe(
+          "Type of check (required when targetCharacter is set). Use 'damage' for interactive player damage rolls.",
+        ),
       ability: z
         .string()
         .optional()
@@ -42,29 +42,35 @@ If \`targetCharacter\` is provided → Mode 2/2b. Otherwise → Mode 1.`,
         .string()
         .optional()
         .describe("Skill name for skill checks, e.g. 'perception', 'stealth'"),
-      dc: z
-        .number()
-        .optional()
-        .describe("Difficulty Class for the check"),
-      advantage: z
-        .boolean()
-        .optional()
-        .describe("Roll with advantage (roll 2d20, take higher)"),
+      dc: z.number().optional().describe("Difficulty Class for the check"),
+      advantage: z.boolean().optional().describe("Roll with advantage (roll 2d20, take higher)"),
       disadvantage: z
         .boolean()
         .optional()
         .describe("Roll with disadvantage (roll 2d20, take lower)"),
     },
-    async ({ notation, reason, targetCharacter, checkType, ability, skill, dc, advantage, disadvantage }) => {
+    async ({
+      notation,
+      reason,
+      targetCharacter,
+      checkType,
+      ability,
+      skill,
+      dc,
+      advantage,
+      disadvantage,
+    }) => {
       wsClient.sendTypingIndicator(true);
       // Mode 2: Interactive player check
       if (targetCharacter) {
         if (!checkType) {
           return {
-            content: [{
-              type: "text" as const,
-              text: "Error: checkType is required when targetCharacter is provided. Use 'ability', 'skill', 'saving_throw', 'attack', or 'custom'.",
-            }],
+            content: [
+              {
+                type: "text" as const,
+                text: "Error: checkType is required when targetCharacter is provided. Use 'ability', 'skill', 'saving_throw', 'attack', or 'custom'.",
+              },
+            ],
           };
         }
 
@@ -81,38 +87,51 @@ If \`targetCharacter\` is provided → Mode 2/2b. Otherwise → Mode 1.`,
             notation: checkType === "damage" ? notation : undefined,
           });
 
-          const successStr = result.dc !== undefined
-            ? ` — ${result.success ? "SUCCESS" : "FAILURE"} (DC ${result.dc})`
-            : "";
-          const critStr = result.roll.criticalHit ? " CRITICAL HIT!" : result.roll.criticalFail ? " CRITICAL FAIL!" : "";
+          const successStr =
+            result.dc !== undefined
+              ? ` — ${result.success ? "SUCCESS" : "FAILURE"} (DC ${result.dc})`
+              : "";
+          const critStr = result.roll.criticalHit
+            ? " CRITICAL HIT!"
+            : result.roll.criticalFail
+              ? " CRITICAL FAIL!"
+              : "";
 
           // Extract natural d20 roll so Claude can report it accurately
-          const naturalRoll = result.roll.rolls.length > 0
-            ? result.roll.rolls.length > 1  // advantage/disadvantage: pick the used die
-              ? (result.roll.advantage
-                ? Math.max(...result.roll.rolls.map(r => r.result))
-                : result.roll.disadvantage
-                  ? Math.min(...result.roll.rolls.map(r => r.result))
-                  : result.roll.rolls[0].result)
-              : result.roll.rolls[0].result
-            : result.roll.total;
+          const naturalRoll =
+            result.roll.rolls.length > 0
+              ? result.roll.rolls.length > 1 // advantage/disadvantage: pick the used die
+                ? result.roll.advantage
+                  ? Math.max(...result.roll.rolls.map((r) => r.result))
+                  : result.roll.disadvantage
+                    ? Math.min(...result.roll.rolls.map((r) => r.result))
+                    : result.roll.rolls[0].result
+                : result.roll.rolls[0].result
+              : result.roll.total;
 
-          const modStr = result.roll.modifier !== 0
-            ? (result.roll.modifier > 0 ? `+${result.roll.modifier}` : `${result.roll.modifier}`)
-            : "";
+          const modStr =
+            result.roll.modifier !== 0
+              ? result.roll.modifier > 0
+                ? `+${result.roll.modifier}`
+                : `${result.roll.modifier}`
+              : "";
 
           return {
-            content: [{
-              type: "text" as const,
-              text: `${result.characterName} rolled d20(${naturalRoll})${modStr} = ${result.roll.total} on ${result.roll.label}${successStr}${critStr}`,
-            }],
+            content: [
+              {
+                type: "text" as const,
+                text: `${result.characterName} rolled d20(${naturalRoll})${modStr} = ${result.roll.total} on ${result.roll.label}${successStr}${critStr}`,
+              },
+            ],
           };
         } catch (error) {
           return {
-            content: [{
-              type: "text" as const,
-              text: `Check request failed: ${error instanceof Error ? error.message : String(error)}`,
-            }],
+            content: [
+              {
+                type: "text" as const,
+                text: `Check request failed: ${error instanceof Error ? error.message : String(error)}`,
+              },
+            ],
           };
         }
       }
@@ -123,21 +142,25 @@ If \`targetCharacter\` is provided → Mode 2/2b. Otherwise → Mode 1.`,
       // Send to worker so all players see it in chat
       wsClient.sendDiceRoll(roll, reason);
 
-      const rollsStr = roll.rolls.length > 1
-        ? ` [${roll.rolls.map(r => r.result).join(", ")}]`
-        : "";
-      const modStr = roll.modifier !== 0
-        ? (roll.modifier > 0 ? `+${roll.modifier}` : `${roll.modifier}`)
-        : "";
-      const critStr = roll.criticalHit ? " (CRITICAL HIT!)" : roll.criticalFail ? " (CRITICAL FAIL!)" : "";
+      const rollsStr =
+        roll.rolls.length > 1 ? ` [${roll.rolls.map((r) => r.result).join(", ")}]` : "";
+      const modStr =
+        roll.modifier !== 0 ? (roll.modifier > 0 ? `+${roll.modifier}` : `${roll.modifier}`) : "";
+      const critStr = roll.criticalHit
+        ? " (CRITICAL HIT!)"
+        : roll.criticalFail
+          ? " (CRITICAL FAIL!)"
+          : "";
       const reasonStr = reason ? ` (${reason})` : "";
 
       return {
-        content: [{
-          type: "text" as const,
-          text: `${notation}:${rollsStr} ${roll.rolls.reduce((s, r) => s + r.result, 0)}${modStr} = ${roll.total}${critStr}${reasonStr}`,
-        }],
+        content: [
+          {
+            type: "text" as const,
+            text: `${notation}:${rollsStr} ${roll.rolls.reduce((s, r) => s + r.result, 0)}${modStr} = ${roll.total}${critStr}${reasonStr}`,
+          },
+        ],
       };
-    }
+    },
   );
 }

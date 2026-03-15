@@ -10,7 +10,7 @@ import { registerCampaignTools } from "./tools/campaign-tools.js";
 export async function createMcpServer(
   messageQueue: MessageQueue,
   wsClient: WSClient,
-  campaignManager: CampaignManager
+  campaignManager: CampaignManager,
 ): Promise<McpServer> {
   const server = new McpServer({
     name: "unseen-servant",

@@ -57,10 +57,7 @@ export function formatClassString(classes: CharacterClass[]): string {
 /**
  * Build a text block describing a character for the AI system prompt.
  */
-export function buildCharacterContextBlock(
-  playerName: string,
-  char: CharacterData
-): string {
+export function buildCharacterContextBlock(playerName: string, char: CharacterData): string {
   const s = char.static;
   const d = char.dynamic;
   const totalLevel = getTotalLevel(s.classes);
@@ -81,16 +78,10 @@ export function buildCharacterContextBlock(
     lines.push(`**Heroic Inspiration:** Yes (can spend for advantage on any d20 roll)`);
   }
 
-  const activeSpells = s.spells.filter(
-    (sp) => getSpellAvailability(sp) === "active"
-  );
-  const ritualOnlySpells = s.spells.filter(
-    (sp) => getSpellAvailability(sp) === "ritual-only"
-  );
+  const activeSpells = s.spells.filter((sp) => getSpellAvailability(sp) === "active");
+  const ritualOnlySpells = s.spells.filter((sp) => getSpellAvailability(sp) === "ritual-only");
   if (activeSpells.length > 0) {
-    const cantrips = activeSpells
-      .filter((sp) => sp.level === 0)
-      .map((sp) => sp.name);
+    const cantrips = activeSpells.filter((sp) => sp.level === 0).map((sp) => sp.name);
     const spells = activeSpells
       .filter((sp) => sp.level > 0)
       .map((sp) => `${sp.name} (Lvl ${sp.level})`);
@@ -103,7 +94,7 @@ export function buildCharacterContextBlock(
   }
   if (ritualOnlySpells.length > 0) {
     lines.push(
-      `**Ritual Only:** ${ritualOnlySpells.map((sp) => `${sp.name} (Lvl ${sp.level})`).join(", ")}`
+      `**Ritual Only:** ${ritualOnlySpells.map((sp) => `${sp.name} (Lvl ${sp.level})`).join(", ")}`,
     );
   }
 
@@ -132,7 +123,9 @@ export function buildCharacterContextBlock(
 
   // Spellcasting stats
   if (s.spellSaveDC) {
-    lines.push(`**Spell Save DC:** ${s.spellSaveDC} | **Spell Attack:** ${formatBonus(s.spellAttackBonus ?? 0)}`);
+    lines.push(
+      `**Spell Save DC:** ${s.spellSaveDC} | **Spell Attack:** ${formatBonus(s.spellAttackBonus ?? 0)}`,
+    );
   }
 
   // Spell slot availability
@@ -174,9 +167,7 @@ export function buildCharacterContextBlock(
 
   const equippedItems = d.inventory.filter((item) => item.equipped);
   if (equippedItems.length > 0) {
-    lines.push(
-      `**Equipped:** ${equippedItems.map((i) => i.name).join(", ")}`
-    );
+    lines.push(`**Equipped:** ${equippedItems.map((i) => i.name).join(", ")}`);
   }
 
   // Depletion warnings — help AI avoid impossible actions
@@ -206,9 +197,7 @@ export function buildCharacterContextBlock(
 /**
  * Create initial dynamic data from static import data.
  */
-export function createInitialDynamicData(
-  staticData: CharacterStaticData
-): CharacterDynamicData {
+export function createInitialDynamicData(staticData: CharacterStaticData): CharacterDynamicData {
   // Build spell slot levels from class data
   const spellSlotsUsed: SpellSlotLevel[] = [];
   // We'll let the DDB parser compute actual spell slots; default to empty
@@ -234,7 +223,7 @@ export function createInitialDynamicData(
 export function mergeReimport(
   existing: CharacterData,
   newStaticData: CharacterStaticData,
-  newDynamic: CharacterDynamicData
+  newDynamic: CharacterDynamicData,
 ): CharacterData {
   const oldMax = existing.static.maxHP;
   const newMax = newStaticData.maxHP;
@@ -247,18 +236,14 @@ export function mergeReimport(
   }
 
   // Update spell slots structure (totals may change), but preserve used counts where possible
-  const oldSlotMap = new Map(
-    dynamic.spellSlotsUsed.map((s) => [s.level, s.used])
-  );
+  const oldSlotMap = new Map(dynamic.spellSlotsUsed.map((s) => [s.level, s.used]));
   dynamic.spellSlotsUsed = newDynamic.spellSlotsUsed.map((slot) => ({
     ...slot,
     used: Math.min(oldSlotMap.get(slot.level) ?? 0, slot.total),
   }));
 
   // Merge pact magic slots similarly
-  const oldPactMap = new Map(
-    (dynamic.pactMagicSlots || []).map((s) => [s.level, s.used])
-  );
+  const oldPactMap = new Map((dynamic.pactMagicSlots || []).map((s) => [s.level, s.used]));
   dynamic.pactMagicSlots = (newDynamic.pactMagicSlots || []).map((slot) => ({
     ...slot,
     used: Math.min(oldPactMap.get(slot.level) ?? 0, slot.total),
@@ -331,7 +316,7 @@ export const SKILL_DISPLAY_NAMES: Record<string, string> = {
 export function getSkillModifier(
   skill: SkillProficiency,
   abilities: AbilityScores,
-  proficiencyBonus: number
+  proficiencyBonus: number,
 ): number {
   const abilityMod = getModifier(abilities[skill.ability]);
   let total = abilityMod;
@@ -352,7 +337,7 @@ export function getSkillModifier(
 export function getSavingThrowModifier(
   save: SavingThrowProficiency,
   abilities: AbilityScores,
-  proficiencyBonus: number
+  proficiencyBonus: number,
 ): number {
   const abilityMod = getModifier(abilities[save.ability]);
   let total = abilityMod;
@@ -390,11 +375,7 @@ export function getSpellAvailability(spell: CharacterSpell): SpellAvailability {
   // Always-prepared from class/subclass features
   if (spell.alwaysPrepared) return "active";
   // Race/feat/item spells are always available
-  if (
-    spell.spellSource === "race" ||
-    spell.spellSource === "feat" ||
-    spell.spellSource === "item"
-  )
+  if (spell.spellSource === "race" || spell.spellSource === "feat" || spell.spellSource === "item")
     return "active";
   // User-prepared spells
   if (spell.prepared) return "active";

@@ -10,11 +10,7 @@ interface FilterChipBarProps {
   onSelect: (chipId: string) => void;
 }
 
-export function FilterChipBar({
-  chips,
-  activeChipId,
-  onSelect,
-}: FilterChipBarProps) {
+export function FilterChipBar({ chips, activeChipId, onSelect }: FilterChipBarProps) {
   return (
     <div className="flex gap-1 overflow-x-auto pb-1.5 scrollbar-none">
       {chips.map((chip) => {

@@ -1,7 +1,13 @@
 import { useMemo, useState } from "react";
 import { baseItemsArray, allItemsArray } from "@unseen-servant/shared/data";
 import type { BaseItemData } from "@unseen-servant/shared/data";
-import { formatDamageType, decodeProperty, decodeMastery, formatItemCost, categorizeBaseItem, DMG_TYPE_MAP } from "@unseen-servant/shared";
+import {
+  formatDamageType,
+  decodeMastery,
+  formatItemCost,
+  categorizeBaseItem,
+  DMG_TYPE_MAP,
+} from "@unseen-servant/shared";
 import type { StepProps, EquipmentEntry, BuilderAction } from "./types";
 import { resolveStartingEquipment, getStartingEquipmentDescription } from "./utils";
 
@@ -40,10 +46,22 @@ const TABS: { value: EquipmentTab; label: string }[] = [
 
 // Category grouping definitions
 const WEAPON_CATEGORIES = [
-  { label: "Simple Melee", filter: (w: BaseItemData) => w.weaponCategory === "simple" && w.type?.split("|")[0] === "M" },
-  { label: "Simple Ranged", filter: (w: BaseItemData) => w.weaponCategory === "simple" && w.type?.split("|")[0] === "R" },
-  { label: "Martial Melee", filter: (w: BaseItemData) => w.weaponCategory === "martial" && w.type?.split("|")[0] === "M" },
-  { label: "Martial Ranged", filter: (w: BaseItemData) => w.weaponCategory === "martial" && w.type?.split("|")[0] === "R" },
+  {
+    label: "Simple Melee",
+    filter: (w: BaseItemData) => w.weaponCategory === "simple" && w.type?.split("|")[0] === "M",
+  },
+  {
+    label: "Simple Ranged",
+    filter: (w: BaseItemData) => w.weaponCategory === "simple" && w.type?.split("|")[0] === "R",
+  },
+  {
+    label: "Martial Melee",
+    filter: (w: BaseItemData) => w.weaponCategory === "martial" && w.type?.split("|")[0] === "M",
+  },
+  {
+    label: "Martial Ranged",
+    filter: (w: BaseItemData) => w.weaponCategory === "martial" && w.type?.split("|")[0] === "R",
+  },
 ];
 
 const ARMOR_CATEGORIES = [
@@ -55,8 +73,8 @@ const ARMOR_CATEGORIES = [
 
 // Pre-categorized item lists
 const weaponItems = baseItemsArray.filter((item: BaseItemData) => item.weapon === true);
-const armorItems = baseItemsArray.filter((item: BaseItemData) =>
-  item.armor === true || item.type?.split("|")[0] === "S"
+const armorItems = baseItemsArray.filter(
+  (item: BaseItemData) => item.armor === true || item.type?.split("|")[0] === "S",
 );
 
 // "Other" tab: gear + tools from base items, plus ALL items from items.json
@@ -66,20 +84,17 @@ const baseGearAndTools = baseItemsArray.filter((item: BaseItemData) => {
   return cat === "gear" || cat === "tool";
 });
 const baseItemNames = new Set(baseItemsArray.map((item: BaseItemData) => item.name.toLowerCase()));
-const allOtherItems = allItemsArray.filter(
-  (item: { name: string; type?: string }) => {
-    // Skip items already in base items (weapons, armor are shown in their own tabs)
-    if (baseItemNames.has(item.name.toLowerCase())) return false;
-    // Skip items that are clearly weapons/armor (handled by other tabs)
-    const typeCode = item.type?.split("|")[0] ?? "";
-    if (["M", "R", "LA", "MA", "HA"].includes(typeCode)) return false;
-    return true;
-  }
+const allOtherItems = allItemsArray.filter((item: { name: string; type?: string }) => {
+  // Skip items already in base items (weapons, armor are shown in their own tabs)
+  if (baseItemNames.has(item.name.toLowerCase())) return false;
+  // Skip items that are clearly weapons/armor (handled by other tabs)
+  const typeCode = item.type?.split("|")[0] ?? "";
+  if (["M", "R", "LA", "MA", "HA"].includes(typeCode)) return false;
+  return true;
+});
+const otherItems = [...baseGearAndTools, ...allOtherItems].sort(
+  (a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name),
 );
-const otherItems = [
-  ...baseGearAndTools,
-  ...allOtherItems,
-].sort((a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name));
 
 export function StepEquipment({ state, dispatch }: StepProps) {
   const [tab, setTab] = useState<EquipmentTab>("weapon");
@@ -101,44 +116,53 @@ export function StepEquipment({ state, dispatch }: StepProps) {
   return (
     <div className="space-y-5">
       <div className="space-y-1">
-        <h2 className="text-xl font-semibold text-amber-200/90 tracking-wide" style={{ fontFamily: "var(--font-cinzel)" }}>
+        <h2
+          className="text-xl font-semibold text-amber-200/90 tracking-wide"
+          style={{ fontFamily: "var(--font-cinzel)" }}
+        >
           Equipment
         </h2>
-        <p className="text-sm text-gray-500">Add weapons, armor, gear, and tools to your inventory.</p>
+        <p className="text-sm text-gray-500">
+          Add weapons, armor, gear, and tools to your inventory.
+        </p>
         <div className="h-px bg-gradient-to-r from-amber-500/30 via-gray-700/50 to-transparent mt-2" />
       </div>
 
       {/* Starting Equipment Presets */}
-      {state.classes.length > 0 && (() => {
-        const className = state.classes[0].className;
-        const desc = getStartingEquipmentDescription(className);
-        if (!desc) return null;
-        return (
-          <div className="bg-gray-800/60 border border-gray-700/40 rounded-lg p-3 space-y-2">
-            <div className="text-sm font-medium text-gray-300" style={{ fontFamily: "var(--font-cinzel)" }}>
-              Starting Equipment — {className}
+      {state.classes.length > 0 &&
+        (() => {
+          const className = state.classes[0].className;
+          const desc = getStartingEquipmentDescription(className);
+          if (!desc) return null;
+          return (
+            <div className="bg-gray-800/60 border border-gray-700/40 rounded-lg p-3 space-y-2">
+              <div
+                className="text-sm font-medium text-gray-300"
+                style={{ fontFamily: "var(--font-cinzel)" }}
+              >
+                Starting Equipment — {className}
+              </div>
+              <div className="flex gap-2">
+                {(["A", "B"] as const).map((choice) => (
+                  <button
+                    key={choice}
+                    onClick={() => {
+                      const { items, currency } = resolveStartingEquipment(className, choice);
+                      dispatch({ type: "ADD_STARTING_EQUIPMENT", items, currency });
+                    }}
+                    className="flex-1 text-left px-3 py-2 rounded-lg border border-gray-700/50 bg-gray-900/40 hover:border-amber-500/40 hover:bg-amber-500/5 transition-all text-xs"
+                  >
+                    <div className="font-medium text-amber-300/80 mb-0.5">Option {choice}</div>
+                    <div className="text-gray-500 text-xs leading-snug">{desc[choice]}</div>
+                  </button>
+                ))}
+              </div>
+              <div className="text-xs text-gray-600">
+                Clicking a preset adds items to your inventory. You can still add more items below.
+              </div>
             </div>
-            <div className="flex gap-2">
-              {(["A", "B"] as const).map((choice) => (
-                <button
-                  key={choice}
-                  onClick={() => {
-                    const { items, currency } = resolveStartingEquipment(className, choice);
-                    dispatch({ type: "ADD_STARTING_EQUIPMENT", items, currency });
-                  }}
-                  className="flex-1 text-left px-3 py-2 rounded-lg border border-gray-700/50 bg-gray-900/40 hover:border-amber-500/40 hover:bg-amber-500/5 transition-all text-xs"
-                >
-                  <div className="font-medium text-amber-300/80 mb-0.5">Option {choice}</div>
-                  <div className="text-gray-500 text-xs leading-snug">{desc[choice]}</div>
-                </button>
-              ))}
-            </div>
-            <div className="text-xs text-gray-600">
-              Clicking a preset adds items to your inventory. You can still add more items below.
-            </div>
-          </div>
-        );
-      })()}
+          );
+        })()}
 
       <div className="flex gap-6">
         {/* Left: Browser */}
@@ -176,10 +200,7 @@ export function StepEquipment({ state, dispatch }: StepProps) {
 
           <div className="max-h-[480px] overflow-y-auto">
             {tab === "custom" ? (
-              <CustomItemsPanel
-                equipment={state.equipment}
-                dispatch={dispatch}
-              />
+              <CustomItemsPanel equipment={state.equipment} dispatch={dispatch} />
             ) : tab === "weapon" ? (
               <GroupedWeapons
                 search={search}
@@ -188,11 +209,7 @@ export function StepEquipment({ state, dispatch }: StepProps) {
                 parseMastery={parseMastery}
               />
             ) : tab === "armor" ? (
-              <GroupedArmor
-                search={search}
-                equipment={state.equipment}
-                onAdd={addItem}
-              />
+              <GroupedArmor search={search} equipment={state.equipment} onAdd={addItem} />
             ) : (
               <FlatList
                 items={otherItems}
@@ -209,9 +226,7 @@ export function StepEquipment({ state, dispatch }: StepProps) {
           <div className="bg-gray-800/60 border border-gray-700/40 rounded-lg p-4 space-y-2">
             <div className="text-sm font-medium text-gray-300">Inventory</div>
             {state.equipment.length === 0 ? (
-              <div className="text-xs text-gray-600 text-center py-4">
-                No items added
-              </div>
+              <div className="text-xs text-gray-600 text-center py-4">No items added</div>
             ) : (
               <div className="space-y-1">
                 {state.equipment.map((entry) => (
@@ -220,19 +235,13 @@ export function StepEquipment({ state, dispatch }: StepProps) {
                     className="flex items-center gap-2 text-xs"
                   >
                     <button
-                      onClick={() =>
-                        dispatch({ type: "TOGGLE_EQUIPPED", name: entry.name })
-                      }
+                      onClick={() => dispatch({ type: "TOGGLE_EQUIPPED", name: entry.name })}
                       className={`w-3 h-3 rounded-sm border shrink-0 ${
-                        entry.equipped
-                          ? "border-amber-500 bg-amber-500/80"
-                          : "border-gray-600"
+                        entry.equipped ? "border-amber-500 bg-amber-500/80" : "border-gray-600"
                       }`}
                       title={entry.equipped ? "Equipped" : "Unequipped"}
                     />
-                    <span className="flex-1 text-gray-300 truncate">
-                      {entry.name}
-                    </span>
+                    <span className="flex-1 text-gray-300 truncate">{entry.name}</span>
                     <div className="flex items-center gap-1">
                       <button
                         onClick={() =>
@@ -251,9 +260,7 @@ export function StepEquipment({ state, dispatch }: StepProps) {
                       >
                         -
                       </button>
-                      <span className="text-gray-400 w-4 text-center">
-                        {entry.quantity}
-                      </span>
+                      <span className="text-gray-400 w-4 text-center">{entry.quantity}</span>
                       <button
                         onClick={() =>
                           dispatch({
@@ -268,9 +275,7 @@ export function StepEquipment({ state, dispatch }: StepProps) {
                       </button>
                     </div>
                     <button
-                      onClick={() =>
-                        dispatch({ type: "REMOVE_EQUIPMENT", name: entry.name })
-                      }
+                      onClick={() => dispatch({ type: "REMOVE_EQUIPMENT", name: entry.name })}
                       className="text-gray-600 hover:text-red-400"
                     >
                       x
@@ -287,9 +292,7 @@ export function StepEquipment({ state, dispatch }: StepProps) {
             <div className="grid grid-cols-5 gap-1">
               {(["cp", "sp", "ep", "gp", "pp"] as const).map((coin) => (
                 <div key={coin} className="text-center">
-                  <div className="text-xs text-gray-500 uppercase">
-                    {coin}
-                  </div>
+                  <div className="text-xs text-gray-500 uppercase">{coin}</div>
                   <input
                     type="number"
                     min={0}
@@ -328,22 +331,22 @@ const TYPE_GROUPS: { label: string; types: string[] }[] = [
 
 // Rarity with D&D-standard colors
 const RARITIES: { name: string; color: string; ring: string; bg: string }[] = [
-  { name: "Common",    color: "text-gray-400",   ring: "ring-gray-500",    bg: "bg-gray-500" },
-  { name: "Uncommon",  color: "text-green-400",  ring: "ring-green-500",   bg: "bg-green-500" },
-  { name: "Rare",      color: "text-blue-400",   ring: "ring-blue-500",    bg: "bg-blue-500" },
-  { name: "Very Rare", color: "text-purple-400", ring: "ring-purple-500",  bg: "bg-purple-500" },
-  { name: "Legendary", color: "text-amber-400",  ring: "ring-amber-500",   bg: "bg-amber-500" },
-  { name: "Artifact",  color: "text-red-400",    ring: "ring-red-500",     bg: "bg-red-500" },
+  { name: "Common", color: "text-gray-400", ring: "ring-gray-500", bg: "bg-gray-500" },
+  { name: "Uncommon", color: "text-green-400", ring: "ring-green-500", bg: "bg-green-500" },
+  { name: "Rare", color: "text-blue-400", ring: "ring-blue-500", bg: "bg-blue-500" },
+  { name: "Very Rare", color: "text-purple-400", ring: "ring-purple-500", bg: "bg-purple-500" },
+  { name: "Legendary", color: "text-amber-400", ring: "ring-amber-500", bg: "bg-amber-500" },
+  { name: "Artifact", color: "text-red-400", ring: "ring-red-500", bg: "bg-red-500" },
 ];
 
 // Rarity border colors for item cards
 const RARITY_BORDER: Record<string, string> = {
-  Common:    "border-l-gray-500",
-  Uncommon:  "border-l-green-500",
-  Rare:      "border-l-blue-500",
+  Common: "border-l-gray-500",
+  Uncommon: "border-l-green-500",
+  Rare: "border-l-blue-500",
   "Very Rare": "border-l-purple-500",
   Legendary: "border-l-amber-500",
-  Artifact:  "border-l-red-500",
+  Artifact: "border-l-red-500",
 };
 
 // Types that show weapon-related fields
@@ -351,8 +354,10 @@ const WEAPON_TYPES = new Set(["Weapon", "Ammunition"]);
 // Types that show AC field
 const ARMOR_TYPES = new Set(["Armor", "Shield"]);
 
-const inputCls = "w-full bg-gray-900/80 border border-gray-700/80 rounded-md px-2.5 py-1.5 text-xs text-gray-100 placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-amber-500/50 focus:border-amber-500/30 transition-colors";
-const selectCls = "w-full bg-gray-900/80 border border-gray-700/80 rounded-md px-2.5 py-1.5 text-xs text-gray-100 focus:outline-none focus:ring-1 focus:ring-amber-500/50 focus:border-amber-500/30 transition-colors";
+const inputCls =
+  "w-full bg-gray-900/80 border border-gray-700/80 rounded-md px-2.5 py-1.5 text-xs text-gray-100 placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-amber-500/50 focus:border-amber-500/30 transition-colors";
+const selectCls =
+  "w-full bg-gray-900/80 border border-gray-700/80 rounded-md px-2.5 py-1.5 text-xs text-gray-100 focus:outline-none focus:ring-1 focus:ring-amber-500/50 focus:border-amber-500/30 transition-colors";
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
@@ -366,9 +371,7 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 }
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="text-xs text-gray-500 leading-none">{children}</span>
-  );
+  return <span className="text-xs text-gray-500 leading-none">{children}</span>;
 }
 
 function CustomItemsPanel({
@@ -413,7 +416,10 @@ function CustomItemsPanel({
   const handleAdd = () => {
     if (!name.trim()) return;
     const parsedProps = properties.trim()
-      ? properties.split(",").map((p) => p.trim()).filter(Boolean)
+      ? properties
+          .split(",")
+          .map((p) => p.trim())
+          .filter(Boolean)
       : undefined;
     const entry: EquipmentEntry = {
       name: name.trim(),
@@ -539,7 +545,9 @@ function CustomItemsPanel({
                   >
                     <option value="">--</option>
                     {DAMAGE_TYPES.map((dt) => (
-                      <option key={dt} value={dt.toLowerCase()}>{dt}</option>
+                      <option key={dt} value={dt.toLowerCase()}>
+                        {dt}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -614,7 +622,9 @@ function CustomItemsPanel({
                         : "bg-gray-900/40 text-gray-600 hover:text-gray-400"
                     }`}
                   >
-                    <span className={`w-1.5 h-1.5 rounded-full ${selected ? r.bg : "bg-gray-700"}`} />
+                    <span
+                      className={`w-1.5 h-1.5 rounded-full ${selected ? r.bg : "bg-gray-700"}`}
+                    />
                     {r.name}
                   </button>
                 );
@@ -702,7 +712,9 @@ function CustomItemsPanel({
                     <div className="flex items-center gap-1.5">
                       <span className="text-gray-200 font-medium truncate">{entry.name}</span>
                       {entry.quantity > 1 && (
-                        <span className="text-xs text-gray-500 tabular-nums">x{entry.quantity}</span>
+                        <span className="text-xs text-gray-500 tabular-nums">
+                          x{entry.quantity}
+                        </span>
                       )}
                     </div>
                     {/* Tags row */}
@@ -713,7 +725,9 @@ function CustomItemsPanel({
                         </span>
                       )}
                       {rarityData && (
-                        <span className={`text-xs px-1.5 py-px rounded ${rarityData.bg}/15 ${rarityData.color}`}>
+                        <span
+                          className={`text-xs px-1.5 py-px rounded ${rarityData.bg}/15 ${rarityData.color}`}
+                        >
                           {entry.rarity}
                         </span>
                       )}
@@ -730,9 +744,7 @@ function CustomItemsPanel({
                     </div>
                     {/* Stats line */}
                     {stats.length > 0 && (
-                      <div className="text-xs text-gray-500 truncate">
-                        {stats.join(" \u00b7 ")}
-                      </div>
+                      <div className="text-xs text-gray-500 truncate">{stats.join(" \u00b7 ")}</div>
                     )}
                     {entry.description && (
                       <div className="text-xs text-gray-600 line-clamp-1 italic">
@@ -782,7 +794,7 @@ function GroupedWeapons({
             <div className="space-y-1">
               {weapons.map((item) => {
                 const alreadyAdded = equipment.some(
-                  (e) => e.name === item.name && e.source === "weapon"
+                  (e) => e.name === item.name && e.source === "weapon",
                 );
                 return (
                   <div
@@ -798,7 +810,9 @@ function GroupedWeapons({
                       <div className="text-xs text-gray-500">
                         {item.dmg1} {item.dmgType ? formatDamageType(item.dmgType) : ""}
                         {item.value ? <span> &middot; {formatItemCost(item.value)}</span> : null}
-                        {item.weight != null && item.weight > 0 && <span> &middot; {item.weight} lb.</span>}
+                        {item.weight != null && item.weight > 0 && (
+                          <span> &middot; {item.weight} lb.</span>
+                        )}
                         {item.mastery && item.mastery.length > 0 && (
                           <span className="ml-1 text-amber-400/60">
                             [{item.mastery.map((m: string) => parseMastery(m)).join(", ")}]
@@ -857,7 +871,7 @@ function GroupedArmor({
             <div className="space-y-1">
               {armorList.map((item) => {
                 const alreadyAdded = equipment.some(
-                  (e) => e.name === item.name && e.source === "armor"
+                  (e) => e.name === item.name && e.source === "armor",
                 );
                 return (
                   <div
@@ -875,7 +889,9 @@ function GroupedArmor({
                         {item.stealth && <span> &middot; Stealth Disadv.</span>}
                         {item.strength && <span> &middot; Str {item.strength}</span>}
                         {item.value ? <span> &middot; {formatItemCost(item.value)}</span> : null}
-                        {item.weight != null && item.weight > 0 && <span> &middot; {item.weight} lb.</span>}
+                        {item.weight != null && item.weight > 0 && (
+                          <span> &middot; {item.weight} lb.</span>
+                        )}
                       </div>
                     </div>
                     <button
@@ -901,8 +917,14 @@ function GroupedArmor({
 
 // ─── Flat List (gear/tools) ──────────────────────────────
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type OtherItem = { name: string; value?: number; weight?: number; rarity?: string; entries?: any[]; reqAttune?: unknown };
+type OtherItem = {
+  name: string;
+  value?: number;
+  weight?: number;
+  rarity?: string;
+  entries?: any[];
+  reqAttune?: unknown;
+};
 
 function FlatList({
   items,
@@ -931,8 +953,8 @@ function FlatList({
         const isExpanded = expanded === item.name;
         const hasEntries = item.entries && item.entries.length > 0;
         const briefDesc = hasEntries
-          ? item.entries!
-              .filter((e: unknown) => typeof e === "string")
+          ? item
+              .entries!.filter((e: unknown) => typeof e === "string")
               .join(" ")
               .replace(/\{@[^}]+\|?([^|}]*)}/g, "$1")
               .slice(0, 120)
@@ -956,17 +978,23 @@ function FlatList({
                 <div className="flex items-center gap-1.5">
                   <span className="text-gray-200 truncate">{item.name}</span>
                   {isMagic && (
-                    <span className={`text-xs px-1 py-px rounded shrink-0 ${RARITY_PILL[item.rarity!] ?? "bg-gray-700/50 text-gray-400"}`}>
+                    <span
+                      className={`text-xs px-1 py-px rounded shrink-0 ${RARITY_PILL[item.rarity!] ?? "bg-gray-700/50 text-gray-400"}`}
+                    >
                       {item.rarity}
                     </span>
                   )}
                   {!!item.reqAttune && (
-                    <span className="text-xs px-1 py-px rounded bg-amber-900/30 text-amber-500/70 shrink-0">Attune</span>
+                    <span className="text-xs px-1 py-px rounded bg-amber-900/30 text-amber-500/70 shrink-0">
+                      Attune
+                    </span>
                   )}
                 </div>
                 <div className="text-xs text-gray-500">
                   {formatItemCost(item.value)}
-                  {item.weight != null && item.weight > 0 && <span> &middot; {item.weight} lb.</span>}
+                  {item.weight != null && item.weight > 0 && (
+                    <span> &middot; {item.weight} lb.</span>
+                  )}
                   {!isMagic && briefDesc && (
                     <span className="ml-1 text-gray-600 truncate">&middot; {briefDesc}</span>
                   )}
@@ -985,8 +1013,8 @@ function FlatList({
             </div>
             {isExpanded && hasEntries && (
               <div className="px-2.5 pb-2 text-xs text-gray-400 leading-relaxed border-t border-gray-700/30 pt-1.5">
-                {item.entries!
-                  .filter((e: unknown) => typeof e === "string")
+                {item
+                  .entries!.filter((e: unknown) => typeof e === "string")
                   .map((e: string, i: number) => (
                     <p key={i} className="mb-1">
                       {e.replace(/\{@[^}]+\|?([^|}]*)}/g, "$1")}

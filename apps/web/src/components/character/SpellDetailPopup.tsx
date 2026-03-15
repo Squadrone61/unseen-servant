@@ -12,9 +12,7 @@ interface SpellDetailPopupProps {
 
 export function SpellDetailPopup({ spell, onClose, position }: SpellDetailPopupProps) {
   const levelStr =
-    spell.level === 0
-      ? "Cantrip"
-      : `Level ${spell.level}${spell.school ? ` ${spell.school}` : ""}`;
+    spell.level === 0 ? "Cantrip" : `Level ${spell.level}${spell.school ? ` ${spell.school}` : ""}`;
 
   return (
     <DetailPopover title={spell.name} onClose={onClose} position={position}>
@@ -43,9 +41,7 @@ export function SpellDetailPopup({ spell, onClose, position }: SpellDetailPopupP
         <div className="grid grid-cols-2 gap-2">
           {spell.castingTime && (
             <div className="bg-gray-900/50 border border-gray-700 rounded px-2.5 py-1.5">
-              <div className="text-xs text-gray-500 uppercase">
-                Casting Time
-              </div>
+              <div className="text-xs text-gray-500 uppercase">Casting Time</div>
               <div className="text-sm text-gray-300">{spell.castingTime}</div>
             </div>
           )}
@@ -57,17 +53,13 @@ export function SpellDetailPopup({ spell, onClose, position }: SpellDetailPopupP
           )}
           {spell.components && (
             <div className="bg-gray-900/50 border border-gray-700 rounded px-2.5 py-1.5">
-              <div className="text-xs text-gray-500 uppercase">
-                Components
-              </div>
+              <div className="text-xs text-gray-500 uppercase">Components</div>
               <div className="text-sm text-gray-300">{spell.components}</div>
             </div>
           )}
           {spell.duration && (
             <div className="bg-gray-900/50 border border-gray-700 rounded px-2.5 py-1.5">
-              <div className="text-xs text-gray-500 uppercase">
-                Duration
-              </div>
+              <div className="text-xs text-gray-500 uppercase">Duration</div>
               <div className="text-sm text-gray-300">{spell.duration}</div>
             </div>
           )}
@@ -76,12 +68,13 @@ export function SpellDetailPopup({ spell, onClose, position }: SpellDetailPopupP
         {/* Description */}
         {spell.description && (
           <div>
-            <div className="text-sm text-gray-500 uppercase tracking-wider font-medium mb-1" style={{ fontFamily: "var(--font-cinzel)" }}>
+            <div
+              className="text-sm text-gray-500 uppercase tracking-wider font-medium mb-1"
+              style={{ fontFamily: "var(--font-cinzel)" }}
+            >
               Description
             </div>
-            <Prose className="text-gray-300">
-              {spell.description}
-            </Prose>
+            <Prose className="text-gray-300">{spell.description}</Prose>
           </div>
         )}
       </div>

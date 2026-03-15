@@ -39,14 +39,10 @@ test.describe("Home Page", () => {
     await expect(page.getByText("Playing as guest")).toBeVisible();
 
     // Google sign-in button
-    await expect(
-      page.getByRole("button", { name: "Sign in with Google" })
-    ).toBeVisible();
+    await expect(page.getByRole("button", { name: "Sign in with Google" })).toBeVisible();
   });
 
-  test("character name input works and persists to localStorage", async ({
-    page,
-  }) => {
+  test("character name input works and persists to localStorage", async ({ page }) => {
     const nameInput = page.getByPlaceholder("Enter your name...");
 
     // Type a character name
@@ -57,16 +53,12 @@ test.describe("Home Page", () => {
     await page.waitForTimeout(700);
 
     // Check localStorage
-    const storedName = await page.evaluate(() =>
-      localStorage.getItem("playerName")
-    );
+    const storedName = await page.evaluate(() => localStorage.getItem("playerName"));
     expect(storedName).toBe("Gandalf");
 
     // Reload and verify it persists
     await page.reload();
-    await expect(page.getByPlaceholder("Enter your name...")).toHaveValue(
-      "Gandalf"
-    );
+    await expect(page.getByPlaceholder("Enter your name...")).toHaveValue("Gandalf");
   });
 
   test("create room shows error without character name", async ({ page }) => {
@@ -93,9 +85,7 @@ test.describe("Home Page", () => {
 
     // Click Join with empty code
     await page.getByRole("button", { name: "Join Room" }).click();
-    await expect(
-      page.getByText("Room code must be 6 characters")
-    ).toBeVisible();
+    await expect(page.getByText("Room code must be 6 characters")).toBeVisible();
   });
 
   test("join room validates short room code", async ({ page }) => {
@@ -103,9 +93,7 @@ test.describe("Home Page", () => {
     await page.getByPlaceholder("ABCDEF").fill("ABC");
 
     await page.getByRole("button", { name: "Join Room" }).click();
-    await expect(
-      page.getByText("Room code must be 6 characters")
-    ).toBeVisible();
+    await expect(page.getByText("Room code must be 6 characters")).toBeVisible();
   });
 
   test("join room validates missing character name", async ({ page }) => {
@@ -115,9 +103,7 @@ test.describe("Home Page", () => {
     await expect(page.getByText("Enter your character name")).toBeVisible();
   });
 
-  test("room code input uppercases and limits to 6 chars", async ({
-    page,
-  }) => {
+  test("room code input uppercases and limits to 6 chars", async ({ page }) => {
     const codeInput = page.getByPlaceholder("ABCDEF");
     await codeInput.fill("abcdefgh");
     // Should be uppercased and truncated to 6

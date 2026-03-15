@@ -4,10 +4,7 @@ import type { CharacterFeature } from "@unseen-servant/shared/types";
 import { DetailPopover } from "./DetailPopover";
 import { Prose } from "../Prose";
 
-const SOURCE_COLORS: Record<
-  CharacterFeature["source"],
-  { bg: string; text: string }
-> = {
+const SOURCE_COLORS: Record<CharacterFeature["source"], { bg: string; text: string }> = {
   class: { bg: "bg-amber-900/20", text: "text-amber-300" },
   race: { bg: "bg-blue-900/40", text: "text-blue-300" },
   feat: { bg: "bg-amber-900/40", text: "text-amber-300" },
@@ -27,11 +24,7 @@ interface FeatureDetailPopupProps {
   position: { x: number; y: number };
 }
 
-export function FeatureDetailPopup({
-  feature,
-  onClose,
-  position,
-}: FeatureDetailPopupProps) {
+export function FeatureDetailPopup({ feature, onClose, position }: FeatureDetailPopupProps) {
   const colors = SOURCE_COLORS[feature.source];
   const sourceTag = feature.sourceLabel
     ? `${SOURCE_LABELS[feature.source]}: ${feature.sourceLabel}`
@@ -48,9 +41,7 @@ export function FeatureDetailPopup({
             {sourceTag}
           </span>
           {feature.requiredLevel != null && (
-            <span className="text-xs text-gray-500">
-              Level {feature.requiredLevel}
-            </span>
+            <span className="text-xs text-gray-500">Level {feature.requiredLevel}</span>
           )}
         </div>
 

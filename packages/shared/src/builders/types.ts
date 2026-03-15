@@ -15,7 +15,6 @@ import type {
   AdvantageEntry,
   InventoryItem,
   Currency,
-  CharacterDynamicData,
   CharacterFeature,
 } from "../types/character";
 

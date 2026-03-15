@@ -25,13 +25,10 @@ import {
 declare const UNSEEN_VERSION: string;
 declare const PRODUCTION_WORKER_URL: string;
 
-const VERSION =
-  typeof UNSEEN_VERSION !== "undefined" ? UNSEEN_VERSION : "dev";
+const VERSION = typeof UNSEEN_VERSION !== "undefined" ? UNSEEN_VERSION : "dev";
 
 const DEFAULT_WORKER_URL =
-  typeof PRODUCTION_WORKER_URL !== "undefined"
-    ? PRODUCTION_WORKER_URL
-    : "http://127.0.0.1:8787";
+  typeof PRODUCTION_WORKER_URL !== "undefined" ? PRODUCTION_WORKER_URL : "http://127.0.0.1:8787";
 
 const BANNER = `
 ╔══════════════════════════════════════════════════╗
@@ -45,11 +42,11 @@ const NATIVE_SKILLS: Record<string, string> = {
   "combat-setup": NATIVE_SKILL_COMBAT_SETUP,
   "short-rest": NATIVE_SKILL_SHORT_REST,
   "long-rest": NATIVE_SKILL_LONG_REST,
-  "recap": NATIVE_SKILL_RECAP,
+  recap: NATIVE_SKILL_RECAP,
   "npc-voice": NATIVE_SKILL_NPC_VOICE,
   "story-arc": NATIVE_SKILL_STORY_ARC,
   "loot-drop": NATIVE_SKILL_LOOT_DROP,
-  "tavern": NATIVE_SKILL_TAVERN,
+  tavern: NATIVE_SKILL_TAVERN,
   "level-up": NATIVE_SKILL_LEVEL_UP,
   "battle-tactics": NATIVE_SKILL_BATTLE_TACTICS,
 };
@@ -110,7 +107,7 @@ export async function startCli(): Promise<void> {
     console.error(
       "Error: 'claude' CLI not found in PATH.\n" +
         "Install Claude Code: https://docs.anthropic.com/en/docs/claude-code/overview\n" +
-        "  npm install -g @anthropic-ai/claude-code"
+        "  npm install -g @anthropic-ai/claude-code",
     );
     process.exit(1);
   }
@@ -134,10 +131,7 @@ export async function startCli(): Promise<void> {
       process.exit(1);
     }
 
-    const modelInput = await prompt(
-      rl,
-      `Model [${model}] (sonnet/opus/haiku): `
-    );
+    const modelInput = await prompt(rl, `Model [${model}] (sonnet/opus/haiku): `);
     if (modelInput.trim()) {
       model = modelInput.trim().toLowerCase();
     }
@@ -180,10 +174,7 @@ export async function startCli(): Promise<void> {
     },
   };
 
-  fs.writeFileSync(
-    path.join(workDir, ".mcp.json"),
-    JSON.stringify(mcpConfig, null, 2)
-  );
+  fs.writeFileSync(path.join(workDir, ".mcp.json"), JSON.stringify(mcpConfig, null, 2));
 
   // Write CLAUDE.md — slim core prompt + skill file index
   fs.writeFileSync(path.join(workDir, "CLAUDE.md"), buildClaudeMd());
@@ -274,7 +265,7 @@ export async function startCli(): Promise<void> {
     {
       cwd: workDir,
       stdio: "inherit",
-    }
+    },
   );
 
   claude.on("exit", (code) => {

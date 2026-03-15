@@ -104,28 +104,14 @@ export const deathSavesSchema = z.object({
 
 export const skillProficiencySchema = z.object({
   name: z.string(),
-  ability: z.enum([
-    "strength",
-    "dexterity",
-    "constitution",
-    "intelligence",
-    "wisdom",
-    "charisma",
-  ]),
+  ability: z.enum(["strength", "dexterity", "constitution", "intelligence", "wisdom", "charisma"]),
   proficient: z.boolean(),
   expertise: z.boolean(),
   bonus: z.number().optional(),
 });
 
 export const savingThrowProficiencySchema = z.object({
-  ability: z.enum([
-    "strength",
-    "dexterity",
-    "constitution",
-    "intelligence",
-    "wisdom",
-    "charisma",
-  ]),
+  ability: z.enum(["strength", "dexterity", "constitution", "intelligence", "wisdom", "charisma"]),
   proficient: z.boolean(),
   bonus: z.number().optional(),
 });
@@ -189,14 +175,7 @@ export const characterStaticDataSchema = z.object({
   languages: z.array(z.string()),
   spells: z.array(characterSpellSchema),
   spellcastingAbility: z
-    .enum([
-      "strength",
-      "dexterity",
-      "constitution",
-      "intelligence",
-      "wisdom",
-      "charisma",
-    ])
+    .enum(["strength", "dexterity", "constitution", "intelligence", "wisdom", "charisma"])
     .optional(),
   spellSaveDC: z.number().optional(),
   spellAttackBonus: z.number().optional(),
@@ -270,7 +249,7 @@ export const clientDMConfigSchema = z.object({
         name: z.string(),
         lastPlayedAt: z.string(),
         sessionCount: z.number(),
-      })
+      }),
     )
     .optional(),
 });
@@ -580,10 +559,12 @@ export const serverDMRequestSchema = z.object({
   type: z.literal("server:dm_request"),
   requestId: z.string(),
   systemPrompt: z.string(),
-  messages: z.array(z.object({
-    role: z.enum(["user", "assistant"]),
-    content: z.string(),
-  })),
+  messages: z.array(
+    z.object({
+      role: z.enum(["user", "assistant"]),
+      content: z.string(),
+    }),
+  ),
 });
 
 export const serverDMConfigUpdateSchema = z.object({
@@ -597,7 +578,7 @@ export const serverDMConfigUpdateSchema = z.object({
         name: z.string(),
         lastPlayedAt: z.string(),
         sessionCount: z.number(),
-      })
+      }),
     )
     .optional(),
 });

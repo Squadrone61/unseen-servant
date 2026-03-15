@@ -15,14 +15,24 @@ interface ChatMessageProps {
 
 const markdownComponents: Components = {
   h1: ({ children }) => <h1 className="text-xl font-bold text-amber-300 mt-3 mb-1">{children}</h1>,
-  h2: ({ children }) => <h2 className="text-lg font-bold text-amber-300 mt-2.5 mb-1">{children}</h2>,
-  h3: ({ children }) => <h3 className="text-base font-bold text-amber-300 mt-2 mb-0.5">{children}</h3>,
-  h4: ({ children }) => <h4 className="text-sm font-bold text-amber-300 mt-1.5 mb-0.5">{children}</h4>,
+  h2: ({ children }) => (
+    <h2 className="text-lg font-bold text-amber-300 mt-2.5 mb-1">{children}</h2>
+  ),
+  h3: ({ children }) => (
+    <h3 className="text-base font-bold text-amber-300 mt-2 mb-0.5">{children}</h3>
+  ),
+  h4: ({ children }) => (
+    <h4 className="text-sm font-bold text-amber-300 mt-1.5 mb-0.5">{children}</h4>
+  ),
   p: ({ children }) => <p className="text-gray-200 mb-2 last:mb-0">{children}</p>,
   strong: ({ children }) => <strong className="font-bold text-gray-100">{children}</strong>,
   em: ({ children }) => <em className="italic text-gray-300">{children}</em>,
-  ul: ({ children }) => <ul className="list-disc list-inside ml-2 mb-2 space-y-0.5 text-gray-200">{children}</ul>,
-  ol: ({ children }) => <ol className="list-decimal list-inside ml-2 mb-2 space-y-0.5 text-gray-200">{children}</ol>,
+  ul: ({ children }) => (
+    <ul className="list-disc list-inside ml-2 mb-2 space-y-0.5 text-gray-200">{children}</ul>
+  ),
+  ol: ({ children }) => (
+    <ol className="list-decimal list-inside ml-2 mb-2 space-y-0.5 text-gray-200">{children}</ol>
+  ),
   li: ({ children }) => <li className="text-gray-200">{children}</li>,
   blockquote: ({ children }) => (
     <blockquote className="border-l-2 border-amber-400/50 pl-3 my-2 italic text-gray-300">
@@ -38,11 +48,20 @@ const markdownComponents: Components = {
         </code>
       );
     }
-    return <code className="bg-gray-800/60 rounded px-1 py-0.5 text-sm font-mono text-amber-300">{children}</code>;
+    return (
+      <code className="bg-gray-800/60 rounded px-1 py-0.5 text-sm font-mono text-amber-300">
+        {children}
+      </code>
+    );
   },
   pre: ({ children }) => <pre className="my-1">{children}</pre>,
   a: ({ href, children }) => (
-    <a href={href} className="text-amber-400 underline hover:text-amber-300" target="_blank" rel="noopener noreferrer">
+    <a
+      href={href}
+      className="text-amber-400 underline hover:text-amber-300"
+      target="_blank"
+      rel="noopener noreferrer"
+    >
       {children}
     </a>
   ),
@@ -52,7 +71,11 @@ const markdownComponents: Components = {
       <table className="min-w-full text-sm text-gray-200">{children}</table>
     </div>
   ),
-  th: ({ children }) => <th className="border border-gray-700/40 px-2 py-1 bg-gray-800/60 font-semibold text-left">{children}</th>,
+  th: ({ children }) => (
+    <th className="border border-gray-700/40 px-2 py-1 bg-gray-800/60 font-semibold text-left">
+      {children}
+    </th>
+  ),
   td: ({ children }) => <td className="border border-gray-700/40 px-2 py-1">{children}</td>,
 };
 
@@ -67,11 +90,21 @@ function TTSButton({ text }: { text: string }) {
       aria-label={isSpeaking ? "Stop narration" : "Listen to narration"}
     >
       {isSpeaking ? (
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 20 20"
+          fill="currentColor"
+          className="w-4 h-4"
+        >
           <path d="M5.25 3A2.25 2.25 0 003 5.25v9.5A2.25 2.25 0 005.25 17h9.5A2.25 2.25 0 0017 14.75v-9.5A2.25 2.25 0 0014.75 3h-9.5z" />
         </svg>
       ) : (
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 20 20"
+          fill="currentColor"
+          className="w-4 h-4"
+        >
           <path d="M10 3.75a.75.75 0 00-1.264-.546L4.703 7H3.167a.75.75 0 00-.7.48A6.985 6.985 0 002 10c0 .887.165 1.737.468 2.52.111.29.39.48.7.48h1.535l4.033 3.796A.75.75 0 0010 16.25V3.75zM15.95 5.05a.75.75 0 00-1.06 1.061 5.5 5.5 0 010 7.778.75.75 0 001.06 1.06 7 7 0 000-9.899z" />
           <path d="M13.829 7.172a.75.75 0 00-1.061 1.06 2.5 2.5 0 010 3.536.75.75 0 001.06 1.06 4 4 0 000-5.656z" />
         </svg>
@@ -112,9 +145,7 @@ function CheckRollDisplay({ roll, dc }: { roll: RollResult; dc?: number }) {
       <DieBadges roll={roll} />
       <span className="text-gray-500">=</span>
       <span className={`text-sm font-bold ${totalColor}`}>{roll.total}</span>
-      {dc !== undefined && (
-        <span className="text-gray-500 text-xs">vs DC {dc}</span>
-      )}
+      {dc !== undefined && <span className="text-gray-500 text-xs">vs DC {dc}</span>}
     </div>
   );
 }
@@ -132,7 +163,12 @@ function DamageRollDisplay({ roll }: { roll: RollResult }) {
 }
 
 /** Result badge pill */
-function ResultBadge({ success, isCrit, isFail, pending }: {
+function ResultBadge({
+  success,
+  isCrit,
+  isFail,
+  pending,
+}: {
   success?: boolean;
   isCrit?: boolean;
   isFail?: boolean;
@@ -174,7 +210,11 @@ function ResultBadge({ success, isCrit, isFail, pending }: {
 }
 
 /** Consolidated check card — used for merged_check, merged_check_pending, and bare check_request */
-function CheckCard({ message, onRollDice, myCharacterName }: {
+function CheckCard({
+  message,
+  onRollDice,
+  myCharacterName,
+}: {
   message: DisplayMessage;
   onRollDice?: (checkRequestId: string) => void;
   myCharacterName?: string;
@@ -184,10 +224,13 @@ function CheckCard({ message, onRollDice, myCharacterName }: {
   const isPending = message.type === "merged_check_pending";
   const isBare = message.type === "server:check_request";
 
-  const request = isMerged ? message.request
-    : isPending ? message.request
-    : isBare ? message.check
-    : null;
+  const request = isMerged
+    ? message.request
+    : isPending
+      ? message.request
+      : isBare
+        ? message.check
+        : null;
 
   if (!request) return null;
 
@@ -228,8 +271,8 @@ function CheckCard({ message, onRollDice, myCharacterName }: {
     }
   }
 
-  const isMyCheck = myCharacterName &&
-    request.targetCharacter.toLowerCase() === myCharacterName.toLowerCase();
+  const isMyCheck =
+    myCharacterName && request.targetCharacter.toLowerCase() === myCharacterName.toLowerCase();
 
   return (
     <div className={`border-l-4 p-3 rounded-r-lg ${bgColor} ${borderColor}`}>
@@ -246,14 +289,11 @@ function CheckCard({ message, onRollDice, myCharacterName }: {
             </span>
           )}
         </div>
-        {(isMerged || isPending) && !isDamage && (success !== undefined || isCrit || isFail || isPending) && (
-          <ResultBadge
-            success={success}
-            isCrit={isCrit}
-            isFail={isFail}
-            pending={isPending}
-          />
-        )}
+        {(isMerged || isPending) &&
+          !isDamage &&
+          (success !== undefined || isCrit || isFail || isPending) && (
+            <ResultBadge success={success} isCrit={isCrit} isFail={isFail} pending={isPending} />
+          )}
       </div>
 
       {/* Subtext: character name + reason */}
@@ -267,10 +307,14 @@ function CheckCard({ message, onRollDice, myCharacterName }: {
       {(request.advantage || request.disadvantage) && (
         <div className="mb-1.5">
           {request.advantage && (
-            <span className="text-xs text-green-400 bg-green-500/10 px-1.5 py-0.5 rounded mr-1">Advantage</span>
+            <span className="text-xs text-green-400 bg-green-500/10 px-1.5 py-0.5 rounded mr-1">
+              Advantage
+            </span>
           )}
           {request.disadvantage && (
-            <span className="text-xs text-red-400 bg-red-500/10 px-1.5 py-0.5 rounded mr-1">Disadvantage</span>
+            <span className="text-xs text-red-400 bg-red-500/10 px-1.5 py-0.5 rounded mr-1">
+              Disadvantage
+            </span>
           )}
         </div>
       )}
@@ -305,9 +349,7 @@ export function ChatMessage({ message, onRollDice, myCharacterName }: ChatMessag
     case "server:chat":
       return (
         <div className="flex gap-2">
-          <span className="font-bold text-blue-400 shrink-0">
-            {message.playerName}:
-          </span>
+          <span className="font-bold text-blue-400 shrink-0">{message.playerName}:</span>
           <span className="text-gray-200">{message.content}</span>
         </div>
       );
@@ -316,13 +358,20 @@ export function ChatMessage({ message, onRollDice, myCharacterName }: ChatMessag
       return (
         <div className="bg-amber-900/20 border-l-4 border-amber-500 p-3 rounded-r-lg">
           <div className="flex items-center justify-between mb-1">
-            <div className="text-sm text-amber-400 font-semibold" style={{ fontFamily: "var(--font-cinzel)" }}>
+            <div
+              className="text-sm text-amber-400 font-semibold"
+              style={{ fontFamily: "var(--font-cinzel)" }}
+            >
               Dungeon Master
             </div>
             <TTSButton text={message.content} />
           </div>
           <div className="text-gray-200 leading-relaxed prose-invert max-w-none">
-            <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} components={markdownComponents}>
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              rehypePlugins={[rehypeRaw]}
+              components={markdownComponents}
+            >
               {preprocessEntityTags(message.content)}
             </ReactMarkdown>
           </div>
@@ -330,11 +379,7 @@ export function ChatMessage({ message, onRollDice, myCharacterName }: ChatMessag
       );
 
     case "server:system":
-      return (
-        <div className="text-center text-sm text-gray-500 italic py-1">
-          {message.content}
-        </div>
-      );
+      return <div className="text-center text-sm text-gray-500 italic py-1">{message.content}</div>;
 
     case "server:error":
       return (
@@ -347,7 +392,9 @@ export function ChatMessage({ message, onRollDice, myCharacterName }: ChatMessag
     case "server:check_request":
     case "merged_check":
     case "merged_check_pending":
-      return <CheckCard message={message} onRollDice={onRollDice} myCharacterName={myCharacterName} />;
+      return (
+        <CheckCard message={message} onRollDice={onRollDice} myCharacterName={myCharacterName} />
+      );
 
     // Standalone dice_roll (DM rolls not tied to checks, or unlinked legacy rolls)
     case "server:dice_roll": {
@@ -363,7 +410,9 @@ export function ChatMessage({ message, onRollDice, myCharacterName }: ChatMessag
             <span className="text-gray-500">DM rolled</span>
             <DieBadges roll={roll} />
             <span className="text-gray-500">=</span>
-            <span className={`font-bold ${isCrit ? "text-yellow-400" : isFail ? "text-red-400" : "text-gray-300"}`}>
+            <span
+              className={`font-bold ${isCrit ? "text-yellow-400" : isFail ? "text-red-400" : "text-gray-300"}`}
+            >
               {roll.total}
             </span>
             {roll.label && <span className="text-gray-600">({roll.label})</span>}
@@ -392,33 +441,17 @@ export function ChatMessage({ message, onRollDice, myCharacterName }: ChatMessag
             <span className="text-gray-500">=</span>
             <span
               className={`text-xl font-bold ${
-                isCrit
-                  ? "text-yellow-400"
-                  : isFail
-                    ? "text-red-400"
-                    : "text-blue-300"
+                isCrit ? "text-yellow-400" : isFail ? "text-red-400" : "text-blue-300"
               }`}
             >
               {roll.total}
             </span>
           </div>
           <div className="text-xs text-gray-400 mt-0.5">{roll.label}</div>
-          {isCrit && (
-            <div className="text-xs text-yellow-400 font-bold mt-1">
-              CRITICAL HIT!
-            </div>
-          )}
-          {isFail && (
-            <div className="text-xs text-red-400 font-bold mt-1">
-              CRITICAL FAIL!
-            </div>
-          )}
-          {roll.advantage && (
-            <span className="text-xs text-green-400">Advantage</span>
-          )}
-          {roll.disadvantage && (
-            <span className="text-xs text-red-400">Disadvantage</span>
-          )}
+          {isCrit && <div className="text-xs text-yellow-400 font-bold mt-1">CRITICAL HIT!</div>}
+          {isFail && <div className="text-xs text-red-400 font-bold mt-1">CRITICAL FAIL!</div>}
+          {roll.advantage && <span className="text-xs text-green-400">Advantage</span>}
+          {roll.disadvantage && <span className="text-xs text-red-400">Disadvantage</span>}
         </div>
       );
     }
@@ -431,17 +464,11 @@ export function ChatMessage({ message, onRollDice, myCharacterName }: ChatMessag
       return (
         <div
           className={`border-l-4 p-3 rounded-r-lg ${
-            success
-              ? "bg-green-900/20 border-green-500"
-              : "bg-red-900/20 border-red-500"
+            success ? "bg-green-900/20 border-green-500" : "bg-red-900/20 border-red-500"
           }`}
         >
           <div className="flex items-center gap-2">
-            <span
-              className={`text-lg font-bold ${
-                success ? "text-green-400" : "text-red-400"
-              }`}
-            >
+            <span className={`text-lg font-bold ${success ? "text-green-400" : "text-red-400"}`}>
               {success ? "Success!" : "Failure!"}
             </span>
             <span className="text-sm text-gray-400">

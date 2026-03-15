@@ -2,7 +2,7 @@
 
 import { useReducer, useEffect, useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
+
 import { Breadcrumb } from "@/components/ui/Breadcrumb";
 import { Button } from "@/components/ui/Button";
 import { motion, AnimatePresence } from "framer-motion";
@@ -63,13 +63,8 @@ interface CharacterBuilderProps {
 
 export function CharacterBuilder({ editId }: CharacterBuilderProps) {
   const router = useRouter();
-  const { getCharacter, saveCharacter, updateCharacter } =
-    useCharacterLibrary();
-  const [state, dispatch] = useReducer(
-    builderReducer,
-    editId,
-    createInitialState
-  );
+  const { getCharacter, saveCharacter, updateCharacter } = useCharacterLibrary();
+  const [state, dispatch] = useReducer(builderReducer, editId, createInitialState);
 
   // Import modal state
   const [showImportModal, setShowImportModal] = useState(false);
@@ -83,25 +78,28 @@ export function CharacterBuilder({ editId }: CharacterBuilderProps) {
   } = useCharacterImport();
 
   // Handle file import — save and redirect
-  const handleFileImport = useCallback((json: string) => {
-    try {
-      const parsed = JSON.parse(json);
-      if (parsed?.format !== "unseen" || !parsed?.character) {
+  const handleFileImport = useCallback(
+    (json: string) => {
+      try {
+        const parsed = JSON.parse(json);
+        if (parsed?.format !== "unseen" || !parsed?.character) {
+          importFromFile(json); // let the hook handle the error
+          return;
+        }
+        const char = parsed.character as CharacterData;
+        if (editId) {
+          updateCharacter(editId, char, parsed.builderChoices);
+          router.push(`/characters/${editId}`);
+        } else {
+          const saved = saveCharacter(char, { builderChoices: parsed.builderChoices });
+          router.push(`/characters/${saved.id}`);
+        }
+      } catch {
         importFromFile(json); // let the hook handle the error
-        return;
       }
-      const char = parsed.character as CharacterData;
-      if (editId) {
-        updateCharacter(editId, char, parsed.builderChoices);
-        router.push(`/characters/${editId}`);
-      } else {
-        const saved = saveCharacter(char, { builderChoices: parsed.builderChoices });
-        router.push(`/characters/${saved.id}`);
-      }
-    } catch {
-      importFromFile(json); // let the hook handle the error
-    }
-  }, [editId, updateCharacter, saveCharacter, router, importFromFile]);
+    },
+    [editId, updateCharacter, saveCharacter, router, importFromFile],
+  );
 
   // When import via hook succeeds, save and redirect
   useEffect(() => {
@@ -128,13 +126,15 @@ export function CharacterBuilder({ editId }: CharacterBuilderProps) {
       // Migration: convert old single-class state to multiclass format
       const choices = saved.builderChoices as Record<string, unknown>;
       if (choices.className && !choices.classes) {
-        hydrated.classes = [{
-          className: choices.className as string,
-          level: (choices.level as number) ?? 1,
-          subclass: (choices.subclass as string | null) ?? null,
-          optionalFeatureSelections: (choices.featureChoices as Record<string, string[]>) ?? {},
-          weaponMasteries: (choices.weaponMasteries as string[]) ?? [],
-        }];
+        hydrated.classes = [
+          {
+            className: choices.className as string,
+            level: (choices.level as number) ?? 1,
+            subclass: (choices.subclass as string | null) ?? null,
+            optionalFeatureSelections: (choices.featureChoices as Record<string, string[]>) ?? {},
+            weaponMasteries: (choices.weaponMasteries as string[]) ?? [],
+          },
+        ];
         hydrated.activeClassIndex = 0;
       }
 
@@ -155,7 +155,10 @@ export function CharacterBuilder({ editId }: CharacterBuilderProps) {
       if (Array.isArray(choices.asiSelections)) {
         const asiSels = choices.asiSelections as { classIndex?: number; level: number }[];
         if (asiSels.length > 0 && asiSels[0].classIndex === undefined) {
-          hydrated.asiSelections = asiSels.map(s => ({ ...s, classIndex: 0 })) as BuilderState["asiSelections"];
+          hydrated.asiSelections = asiSels.map((s) => ({
+            ...s,
+            classIndex: 0,
+          })) as BuilderState["asiSelections"];
         }
       }
 
@@ -192,12 +195,9 @@ export function CharacterBuilder({ editId }: CharacterBuilderProps) {
     }
   }, [currentIndex, visibleSteps]);
 
-  const goToStep = useCallback(
-    (step: BuilderStep) => {
-      dispatch({ type: "SET_STEP", step });
-    },
-    []
-  );
+  const goToStep = useCallback((step: BuilderStep) => {
+    dispatch({ type: "SET_STEP", step });
+  }, []);
 
   const handleSave = useCallback(() => {
     if (state.classes.length === 0) return;
@@ -236,7 +236,10 @@ export function CharacterBuilder({ editId }: CharacterBuilderProps) {
               items={[
                 { label: "Home", href: "/" },
                 { label: "Characters", href: "/characters" },
-                { label: getCharacter(editId)?.character.static.name ?? "Character", href: `/characters/${editId}` },
+                {
+                  label: getCharacter(editId)?.character.static.name ?? "Character",
+                  href: `/characters/${editId}`,
+                },
               ]}
               current="Edit"
             >
@@ -304,32 +307,21 @@ export function CharacterBuilder({ editId }: CharacterBuilderProps) {
       <div className="relative bg-gray-800/80 border-t border-gray-700/50 px-6 py-3 shrink-0 backdrop-blur-sm">
         <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-amber-500/20 to-transparent" />
         <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={goBack}
-            disabled={currentIndex === 0}
-          >
+          <Button variant="secondary" size="sm" onClick={goBack} disabled={currentIndex === 0}>
             Back
           </Button>
-          <div className="text-sm text-gray-600 tracking-wider uppercase" style={{ fontFamily: "var(--font-cinzel)" }}>
+          <div
+            className="text-sm text-gray-600 tracking-wider uppercase"
+            style={{ fontFamily: "var(--font-cinzel)" }}
+          >
             Step {currentIndex + 1} of {visibleSteps.length}
           </div>
           {isLastStep ? (
-            <Button
-              variant="success"
-              size="md"
-              onClick={handleSave}
-              disabled={!canGoNext}
-            >
+            <Button variant="success" size="md" onClick={handleSave} disabled={!canGoNext}>
               {state.editingId ? "Save Changes" : "Save Character"}
             </Button>
           ) : (
-            <Button
-              size="md"
-              onClick={goNext}
-              disabled={!canGoNext}
-            >
+            <Button size="md" onClick={goNext} disabled={!canGoNext}>
               Next
             </Button>
           )}
@@ -346,15 +338,20 @@ export function CharacterBuilder({ editId }: CharacterBuilderProps) {
           <div className="relative bg-gray-800 border border-gray-600/50 rounded-xl shadow-2xl max-w-md w-full p-5 space-y-3">
             <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-amber-500/30 to-transparent rounded-t-xl" />
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-gray-200" style={{ fontFamily: "var(--font-cinzel)" }}>
+              <h3
+                className="text-sm font-semibold text-gray-200"
+                style={{ fontFamily: "var(--font-cinzel)" }}
+              >
                 Import Character
               </h3>
-              <Button
-                variant="icon"
-                onClick={() => setShowImportModal(false)}
-              >
+              <Button variant="icon" onClick={() => setShowImportModal(false)}>
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
                 </svg>
               </Button>
             </div>
@@ -417,7 +414,12 @@ function ProgressStepper({
               >
                 {isCompleted ? (
                   <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={3}
+                      d="M5 13l4 4L19 7"
+                    />
                   </svg>
                 ) : (
                   i + 1
@@ -455,7 +457,7 @@ function ProgressStepper({
 function renderStep(
   step: BuilderStep,
   state: Parameters<typeof StepSpecies>[0]["state"],
-  dispatch: Parameters<typeof StepSpecies>[0]["dispatch"]
+  dispatch: Parameters<typeof StepSpecies>[0]["dispatch"],
 ) {
   switch (step) {
     case "species":

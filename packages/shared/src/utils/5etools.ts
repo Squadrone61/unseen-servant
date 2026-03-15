@@ -5,7 +5,6 @@ import type { Entry } from "../data/entry-types";
 import type {
   SpellData,
   SpellRange,
-  SpellDuration,
   MonsterData,
   MonsterAc,
   MonsterHp,
@@ -16,12 +15,10 @@ import type {
   MonsterCr,
   ClassRaw,
   ClassAssembled,
-  FeatData,
   FeatPrerequisite,
   SpeciesData,
   BackgroundData,
   BaseItemData,
-  MagicItemData,
 } from "../data/types";
 
 // ═══════════════════════════════════════════════════════
@@ -102,10 +99,10 @@ export const ITEM_TYPE_MAP: Record<string, string> = {
   VEH: "Vehicle",
   WD: "Wand",
   WS: "Weapon Seed",
-  "$": "Treasure",
-  "$A": "Art Object",
-  "$C": "Coinage",
-  "$G": "Gemstone",
+  $: "Treasure",
+  $A: "Art Object",
+  $C: "Coinage",
+  $G: "Gemstone",
   AIR: "Vehicle (Air)",
   SHP: "Vehicle (Water)",
   SPC: "Vehicle (Space)",
@@ -124,21 +121,46 @@ export const OPT_FEAT_TYPE_MAP: Record<string, string> = {
   PB: "Pact Boon",
   "AS:V1-UA": "Arcane Shot (V1-UA)",
   "MV:C2-UA": "Cavalier Maneuver",
-  "ED": "Elemental Discipline",
-  "RN": "Rune Knight Rune",
-  "AF": "Alchemical Formula",
+  ED: "Elemental Discipline",
+  RN: "Rune Knight Rune",
+  AF: "Alchemical Formula",
 };
 
 export const CR_XP_MAP: Record<string, number> = {
-  "0": 0, "1/8": 25, "1/4": 50, "1/2": 100,
-  "1": 200, "2": 450, "3": 700, "4": 1100,
-  "5": 1800, "6": 2300, "7": 2900, "8": 3900,
-  "9": 5000, "10": 5900, "11": 7200, "12": 8400,
-  "13": 10000, "14": 11500, "15": 13000, "16": 15000,
-  "17": 18000, "18": 20000, "19": 22000, "20": 25000,
-  "21": 33000, "22": 41000, "23": 50000, "24": 62000,
-  "25": 75000, "26": 90000, "27": 105000, "28": 120000,
-  "29": 135000, "30": 155000,
+  "0": 0,
+  "1/8": 25,
+  "1/4": 50,
+  "1/2": 100,
+  "1": 200,
+  "2": 450,
+  "3": 700,
+  "4": 1100,
+  "5": 1800,
+  "6": 2300,
+  "7": 2900,
+  "8": 3900,
+  "9": 5000,
+  "10": 5900,
+  "11": 7200,
+  "12": 8400,
+  "13": 10000,
+  "14": 11500,
+  "15": 13000,
+  "16": 15000,
+  "17": 18000,
+  "18": 20000,
+  "19": 22000,
+  "20": 25000,
+  "21": 33000,
+  "22": 41000,
+  "23": 50000,
+  "24": 62000,
+  "25": 75000,
+  "26": 90000,
+  "27": 105000,
+  "28": 120000,
+  "29": 135000,
+  "30": 155000,
 };
 
 export const ABILITY_MAP: Record<string, string> = {
@@ -244,7 +266,8 @@ export function isRitual(spell: SpellData): boolean {
 
 export function formatSpellLevel(spell: SpellData): string {
   if (spell.level === 0) return "Cantrip";
-  const suffix = spell.level === 1 ? "st" : spell.level === 2 ? "nd" : spell.level === 3 ? "rd" : "th";
+  const suffix =
+    spell.level === 1 ? "st" : spell.level === 2 ? "nd" : spell.level === 3 ? "rd" : "th";
   return `${spell.level}${suffix}-level`;
 }
 
@@ -293,7 +316,10 @@ export function formatMonsterHp(hp: MonsterHp): string {
 
 export function formatMonsterSpeed(speed: MonsterSpeed): string {
   const parts: string[] = [];
-  const fmt = (val: number | { number: number; condition?: string } | undefined, label?: string) => {
+  const fmt = (
+    val: number | { number: number; condition?: string } | undefined,
+    label?: string,
+  ) => {
     if (val == null) return;
     const num = typeof val === "number" ? val : val.number;
     const cond = typeof val === "object" ? val.condition : undefined;
@@ -404,17 +430,13 @@ export function getSavingThrows(cls: ClassRaw): string[] {
 
 export function getArmorProfs(cls: ClassRaw): string[] {
   return (
-    cls.startingProficiencies.armor?.map((a) =>
-      typeof a === "string" ? a : a.proficiency
-    ) ?? []
+    cls.startingProficiencies.armor?.map((a) => (typeof a === "string" ? a : a.proficiency)) ?? []
   );
 }
 
 export function getWeaponProfs(cls: ClassRaw): string[] {
   return (
-    cls.startingProficiencies.weapons?.map((w) =>
-      typeof w === "string" ? w : w.proficiency
-    ) ?? []
+    cls.startingProficiencies.weapons?.map((w) => (typeof w === "string" ? w : w.proficiency)) ?? []
   );
 }
 
@@ -428,7 +450,13 @@ export function getToolProfs(cls: ClassRaw): string[] {
   );
 }
 
-type AbilityName = "strength" | "dexterity" | "constitution" | "intelligence" | "wisdom" | "charisma";
+type AbilityName =
+  | "strength"
+  | "dexterity"
+  | "constitution"
+  | "intelligence"
+  | "wisdom"
+  | "charisma";
 
 /** All 18 D&D 5e skills → governing ability */
 export const SKILL_ABILITY_MAP: Record<string, AbilityName> = {
@@ -485,16 +513,17 @@ export function getSpellSlotTable(cls: ClassAssembled): number[][] | undefined {
 
   // Fallback: look for inline spell slot columns in a regular rows table
   const group = cls.classTableGroups?.find((g) =>
-    g.colLabels?.some((l) =>
-      /spell\s*slot/i.test(stripTags(typeof l === "string" ? l : "")) ||
-      /^1st$/i.test(stripTags(typeof l === "string" ? l : ""))
-    )
+    g.colLabels?.some(
+      (l) =>
+        /spell\s*slot/i.test(stripTags(typeof l === "string" ? l : "")) ||
+        /^1st$/i.test(stripTags(typeof l === "string" ? l : "")),
+    ),
   );
   if (!group?.rows) return undefined;
 
   // Find the columns that represent spell slots (1st through 9th)
   const slotStartIdx = group.colLabels.findIndex((l) =>
-    /^1st$/i.test(stripTags(typeof l === "string" ? l : ""))
+    /^1st$/i.test(stripTags(typeof l === "string" ? l : "")),
   );
   if (slotStartIdx === -1) return undefined;
 
@@ -502,33 +531,40 @@ export function getSpellSlotTable(cls: ClassAssembled): number[][] | undefined {
     const slots: number[] = [];
     for (let i = slotStartIdx; i < row.length; i++) {
       const cell = row[i];
-      const num = typeof cell === "number" ? cell : typeof cell === "string" ? parseInt(cell, 10) : 0;
+      const num =
+        typeof cell === "number" ? cell : typeof cell === "string" ? parseInt(cell, 10) : 0;
       slots.push(isNaN(num) ? 0 : num);
     }
     return slots;
   });
 }
 
-export function getPactSlotTable(cls: ClassAssembled): { level: number; slots: number; slotLevel: number }[] | undefined {
+export function getPactSlotTable(
+  cls: ClassAssembled,
+): { level: number; slots: number; slotLevel: number }[] | undefined {
   // Warlock pact slots from classTableGroups
   const group = cls.classTableGroups?.find((g) =>
-    g.colLabels?.some((l) =>
-      /spell\s*slot/i.test(stripTags(typeof l === "string" ? l : "")) ||
-      /slot\s*level/i.test(stripTags(typeof l === "string" ? l : ""))
-    )
+    g.colLabels?.some(
+      (l) =>
+        /spell\s*slot/i.test(stripTags(typeof l === "string" ? l : "")) ||
+        /slot\s*level/i.test(stripTags(typeof l === "string" ? l : "")),
+    ),
   );
   if (!group || cls.casterProgression !== "pact") return undefined;
 
   const slotsIdx = group.colLabels.findIndex((l) =>
-    /spell\s*slot/i.test(stripTags(typeof l === "string" ? l : ""))
+    /spell\s*slot/i.test(stripTags(typeof l === "string" ? l : "")),
   );
   const levelIdx = group.colLabels.findIndex((l) =>
-    /slot\s*level/i.test(stripTags(typeof l === "string" ? l : ""))
+    /slot\s*level/i.test(stripTags(typeof l === "string" ? l : "")),
   );
   if (slotsIdx === -1 || levelIdx === -1 || !group.rows) return undefined;
 
   return group.rows.map((row, i) => {
-    const slots = typeof row[slotsIdx] === "number" ? row[slotsIdx] as number : parseInt(String(row[slotsIdx]), 10) || 0;
+    const slots =
+      typeof row[slotsIdx] === "number"
+        ? (row[slotsIdx] as number)
+        : parseInt(String(row[slotsIdx]), 10) || 0;
     const slotLevelStr = stripTags(String(row[levelIdx]));
     const slotLevel = parseInt(slotLevelStr, 10) || 1;
     return { level: i + 1, slots, slotLevel };
@@ -560,14 +596,15 @@ export function formatPrerequisite(prereqs: FeatPrerequisite[]): string {
         const abs = p.ability.map((a) =>
           Object.entries(a)
             .map(([k, v]) => `${ABILITY_MAP[k] ?? k} ${v}+`)
-            .join(" or ")
+            .join(" or "),
         );
         parts.push(abs.join("; "));
       }
       if (p.spellcasting) parts.push("Spellcasting feature");
       if (p.feature?.length) parts.push(p.feature.join(", "));
       if (p.other) parts.push(p.other);
-      if (p.otherSummary) parts.push(stripTags(p.otherSummary.entrySummary ?? p.otherSummary.entry));
+      if (p.otherSummary)
+        parts.push(stripTags(p.otherSummary.entrySummary ?? p.otherSummary.entry));
       return parts.join(", ");
     })
     .filter(Boolean)
@@ -594,15 +631,15 @@ export function getSpeciesSpeed(species: SpeciesData): number {
 export function getBackgroundSkills(bg: BackgroundData): string[] {
   if (!bg.skillProficiencies?.length) return [];
   return bg.skillProficiencies.flatMap((sp) =>
-    Object.keys(sp).filter((k) => sp[k] === true).map(normalizeSkill)
+    Object.keys(sp)
+      .filter((k) => sp[k] === true)
+      .map(normalizeSkill),
   );
 }
 
 export function getBackgroundTools(bg: BackgroundData): string[] {
   if (!bg.toolProficiencies?.length) return [];
-  return bg.toolProficiencies.flatMap((tp) =>
-    Object.keys(tp).filter((k) => tp[k] === true)
-  );
+  return bg.toolProficiencies.flatMap((tp) => Object.keys(tp).filter((k) => tp[k] === true));
 }
 
 export function getBackgroundFeat(bg: BackgroundData): string | undefined {
@@ -618,7 +655,9 @@ export function getBackgroundFeat(bg: BackgroundData): string | undefined {
     .join("; ");
 }
 
-export function getBackgroundAbilityScores(bg: BackgroundData): { from: string[]; weights: number[] } | undefined {
+export function getBackgroundAbilityScores(
+  bg: BackgroundData,
+): { from: string[]; weights: number[] } | undefined {
   if (!bg.ability?.length) return undefined;
   const first = bg.ability[0];
   if (first.choose?.weighted) {
@@ -660,13 +699,23 @@ export function decodeItemType(code: string): string {
   return ITEM_TYPE_MAP[clean] ?? clean;
 }
 
-export function categorizeBaseItem(item: BaseItemData): "weapon" | "armor" | "gear" | "tool" | "other" {
+export function categorizeBaseItem(
+  item: BaseItemData,
+): "weapon" | "armor" | "gear" | "tool" | "other" {
   if (item.weapon) return "weapon";
   if (item.armor) return "armor";
   const typeCode = item.type?.split("|")[0];
   if (typeCode === "S") return "armor"; // Shield
-  if (typeCode === "AT" || typeCode === "GS" || typeCode === "INS" || typeCode === "T") return "tool";
-  if (typeCode === "G" || typeCode === "SC" || typeCode === "A" || typeCode === "SCF" || typeCode === "AF") return "gear";
+  if (typeCode === "AT" || typeCode === "GS" || typeCode === "INS" || typeCode === "T")
+    return "tool";
+  if (
+    typeCode === "G" ||
+    typeCode === "SC" ||
+    typeCode === "A" ||
+    typeCode === "SCF" ||
+    typeCode === "AF"
+  )
+    return "gear";
   return "other";
 }
 
@@ -769,13 +818,20 @@ export function stripTags(text: string): string {
 function formatAtkTag(code: string): string {
   const types = code.split(",").map((c) => {
     switch (c.trim()) {
-      case "mw": return "Melee Weapon";
-      case "rw": return "Ranged Weapon";
-      case "ms": return "Melee Spell";
-      case "rs": return "Ranged Spell";
-      case "m": return "Melee";
-      case "r": return "Ranged";
-      default: return c;
+      case "mw":
+        return "Melee Weapon";
+      case "rw":
+        return "Ranged Weapon";
+      case "ms":
+        return "Melee Spell";
+      case "rs":
+        return "Ranged Spell";
+      case "m":
+        return "Melee";
+      case "r":
+        return "Ranged";
+      default:
+        return c;
     }
   });
   return `${types.join(" or ")} Attack:`;
@@ -827,7 +883,11 @@ export function entriesToText(entries: Entry[] | undefined | null, depth: number
         break;
       }
       case "table": {
-        const table = entry as { caption?: string; colLabels?: string[]; rows: (string | Entry)[][] };
+        const table = entry as {
+          caption?: string;
+          colLabels?: string[];
+          rows: (string | Entry)[][];
+        };
         if (table.caption) lines.push(indent + table.caption);
         if (table.colLabels) {
           lines.push(indent + table.colLabels.map((l) => stripTags(String(l))).join(" | "));
@@ -835,7 +895,11 @@ export function entriesToText(entries: Entry[] | undefined | null, depth: number
         for (const row of table.rows) {
           lines.push(
             indent +
-            row.map((cell) => (typeof cell === "string" ? stripTags(cell) : entriesToText([cell], 0))).join(" | ")
+              row
+                .map((cell) =>
+                  typeof cell === "string" ? stripTags(cell) : entriesToText([cell], 0),
+                )
+                .join(" | "),
           );
         }
         break;
@@ -893,12 +957,18 @@ export function entriesToText(entries: Entry[] | undefined | null, depth: number
       }
       case "abilityDc": {
         const dc = entry as { name: string; attributes: string[] };
-        lines.push(indent + `${dc.name} save DC = 8 + proficiency bonus + ${dc.attributes.map((a) => ABILITY_ABBR[a] ?? a).join("/")}`);
+        lines.push(
+          indent +
+            `${dc.name} save DC = 8 + proficiency bonus + ${dc.attributes.map((a) => ABILITY_ABBR[a] ?? a).join("/")}`,
+        );
         break;
       }
       case "abilityAttackMod": {
         const atk = entry as { name: string; attributes: string[] };
-        lines.push(indent + `${atk.name} attack modifier = proficiency bonus + ${atk.attributes.map((a) => ABILITY_ABBR[a] ?? a).join("/")}`);
+        lines.push(
+          indent +
+            `${atk.name} attack modifier = proficiency bonus + ${atk.attributes.map((a) => ABILITY_ABBR[a] ?? a).join("/")}`,
+        );
         break;
       }
       case "hr":
@@ -907,7 +977,11 @@ export function entriesToText(entries: Entry[] | undefined | null, depth: number
       case "refOptionalfeature":
       case "refClassFeature":
       case "refSubclassFeature": {
-        const ref = entry as { optionalfeature?: string; classFeature?: string; subclassFeature?: string };
+        const ref = entry as {
+          optionalfeature?: string;
+          classFeature?: string;
+          subclassFeature?: string;
+        };
         const refName = ref.optionalfeature ?? ref.classFeature ?? ref.subclassFeature ?? "";
         lines.push(indent + `[See: ${refName.split("|")[0]}]`);
         break;

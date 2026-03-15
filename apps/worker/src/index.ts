@@ -42,10 +42,7 @@ export default {
     }
 
     // GET /api/auth/google/callback — handle OAuth callback
-    if (
-      url.pathname === "/api/auth/google/callback" &&
-      request.method === "GET"
-    ) {
+    if (url.pathname === "/api/auth/google/callback" && request.method === "GET") {
       return handleGoogleCallback(request, env);
     }
 
@@ -75,7 +72,7 @@ export default {
           email: payload.email,
           avatarUrl: payload.picture,
         }),
-        { headers: { "Content-Type": "application/json", ...cors } }
+        { headers: { "Content-Type": "application/json", ...cors } },
       );
     }
 
@@ -145,10 +142,9 @@ export default {
 
     // GET /api/health
     if (url.pathname === "/api/health") {
-      return new Response(
-        JSON.stringify({ status: "ok", timestamp: Date.now() }),
-        { headers: { "Content-Type": "application/json", ...cors } }
-      );
+      return new Response(JSON.stringify({ status: "ok", timestamp: Date.now() }), {
+        headers: { "Content-Type": "application/json", ...cors },
+      });
     }
 
     return new Response("Not Found", { status: 404 });

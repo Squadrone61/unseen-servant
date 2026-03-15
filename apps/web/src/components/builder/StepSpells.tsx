@@ -28,10 +28,10 @@ import {
 type SchoolCode = "A" | "C" | "D" | "E" | "V" | "I" | "N" | "T" | string;
 
 interface SchoolStyle {
-  dot: string;       // bg color class for the dot
-  border: string;    // left border color class
-  badge: string;     // badge bg + text
-  text: string;      // school name text color
+  dot: string; // bg color class for the dot
+  border: string; // left border color class
+  badge: string; // badge bg + text
+  text: string; // school name text color
 }
 
 const SCHOOL_STYLES: Record<string, SchoolStyle> = {
@@ -119,7 +119,7 @@ export function StepSpells({ state, dispatch }: StepProps) {
   const [cantripsExpanded, setCantripsExpanded] = useState(true);
 
   // Find the first caster class for spell display
-  const casterClass = state.classes.find(c => isCasterClass(c.className));
+  const casterClass = state.classes.find((c) => isCasterClass(c.className));
   const className = casterClass?.className ?? "";
   const classLevel = casterClass?.level ?? 1;
   const classSubclass = casterClass?.subclass ?? null;
@@ -129,9 +129,7 @@ export function StepSpells({ state, dispatch }: StepProps) {
   const castingAbility = SPELLCASTING_ABILITY_MAP[className.toLowerCase()] as
     | keyof typeof finalAbilities
     | undefined;
-  const abilityMod = castingAbility
-    ? getAbilityMod(finalAbilities[castingAbility])
-    : 0;
+  const abilityMod = castingAbility ? getAbilityMod(finalAbilities[castingAbility]) : 0;
 
   // Per-class spell selections
   const selectedCantrips = state.spellSelections[className]?.cantrips ?? [];
@@ -139,20 +137,16 @@ export function StepSpells({ state, dispatch }: StepProps) {
 
   const maxCantrips = getCantripsKnown(className, classLevel);
   const maxSpellLevel = getMaxSpellLevel(className, classLevel);
-  const spellInfo = getSpellsKnownOrPrepared(
-    className,
-    classLevel,
-    abilityMod
-  );
+  const spellInfo = getSpellsKnownOrPrepared(className, classLevel, abilityMod);
 
   // Always-prepared spells from subclass
   const alwaysPrepared = useMemo(
     () => getSubclassAlwaysPrepared(className, classSubclass, classLevel),
-    [className, classSubclass, classLevel]
+    [className, classSubclass, classLevel],
   );
   const alwaysPreparedSet = useMemo(
     () => new Set(alwaysPrepared.map((s) => s.toLowerCase())),
-    [alwaysPrepared]
+    [alwaysPrepared],
   );
 
   // Auto-collapse cantrips when selection is complete
@@ -173,15 +167,10 @@ export function StepSpells({ state, dispatch }: StepProps) {
   }, [className]);
 
   // Filter spells
-  const cantrips = useMemo(
-    () => classSpells.filter((s) => s.level === 0),
-    [classSpells]
-  );
+  const cantrips = useMemo(() => classSpells.filter((s) => s.level === 0), [classSpells]);
 
   const leveled = useMemo(() => {
-    return classSpells.filter(
-      (s) => s.level > 0 && s.level <= maxSpellLevel
-    );
+    return classSpells.filter((s) => s.level > 0 && s.level <= maxSpellLevel);
   }, [classSpells, maxSpellLevel]);
 
   const filteredCantrips = useMemo(() => {
@@ -189,9 +178,7 @@ export function StepSpells({ state, dispatch }: StepProps) {
     if (search) {
       const q = search.toLowerCase();
       list = list.filter(
-        (s) =>
-          s.name.toLowerCase().includes(q) ||
-          formatSchool(s.school).toLowerCase().includes(q)
+        (s) => s.name.toLowerCase().includes(q) || formatSchool(s.school).toLowerCase().includes(q),
       );
     }
     return list;
@@ -208,9 +195,7 @@ export function StepSpells({ state, dispatch }: StepProps) {
     if (search) {
       const q = search.toLowerCase();
       list = list.filter(
-        (s) =>
-          s.name.toLowerCase().includes(q) ||
-          formatSchool(s.school).toLowerCase().includes(q)
+        (s) => s.name.toLowerCase().includes(q) || formatSchool(s.school).toLowerCase().includes(q),
       );
     }
     return list;
@@ -231,7 +216,10 @@ export function StepSpells({ state, dispatch }: StepProps) {
   return (
     <div className="space-y-5">
       <div>
-        <h2 className="text-xl font-semibold text-amber-200/90 tracking-wide" style={{ fontFamily: "var(--font-cinzel)" }}>
+        <h2
+          className="text-xl font-semibold text-amber-200/90 tracking-wide"
+          style={{ fontFamily: "var(--font-cinzel)" }}
+        >
           Spells
         </h2>
         <p className="text-sm text-gray-500">
@@ -279,7 +267,12 @@ export function StepSpells({ state, dispatch }: StepProps) {
                   stroke="currentColor"
                   viewBox="0 0 24 24"
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 5l7 7-7 7"
+                  />
                 </svg>
                 <span className="text-xs font-medium text-gray-300">Cantrips</span>
                 {/* Progress pill */}
@@ -316,9 +309,7 @@ export function StepSpells({ state, dispatch }: StepProps) {
                       dispatch({ type: "TOGGLE_CANTRIP", className, spell: spell.name })
                     }
                     onExpand={() =>
-                      setExpandedSpell(
-                        expandedSpell === spell.name ? null : spell.name
-                      )
+                      setExpandedSpell(expandedSpell === spell.name ? null : spell.name)
                     }
                   />
                 ))}
@@ -331,9 +322,7 @@ export function StepSpells({ state, dispatch }: StepProps) {
             <div>
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-medium text-gray-300">
-                    Spells
-                  </span>
+                  <span className="text-xs font-medium text-gray-300">Spells</span>
                   <div className="flex gap-1">
                     <button
                       onClick={() => setLevelFilter(null)}
@@ -345,21 +334,19 @@ export function StepSpells({ state, dispatch }: StepProps) {
                     >
                       All
                     </button>
-                    {Array.from({ length: maxSpellLevel }, (_, i) => i + 1).map(
-                      (l) => (
-                        <button
-                          key={l}
-                          onClick={() => setLevelFilter(l)}
-                          className={`text-xs px-1.5 py-0.5 rounded ${
-                            levelFilter === l
-                              ? "bg-amber-500/15 text-amber-300"
-                              : "text-gray-500 hover:text-gray-300"
-                          }`}
-                        >
-                          {l}
-                        </button>
-                      )
-                    )}
+                    {Array.from({ length: maxSpellLevel }, (_, i) => i + 1).map((l) => (
+                      <button
+                        key={l}
+                        onClick={() => setLevelFilter(l)}
+                        className={`text-xs px-1.5 py-0.5 rounded ${
+                          levelFilter === l
+                            ? "bg-amber-500/15 text-amber-300"
+                            : "text-gray-500 hover:text-gray-300"
+                        }`}
+                      >
+                        {l}
+                      </button>
+                    ))}
                     {isRitualCaster && (
                       <button
                         onClick={() => setRitualOnly(!ritualOnly)}
@@ -375,12 +362,20 @@ export function StepSpells({ state, dispatch }: StepProps) {
                   </div>
                 </div>
                 {/* Selection pill for leveled spells */}
-                <SelectionPill current={selectedSpells.length} max={spellInfo.count} label={spellInfo.type} />
+                <SelectionPill
+                  current={selectedSpells.length}
+                  max={spellInfo.count}
+                  label={spellInfo.type}
+                />
               </div>
 
               {/* Leveled spells progress bar */}
               {spellInfo.count > 0 && (
-                <ProgressBar current={selectedSpells.length} max={spellInfo.count} className="mb-2" />
+                <ProgressBar
+                  current={selectedSpells.length}
+                  max={spellInfo.count}
+                  className="mb-2"
+                />
               )}
 
               <div className="space-y-1 max-h-96 overflow-y-auto">
@@ -406,9 +401,7 @@ export function StepSpells({ state, dispatch }: StepProps) {
                         }
                       }}
                       onExpand={() =>
-                        setExpandedSpell(
-                          expandedSpell === spell.name ? null : spell.name
-                        )
+                        setExpandedSpell(expandedSpell === spell.name ? null : spell.name)
                       }
                     />
                   );
@@ -431,15 +424,7 @@ export function StepSpells({ state, dispatch }: StepProps) {
 
 // ─── Progress components ──────────────────────────────────────────────────────
 
-function SelectionPill({
-  current,
-  max,
-  label,
-}: {
-  current: number;
-  max: number;
-  label?: string;
-}) {
+function SelectionPill({ current, max, label }: { current: number; max: number; label?: string }) {
   const full = current >= max && max > 0;
   return (
     <span
@@ -524,13 +509,25 @@ function SpellRow({
     >
       <div className="flex items-center gap-2 px-2.5 py-1.5">
         {/* School color dot */}
-        <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${schoolStyle.dot} ${disabled ? "opacity-30" : "opacity-80"}`} />
+        <div
+          className={`w-1.5 h-1.5 rounded-full shrink-0 ${schoolStyle.dot} ${disabled ? "opacity-30" : "opacity-80"}`}
+        />
 
         {/* Checkbox */}
         {locked ? (
           <div className="w-4 h-4 rounded border border-amber-600 bg-amber-600/30 flex items-center justify-center shrink-0">
-            <svg className="w-3 h-3 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+            <svg
+              className="w-3 h-3 text-amber-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={3}
+                d="M5 13l4 4L19 7"
+              />
             </svg>
           </div>
         ) : (
@@ -546,8 +543,18 @@ function SpellRow({
             }`}
           >
             {selected && (
-              <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+              <svg
+                className="w-3 h-3 text-white"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={3}
+                  d="M5 13l4 4L19 7"
+                />
               </svg>
             )}
           </button>
@@ -558,9 +565,7 @@ function SpellRow({
           <span className={`text-xs ${disabled && !selected ? "text-gray-500" : "text-gray-200"}`}>
             {spell.name}
           </span>
-          <span className={`text-xs ${schoolStyle.text}`}>
-            {formatSchool(spell.school)}
-          </span>
+          <span className={`text-xs ${schoolStyle.text}`}>{formatSchool(spell.school)}</span>
 
           {/* Concentration badge */}
           {concentration && (
@@ -571,19 +576,19 @@ function SpellRow({
 
           {/* Ritual badge */}
           {ritual && (
-            <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium leading-none ${
-              isRitualCaster
-                ? "bg-cyan-900/40 text-cyan-300 border border-cyan-700/40"
-                : "bg-gray-800/50 text-gray-600 border border-gray-700/40"
-            }`}>
+            <span
+              className={`text-xs px-1.5 py-0.5 rounded-full font-medium leading-none ${
+                isRitualCaster
+                  ? "bg-cyan-900/40 text-cyan-300 border border-cyan-700/40"
+                  : "bg-gray-800/50 text-gray-600 border border-gray-700/40"
+              }`}
+            >
               R
             </span>
           )}
 
           {/* Always prepared badge */}
-          {locked && (
-            <span className="text-xs px-1 text-amber-500/80">always</span>
-          )}
+          {locked && <span className="text-xs px-1 text-amber-500/80">always</span>}
         </div>
 
         {/* Level label */}
@@ -592,10 +597,7 @@ function SpellRow({
         </span>
 
         {/* Expand button */}
-        <button
-          onClick={onExpand}
-          className="text-gray-600 hover:text-gray-400 shrink-0"
-        >
+        <button onClick={onExpand} className="text-gray-600 hover:text-gray-400 shrink-0">
           <svg
             className={`w-3 h-3 transition-transform ${expanded ? "rotate-180" : ""}`}
             fill="none"
@@ -664,9 +666,7 @@ function SelectedSpellsSidebar({
   alwaysPrepared: string[];
 }) {
   const hasSpells =
-    alwaysPrepared.length > 0 ||
-    selectedCantrips.length > 0 ||
-    selectedSpells.length > 0;
+    alwaysPrepared.length > 0 || selectedCantrips.length > 0 || selectedSpells.length > 0;
 
   // Group leveled spells by spell level
   const spellsByLevel = useMemo(() => {
@@ -693,12 +693,12 @@ function SelectedSpellsSidebar({
 
   const sortedLevels = useMemo(
     () => Array.from(spellsByLevel.keys()).sort((a, b) => a - b),
-    [spellsByLevel]
+    [spellsByLevel],
   );
 
   const sortedAlwaysLevels = useMemo(
     () => Array.from(alwaysPreparedByLevel.keys()).sort((a, b) => a - b),
-    [alwaysPreparedByLevel]
+    [alwaysPreparedByLevel],
   );
 
   const totalCount = selectedCantrips.length + selectedSpells.length + alwaysPrepared.length;
@@ -709,10 +709,23 @@ function SelectedSpellsSidebar({
       <div className="bg-gray-800/80 border border-gray-700/50 rounded-t-lg px-3 py-2 flex items-center justify-between">
         <div className="flex items-center gap-2">
           {/* Spellbook icon */}
-          <svg className="w-3.5 h-3.5 text-amber-400/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+          <svg
+            className="w-3.5 h-3.5 text-amber-400/70"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={1.5}
+              d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+            />
           </svg>
-          <span className="text-sm font-medium text-gray-200" style={{ fontFamily: "var(--font-cinzel)" }}>
+          <span
+            className="text-sm font-medium text-gray-200"
+            style={{ fontFamily: "var(--font-cinzel)" }}
+          >
             Spellbook
           </span>
         </div>

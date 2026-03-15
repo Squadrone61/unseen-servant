@@ -3,7 +3,8 @@ import * as path from "path";
 import { campaignManifestSchema } from "../types.js";
 import type { CampaignManifest, CampaignSummary } from "../types.js";
 
-const CAMPAIGNS_ROOT = process.env.UNSEEN_CAMPAIGNS_DIR || path.join(process.cwd(), ".unseen", "campaigns");
+const CAMPAIGNS_ROOT =
+  process.env.UNSEEN_CAMPAIGNS_DIR || path.join(process.cwd(), ".unseen", "campaigns");
 
 /** Slugify a campaign name: lowercase, hyphens, no special chars. */
 function slugify(name: string): string {
@@ -113,32 +114,32 @@ export class CampaignManager {
     fs.writeFileSync(
       path.join(dir, "active-context.md"),
       "# Active Context\n\nNew campaign — no context yet.\n",
-      "utf-8"
+      "utf-8",
     );
     fs.writeFileSync(
       path.join(dir, "world", "npcs.md"),
       "# NPCs\n\n_No NPCs recorded yet._\n",
-      "utf-8"
+      "utf-8",
     );
     fs.writeFileSync(
       path.join(dir, "world", "locations.md"),
       "# Locations\n\n_No locations recorded yet._\n",
-      "utf-8"
+      "utf-8",
     );
     fs.writeFileSync(
       path.join(dir, "world", "factions.md"),
       "# Factions\n\n_No factions recorded yet._\n",
-      "utf-8"
+      "utf-8",
     );
     fs.writeFileSync(
       path.join(dir, "world", "quests.md"),
       "# Quests\n\n_No quests recorded yet._\n",
-      "utf-8"
+      "utf-8",
     );
     fs.writeFileSync(
       path.join(dir, "world", "items.md"),
       "# Notable Items\n\n_No items recorded yet._\n",
-      "utf-8"
+      "utf-8",
     );
 
     return manifest;
@@ -172,11 +173,7 @@ export class CampaignManager {
 
     for (const entry of entries) {
       if (!entry.isDirectory()) continue;
-      const manifestPath = path.join(
-        CAMPAIGNS_ROOT,
-        entry.name,
-        "campaign.json"
-      );
+      const manifestPath = path.join(CAMPAIGNS_ROOT, entry.name, "campaign.json");
       if (!fs.existsSync(manifestPath)) continue;
 
       try {
@@ -190,17 +187,19 @@ export class CampaignManager {
             sessionCount: result.data.sessionCount,
           });
         } else {
-          console.error(`[campaign-manager] Corrupt manifest in ${entry.name}: ${result.error.message}`);
+          console.error(
+            `[campaign-manager] Corrupt manifest in ${entry.name}: ${result.error.message}`,
+          );
         }
       } catch (e) {
-        console.error(`[campaign-manager] Failed to read manifest in ${entry.name}: ${e instanceof Error ? e.message : String(e)}`);
+        console.error(
+          `[campaign-manager] Failed to read manifest in ${entry.name}: ${e instanceof Error ? e.message : String(e)}`,
+        );
       }
     }
 
     return campaigns.sort(
-      (a, b) =>
-        new Date(b.lastPlayedAt).getTime() -
-        new Date(a.lastPlayedAt).getTime()
+      (a, b) => new Date(b.lastPlayedAt).getTime() - new Date(a.lastPlayedAt).getTime(),
     );
   }
 
@@ -211,11 +210,7 @@ export class CampaignManager {
 
     // Try with .md extension first, then .json, then exact
     const basePath = path.join(this.activeDir, normalized);
-    for (const candidate of [
-      `${basePath}.md`,
-      `${basePath}.json`,
-      basePath,
-    ]) {
+    for (const candidate of [`${basePath}.md`, `${basePath}.json`, basePath]) {
       if (fs.existsSync(candidate)) {
         return fs.readFileSync(candidate, "utf-8");
       }
@@ -273,14 +268,12 @@ export class CampaignManager {
 
     let count = 0;
     for (const [playerName, charData] of Object.entries(characters)) {
-      const slug = slugify(
-        (charData.static as { name?: string })?.name || playerName
-      );
+      const slug = slugify((charData.static as { name?: string })?.name || playerName);
       const userId = userIds?.[playerName];
       fs.writeFileSync(
         path.join(charDir, `${slug}.json`),
         JSON.stringify({ playerName, ...(userId ? { userId } : {}), ...charData }, null, 2),
-        "utf-8"
+        "utf-8",
       );
       count++;
     }
@@ -308,9 +301,7 @@ export class CampaignManager {
 
     for (const file of charFiles) {
       try {
-        const data = JSON.parse(
-          fs.readFileSync(path.join(charDir, file), "utf-8")
-        );
+        const data = JSON.parse(fs.readFileSync(path.join(charDir, file), "utf-8"));
         const playerName = data.playerName as string | undefined;
         const charName = (data.static as { name?: string })?.name;
         // Use saved playerName, fall back to character name
@@ -345,7 +336,7 @@ export class CampaignManager {
         `## Campaign: ${manifest.name}\n` +
           `- Sessions played: ${manifest.sessionCount}\n` +
           `- Players: ${manifest.players.length > 0 ? manifest.players.join(", ") : "none yet"}\n` +
-          `- Last played: ${manifest.lastPlayedAt}\n`
+          `- Last played: ${manifest.lastPlayedAt}\n`,
       );
     }
 
@@ -375,10 +366,7 @@ export class CampaignManager {
         .filter((f) => f.endsWith(".md"))
         .sort();
       if (sessionFiles.length > 0) {
-        const latestPath = path.join(
-          sessionsDir,
-          sessionFiles[sessionFiles.length - 1]
-        );
+        const latestPath = path.join(sessionsDir, sessionFiles[sessionFiles.length - 1]);
         const summary = fs.readFileSync(latestPath, "utf-8").trim();
         if (summary) {
           parts.push(`## Previous Session Summary\n\n${summary}`);
@@ -389,23 +377,19 @@ export class CampaignManager {
     // 5. Character summaries
     const charDir = path.join(this.activeDir, "characters");
     if (fs.existsSync(charDir)) {
-      const charFiles = fs
-        .readdirSync(charDir)
-        .filter((f) => f.endsWith(".json"));
+      const charFiles = fs.readdirSync(charDir).filter((f) => f.endsWith(".json"));
       if (charFiles.length > 0) {
         const charSummaries: string[] = [];
         for (const file of charFiles) {
           try {
-            const data = JSON.parse(
-              fs.readFileSync(path.join(charDir, file), "utf-8")
-            );
+            const data = JSON.parse(fs.readFileSync(path.join(charDir, file), "utf-8"));
             const s = data.static;
             const d = data.dynamic;
             const classes = s.classes
               ?.map((c: { name: string; level: number }) => `${c.name} ${c.level}`)
               .join("/");
             charSummaries.push(
-              `- **${s.name}** (${s.species || s.race} ${classes}) — HP ${d.currentHP}/${s.maxHP}, AC ${s.armorClass}`
+              `- **${s.name}** (${s.species || s.race} ${classes}) — HP ${d.currentHP}/${s.maxHP}, AC ${s.armorClass}`,
             );
           } catch {
             // skip
@@ -427,7 +411,7 @@ export class CampaignManager {
   endSession(
     summary: string,
     activeContext: string,
-    characters?: Record<string, { static: unknown; dynamic: unknown }>
+    characters?: Record<string, { static: unknown; dynamic: unknown }>,
   ): { sessionNumber: number } {
     if (!this.activeDir || !this.cachedManifest) throw new Error("No campaign loaded");
 
@@ -440,18 +424,10 @@ export class CampaignManager {
     const sessionsDir = path.join(this.activeDir, "sessions");
     this.ensureDir(sessionsDir);
     const sessionFile = `session-${String(sessionNumber).padStart(3, "0")}.md`;
-    fs.writeFileSync(
-      path.join(sessionsDir, sessionFile),
-      summary,
-      "utf-8"
-    );
+    fs.writeFileSync(path.join(sessionsDir, sessionFile), summary, "utf-8");
 
     // Update active context
-    fs.writeFileSync(
-      path.join(this.activeDir, "active-context.md"),
-      activeContext,
-      "utf-8"
-    );
+    fs.writeFileSync(path.join(this.activeDir, "active-context.md"), activeContext, "utf-8");
 
     // Snapshot characters if provided
     if (characters) {
@@ -459,7 +435,7 @@ export class CampaignManager {
 
       // Update players list from characters
       this.cachedManifest.players = Object.values(characters).map(
-        (c) => (c.static as { name?: string })?.name || "Unknown"
+        (c) => (c.static as { name?: string })?.name || "Unknown",
       );
     }
 
@@ -474,7 +450,6 @@ export class CampaignManager {
 
     return { sessionNumber };
   }
-
 
   /** Save pacing/encounter settings to the manifest. */
   saveSettings(settings: { pacingProfile?: string; encounterLength?: string }): void {
@@ -499,11 +474,7 @@ export class CampaignManager {
   /** Save the system prompt to the active campaign. */
   saveSystemPrompt(prompt: string): void {
     if (!this.activeDir) throw new Error("No campaign loaded");
-    fs.writeFileSync(
-      path.join(this.activeDir, "system-prompt.md"),
-      prompt,
-      "utf-8"
-    );
+    fs.writeFileSync(path.join(this.activeDir, "system-prompt.md"), prompt, "utf-8");
   }
 
   /** Update the manifest's lastPlayedAt timestamp. */

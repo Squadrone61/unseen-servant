@@ -114,7 +114,15 @@ export type ASIMode = "two-one" | "three-ones";
 
 export interface TraitChoiceDefinition {
   traitName: string;
-  choiceType: "skill" | "skills" | "feat" | "lineage" | "ancestry" | "language" | "resistance" | "size";
+  choiceType:
+    | "skill"
+    | "skills"
+    | "feat"
+    | "lineage"
+    | "ancestry"
+    | "language"
+    | "resistance"
+    | "size";
   count?: number;
   options?: string[];
   featCategory?: string;
@@ -134,10 +142,13 @@ export interface BuilderState {
   // Step 1: Species
   species: string | null;
   nameFromSpeciesStep: string;
-  speciesChoices: Record<string, {
-    selected: string | string[];
-    secondarySelected?: string;
-  }>;
+  speciesChoices: Record<
+    string,
+    {
+      selected: string | string[];
+      secondarySelected?: string;
+    }
+  >;
 
   // Step 2: Background
   background: string | null;
@@ -165,10 +176,13 @@ export interface BuilderState {
   skillExpertise: string[];
 
   // Step 6: Spells (per-class selections)
-  spellSelections: Record<string, {
-    cantrips: string[];
-    spells: string[];
-  }>;
+  spellSelections: Record<
+    string,
+    {
+      cantrips: string[];
+      spells: string[];
+    }
+  >;
 
   // Step 7: Equipment
   startingEquipmentChoice: "A" | "B" | "custom";
@@ -243,7 +257,11 @@ export type BuilderAction =
 
   // Equipment
   | { type: "SET_STARTING_EQUIPMENT_CHOICE"; choice: "A" | "B" | "custom" }
-  | { type: "ADD_STARTING_EQUIPMENT"; items: EquipmentEntry[]; currency: import("@unseen-servant/shared/types").Currency }
+  | {
+      type: "ADD_STARTING_EQUIPMENT";
+      items: EquipmentEntry[];
+      currency: import("@unseen-servant/shared/types").Currency;
+    }
   | { type: "ADD_EQUIPMENT"; entry: EquipmentEntry }
   | { type: "REMOVE_EQUIPMENT"; name: string }
   | { type: "SET_EQUIPMENT_QUANTITY"; name: string; quantity: number }

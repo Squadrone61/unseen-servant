@@ -16,7 +16,10 @@ export function Breadcrumb({ items, current, children }: BreadcrumbProps) {
   return (
     <nav className="mb-4">
       <div className="flex items-center justify-between">
-        <ol className="flex items-center gap-1.5 text-sm" style={{ fontFamily: "var(--font-cinzel)" }}>
+        <ol
+          className="flex items-center gap-1.5 text-sm"
+          style={{ fontFamily: "var(--font-cinzel)" }}
+        >
           {items.map((item, i) => (
             <li key={i} className="flex items-center gap-1.5">
               <Link

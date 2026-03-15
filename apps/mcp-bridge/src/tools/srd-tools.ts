@@ -2,33 +2,81 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { WSClient } from "../ws-client.js";
 import {
-  getSpell, getMonster, getCondition, getMagicItem, getFeat,
-  getClass, getSpecies, getBackground, getOptionalFeature,
-  getAction, getLanguage, getDisease,
-  searchSpells, searchMonsters, searchMagicItems, searchFeats, searchOptionalFeatures,
-  getSpellsByClass, getSpellsByLevel,
-  classesArray, spellsArray, speciesArray, backgroundsArray, conditionsArray,
-  monstersArray, magicItemsArray, featsArray, optionalFeaturesArray, actionsArray,
-  languagesArray, diseasesArray,
+  getSpell,
+  getMonster,
+  getCondition,
+  getMagicItem,
+  getFeat,
+  getClass,
+  getSpecies,
+  getBackground,
+  getOptionalFeature,
+  getAction,
+  getLanguage,
+  getDisease,
+  searchSpells,
+  searchMonsters,
+  searchMagicItems,
+  searchFeats,
+  searchOptionalFeatures,
+  classesArray,
+  speciesArray,
+  backgroundsArray,
+  conditionsArray,
+  actionsArray,
   getClassResources,
-  type SpellData, type MonsterData, type ConditionData, type MagicItemData, type FeatData,
-  type ClassAssembled, type SpeciesData, type BackgroundData, type OptionalFeatureData,
-  type ActionData, type LanguageData, type DiseaseData,
+  type SpellData,
+  type MonsterData,
+  type ConditionData,
+  type MagicItemData,
+  type FeatData,
+  type ClassAssembled,
+  type SpeciesData,
+  type BackgroundData,
+  type OptionalFeatureData,
+  type ActionData,
+  type LanguageData,
+  type DiseaseData,
 } from "@unseen-servant/shared/data";
 import {
-  formatSchool, formatCastingTime, formatRange, formatComponents, formatDuration,
-  isConcentration, isRitual, formatSpellLevel,
-  formatMonsterSize, formatMonsterType, formatMonsterAc, formatMonsterHp,
-  formatMonsterSpeed, formatMonsterCr, crToXp,
-  formatAbilityMod, formatSaves, formatSkills,
-  flattenResistances, flattenConditionImmunities,
-  getHitDice, getSavingThrows, getArmorProfs, getWeaponProfs, getToolProfs, getSkillChoices,
+  formatSchool,
+  formatCastingTime,
+  formatRange,
+  formatComponents,
+  formatDuration,
+  isConcentration,
+  isRitual,
+  formatSpellLevel,
+  formatMonsterSize,
+  formatMonsterType,
+  formatMonsterAc,
+  formatMonsterHp,
+  formatMonsterSpeed,
+  formatMonsterCr,
+  crToXp,
+  formatAbilityMod,
+  formatSaves,
+  formatSkills,
+  flattenResistances,
+  flattenConditionImmunities,
+  getHitDice,
+  getSavingThrows,
+  getArmorProfs,
+  getWeaponProfs,
+  getToolProfs,
+  getSkillChoices,
   getCasterType,
-  formatFeatCategory, formatPrerequisite,
-  formatSpeciesSize, getSpeciesSpeed,
-  getBackgroundSkills, getBackgroundTools, getBackgroundFeat, getBackgroundAbilityScores,
+  formatFeatCategory,
+  formatPrerequisite,
+  formatSpeciesSize,
+  getSpeciesSpeed,
+  getBackgroundSkills,
+  getBackgroundTools,
+  getBackgroundFeat,
+  getBackgroundAbilityScores,
   formatOptionalFeatureType,
-  entriesToText, stripTags,
+  entriesToText,
+  stripTags,
   ABILITY_MAP,
 } from "@unseen-servant/shared";
 
@@ -44,11 +92,12 @@ function formatSpell(s: SpellData): string {
   text += `**Components:** ${formatComponents(s)}\n`;
   text += `**Duration:** ${formatDuration(s)}\n`;
   if (s.classes?.fromClassList?.length) {
-    text += `**Classes:** ${s.classes.fromClassList.map(c => c.name).join(", ")}\n`;
+    text += `**Classes:** ${s.classes.fromClassList.map((c) => c.name).join(", ")}\n`;
   }
   if (s.damageInflict?.length) text += `**Damage Type:** ${s.damageInflict.join(", ")}\n`;
   text += `\n${entriesToText(s.entries)}`;
-  if (s.entriesHigherLevel?.length) text += `\n\n**At Higher Levels.** ${entriesToText(s.entriesHigherLevel)}`;
+  if (s.entriesHigherLevel?.length)
+    text += `\n\n**At Higher Levels.** ${entriesToText(s.entriesHigherLevel)}`;
   text += `\n\n*Source: ${s.source}*`;
   return text;
 }
@@ -71,7 +120,8 @@ function formatMonster(m: MonsterData): string {
   if (m.vulnerable?.length) text += `**Vulnerabilities:** ${flattenResistances(m.vulnerable)}\n`;
   if (m.resist?.length) text += `**Resistances:** ${flattenResistances(m.resist)}\n`;
   if (m.immune?.length) text += `**Immunities:** ${flattenResistances(m.immune)}\n`;
-  if (m.conditionImmune?.length) text += `**Condition Immunities:** ${flattenConditionImmunities(m.conditionImmune)}\n`;
+  if (m.conditionImmune?.length)
+    text += `**Condition Immunities:** ${flattenConditionImmunities(m.conditionImmune)}\n`;
   if (m.senses?.length) text += `**Senses:** ${m.senses.join(", ")}\n`;
   text += `**Passive Perception:** ${m.passive}\n`;
   if (m.languages?.length) text += `**Languages:** ${m.languages.join(", ")}\n`;
@@ -153,17 +203,24 @@ function formatFeatFn(f: FeatData): string {
   text += "\n\n";
   text += entriesToText(f.entries);
   if (f.ability?.length) {
-    const abilityDesc = f.ability.map(a => {
-      if (a.choose) {
-        return `Choose ${a.choose.count ?? 1} from ${a.choose.from.map(k => ABILITY_MAP[k] ?? k).join(", ")} (+${a.choose.amount ?? 1})`;
-      }
-      return Object.entries(a).filter(([k]) => k !== "choose").map(([k, v]) => `${ABILITY_MAP[k] ?? k} +${v}`).join(", ");
-    }).join("; ");
+    const abilityDesc = f.ability
+      .map((a) => {
+        if (a.choose) {
+          return `Choose ${a.choose.count ?? 1} from ${a.choose.from.map((k) => ABILITY_MAP[k] ?? k).join(", ")} (+${a.choose.amount ?? 1})`;
+        }
+        return Object.entries(a)
+          .filter(([k]) => k !== "choose")
+          .map(([k, v]) => `${ABILITY_MAP[k] ?? k} +${v}`)
+          .join(", ");
+      })
+      .join("; ");
     text += `\n\n**Ability Score Increase:** ${abilityDesc}`;
   }
   if (f.resist?.length) text += `\n\n**Resistances:** ${f.resist.join(", ")}`;
   if (f.senses && Object.keys(f.senses).length > 0) {
-    text += `\n\n**Senses:** ${Object.entries(f.senses).map(([k, v]) => `${k} ${v} ft.`).join(", ")}`;
+    text += `\n\n**Senses:** ${Object.entries(f.senses)
+      .map(([k, v]) => `${k} ${v} ft.`)
+      .join(", ")}`;
   }
   text += `\n\n*Source: ${f.source}*`;
   return text;
@@ -172,7 +229,11 @@ function formatFeatFn(f: FeatData): string {
 function formatClassFn(c: ClassAssembled): string {
   let text = `# ${c.name}\n\n`;
   text += `**Hit Die:** ${getHitDice(c)}\n`;
-  const primaryAbs = c.primaryAbility.flatMap(a => Object.keys(a).filter(k => a[k]).map(k => ABILITY_MAP[k] ?? k));
+  const primaryAbs = c.primaryAbility.flatMap((a) =>
+    Object.keys(a)
+      .filter((k) => a[k])
+      .map((k) => ABILITY_MAP[k] ?? k),
+  );
   text += `**Primary Ability:** ${primaryAbs.join(", ")}\n`;
   text += `**Saving Throws:** ${getSavingThrows(c).join(", ")}\n`;
   const armorProfs = getArmorProfs(c);
@@ -190,7 +251,10 @@ function formatClassFn(c: ClassAssembled): string {
   if (resources.length > 0) {
     text += "\n**Class Resources:**\n";
     for (const r of resources) {
-      const uses = typeof r.uses === "number" ? `${r.uses}` : `${r.uses.abilityMod} modifier (min ${r.uses.minimum ?? 1})`;
+      const uses =
+        typeof r.uses === "number"
+          ? `${r.uses}`
+          : `${r.uses.abilityMod} modifier (min ${r.uses.minimum ?? 1})`;
       text += `- **${r.name}** (level ${r.levelAvailable}+): ${uses} uses, resets on ${r.resetType} rest\n`;
     }
   }
@@ -204,7 +268,7 @@ function formatClassFn(c: ClassAssembled): string {
   }
 
   if (c.resolvedSubclasses.length > 0) {
-    text += `\n**Subclasses:** ${c.resolvedSubclasses.map(s => s.name).join(", ")}\n`;
+    text += `\n**Subclasses:** ${c.resolvedSubclasses.map((s) => s.name).join(", ")}\n`;
   }
 
   text += `\n*Source: ${c.source}*`;
@@ -237,7 +301,8 @@ function formatBackgroundFn(b: BackgroundData): string {
   const feat = getBackgroundFeat(b);
   if (feat) text += `**Feat:** ${feat}\n`;
   const asi = getBackgroundAbilityScores(b);
-  if (asi) text += `**Ability Scores:** Choose from ${asi.from.map(k => ABILITY_MAP[k] ?? k).join(", ")} (weights: ${asi.weights.join(", ")})\n`;
+  if (asi)
+    text += `**Ability Scores:** Choose from ${asi.from.map((k) => ABILITY_MAP[k] ?? k).join(", ")} (weights: ${asi.weights.join(", ")})\n`;
   text += `\n*Source: ${b.source}*`;
   return text;
 }
@@ -254,7 +319,7 @@ function formatOptionalFeatureFn(f: OptionalFeatureData): string {
 function formatActionFn(a: ActionData): string {
   let text = `# ${a.name}\n`;
   if (a.time?.length) {
-    text += `*${a.time.map(t => `${t.number} ${t.unit}`).join(", ")}*\n`;
+    text += `*${a.time.map((t) => `${t.number} ${t.unit}`).join(", ")}*\n`;
   }
   text += "\n" + entriesToText(a.entries);
   text += `\n\n*Source: ${a.source}*`;
@@ -282,31 +347,32 @@ function formatDiseaseFn(d: DiseaseData): string {
 /** Send a visible "[Rules]" system event to the activity log when lookup fails. */
 function logLookupFailure(wsClient: WSClient, category: string, name: string): void {
   wsClient.broadcastSystemEvent(
-    `[Rules] "${name}" not found in any source — DM is using training knowledge`
+    `[Rules] "${name}" not found in any source — DM is using training knowledge`,
   );
   console.error(`[srd-tools] ${category} lookup failed: "${name}"`);
 }
 
 function notFoundResult(category: string, name: string) {
   return {
-    content: [{
-      type: "text" as const,
-      text: `"${name}" not found in the D&D 2024 database. Use your training knowledge as fallback.`,
-    }],
+    content: [
+      {
+        type: "text" as const,
+        text: `"${name}" not found in the D&D 2024 database. Use your training knowledge as fallback.`,
+      },
+    ],
   };
 }
 
 // ─── Tool Registration ──────────────────────────────────────
 
-export function registerSrdTools(
-  server: McpServer,
-  wsClient: WSClient
-): void {
+export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
   server.tool(
     "lookup_spell",
     "Look up a spell from the D&D 2024 database. Call this BEFORE resolving any spell cast.",
     {
-      spell_name: z.string().describe("Spell name, e.g. 'Fireball', 'Cure Wounds', 'Shield', 'Silvery Barbs'"),
+      spell_name: z
+        .string()
+        .describe("Spell name, e.g. 'Fireball', 'Cure Wounds', 'Shield', 'Silvery Barbs'"),
     },
     async ({ spell_name }) => {
       wsClient.sendTypingIndicator(true);
@@ -318,14 +384,16 @@ export function registerSrdTools(
 
       logLookupFailure(wsClient, "Spell", spell_name);
       return notFoundResult("Spell", spell_name);
-    }
+    },
   );
 
   server.tool(
     "lookup_monster",
     "Look up a monster/creature stat block from the D&D 2024 database. Call this for every enemy type BEFORE combat.",
     {
-      monster_name: z.string().describe("Monster name, e.g. 'Goblin', 'Adult Red Dragon', 'Bugbear'"),
+      monster_name: z
+        .string()
+        .describe("Monster name, e.g. 'Goblin', 'Adult Red Dragon', 'Bugbear'"),
     },
     async ({ monster_name }) => {
       wsClient.sendTypingIndicator(true);
@@ -337,14 +405,16 @@ export function registerSrdTools(
 
       logLookupFailure(wsClient, "Monster", monster_name);
       return notFoundResult("Monster", monster_name);
-    }
+    },
   );
 
   server.tool(
     "lookup_condition",
     "Look up the exact mechanical effects of a D&D condition from the D&D 2024 database. Call this BEFORE applying any condition.",
     {
-      condition_name: z.string().describe("Condition name, e.g. 'Grappled', 'Stunned', 'Prone', 'Frightened'"),
+      condition_name: z
+        .string()
+        .describe("Condition name, e.g. 'Grappled', 'Stunned', 'Prone', 'Frightened'"),
     },
     async ({ condition_name }) => {
       wsClient.sendTypingIndicator(true);
@@ -356,7 +426,7 @@ export function registerSrdTools(
 
       logLookupFailure(wsClient, "Condition", condition_name);
       return notFoundResult("Condition", condition_name);
-    }
+    },
   );
 
   server.tool(
@@ -375,7 +445,7 @@ export function registerSrdTools(
 
       logLookupFailure(wsClient, "Magic Item", item_name);
       return notFoundResult("Magic Item", item_name);
-    }
+    },
   );
 
   server.tool(
@@ -394,7 +464,7 @@ export function registerSrdTools(
 
       logLookupFailure(wsClient, "Feat", feat_name);
       return notFoundResult("Feat", feat_name);
-    }
+    },
   );
 
   server.tool(
@@ -413,14 +483,16 @@ export function registerSrdTools(
 
       logLookupFailure(wsClient, "Class", class_name);
       return notFoundResult("Class", class_name);
-    }
+    },
   );
 
   server.tool(
     "lookup_species",
     "Look up a D&D species/race from the D&D 2024 database. Returns size, speed, traits, and abilities.",
     {
-      species_name: z.string().describe("Species name, e.g. 'Tiefling', 'Aasimar', 'Goliath', 'Kenku'"),
+      species_name: z
+        .string()
+        .describe("Species name, e.g. 'Tiefling', 'Aasimar', 'Goliath', 'Kenku'"),
     },
     async ({ species_name }) => {
       wsClient.sendTypingIndicator(true);
@@ -432,14 +504,16 @@ export function registerSrdTools(
 
       logLookupFailure(wsClient, "Species", species_name);
       return notFoundResult("Species", species_name);
-    }
+    },
   );
 
   server.tool(
     "lookup_background",
     "Look up a D&D background from the D&D 2024 database. Returns skill proficiencies, feat, ability scores, and equipment.",
     {
-      background_name: z.string().describe("Background name, e.g. 'Noble', 'Criminal', 'Sage', 'Haunted One'"),
+      background_name: z
+        .string()
+        .describe("Background name, e.g. 'Noble', 'Criminal', 'Sage', 'Haunted One'"),
     },
     async ({ background_name }) => {
       wsClient.sendTypingIndicator(true);
@@ -451,7 +525,7 @@ export function registerSrdTools(
 
       logLookupFailure(wsClient, "Background", background_name);
       return notFoundResult("Background", background_name);
-    }
+    },
   );
 
   // ─── New Lookup Tools ────────────────────────────────────
@@ -460,7 +534,9 @@ export function registerSrdTools(
     "lookup_optional_feature",
     "Look up an optional class feature (Eldritch Invocation, Battle Master Maneuver, Metamagic, etc.) from the D&D 2024 database.",
     {
-      feature_name: z.string().describe("Feature name, e.g. 'Agonizing Blast', 'Riposte', 'Quickened Spell'"),
+      feature_name: z
+        .string()
+        .describe("Feature name, e.g. 'Agonizing Blast', 'Riposte', 'Quickened Spell'"),
     },
     async ({ feature_name }) => {
       wsClient.sendTypingIndicator(true);
@@ -472,7 +548,7 @@ export function registerSrdTools(
 
       logLookupFailure(wsClient, "Optional Feature", feature_name);
       return notFoundResult("Optional Feature", feature_name);
-    }
+    },
   );
 
   server.tool(
@@ -491,7 +567,7 @@ export function registerSrdTools(
 
       logLookupFailure(wsClient, "Action", action_name);
       return notFoundResult("Action", action_name);
-    }
+    },
   );
 
   server.tool(
@@ -510,7 +586,7 @@ export function registerSrdTools(
 
       logLookupFailure(wsClient, "Language", language_name);
       return notFoundResult("Language", language_name);
-    }
+    },
   );
 
   server.tool(
@@ -529,7 +605,7 @@ export function registerSrdTools(
 
       logLookupFailure(wsClient, "Disease", disease_name);
       return notFoundResult("Disease", disease_name);
-    }
+    },
   );
 
   // ─── Search ──────────────────────────────────────────────
@@ -538,7 +614,11 @@ export function registerSrdTools(
     "search_rules",
     "Search the D&D 2024 database for rules, spells, monsters, items, feats, conditions, classes, species, backgrounds, optional features, and actions matching a query.",
     {
-      query: z.string().describe("Search query, e.g. 'opportunity attack', 'fire damage spell', 'flying creature'"),
+      query: z
+        .string()
+        .describe(
+          "Search query, e.g. 'opportunity attack', 'fire damage spell', 'flying creature'",
+        ),
       limit: z.number().optional().default(5).describe("Max results to return (default 5)"),
     },
     async ({ query, limit }) => {
@@ -554,71 +634,147 @@ export function registerSrdTools(
       const matchedFeats = searchFeats(query).slice(0, limit);
       const matchedOptFeats = searchOptionalFeatures(query).slice(0, limit);
 
-      const matchedConditions = conditionsArray.filter(c =>
-        c.name.toLowerCase().includes(lowerQuery) ||
-        entriesToText(c.entries).toLowerCase().includes(lowerQuery)
-      ).slice(0, limit);
+      const matchedConditions = conditionsArray
+        .filter(
+          (c) =>
+            c.name.toLowerCase().includes(lowerQuery) ||
+            entriesToText(c.entries).toLowerCase().includes(lowerQuery),
+        )
+        .slice(0, limit);
 
-      const matchedClasses = classesArray.filter(c =>
-        c.name.toLowerCase().includes(lowerQuery)
-      ).slice(0, limit);
+      const matchedClasses = classesArray
+        .filter((c) => c.name.toLowerCase().includes(lowerQuery))
+        .slice(0, limit);
 
-      const matchedSpecies = speciesArray.filter(s =>
-        s.name.toLowerCase().includes(lowerQuery) ||
-        entriesToText(s.entries).toLowerCase().includes(lowerQuery)
-      ).slice(0, limit);
+      const matchedSpecies = speciesArray
+        .filter(
+          (s) =>
+            s.name.toLowerCase().includes(lowerQuery) ||
+            entriesToText(s.entries).toLowerCase().includes(lowerQuery),
+        )
+        .slice(0, limit);
 
-      const matchedBackgrounds = backgroundsArray.filter(b =>
-        b.name.toLowerCase().includes(lowerQuery) ||
-        (b.entries && entriesToText(b.entries).toLowerCase().includes(lowerQuery))
-      ).slice(0, limit);
+      const matchedBackgrounds = backgroundsArray
+        .filter(
+          (b) =>
+            b.name.toLowerCase().includes(lowerQuery) ||
+            (b.entries && entriesToText(b.entries).toLowerCase().includes(lowerQuery)),
+        )
+        .slice(0, limit);
 
-      const matchedActions = actionsArray.filter(a =>
-        a.name.toLowerCase().includes(lowerQuery) ||
-        entriesToText(a.entries).toLowerCase().includes(lowerQuery)
-      ).slice(0, limit);
+      const matchedActions = actionsArray
+        .filter(
+          (a) =>
+            a.name.toLowerCase().includes(lowerQuery) ||
+            entriesToText(a.entries).toLowerCase().includes(lowerQuery),
+        )
+        .slice(0, limit);
 
       if (matchedConditions.length > 0) {
-        results.push("## Conditions\n" + matchedConditions.map(c => formatCondition(c)).join("\n\n---\n\n"));
+        results.push(
+          "## Conditions\n" + matchedConditions.map((c) => formatCondition(c)).join("\n\n---\n\n"),
+        );
       }
       if (matchedActions.length > 0) {
-        results.push("## Actions\n" + matchedActions.map(a => formatActionFn(a)).join("\n\n---\n\n"));
+        results.push(
+          "## Actions\n" + matchedActions.map((a) => formatActionFn(a)).join("\n\n---\n\n"),
+        );
       }
       if (matchedClasses.length > 0) {
-        results.push("## Classes\n" + matchedClasses.map(c => `- **${c.name}** (${getHitDice(c)}, ${getCasterType(c) ?? "non-caster"})`).join("\n"));
+        results.push(
+          "## Classes\n" +
+            matchedClasses
+              .map((c) => `- **${c.name}** (${getHitDice(c)}, ${getCasterType(c) ?? "non-caster"})`)
+              .join("\n"),
+        );
       }
       if (matchedSpells.length > 0) {
-        results.push("## Spells\n" + matchedSpells.map(s => `- **${s.name}** (${formatSpellLevel(s)} ${formatSchool(s.school)}): ${entriesToText(s.entries).slice(0, 150)}...`).join("\n"));
+        results.push(
+          "## Spells\n" +
+            matchedSpells
+              .map(
+                (s) =>
+                  `- **${s.name}** (${formatSpellLevel(s)} ${formatSchool(s.school)}): ${entriesToText(s.entries).slice(0, 150)}...`,
+              )
+              .join("\n"),
+        );
       }
       if (matchedMonsters.length > 0) {
-        results.push("## Monsters\n" + matchedMonsters.map(m => `- **${m.name}** (CR ${formatMonsterCr(m.cr)}, ${formatMonsterSize(m.size)} ${formatMonsterType(m.type)})`).join("\n"));
+        results.push(
+          "## Monsters\n" +
+            matchedMonsters
+              .map(
+                (m) =>
+                  `- **${m.name}** (CR ${formatMonsterCr(m.cr)}, ${formatMonsterSize(m.size)} ${formatMonsterType(m.type)})`,
+              )
+              .join("\n"),
+        );
       }
       if (matchedItems.length > 0) {
-        results.push("## Magic Items\n" + matchedItems.map(i => `- **${i.name}** (${i.rarity}, ${i.type ?? "wondrous"})`).join("\n"));
+        results.push(
+          "## Magic Items\n" +
+            matchedItems
+              .map((i) => `- **${i.name}** (${i.rarity}, ${i.type ?? "wondrous"})`)
+              .join("\n"),
+        );
       }
       if (matchedFeats.length > 0) {
-        results.push("## Feats\n" + matchedFeats.map(f => `- **${f.name}** (${formatFeatCategory(f.category)}): ${entriesToText(f.entries).slice(0, 150)}...`).join("\n"));
+        results.push(
+          "## Feats\n" +
+            matchedFeats
+              .map(
+                (f) =>
+                  `- **${f.name}** (${formatFeatCategory(f.category)}): ${entriesToText(f.entries).slice(0, 150)}...`,
+              )
+              .join("\n"),
+        );
       }
       if (matchedOptFeats.length > 0) {
-        results.push("## Optional Features\n" + matchedOptFeats.map(f => `- **${f.name}** (${formatOptionalFeatureType(f.featureType)}): ${entriesToText(f.entries).slice(0, 150)}...`).join("\n"));
+        results.push(
+          "## Optional Features\n" +
+            matchedOptFeats
+              .map(
+                (f) =>
+                  `- **${f.name}** (${formatOptionalFeatureType(f.featureType)}): ${entriesToText(f.entries).slice(0, 150)}...`,
+              )
+              .join("\n"),
+        );
       }
       if (matchedSpecies.length > 0) {
-        results.push("## Species\n" + matchedSpecies.map(s => `- **${s.name}** (${formatSpeciesSize(s.size)}, speed ${getSpeciesSpeed(s)} ft.)`).join("\n"));
+        results.push(
+          "## Species\n" +
+            matchedSpecies
+              .map(
+                (s) =>
+                  `- **${s.name}** (${formatSpeciesSize(s.size)}, speed ${getSpeciesSpeed(s)} ft.)`,
+              )
+              .join("\n"),
+        );
       }
       if (matchedBackgrounds.length > 0) {
-        results.push("## Backgrounds\n" + matchedBackgrounds.map(b => `- **${b.name}**: ${b.entries ? entriesToText(b.entries).slice(0, 150) + "..." : ""}`).join("\n"));
+        results.push(
+          "## Backgrounds\n" +
+            matchedBackgrounds
+              .map(
+                (b) =>
+                  `- **${b.name}**: ${b.entries ? entriesToText(b.entries).slice(0, 150) + "..." : ""}`,
+              )
+              .join("\n"),
+        );
       }
 
       if (results.length === 0) {
         return {
-          content: [{
-            type: "text" as const,
-            text: `No results found matching "${query}" in the D&D 2024 database. Use your training knowledge as fallback.`,
-          }],
+          content: [
+            {
+              type: "text" as const,
+              text: `No results found matching "${query}" in the D&D 2024 database. Use your training knowledge as fallback.`,
+            },
+          ],
         };
       }
 
       return { content: [{ type: "text" as const, text: results.join("\n\n") }] };
-    }
+    },
   );
 }

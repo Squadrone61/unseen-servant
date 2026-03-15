@@ -1,9 +1,7 @@
 import { test, expect } from "@playwright/test";
 
 test.describe("Multiplayer", () => {
-  test("two players can join the same room and see each other", async ({
-    browser,
-  }) => {
+  test("two players can join the same room and see each other", async ({ browser }) => {
     // Create two separate browser contexts (like two different users)
     const context1 = await browser.newContext();
     const context2 = await browser.newContext();
@@ -11,9 +9,7 @@ test.describe("Multiplayer", () => {
     const player2 = await context2.newPage();
 
     // Create a room via API
-    const res = await player1.request.post(
-      "http://localhost:8787/api/rooms/create"
-    );
+    const res = await player1.request.post("http://localhost:8787/api/rooms/create");
     const { roomCode } = await res.json();
 
     // Set player names via addInitScript (runs before page JS)
@@ -81,9 +77,7 @@ test.describe("Multiplayer", () => {
     const player1 = await context1.newPage();
     const player2 = await context2.newPage();
 
-    const res = await player1.request.post(
-      "http://localhost:8787/api/rooms/create"
-    );
+    const res = await player1.request.post("http://localhost:8787/api/rooms/create");
     const { roomCode } = await res.json();
 
     // Set player names

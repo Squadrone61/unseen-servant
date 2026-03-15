@@ -27,12 +27,9 @@ export function CharacterImport({
       <div className="bg-gray-800/60 border border-gray-700/40 rounded-lg p-3">
         <div className="flex items-center justify-between">
           <div>
-            <div className="text-sm font-medium text-amber-300">
-              {s.name}
-            </div>
+            <div className="text-sm font-medium text-amber-300">{s.name}</div>
             <div className="text-xs text-gray-400">
-              {s.species || s.race} {formatClassString(s.classes)} (Lvl{" "}
-              {getTotalLevel(s.classes)})
+              {s.species || s.race} {formatClassString(s.classes)} (Lvl {getTotalLevel(s.classes)})
             </div>
           </div>
           <button
@@ -49,7 +46,8 @@ export function CharacterImport({
   return (
     <div className="space-y-2">
       <p className="text-xs text-gray-500 leading-relaxed">
-        Import a character from a <code className="text-gray-400">.unseen.json</code> file exported from this app.
+        Import a character from a <code className="text-gray-400">.unseen.json</code> file exported
+        from this app.
       </p>
       <input
         ref={fileInputRef}
@@ -76,9 +74,7 @@ export function CharacterImport({
       </button>
 
       {error && (
-        <div className="text-xs text-red-400 bg-red-900/10 rounded px-2 py-1.5">
-          {error}
-        </div>
+        <div className="text-xs text-red-400 bg-red-900/10 rounded px-2 py-1.5">{error}</div>
       )}
     </div>
   );

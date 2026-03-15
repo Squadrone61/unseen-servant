@@ -17,9 +17,7 @@ export function buildCheckLabel(check: CheckRequest): string {
         ? `${abilityAbbr} Save${check.reason ? ` — ${check.reason}` : ""}`
         : `Save${check.reason ? ` — ${check.reason}` : ""}`;
     case "skill": {
-      const skill = check.skill
-        ? check.skill.charAt(0).toUpperCase() + check.skill.slice(1)
-        : null;
+      const skill = check.skill ? check.skill.charAt(0).toUpperCase() + check.skill.slice(1) : null;
       return skill
         ? `${skill}${check.reason && check.reason.toLowerCase() !== skill.toLowerCase() ? ` — ${check.reason}` : ""}`
         : check.reason;
@@ -36,25 +34,18 @@ export function buildCheckLabel(check: CheckRequest): string {
 }
 
 /** Compute the modifier for a check based on the character's stats. */
-export function computeCheckModifier(
-  char: CharacterData,
-  check: CheckRequest
-): number {
+export function computeCheckModifier(char: CharacterData, check: CheckRequest): number {
   const s = char.static;
 
   if (check.type === "skill" && check.skill) {
-    const skill = s.skills.find(
-      (sk) => sk.name.toLowerCase() === check.skill!.toLowerCase()
-    );
+    const skill = s.skills.find((sk) => sk.name.toLowerCase() === check.skill!.toLowerCase());
     if (skill) {
       return getSkillModifier(skill, s.abilities, s.proficiencyBonus);
     }
   }
 
   if (check.type === "saving_throw" && check.ability) {
-    const save = s.savingThrows.find(
-      (sv) => sv.ability === check.ability
-    );
+    const save = s.savingThrows.find((sv) => sv.ability === check.ability);
     if (save) {
       return getSavingThrowModifier(save, s.abilities, s.proficiencyBonus);
     }

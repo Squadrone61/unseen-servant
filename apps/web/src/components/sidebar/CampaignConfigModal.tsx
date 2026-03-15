@@ -23,20 +23,13 @@ interface CampaignConfigModalProps {
   onClose: () => void;
 }
 
-export function CampaignConfigModal({
-  campaigns,
-  onSubmit,
-  onClose,
-}: CampaignConfigModalProps) {
-  const [mode, setMode] = useState<"new" | "existing">(
-    campaigns.length > 0 ? "existing" : "new"
-  );
+export function CampaignConfigModal({ campaigns, onSubmit, onClose }: CampaignConfigModalProps) {
+  const [mode, setMode] = useState<"new" | "existing">(campaigns.length > 0 ? "existing" : "new");
   const [campaignName, setCampaignName] = useState("");
   const [selectedSlug, setSelectedSlug] = useState(campaigns[0]?.slug || "");
   const [systemPrompt, setSystemPrompt] = useState("");
   const [pacingProfile, setPacingProfile] = useState<PacingProfile>("balanced");
-  const [encounterLength, setEncounterLength] =
-    useState<EncounterLength>("standard");
+  const [encounterLength, setEncounterLength] = useState<EncounterLength>("standard");
   const [showPrompt, setShowPrompt] = useState(false);
 
   const hasCustomPrompt = systemPrompt.trim().length > 0;
@@ -139,7 +132,10 @@ export function CampaignConfigModal({
               </select>
             ) : (
               <div>
-                <label className="text-sm text-gray-500 uppercase tracking-wider block mb-1" style={{ fontFamily: "var(--font-cinzel)" }}>
+                <label
+                  className="text-sm text-gray-500 uppercase tracking-wider block mb-1"
+                  style={{ fontFamily: "var(--font-cinzel)" }}
+                >
                   Campaign Name
                 </label>
                 <input
@@ -161,14 +157,15 @@ export function CampaignConfigModal({
 
           {/* Pacing */}
           <div>
-            <label className="text-sm text-gray-500 uppercase tracking-wider block mb-1" style={{ fontFamily: "var(--font-cinzel)" }}>
+            <label
+              className="text-sm text-gray-500 uppercase tracking-wider block mb-1"
+              style={{ fontFamily: "var(--font-cinzel)" }}
+            >
               Pacing
             </label>
             <select
               value={pacingProfile}
-              onChange={(e) =>
-                setPacingProfile(e.target.value as PacingProfile)
-              }
+              onChange={(e) => setPacingProfile(e.target.value as PacingProfile)}
               className="w-full bg-gray-900/60 border border-gray-700/40 rounded-lg px-3 py-2
                          text-sm text-gray-200 focus:outline-none focus:ring-1 focus:ring-amber-500/50 focus:border-amber-500/30"
             >
@@ -180,14 +177,15 @@ export function CampaignConfigModal({
 
           {/* Encounter Length */}
           <div>
-            <label className="text-sm text-gray-500 uppercase tracking-wider block mb-1" style={{ fontFamily: "var(--font-cinzel)" }}>
+            <label
+              className="text-sm text-gray-500 uppercase tracking-wider block mb-1"
+              style={{ fontFamily: "var(--font-cinzel)" }}
+            >
               Encounter Length
             </label>
             <select
               value={encounterLength}
-              onChange={(e) =>
-                setEncounterLength(e.target.value as EncounterLength)
-              }
+              onChange={(e) => setEncounterLength(e.target.value as EncounterLength)}
               className="w-full bg-gray-900/60 border border-gray-700/40 rounded-lg px-3 py-2
                          text-sm text-gray-200 focus:outline-none focus:ring-1 focus:ring-amber-500/50 focus:border-amber-500/30"
             >

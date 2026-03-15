@@ -10,14 +10,7 @@ import { fileURLToPath } from "url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const RAW_DIR = join(__dirname, "5etools-raw");
-const OUT_DIR = join(
-  __dirname,
-  "..",
-  "packages",
-  "shared",
-  "src",
-  "data"
-);
+const OUT_DIR = join(__dirname, "..", "packages", "shared", "src", "data");
 
 const ALLOWED_SOURCES = new Set(["XPHB", "XDMG", "XMM", "TCE", "XGE", "MPMM"]);
 
@@ -134,8 +127,18 @@ function processClasses() {
   const allSubclassFeatures: any[] = [];
 
   const classNames = [
-    "barbarian", "bard", "cleric", "druid", "fighter", "monk",
-    "paladin", "ranger", "rogue", "sorcerer", "warlock", "wizard",
+    "barbarian",
+    "bard",
+    "cleric",
+    "druid",
+    "fighter",
+    "monk",
+    "paladin",
+    "ranger",
+    "rogue",
+    "sorcerer",
+    "warlock",
+    "wizard",
   ];
 
   for (const name of classNames) {
@@ -150,9 +153,7 @@ function processClasses() {
     // Subclasses: include if source OR classSource is in our allowed set
     if (data.subclass) {
       const filtered = data.subclass.filter(
-        (sc: any) =>
-          ALLOWED_SOURCES.has(sc.source) ||
-          ALLOWED_CLASS_SOURCES.has(sc.classSource)
+        (sc: any) => ALLOWED_SOURCES.has(sc.source) || ALLOWED_CLASS_SOURCES.has(sc.classSource),
       );
       // But we only want subclasses whose own source is allowed
       allSubclasses.push(...filtered.filter((sc: any) => ALLOWED_SOURCES.has(sc.source)));
@@ -162,10 +163,8 @@ function processClasses() {
     if (data.classFeature) {
       allClassFeatures.push(
         ...data.classFeature.filter(
-          (f: any) =>
-            ALLOWED_SOURCES.has(f.source) &&
-            ALLOWED_CLASS_SOURCES.has(f.classSource)
-        )
+          (f: any) => ALLOWED_SOURCES.has(f.source) && ALLOWED_CLASS_SOURCES.has(f.classSource),
+        ),
       );
     }
 
@@ -173,10 +172,8 @@ function processClasses() {
     if (data.subclassFeature) {
       allSubclassFeatures.push(
         ...data.subclassFeature.filter(
-          (f: any) =>
-            ALLOWED_SOURCES.has(f.source) &&
-            ALLOWED_CLASS_SOURCES.has(f.classSource)
-        )
+          (f: any) => ALLOWED_SOURCES.has(f.source) && ALLOWED_CLASS_SOURCES.has(f.classSource),
+        ),
       );
     }
   }
@@ -188,7 +185,7 @@ function processClasses() {
     subclassFeature: allSubclassFeatures,
   });
   console.log(
-    `    (${allClasses.length} classes, ${allSubclasses.length} subclasses, ${allClassFeatures.length} class features, ${allSubclassFeatures.length} subclass features)`
+    `    (${allClasses.length} classes, ${allSubclasses.length} subclasses, ${allClassFeatures.length} class features, ${allSubclassFeatures.length} subclass features)`,
   );
 }
 
@@ -222,9 +219,7 @@ function processSpecies() {
     result.subrace = filterBySource(data.subrace);
   }
   writeOut("species", result);
-  console.log(
-    `    (${result.race?.length ?? 0} races, ${result.subrace?.length ?? 0} subraces)`
-  );
+  console.log(`    (${result.race?.length ?? 0} races, ${result.subrace?.length ?? 0} subraces)`);
 }
 
 // ─── Items (magic) ─────────────────────────────────────────
@@ -240,7 +235,7 @@ function processItems() {
   }
   writeOut("items", result);
   console.log(
-    `    (${result.item?.length ?? 0} items, ${result.itemGroup?.length ?? 0} item groups)`
+    `    (${result.item?.length ?? 0} items, ${result.itemGroup?.length ?? 0} item groups)`,
   );
 }
 
@@ -295,13 +290,11 @@ function processConditionsDiseases() {
   }
   if (data?.status) {
     // Statuses may not have source — keep all
-    result.status = Array.isArray(data.status)
-      ? data.status
-      : [];
+    result.status = Array.isArray(data.status) ? data.status : [];
   }
   writeOut("conditions-diseases", result);
   console.log(
-    `    (${result.condition?.length ?? 0} conditions, ${result.disease?.length ?? 0} diseases, ${result.status?.length ?? 0} statuses)`
+    `    (${result.condition?.length ?? 0} conditions, ${result.disease?.length ?? 0} diseases, ${result.status?.length ?? 0} statuses)`,
   );
 }
 
@@ -335,7 +328,7 @@ function main() {
 
   if (!existsSync(RAW_DIR)) {
     console.error(
-      "Raw data directory not found. Run fetch-5etools.ts first:\n  npx tsx scripts/fetch-5etools.ts"
+      "Raw data directory not found. Run fetch-5etools.ts first:\n  npx tsx scripts/fetch-5etools.ts",
     );
     process.exit(1);
   }

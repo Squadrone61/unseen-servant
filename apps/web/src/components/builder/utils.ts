@@ -1,6 +1,17 @@
-import type { AbilityScores, CharacterSpell, InventoryItem, Currency, CharacterFeature } from "@unseen-servant/shared/types";
+import type {
+  AbilityScores,
+  CharacterSpell,
+  InventoryItem,
+  Currency,
+  CharacterFeature,
+} from "@unseen-servant/shared/types";
 import type { CharacterIdentifiers } from "@unseen-servant/shared/builders";
-import type { SpeciesData, FeatData, SpellData, ClassAssembled, OptionalFeatureData } from "@unseen-servant/shared/data";
+import type {
+  SpeciesData,
+  FeatData,
+  SpellData,
+  OptionalFeatureData,
+} from "@unseen-servant/shared/data";
 import {
   getClass,
   getSpecies,
@@ -38,7 +49,13 @@ import {
   getBackgroundTools,
   SKILL_ABILITY_MAP,
 } from "@unseen-servant/shared";
-import type { BuilderState, BuilderStep, EquipmentEntry, TraitChoiceDefinition, ClassEntry } from "./types";
+import type {
+  BuilderState,
+  BuilderStep,
+  EquipmentEntry,
+  TraitChoiceDefinition,
+  ClassEntry,
+} from "./types";
 
 // ─── Tool Proficiency Constants (derived from base item data) ──────────────────────────
 
@@ -46,15 +63,15 @@ const MUSICAL_INSTRUMENTS = baseItemsArray
   .filter((i) => i.type?.startsWith("INS"))
   .map((i) => i.name);
 
-const ARTISAN_TOOLS = baseItemsArray
-  .filter((i) => i.type?.startsWith("AT"))
-  .map((i) => i.name);
+const ARTISAN_TOOLS = baseItemsArray.filter((i) => i.type?.startsWith("AT")).map((i) => i.name);
 
 /**
  * Detect whether a feat grants tool proficiency choices (Musician, Crafter).
  * Returns the option list and count, or null if no tool choice needed.
  */
-export function getFeatToolChoiceInfo(featName: string): { options: string[]; count: number } | null {
+export function getFeatToolChoiceInfo(
+  featName: string,
+): { options: string[]; count: number } | null {
   const feat = getFeat(featName);
   if (!feat?.toolProficiencies) return null;
   for (const tp of feat.toolProficiencies) {
@@ -68,9 +85,7 @@ export function getFeatToolChoiceInfo(featName: string): { options: string[]; co
     const choose = rec["choose"] as { from?: string[]; count?: number } | undefined;
     if (choose?.from) {
       // Capitalize tool names from data (they're lowercase in feats.json)
-      const options = choose.from.map((t: string) =>
-        t.replace(/\b\w/g, (c) => c.toUpperCase())
-      );
+      const options = choose.from.map((t: string) => t.replace(/\b\w/g, (c) => c.toUpperCase()));
       return { options, count: choose.count ?? 1 };
     }
   }
@@ -82,16 +97,20 @@ export function getFeatToolChoiceInfo(featName: string): { options: string[]; co
 export const STANDARD_ARRAY = [15, 14, 13, 12, 10, 8];
 
 const POINT_BUY_COSTS: Record<number, number> = {
-  8: 0, 9: 1, 10: 2, 11: 3, 12: 4, 13: 5, 14: 7, 15: 9,
+  8: 0,
+  9: 1,
+  10: 2,
+  11: 3,
+  12: 4,
+  13: 5,
+  14: 7,
+  15: 9,
 };
 
 export const POINT_BUY_POOL = 27;
 
 export function getPointBuyCost(scores: AbilityScores): number {
-  return Object.values(scores).reduce(
-    (sum, v) => sum + (POINT_BUY_COSTS[v] ?? 0),
-    0
-  );
+  return Object.values(scores).reduce((sum, v) => sum + (POINT_BUY_COSTS[v] ?? 0), 0);
 }
 
 export function getAbilityMod(score: number): number {
@@ -126,18 +145,30 @@ export function getFinalAbilities(state: BuilderState): AbilityScores {
 }
 
 export const STANDARD_ARRAY_DEFAULT: AbilityScores = {
-  strength: 0, dexterity: 0, constitution: 0,
-  intelligence: 0, wisdom: 0, charisma: 0,
+  strength: 0,
+  dexterity: 0,
+  constitution: 0,
+  intelligence: 0,
+  wisdom: 0,
+  charisma: 0,
 };
 
 export const DEFAULT_ABILITIES: AbilityScores = {
-  strength: 10, dexterity: 10, constitution: 10,
-  intelligence: 10, wisdom: 10, charisma: 10,
+  strength: 10,
+  dexterity: 10,
+  constitution: 10,
+  intelligence: 10,
+  wisdom: 10,
+  charisma: 10,
 };
 
 export const POINT_BUY_DEFAULT: AbilityScores = {
-  strength: 8, dexterity: 8, constitution: 8,
-  intelligence: 8, wisdom: 8, charisma: 8,
+  strength: 8,
+  dexterity: 8,
+  constitution: 8,
+  intelligence: 8,
+  wisdom: 8,
+  charisma: 8,
 };
 
 // ─── ASI Level Helpers (DATA-DRIVEN) ────────────────────
@@ -146,14 +177,14 @@ export const POINT_BUY_DEFAULT: AbilityScores = {
 function getASILevelsForSingleClass(className: string, level: number): number[] {
   const features = getClassFeatures(className, level);
   return features
-    .filter(f => f.name === "Ability Score Improvement" || f.name === "Epic Boon")
-    .map(f => f.level)
+    .filter((f) => f.name === "Ability Score Improvement" || f.name === "Epic Boon")
+    .map((f) => f.level)
     .sort((a, b) => a - b);
 }
 
 /** Returns ASI levels across all classes in a multiclass build */
 export function getASILevelsForClasses(
-  classes: { className: string; level: number; classIndex?: number }[]
+  classes: { className: string; level: number; classIndex?: number }[],
 ): { classIndex: number; level: number; className: string }[] {
   const result: { classIndex: number; level: number; className: string }[] = [];
   for (let i = 0; i < classes.length; i++) {
@@ -163,7 +194,9 @@ export function getASILevelsForClasses(
       result.push({ classIndex: i, level: lvl, className });
     }
   }
-  return result.sort((a, b) => a.classIndex !== b.classIndex ? a.classIndex - b.classIndex : a.level - b.level);
+  return result.sort((a, b) =>
+    a.classIndex !== b.classIndex ? a.classIndex - b.classIndex : a.level - b.level,
+  );
 }
 
 /** Returns feats eligible for selection at a given total level */
@@ -180,12 +213,18 @@ export function getEligibleFeats(level: number): FeatData[] {
 
 /** Normalize ability abbreviations to full names */
 const ABILITY_ABBREV_MAP: Record<string, keyof AbilityScores> = {
-  str: "strength", strength: "strength",
-  dex: "dexterity", dexterity: "dexterity",
-  con: "constitution", constitution: "constitution",
-  int: "intelligence", intelligence: "intelligence",
-  wis: "wisdom", wisdom: "wisdom",
-  cha: "charisma", charisma: "charisma",
+  str: "strength",
+  strength: "strength",
+  dex: "dexterity",
+  dexterity: "dexterity",
+  con: "constitution",
+  constitution: "constitution",
+  int: "intelligence",
+  intelligence: "intelligence",
+  wis: "wisdom",
+  wisdom: "wisdom",
+  cha: "charisma",
+  charisma: "charisma",
 };
 
 /** Normalize and deduplicate ability choices from feat data */
@@ -230,7 +269,8 @@ function computeSingleClassHP(className: string, level: number, conMod: number):
 /** Compute HP for multiclass: first class max HD + con, subsequent levels average + con */
 function computeMulticlassHP(classes: ClassEntry[], conMod: number): number {
   if (classes.length === 0) return 10 + conMod;
-  if (classes.length === 1) return computeSingleClassHP(classes[0].className, classes[0].level, conMod);
+  if (classes.length === 1)
+    return computeSingleClassHP(classes[0].className, classes[0].level, conMod);
 
   let hp = 0;
   for (let ci = 0; ci < classes.length; ci++) {
@@ -261,7 +301,7 @@ export function getCantripsKnown(className: string, level: number): number {
 export function getSpellsKnownOrPrepared(
   className: string,
   level: number,
-  abilityMod: number
+  abilityMod: number,
 ): { type: "known" | "prepared"; count: number } {
   const cls = getClass(className);
   if (!cls) return { type: "known", count: 0 };
@@ -292,7 +332,9 @@ export function getMaxSpellLevel(className: string, level: number): number {
     if (cls) {
       const pactTable = getPactSlotTable(cls);
       if (pactTable) {
-        const entry = pactTable.find((e: { level: number; slotLevel: number }) => e.level === level);
+        const entry = pactTable.find(
+          (e: { level: number; slotLevel: number }) => e.level === level,
+        );
         return entry?.slotLevel ?? 0;
       }
     }
@@ -327,19 +369,12 @@ export function isCasterClass(className: string): boolean {
 
 /** Check if any class in the build is a caster */
 function hasAnyCaster(classes: ClassEntry[]): boolean {
-  return classes.some(c => isCasterClass(c.className));
+  return classes.some((c) => isCasterClass(c.className));
 }
 
 /** Get total character level across all classes */
 function getTotalLevel(classes: ClassEntry[]): number {
   return classes.reduce((sum, c) => sum + c.level, 0);
-}
-
-// ─── Background Helpers ─────────────────────────────────
-
-function parseBackgroundFeat(featString: string): string {
-  const name = featString.split("|")[0];
-  return name.charAt(0).toUpperCase() + name.slice(1);
 }
 
 // ─── Species Filter ─────────────────────────────────────
@@ -387,7 +422,11 @@ function deriveSpeciesChoices(species: SpeciesData): TraitChoiceDefinition[] {
       } else {
         // Specific skill choices: { choose: { from: [...], count: N } }
         const chooseData = (sp as Record<string, unknown>)["choose"];
-        if (chooseData && typeof chooseData === "object" && "from" in (chooseData as Record<string, unknown>)) {
+        if (
+          chooseData &&
+          typeof chooseData === "object" &&
+          "from" in (chooseData as Record<string, unknown>)
+        ) {
           const choose = chooseData as { from: string[]; count?: number };
           // Derive trait name from species entries (e.g., Elf → "Keen Senses")
           const skillTraitName = findSkillTraitName(species) ?? "Skill Proficiency";
@@ -428,16 +467,19 @@ function deriveSpeciesChoices(species: SpeciesData): TraitChoiceDefinition[] {
   if (species.languageProficiencies) {
     for (const lp of species.languageProficiencies) {
       const rec = lp as Record<string, unknown>;
-      const anyStandard = typeof rec["anyStandard"] === "number" ? rec["anyStandard"] as number : 0;
+      const anyStandard =
+        typeof rec["anyStandard"] === "number" ? (rec["anyStandard"] as number) : 0;
       if (anyStandard > 0) {
         // Fixed languages already granted
         const fixedLangs = new Set(
-          Object.keys(rec).filter(k => rec[k] === true).map(k => k.toLowerCase())
+          Object.keys(rec)
+            .filter((k) => rec[k] === true)
+            .map((k) => k.toLowerCase()),
         );
         // Standard languages as options, excluding already-granted ones
         const options = languagesArray
-          .filter(l => l.type === "standard" && !fixedLangs.has(l.name.toLowerCase()))
-          .map(l => l.name);
+          .filter((l) => l.type === "standard" && !fixedLangs.has(l.name.toLowerCase()))
+          .map((l) => l.name);
         choices.push({
           traitName: "Languages",
           choiceType: "language",
@@ -466,7 +508,11 @@ function deriveSpeciesChoices(species: SpeciesData): TraitChoiceDefinition[] {
   }
 
   // Fallback: lineages defined in _versions (e.g., Gnome has lineages only in _versions)
-  if (!choices.some(c => c.choiceType === "lineage") && species._versions && species._versions.length > 1) {
+  if (
+    !choices.some((c) => c.choiceType === "lineage") &&
+    species._versions &&
+    species._versions.length > 1
+  ) {
     const lineageChoices = extractLineageChoicesFromVersions(species);
     if (lineageChoices) {
       choices.push(lineageChoices);
@@ -489,8 +535,8 @@ function extractLineageChoices(species: SpeciesData): TraitChoiceDefinition | nu
   // Multiple additionalSpells entries = multiple lineage options
   if (species.additionalSpells.length > 1) {
     const lineageOptions = species.additionalSpells
-      .filter(as => as.name)
-      .map(as => {
+      .filter((as) => as.name)
+      .map((as) => {
         const spellNames: string[] = [];
         // Extract from known spells
         if (as.known) {
@@ -520,21 +566,21 @@ function extractLineageChoices(species: SpeciesData): TraitChoiceDefinition | nu
         }
         return {
           name: as.name!,
-          description: spellNames.length > 0
-            ? `Spells: ${spellNames.join(", ")}`
-            : as.name!,
+          description: spellNames.length > 0 ? `Spells: ${spellNames.join(", ")}` : as.name!,
         };
       });
 
     if (lineageOptions.length > 0) {
       // Check for spellcasting ability choice
       const firstWithAbility = species.additionalSpells.find(
-        as => as.ability && typeof as.ability === "object" && "choose" in as.ability
+        (as) => as.ability && typeof as.ability === "object" && "choose" in as.ability,
       );
-      const abilityChoices = firstWithAbility?.ability &&
-        typeof firstWithAbility.ability === "object" && "choose" in firstWithAbility.ability
-        ? (firstWithAbility.ability as { choose: string[] }).choose
-        : undefined;
+      const abilityChoices =
+        firstWithAbility?.ability &&
+        typeof firstWithAbility.ability === "object" &&
+        "choose" in firstWithAbility.ability
+          ? (firstWithAbility.ability as { choose: string[] }).choose
+          : undefined;
 
       return {
         traitName: getLineageTraitName(species.name),
@@ -555,10 +601,10 @@ function extractLineageChoicesFromVersions(species: SpeciesData): TraitChoiceDef
   if (!species._versions || species._versions.length < 2) return null;
 
   const prefix = `${species.name}; `;
-  const lineageVersions = species._versions.filter(v => v.name?.startsWith(prefix));
+  const lineageVersions = species._versions.filter((v) => v.name?.startsWith(prefix));
   if (lineageVersions.length < 2) return null;
 
-  const lineageOptions = lineageVersions.map(v => {
+  const lineageOptions = lineageVersions.map((v) => {
     const rawName = v.name!.replace(prefix, "");
     const name = rawName.replace(/ Lineage$/, "");
 
@@ -589,9 +635,13 @@ function extractLineageChoicesFromVersions(species: SpeciesData): TraitChoiceDef
   for (const v of lineageVersions) {
     if (v.additionalSpells) {
       const withAbility = v.additionalSpells.find(
-        as => as.ability && typeof as.ability === "object" && "choose" in as.ability
+        (as) => as.ability && typeof as.ability === "object" && "choose" in as.ability,
       );
-      if (withAbility?.ability && typeof withAbility.ability === "object" && "choose" in withAbility.ability) {
+      if (
+        withAbility?.ability &&
+        typeof withAbility.ability === "object" &&
+        "choose" in withAbility.ability
+      ) {
         abilityChoices = (withAbility.ability as { choose: string[] }).choose;
         break;
       }
@@ -645,27 +695,62 @@ const ANCESTRY_CHOICES: Record<string, TraitChoiceDefinition[]> = {
       traitName: "Giant Ancestry",
       choiceType: "ancestry",
       lineageOptions: [
-        { name: "Cloud's Jaunt", description: "As a Bonus Action, teleport up to 30 feet to an unoccupied space you can see" },
-        { name: "Fire's Burn", description: "When you hit with an attack, deal extra 1d10 fire damage" },
-        { name: "Frost's Chill", description: "When you hit with an attack, deal extra 1d6 cold damage and reduce speed by 10 ft." },
-        { name: "Hill's Tumble", description: "As a Bonus Action, knock a Large or smaller creature prone when within 5 ft." },
-        { name: "Stone's Endurance", description: "As a Reaction, reduce damage by 1d12 + CON modifier" },
-        { name: "Storm's Thunder", description: "As a Reaction, deal 1d8 thunder damage and push 15 ft. when hit by an attack" },
+        {
+          name: "Cloud's Jaunt",
+          description:
+            "As a Bonus Action, teleport up to 30 feet to an unoccupied space you can see",
+        },
+        {
+          name: "Fire's Burn",
+          description: "When you hit with an attack, deal extra 1d10 fire damage",
+        },
+        {
+          name: "Frost's Chill",
+          description:
+            "When you hit with an attack, deal extra 1d6 cold damage and reduce speed by 10 ft.",
+        },
+        {
+          name: "Hill's Tumble",
+          description:
+            "As a Bonus Action, knock a Large or smaller creature prone when within 5 ft.",
+        },
+        {
+          name: "Stone's Endurance",
+          description: "As a Reaction, reduce damage by 1d12 + CON modifier",
+        },
+        {
+          name: "Storm's Thunder",
+          description:
+            "As a Reaction, deal 1d8 thunder damage and push 15 ft. when hit by an attack",
+        },
       ],
     },
   ],
-  "half-elf": [
-    { traitName: "Skill Versatility", choiceType: "skills", count: 2 },
-  ],
+  "half-elf": [{ traitName: "Skill Versatility", choiceType: "skills", count: 2 }],
   genasi: [
     {
       traitName: "Elemental Lineage",
       choiceType: "ancestry",
       lineageOptions: [
-        { name: "Air", description: "Lightning Resistance, Shocking Grasp cantrip, Feather Fall, Levitate — Speed 35 ft." },
-        { name: "Earth", description: "Blade Ward cantrip, Pass without Trace — Earth Walk (ignore difficult terrain)" },
-        { name: "Fire", description: "Fire Resistance, Produce Flame cantrip, Burning Hands, Flame Blade" },
-        { name: "Water", description: "Acid Resistance, Acid Splash cantrip, Create or Destroy Water, Water Walk — Swim speed" },
+        {
+          name: "Air",
+          description:
+            "Lightning Resistance, Shocking Grasp cantrip, Feather Fall, Levitate — Speed 35 ft.",
+        },
+        {
+          name: "Earth",
+          description:
+            "Blade Ward cantrip, Pass without Trace — Earth Walk (ignore difficult terrain)",
+        },
+        {
+          name: "Fire",
+          description: "Fire Resistance, Produce Flame cantrip, Burning Hands, Flame Blade",
+        },
+        {
+          name: "Water",
+          description:
+            "Acid Resistance, Acid Splash cantrip, Create or Destroy Water, Water Walk — Swim speed",
+        },
       ],
     },
   ],
@@ -675,9 +760,15 @@ const ANCESTRY_CHOICES: Record<string, TraitChoiceDefinition[]> = {
       choiceType: "ancestry",
       lineageOptions: [
         { name: "Beasthide", description: "Extra temp HP (+1d6) + AC bonus (+1) while shifted" },
-        { name: "Longtooth", description: "Fanged unarmed strike (1d6 piercing + STR) while shifted" },
+        {
+          name: "Longtooth",
+          description: "Fanged unarmed strike (1d6 piercing + STR) while shifted",
+        },
         { name: "Swiftstride", description: "+10 ft. speed + reactive movement while shifted" },
-        { name: "Wildhunt", description: "Advantage on WIS checks, no advantage against you while shifted" },
+        {
+          name: "Wildhunt",
+          description: "Advantage on WIS checks, no advantage against you while shifted",
+        },
       ],
     },
   ],
@@ -719,12 +810,17 @@ export function getSpeciesSkills(state: BuilderState): string[] {
  */
 export function getClassOptionalFeatures(
   className: string,
-  level: number
+  level: number,
 ): { name: string; featureTypes: string[]; count: number; options: OptionalFeatureData[] }[] {
   const cls = getClass(className);
   if (!cls) return [];
 
-  const result: { name: string; featureTypes: string[]; count: number; options: OptionalFeatureData[] }[] = [];
+  const result: {
+    name: string;
+    featureTypes: string[];
+    count: number;
+    options: OptionalFeatureData[];
+  }[] = [];
 
   // optionalfeatureProgression (Warlock Invocations, Sorcerer Metamagic, etc.)
   if (cls.optionalfeatureProgression) {
@@ -758,7 +854,7 @@ export function getClassOptionalFeatures(
   // featProgression for Fighting Styles (category "FS", "FS:P", "FS:R")
   if (cls.featProgression) {
     for (const prog of cls.featProgression) {
-      if (!prog.category?.some(c => c.startsWith("FS"))) continue;
+      if (!prog.category?.some((c) => c.startsWith("FS"))) continue;
 
       let available = false;
       for (const [lvl] of Object.entries(prog.progression)) {
@@ -767,15 +863,15 @@ export function getClassOptionalFeatures(
 
       if (available) {
         // Get Fighting Style feats matching the categories
-        const fsFeats = featsArray.filter(f =>
-          prog.category!.some(cat => f.category === cat || (cat === "FS" && f.category === "FS"))
+        const fsFeats = featsArray.filter((f) =>
+          prog.category!.some((cat) => f.category === cat || (cat === "FS" && f.category === "FS")),
         );
 
         result.push({
           name: prog.name,
           featureTypes: prog.category!,
           count: 1,
-          options: fsFeats.map(f => ({
+          options: fsFeats.map((f) => ({
             name: f.name,
             source: f.source,
             featureType: [f.category],
@@ -795,13 +891,17 @@ export function getClassOptionalFeatures(
  * Get always-prepared spells from subclass data.
  * Reads subclass.additionalSpells[].prepared directly.
  */
-export function getSubclassAlwaysPrepared(className: string, subclassName: string | null, level: number): string[] {
+export function getSubclassAlwaysPrepared(
+  className: string,
+  subclassName: string | null,
+  level: number,
+): string[] {
   if (!subclassName) return [];
   const cls = getClass(className);
   if (!cls) return [];
 
   const subclass = cls.resolvedSubclasses.find(
-    sc => sc.name === subclassName || sc.shortName === subclassName
+    (sc) => sc.name === subclassName || sc.shortName === subclassName,
   );
   if (!subclass?.additionalSpells) return [];
 
@@ -842,7 +942,7 @@ function getSpeciesSpells(state: BuilderState): CharacterSpell[] {
     if (typeof choice.selected === "string" && choice.selected) {
       // Check if this matches an additionalSpells entry name
       const matchesLineage = speciesData.additionalSpells!.some(
-        as => as.name === choice.selected
+        (as) => as.name === choice.selected,
       );
       if (matchesLineage) {
         selectedLineage = choice.selected as string;
@@ -866,10 +966,15 @@ function getSpeciesSpells(state: BuilderState): CharacterSpell[] {
             const spellName = rawName.split("|")[0];
             const db = getSpell(spellName);
             if (db) {
-              result.push(spellFromDb(db, {
-                name: spellName, prepared: true, alwaysPrepared: true,
-                spellSource: "race" as const, knownByClass: false,
-              }));
+              result.push(
+                spellFromDb(db, {
+                  name: spellName,
+                  prepared: true,
+                  alwaysPrepared: true,
+                  spellSource: "race" as const,
+                  knownByClass: false,
+                }),
+              );
             }
           }
         }
@@ -882,7 +987,10 @@ function getSpeciesSpells(state: BuilderState): CharacterSpell[] {
 
 // ─── Weapon Mastery Registry ────────────────────────────
 
-const WEAPON_MASTERY_CLASSES: Record<string, { level: number; count: number; restriction?: "melee" }> = {
+const WEAPON_MASTERY_CLASSES: Record<
+  string,
+  { level: number; count: number; restriction?: "melee" }
+> = {
   barbarian: { level: 1, count: 2, restriction: "melee" },
   fighter: { level: 1, count: 3 },
   paladin: { level: 1, count: 2, restriction: "melee" },
@@ -899,73 +1007,12 @@ export function getWeaponMasteryConfig(className: string, level: number) {
 
 export const RITUAL_CASTER_CLASSES = new Set(["bard", "cleric", "druid", "wizard"]);
 
-// ─── Multiclass Validation ──────────────────────────────
-
-/**
- * Validate multiclass prerequisites. Returns error message or null if valid.
- * In 2024 PHB, multiclass requirements are not formalized in structured data,
- * so we use the standard 13-in-primary-ability rule.
- */
-function validateMulticlassPrereqs(
-  abilities: AbilityScores,
-  className: string
-): string | null {
-  const cls = getClass(className);
-  if (!cls?.multiclassing?.requirements) return null;
-
-  // Not all classes define requirements in the data; fall back to standard rules
-  return null; // Prerequisites not strictly enforced in builder (show warnings instead)
-}
-
-/**
- * Get multiclass skill choices for subsequent classes.
- * First class gets full skill count; subsequent get multiclassing.proficienciesGained.skills
- */
-function getMulticlassSkillInfo(classes: ClassEntry[]): {
-  primarySkillChoices: { from: string[]; count: number } | null;
-  secondarySkillChoices: { className: string; from: string[]; count: number }[];
-} {
-  if (classes.length === 0) return { primarySkillChoices: null, secondarySkillChoices: [] };
-
-  // First class gets full skill choices
-  const primaryCls = getClass(classes[0].className);
-  const primarySkillChoices = primaryCls ? (getSkillChoices(primaryCls) ?? null) : null;
-
-  // Subsequent classes get multiclassing skill gains
-  const secondarySkillChoices: { className: string; from: string[]; count: number }[] = [];
-  for (let i = 1; i < classes.length; i++) {
-    const cls = getClass(classes[i].className);
-    if (!cls?.multiclassing?.proficienciesGained?.skills) continue;
-    const skills = cls.multiclassing.proficienciesGained.skills;
-    if (Array.isArray(skills)) {
-      for (const s of skills) {
-        if (s.choose) {
-          secondarySkillChoices.push({
-            className: classes[i].className,
-            from: s.choose.from,
-            count: s.choose.count,
-          });
-        }
-      }
-    } else if (skills && typeof skills === "object" && "choose" in skills) {
-      const choose = (skills as { choose: { from: string[]; count: number } }).choose;
-      secondarySkillChoices.push({
-        className: classes[i].className,
-        from: choose.from,
-        count: choose.count,
-      });
-    }
-  }
-
-  return { primarySkillChoices, secondarySkillChoices };
-}
-
 // ─── Spell Helpers ──────────────────────────────────────
 
 /** Build CharacterSpell from native 5e.tools SpellData */
 function spellFromDb(
   db: SpellData,
-  overrides: Partial<CharacterSpell> & { name: string }
+  overrides: Partial<CharacterSpell> & { name: string },
 ): CharacterSpell {
   return {
     level: db.level,
@@ -1088,7 +1135,7 @@ export function assembleIdentifiers(state: BuilderState): CharacterIdentifiers {
   const bgData = state.background ? getBackground(state.background) : null;
 
   // Build classes array
-  const classEntries = state.classes.map(c => ({
+  const classEntries = state.classes.map((c) => ({
     name: c.className,
     level: c.level,
     subclass: c.subclass ?? undefined,
@@ -1100,9 +1147,9 @@ export function assembleIdentifiers(state: BuilderState): CharacterIdentifiers {
   const allSkills = [...new Set([...bgSkills, ...speciesSkills, ...state.skillProficiencies])];
 
   // Save proficiencies from primary class
-  const saveProficiencies: (keyof AbilityScores)[] = (primaryCls ? getSavingThrows(primaryCls) : []).map(
-    (s: string) => s.toLowerCase() as keyof AbilityScores
-  );
+  const saveProficiencies: (keyof AbilityScores)[] = (
+    primaryCls ? getSavingThrows(primaryCls) : []
+  ).map((s: string) => s.toLowerCase() as keyof AbilityScores);
 
   // Build spells from all classes
   const spells: CharacterSpell[] = [];
@@ -1111,18 +1158,33 @@ export function assembleIdentifiers(state: BuilderState): CharacterIdentifiers {
     const className = classEntry.className;
 
     // Always-prepared spells from subclass
-    const alwaysPrepared = getSubclassAlwaysPrepared(className, classEntry.subclass, classEntry.level);
+    const alwaysPrepared = getSubclassAlwaysPrepared(
+      className,
+      classEntry.subclass,
+      classEntry.level,
+    );
     for (const name of alwaysPrepared) {
       const db = getSpell(name);
       if (db) {
-        spells.push(spellFromDb(db, {
-          name, prepared: true, alwaysPrepared: true,
-          spellSource: "class" as const, knownByClass: true, sourceClass: className,
-        }));
+        spells.push(
+          spellFromDb(db, {
+            name,
+            prepared: true,
+            alwaysPrepared: true,
+            spellSource: "class" as const,
+            knownByClass: true,
+            sourceClass: className,
+          }),
+        );
       } else {
         spells.push({
-          name, level: 1, prepared: true, alwaysPrepared: true,
-          spellSource: "class" as const, knownByClass: true, sourceClass: className,
+          name,
+          level: 1,
+          prepared: true,
+          alwaysPrepared: true,
+          spellSource: "class" as const,
+          knownByClass: true,
+          sourceClass: className,
         });
       }
     }
@@ -1133,14 +1195,26 @@ export function assembleIdentifiers(state: BuilderState): CharacterIdentifiers {
       for (const name of classSpells.cantrips) {
         const db = getSpell(name);
         if (db) {
-          spells.push(spellFromDb(db, {
-            name, level: 0, prepared: true, alwaysPrepared: false,
-            spellSource: "class" as const, knownByClass: true, sourceClass: className,
-          }));
+          spells.push(
+            spellFromDb(db, {
+              name,
+              level: 0,
+              prepared: true,
+              alwaysPrepared: false,
+              spellSource: "class" as const,
+              knownByClass: true,
+              sourceClass: className,
+            }),
+          );
         } else {
           spells.push({
-            name, level: 0, prepared: true, alwaysPrepared: false,
-            spellSource: "class" as const, knownByClass: true, sourceClass: className,
+            name,
+            level: 0,
+            prepared: true,
+            alwaysPrepared: false,
+            spellSource: "class" as const,
+            knownByClass: true,
+            sourceClass: className,
           });
         }
       }
@@ -1149,14 +1223,25 @@ export function assembleIdentifiers(state: BuilderState): CharacterIdentifiers {
       for (const name of classSpells.spells) {
         const db = getSpell(name);
         if (db) {
-          spells.push(spellFromDb(db, {
-            name, prepared: true, alwaysPrepared: false,
-            spellSource: "class" as const, knownByClass: true, sourceClass: className,
-          }));
+          spells.push(
+            spellFromDb(db, {
+              name,
+              prepared: true,
+              alwaysPrepared: false,
+              spellSource: "class" as const,
+              knownByClass: true,
+              sourceClass: className,
+            }),
+          );
         } else {
           spells.push({
-            name, level: 1, prepared: true, alwaysPrepared: false,
-            spellSource: "class" as const, knownByClass: true, sourceClass: className,
+            name,
+            level: 1,
+            prepared: true,
+            alwaysPrepared: false,
+            spellSource: "class" as const,
+            knownByClass: true,
+            sourceClass: className,
           });
         }
       }
@@ -1189,7 +1274,9 @@ export function assembleIdentifiers(state: BuilderState): CharacterIdentifiers {
   if (langChoice) {
     const selected = langChoice.selected;
     if (Array.isArray(selected)) {
-      for (const l of selected) { if (!languages.includes(l)) languages.push(l); }
+      for (const l of selected) {
+        if (!languages.includes(l)) languages.push(l);
+      }
     } else if (selected && !languages.includes(selected)) {
       languages.push(selected);
     }
@@ -1206,9 +1293,7 @@ export function assembleIdentifiers(state: BuilderState): CharacterIdentifiers {
   for (const classEntry of state.classes) {
     for (const [featureType, choices] of Object.entries(classEntry.optionalFeatureSelections)) {
       for (const choice of choices) {
-        const optData = getOptionalFeaturesByType(featureType).find(
-          f => f.name === choice
-        );
+        const optData = getOptionalFeaturesByType(featureType).find((f) => f.name === choice);
         additionalFeatures.push({
           name: choice,
           description: optData ? entriesToText(optData.entries) : choice,
@@ -1225,7 +1310,9 @@ export function assembleIdentifiers(state: BuilderState): CharacterIdentifiers {
       const featData = getFeat(sel.featName);
       additionalFeatures.push({
         name: sel.featName,
-        description: featData ? entriesToText(featData.entries) : `Feat selected at level ${sel.level}`,
+        description: featData
+          ? entriesToText(featData.entries)
+          : `Feat selected at level ${sel.level}`,
         source: "feat",
         sourceLabel: `Level ${sel.level}`,
       });
@@ -1240,19 +1327,31 @@ export function assembleIdentifiers(state: BuilderState): CharacterIdentifiers {
         for (const cantripName of sel.featSubChoices["cantrips"] ?? []) {
           const db = getSpell(cantripName);
           if (db) {
-            spells.push(spellFromDb(db, {
-              name: cantripName, level: 0, prepared: true, alwaysPrepared: true,
-              spellSource: "feat" as const, knownByClass: false,
-            }));
+            spells.push(
+              spellFromDb(db, {
+                name: cantripName,
+                level: 0,
+                prepared: true,
+                alwaysPrepared: true,
+                spellSource: "feat" as const,
+                knownByClass: false,
+              }),
+            );
           }
         }
         for (const spellName of sel.featSubChoices["spells"] ?? []) {
           const db = getSpell(spellName);
           if (db) {
-            spells.push(spellFromDb(db, {
-              name: spellName, level: db.level, prepared: true, alwaysPrepared: true,
-              spellSource: "feat" as const, knownByClass: false,
-            }));
+            spells.push(
+              spellFromDb(db, {
+                name: spellName,
+                level: db.level,
+                prepared: true,
+                alwaysPrepared: true,
+                spellSource: "feat" as const,
+                knownByClass: false,
+              }),
+            );
           }
         }
       }
@@ -1273,7 +1372,7 @@ export function assembleIdentifiers(state: BuilderState): CharacterIdentifiers {
 
   // Origin feats (background + species Versatile trait)
   const originFeatNames: string[] = [];
-  const bgOriginFeat = bgData ? getBackgroundFeat(bgData) ?? null : null;
+  const bgOriginFeat = bgData ? (getBackgroundFeat(bgData) ?? null) : null;
   if (bgOriginFeat) originFeatNames.push(bgOriginFeat);
 
   const versatileChoice = state.speciesChoices["Versatile"];
@@ -1292,7 +1391,8 @@ export function assembleIdentifiers(state: BuilderState): CharacterIdentifiers {
     featOccurrences[lowerFeat] = (featOccurrences[lowerFeat] ?? 0) + 1;
     const occurrence = featOccurrences[lowerFeat];
     // First occurrence = background overrides, second = species overrides
-    const overrides = occurrence === 1 ? state.originFeatOverrides : state.speciesOriginFeatOverrides;
+    const overrides =
+      occurrence === 1 ? state.originFeatOverrides : state.speciesOriginFeatOverrides;
 
     const originFeat = getFeat(originFeatName);
     if (originFeat) {
@@ -1300,7 +1400,8 @@ export function assembleIdentifiers(state: BuilderState): CharacterIdentifiers {
         name: originFeatName,
         description: entriesToText(originFeat.entries),
         source: "feat",
-        sourceLabel: occurrence === 1 ? (bgData?.name ?? "Background") : (state.species ?? "Species"),
+        sourceLabel:
+          occurrence === 1 ? (bgData?.name ?? "Background") : (state.species ?? "Species"),
       });
     }
 
@@ -1308,27 +1409,41 @@ export function assembleIdentifiers(state: BuilderState): CharacterIdentifiers {
       for (const cantripName of overrides.cantrips) {
         const db = getSpell(cantripName);
         if (db) {
-          spells.push(spellFromDb(db, {
-            name: cantripName, level: 0, prepared: true, alwaysPrepared: true,
-            spellSource: "feat" as const, knownByClass: false,
-          }));
+          spells.push(
+            spellFromDb(db, {
+              name: cantripName,
+              level: 0,
+              prepared: true,
+              alwaysPrepared: true,
+              spellSource: "feat" as const,
+              knownByClass: false,
+            }),
+          );
         }
       }
       if (overrides.spell) {
         const db = getSpell(overrides.spell);
         if (db) {
-          spells.push(spellFromDb(db, {
-            name: overrides.spell, level: 1, prepared: true,
-            alwaysPrepared: true, spellSource: "feat" as const, knownByClass: false,
-          }));
+          spells.push(
+            spellFromDb(db, {
+              name: overrides.spell,
+              level: 1,
+              prepared: true,
+              alwaysPrepared: true,
+              spellSource: "feat" as const,
+              knownByClass: false,
+            }),
+          );
         }
       }
     }
     if (lowerFeat === "skilled" && overrides.skillChoices) {
       allSkills.push(...overrides.skillChoices);
     }
-    if ((lowerFeat === "skilled" || lowerFeat === "crafter" || lowerFeat === "musician") &&
-        overrides.toolChoices) {
+    if (
+      (lowerFeat === "skilled" || lowerFeat === "crafter" || lowerFeat === "musician") &&
+      overrides.toolChoices
+    ) {
       toolProficiencies.push(...overrides.toolChoices);
     }
   }
@@ -1342,7 +1457,7 @@ export function assembleIdentifiers(state: BuilderState): CharacterIdentifiers {
 
   // Jack of All Trades: Bard level 2+
   let skillBonuses: Map<string, number> | undefined;
-  const bardEntry = state.classes.find(c => c.className.toLowerCase() === "bard");
+  const bardEntry = state.classes.find((c) => c.className.toLowerCase() === "bard");
   if (bardEntry && bardEntry.level >= 2) {
     const totalLevel = getTotalLevel(state.classes);
     const halfProf = Math.floor((Math.ceil(totalLevel / 4) + 1) / 2);
@@ -1371,9 +1486,9 @@ export function assembleIdentifiers(state: BuilderState): CharacterIdentifiers {
     languages,
     toolProficiencies,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    traits: Object.keys(state.traits).length > 0 ? state.traits as any : undefined,
+    traits: Object.keys(state.traits).length > 0 ? (state.traits as any) : undefined,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    appearance: Object.keys(state.appearance).length > 0 ? state.appearance as any : undefined,
+    appearance: Object.keys(state.appearance).length > 0 ? (state.appearance as any) : undefined,
     backstory: state.backstory.trim() || undefined,
     currency,
     additionalFeatures: additionalFeatures.length > 0 ? additionalFeatures : undefined,
@@ -1400,19 +1515,23 @@ export function isStepValid(state: BuilderState, step: BuilderStep): boolean {
       }
       if (state.abilityMethod === "point-buy") {
         const cost = getPointBuyCost(state.baseAbilities);
-        return cost <= POINT_BUY_POOL &&
-          Object.values(state.baseAbilities).every((v) => v >= 8 && v <= 15);
+        return (
+          cost <= POINT_BUY_POOL &&
+          Object.values(state.baseAbilities).every((v) => v >= 8 && v <= 15)
+        );
       }
       return Object.values(state.baseAbilities).every((v) => v > 0);
     }
     case "feats": {
       if (state.classes.length === 0) return false;
       const allAsiLevels = getASILevelsForClasses(
-        state.classes.map((c, i) => ({ className: c.className, level: c.level, classIndex: i }))
+        state.classes.map((c, i) => ({ className: c.className, level: c.level, classIndex: i })),
       );
       if (allAsiLevels.length === 0) return true;
       return allAsiLevels.every(({ classIndex, level }) => {
-        const sel = state.asiSelections.find(s => s.classIndex === classIndex && s.level === level);
+        const sel = state.asiSelections.find(
+          (s) => s.classIndex === classIndex && s.level === level,
+        );
         if (!sel) return false;
         if (sel.type === "asi") {
           if (!sel.asiChoice) return false;
@@ -1457,9 +1576,12 @@ export function isStepTouched(state: BuilderState, step: BuilderStep): boolean {
     case "class":
       return state.classes.length > 0;
     case "abilities": {
-      const defaultVal = state.abilityMethod === "standard-array" ? 0 : state.abilityMethod === "point-buy" ? 8 : 10;
-      return !Object.values(state.baseAbilities).every((v) => v === defaultVal) ||
-        Object.keys(state.asiAssignments).length > 0;
+      const defaultVal =
+        state.abilityMethod === "standard-array" ? 0 : state.abilityMethod === "point-buy" ? 8 : 10;
+      return (
+        !Object.values(state.baseAbilities).every((v) => v === defaultVal) ||
+        Object.keys(state.asiAssignments).length > 0
+      );
     }
     case "feats":
       return state.asiSelections.length > 0;
@@ -1467,13 +1589,17 @@ export function isStepTouched(state: BuilderState, step: BuilderStep): boolean {
       return state.skillProficiencies.length > 0;
     case "spells":
       return Object.values(state.spellSelections).some(
-        sel => sel.cantrips.length > 0 || sel.spells.length > 0
+        (sel) => sel.cantrips.length > 0 || sel.spells.length > 0,
       );
     case "equipment":
       return state.equipment.length > 0;
     case "details":
-      return !!(state.name.trim() || state.nameFromSpeciesStep.trim() ||
-        state.alignment || state.backstory);
+      return !!(
+        state.name.trim() ||
+        state.nameFromSpeciesStep.trim() ||
+        state.alignment ||
+        state.backstory
+      );
     case "review":
       return false;
   }
@@ -1493,12 +1619,21 @@ export function getStepsToSkip(state: BuilderState): Set<BuilderStep> {
 
 // ─── Starting Equipment Presets ──────────────────────────
 
-export function resolveStartingEquipment(className: string, choice: "A" | "B"): { items: EquipmentEntry[]; currency: Currency } {
+export function resolveStartingEquipment(
+  className: string,
+  choice: "A" | "B",
+): { items: EquipmentEntry[]; currency: Currency } {
   const cls = getClass(className);
-  if (!cls?.startingEquipment?.defaultData?.[0]) return { items: [], currency: { cp: 0, sp: 0, ep: 0, gp: 0, pp: 0 } };
+  if (!cls?.startingEquipment?.defaultData?.[0])
+    return { items: [], currency: { cp: 0, sp: 0, ep: 0, gp: 0, pp: 0 } };
 
   const data = cls.startingEquipment.defaultData[0];
-  const entries = (data[choice] ?? []) as { item?: string; quantity?: number; value?: number; equipmentType?: string }[];
+  const entries = (data[choice] ?? []) as {
+    item?: string;
+    quantity?: number;
+    value?: number;
+    equipmentType?: string;
+  }[];
   const items: EquipmentEntry[] = [];
   const currency: Currency = { cp: 0, sp: 0, ep: 0, gp: 0, pp: 0 };
 
@@ -1520,7 +1655,7 @@ export function resolveStartingEquipment(className: string, choice: "A" | "B"): 
         name: displayName,
         quantity: entry.quantity ?? 1,
         equipped: isWeapon || isArmor || isShield,
-        source: isWeapon ? "weapon" : (isArmor || isShield) ? "armor" : "gear",
+        source: isWeapon ? "weapon" : isArmor || isShield ? "armor" : "gear",
       });
     } else if (entry.equipmentType) {
       // Generic equipment type (e.g., "instrumentMusical") — skip, player picks manually
@@ -1530,7 +1665,9 @@ export function resolveStartingEquipment(className: string, choice: "A" | "B"): 
   return { items, currency };
 }
 
-export function getStartingEquipmentDescription(className: string): { A: string; B: string } | null {
+export function getStartingEquipmentDescription(
+  className: string,
+): { A: string; B: string } | null {
   const cls = getClass(className);
   if (!cls?.startingEquipment) return null;
   const se = cls.startingEquipment as unknown as { entries?: string[] };
@@ -1543,7 +1680,9 @@ export function getStartingEquipmentDescription(className: string): { A: string;
   const strip = (s: string) => s.replace(/\{@\w+\s+([^|}]+?)(?:\|[^}]*)?\}/g, "$1").trim();
   // Parse the entries format: "{@i Choose A, B, or C:} (A) ...; (B) ...; or (C) ..."
   // Also handles two-option format: "(A) ...; or (B) ..."
-  const matchThree = text.match(/\(A\)\s*([\s\S]+?);\s*\(B\)\s*([\s\S]+?);\s*or\s*\(C\)\s*([\s\S]+)/);
+  const matchThree = text.match(
+    /\(A\)\s*([\s\S]+?);\s*\(B\)\s*([\s\S]+?);\s*or\s*\(C\)\s*([\s\S]+)/,
+  );
   if (matchThree) return { A: strip(matchThree[1]), B: strip(matchThree[2]) };
   const matchTwo = text.match(/\(A\)\s*([\s\S]+?);\s*or\s*\(B\)\s*([\s\S]+)/);
   if (matchTwo) return { A: strip(matchTwo[1]), B: strip(matchTwo[2]) };
@@ -1566,7 +1705,7 @@ export function formatSkillName(slug: string): string {
 // ─── Subclass Deduplication ─────────────────────────────
 
 export function deduplicateSubclasses(
-  subclasses: { name: string; source: string }[]
+  subclasses: { name: string; source: string }[],
 ): { name: string; source: string }[] {
   const byName = new Map<string, { name: string; source: string }>();
   for (const sc of subclasses) {
@@ -1591,4 +1730,3 @@ export const ALIGNMENTS = [
   "Neutral Evil",
   "Chaotic Evil",
 ];
-

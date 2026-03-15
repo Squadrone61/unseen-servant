@@ -5,17 +5,13 @@ test.describe("Room Browser", () => {
     await page.goto("/rooms");
 
     // Heading
-    await expect(
-      page.getByRole("heading", { name: "Browse Rooms" })
-    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Browse Rooms" })).toBeVisible();
 
     // Subtitle
     await expect(page.getByText("Join an active game session")).toBeVisible();
 
     // Back link
-    await expect(
-      page.getByRole("link", { name: /Back to Home/ })
-    ).toBeVisible();
+    await expect(page.getByRole("link", { name: /Back to Home/ })).toBeVisible();
   });
 
   test("shows empty state or room list", async ({ page }) => {
@@ -37,9 +33,7 @@ test.describe("Room Browser", () => {
 
   test("created room appears in browser", async ({ page, browser }) => {
     // Create a room via API
-    const res = await page.request.post(
-      "http://localhost:8787/api/rooms/create"
-    );
+    const res = await page.request.post("http://localhost:8787/api/rooms/create");
     const { roomCode } = await res.json();
 
     // Use a separate context to join the room (keeps it alive)

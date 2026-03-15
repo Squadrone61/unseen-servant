@@ -14,11 +14,7 @@ export function registerCampaignTools(
     "create_campaign",
     "Create a new campaign folder with manifest and empty structure. Returns the campaign manifest.",
     {
-      name: z
-        .string()
-        .describe(
-          "Human-readable campaign name, e.g. 'Curse of the Crimson Keep'"
-        ),
+      name: z.string().describe("Human-readable campaign name, e.g. 'Curse of the Crimson Keep'"),
     },
     async ({ name }) => {
       try {
@@ -42,7 +38,7 @@ export function registerCampaignTools(
           isError: true,
         };
       }
-    }
+    },
   );
 
   server.tool(
@@ -64,7 +60,7 @@ export function registerCampaignTools(
 
       const lines = campaigns.map(
         (c) =>
-          `- **${c.name}** (${c.slug}) — ${c.sessionCount} sessions, last played ${c.lastPlayedAt}`
+          `- **${c.name}** (${c.slug}) — ${c.sessionCount} sessions, last played ${c.lastPlayedAt}`,
       );
       return {
         content: [
@@ -74,7 +70,7 @@ export function registerCampaignTools(
           },
         ],
       };
-    }
+    },
   );
 
   server.tool(
@@ -98,7 +94,7 @@ export function registerCampaignTools(
           isError: true,
         };
       }
-    }
+    },
   );
 
   server.tool(
@@ -108,12 +104,12 @@ export function registerCampaignTools(
       summary: z
         .string()
         .describe(
-          "Session summary: key events, state at end, open threads. Will be saved as sessions/session-NNN.md"
+          "Session summary: key events, state at end, open threads. Will be saved as sessions/session-NNN.md",
         ),
       activeContext: z
         .string()
         .describe(
-          'Updated active-context.md content: "What\'s happening now" — current scene, pending threads, next steps. Keep under ~800 tokens.'
+          'Updated active-context.md content: "What\'s happening now" — current scene, pending threads, next steps. Keep under ~800 tokens.',
         ),
     },
     async ({ summary, activeContext }) => {
@@ -146,7 +142,7 @@ export function registerCampaignTools(
           isError: true,
         };
       }
-    }
+    },
   );
 
   // --- File operations ---
@@ -158,7 +154,7 @@ export function registerCampaignTools(
       path: z
         .string()
         .describe(
-          "Relative file path within the campaign folder (without extension for markdown), e.g. 'world/npcs', 'world/locations', 'sessions/session-001', 'active-context'"
+          "Relative file path within the campaign folder (without extension for markdown), e.g. 'world/npcs', 'world/locations', 'sessions/session-001', 'active-context'",
         ),
       content: z.string().describe("The file content (markdown or JSON)"),
     },
@@ -185,7 +181,7 @@ export function registerCampaignTools(
           isError: true,
         };
       }
-    }
+    },
   );
 
   server.tool(
@@ -194,9 +190,7 @@ export function registerCampaignTools(
     {
       path: z
         .string()
-        .describe(
-          "Relative file path within the campaign folder (without extension for markdown)"
-        ),
+        .describe("Relative file path within the campaign folder (without extension for markdown)"),
     },
     async ({ path: filePath }) => {
       try {
@@ -225,7 +219,7 @@ export function registerCampaignTools(
           isError: true,
         };
       }
-    }
+    },
   );
 
   server.tool(
@@ -267,6 +261,6 @@ export function registerCampaignTools(
           isError: true,
         };
       }
-    }
+    },
   );
 }

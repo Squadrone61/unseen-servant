@@ -92,7 +92,7 @@ export function StepSkills({ state, dispatch }: StepProps) {
 
   // Jack of All Trades: Bard level 2+ adds half-prof to non-proficient checks
   const hasJackOfAllTrades = state.classes.some(
-    (c) => c.className.toLowerCase() === "bard" && c.level >= 2
+    (c) => c.className.toLowerCase() === "bard" && c.level >= 2,
   );
   const halfProfBonus = hasJackOfAllTrades ? Math.floor(profBonus / 2) : 0;
 
@@ -122,8 +122,8 @@ export function StepSkills({ state, dispatch }: StepProps) {
           Skill Proficiencies
         </h2>
         <p className="text-sm text-gray-500">
-          Background and species skills are automatically included. Choose {maxClassPicks > 0 ? maxClassPicks : "your"} additional
-          skill proficiencies.
+          Background and species skills are automatically included. Choose{" "}
+          {maxClassPicks > 0 ? maxClassPicks : "your"} additional skill proficiencies.
         </p>
         <div className="h-px bg-gradient-to-r from-amber-500/30 via-gray-700/50 to-transparent mt-2" />
       </div>
@@ -216,7 +216,8 @@ export function StepSkills({ state, dispatch }: StepProps) {
                         : "text-gray-500"
                   }`}
                 >
-                  {modSign}{abilityMod}
+                  {modSign}
+                  {abilityMod}
                 </span>
                 <div className="flex-1 h-px bg-gray-800/60 ml-1" />
               </div>
@@ -238,11 +239,7 @@ export function StepSkills({ state, dispatch }: StepProps) {
 
                   const bonusSign = bonus >= 0 ? "+" : "";
                   const bonusColor =
-                    bonus > 0
-                      ? "text-green-400"
-                      : bonus < 0
-                        ? "text-red-400"
-                        : "text-gray-500";
+                    bonus > 0 ? "text-green-400" : bonus < 0 ? "text-red-400" : "text-gray-500";
 
                   return (
                     <motion.div
@@ -338,13 +335,8 @@ export function StepSkills({ state, dispatch }: StepProps) {
                       {/* Expertise badge */}
                       {canHaveExpertise && isProficient && (
                         <button
-                          onClick={() =>
-                            dispatch({ type: "TOGGLE_EXPERTISE", skill })
-                          }
-                          disabled={
-                            !isExpertise &&
-                            state.skillExpertise.length >= maxExpertise
-                          }
+                          onClick={() => dispatch({ type: "TOGGLE_EXPERTISE", skill })}
+                          disabled={!isExpertise && state.skillExpertise.length >= maxExpertise}
                           title={isExpertise ? "Remove expertise" : "Grant expertise"}
                           className={`shrink-0 transition-opacity ${
                             !isExpertise && state.skillExpertise.length >= maxExpertise
@@ -362,7 +354,8 @@ export function StepSkills({ state, dispatch }: StepProps) {
                           isProficient ? bonusColor : "text-gray-600"
                         }`}
                       >
-                        {bonusSign}{bonus}
+                        {bonusSign}
+                        {bonus}
                       </span>
                     </motion.div>
                   );
@@ -402,13 +395,7 @@ export function StepSkills({ state, dispatch }: StepProps) {
 
 // ─── Expertise Badge ──────────────────────────────────────
 
-function ExpertiseBadge({
-  active,
-  size,
-}: {
-  active: boolean;
-  size: "sm" | "xs";
-}) {
+function ExpertiseBadge({ active, size }: { active: boolean; size: "sm" | "xs" }) {
   if (size === "xs") {
     return (
       <span

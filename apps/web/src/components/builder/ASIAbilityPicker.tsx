@@ -2,12 +2,21 @@ import type { AbilityScores } from "@unseen-servant/shared/types";
 import { getAbilityMod } from "./utils";
 
 const ABILITY_KEYS: (keyof AbilityScores)[] = [
-  "strength", "dexterity", "constitution", "intelligence", "wisdom", "charisma",
+  "strength",
+  "dexterity",
+  "constitution",
+  "intelligence",
+  "wisdom",
+  "charisma",
 ];
 
 const ABILITY_SHORT: Record<keyof AbilityScores, string> = {
-  strength: "STR", dexterity: "DEX", constitution: "CON",
-  intelligence: "INT", wisdom: "WIS", charisma: "CHA",
+  strength: "STR",
+  dexterity: "DEX",
+  constitution: "CON",
+  intelligence: "INT",
+  wisdom: "WIS",
+  charisma: "CHA",
 };
 
 interface ASIAbilityPickerProps {
@@ -72,12 +81,11 @@ function TwoOnePicker({
       {ABILITY_KEYS.map((ability) => {
         const is2 = plusTwo === ability;
         const is1 = plusOne === ability;
-        const isDisabled = allowedAbilities && allowedAbilities.length > 0 && !allowedAbilities.includes(ability);
+        const isDisabled =
+          allowedAbilities && allowedAbilities.length > 0 && !allowedAbilities.includes(ability);
         return (
           <div key={ability} className={`text-center space-y-1 ${isDisabled ? "opacity-30" : ""}`}>
-            <div className="text-xs text-gray-500 uppercase">
-              {ABILITY_SHORT[ability]}
-            </div>
+            <div className="text-xs text-gray-500 uppercase">{ABILITY_SHORT[ability]}</div>
             {currentScores && (
               <div className="text-xs text-gray-400">
                 {currentScores[ability]}
@@ -157,12 +165,11 @@ function ThreeOnesPicker({
     <div className="grid grid-cols-6 gap-2">
       {ABILITY_KEYS.map((ability) => {
         const isSelected = selected.includes(ability);
-        const isDisabled = allowedAbilities && allowedAbilities.length > 0 && !allowedAbilities.includes(ability);
+        const isDisabled =
+          allowedAbilities && allowedAbilities.length > 0 && !allowedAbilities.includes(ability);
         return (
           <div key={ability} className={`text-center space-y-1 ${isDisabled ? "opacity-30" : ""}`}>
-            <div className="text-xs text-gray-500 uppercase">
-              {ABILITY_SHORT[ability]}
-            </div>
+            <div className="text-xs text-gray-500 uppercase">{ABILITY_SHORT[ability]}</div>
             {currentScores && (
               <div className="text-xs text-gray-400">
                 {currentScores[ability]}
@@ -239,12 +246,8 @@ export function ClassASIPicker({
               }`}
             >
               <div className="text-xs text-gray-500 uppercase">{ABILITY_SHORT[ability]}</div>
-              {score !== undefined && (
-                <div className="text-sm font-medium">{score}</div>
-              )}
-              <div className={`text-xs ${isSelected ? "text-amber-400" : "text-gray-600"}`}>
-                +2
-              </div>
+              {score !== undefined && <div className="text-sm font-medium">{score}</div>}
+              <div className={`text-xs ${isSelected ? "text-amber-400" : "text-gray-600"}`}>+2</div>
             </button>
           );
         })}
@@ -284,12 +287,8 @@ export function ClassASIPicker({
             }`}
           >
             <div className="text-xs text-gray-500 uppercase">{ABILITY_SHORT[ability]}</div>
-            {score !== undefined && (
-              <div className="text-sm font-medium">{score}</div>
-            )}
-            <div className={`text-xs ${isSelected ? "text-amber-400" : "text-gray-600"}`}>
-              +1
-            </div>
+            {score !== undefined && <div className="text-sm font-medium">{score}</div>}
+            <div className={`text-xs ${isSelected ? "text-amber-400" : "text-gray-600"}`}>+1</div>
           </button>
         );
       })}

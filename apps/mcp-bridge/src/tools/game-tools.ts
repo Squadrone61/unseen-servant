@@ -6,7 +6,7 @@ import type { WSClient } from "../ws-client.js";
 export function registerGameTools(
   server: McpServer,
   messageQueue: MessageQueue,
-  wsClient: WSClient
+  wsClient: WSClient,
 ): void {
   // ─── Core Game Loop ───
 
@@ -29,21 +29,19 @@ export function registerGameTools(
                 totalMessageCount: msg.totalMessageCount,
               },
               null,
-              2
+              2,
             ),
           },
         ],
       };
-    }
+    },
   );
 
   server.tool(
     "acknowledge",
     "Silently observe player messages without sending a visible response. Use when players are talking to each other, roleplaying between characters, or having conversations that don't need DM input.",
     {
-      requestId: z
-        .string()
-        .describe("The requestId from the dm_request to acknowledge"),
+      requestId: z.string().describe("The requestId from the dm_request to acknowledge"),
     },
     async ({ requestId }) => {
       wsClient.sendTypingIndicator(false);
@@ -55,19 +53,15 @@ export function registerGameTools(
           },
         ],
       };
-    }
+    },
   );
 
   server.tool(
     "send_response",
     "Send the DM narrative response back to all players. This broadcasts the AI message, stores it in conversation history, and updates game state.",
     {
-      requestId: z
-        .string()
-        .describe("The requestId from the dm_request to respond to"),
-      text: z
-        .string()
-        .describe("The DM narrative text to send back to the players"),
+      requestId: z.string().describe("The requestId from the dm_request to respond to"),
+      text: z.string().describe("The DM narrative text to send back to the players"),
     },
     async ({ requestId, text }) => {
       wsClient.sendTypingIndicator(false);
@@ -80,7 +74,7 @@ export function registerGameTools(
           },
         ],
       };
-    }
+    },
   );
 
   server.tool(
@@ -99,12 +93,12 @@ export function registerGameTools(
                 players: wsClient.players,
               },
               null,
-              2
+              2,
             ),
           },
         ],
       };
-    }
+    },
   );
 
   // ─── State Query Tools ───
@@ -123,7 +117,7 @@ export function registerGameTools(
           },
         ],
       };
-    }
+    },
   );
 
   server.tool(
@@ -147,7 +141,7 @@ export function registerGameTools(
           },
         ],
       };
-    }
+    },
   );
 
   // ─── HP & Conditions ───
@@ -158,13 +152,16 @@ export function registerGameTools(
     {
       target: z.string().describe("Name of the character or combatant to damage"),
       amount: z.number().describe("Amount of damage to deal"),
-      damage_type: z.string().optional().describe("Type of damage (e.g., 'fire', 'slashing', 'psychic')"),
+      damage_type: z
+        .string()
+        .optional()
+        .describe("Type of damage (e.g., 'fire', 'slashing', 'psychic')"),
     },
     async ({ target, amount, damage_type }) => {
       wsClient.sendTypingIndicator(true);
       const result = wsClient.gameStateManager.applyDamage(target, amount, damage_type);
       return { content: [{ type: "text" as const, text: result }] };
-    }
+    },
   );
 
   server.tool(
@@ -178,7 +175,7 @@ export function registerGameTools(
       wsClient.sendTypingIndicator(true);
       const result = wsClient.gameStateManager.heal(target, amount);
       return { content: [{ type: "text" as const, text: result }] };
-    }
+    },
   );
 
   server.tool(
@@ -192,7 +189,7 @@ export function registerGameTools(
       wsClient.sendTypingIndicator(true);
       const result = wsClient.gameStateManager.setHP(target, value);
       return { content: [{ type: "text" as const, text: result }] };
-    }
+    },
   );
 
   server.tool(
@@ -207,7 +204,7 @@ export function registerGameTools(
       wsClient.sendTypingIndicator(true);
       const result = wsClient.gameStateManager.addCondition(target, condition, duration);
       return { content: [{ type: "text" as const, text: result }] };
-    }
+    },
   );
 
   server.tool(
@@ -221,7 +218,7 @@ export function registerGameTools(
       wsClient.sendTypingIndicator(true);
       const result = wsClient.gameStateManager.removeCondition(target, condition);
       return { content: [{ type: "text" as const, text: result }] };
-    }
+    },
   );
 
   // ─── Combat Management ───
@@ -230,24 +227,39 @@ export function registerGameTools(
     "start_combat",
     "Initialize combat with a list of combatants. Initiative is rolled automatically by the system for all combatants. Creates turn order and broadcasts combat state to all players.",
     {
-      combatants: z.array(z.object({
-        name: z.string().describe("Combatant name"),
-        type: z.enum(["player", "npc", "enemy"]).describe("Combatant type"),
-        initiativeModifier: z.number().optional().describe("Initiative modifier (Dex mod). For players, auto-read from character sheet if omitted."),
-        speed: z.number().optional().describe("Movement speed in feet (default 30)"),
-        maxHP: z.number().optional().describe("Maximum HP (required for NPCs/enemies)"),
-        currentHP: z.number().optional().describe("Current HP (defaults to maxHP)"),
-        armorClass: z.number().optional().describe("Armor Class"),
-        position: z.object({ x: z.number(), y: z.number() }).optional().describe("Starting grid position"),
-        size: z.enum(["tiny", "small", "medium", "large", "huge", "gargantuan"]).optional().describe("Creature size (default medium)"),
-        tokenColor: z.string().optional().describe("Token color for battle map"),
-      })).describe("List of combatants to add to combat"),
+      combatants: z
+        .array(
+          z.object({
+            name: z.string().describe("Combatant name"),
+            type: z.enum(["player", "npc", "enemy"]).describe("Combatant type"),
+            initiativeModifier: z
+              .number()
+              .optional()
+              .describe(
+                "Initiative modifier (Dex mod). For players, auto-read from character sheet if omitted.",
+              ),
+            speed: z.number().optional().describe("Movement speed in feet (default 30)"),
+            maxHP: z.number().optional().describe("Maximum HP (required for NPCs/enemies)"),
+            currentHP: z.number().optional().describe("Current HP (defaults to maxHP)"),
+            armorClass: z.number().optional().describe("Armor Class"),
+            position: z
+              .object({ x: z.number(), y: z.number() })
+              .optional()
+              .describe("Starting grid position"),
+            size: z
+              .enum(["tiny", "small", "medium", "large", "huge", "gargantuan"])
+              .optional()
+              .describe("Creature size (default medium)"),
+            tokenColor: z.string().optional().describe("Token color for battle map"),
+          }),
+        )
+        .describe("List of combatants to add to combat"),
     },
     async ({ combatants }) => {
       wsClient.sendTypingIndicator(true);
       const result = wsClient.gameStateManager.startCombat(combatants);
       return { content: [{ type: "text" as const, text: result }] };
-    }
+    },
   );
 
   server.tool(
@@ -258,7 +270,7 @@ export function registerGameTools(
       wsClient.sendTypingIndicator(true);
       const result = wsClient.gameStateManager.endCombat();
       return { content: [{ type: "text" as const, text: result }] };
-    }
+    },
   );
 
   server.tool(
@@ -269,7 +281,7 @@ export function registerGameTools(
       wsClient.sendTypingIndicator(true);
       const result = wsClient.gameStateManager.advanceTurnMCP();
       return { content: [{ type: "text" as const, text: result }] };
-    }
+    },
   );
 
   server.tool(
@@ -278,7 +290,12 @@ export function registerGameTools(
     {
       name: z.string().describe("Combatant name"),
       type: z.enum(["player", "npc", "enemy"]).describe("Combatant type"),
-      initiativeModifier: z.number().optional().describe("Initiative modifier (Dex mod). For players, auto-read from character sheet if omitted."),
+      initiativeModifier: z
+        .number()
+        .optional()
+        .describe(
+          "Initiative modifier (Dex mod). For players, auto-read from character sheet if omitted.",
+        ),
       speed: z.number().optional().describe("Movement speed in feet"),
       maxHP: z.number().optional().describe("Maximum HP"),
       currentHP: z.number().optional().describe("Current HP"),
@@ -291,7 +308,7 @@ export function registerGameTools(
       wsClient.sendTypingIndicator(true);
       const result = wsClient.gameStateManager.addCombatant(params);
       return { content: [{ type: "text" as const, text: result }] };
-    }
+    },
   );
 
   server.tool(
@@ -304,7 +321,7 @@ export function registerGameTools(
       wsClient.sendTypingIndicator(true);
       const result = wsClient.gameStateManager.removeCombatant(name);
       return { content: [{ type: "text" as const, text: result }] };
-    }
+    },
   );
 
   server.tool(
@@ -319,7 +336,7 @@ export function registerGameTools(
       wsClient.sendTypingIndicator(true);
       const result = wsClient.gameStateManager.moveCombatant(name, { x, y });
       return { content: [{ type: "text" as const, text: result }] };
-    }
+    },
   );
 
   // ─── Spell Slots ───
@@ -335,7 +352,7 @@ export function registerGameTools(
       wsClient.sendTypingIndicator(true);
       const result = wsClient.gameStateManager.useSpellSlot(character_name, level);
       return { content: [{ type: "text" as const, text: result }] };
-    }
+    },
   );
 
   server.tool(
@@ -349,7 +366,7 @@ export function registerGameTools(
       wsClient.sendTypingIndicator(true);
       const result = wsClient.gameStateManager.restoreSpellSlot(character_name, level);
       return { content: [{ type: "text" as const, text: result }] };
-    }
+    },
   );
 
   // ─── Class Resources ───
@@ -359,13 +376,15 @@ export function registerGameTools(
     "Expend a use of a class resource (e.g., Bardic Inspiration, Channel Divinity, Rage, Ki Points, Wild Shape, Lay on Hands).",
     {
       character_name: z.string().describe("Character name"),
-      resource_name: z.string().describe("Resource name (e.g., 'Channel Divinity', 'Rage', 'Bardic Inspiration')"),
+      resource_name: z
+        .string()
+        .describe("Resource name (e.g., 'Channel Divinity', 'Rage', 'Bardic Inspiration')"),
     },
     async ({ character_name, resource_name }) => {
       wsClient.sendTypingIndicator(true);
       const result = wsClient.gameStateManager.useClassResource(character_name, resource_name);
       return { content: [{ type: "text" as const, text: result }] };
-    }
+    },
   );
 
   server.tool(
@@ -374,13 +393,20 @@ export function registerGameTools(
     {
       character_name: z.string().describe("Character name"),
       resource_name: z.string().describe("Resource name (e.g., 'Channel Divinity', 'Rage')"),
-      amount: z.number().optional().describe("Number of uses to restore (default 1, use 999 to fully restore)"),
+      amount: z
+        .number()
+        .optional()
+        .describe("Number of uses to restore (default 1, use 999 to fully restore)"),
     },
     async ({ character_name, resource_name, amount }) => {
       wsClient.sendTypingIndicator(true);
-      const result = wsClient.gameStateManager.restoreClassResource(character_name, resource_name, amount);
+      const result = wsClient.gameStateManager.restoreClassResource(
+        character_name,
+        resource_name,
+        amount,
+      );
       return { content: [{ type: "text" as const, text: result }] };
-    }
+    },
   );
 
   // ─── Battle Map ───
@@ -392,15 +418,32 @@ export function registerGameTools(
       width: z.number().describe("Grid width in tiles"),
       height: z.number().describe("Grid height in tiles"),
       name: z.string().optional().describe("Map name (e.g., 'Goblin Cave', 'Town Square')"),
-      tiles: z.array(z.array(z.object({
-        type: z.enum(["floor", "wall", "difficult_terrain", "water", "pit", "door", "stairs"]),
-      }))).optional().describe("2D array of tiles [y][x]. If omitted, all floor."),
+      tiles: z
+        .array(
+          z.array(
+            z.object({
+              type: z.enum([
+                "floor",
+                "wall",
+                "difficult_terrain",
+                "water",
+                "pit",
+                "door",
+                "stairs",
+              ]),
+            }),
+          ),
+        )
+        .optional()
+        .describe("2D array of tiles [y][x]. If omitted, all floor."),
     },
     async ({ width, height, name, tiles }) => {
       wsClient.sendTypingIndicator(true);
-      const mapTiles = tiles ?? Array.from({ length: height }, () =>
-        Array.from({ length: width }, () => ({ type: "floor" as const }))
-      );
+      const mapTiles =
+        tiles ??
+        Array.from({ length: height }, () =>
+          Array.from({ length: width }, () => ({ type: "floor" as const })),
+        );
 
       const result = wsClient.gameStateManager.updateBattleMap({
         id: crypto.randomUUID(),
@@ -410,7 +453,7 @@ export function registerGameTools(
         name,
       });
       return { content: [{ type: "text" as const, text: result }] };
-    }
+    },
   );
 
   // ─── Inventory & Currency ───
@@ -424,22 +467,47 @@ export function registerGameTools(
       quantity: z.number().optional().describe("Quantity (default 1)"),
       type: z.string().optional().describe("Item type (e.g., 'Weapon', 'Armor', 'Gear', 'Potion')"),
       description: z.string().optional().describe("Item description"),
-      rarity: z.string().optional().describe("Rarity (Common, Uncommon, Rare, Very Rare, Legendary)"),
+      rarity: z
+        .string()
+        .optional()
+        .describe("Rarity (Common, Uncommon, Rare, Very Rare, Legendary)"),
       is_magic_item: z.boolean().optional().describe("Whether this is a magic item"),
       damage: z.string().optional().describe("Damage dice (e.g., '1d8', '2d6')"),
       damage_type: z.string().optional().describe("Damage type (e.g., 'slashing', 'fire')"),
-      properties: z.array(z.string()).optional().describe("Item properties (e.g., ['Versatile', 'Light'])"),
+      properties: z
+        .array(z.string())
+        .optional()
+        .describe("Item properties (e.g., ['Versatile', 'Light'])"),
       weight: z.number().optional().describe("Item weight in pounds"),
     },
-    async ({ character_name, name, quantity, type, description, rarity, is_magic_item, damage, damage_type, properties, weight }) => {
+    async ({
+      character_name,
+      name,
+      quantity,
+      type,
+      description,
+      rarity,
+      is_magic_item,
+      damage,
+      damage_type,
+      properties,
+      weight,
+    }) => {
       wsClient.sendTypingIndicator(true);
       const result = wsClient.gameStateManager.addItem(character_name, {
-        name, quantity, type, description, rarity,
-        isMagicItem: is_magic_item, damage, damageType: damage_type,
-        properties, weight,
+        name,
+        quantity,
+        type,
+        description,
+        rarity,
+        isMagicItem: is_magic_item,
+        damage,
+        damageType: damage_type,
+        properties,
+        weight,
       });
       return { content: [{ type: "text" as const, text: result }] };
-    }
+    },
   );
 
   server.tool(
@@ -454,7 +522,7 @@ export function registerGameTools(
       wsClient.sendTypingIndicator(true);
       const result = wsClient.gameStateManager.removeItem(character_name, item_name, quantity);
       return { content: [{ type: "text" as const, text: result }] };
-    }
+    },
   );
 
   server.tool(
@@ -469,12 +537,28 @@ export function registerGameTools(
       description: z.string().optional().describe("Update description"),
       damage: z.string().optional().describe("Update damage dice (e.g., '1d8', '2d6+1')"),
       damage_type: z.string().optional().describe("Update damage type (e.g., 'slashing', 'fire')"),
-      properties: z.array(z.string()).optional().describe("Update item properties (e.g., ['Versatile', 'Light'])"),
+      properties: z
+        .array(z.string())
+        .optional()
+        .describe("Update item properties (e.g., ['Versatile', 'Light'])"),
       armor_class: z.number().optional().describe("Update AC value"),
       attack_bonus: z.number().optional().describe("Update attack bonus"),
       range: z.string().optional().describe("Update range (e.g., '5 ft.', '20/60 ft.')"),
     },
-    async ({ character_name, item_name, equipped, quantity, is_attuned, description, damage, damage_type, properties, armor_class, attack_bonus, range }) => {
+    async ({
+      character_name,
+      item_name,
+      equipped,
+      quantity,
+      is_attuned,
+      description,
+      damage,
+      damage_type,
+      properties,
+      armor_class,
+      attack_bonus,
+      range,
+    }) => {
       wsClient.sendTypingIndicator(true);
       const updates: Record<string, unknown> = {};
       if (equipped !== undefined) updates.equipped = equipped;
@@ -489,7 +573,7 @@ export function registerGameTools(
       if (range !== undefined) updates.range = range;
       const result = wsClient.gameStateManager.updateItem(character_name, item_name, updates);
       return { content: [{ type: "text" as const, text: result }] };
-    }
+    },
   );
 
   server.tool(
@@ -513,7 +597,7 @@ export function registerGameTools(
       if (pp !== undefined) changes.pp = pp;
       const result = wsClient.gameStateManager.updateCurrency(character_name, changes);
       return { content: [{ type: "text" as const, text: result }] };
-    }
+    },
   );
 
   // ─── Heroic Inspiration ───
@@ -528,7 +612,7 @@ export function registerGameTools(
       wsClient.sendTypingIndicator(true);
       const result = wsClient.gameStateManager.grantInspiration(character_name);
       return { content: [{ type: "text" as const, text: result }] };
-    }
+    },
   );
 
   server.tool(
@@ -541,7 +625,7 @@ export function registerGameTools(
       wsClient.sendTypingIndicator(true);
       const result = wsClient.gameStateManager.useInspiration(character_name);
       return { content: [{ type: "text" as const, text: result }] };
-    }
+    },
   );
 
   // ─── Context Management ───
@@ -550,12 +634,15 @@ export function registerGameTools(
     "compact_history",
     "Compact conversation history to free context space. Replaces older messages with your summary, keeping recent messages. Call during natural breaks when totalMessageCount is high.",
     {
-      keep_recent: z.number().default(30).describe("Number of recent messages to keep (default 30)"),
+      keep_recent: z
+        .number()
+        .default(30)
+        .describe("Number of recent messages to keep (default 30)"),
       summary: z.string().describe("Your summary of the older events being compacted"),
     },
     async ({ keep_recent, summary }) => {
       const result = wsClient.gameStateManager.compactHistory(keep_recent, summary);
       return { content: [{ type: "text" as const, text: result }] };
-    }
+    },
   );
 }

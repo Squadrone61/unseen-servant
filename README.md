@@ -71,6 +71,7 @@ node unseen-servant.mjs
 ```
 
 The launcher prompts for:
+
 - **Room code** — the 6-character code from Step 2
 - **Model** — which Claude model to use (`sonnet`, `opus`, or `haiku` — default: `sonnet`)
 
@@ -227,60 +228,66 @@ tests/             — Playwright E2E tests
 Claude Code has access to these tools when acting as DM:
 
 ### Game Communication
-| Tool | Description |
-|------|-------------|
+
+| Tool               | Description                                              |
+| ------------------ | -------------------------------------------------------- |
 | `wait_for_message` | Blocks until a player message arrives (main loop driver) |
-| `send_response` | Sends DM narrative back to all players |
-| `acknowledge` | Silently observe a message without responding |
-| `get_players` | Current player list with character summaries |
-| `get_game_state` | Full game state snapshot |
-| `get_character` | Specific character's full data by name |
+| `send_response`    | Sends DM narrative back to all players                   |
+| `acknowledge`      | Silently observe a message without responding            |
+| `get_players`      | Current player list with character summaries             |
+| `get_game_state`   | Full game state snapshot                                 |
+| `get_character`    | Specific character's full data by name                   |
 
 ### HP, Conditions & Spell Slots
-| Tool | Description |
-|------|-------------|
-| `apply_damage` | Deal damage (handles temp HP) |
-| `heal` | Restore HP |
-| `set_hp` | Set exact HP |
-| `add_condition` / `remove_condition` | Manage conditions (poisoned, stunned, etc.) |
-| `use_spell_slot` / `restore_spell_slot` | Manage spell slots |
-| `use_class_resource` / `restore_class_resource` | Manage class resources (Rage, Ki, etc.) |
-| `grant_inspiration` / `use_inspiration` | Heroic Inspiration |
+
+| Tool                                            | Description                                 |
+| ----------------------------------------------- | ------------------------------------------- |
+| `apply_damage`                                  | Deal damage (handles temp HP)               |
+| `heal`                                          | Restore HP                                  |
+| `set_hp`                                        | Set exact HP                                |
+| `add_condition` / `remove_condition`            | Manage conditions (poisoned, stunned, etc.) |
+| `use_spell_slot` / `restore_spell_slot`         | Manage spell slots                          |
+| `use_class_resource` / `restore_class_resource` | Manage class resources (Rage, Ki, etc.)     |
+| `grant_inspiration` / `use_inspiration`         | Heroic Inspiration                          |
 
 ### Combat & Battle Map
-| Tool | Description |
-|------|-------------|
-| `start_combat` / `end_combat` | Start/end combat encounters |
-| `advance_turn` | Next combatant's turn |
+
+| Tool                                 | Description                     |
+| ------------------------------------ | ------------------------------- |
+| `start_combat` / `end_combat`        | Start/end combat encounters     |
+| `advance_turn`                       | Next combatant's turn           |
 | `add_combatant` / `remove_combatant` | Add/remove combatants mid-fight |
-| `move_combatant` | Move token on battle map |
-| `update_battle_map` | Set/update the tactical grid |
+| `move_combatant`                     | Move token on battle map        |
+| `update_battle_map`                  | Set/update the tactical grid    |
 
 ### Inventory & Currency
-| Tool | Description |
-|------|-------------|
-| `add_item` / `update_item` / `remove_item` | Manage character inventory |
-| `update_currency` | Add or subtract gold/silver/etc. |
+
+| Tool                                       | Description                      |
+| ------------------------------------------ | -------------------------------- |
+| `add_item` / `update_item` / `remove_item` | Manage character inventory       |
+| `update_currency`                          | Add or subtract gold/silver/etc. |
 
 ### D&D Reference
-| Tool | Description |
-|------|-------------|
-| `lookup_spell` | Spell details (490 spells) |
-| `lookup_monster` | Monster stat blocks (580 monsters) |
-| `lookup_condition` | Condition effects (15 conditions) |
-| `lookup_magic_item` | Magic items (563 items) |
-| `lookup_feat` | Feat details (103 feats) |
-| `lookup_class` / `lookup_species` / `lookup_background` | Class, species, background data |
-| `search_rules` | Search across all D&D data categories |
-| `roll_dice` | Direct rolls or interactive player checks |
+
+| Tool                                                    | Description                               |
+| ------------------------------------------------------- | ----------------------------------------- |
+| `lookup_spell`                                          | Spell details (490 spells)                |
+| `lookup_monster`                                        | Monster stat blocks (580 monsters)        |
+| `lookup_condition`                                      | Condition effects (15 conditions)         |
+| `lookup_magic_item`                                     | Magic items (563 items)                   |
+| `lookup_feat`                                           | Feat details (103 feats)                  |
+| `lookup_class` / `lookup_species` / `lookup_background` | Class, species, background data           |
+| `search_rules`                                          | Search across all D&D data categories     |
+| `roll_dice`                                             | Direct rolls or interactive player checks |
 
 ### Campaign Persistence
-| Tool | Description |
-|------|-------------|
-| `create_campaign` / `list_campaigns` | Manage campaigns |
-| `load_campaign_context` | Load full campaign context for session start |
-| `save_campaign_file` / `read_campaign_file` / `list_campaign_files` | Campaign file management |
-| `end_session` | End session (save summary, snapshot characters) |
+
+| Tool                                                                | Description                                     |
+| ------------------------------------------------------------------- | ----------------------------------------------- |
+| `create_campaign` / `list_campaigns`                                | Manage campaigns                                |
+| `load_campaign_context`                                             | Load full campaign context for session start    |
+| `save_campaign_file` / `read_campaign_file` / `list_campaign_files` | Campaign file management                        |
+| `end_session`                                                       | End session (save summary, snapshot characters) |
 
 ## How a Turn Works
 

@@ -3,7 +3,12 @@
 import { useState, useRef, useEffect } from "react";
 import { ChatMessage } from "./ChatMessage";
 import { Button } from "@/components/ui/Button";
-import type { ServerMessage, CheckRequest, CheckResult, RollResult } from "@unseen-servant/shared/types";
+import type {
+  ServerMessage,
+  CheckRequest,
+  CheckResult,
+  RollResult,
+} from "@unseen-servant/shared/types";
 import type { ConnectionState } from "@/hooks/useWebSocket";
 
 // Merged check: all 3 messages resolved (check_request + dice_roll + check_result)
@@ -65,7 +70,17 @@ interface ChatPanelProps {
   onTypingChange?: (isTyping: boolean) => void;
 }
 
-export function ChatPanel({ messages, onSend, connectionState, onRollDice, myCharacterName, isMyTurn, onEndTurn, typingPlayers, onTypingChange }: ChatPanelProps) {
+export function ChatPanel({
+  messages,
+  onSend,
+  connectionState,
+  onRollDice,
+  myCharacterName,
+  isMyTurn,
+  onEndTurn,
+  typingPlayers,
+  onTypingChange,
+}: ChatPanelProps) {
   const [input, setInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -110,12 +125,19 @@ export function ChatPanel({ messages, onSend, connectionState, onRollDice, myCha
       <div className="flex-1 overflow-y-auto p-4 space-y-3 min-h-0">
         {messages.length === 0 && (
           <div className="text-center text-gray-600 mt-16">
-            <p className="text-lg mb-2 text-gray-500" style={{ fontFamily: "var(--font-cinzel)" }}>Waiting for the adventure to begin&hellip;</p>
+            <p className="text-lg mb-2 text-gray-500" style={{ fontFamily: "var(--font-cinzel)" }}>
+              Waiting for the adventure to begin&hellip;
+            </p>
             <div className="w-16 h-px bg-gradient-to-r from-transparent via-amber-500/30 to-transparent mx-auto" />
           </div>
         )}
         {messages.map((msg, i) => (
-          <ChatMessage key={getMessageKey(msg, i)} message={msg} onRollDice={onRollDice} myCharacterName={myCharacterName} />
+          <ChatMessage
+            key={getMessageKey(msg, i)}
+            message={msg}
+            onRollDice={onRollDice}
+            myCharacterName={myCharacterName}
+          />
         ))}
         <div ref={messagesEndRef} />
       </div>
@@ -142,19 +164,11 @@ export function ChatPanel({ messages, onSend, connectionState, onRollDice, myCha
                        focus:ring-amber-500/50 focus:border-amber-500/30 disabled:opacity-50"
           />
           {isMyTurn && onEndTurn && (
-            <Button
-              type="button"
-              onClick={onEndTurn}
-              size="md"
-            >
+            <Button type="button" onClick={onEndTurn} size="md">
               End Turn
             </Button>
           )}
-          <Button
-            type="submit"
-            disabled={!isConnected || !input.trim()}
-            size="md"
-          >
+          <Button type="submit" disabled={!isConnected || !input.trim()} size="md">
             Send
           </Button>
         </div>

@@ -13,7 +13,11 @@ export interface SpellData {
   school: string; // V=Evocation, A=Abjuration, C=Conjuration, D=Divination, E=Enchantment, I=Illusion, N=Necromancy, T=Transmutation
   time: { number: number; unit: string; condition?: string }[];
   range: SpellRange;
-  components: { v?: boolean; s?: boolean; m?: string | { text: string; cost?: number; consume?: boolean | string } };
+  components: {
+    v?: boolean;
+    s?: boolean;
+    m?: string | { text: string; cost?: number; consume?: boolean | string };
+  };
   duration: SpellDuration[];
   entries: Entry[];
   entriesHigherLevel?: Entry[];

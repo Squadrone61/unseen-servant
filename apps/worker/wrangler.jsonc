@@ -1,56 +1,52 @@
 {
-	"name": "unseen-servant-worker",
-	"main": "src/index.ts",
-	"compatibility_date": "2025-12-01",
-	"compatibility_flags": [
-		"nodejs_compat"
-	],
-	"vars": {
-		"ENVIRONMENT": "development",
-		"FRONTEND_URL": "http://localhost:3000"
-	},
-	"durable_objects": {
-		"bindings": [
-			{
-				"name": "GAME_ROOM",
-				"class_name": "GameRoom"
-			}
-		]
-	},
-	"kv_namespaces": [
-		{
-			"binding": "ROOMS",
-			"id": "c10fedf5133c4636b679d47f5ba09524"
-		}
-	],
-	"migrations": [
-		{
-			"tag": "v1",
-			"new_sqlite_classes": [
-				"GameRoom"
-			]
-		}
-	],
-	"env": {
-		"production": {
-			"vars": {
-				"ENVIRONMENT": "production",
-				"FRONTEND_URL": "https://unseenservant.safaakyuz.com"
-			},
-			"durable_objects": {
-				"bindings": [
-					{
-						"name": "GAME_ROOM",
-						"class_name": "GameRoom"
-					}
-				]
-			},
-			"kv_namespaces": [
-				{
-					"binding": "ROOMS",
-					"id": "c10fedf5133c4636b679d47f5ba09524"
-				}
-			]
-		}
-	}
+  "name": "unseen-servant-worker",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-12-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "vars": {
+    "ENVIRONMENT": "development",
+    "FRONTEND_URL": "http://localhost:3000",
+  },
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "GAME_ROOM",
+        "class_name": "GameRoom",
+      },
+    ],
+  },
+  "kv_namespaces": [
+    {
+      "binding": "ROOMS",
+      "id": "c10fedf5133c4636b679d47f5ba09524",
+    },
+  ],
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["GameRoom"],
+    },
+  ],
+  "env": {
+    "production": {
+      "vars": {
+        "ENVIRONMENT": "production",
+        "FRONTEND_URL": "https://unseenservant.safaakyuz.com",
+      },
+      "durable_objects": {
+        "bindings": [
+          {
+            "name": "GAME_ROOM",
+            "class_name": "GameRoom",
+          },
+        ],
+      },
+      "kv_namespaces": [
+        {
+          "binding": "ROOMS",
+          "id": "c10fedf5133c4636b679d47f5ba09524",
+        },
+      ],
+    },
+  },
 }

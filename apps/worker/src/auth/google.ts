@@ -36,10 +36,7 @@ export function getGoogleAuthURL(env: Env, request: Request): string {
 /**
  * Handle the Google OAuth callback: exchange code → get user info → issue JWT → redirect to frontend.
  */
-export async function handleGoogleCallback(
-  request: Request,
-  env: Env
-): Promise<Response> {
+export async function handleGoogleCallback(request: Request, env: Env): Promise<Response> {
   const url = new URL(request.url);
   const code = url.searchParams.get("code");
   const error = url.searchParams.get("error");
@@ -96,7 +93,7 @@ export async function handleGoogleCallback(
         email: userInfo.email,
         picture: userInfo.picture,
       },
-      env.JWT_SECRET
+      env.JWT_SECRET,
     );
 
     // Redirect to frontend with token

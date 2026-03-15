@@ -1,7 +1,11 @@
 import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { classesArray, getClass, baseItemsArray } from "@unseen-servant/shared/data";
-import type { ClassAssembled, ClassFeatureRaw, SubclassFeatureRaw } from "@unseen-servant/shared/data";
+import type {
+  ClassAssembled,
+  ClassFeatureRaw,
+  SubclassFeatureRaw,
+} from "@unseen-servant/shared/data";
 import type { BaseItemData, OptionalFeatureData } from "@unseen-servant/shared/data";
 import {
   getHitDiceFaces,
@@ -42,14 +46,26 @@ function getCasterDisplay(cls: ClassAssembled): CasterDisplay | null {
   if (!raw) return null;
   switch (raw) {
     case "full":
-      return { label: "Full Caster", badgeClass: "bg-blue-900/30 text-blue-400 border border-blue-800/30" };
+      return {
+        label: "Full Caster",
+        badgeClass: "bg-blue-900/30 text-blue-400 border border-blue-800/30",
+      };
     case "half":
-      return { label: "Half Caster", badgeClass: "bg-teal-900/30 text-teal-400 border border-teal-800/30" };
+      return {
+        label: "Half Caster",
+        badgeClass: "bg-teal-900/30 text-teal-400 border border-teal-800/30",
+      };
     case "artificer":
       // BUG #8 fix: artificer progression maps to Half Caster display
-      return { label: "Half Caster", badgeClass: "bg-teal-900/30 text-teal-400 border border-teal-800/30" };
+      return {
+        label: "Half Caster",
+        badgeClass: "bg-teal-900/30 text-teal-400 border border-teal-800/30",
+      };
     case "pact":
-      return { label: "Pact Caster", badgeClass: "bg-purple-900/30 text-purple-400 border border-purple-800/30" };
+      return {
+        label: "Pact Caster",
+        badgeClass: "bg-purple-900/30 text-purple-400 border border-purple-800/30",
+      };
     default:
       return null;
   }
@@ -65,7 +81,8 @@ function stripFilterTags(text: string): string {
 
 // ─── Modern/sci-fi weapon filter ─────────────────────────
 // BUG #11: Exclude modern/sci-fi weapons from weapon mastery picker
-const MODERN_WEAPON_PATTERNS = /pistol|musket|laser|antimatter|automatic|rifle|revolver|shotgun|blaster/i;
+const MODERN_WEAPON_PATTERNS =
+  /pistol|musket|laser|antimatter|automatic|rifle|revolver|shotgun|blaster/i;
 
 // ─── Main Step ────────────────────────────────────────────
 
@@ -96,7 +113,10 @@ export function StepClass({ state, dispatch }: StepProps) {
   return (
     <div className="space-y-5">
       <div className="space-y-1">
-        <h2 className="text-xl font-semibold text-amber-200/90 tracking-wide" style={{ fontFamily: "var(--font-cinzel)" }}>
+        <h2
+          className="text-xl font-semibold text-amber-200/90 tracking-wide"
+          style={{ fontFamily: "var(--font-cinzel)" }}
+        >
           Choose Your Class
         </h2>
         <p className="text-sm text-gray-500">
@@ -251,7 +271,11 @@ export function StepClass({ state, dispatch }: StepProps) {
             )}
 
             {/* Features Reference */}
-            <ClassFeaturesSection cls={selected} level={activeClass.level} subclassName={activeClass.subclass} />
+            <ClassFeaturesSection
+              cls={selected}
+              level={activeClass.level}
+              subclassName={activeClass.subclass}
+            />
           </div>
 
           {/* Right: Class Detail */}
@@ -333,29 +357,43 @@ function FeatureChoicePicker({
         })}
       </div>
       {/* Expandable detail for selected or inspected option */}
-      {(expanded || selected.length > 0) && (() => {
-        const detailName = expanded ?? selected[selected.length - 1];
-        const detailOpt = options.find((o) => o.name === detailName);
-        if (!detailOpt) return null;
-        return (
-          <div className="border-t border-gray-700/40 pt-2 mt-1">
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-xs font-medium text-amber-300/80">{detailOpt.name}</span>
-              {expanded && (
-                <button onClick={() => setExpanded(null)} className="text-gray-600 hover:text-gray-400">
-                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              )}
+      {(expanded || selected.length > 0) &&
+        (() => {
+          const detailName = expanded ?? selected[selected.length - 1];
+          const detailOpt = options.find((o) => o.name === detailName);
+          if (!detailOpt) return null;
+          return (
+            <div className="border-t border-gray-700/40 pt-2 mt-1">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs font-medium text-amber-300/80">{detailOpt.name}</span>
+                {expanded && (
+                  <button
+                    onClick={() => setExpanded(null)}
+                    className="text-gray-600 hover:text-gray-400"
+                  >
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </button>
+                )}
+              </div>
+              <RichText
+                entries={detailOpt.entries}
+                className="text-xs text-gray-500 line-clamp-4"
+              />
             </div>
-            <RichText entries={detailOpt.entries} className="text-xs text-gray-500 line-clamp-4" />
-          </div>
-        );
-      })()}
+          );
+        })()}
       {/* Hint */}
       {selected.length === 0 && !expanded && (
-        <div className="text-xs text-gray-600">Click to select &middot; Right-click for details</div>
+        <div className="text-xs text-gray-600">
+          Click to select &middot; Right-click for details
+        </div>
       )}
     </div>
   );
@@ -376,7 +414,8 @@ function WeaponMasteryPicker({
 
   const eligibleWeapons = useMemo(() => {
     let weapons = baseItemsArray.filter(
-      (w): w is BaseItemData & { mastery: string[] } => !!w.weapon && !!w.mastery && w.mastery.length > 0
+      (w): w is BaseItemData & { mastery: string[] } =>
+        !!w.weapon && !!w.mastery && w.mastery.length > 0,
     );
     // BUG #11: Filter out modern/sci-fi weapons
     weapons = weapons.filter((w) => !MODERN_WEAPON_PATTERNS.test(w.name));
@@ -455,13 +494,7 @@ function WeaponMasteryPicker({
 
 // ─── Class Detail Panel ───────────────────────────────────
 
-function ClassDetail({
-  cls,
-  level,
-}: {
-  cls: ClassAssembled;
-  level: number;
-}) {
+function ClassDetail({ cls, level }: { cls: ClassAssembled; level: number }) {
   const hitDice = getHitDiceFaces(cls);
   const caster = getCasterDisplay(cls);
   const savingThrows = getSavingThrows(cls);
@@ -509,9 +542,7 @@ function ClassDetail({
           <div className="text-sm text-gray-500 font-medium uppercase tracking-wider mb-1">
             Armor
           </div>
-          <div className="text-xs text-gray-300">
-            {armorProfs.join(", ")}
-          </div>
+          <div className="text-xs text-gray-300">{armorProfs.join(", ")}</div>
         </div>
       )}
 
@@ -521,9 +552,7 @@ function ClassDetail({
           <div className="text-sm text-gray-500 font-medium uppercase tracking-wider mb-1">
             Weapons
           </div>
-          <div className="text-xs text-gray-300">
-            {weaponProfs.map(stripFilterTags).join(", ")}
-          </div>
+          <div className="text-xs text-gray-300">{weaponProfs.map(stripFilterTags).join(", ")}</div>
         </div>
       )}
 
@@ -583,7 +612,10 @@ function ClassFeaturesSection({
   if (totalCount === 0) return null;
 
   // Group features by level for a compact timeline view
-  const featuresByLevel = new Map<number, { class: ClassFeatureRaw[]; subclass: SubclassFeatureRaw[] }>();
+  const featuresByLevel = new Map<
+    number,
+    { class: ClassFeatureRaw[]; subclass: SubclassFeatureRaw[] }
+  >();
   for (const f of classFeatures) {
     if (!featuresByLevel.has(f.level)) featuresByLevel.set(f.level, { class: [], subclass: [] });
     featuresByLevel.get(f.level)!.class.push(f);
@@ -600,7 +632,7 @@ function ClassFeaturesSection({
     const f = subclassFeatures[i];
     featureByKey.set(`sc-${f.name}-${f.level}-${i}`, f);
   }
-  const expandedOpt = expandedFeature ? featureByKey.get(expandedFeature) ?? null : null;
+  const expandedOpt = expandedFeature ? (featureByKey.get(expandedFeature) ?? null) : null;
 
   return (
     <div className="bg-gray-800/60 border border-gray-700/40 rounded-lg p-3 space-y-2">
@@ -617,7 +649,9 @@ function ClassFeaturesSection({
           .sort(([a], [b]) => a - b)
           .map(([lv, features]) => (
             <div key={lv} className="flex items-start gap-2">
-              <span className="text-xs text-gray-600 font-mono w-5 shrink-0 pt-0.5 text-right">{lv}</span>
+              <span className="text-xs text-gray-600 font-mono w-5 shrink-0 pt-0.5 text-right">
+                {lv}
+              </span>
               <div className="flex flex-wrap gap-1">
                 {features.class.map((f) => {
                   const key = `${f.name}-${f.level}`;
@@ -663,9 +697,17 @@ function ClassFeaturesSection({
         <div className="border-t border-gray-700/40 pt-2">
           <div className="flex items-center justify-between mb-1">
             <span className="text-xs font-medium text-amber-300/80">{expandedOpt.name}</span>
-            <button onClick={() => setExpandedFeature(null)} className="text-gray-600 hover:text-gray-400">
+            <button
+              onClick={() => setExpandedFeature(null)}
+              className="text-gray-600 hover:text-gray-400"
+            >
               <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
           </div>
@@ -678,13 +720,7 @@ function ClassFeaturesSection({
 
 // ─── Spell Slot Table ─────────────────────────────────────
 
-function SpellSlotTable({
-  slots,
-  currentLevel,
-}: {
-  slots: number[][];
-  currentLevel: number;
-}) {
+function SpellSlotTable({ slots, currentLevel }: { slots: number[][]; currentLevel: number }) {
   const row = slots[Math.min(currentLevel, 20) - 1];
   if (!row || row.every((v) => v === 0)) return null;
 

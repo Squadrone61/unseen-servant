@@ -4,9 +4,7 @@ import * as path from "path";
 import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const pkg = JSON.parse(
-  fs.readFileSync(path.join(__dirname, "package.json"), "utf-8")
-);
+const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, "package.json"), "utf-8"));
 
 const isDev = process.argv.includes("--dev");
 if (isDev) console.log("Building in DEV mode (localhost:8787)\n");
@@ -25,10 +23,7 @@ const result = await esbuild.build({
 
   // Node builtins are external (available at runtime)
   // Also exclude optional native WebSocket deps
-  external: [
-    "bufferutil",
-    "utf-8-validate",
-  ],
+  external: ["bufferutil", "utf-8-validate"],
 
   // Resolve npm packages from mcp-bridge and root node_modules
   nodePaths: [
@@ -62,7 +57,12 @@ const result = await esbuild.build({
   logLevel: "info",
 });
 
-const outPath = path.join(__dirname, isDev ? "dist/unseen-servant-dev.mjs" : "dist/unseen-servant.mjs");
+const outPath = path.join(
+  __dirname,
+  isDev ? "dist/unseen-servant-dev.mjs" : "dist/unseen-servant.mjs",
+);
 const stat = fs.statSync(outPath);
 const sizeKB = (stat.size / 1024).toFixed(0);
-console.log(`\n✓ Built ${isDev ? "dist/unseen-servant-dev.mjs" : "dist/unseen-servant.mjs"} (${sizeKB} KB)`);
+console.log(
+  `\n✓ Built ${isDev ? "dist/unseen-servant-dev.mjs" : "dist/unseen-servant.mjs"} (${sizeKB} KB)`,
+);

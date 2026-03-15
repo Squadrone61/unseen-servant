@@ -10,7 +10,7 @@ const workerUrl = process.env.UNSEEN_WORKER_URL || "http://127.0.0.1:8787";
 if (!roomCode) {
   console.error(
     "Error: UNSEEN_ROOM_CODE environment variable is required.\n" +
-      "Usage: UNSEEN_ROOM_CODE=ABC123 npx tsx apps/mcp-bridge/src/index.ts"
+      "Usage: UNSEEN_ROOM_CODE=ABC123 npx tsx apps/mcp-bridge/src/index.ts",
   );
   process.exit(1);
 }

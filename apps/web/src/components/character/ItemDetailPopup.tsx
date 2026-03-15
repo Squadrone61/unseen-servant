@@ -25,9 +25,7 @@ export function ItemDetailPopup({ item, onClose, position }: ItemDetailPopupProp
             </span>
           )}
           {item.rarity && (
-            <span className={`text-xs font-medium ${rarityColor}`}>
-              {item.rarity}
-            </span>
+            <span className={`text-xs font-medium ${rarityColor}`}>{item.rarity}</span>
           )}
           {item.isMagicItem && (
             <span className="text-xs bg-amber-900/20 text-amber-300 px-2 py-0.5 rounded-full border border-amber-700/30">
@@ -59,9 +57,7 @@ export function ItemDetailPopup({ item, onClose, position }: ItemDetailPopupProp
               <div className="text-xs text-gray-500 uppercase">Damage</div>
               <div className="text-sm text-gray-300">
                 {item.damage}
-                {item.damageType && (
-                  <span className="text-gray-500"> {item.damageType}</span>
-                )}
+                {item.damageType && <span className="text-gray-500"> {item.damageType}</span>}
               </div>
             </div>
           )}
@@ -88,7 +84,10 @@ export function ItemDetailPopup({ item, onClose, position }: ItemDetailPopupProp
         {/* Properties */}
         {item.properties && item.properties.length > 0 && (
           <div>
-            <div className="text-sm text-gray-500 uppercase tracking-wider font-medium mb-1" style={{ fontFamily: "var(--font-cinzel)" }}>
+            <div
+              className="text-sm text-gray-500 uppercase tracking-wider font-medium mb-1"
+              style={{ fontFamily: "var(--font-cinzel)" }}
+            >
               Properties
             </div>
             <div className="flex flex-wrap gap-1">
@@ -107,12 +106,13 @@ export function ItemDetailPopup({ item, onClose, position }: ItemDetailPopupProp
         {/* Description */}
         {item.description && (
           <div>
-            <div className="text-sm text-gray-500 uppercase tracking-wider font-medium mb-1" style={{ fontFamily: "var(--font-cinzel)" }}>
+            <div
+              className="text-sm text-gray-500 uppercase tracking-wider font-medium mb-1"
+              style={{ fontFamily: "var(--font-cinzel)" }}
+            >
               Description
             </div>
-            <Prose className="text-gray-300">
-              {item.description}
-            </Prose>
+            <Prose className="text-gray-300">{item.description}</Prose>
           </div>
         )}
       </div>

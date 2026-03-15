@@ -44,7 +44,6 @@ import {
   getSpellSlotTable,
   getPactSlotTable,
   entriesToText,
-  stripTags,
   SKILL_ABILITY_MAP,
 } from "../utils/5etools";
 
@@ -79,10 +78,7 @@ const MULTICLASS_SPELL_SLOTS: number[][] = [
 ];
 
 /** Third-caster subclasses that grant spellcasting */
-const THIRD_CASTER_SUBCLASSES = new Set([
-  "eldritch knight",
-  "arcane trickster",
-]);
+const THIRD_CASTER_SUBCLASSES = new Set(["eldritch knight", "arcane trickster"]);
 
 // Spellcasting ability by class name (derived from 5e.tools additionalSpells/casterProgression)
 const CLASS_SPELLCASTING_ABILITY: Record<string, keyof AbilityScores> = {
@@ -98,9 +94,10 @@ const CLASS_SPELLCASTING_ABILITY: Record<string, keyof AbilityScores> = {
 
 // ─── Main Builder ────────────────────────────────────────
 
-export function buildCharacter(
-  ids: CharacterIdentifiers
-): { character: CharacterData; warnings: string[] } {
+export function buildCharacter(ids: CharacterIdentifiers): {
+  character: CharacterData;
+  warnings: string[];
+} {
   const warnings: string[] = [];
 
   const totalLevel = ids.classes.reduce((sum, c) => sum + c.level, 0);
@@ -108,9 +105,7 @@ export function buildCharacter(
 
   // === HP adjustments from feats/species ===
   let maxHP = ids.maxHP;
-  const featureNames = new Set(
-    (ids.additionalFeatures ?? []).map((f) => f.name.toLowerCase())
-  );
+  const featureNames = new Set((ids.additionalFeatures ?? []).map((f) => f.name.toLowerCase()));
   if (featureNames.has("tough")) {
     maxHP += 2 * totalLevel;
   }
@@ -275,8 +270,7 @@ function computeArmorClass(ids: CharacterIdentifiers): number {
     if (
       ids.classes.some(
         (c) =>
-          c.name.toLowerCase() === "sorcerer" &&
-          c.subclass?.toLowerCase()?.includes("draconic")
+          c.name.toLowerCase() === "sorcerer" && c.subclass?.toLowerCase()?.includes("draconic"),
       )
     ) {
       baseAC = Math.max(baseAC, 13 + dexMod);
@@ -318,8 +312,7 @@ function computeSpeed(ids: CharacterIdentifiers, featureNames: Set<string>): num
   const monkClass = ids.classes.find((c) => c.name.toLowerCase() === "monk");
   if (monkClass && monkClass.level >= 2) {
     const lvl = monkClass.level;
-    const monkBonus =
-      lvl >= 18 ? 30 : lvl >= 14 ? 25 : lvl >= 10 ? 20 : lvl >= 6 ? 15 : 10;
+    const monkBonus = lvl >= 18 ? 30 : lvl >= 14 ? 25 : lvl >= 10 ? 20 : lvl >= 6 ? 15 : 10;
     speed += monkBonus;
   }
 
@@ -352,8 +345,12 @@ function computeSavingThrows(ids: CharacterIdentifiers): SavingThrowProficiency[
   const profSet = new Set(ids.saveProficiencies);
 
   const abilityList: (keyof AbilityScores)[] = [
-    "strength", "dexterity", "constitution",
-    "intelligence", "wisdom", "charisma",
+    "strength",
+    "dexterity",
+    "constitution",
+    "intelligence",
+    "wisdom",
+    "charisma",
   ];
 
   return abilityList.map((ability) => ({
@@ -367,7 +364,7 @@ function computeSavingThrows(ids: CharacterIdentifiers): SavingThrowProficiency[
 
 function computeSpellcasting(
   ids: CharacterIdentifiers,
-  proficiencyBonus: number
+  proficiencyBonus: number,
 ): {
   spellcastingAbility?: keyof AbilityScores;
   spellSaveDC?: number;
@@ -518,10 +515,7 @@ function computeSpellSlots(ids: CharacterIdentifiers): {
 
 // ─── Features ────────────────────────────────────────────
 
-function computeFeatures(
-  ids: CharacterIdentifiers,
-  warnings: string[]
-): CharacterFeature[] {
+function computeFeatures(ids: CharacterIdentifiers, _warnings: string[]): CharacterFeature[] {
   const features: CharacterFeature[] = [];
   const seen = new Set<string>();
 
@@ -556,8 +550,9 @@ function computeFeatures(
     if (cls.subclass && !seen.has(cls.subclass)) {
       const classData = getClass(cls.name);
       const subclassData = classData?.resolvedSubclasses.find(
-        (s) => s.name.toLowerCase() === cls.subclass!.toLowerCase() ||
-               s.shortName.toLowerCase() === cls.subclass!.toLowerCase()
+        (s) =>
+          s.name.toLowerCase() === cls.subclass!.toLowerCase() ||
+          s.shortName.toLowerCase() === cls.subclass!.toLowerCase(),
       );
       if (subclassData) {
         for (const sf of subclassData.resolvedFeatures) {
@@ -663,7 +658,7 @@ function computeClassResources(ids: CharacterIdentifiers): ClassResource[] {
 function resolveResourceUses(
   template: ClassResourceTemplate,
   level: number,
-  abilities: AbilityScores
+  abilities: AbilityScores,
 ): number {
   // Check usesTable: find the highest level entry at or below current level
   if (template.usesTable) {
@@ -725,7 +720,7 @@ function computeProficiencies(ids: CharacterIdentifiers): ProficiencyGroup {
 function computeSenses(
   ids: CharacterIdentifiers,
   proficiencyBonus: number,
-  skills: SkillProficiency[]
+  skills: SkillProficiency[],
 ): string[] {
   // If parser provided custom senses, use those directly
   if (ids.senses) return ids.senses;

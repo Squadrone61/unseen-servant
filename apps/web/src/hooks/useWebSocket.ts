@@ -4,11 +4,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { serverMessageSchema } from "@unseen-servant/shared/schemas";
 import type { ClientMessage, ServerMessage } from "@unseen-servant/shared/types";
 
-export type ConnectionState =
-  | "connecting"
-  | "connected"
-  | "reconnecting"
-  | "disconnected";
+export type ConnectionState = "connecting" | "connected" | "reconnecting" | "disconnected";
 
 interface UseWebSocketOptions {
   roomCode: string;
@@ -34,8 +30,7 @@ export function useWebSocket({
   enabled = true,
 }: UseWebSocketOptions) {
   const wsRef = useRef<WebSocket | null>(null);
-  const [connectionState, setConnectionState] =
-    useState<ConnectionState>("connecting");
+  const [connectionState, setConnectionState] = useState<ConnectionState>("connecting");
   const onMessageRef = useRef(onMessage);
   onMessageRef.current = onMessage;
 
@@ -50,10 +45,8 @@ export function useWebSocket({
     reconnectAttemptRef.current = 0;
 
     function connect() {
-      const workerUrl =
-        process.env.NEXT_PUBLIC_WORKER_URL || "http://localhost:8787";
-      const wsUrl =
-        workerUrl.replace(/^http/, "ws") + `/api/rooms/${roomCode}/ws`;
+      const workerUrl = process.env.NEXT_PUBLIC_WORKER_URL || "http://localhost:8787";
+      const wsUrl = workerUrl.replace(/^http/, "ws") + `/api/rooms/${roomCode}/ws`;
       const ws = new WebSocket(wsUrl);
       wsRef.current = ws;
 
@@ -113,7 +106,7 @@ export function useWebSocket({
         // Schedule reconnection with exponential backoff
         const delay = Math.min(
           BASE_RECONNECT_DELAY * Math.pow(2, reconnectAttemptRef.current),
-          MAX_RECONNECT_DELAY
+          MAX_RECONNECT_DELAY,
         );
         reconnectAttemptRef.current++;
 

@@ -20,7 +20,6 @@ import type {
   EntryAbilityAttackMod,
   EntryAbilityGeneric,
   EntrySpellcasting,
-  EntryHr,
   EntryLink,
   EntryCell,
   EntryOptions,
@@ -38,12 +37,16 @@ import { parseTags, type ParsedTag } from "@unseen-servant/shared";
 // ─── Tag type → style mapping ────────────────────────────
 
 const TAG_STYLES: Record<string, string> = {
-  spell: "text-amber-400 hover:text-amber-300 cursor-pointer underline decoration-amber-500/30 hover:decoration-amber-400/60",
-  condition: "text-red-400 hover:text-red-300 cursor-pointer underline decoration-red-500/30 hover:decoration-red-400/60",
-  disease: "text-red-400 hover:text-red-300 cursor-pointer underline decoration-red-500/30 hover:decoration-red-400/60",
+  spell:
+    "text-amber-400 hover:text-amber-300 cursor-pointer underline decoration-amber-500/30 hover:decoration-amber-400/60",
+  condition:
+    "text-red-400 hover:text-red-300 cursor-pointer underline decoration-red-500/30 hover:decoration-red-400/60",
+  disease:
+    "text-red-400 hover:text-red-300 cursor-pointer underline decoration-red-500/30 hover:decoration-red-400/60",
   status: "text-orange-400 hover:text-orange-300 cursor-pointer underline decoration-orange-500/30",
   item: "text-emerald-400 hover:text-emerald-300 cursor-pointer underline decoration-emerald-500/30 hover:decoration-emerald-400/60",
-  creature: "text-violet-400 hover:text-violet-300 cursor-pointer underline decoration-violet-500/30",
+  creature:
+    "text-violet-400 hover:text-violet-300 cursor-pointer underline decoration-violet-500/30",
   action: "text-sky-400 hover:text-sky-300 cursor-pointer underline decoration-sky-500/30",
   skill: "text-blue-300",
   dice: "text-amber-300 font-mono",
@@ -76,8 +79,15 @@ const TAG_STYLES: Record<string, string> = {
 
 // Tags that are clickable and should trigger onTagClick
 const CLICKABLE_TAGS = new Set([
-  "spell", "condition", "disease", "item", "creature", "action",
-  "feat", "optfeature", "status",
+  "spell",
+  "condition",
+  "disease",
+  "item",
+  "creature",
+  "action",
+  "feat",
+  "optfeature",
+  "status",
 ]);
 
 // ─── Props ───────────────────────────────────────────────
@@ -137,7 +147,13 @@ function RenderEntry({
     case "inset":
       return <RenderInset entry={entry as EntryInset} onTagClick={onTagClick} depth={depth} />;
     case "insetReadaloud":
-      return <RenderReadaloud entry={entry as EntryInsetReadaloud} onTagClick={onTagClick} depth={depth} />;
+      return (
+        <RenderReadaloud
+          entry={entry as EntryInsetReadaloud}
+          onTagClick={onTagClick}
+          depth={depth}
+        />
+      );
     case "quote":
       return <RenderQuote entry={entry as EntryQuote} onTagClick={onTagClick} depth={depth} />;
     case "list":
@@ -146,11 +162,15 @@ function RenderEntry({
       return <RenderItem entry={entry as EntryItem} onTagClick={onTagClick} depth={depth} />;
     case "itemSub":
     case "itemSpell":
-      return <RenderListItem entry={entry as EntryListItem} onTagClick={onTagClick} depth={depth} />;
+      return (
+        <RenderListItem entry={entry as EntryListItem} onTagClick={onTagClick} depth={depth} />
+      );
     case "table":
       return <RenderTable entry={entry as EntryTable} onTagClick={onTagClick} depth={depth} />;
     case "tableGroup":
-      return <RenderTableGroup entry={entry as EntryTableGroup} onTagClick={onTagClick} depth={depth} />;
+      return (
+        <RenderTableGroup entry={entry as EntryTableGroup} onTagClick={onTagClick} depth={depth} />
+      );
     case "dice":
       return <RenderDice entry={entry as EntryDice} />;
     case "bonus":
@@ -164,7 +184,13 @@ function RenderEntry({
     case "abilityGeneric":
       return <RenderAbilityGeneric entry={entry as EntryAbilityGeneric} onTagClick={onTagClick} />;
     case "spellcasting":
-      return <RenderSpellcasting entry={entry as EntrySpellcasting} onTagClick={onTagClick} depth={depth} />;
+      return (
+        <RenderSpellcasting
+          entry={entry as EntrySpellcasting}
+          onTagClick={onTagClick}
+          depth={depth}
+        />
+      );
     case "hr":
       return <RenderHr />;
     case "link":
@@ -174,21 +200,35 @@ function RenderEntry({
     case "options":
       return <RenderOptions entry={entry as EntryOptions} onTagClick={onTagClick} depth={depth} />;
     case "inline":
-      return <RenderInlineEntry entry={entry as EntryInline} onTagClick={onTagClick} depth={depth} />;
+      return (
+        <RenderInlineEntry entry={entry as EntryInline} onTagClick={onTagClick} depth={depth} />
+      );
     case "inlineBlock":
-      return <RenderInlineBlock entry={entry as EntryInlineBlock} onTagClick={onTagClick} depth={depth} />;
+      return (
+        <RenderInlineBlock
+          entry={entry as EntryInlineBlock}
+          onTagClick={onTagClick}
+          depth={depth}
+        />
+      );
     case "image":
       return <RenderImage entry={entry as EntryImage} />;
     case "flowchart":
-      return <RenderFlowchart entry={entry as EntryFlowchart} onTagClick={onTagClick} depth={depth} />;
+      return (
+        <RenderFlowchart entry={entry as EntryFlowchart} onTagClick={onTagClick} depth={depth} />
+      );
     case "flowBlock":
-      return <RenderFlowBlock entry={entry as EntryFlowBlock} onTagClick={onTagClick} depth={depth} />;
+      return (
+        <RenderFlowBlock entry={entry as EntryFlowBlock} onTagClick={onTagClick} depth={depth} />
+      );
     case "refOptionalfeature":
       return <RenderOptFeatureRef entry={entry as EntryOptionalFeature} onTagClick={onTagClick} />;
     case "refClassFeature":
       return <RenderClassFeatureRef entry={entry as EntryClassFeature} onTagClick={onTagClick} />;
     case "refSubclassFeature":
-      return <RenderSubclassFeatureRef entry={entry as EntrySubclassFeature} onTagClick={onTagClick} />;
+      return (
+        <RenderSubclassFeatureRef entry={entry as EntrySubclassFeature} onTagClick={onTagClick} />
+      );
     default:
       return null;
   }
@@ -219,23 +259,32 @@ function RenderTaggedText({
         const isClickable = CLICKABLE_TAGS.has(tag.type) && onTagClick;
 
         if (tag.type === "atk") {
-          const atkMap: Record<string, string> = { mw: "Melee Weapon", rw: "Ranged Weapon", ms: "Melee Spell", rs: "Ranged Spell" };
-          return <em key={i} className="text-amber-300">{atkMap[tag.name] || tag.name} Attack:</em>;
+          const atkMap: Record<string, string> = {
+            mw: "Melee Weapon",
+            rw: "Ranged Weapon",
+            ms: "Melee Spell",
+            rs: "Ranged Spell",
+          };
+          return (
+            <em key={i} className="text-amber-300">
+              {atkMap[tag.name] || tag.name} Attack:
+            </em>
+          );
         }
 
         if (isClickable) {
           return (
-            <button
-              key={i}
-              className={`${style} inline`}
-              onClick={(e) => onTagClick(tag, e)}
-            >
+            <button key={i} className={`${style} inline`} onClick={(e) => onTagClick(tag, e)}>
               {display}
             </button>
           );
         }
 
-        return <span key={i} className={style}>{display}</span>;
+        return (
+          <span key={i} className={style}>
+            {display}
+          </span>
+        );
       })}
     </>
   );
@@ -243,11 +292,21 @@ function RenderTaggedText({
 
 // ─── Structural renderers ────────────────────────────────
 
-function RenderEntries({ entry, onTagClick, depth }: { entry: EntryEntries; onTagClick?: (tag: ParsedTag, e: React.MouseEvent) => void; depth: number }) {
+function RenderEntries({
+  entry,
+  onTagClick,
+  depth,
+}: {
+  entry: EntryEntries;
+  onTagClick?: (tag: ParsedTag, e: React.MouseEvent) => void;
+  depth: number;
+}) {
   return (
     <div className={depth > 0 ? "mt-1" : ""}>
       {entry.name && (
-        <div className={`font-semibold text-gray-200 ${depth === 0 ? "text-sm mb-1" : "text-xs mb-0.5"}`}>
+        <div
+          className={`font-semibold text-gray-200 ${depth === 0 ? "text-sm mb-1" : "text-xs mb-0.5"}`}
+        >
           <RenderTaggedText text={entry.name} onTagClick={onTagClick} />
         </div>
       )}
@@ -260,11 +319,22 @@ function RenderEntries({ entry, onTagClick, depth }: { entry: EntryEntries; onTa
   );
 }
 
-function RenderSection({ entry, onTagClick, depth }: { entry: EntrySection; onTagClick?: (tag: ParsedTag, e: React.MouseEvent) => void; depth: number }) {
+function RenderSection({
+  entry,
+  onTagClick,
+  depth,
+}: {
+  entry: EntrySection;
+  onTagClick?: (tag: ParsedTag, e: React.MouseEvent) => void;
+  depth: number;
+}) {
   return (
     <div className="mt-3">
       {entry.name && (
-        <h4 className="text-sm font-semibold text-amber-200/80 mb-1.5" style={{ fontFamily: "var(--font-cinzel)" }}>
+        <h4
+          className="text-sm font-semibold text-amber-200/80 mb-1.5"
+          style={{ fontFamily: "var(--font-cinzel)" }}
+        >
           {entry.name}
         </h4>
       )}
@@ -277,7 +347,15 @@ function RenderSection({ entry, onTagClick, depth }: { entry: EntrySection; onTa
   );
 }
 
-function RenderInset({ entry, onTagClick, depth }: { entry: EntryInset; onTagClick?: (tag: ParsedTag, e: React.MouseEvent) => void; depth: number }) {
+function RenderInset({
+  entry,
+  onTagClick,
+  depth,
+}: {
+  entry: EntryInset;
+  onTagClick?: (tag: ParsedTag, e: React.MouseEvent) => void;
+  depth: number;
+}) {
   return (
     <div className="border-l-2 border-amber-600/30 pl-3 my-2 bg-amber-900/5 py-1.5 rounded-r">
       {entry.name && (
@@ -292,7 +370,15 @@ function RenderInset({ entry, onTagClick, depth }: { entry: EntryInset; onTagCli
   );
 }
 
-function RenderReadaloud({ entry, onTagClick, depth }: { entry: EntryInsetReadaloud; onTagClick?: (tag: ParsedTag, e: React.MouseEvent) => void; depth: number }) {
+function RenderReadaloud({
+  entry,
+  onTagClick,
+  depth,
+}: {
+  entry: EntryInsetReadaloud;
+  onTagClick?: (tag: ParsedTag, e: React.MouseEvent) => void;
+  depth: number;
+}) {
   return (
     <div className="border-l-2 border-amber-500/40 pl-3 my-2 bg-amber-900/10 py-2 rounded-r italic text-amber-100/70">
       {entry.name && (
@@ -307,7 +393,15 @@ function RenderReadaloud({ entry, onTagClick, depth }: { entry: EntryInsetReadal
   );
 }
 
-function RenderQuote({ entry, onTagClick, depth }: { entry: EntryQuote; onTagClick?: (tag: ParsedTag, e: React.MouseEvent) => void; depth: number }) {
+function RenderQuote({
+  entry,
+  onTagClick,
+  depth,
+}: {
+  entry: EntryQuote;
+  onTagClick?: (tag: ParsedTag, e: React.MouseEvent) => void;
+  depth: number;
+}) {
   return (
     <blockquote className="border-l-2 border-gray-600/40 pl-3 my-2 text-gray-400 italic">
       <div className="space-y-1">
@@ -325,7 +419,15 @@ function RenderQuote({ entry, onTagClick, depth }: { entry: EntryQuote; onTagCli
   );
 }
 
-function RenderList({ entry, onTagClick, depth }: { entry: EntryList; onTagClick?: (tag: ParsedTag, e: React.MouseEvent) => void; depth: number }) {
+function RenderList({
+  entry,
+  onTagClick,
+  depth,
+}: {
+  entry: EntryList;
+  onTagClick?: (tag: ParsedTag, e: React.MouseEvent) => void;
+  depth: number;
+}) {
   const isNumbered = entry.style === "list-decimal";
 
   return (
@@ -359,7 +461,15 @@ function RenderList({ entry, onTagClick, depth }: { entry: EntryList; onTagClick
   );
 }
 
-function RenderItem({ entry, onTagClick, depth }: { entry: EntryItem; onTagClick?: (tag: ParsedTag, e: React.MouseEvent) => void; depth: number }) {
+function RenderItem({
+  entry,
+  onTagClick,
+  depth,
+}: {
+  entry: EntryItem;
+  onTagClick?: (tag: ParsedTag, e: React.MouseEvent) => void;
+  depth: number;
+}) {
   return (
     <div>
       <span className="font-semibold text-gray-200">
@@ -381,10 +491,20 @@ function RenderItem({ entry, onTagClick, depth }: { entry: EntryItem; onTagClick
   );
 }
 
-function RenderListItem({ entry, onTagClick, depth }: { entry: EntryListItem; onTagClick?: (tag: ParsedTag, e: React.MouseEvent) => void; depth: number }) {
+function RenderListItem({
+  entry,
+  onTagClick,
+  depth,
+}: {
+  entry: EntryListItem;
+  onTagClick?: (tag: ParsedTag, e: React.MouseEvent) => void;
+  depth: number;
+}) {
   return (
     <div>
-      <span className={`font-medium ${entry.type === "itemSpell" ? "text-amber-300" : "text-gray-300"}`}>
+      <span
+        className={`font-medium ${entry.type === "itemSpell" ? "text-amber-300" : "text-gray-300"}`}
+      >
         <RenderTaggedText text={entry.name} onTagClick={onTagClick} />
       </span>
       {entry.entry && (
@@ -405,7 +525,15 @@ function RenderListItem({ entry, onTagClick, depth }: { entry: EntryListItem; on
 
 // ─── Table ───────────────────────────────────────────────
 
-function RenderTable({ entry, onTagClick, depth }: { entry: EntryTable; onTagClick?: (tag: ParsedTag, e: React.MouseEvent) => void; depth: number }) {
+function RenderTable({
+  entry,
+  onTagClick,
+  depth,
+}: {
+  entry: EntryTable;
+  onTagClick?: (tag: ParsedTag, e: React.MouseEvent) => void;
+  depth: number;
+}) {
   return (
     <div className="my-2 overflow-x-auto">
       {entry.caption && (
@@ -442,7 +570,15 @@ function RenderTable({ entry, onTagClick, depth }: { entry: EntryTable; onTagCli
   );
 }
 
-function RenderTableGroup({ entry, onTagClick, depth }: { entry: EntryTableGroup; onTagClick?: (tag: ParsedTag, e: React.MouseEvent) => void; depth: number }) {
+function RenderTableGroup({
+  entry,
+  onTagClick,
+  depth,
+}: {
+  entry: EntryTableGroup;
+  onTagClick?: (tag: ParsedTag, e: React.MouseEvent) => void;
+  depth: number;
+}) {
   return (
     <div className="space-y-2">
       {entry.tables.map((t, i) => (
@@ -457,23 +593,37 @@ function RenderTableGroup({ entry, onTagClick, depth }: { entry: EntryTableGroup
 function RenderDice({ entry }: { entry: EntryDice }) {
   if (!entry.toRoll) return null;
   const text = entry.toRoll
-    .map((r) => `${r.number}d${r.faces}${r.modifier ? (r.modifier > 0 ? `+${r.modifier}` : `${r.modifier}`) : ""}`)
+    .map(
+      (r) =>
+        `${r.number}d${r.faces}${r.modifier ? (r.modifier > 0 ? `+${r.modifier}` : `${r.modifier}`) : ""}`,
+    )
     .join(" + ");
   return <span className="text-amber-300 font-mono">{text}</span>;
 }
 
 function RenderBonus({ entry }: { entry: EntryBonus }) {
-  return <span className="text-amber-300 font-mono">{entry.value >= 0 ? "+" : ""}{entry.value}</span>;
+  return (
+    <span className="text-amber-300 font-mono">
+      {entry.value >= 0 ? "+" : ""}
+      {entry.value}
+    </span>
+  );
 }
 
 function RenderBonusSpeed({ entry }: { entry: EntryBonusSpeed }) {
-  return <span className="text-amber-300 font-mono">{entry.value >= 0 ? "+" : ""}{entry.value} ft.</span>;
+  return (
+    <span className="text-amber-300 font-mono">
+      {entry.value >= 0 ? "+" : ""}
+      {entry.value} ft.
+    </span>
+  );
 }
 
 function RenderAbilityDc({ entry }: { entry: EntryAbilityDc }) {
   return (
     <span className="text-gray-300">
-      <span className="font-semibold text-amber-300">{entry.name} save DC</span> = 8 + your proficiency bonus + your {entry.attributes.join(" or ")} modifier
+      <span className="font-semibold text-amber-300">{entry.name} save DC</span> = 8 + your
+      proficiency bonus + your {entry.attributes.join(" or ")} modifier
     </span>
   );
 }
@@ -481,12 +631,19 @@ function RenderAbilityDc({ entry }: { entry: EntryAbilityDc }) {
 function RenderAbilityAttackMod({ entry }: { entry: EntryAbilityAttackMod }) {
   return (
     <span className="text-gray-300">
-      <span className="font-semibold text-amber-300">{entry.name} attack modifier</span> = your proficiency bonus + your {entry.attributes.join(" or ")} modifier
+      <span className="font-semibold text-amber-300">{entry.name} attack modifier</span> = your
+      proficiency bonus + your {entry.attributes.join(" or ")} modifier
     </span>
   );
 }
 
-function RenderAbilityGeneric({ entry, onTagClick }: { entry: EntryAbilityGeneric; onTagClick?: (tag: ParsedTag, e: React.MouseEvent) => void }) {
+function RenderAbilityGeneric({
+  entry,
+  onTagClick,
+}: {
+  entry: EntryAbilityGeneric;
+  onTagClick?: (tag: ParsedTag, e: React.MouseEvent) => void;
+}) {
   return (
     <span className="text-gray-300">
       {entry.name && <span className="font-semibold text-amber-300">{entry.name} = </span>}
@@ -497,7 +654,15 @@ function RenderAbilityGeneric({ entry, onTagClick }: { entry: EntryAbilityGeneri
 
 // ─── Spellcasting block ─────────────────────────────────
 
-function RenderSpellcasting({ entry, onTagClick, depth }: { entry: EntrySpellcasting; onTagClick?: (tag: ParsedTag, e: React.MouseEvent) => void; depth: number }) {
+function RenderSpellcasting({
+  entry,
+  onTagClick,
+  depth,
+}: {
+  entry: EntrySpellcasting;
+  onTagClick?: (tag: ParsedTag, e: React.MouseEvent) => void;
+  depth: number;
+}) {
   return (
     <div className="space-y-1.5">
       <div className="text-sm font-semibold text-amber-200/80 italic">{entry.name}</div>
@@ -517,37 +682,40 @@ function RenderSpellcasting({ entry, onTagClick, depth }: { entry: EntrySpellcas
           </span>
         </div>
       )}
-      {entry.daily && Object.entries(entry.daily).map(([freq, spells]) => (
-        <div key={freq}>
-          <span className="text-xs text-gray-500 uppercase">{freq.replace("e", "")}/day each: </span>
-          <span className="text-gray-300">
-            {spells.map((s, i) => (
-              <Fragment key={i}>
-                {i > 0 && ", "}
-                <RenderTaggedText text={s} onTagClick={onTagClick} />
-              </Fragment>
-            ))}
-          </span>
-        </div>
-      ))}
-      {entry.spells && Object.entries(entry.spells).map(([level, data]) => (
-        <div key={level}>
-          <span className="text-xs text-gray-500 uppercase">
-            {level === "0" ? "Cantrips" : `Level ${level}`}
-            {data.slots != null && ` (${data.slots} slots)`}
-            {data.atWill && " (at will)"}
-            :{" "}
-          </span>
-          <span className="text-gray-300">
-            {data.spells.map((s, i) => (
-              <Fragment key={i}>
-                {i > 0 && ", "}
-                <RenderTaggedText text={s} onTagClick={onTagClick} />
-              </Fragment>
-            ))}
-          </span>
-        </div>
-      ))}
+      {entry.daily &&
+        Object.entries(entry.daily).map(([freq, spells]) => (
+          <div key={freq}>
+            <span className="text-xs text-gray-500 uppercase">
+              {freq.replace("e", "")}/day each:{" "}
+            </span>
+            <span className="text-gray-300">
+              {spells.map((s, i) => (
+                <Fragment key={i}>
+                  {i > 0 && ", "}
+                  <RenderTaggedText text={s} onTagClick={onTagClick} />
+                </Fragment>
+              ))}
+            </span>
+          </div>
+        ))}
+      {entry.spells &&
+        Object.entries(entry.spells).map(([level, data]) => (
+          <div key={level}>
+            <span className="text-xs text-gray-500 uppercase">
+              {level === "0" ? "Cantrips" : `Level ${level}`}
+              {data.slots != null && ` (${data.slots} slots)`}
+              {data.atWill && " (at will)"}:{" "}
+            </span>
+            <span className="text-gray-300">
+              {data.spells.map((s, i) => (
+                <Fragment key={i}>
+                  {i > 0 && ", "}
+                  <RenderTaggedText text={s} onTagClick={onTagClick} />
+                </Fragment>
+              ))}
+            </span>
+          </div>
+        ))}
       {entry.footerEntries?.map((e, i) => (
         <RenderEntry key={`f${i}`} entry={e} onTagClick={onTagClick} depth={depth + 1} />
       ))}
@@ -558,28 +726,55 @@ function RenderSpellcasting({ entry, onTagClick, depth }: { entry: EntrySpellcas
 // ─── Simple renderers ───────────────────────────────────
 
 function RenderHr() {
-  return <div className="h-px bg-gradient-to-r from-gray-700/50 via-gray-600/30 to-transparent my-2" />;
+  return (
+    <div className="h-px bg-gradient-to-r from-gray-700/50 via-gray-600/30 to-transparent my-2" />
+  );
 }
 
 function RenderLink({ entry }: { entry: EntryLink }) {
   const href = typeof entry.href === "object" && "url" in entry.href ? entry.href.url : "#";
   return (
-    <a href={href} className="text-amber-400 hover:text-amber-300 underline" target="_blank" rel="noopener noreferrer">
+    <a
+      href={href}
+      className="text-amber-400 hover:text-amber-300 underline"
+      target="_blank"
+      rel="noopener noreferrer"
+    >
       {entry.text}
     </a>
   );
 }
 
-function RenderCell({ entry, onTagClick, depth }: { entry: EntryCell; onTagClick?: (tag: ParsedTag, e: React.MouseEvent) => void; depth: number }) {
+function RenderCell({
+  entry,
+  onTagClick,
+  depth,
+}: {
+  entry: EntryCell;
+  onTagClick?: (tag: ParsedTag, e: React.MouseEvent) => void;
+  depth: number;
+}) {
   if (entry.roll) {
     if ("exact" in entry.roll) return <span className="text-gray-300">{entry.roll.exact}</span>;
-    return <span className="text-gray-300">{entry.roll.min}–{entry.roll.max}</span>;
+    return (
+      <span className="text-gray-300">
+        {entry.roll.min}–{entry.roll.max}
+      </span>
+    );
   }
   if (entry.entry) return <RenderEntry entry={entry.entry} onTagClick={onTagClick} depth={depth} />;
   return null;
 }
 
-function RenderOptions({ entry, onTagClick, depth }: { entry: EntryOptions; onTagClick?: (tag: ParsedTag, e: React.MouseEvent) => void; depth: number }) {
+function RenderOptions({
+  entry,
+  onTagClick,
+  depth,
+}: {
+  entry: EntryOptions;
+  onTagClick?: (tag: ParsedTag, e: React.MouseEvent) => void;
+  depth: number;
+}) {
   return (
     <div className="space-y-1">
       {entry.count && <div className="text-xs text-gray-500">Choose {entry.count}:</div>}
@@ -590,7 +785,15 @@ function RenderOptions({ entry, onTagClick, depth }: { entry: EntryOptions; onTa
   );
 }
 
-function RenderInlineEntry({ entry, onTagClick, depth }: { entry: EntryInline; onTagClick?: (tag: ParsedTag, e: React.MouseEvent) => void; depth: number }) {
+function RenderInlineEntry({
+  entry,
+  onTagClick,
+  depth,
+}: {
+  entry: EntryInline;
+  onTagClick?: (tag: ParsedTag, e: React.MouseEvent) => void;
+  depth: number;
+}) {
   return (
     <span>
       {entry.entries.map((e, i) => (
@@ -600,7 +803,15 @@ function RenderInlineEntry({ entry, onTagClick, depth }: { entry: EntryInline; o
   );
 }
 
-function RenderInlineBlock({ entry, onTagClick, depth }: { entry: EntryInlineBlock; onTagClick?: (tag: ParsedTag, e: React.MouseEvent) => void; depth: number }) {
+function RenderInlineBlock({
+  entry,
+  onTagClick,
+  depth,
+}: {
+  entry: EntryInlineBlock;
+  onTagClick?: (tag: ParsedTag, e: React.MouseEvent) => void;
+  depth: number;
+}) {
   return (
     <span className="inline-block">
       {entry.entries.map((e, i) => (
@@ -617,7 +828,15 @@ function RenderImage({ entry }: { entry: EntryImage }) {
   ) : null;
 }
 
-function RenderFlowchart({ entry, onTagClick, depth }: { entry: EntryFlowchart; onTagClick?: (tag: ParsedTag, e: React.MouseEvent) => void; depth: number }) {
+function RenderFlowchart({
+  entry,
+  onTagClick,
+  depth,
+}: {
+  entry: EntryFlowchart;
+  onTagClick?: (tag: ParsedTag, e: React.MouseEvent) => void;
+  depth: number;
+}) {
   return (
     <div className="space-y-1 border-l border-gray-700/40 pl-3">
       {entry.blocks.map((block, i) => (
@@ -630,7 +849,15 @@ function RenderFlowchart({ entry, onTagClick, depth }: { entry: EntryFlowchart; 
   );
 }
 
-function RenderFlowBlock({ entry, onTagClick, depth }: { entry: EntryFlowBlock; onTagClick?: (tag: ParsedTag, e: React.MouseEvent) => void; depth: number }) {
+function RenderFlowBlock({
+  entry,
+  onTagClick,
+  depth,
+}: {
+  entry: EntryFlowBlock;
+  onTagClick?: (tag: ParsedTag, e: React.MouseEvent) => void;
+  depth: number;
+}) {
   return (
     <div className="bg-gray-800/30 rounded px-2 py-1.5 border border-gray-700/30">
       {entry.name && <div className="text-xs font-semibold text-gray-200 mb-0.5">{entry.name}</div>}
@@ -645,8 +872,18 @@ function RenderFlowBlock({ entry, onTagClick, depth }: { entry: EntryFlowBlock; 
 
 // ─── Reference renderers ────────────────────────────────
 
-function RenderOptFeatureRef({ entry, onTagClick }: { entry: EntryOptionalFeature; onTagClick?: (tag: ParsedTag, e: React.MouseEvent) => void }) {
-  const tag: ParsedTag = { type: "optfeature", name: entry.optionalfeature, original: entry.optionalfeature };
+function RenderOptFeatureRef({
+  entry,
+  onTagClick,
+}: {
+  entry: EntryOptionalFeature;
+  onTagClick?: (tag: ParsedTag, e: React.MouseEvent) => void;
+}) {
+  const tag: ParsedTag = {
+    type: "optfeature",
+    name: entry.optionalfeature,
+    original: entry.optionalfeature,
+  };
   if (onTagClick) {
     return (
       <button className={TAG_STYLES.optfeature} onClick={(e) => onTagClick(tag, e)}>
@@ -657,12 +894,24 @@ function RenderOptFeatureRef({ entry, onTagClick }: { entry: EntryOptionalFeatur
   return <span className="text-cyan-400">{entry.optionalfeature}</span>;
 }
 
-function RenderClassFeatureRef({ entry, onTagClick: _onTagClick }: { entry: EntryClassFeature; onTagClick?: (tag: ParsedTag, e: React.MouseEvent) => void }) {
+function RenderClassFeatureRef({
+  entry,
+  onTagClick: _onTagClick,
+}: {
+  entry: EntryClassFeature;
+  onTagClick?: (tag: ParsedTag, e: React.MouseEvent) => void;
+}) {
   const parts = entry.classFeature.split("|");
   return <span className="text-amber-300 font-medium">{parts[0]}</span>;
 }
 
-function RenderSubclassFeatureRef({ entry, onTagClick: _onTagClick }: { entry: EntrySubclassFeature; onTagClick?: (tag: ParsedTag, e: React.MouseEvent) => void }) {
+function RenderSubclassFeatureRef({
+  entry,
+  onTagClick: _onTagClick,
+}: {
+  entry: EntrySubclassFeature;
+  onTagClick?: (tag: ParsedTag, e: React.MouseEvent) => void;
+}) {
   const parts = entry.subclassFeature.split("|");
   return <span className="text-amber-300 font-medium">{parts[0]}</span>;
 }

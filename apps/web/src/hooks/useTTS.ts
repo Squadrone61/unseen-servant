@@ -5,19 +5,19 @@ import { useState, useEffect, useCallback, useRef } from "react";
 function stripMarkdown(text: string): string {
   return text
     .replace(/\{(?:place|npc|pc|item|faction):([^}]+)\}/g, "$1") // entity tags
-    .replace(/#{1,6}\s+/g, "")       // headings
-    .replace(/\*\*(.+?)\*\*/g, "$1")  // bold
-    .replace(/\*(.+?)\*/g, "$1")      // italic
-    .replace(/__(.+?)__/g, "$1")      // bold alt
-    .replace(/_(.+?)_/g, "$1")        // italic alt
-    .replace(/~~(.+?)~~/g, "$1")      // strikethrough
+    .replace(/#{1,6}\s+/g, "") // headings
+    .replace(/\*\*(.+?)\*\*/g, "$1") // bold
+    .replace(/\*(.+?)\*/g, "$1") // italic
+    .replace(/__(.+?)__/g, "$1") // bold alt
+    .replace(/_(.+?)_/g, "$1") // italic alt
+    .replace(/~~(.+?)~~/g, "$1") // strikethrough
     .replace(/`{1,3}[^`]*`{1,3}/g, "") // code
     .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1") // links
-    .replace(/^>\s+/gm, "")           // blockquotes
-    .replace(/^[-*+]\s+/gm, "")       // unordered lists
-    .replace(/^\d+\.\s+/gm, "")       // ordered lists
-    .replace(/---+/g, "")             // horizontal rules
-    .replace(/\n{3,}/g, "\n\n")       // collapse whitespace
+    .replace(/^>\s+/gm, "") // blockquotes
+    .replace(/^[-*+]\s+/gm, "") // unordered lists
+    .replace(/^\d+\.\s+/gm, "") // ordered lists
+    .replace(/---+/g, "") // horizontal rules
+    .replace(/\n{3,}/g, "\n\n") // collapse whitespace
     .trim();
 }
 
@@ -57,7 +57,7 @@ export function useTTS() {
     const preferred = english.find(
       (v) =>
         /male|david|daniel|james|mark|google uk/i.test(v.name) &&
-        !/female|zira|hazel/i.test(v.name)
+        !/female|zira|hazel/i.test(v.name),
     );
     return preferred || english[0] || voices[0];
   }, [voices]);
@@ -106,7 +106,7 @@ export function useTTS() {
       setIsSpeaking(true);
       speechSynthesis.speak(utterance);
     },
-    [stop, pickVoice]
+    [stop, pickVoice],
   );
 
   return { speak, stop, isSpeaking };

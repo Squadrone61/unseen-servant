@@ -5,17 +5,25 @@ export function StepDetails({ state, dispatch }: StepProps) {
   return (
     <div className="space-y-6 max-w-3xl">
       <div className="space-y-1">
-        <h2 className="text-xl font-semibold text-amber-200/90 tracking-wide" style={{ fontFamily: "var(--font-cinzel)" }}>
+        <h2
+          className="text-xl font-semibold text-amber-200/90 tracking-wide"
+          style={{ fontFamily: "var(--font-cinzel)" }}
+        >
           Character Details
         </h2>
-        <p className="text-sm text-gray-500">Personalize your character with a name, appearance, and personality.</p>
+        <p className="text-sm text-gray-500">
+          Personalize your character with a name, appearance, and personality.
+        </p>
         <div className="h-px bg-gradient-to-r from-amber-500/30 via-gray-700/50 to-transparent mt-2" />
       </div>
 
       {/* Name + Alignment row */}
       <div className="flex gap-4">
         <div className="flex-1">
-          <label className="text-sm text-gray-500 uppercase tracking-wider block mb-1" style={{ fontFamily: "var(--font-cinzel)" }}>
+          <label
+            className="text-sm text-gray-500 uppercase tracking-wider block mb-1"
+            style={{ fontFamily: "var(--font-cinzel)" }}
+          >
             Character Name
           </label>
           <input
@@ -27,14 +35,15 @@ export function StepDetails({ state, dispatch }: StepProps) {
           />
         </div>
         <div className="w-48">
-          <label className="text-sm text-gray-500 uppercase tracking-wider block mb-1" style={{ fontFamily: "var(--font-cinzel)" }}>
+          <label
+            className="text-sm text-gray-500 uppercase tracking-wider block mb-1"
+            style={{ fontFamily: "var(--font-cinzel)" }}
+          >
             Alignment
           </label>
           <select
             value={state.alignment}
-            onChange={(e) =>
-              dispatch({ type: "SET_ALIGNMENT", alignment: e.target.value })
-            }
+            onChange={(e) => dispatch({ type: "SET_ALIGNMENT", alignment: e.target.value })}
             className="w-full bg-gray-900/60 border border-gray-700/60 rounded-lg px-3 py-2 text-sm text-gray-100 focus:outline-none focus:ring-1 focus:ring-amber-500/50"
           >
             <option value="">None</option>
@@ -49,7 +58,10 @@ export function StepDetails({ state, dispatch }: StepProps) {
 
       {/* Appearance */}
       <div>
-        <div className="text-sm text-amber-200/60 font-medium mb-2" style={{ fontFamily: "var(--font-cinzel)" }}>
+        <div
+          className="text-sm text-amber-200/60 font-medium mb-2"
+          style={{ fontFamily: "var(--font-cinzel)" }}
+        >
           Appearance
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -65,9 +77,7 @@ export function StepDetails({ state, dispatch }: StepProps) {
             ] as const
           ).map(([field, label]) => (
             <div key={field}>
-              <label className="text-xs text-gray-500 block mb-0.5">
-                {label}
-              </label>
+              <label className="text-xs text-gray-500 block mb-0.5">{label}</label>
               <input
                 type="text"
                 value={(state.appearance[field] as string) ?? ""}
@@ -87,7 +97,10 @@ export function StepDetails({ state, dispatch }: StepProps) {
 
       {/* Traits */}
       <div>
-        <div className="text-sm text-amber-200/60 font-medium mb-2" style={{ fontFamily: "var(--font-cinzel)" }}>
+        <div
+          className="text-sm text-amber-200/60 font-medium mb-2"
+          style={{ fontFamily: "var(--font-cinzel)" }}
+        >
           Personality
         </div>
         <div className="space-y-3">
@@ -100,9 +113,7 @@ export function StepDetails({ state, dispatch }: StepProps) {
             ] as const
           ).map(([field, label]) => (
             <div key={field}>
-              <label className="text-xs text-gray-500 block mb-0.5">
-                {label}
-              </label>
+              <label className="text-xs text-gray-500 block mb-0.5">{label}</label>
               <textarea
                 value={(state.traits[field] as string) ?? ""}
                 onChange={(e) =>
@@ -122,14 +133,15 @@ export function StepDetails({ state, dispatch }: StepProps) {
 
       {/* Backstory */}
       <div>
-        <div className="text-sm text-amber-200/60 font-medium mb-2" style={{ fontFamily: "var(--font-cinzel)" }}>
+        <div
+          className="text-sm text-amber-200/60 font-medium mb-2"
+          style={{ fontFamily: "var(--font-cinzel)" }}
+        >
           Backstory
         </div>
         <textarea
           value={state.backstory}
-          onChange={(e) =>
-            dispatch({ type: "SET_BACKSTORY", backstory: e.target.value })
-          }
+          onChange={(e) => dispatch({ type: "SET_BACKSTORY", backstory: e.target.value })}
           placeholder="Write your character's backstory..."
           rows={5}
           className="w-full bg-gray-900/60 border border-gray-700/60 rounded px-2 py-1.5 text-xs text-gray-100 placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-amber-500/50 resize-y"

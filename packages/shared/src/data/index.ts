@@ -48,12 +48,12 @@ import actionsData from "./actions.json";
 
 // ─── Type assertions for JSON imports ──────────────────
 
-const rawClasses = (classesData as unknown as {
+const rawClasses = classesData as unknown as {
   class: ClassRaw[];
   subclass: SubclassRaw[];
   classFeature: ClassFeatureRaw[];
   subclassFeature: SubclassFeatureRaw[];
-});
+};
 
 const rawSpecies = speciesData as unknown as {
   race: SpeciesData[];
@@ -91,16 +91,13 @@ const rawLanguages = languagesData as unknown as {
 function assembleClasses(): ClassAssembled[] {
   return rawClasses.class.map((cls) => {
     const resolvedFeatures = rawClasses.classFeature.filter(
-      (f) =>
-        f.className.toLowerCase() === cls.name.toLowerCase() &&
-        f.classSource === cls.source
+      (f) => f.className.toLowerCase() === cls.name.toLowerCase() && f.classSource === cls.source,
     );
 
     const resolvedSubclasses: SubclassAssembled[] = rawClasses.subclass
       .filter(
         (sc) =>
-          sc.className.toLowerCase() === cls.name.toLowerCase() &&
-          sc.classSource === cls.source
+          sc.className.toLowerCase() === cls.name.toLowerCase() && sc.classSource === cls.source,
       )
       .map((sc) => ({
         ...sc,
@@ -109,7 +106,7 @@ function assembleClasses(): ClassAssembled[] {
             f.className.toLowerCase() === sc.className.toLowerCase() &&
             f.classSource === sc.classSource &&
             f.subclassShortName === sc.shortName &&
-            f.subclassSource === sc.source
+            f.subclassSource === sc.source,
         ),
       }));
 
@@ -174,7 +171,7 @@ export const itemGroupsArray = rawItems.itemGroup ?? [];
 
 // Magic items (for backward compat — filters to rarity !== "none")
 export const magicItemsArray = allItemsArray.filter(
-  (i: { rarity?: string }) => i.rarity && i.rarity !== "none"
+  (i: { rarity?: string }) => i.rarity && i.rarity !== "none",
 );
 export const magicItems = buildMap(magicItemsArray);
 
@@ -262,14 +259,11 @@ export function getSpellsByLevel(level: number): SpellData[] {
 export function getSpellsByClass(className: string): SpellData[] {
   const lower = className.toLowerCase();
   return spellsArray.filter((s) =>
-    s.classes?.fromClassList?.some((c) => c.name.toLowerCase() === lower)
+    s.classes?.fromClassList?.some((c) => c.name.toLowerCase() === lower),
   );
 }
 
-export function getClassFeatures(
-  className: string,
-  upToLevel: number
-): ClassFeatureRaw[] {
+export function getClassFeatures(className: string, upToLevel: number): ClassFeatureRaw[] {
   const cls = getClass(className);
   if (!cls) return [];
   return cls.resolvedFeatures.filter((f) => f.level <= upToLevel);
@@ -286,19 +280,40 @@ export function getCasterMultiplier(className: string): number {
   const cls = getClass(className);
   if (!cls) return 0;
   switch (cls.casterProgression) {
-    case "full": return 1;
-    case "1/2": return 0.5;
-    case "1/3": return 1 / 3;
-    case "pact": return 0; // Warlock uses pact magic, handled separately
-    default: return 0;
+    case "full":
+      return 1;
+    case "1/2":
+      return 0.5;
+    case "1/3":
+      return 1 / 3;
+    case "pact":
+      return 0; // Warlock uses pact magic, handled separately
+    default:
+      return 0;
   }
 }
 
 // Third-Caster Spell Slot Table (Eldritch Knight, Arcane Trickster)
 export const THIRD_CASTER_SLOTS: Record<number, number[]> = {
-  1: [], 2: [], 3: [2], 4: [3], 5: [3], 6: [3], 7: [4, 2], 8: [4, 2],
-  9: [4, 2], 10: [4, 3], 11: [4, 3], 12: [4, 3], 13: [4, 3, 2], 14: [4, 3, 2],
-  15: [4, 3, 2], 16: [4, 3, 3], 17: [4, 3, 3], 18: [4, 3, 3], 19: [4, 3, 3, 1],
+  1: [],
+  2: [],
+  3: [2],
+  4: [3],
+  5: [3],
+  6: [3],
+  7: [4, 2],
+  8: [4, 2],
+  9: [4, 2],
+  10: [4, 3],
+  11: [4, 3],
+  12: [4, 3],
+  13: [4, 3, 2],
+  14: [4, 3, 2],
+  15: [4, 3, 2],
+  16: [4, 3, 3],
+  17: [4, 3, 3],
+  18: [4, 3, 3],
+  19: [4, 3, 3, 1],
   20: [4, 3, 3, 1],
 };
 
@@ -382,39 +397,163 @@ export function formatWeaponProperty(raw: string | { uid: string; note?: string 
 
 export const CLASS_RESOURCES: Record<string, ClassResourceTemplate[]> = {
   barbarian: [
-    { name: "Rage", levelAvailable: 1, resetType: "long", uses: 2, usesTable: { 1: 2, 3: 3, 6: 4, 17: 5, 20: 6 } },
+    {
+      name: "Rage",
+      levelAvailable: 1,
+      resetType: "long",
+      uses: 2,
+      usesTable: { 1: 2, 3: 3, 6: 4, 17: 5, 20: 6 },
+    },
   ],
   bard: [
-    { name: "Bardic Inspiration", levelAvailable: 1, resetType: "short", uses: { abilityMod: "cha", minimum: 1 } },
+    {
+      name: "Bardic Inspiration",
+      levelAvailable: 1,
+      resetType: "short",
+      uses: { abilityMod: "cha", minimum: 1 },
+    },
   ],
   cleric: [
-    { name: "Channel Divinity", levelAvailable: 1, resetType: "short", uses: 1, usesTable: { 1: 1, 6: 2, 18: 3 } },
+    {
+      name: "Channel Divinity",
+      levelAvailable: 1,
+      resetType: "short",
+      uses: 1,
+      usesTable: { 1: 1, 6: 2, 18: 3 },
+    },
   ],
   druid: [
     { name: "Wild Shape", levelAvailable: 2, resetType: "short", uses: 2 },
-    { name: "Channel Nature", levelAvailable: 1, resetType: "long", uses: 1, usesTable: { 1: 1, 6: 2, 18: 3 } },
+    {
+      name: "Channel Nature",
+      levelAvailable: 1,
+      resetType: "long",
+      uses: 1,
+      usesTable: { 1: 1, 6: 2, 18: 3 },
+    },
   ],
   fighter: [
-    { name: "Second Wind", levelAvailable: 1, resetType: "short", uses: 1, usesTable: { 1: 1, 2: 2, 9: 3, 13: 4, 17: 5 } },
-    { name: "Action Surge", levelAvailable: 2, resetType: "short", uses: 1, usesTable: { 2: 1, 17: 2 } },
-    { name: "Indomitable", levelAvailable: 9, resetType: "long", uses: 1, usesTable: { 9: 1, 13: 2, 17: 3 } },
+    {
+      name: "Second Wind",
+      levelAvailable: 1,
+      resetType: "short",
+      uses: 1,
+      usesTable: { 1: 1, 2: 2, 9: 3, 13: 4, 17: 5 },
+    },
+    {
+      name: "Action Surge",
+      levelAvailable: 2,
+      resetType: "short",
+      uses: 1,
+      usesTable: { 2: 1, 17: 2 },
+    },
+    {
+      name: "Indomitable",
+      levelAvailable: 9,
+      resetType: "long",
+      uses: 1,
+      usesTable: { 9: 1, 13: 2, 17: 3 },
+    },
   ],
   monk: [
-    { name: "Focus Points", levelAvailable: 2, resetType: "short", uses: 2, usesTable: { 2: 2, 3: 3, 4: 4, 5: 5, 6: 6, 7: 7, 8: 8, 9: 9, 10: 10, 11: 11, 12: 12, 13: 13, 14: 14, 15: 15, 16: 16, 17: 17, 18: 18, 19: 19, 20: 20 } },
+    {
+      name: "Focus Points",
+      levelAvailable: 2,
+      resetType: "short",
+      uses: 2,
+      usesTable: {
+        2: 2,
+        3: 3,
+        4: 4,
+        5: 5,
+        6: 6,
+        7: 7,
+        8: 8,
+        9: 9,
+        10: 10,
+        11: 11,
+        12: 12,
+        13: 13,
+        14: 14,
+        15: 15,
+        16: 16,
+        17: 17,
+        18: 18,
+        19: 19,
+        20: 20,
+      },
+    },
   ],
   paladin: [
-    { name: "Lay on Hands", levelAvailable: 1, resetType: "long", uses: 5, usesTable: { 1: 5, 2: 10, 3: 15, 4: 20, 5: 25, 6: 30, 7: 35, 8: 40, 9: 45, 10: 50, 11: 55, 12: 60, 13: 65, 14: 70, 15: 75, 16: 80, 17: 85, 18: 90, 19: 95, 20: 100 } },
-    { name: "Channel Divinity", levelAvailable: 3, resetType: "long", uses: 1, usesTable: { 3: 1, 11: 2, 15: 3 } },
+    {
+      name: "Lay on Hands",
+      levelAvailable: 1,
+      resetType: "long",
+      uses: 5,
+      usesTable: {
+        1: 5,
+        2: 10,
+        3: 15,
+        4: 20,
+        5: 25,
+        6: 30,
+        7: 35,
+        8: 40,
+        9: 45,
+        10: 50,
+        11: 55,
+        12: 60,
+        13: 65,
+        14: 70,
+        15: 75,
+        16: 80,
+        17: 85,
+        18: 90,
+        19: 95,
+        20: 100,
+      },
+    },
+    {
+      name: "Channel Divinity",
+      levelAvailable: 3,
+      resetType: "long",
+      uses: 1,
+      usesTable: { 3: 1, 11: 2, 15: 3 },
+    },
   ],
   ranger: [],
   rogue: [],
   sorcerer: [
-    { name: "Sorcery Points", levelAvailable: 2, resetType: "long", uses: 2, usesTable: { 2: 2, 3: 3, 4: 4, 5: 5, 6: 6, 7: 7, 8: 8, 9: 9, 10: 10, 11: 11, 12: 12, 13: 13, 14: 14, 15: 15, 16: 16, 17: 17, 18: 18, 19: 19, 20: 20 } },
+    {
+      name: "Sorcery Points",
+      levelAvailable: 2,
+      resetType: "long",
+      uses: 2,
+      usesTable: {
+        2: 2,
+        3: 3,
+        4: 4,
+        5: 5,
+        6: 6,
+        7: 7,
+        8: 8,
+        9: 9,
+        10: 10,
+        11: 11,
+        12: 12,
+        13: 13,
+        14: 14,
+        15: 15,
+        16: 16,
+        17: 17,
+        18: 18,
+        19: 19,
+        20: 20,
+      },
+    },
   ],
   warlock: [],
-  wizard: [
-    { name: "Arcane Recovery", levelAvailable: 1, resetType: "long", uses: 1 },
-  ],
+  wizard: [{ name: "Arcane Recovery", levelAvailable: 1, resetType: "long", uses: 1 }],
 };
 
 export function getClassResources(className: string): ClassResourceTemplate[] {

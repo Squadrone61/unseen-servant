@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { motion } from "framer-motion";
 import type { AbilityScores } from "@unseen-servant/shared/types";
-import { getBackground } from "@unseen-servant/shared/data";
+
 import type { StepProps, AbilityMethod, ASIMode } from "./types";
 import {
   STANDARD_ARRAY,
@@ -48,11 +48,8 @@ const METHODS: { value: AbilityMethod; label: string }[] = [
 
 export function StepAbilities({ state, dispatch }: StepProps) {
   const pointsUsed = useMemo(
-    () =>
-      state.abilityMethod === "point-buy"
-        ? getPointBuyCost(state.baseAbilities)
-        : 0,
-    [state.abilityMethod, state.baseAbilities]
+    () => (state.abilityMethod === "point-buy" ? getPointBuyCost(state.baseAbilities) : 0),
+    [state.abilityMethod, state.baseAbilities],
   );
 
   const finalAbilities = useMemo(() => getFinalAbilities(state), [state]);
@@ -63,7 +60,9 @@ export function StepAbilities({ state, dispatch }: StepProps) {
   // For standard array: track which values have been assigned
   const usedValues = useMemo(() => {
     if (state.abilityMethod !== "standard-array") return new Set<number>();
-    return new Set(Object.values(state.baseAbilities).filter((v) => v > 0 && STANDARD_ARRAY.includes(v)));
+    return new Set(
+      Object.values(state.baseAbilities).filter((v) => v > 0 && STANDARD_ARRAY.includes(v)),
+    );
   }, [state.abilityMethod, state.baseAbilities]);
 
   const pointBuyOverBudget = pointsUsed > POINT_BUY_POOL;
@@ -72,10 +71,15 @@ export function StepAbilities({ state, dispatch }: StepProps) {
   return (
     <div className="space-y-6">
       <div className="space-y-1">
-        <h2 className="text-xl font-semibold text-amber-200/90 tracking-wide" style={{ fontFamily: "var(--font-cinzel)" }}>
+        <h2
+          className="text-xl font-semibold text-amber-200/90 tracking-wide"
+          style={{ fontFamily: "var(--font-cinzel)" }}
+        >
           Ability Scores
         </h2>
-        <p className="text-sm text-gray-500">Set your base ability scores, then apply your background ability score increases.</p>
+        <p className="text-sm text-gray-500">
+          Set your base ability scores, then apply your background ability score increases.
+        </p>
         <div className="h-px bg-gradient-to-r from-amber-500/30 via-gray-700/50 to-transparent mt-2" />
       </div>
 
@@ -84,9 +88,7 @@ export function StepAbilities({ state, dispatch }: StepProps) {
         {METHODS.map((m) => (
           <button
             key={m.value}
-            onClick={() =>
-              dispatch({ type: "SET_ABILITY_METHOD", method: m.value })
-            }
+            onClick={() => dispatch({ type: "SET_ABILITY_METHOD", method: m.value })}
             className={`px-4 py-2.5 text-xs font-medium transition-colors ${
               state.abilityMethod === m.value
                 ? "text-amber-300 border-b-2 border-amber-400/70"
@@ -103,7 +105,9 @@ export function StepAbilities({ state, dispatch }: StepProps) {
         <div className="space-y-1.5">
           <div className="flex items-center justify-between text-xs">
             <span className="text-gray-400">Points Spent</span>
-            <span className={`font-semibold tabular-nums ${pointBuyOverBudget ? "text-red-400" : pointsUsed === POINT_BUY_POOL ? "text-emerald-400" : "text-amber-300"}`}>
+            <span
+              className={`font-semibold tabular-nums ${pointBuyOverBudget ? "text-red-400" : pointsUsed === POINT_BUY_POOL ? "text-emerald-400" : "text-amber-300"}`}
+            >
               {pointsUsed} / {POINT_BUY_POOL}
             </span>
           </div>
@@ -113,8 +117,8 @@ export function StepAbilities({ state, dispatch }: StepProps) {
                 pointBuyOverBudget
                   ? "bg-red-500"
                   : pointsUsed === POINT_BUY_POOL
-                  ? "bg-emerald-500"
-                  : "bg-amber-500"
+                    ? "bg-emerald-500"
+                    : "bg-amber-500"
               }`}
               initial={{ width: 0 }}
               animate={{ width: `${pointBuyPercent}%` }}
@@ -122,7 +126,10 @@ export function StepAbilities({ state, dispatch }: StepProps) {
             />
           </div>
           {pointBuyOverBudget && (
-            <p className="text-xs text-red-400">Over budget by {pointsUsed - POINT_BUY_POOL} point{pointsUsed - POINT_BUY_POOL !== 1 ? "s" : ""}. Lower some scores.</p>
+            <p className="text-xs text-red-400">
+              Over budget by {pointsUsed - POINT_BUY_POOL} point
+              {pointsUsed - POINT_BUY_POOL !== 1 ? "s" : ""}. Lower some scores.
+            </p>
           )}
         </div>
       )}
@@ -198,7 +205,8 @@ export function StepAbilities({ state, dispatch }: StepProps) {
                       value={v}
                       disabled={
                         usedValues.has(v) && state.baseAbilities[ability] !== v
-                          ? countInArray(Object.values(state.baseAbilities), v) >= countInArray(STANDARD_ARRAY, v)
+                          ? countInArray(Object.values(state.baseAbilities), v) >=
+                            countInArray(STANDARD_ARRAY, v)
                           : false
                       }
                     >
@@ -259,7 +267,8 @@ export function StepAbilities({ state, dispatch }: StepProps) {
               <div className="text-xs font-medium tabular-nums leading-none">
                 {mod !== null ? (
                   <span className={mod >= 0 ? "text-amber-300/90" : "text-gray-500"}>
-                    {mod >= 0 ? "+" : ""}{mod}
+                    {mod >= 0 ? "+" : ""}
+                    {mod}
                   </span>
                 ) : (
                   <span className="text-gray-700">&nbsp;</span>
@@ -304,9 +313,7 @@ export function StepAbilities({ state, dispatch }: StepProps) {
               +2 / +1
             </button>
             <button
-              onClick={() =>
-                dispatch({ type: "SET_ASI_MODE", mode: "three-ones" })
-              }
+              onClick={() => dispatch({ type: "SET_ASI_MODE", mode: "three-ones" })}
               className={`px-3 py-1.5 text-xs font-semibold rounded transition-all ${
                 state.asiMode === "three-ones"
                   ? "bg-amber-500/15 text-amber-300 border border-amber-500/40 shadow-inner"
@@ -336,17 +343,28 @@ export function StepAbilities({ state, dispatch }: StepProps) {
 
       {/* Final Scores Table */}
       <div className="space-y-2">
-        <div className="text-sm text-amber-200/70 font-medium" style={{ fontFamily: "var(--font-cinzel)" }}>
+        <div
+          className="text-sm text-amber-200/70 font-medium"
+          style={{ fontFamily: "var(--font-cinzel)" }}
+        >
           Final Ability Scores
         </div>
         <div className="bg-gray-900/40 border border-gray-700/40 rounded-lg overflow-hidden">
           {/* Table header */}
           <div className="grid grid-cols-[1fr_auto_auto_auto_auto] gap-x-3 px-3 py-1.5 border-b border-gray-700/40 bg-gray-800/40">
             <div className="text-xs text-gray-600 uppercase tracking-wider">Ability</div>
-            <div className="text-xs text-gray-600 uppercase tracking-wider text-center w-10">Base</div>
-            <div className="text-xs text-gray-600 uppercase tracking-wider text-center w-10">ASI</div>
-            <div className="text-xs text-gray-600 uppercase tracking-wider text-center w-12">Total</div>
-            <div className="text-xs text-gray-600 uppercase tracking-wider text-center w-10">Mod</div>
+            <div className="text-xs text-gray-600 uppercase tracking-wider text-center w-10">
+              Base
+            </div>
+            <div className="text-xs text-gray-600 uppercase tracking-wider text-center w-10">
+              ASI
+            </div>
+            <div className="text-xs text-gray-600 uppercase tracking-wider text-center w-12">
+              Total
+            </div>
+            <div className="text-xs text-gray-600 uppercase tracking-wider text-center w-10">
+              Mod
+            </div>
           </div>
           {/* Table rows */}
           {ABILITY_KEYS.map((ability, i) => {
@@ -403,11 +421,12 @@ export function StepAbilities({ state, dispatch }: StepProps) {
                         mod > 0
                           ? "text-amber-300 bg-amber-500/10 border border-amber-500/20"
                           : mod < 0
-                          ? "text-red-400 bg-red-500/10 border border-red-500/20"
-                          : "text-gray-400 bg-gray-700/40 border border-gray-600/30"
+                            ? "text-red-400 bg-red-500/10 border border-red-500/20"
+                            : "text-gray-400 bg-gray-700/40 border border-gray-600/30"
                       }`}
                     >
-                      {mod >= 0 ? "+" : ""}{mod}
+                      {mod >= 0 ? "+" : ""}
+                      {mod}
                     </span>
                   ) : (
                     <span className="text-gray-700 text-xs">—</span>

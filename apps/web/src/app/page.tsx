@@ -2,7 +2,7 @@
 
 import { Suspense, useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import Link from "next/link";
+
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/Button";
 
@@ -119,11 +119,16 @@ function HomePageInner() {
         <div className="text-center mb-8">
           <h1
             className="text-4xl font-bold text-amber-200/90 mb-2"
-            style={{ fontFamily: "var(--font-cinzel)", textShadow: '0 0 40px rgba(245,158,11,0.25)' }}
+            style={{
+              fontFamily: "var(--font-cinzel)",
+              textShadow: "0 0 40px rgba(245,158,11,0.25)",
+            }}
           >
             Unseen Servant
           </h1>
-          <p className="text-gray-500 tracking-wide uppercase text-sm font-medium">D&D 5e with an AI Game Master</p>
+          <p className="text-gray-500 tracking-wide uppercase text-sm font-medium">
+            D&D 5e with an AI Game Master
+          </p>
           <div className="w-24 h-px bg-gradient-to-r from-transparent via-amber-500/40 to-transparent mx-auto mt-4" />
         </div>
 
@@ -144,16 +149,10 @@ function HomePageInner() {
             ) : user ? (
               <div className="flex items-center gap-3">
                 {user.avatarUrl && (
-                  <img
-                    src={user.avatarUrl}
-                    alt=""
-                    className="w-8 h-8 rounded-full"
-                  />
+                  <img src={user.avatarUrl} alt="" className="w-8 h-8 rounded-full" />
                 )}
                 <div>
-                  <div className="text-sm font-medium text-gray-200">
-                    {user.displayName}
-                  </div>
+                  <div className="text-sm font-medium text-gray-200">{user.displayName}</div>
                   <div className="text-xs text-gray-500">{user.email}</div>
                 </div>
               </div>
@@ -196,7 +195,10 @@ function HomePageInner() {
 
           {/* Character Name */}
           <div>
-            <label className="block text-sm text-gray-500 uppercase tracking-wider font-medium mb-1.5" style={{ fontFamily: "var(--font-cinzel)" }}>
+            <label
+              className="block text-sm text-gray-500 uppercase tracking-wider font-medium mb-1.5"
+              style={{ fontFamily: "var(--font-cinzel)" }}
+            >
               Player Name
             </label>
             <input
@@ -217,7 +219,10 @@ function HomePageInner() {
           <div className="grid grid-cols-2 gap-6 pt-1">
             {/* Left column: Create Room */}
             <div className="space-y-3">
-              <div className="text-sm text-amber-200/50 uppercase tracking-wider font-medium" style={{ fontFamily: "var(--font-cinzel)" }}>
+              <div
+                className="text-sm text-amber-200/50 uppercase tracking-wider font-medium"
+                style={{ fontFamily: "var(--font-cinzel)" }}
+              >
                 Create Room
               </div>
 
@@ -225,32 +230,26 @@ function HomePageInner() {
                 Start a new adventure as the host. An unseen force will guide your story.
               </p>
 
-              <Button
-                onClick={handleCreate}
-                disabled={loading}
-                size="lg"
-                fullWidth
-              >
+              <Button onClick={handleCreate} disabled={loading} size="lg" fullWidth>
                 {loading ? "Creating..." : "Create Room"}
               </Button>
             </div>
 
             {/* Right column: Join Room */}
             <div className="space-y-3">
-              <div className="text-sm text-amber-200/50 uppercase tracking-wider font-medium" style={{ fontFamily: "var(--font-cinzel)" }}>
+              <div
+                className="text-sm text-amber-200/50 uppercase tracking-wider font-medium"
+                style={{ fontFamily: "var(--font-cinzel)" }}
+              >
                 Join Room
               </div>
 
               <div>
-                <label className="block text-xs text-gray-400 mb-1">
-                  Room Code
-                </label>
+                <label className="block text-xs text-gray-400 mb-1">Room Code</label>
                 <input
                   type="text"
                   value={joinCode}
-                  onChange={(e) =>
-                    setJoinCode(e.target.value.toUpperCase().slice(0, 6))
-                  }
+                  onChange={(e) => setJoinCode(e.target.value.toUpperCase().slice(0, 6))}
                   placeholder="ABCDEF"
                   maxLength={6}
                   className="w-full bg-gray-900/60 border border-gray-700/50 rounded-lg px-3 py-2
@@ -275,12 +274,7 @@ function HomePageInner() {
                 />
               </div>
 
-              <Button
-                variant="secondary"
-                size="md"
-                fullWidth
-                onClick={handleJoin}
-              >
+              <Button variant="secondary" size="md" fullWidth onClick={handleJoin}>
                 Join Room
               </Button>
             </div>

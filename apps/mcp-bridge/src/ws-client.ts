@@ -10,7 +10,6 @@ import type {
   CheckRequest,
   CheckResult,
   PlayerInfo,
-  GameState,
   RollResult,
 } from "@unseen-servant/shared/types";
 
@@ -57,9 +56,7 @@ export class WSClient {
   connect(): void {
     if (this.closed) return;
 
-    const wsUrl = this.options.workerUrl
-      .replace(/^http/, "ws")
-      .replace(/\/$/, "");
+    const wsUrl = this.options.workerUrl.replace(/^http/, "ws").replace(/\/$/, "");
     const url = `${wsUrl}/api/rooms/${this.options.roomCode}/ws`;
 
     console.error(`[ws-client] Connecting to ${url}...`);
@@ -153,7 +150,7 @@ export class WSClient {
         this.gameStateManager.storyStarted = this.storyStarted;
         this.gameStateManager.hostName = msg.hostName;
         console.error(
-          `[ws-client] Joined room ${msg.roomCode} as DM (host: ${msg.hostName}, players: ${msg.players.join(", ")})`
+          `[ws-client] Joined room ${msg.roomCode} as DM (host: ${msg.hostName}, players: ${msg.players.join(", ")})`,
         );
 
         // Store initial character data
@@ -196,9 +193,7 @@ export class WSClient {
             .filter((p) => !p.isDM)
             .map((p) => p.name);
         }
-        console.error(
-          `[ws-client] + ${msg.playerName} (${msg.players.length} players)`
-        );
+        console.error(`[ws-client] + ${msg.playerName} (${msg.players.length} players)`);
 
         // Send game state sync to newly joined player
         if (!msg.isDM) {
@@ -217,9 +212,7 @@ export class WSClient {
             .filter((p) => !p.isDM)
             .map((p) => p.name);
         }
-        console.error(
-          `[ws-client] - ${msg.playerName} (${msg.players.length} players)`
-        );
+        console.error(`[ws-client] - ${msg.playerName} (${msg.players.length} players)`);
         break;
       }
 
@@ -280,11 +273,7 @@ export class WSClient {
       return;
     }
 
-    this.gameStateManager.handlePlayerAction(
-      raw.playerName,
-      raw.action,
-      raw.requestId
-    );
+    this.gameStateManager.handlePlayerAction(raw.playerName, raw.action, raw.requestId);
   }
 
   /** Send a ServerMessage to all clients via the worker's client:broadcast relay */
@@ -297,24 +286,17 @@ export class WSClient {
   }
 
   /** Handle set_campaign relayed from worker. */
-  private handleSetCampaign(msg: {
-    campaignSlug?: string;
-    newCampaignName?: string;
-  }): void {
+  private handleSetCampaign(msg: { campaignSlug?: string; newCampaignName?: string }): void {
     const cm = this.options.campaignManager;
 
     try {
       let manifest;
       if (msg.newCampaignName) {
         manifest = cm.createCampaign(msg.newCampaignName);
-        console.error(
-          `[ws-client] Created campaign: ${manifest.name} (${manifest.slug})`
-        );
+        console.error(`[ws-client] Created campaign: ${manifest.name} (${manifest.slug})`);
       } else if (msg.campaignSlug) {
         manifest = cm.loadCampaign(msg.campaignSlug);
-        console.error(
-          `[ws-client] Loaded campaign: ${manifest.name} (${manifest.slug})`
-        );
+        console.error(`[ws-client] Loaded campaign: ${manifest.name} (${manifest.slug})`);
       } else {
         console.error(`[ws-client] set_campaign: no slug or name provided`);
         return;
@@ -338,9 +320,7 @@ export class WSClient {
         campaigns: campaigns.length > 0 ? campaigns : undefined,
       });
     } catch (e) {
-      console.error(
-        `[ws-client] Campaign error: ${e instanceof Error ? e.message : String(e)}`
-      );
+      console.error(`[ws-client] Campaign error: ${e instanceof Error ? e.message : String(e)}`);
     }
   }
 
@@ -370,7 +350,7 @@ export class WSClient {
       console.error(`[ws-client] Restored ${count} character(s) from campaign snapshots`);
     } catch (e) {
       console.error(
-        `[ws-client] Character restore error: ${e instanceof Error ? e.message : String(e)}`
+        `[ws-client] Character restore error: ${e instanceof Error ? e.message : String(e)}`,
       );
     }
   }
@@ -398,7 +378,9 @@ export class WSClient {
           restoredCharacters = chars;
           // Restore userId mappings from saved snapshots
           Object.assign(this.playerUserIds, userIds);
-          console.error(`[ws-client] Restored ${Object.keys(chars).length} character(s) from campaign`);
+          console.error(
+            `[ws-client] Restored ${Object.keys(chars).length} character(s) from campaign`,
+          );
         }
       } else {
         manifest = cm.createCampaign(msg.campaignName);
@@ -421,16 +403,16 @@ export class WSClient {
       });
 
       // Populate players in the manifest from current room players
-      const playerNames = this.players
-        .map((p) => p.character?.name || p.name)
-        .filter(Boolean);
+      const playerNames = this.players.map((p) => p.character?.name || p.name).filter(Boolean);
       if (playerNames.length > 0) {
         cm.updatePlayers(playerNames);
       }
 
       // Update game state manager
-      this.gameStateManager.gameState.pacingProfile = msg.pacingProfile as import("@unseen-servant/shared/types").PacingProfile;
-      this.gameStateManager.gameState.encounterLength = msg.encounterLength as import("@unseen-servant/shared/types").EncounterLength;
+      this.gameStateManager.gameState.pacingProfile =
+        msg.pacingProfile as import("@unseen-servant/shared/types").PacingProfile;
+      this.gameStateManager.gameState.encounterLength =
+        msg.encounterLength as import("@unseen-servant/shared/types").EncounterLength;
 
       this.send({
         type: "client:campaign_configured_ack",
@@ -440,7 +422,8 @@ export class WSClient {
         encounterLength: msg.encounterLength,
         systemPrompt: msg.systemPrompt,
         restoredCharacters,
-        characterUserIds: Object.keys(this.playerUserIds).length > 0 ? this.playerUserIds : undefined,
+        characterUserIds:
+          Object.keys(this.playerUserIds).length > 0 ? this.playerUserIds : undefined,
       });
 
       const campaigns = cm.listCampaigns();
@@ -454,7 +437,9 @@ export class WSClient {
       // Send saved notes to all connected players
       this.sendAllPlayerNotes();
     } catch (e) {
-      console.error(`[ws-client] Campaign configure error: ${e instanceof Error ? e.message : String(e)}`);
+      console.error(
+        `[ws-client] Campaign configure error: ${e instanceof Error ? e.message : String(e)}`,
+      );
     }
   }
 
@@ -478,11 +463,15 @@ export class WSClient {
     try {
       cm.snapshotCharacters(
         { [msg.playerName]: msg.character },
-        { [msg.playerName]: msg.userId || this.playerUserIds[msg.playerName] }
+        { [msg.playerName]: msg.userId || this.playerUserIds[msg.playerName] },
       );
-      console.error(`[ws-client] Saved character "${msg.character.static.name}" for ${msg.playerName}`);
+      console.error(
+        `[ws-client] Saved character "${msg.character.static.name}" for ${msg.playerName}`,
+      );
     } catch (e) {
-      console.error(`[ws-client] Character save error: ${e instanceof Error ? e.message : String(e)}`);
+      console.error(
+        `[ws-client] Character save error: ${e instanceof Error ? e.message : String(e)}`,
+      );
     }
   }
 
@@ -497,15 +486,13 @@ export class WSClient {
 
       if (Object.keys(this.characters).length > 0) {
         const count = cm.snapshotCharacters(this.characters, this.playerUserIds);
-        console.error(
-          `[ws-client] Auto-snapshot: saved ${count} character(s) to campaign`
-        );
+        console.error(`[ws-client] Auto-snapshot: saved ${count} character(s) to campaign`);
       }
       cm.touchManifest();
       cm.flushManifest();
     } catch (e) {
       console.error(
-        `[ws-client] Auto-snapshot error: ${e instanceof Error ? e.message : String(e)}`
+        `[ws-client] Auto-snapshot error: ${e instanceof Error ? e.message : String(e)}`,
       );
     }
   }
@@ -559,10 +546,12 @@ export class WSClient {
 
       // Restore pacing/encounterLength from manifest
       if (manifest.pacingProfile) {
-        this.gameStateManager.gameState.pacingProfile = manifest.pacingProfile as import("@unseen-servant/shared/types").PacingProfile;
+        this.gameStateManager.gameState.pacingProfile =
+          manifest.pacingProfile as import("@unseen-servant/shared/types").PacingProfile;
       }
       if (manifest.encounterLength) {
-        this.gameStateManager.gameState.encounterLength = manifest.encounterLength as import("@unseen-servant/shared/types").EncounterLength;
+        this.gameStateManager.gameState.encounterLength =
+          manifest.encounterLength as import("@unseen-servant/shared/types").EncounterLength;
       }
 
       // Notify worker that campaign is loaded
@@ -582,12 +571,12 @@ export class WSClient {
       const msgCount = chatHistory?.length ?? snapshot.conversationHistory?.length ?? 0;
       console.error(
         `[ws-client] Session restored: ${msgCount} messages, ` +
-        `story=${snapshot.storyStarted}, combat=${!!snapshot.gameState.encounter?.combat}, ` +
-        `saved at ${snapshot.savedAt}`
+          `story=${snapshot.storyStarted}, combat=${!!snapshot.gameState.encounter?.combat}, ` +
+          `saved at ${snapshot.savedAt}`,
       );
     } catch (e) {
       console.error(
-        `[ws-client] Session restore error: ${e instanceof Error ? e.message : String(e)}`
+        `[ws-client] Session restore error: ${e instanceof Error ? e.message : String(e)}`,
       );
     }
   }
@@ -612,10 +601,9 @@ export class WSClient {
     try {
       const notes = cm.loadPlayerNotes(playerName);
       if (notes !== null) {
-        this.broadcastViaWorker(
-          { type: "server:player_notes_loaded", content: notes },
-          [playerName],
-        );
+        this.broadcastViaWorker({ type: "server:player_notes_loaded", content: notes }, [
+          playerName,
+        ]);
       }
     } catch (e) {
       console.error(`[ws-client] Load notes error: ${e instanceof Error ? e.message : String(e)}`);
@@ -640,16 +628,11 @@ export class WSClient {
           isHost: p.isHost,
         };
         if (char) {
-          const totalLevel = char.static.classes.reduce(
-            (sum, c) => sum + c.level,
-            0
-          );
+          const totalLevel = char.static.classes.reduce((sum, c) => sum + c.level, 0);
           summary.character = {
             name: char.static.name,
             race: char.static.species || char.static.race,
-            classes: char.static.classes
-              .map((c) => `${c.name} ${c.level}`)
-              .join("/"),
+            classes: char.static.classes.map((c) => `${c.name} ${c.level}`).join("/"),
             level: totalLevel,
             hp: `${char.dynamic.currentHP}/${char.static.maxHP}`,
             ac: char.static.armorClass,
@@ -662,9 +645,7 @@ export class WSClient {
     // Keep campaign manifest players in sync
     const cm = this.options.campaignManager;
     if (cm.activeSlug) {
-      const playerNames = this.players
-        .map((p) => p.character?.name || p.name)
-        .filter(Boolean);
+      const playerNames = this.players.map((p) => p.character?.name || p.name).filter(Boolean);
       cm.updatePlayers(playerNames);
     }
   }
@@ -735,8 +716,9 @@ export class WSClient {
       // The player clicks "Roll" → worker forwards roll_dice → bridge handles it →
       // broadcasts check_result → conversation history gets the result
       // For now, we resolve when the check is processed by handleRollDice
-      const checkId = this.gameStateManager.gameState.pendingCheck?.id
-        ?? this.gameStateManager.gameState.encounter?.combat?.pendingCheck?.id;
+      const checkId =
+        this.gameStateManager.gameState.pendingCheck?.id ??
+        this.gameStateManager.gameState.encounter?.combat?.pendingCheck?.id;
 
       if (!checkId) {
         reject(new Error("Failed to create check request"));
@@ -755,7 +737,10 @@ export class WSClient {
 
           // Extract the last check result from conversation history
           const lastMsg = this.gameStateManager.conversationHistory
-            .filter((m) => m.role === "user" && m.content.includes("[System:") && m.content.includes("rolled"))
+            .filter(
+              (m) =>
+                m.role === "user" && m.content.includes("[System:") && m.content.includes("rolled"),
+            )
             .pop();
 
           if (lastMsg) {
@@ -780,7 +765,13 @@ export class WSClient {
           } else {
             resolve({
               requestId: checkId,
-              roll: { id: crypto.randomUUID(), rolls: [], modifier: 0, total: 0, label: params.reason },
+              roll: {
+                id: crypto.randomUUID(),
+                rolls: [],
+                modifier: 0,
+                total: 0,
+                label: params.reason,
+              },
               success: true,
               characterName: params.targetCharacter,
             });
@@ -792,11 +783,13 @@ export class WSClient {
         // Auto-resolve: roll server-side instead of rejecting
         // Find the player name for the target character
         const charEntry = Object.entries(this.gameStateManager.characters).find(
-          ([, c]) => c.static.name.toLowerCase() === params.targetCharacter.toLowerCase()
+          ([, c]) => c.static.name.toLowerCase() === params.targetCharacter.toLowerCase(),
         );
         if (charEntry) {
           const [targetPlayerName] = charEntry;
-          console.error(`[ws-client] Check timed out for ${params.targetCharacter}, auto-resolving...`);
+          console.error(
+            `[ws-client] Check timed out for ${params.targetCharacter}, auto-resolving...`,
+          );
           this.gameStateManager.handleRollDice(targetPlayerName, checkId);
           // The polling interval will detect the cleared check and resolve normally
         } else {
@@ -804,7 +797,13 @@ export class WSClient {
           clearInterval(interval);
           resolve({
             requestId: checkId,
-            roll: { id: crypto.randomUUID(), rolls: [], modifier: 0, total: 0, label: params.reason },
+            roll: {
+              id: crypto.randomUUID(),
+              rolls: [],
+              modifier: 0,
+              total: 0,
+              label: params.reason,
+            },
             success: false,
             characterName: params.targetCharacter,
           });
@@ -820,12 +819,10 @@ export class WSClient {
     this.reconnectAttempts++;
     if (this.reconnectAttempts % 10 === 0) {
       console.error(
-        `[ws-client] WARNING: ${this.reconnectAttempts} reconnect attempts so far — still trying...`
+        `[ws-client] WARNING: ${this.reconnectAttempts} reconnect attempts so far — still trying...`,
       );
     }
-    console.error(
-      `[ws-client] Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts})...`
-    );
+    console.error(`[ws-client] Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts})...`);
     setTimeout(() => this.connect(), delay);
   }
 

@@ -9,14 +9,8 @@ interface PlayerNotesPanelProps {
   onClose: () => void;
 }
 
-export function PlayerNotesPanel({
-  notes,
-  saveState,
-  onChange,
-  onClose,
-}: PlayerNotesPanelProps) {
-  const { geometry, dragHandleProps, resizeHandleProps, isInteracting } =
-    usePanelGeometry();
+export function PlayerNotesPanel({ notes, saveState, onChange, onClose }: PlayerNotesPanelProps) {
+  const { geometry, dragHandleProps, resizeHandleProps, isInteracting } = usePanelGeometry();
 
   return (
     <div
@@ -44,11 +38,7 @@ export function PlayerNotesPanel({
                   : "text-gray-500 bg-gray-700"
             }`}
           >
-            {saveState === "saved"
-              ? "Saved"
-              : saveState === "saving"
-                ? "Saving..."
-                : "Unsaved"}
+            {saveState === "saved" ? "Saved" : saveState === "saving" ? "Saving..." : "Unsaved"}
           </span>
         </div>
         <button
@@ -88,7 +78,11 @@ export function PlayerNotesPanel({
       >
         {/* Visible grip icon */}
         <svg width="8" height="8" viewBox="0 0 8 8" className="text-gray-500">
-          <path d="M6 0v2H4V0h2zm0 4v2H4V4h2zM2 4v2H0V4h2zm4 0z" fill="currentColor" opacity="0.6" />
+          <path
+            d="M6 0v2H4V0h2zm0 4v2H4V4h2zM2 4v2H0V4h2zm4 0z"
+            fill="currentColor"
+            opacity="0.6"
+          />
           <path d="M6 4v2H4V4h2zM2 4v2H0V4h2zM2 0v2H0V0h2z" fill="currentColor" opacity="0.3" />
         </svg>
       </div>

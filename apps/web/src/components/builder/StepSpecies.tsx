@@ -13,7 +13,12 @@ import {
   getFeatToolChoiceInfo,
   ALL_SKILLS,
 } from "./utils";
-import { formatSpeciesSize, getSpeciesSpeed, entriesToText, SIZE_MAP } from "@unseen-servant/shared";
+import {
+  formatSpeciesSize,
+  getSpeciesSpeed,
+  entriesToText,
+  SIZE_MAP,
+} from "@unseen-servant/shared";
 import { gridItem, cardHover } from "./animations";
 
 export function StepSpecies({ state, dispatch }: StepProps) {
@@ -27,9 +32,7 @@ export function StepSpecies({ state, dispatch }: StepProps) {
   }, [allSpecies, search]);
 
   const selected = state.species ? getSpecies(state.species) : null;
-  const traitChoices = state.species
-    ? getSpeciesTraitChoices(state.species)
-    : [];
+  const traitChoices = state.species ? getSpeciesTraitChoices(state.species) : [];
 
   function handleSpeciesClick(name: string) {
     dispatch({ type: "SET_SPECIES", species: name });
@@ -210,7 +213,11 @@ function TraitChoicePicker({
           traitName={traitName}
           options={definition.options ?? ALL_SKILLS}
           count={1}
-          value={value?.selected ? [typeof value.selected === "string" ? value.selected : value.selected[0]] : []}
+          value={
+            value?.selected
+              ? [typeof value.selected === "string" ? value.selected : value.selected[0]]
+              : []
+          }
           dispatch={dispatch}
         />
       )}
@@ -237,9 +244,14 @@ function TraitChoicePicker({
           {typeof value?.selected === "string" && value.selected.toLowerCase() === "skilled" && (
             <SpeciesSkilledChoices state={state} dispatch={dispatch} />
           )}
-          {typeof value?.selected === "string" && value.selected.toLowerCase().startsWith("magic initiate") && (
-            <SpeciesMagicInitiateChoices featName={value.selected} state={state} dispatch={dispatch} />
-          )}
+          {typeof value?.selected === "string" &&
+            value.selected.toLowerCase().startsWith("magic initiate") && (
+              <SpeciesMagicInitiateChoices
+                featName={value.selected}
+                state={state}
+                dispatch={dispatch}
+              />
+            )}
           {typeof value?.selected === "string" && getFeatToolChoiceInfo(value.selected) && (
             <SpeciesToolChoices featName={value.selected} state={state} dispatch={dispatch} />
           )}
@@ -254,7 +266,9 @@ function TraitChoicePicker({
             return (
               <button
                 key={sizeCode}
-                onClick={() => dispatch({ type: "SET_SPECIES_CHOICE", traitName, selected: sizeCode })}
+                onClick={() =>
+                  dispatch({ type: "SET_SPECIES_CHOICE", traitName, selected: sizeCode })
+                }
                 className={`text-xs px-2.5 py-1 rounded-md border transition-all duration-150 ${
                   isSelected
                     ? "border-amber-500/50 bg-amber-500/10 text-amber-300"
@@ -273,7 +287,13 @@ function TraitChoicePicker({
           traitName={traitName}
           options={definition.options ?? []}
           count={definition.count ?? 1}
-          value={Array.isArray(value?.selected) ? value.selected : value?.selected ? [value.selected] : []}
+          value={
+            Array.isArray(value?.selected)
+              ? value.selected
+              : value?.selected
+                ? [value.selected]
+                : []
+          }
           dispatch={dispatch}
         />
       )}
@@ -399,10 +419,11 @@ function FeatPicker({
   const [search, setSearch] = useState("");
   const [expanded, setExpanded] = useState<string | null>(null);
   const originFeats = useMemo(
-    () => category
-      ? featsArray.filter((f: FeatData) => f.category === category)
-      : featsArray.filter((f: FeatData) => !!f.category),
-    [category]
+    () =>
+      category
+        ? featsArray.filter((f: FeatData) => f.category === category)
+        : featsArray.filter((f: FeatData) => !!f.category),
+    [category],
   );
 
   const filtered = useMemo(() => {
@@ -446,8 +467,18 @@ function FeatPicker({
                   }`}
                 >
                   {isSelected && (
-                    <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                    <svg
+                      className="w-2.5 h-2.5 text-white"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={3}
+                        d="M5 13l4 4L19 7"
+                      />
                     </svg>
                   )}
                 </button>
@@ -457,13 +488,13 @@ function FeatPicker({
                   }
                   className="flex-1 min-w-0 text-left"
                 >
-                  <span className={`text-xs font-medium ${isSelected ? "text-amber-200" : "text-gray-200"}`}>
+                  <span
+                    className={`text-xs font-medium ${isSelected ? "text-amber-200" : "text-gray-200"}`}
+                  >
                     {feat.name}
                   </span>
                   {benefits.length > 0 && (
-                    <span className="text-xs text-gray-500 ml-1.5">
-                      {benefits.join(", ")}
-                    </span>
+                    <span className="text-xs text-gray-500 ml-1.5">{benefits.join(", ")}</span>
                   )}
                 </button>
                 <button
@@ -472,9 +503,16 @@ function FeatPicker({
                 >
                   <svg
                     className={`w-3 h-3 transition-transform ${isExpanded ? "rotate-180" : ""}`}
-                    fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
                   >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
                   </svg>
                 </button>
               </div>
@@ -544,19 +582,17 @@ function SpeciesMagicInitiateChoices({
   state,
   dispatch,
 }: { featName: string } & StepProps) {
-  const matchedClass = MI_CLASSES.find((c) =>
-    featName.toLowerCase().includes(c.toLowerCase())
-  );
+  const matchedClass = MI_CLASSES.find((c) => featName.toLowerCase().includes(c.toLowerCase()));
   const overrides = state.speciesOriginFeatOverrides;
   const spellClass = matchedClass ?? overrides.spellClass ?? "Druid";
 
   const cantrips = useMemo(
     () => getSpellsByClass(spellClass).filter((s) => s.level === 0),
-    [spellClass]
+    [spellClass],
   );
   const level1Spells = useMemo(
     () => getSpellsByClass(spellClass).filter((s) => s.level === 1),
-    [spellClass]
+    [spellClass],
   );
 
   const selectedCantrips = overrides.cantrips ?? [];
@@ -617,9 +653,7 @@ function SpeciesMagicInitiateChoices({
       </div>
 
       <div>
-        <div className="text-xs text-gray-500 mb-1">
-          Cantrips ({selectedCantrips.length}/2)
-        </div>
+        <div className="text-xs text-gray-500 mb-1">Cantrips ({selectedCantrips.length}/2)</div>
         <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto">
           {cantrips.map((s) => {
             const isSelected = selectedCantrips.includes(s.name);
@@ -687,11 +721,7 @@ function SpeciesMagicInitiateChoices({
 
 // ─── Species Tool Choices (Musician/Crafter) ────────────
 
-function SpeciesToolChoices({
-  featName,
-  state,
-  dispatch,
-}: { featName: string } & StepProps) {
+function SpeciesToolChoices({ featName, state, dispatch }: { featName: string } & StepProps) {
   const toolInfo = getFeatToolChoiceInfo(featName);
   if (!toolInfo) return null;
 
@@ -701,7 +731,8 @@ function SpeciesToolChoices({
   return (
     <div className="mt-2 space-y-2 border-t border-gray-700/50 pt-2">
       <div className="text-xs text-gray-500 font-medium">
-        {featName}: Choose {toolInfo.count} tool proficiencies ({selectedTools.length}/{toolInfo.count})
+        {featName}: Choose {toolInfo.count} tool proficiencies ({selectedTools.length}/
+        {toolInfo.count})
       </div>
       <div className="flex flex-wrap gap-1">
         {toolInfo.options.map((tool) => {
@@ -756,9 +787,7 @@ function LineagePicker({
       {options.map((opt) => (
         <button
           key={opt.name}
-          onClick={() =>
-            dispatch({ type: "SET_SPECIES_CHOICE", traitName, selected: opt.name })
-          }
+          onClick={() => dispatch({ type: "SET_SPECIES_CHOICE", traitName, selected: opt.name })}
           className={`w-full text-left px-2.5 py-1.5 rounded-lg border text-xs transition-all duration-150 ${
             value === opt.name
               ? "border-amber-500/30 bg-amber-500/5"
@@ -792,12 +821,13 @@ function SpeciesDetail({ species }: { species: SpeciesData }) {
       {/* Traits */}
       {species.entries.length > 0 && (
         <div className="space-y-2">
-          <div className="text-sm text-gray-500 font-medium uppercase tracking-wider">
-            Traits
-          </div>
+          <div className="text-sm text-gray-500 font-medium uppercase tracking-wider">Traits</div>
           {species.entries.map((entry, i) => {
-            const entryObj = typeof entry === "object" && entry !== null ? entry as unknown as Record<string, unknown> : null;
-            const entryName = entryObj && "name" in entryObj ? entryObj.name as string : null;
+            const entryObj =
+              typeof entry === "object" && entry !== null
+                ? (entry as unknown as Record<string, unknown>)
+                : null;
+            const entryName = entryObj && "name" in entryObj ? (entryObj.name as string) : null;
             // Plain string entries: render as description text without trait header
             if (!entryName) {
               return (
@@ -807,14 +837,12 @@ function SpeciesDetail({ species }: { species: SpeciesData }) {
               );
             }
             // Pass only child entries to RichText to avoid double-rendering the name
-            const childEntries = entryObj && "entries" in entryObj && Array.isArray(entryObj.entries)
-              ? entryObj.entries as import("@unseen-servant/shared/data").Entry[]
-              : [entry];
+            const childEntries =
+              entryObj && "entries" in entryObj && Array.isArray(entryObj.entries)
+                ? (entryObj.entries as import("@unseen-servant/shared/data").Entry[])
+                : [entry];
             return (
-              <div
-                key={entryName}
-                className="border-l-2 border-amber-500/30 pl-2.5"
-              >
+              <div key={entryName} className="border-l-2 border-amber-500/30 pl-2.5">
                 <div className="text-sm font-medium text-gray-200">{entryName}</div>
                 <div className="mt-0.5">
                   <RichText entries={childEntries} className="text-xs text-gray-400" />
@@ -859,7 +887,10 @@ function SpeciesDetail({ species }: { species: SpeciesData }) {
 
       {/* Languages */}
       {(() => {
-        const languages = species.languageProficiencies?.flatMap(lp => Object.keys(lp).filter(k => lp[k] === true)) ?? [];
+        const languages =
+          species.languageProficiencies?.flatMap((lp) =>
+            Object.keys(lp).filter((k) => lp[k] === true),
+          ) ?? [];
         return languages.length > 0 ? (
           <div>
             <div className="text-sm text-gray-500 font-medium uppercase tracking-wider mb-1">

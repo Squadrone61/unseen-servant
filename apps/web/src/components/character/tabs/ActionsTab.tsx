@@ -1,9 +1,5 @@
 import { useState, useMemo } from "react";
-import type {
-  CharacterData,
-  CharacterFeature,
-  InventoryItem,
-} from "@unseen-servant/shared/types";
+import type { CharacterData, CharacterFeature, InventoryItem } from "@unseen-servant/shared/types";
 import { actionsArray } from "@unseen-servant/shared/data";
 import { entriesToText } from "@unseen-servant/shared";
 import { FilterChipBar } from "../FilterChipBar";
@@ -61,11 +57,7 @@ function classifyFeature(f: CharacterFeature): GroupId {
   return "other";
 }
 
-export function ActionsTab({
-  character,
-  onItemClick,
-  onFeatureClick,
-}: ActionsTabProps) {
+export function ActionsTab({ character, onItemClick, onFeatureClick }: ActionsTabProps) {
   const [filter, setFilter] = useState<string>("all");
   const s = character.static;
   const d = character.dynamic;
@@ -80,9 +72,7 @@ export function ActionsTab({
         if (item.attackBonus != null) {
           parts.push(`${item.attackBonus >= 0 ? "+" : ""}${item.attackBonus}`);
         }
-        parts.push(
-          [item.damage, item.damageType].filter(Boolean).join(" ")
-        );
+        parts.push([item.damage, item.damageType].filter(Boolean).join(" "));
         result.push({
           name: item.name,
           detail: parts.join(" · "),
@@ -123,11 +113,8 @@ export function ActionsTab({
   // Build filter chips
   const chips = useMemo(() => {
     const totalFeatures = featureGroups.reduce((sum, g) => sum + g.features.length, 0);
-    const result = [
-      { id: "all", label: "ALL", count: weapons.length + totalFeatures },
-    ];
-    if (weapons.length > 0)
-      result.push({ id: "weapons", label: "WEAPONS", count: weapons.length });
+    const result = [{ id: "all", label: "ALL", count: weapons.length + totalFeatures }];
+    if (weapons.length > 0) result.push({ id: "weapons", label: "WEAPONS", count: weapons.length });
     for (const group of featureGroups) {
       result.push({
         id: group.id,
@@ -140,9 +127,7 @@ export function ActionsTab({
 
   const showWeapons = filter === "all" || filter === "weapons";
   const visibleGroups =
-    filter === "all"
-      ? featureGroups
-      : featureGroups.filter((g) => g.id === filter);
+    filter === "all" ? featureGroups : featureGroups.filter((g) => g.id === filter);
 
   return (
     <div className="space-y-2">
@@ -151,7 +136,10 @@ export function ActionsTab({
       {/* Weapon attacks */}
       {showWeapons && weapons.length > 0 && (
         <div>
-          <div className="text-sm text-gray-500 uppercase tracking-wider font-medium mb-0.5 px-1.5" style={{ fontFamily: "var(--font-cinzel)" }}>
+          <div
+            className="text-sm text-gray-500 uppercase tracking-wider font-medium mb-0.5 px-1.5"
+            style={{ fontFamily: "var(--font-cinzel)" }}
+          >
             Weapons
           </div>
           <div className="space-y-0.5">
@@ -164,9 +152,7 @@ export function ActionsTab({
                 <span className="text-gray-200 group-hover:text-amber-300 transition-colors truncate flex-1">
                   {action.name}
                 </span>
-                <span className="text-gray-500 shrink-0 text-xs">
-                  {action.detail}
-                </span>
+                <span className="text-gray-500 shrink-0 text-xs">{action.detail}</span>
               </div>
             ))}
           </div>
@@ -176,7 +162,10 @@ export function ActionsTab({
       {/* Feature-based actions grouped by type */}
       {visibleGroups.map((group) => (
         <div key={group.id}>
-          <div className="text-sm text-gray-500 uppercase tracking-wider font-medium mb-0.5 px-1.5" style={{ fontFamily: "var(--font-cinzel)" }}>
+          <div
+            className="text-sm text-gray-500 uppercase tracking-wider font-medium mb-0.5 px-1.5"
+            style={{ fontFamily: "var(--font-cinzel)" }}
+          >
             {group.label}
           </div>
           <div className="space-y-0.5">
@@ -201,9 +190,7 @@ export function ActionsTab({
       ))}
 
       {weapons.length === 0 && featureGroups.length === 0 && (
-        <div className="text-xs text-gray-600 text-center py-4">
-          No actions available
-        </div>
+        <div className="text-xs text-gray-600 text-center py-4">No actions available</div>
       )}
 
       {/* Standard combat actions (from D&D database) */}
@@ -218,12 +205,21 @@ export function ActionsTab({
   );
 }
 
-function StandardActionsSection({ label, items }: { label: string; items: { name: string; description: string }[] }) {
+function StandardActionsSection({
+  label,
+  items,
+}: {
+  label: string;
+  items: { name: string; description: string }[];
+}) {
   const [expanded, setExpanded] = useState<string | null>(null);
 
   return (
     <div className="border-t border-gray-700/40 pt-2 mt-2">
-      <div className="text-sm text-gray-500 uppercase tracking-wider font-medium mb-0.5 px-1.5" style={{ fontFamily: "var(--font-cinzel)" }}>
+      <div
+        className="text-sm text-gray-500 uppercase tracking-wider font-medium mb-0.5 px-1.5"
+        style={{ fontFamily: "var(--font-cinzel)" }}
+      >
         {label}
       </div>
       <div className="space-y-0.5">
@@ -235,9 +231,16 @@ function StandardActionsSection({ label, items }: { label: string; items: { name
             >
               <svg
                 className={`w-2.5 h-2.5 shrink-0 transition-transform ${expanded === sa.name ? "rotate-90" : ""}`}
-                fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
               >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 5l7 7-7 7"
+                />
               </svg>
               <span className="truncate flex-1">{sa.name}</span>
             </div>
