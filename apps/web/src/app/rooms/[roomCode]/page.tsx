@@ -221,6 +221,11 @@ function GameContent({
           setIsHost(msg.isHost ?? false);
           setPasswordRequired(false);
           setPasswordError("");
+          // Clear chat/log on reconnect — server replays the full chat log
+          if (msg.isReconnect) {
+            setStoryMessages([]);
+            setLogMessages([]);
+          }
           if (msg.allPlayers) setAllPlayers(msg.allPlayers);
           if (msg.characters) {
             setPartyCharacters(msg.characters);
