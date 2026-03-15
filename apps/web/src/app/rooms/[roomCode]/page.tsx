@@ -568,6 +568,10 @@ function GameContent({
 
   const handleStartStory = () => {
     send({ type: "client:start_story" });
+    // Bind character to campaign — this is when the bridge snapshots characters
+    if (myCharacterLibraryId && activeCampaignSlug) {
+      libBindToCampaign(myCharacterLibraryId, activeCampaignSlug, roomCode);
+    }
     setStoryStarted(true);
   };
 
