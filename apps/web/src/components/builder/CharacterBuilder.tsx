@@ -24,7 +24,37 @@ import { StepReview } from "./StepReview";
 import { BUILDER_STEPS, STEP_LABELS, type BuilderStep, type BuilderState } from "./types";
 import { isStepValid, isStepTouched, getStepsToSkip, assembleIdentifiers } from "./utils";
 import { stepTransition } from "./animations";
-import type { CharacterData } from "@unseen-servant/shared/types";
+import type { CharacterData, InventoryItem } from "@unseen-servant/shared/types";
+import type { EquipmentEntry } from "./types";
+
+/** Convert gameplay InventoryItem back to builder EquipmentEntry */
+function inventoryToEquipment(item: InventoryItem): EquipmentEntry {
+  const typeMap: Record<string, EquipmentEntry["source"]> = {
+    Weapon: "weapon",
+    Armor: "armor",
+    Shield: "armor",
+    Tool: "tool",
+    Gear: "gear",
+  };
+  return {
+    name: item.name,
+    quantity: item.quantity,
+    equipped: item.equipped,
+    source: item.isMagicItem ? "magic-item" : (typeMap[item.type ?? ""] ?? "item"),
+    description: item.description,
+    weight: item.weight,
+    itemType: item.type,
+    armorClass: item.armorClass,
+    damage: item.damage,
+    damageType: item.damageType,
+    range: item.range,
+    attackBonus: item.attackBonus,
+    properties: item.properties,
+    rarity: item.rarity,
+    attunement: item.attunement,
+    isMagicItem: item.isMagicItem,
+  };
+}
 
 interface CharacterBuilderProps {
   editId: string | null;
@@ -126,6 +156,15 @@ export function CharacterBuilder({ editId }: CharacterBuilderProps) {
         if (asiSels.length > 0 && asiSels[0].classIndex === undefined) {
           hydrated.asiSelections = asiSels.map(s => ({ ...s, classIndex: 0 })) as BuilderState["asiSelections"];
         }
+      }
+
+      // Use dynamic inventory/currency as source of truth (gameplay changes)
+      const dyn = saved.character.dynamic;
+      if (dyn?.inventory?.length > 0) {
+        hydrated.equipment = dyn.inventory.map(inventoryToEquipment);
+      }
+      if (dyn?.currency) {
+        hydrated.currency = dyn.currency;
       }
 
       const charName = saved.character.static.name;
