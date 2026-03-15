@@ -174,10 +174,13 @@ export const stateChangeSchema = z.union([
   z.object({ type: z.literal("condition_remove"), target: z.string(), condition: z.string() }),
   z.object({ type: z.literal("spell_slot_use"), target: z.string(), level: z.number() }),
   z.object({ type: z.literal("spell_slot_restore"), target: z.string(), level: z.number() }),
+  z.object({ type: z.literal("resource_use"), target: z.string(), resource: z.string() }),
+  z.object({ type: z.literal("resource_restore"), target: z.string(), resource: z.string(), amount: z.number() }),
   z.object({ type: z.literal("death_save"), target: z.string(), success: z.boolean() }),
   z.object({ type: z.literal("xp_gain"), target: z.string(), amount: z.number() }),
   z.object({ type: z.literal("item_add"), target: z.string(), item: z.string(), quantity: z.number() }),
   z.object({ type: z.literal("item_remove"), target: z.string(), item: z.string(), quantity: z.number() }),
+  z.object({ type: z.literal("item_update"), target: z.string(), item: z.string(), changes: z.string() }),
   z.object({ type: z.literal("combatant_add"), combatant: combatantSchema }),
   z.object({ type: z.literal("combatant_remove"), combatantId: z.string() }),
   z.object({ type: z.literal("initiative_set"), combatantId: z.string(), value: z.number() }),
@@ -190,10 +193,11 @@ export const stateChangeSchema = z.union([
 
 export const gameEventTypeSchema = z.enum([
   "damage", "healing", "condition_added", "condition_removed",
-  "spell_slot_used", "spell_slot_restored", "hp_set", "temp_hp_set",
+  "spell_slot_used", "spell_slot_restored", "resource_used", "resource_restored",
+  "hp_set", "temp_hp_set",
   "death_save", "combat_start", "combat_end", "turn_start", "turn_end",
   "check_requested", "check_resolved", "initiative_rolled",
-  "rest_short", "rest_long", "item_added", "item_removed",
+  "rest_short", "rest_long", "item_added", "item_removed", "item_updated",
   "xp_gained", "inspiration_granted", "inspiration_used",
   "ai_response", "custom",
 ]);

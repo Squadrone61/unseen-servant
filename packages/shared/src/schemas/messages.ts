@@ -160,8 +160,19 @@ export const classResourceSchema = z.object({
   source: z.string(),
 });
 
+export const characterAppearanceSchema = z.object({
+  gender: z.string().optional(),
+  age: z.string().optional(),
+  height: z.string().optional(),
+  weight: z.string().optional(),
+  hair: z.string().optional(),
+  eyes: z.string().optional(),
+  skin: z.string().optional(),
+});
+
 export const characterStaticDataSchema = z.object({
   name: z.string(),
+  species: z.string().optional(),
   race: z.string(),
   classes: z.array(characterClassSchema),
   abilities: abilityScoresSchema,
@@ -191,7 +202,10 @@ export const characterStaticDataSchema = z.object({
   spellAttackBonus: z.number().optional(),
   advantages: z.array(advantageEntrySchema),
   traits: characterTraitsSchema,
+  appearance: characterAppearanceSchema.optional(),
+  backstory: z.string().optional(),
   importedAt: z.number(),
+  source: z.enum(["builder"]).optional(),
 });
 
 export const characterDynamicDataSchema = z.object({

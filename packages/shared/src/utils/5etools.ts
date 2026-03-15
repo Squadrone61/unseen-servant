@@ -428,12 +428,31 @@ export function getToolProfs(cls: ClassRaw): string[] {
   );
 }
 
-const ALL_SKILLS = [
-  "acrobatics", "animal-handling", "arcana", "athletics", "deception",
-  "history", "insight", "intimidation", "investigation", "medicine",
-  "nature", "perception", "performance", "persuasion", "religion",
-  "sleight-of-hand", "stealth", "survival",
-];
+type AbilityName = "strength" | "dexterity" | "constitution" | "intelligence" | "wisdom" | "charisma";
+
+/** All 18 D&D 5e skills → governing ability */
+export const SKILL_ABILITY_MAP: Record<string, AbilityName> = {
+  athletics: "strength",
+  acrobatics: "dexterity",
+  "sleight-of-hand": "dexterity",
+  stealth: "dexterity",
+  arcana: "intelligence",
+  history: "intelligence",
+  investigation: "intelligence",
+  nature: "intelligence",
+  religion: "intelligence",
+  "animal-handling": "wisdom",
+  insight: "wisdom",
+  medicine: "wisdom",
+  perception: "wisdom",
+  survival: "wisdom",
+  deception: "charisma",
+  intimidation: "charisma",
+  performance: "charisma",
+  persuasion: "charisma",
+};
+
+const ALL_SKILLS = Object.keys(SKILL_ABILITY_MAP);
 
 /** Normalize skill names from 5e.tools format (spaces) to builder format (hyphens) */
 function normalizeSkill(s: string): string {
@@ -454,16 +473,6 @@ export function getSkillChoices(cls: ClassRaw): { from: string[]; count: number 
 
 export function getCasterType(cls: ClassRaw): string | undefined {
   return cls.casterProgression ?? undefined;
-}
-
-export function getCasterMultiplier(cls: ClassRaw): number {
-  switch (cls.casterProgression) {
-    case "full": return 1;
-    case "1/2": return 0.5;
-    case "1/3": return 1 / 3;
-    case "pact": return 0; // Warlock uses pact magic, handled separately
-    default: return 0;
-  }
 }
 
 export function getSpellSlotTable(cls: ClassAssembled): number[][] | undefined {

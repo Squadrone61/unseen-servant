@@ -45,6 +45,7 @@ import {
   getPactSlotTable,
   entriesToText,
   stripTags,
+  SKILL_ABILITY_MAP,
 } from "../utils/5etools";
 
 // ─── Helpers ─────────────────────────────────────────────
@@ -52,28 +53,6 @@ import {
 function getAbilityMod(score: number): number {
   return Math.floor((score - 10) / 2);
 }
-
-// All 18 D&D 5e skills → governing ability
-const SKILL_ABILITY_MAP: Record<string, keyof AbilityScores> = {
-  athletics: "strength",
-  acrobatics: "dexterity",
-  "sleight-of-hand": "dexterity",
-  stealth: "dexterity",
-  arcana: "intelligence",
-  history: "intelligence",
-  investigation: "intelligence",
-  nature: "intelligence",
-  religion: "intelligence",
-  "animal-handling": "wisdom",
-  insight: "wisdom",
-  medicine: "wisdom",
-  perception: "wisdom",
-  survival: "wisdom",
-  deception: "charisma",
-  intimidation: "charisma",
-  performance: "charisma",
-  persuasion: "charisma",
-};
 
 // Multiclass spell slot table (caster levels 1-20) — from PHB
 const MULTICLASS_SPELL_SLOTS: number[][] = [

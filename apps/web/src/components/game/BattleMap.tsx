@@ -11,7 +11,6 @@ import type {
   TileType,
   CreatureSize,
 } from "@unseen-servant/shared/types";
-
 // ─── Constants ───
 
 const TILE_SIZE = 40;
@@ -28,29 +27,10 @@ const TILE_BG: Record<TileType, string> = {
   stairs: "#282830",
 };
 
-const CONDITION_ABBR: Record<string, string> = {
-  poisoned: "PSN",
-  stunned: "STN",
-  prone: "PRN",
-  unconscious: "UNC",
-  blinded: "BLN",
-  charmed: "CHR",
-  deafened: "DEF",
-  frightened: "FRT",
-  grappled: "GRP",
-  incapacitated: "INC",
-  invisible: "INV",
-  paralyzed: "PAR",
-  petrified: "PTR",
-  restrained: "RST",
-  exhaustion: "EXH",
-  concentrating: "CON",
-};
-
 // ─── Helpers ───
 
 function condAbbr(c: string): string {
-  return CONDITION_ABBR[c.toLowerCase()] || c.slice(0, 3).toUpperCase();
+  return c.slice(0, 3).toUpperCase();
 }
 
 function sizeSpan(s: CreatureSize): number {

@@ -26,7 +26,6 @@ const config: KnipConfig = {
     },
   },
   ignore: ["scripts/**"],
-  ignoreBinaries: ["tsx"],
 };
 
 export default config;

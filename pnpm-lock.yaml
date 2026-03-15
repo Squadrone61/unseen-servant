@@ -14,9 +14,6 @@ importers:
       knip:
         specifier: ^5.85.0
         version: 5.85.0(@types/node@20.19.33)(typescript@5.9.3)
-      tsx:
-        specifier: ^4.19.4
-        version: 4.21.0
       turbo:
         specifier: ^2
         version: 2.8.9

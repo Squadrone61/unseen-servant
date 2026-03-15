@@ -55,6 +55,7 @@ export {
   getBackgroundTools,
   getBackgroundFeat,
   getBackgroundAbilityScores,
+  SKILL_ABILITY_MAP,
   formatItemCost,
   formatDamageType,
   decodeProperty,

@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { baseItemsArray, allItemsArray } from "@unseen-servant/shared/data";
 import type { BaseItemData } from "@unseen-servant/shared/data";
-import { formatDamageType, decodeProperty, decodeMastery, formatItemCost, categorizeBaseItem } from "@unseen-servant/shared";
+import { formatDamageType, decodeProperty, decodeMastery, formatItemCost, categorizeBaseItem, DMG_TYPE_MAP } from "@unseen-servant/shared";
 import type { StepProps, EquipmentEntry, BuilderAction } from "./types";
 import { resolveStartingEquipment, getStartingEquipmentDescription } from "./utils";
 
@@ -317,10 +317,7 @@ export function StepEquipment({ state, dispatch }: StepProps) {
 
 // ─── Custom Items Panel ─────────────────────────────────
 
-const DAMAGE_TYPES = [
-  "Slashing", "Piercing", "Bludgeoning", "Fire", "Cold", "Lightning",
-  "Thunder", "Acid", "Poison", "Necrotic", "Radiant", "Force", "Psychic",
-];
+const DAMAGE_TYPES = Object.values(DMG_TYPE_MAP);
 
 // Type pills grouped by category
 const TYPE_GROUPS: { label: string; types: string[] }[] = [

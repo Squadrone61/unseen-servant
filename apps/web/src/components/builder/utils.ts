@@ -14,6 +14,7 @@ import {
   languagesArray,
   getClassFeatures,
   getOptionalFeaturesByType,
+  baseItemsArray,
 } from "@unseen-servant/shared/data";
 import {
   formatSchool,
@@ -35,21 +36,19 @@ import {
   getHitDiceFaces,
   getBackgroundSkills,
   getBackgroundTools,
+  SKILL_ABILITY_MAP,
 } from "@unseen-servant/shared";
 import type { BuilderState, BuilderStep, EquipmentEntry, TraitChoiceDefinition, ClassEntry } from "./types";
 
-// ─── Tool Proficiency Constants ──────────────────────────
+// ─── Tool Proficiency Constants (derived from base item data) ──────────────────────────
 
-export const MUSICAL_INSTRUMENTS = [
-  "Bagpipes", "Drum", "Dulcimer", "Flute", "Lute",
-  "Lyre", "Horn", "Pan Flute", "Shawm", "Viol",
-];
+const MUSICAL_INSTRUMENTS = baseItemsArray
+  .filter((i) => i.type?.startsWith("INS"))
+  .map((i) => i.name);
 
-export const ARTISAN_TOOLS = [
-  "Carpenter's Tools", "Leatherworker's Tools", "Mason's Tools",
-  "Potter's Tools", "Smith's Tools", "Tinker's Tools",
-  "Weaver's Tools", "Woodcarver's Tools",
-];
+const ARTISAN_TOOLS = baseItemsArray
+  .filter((i) => i.type?.startsWith("AT"))
+  .map((i) => i.name);
 
 /**
  * Detect whether a feat grants tool proficiency choices (Musician, Crafter).
@@ -345,16 +344,8 @@ function parseBackgroundFeat(featString: string): string {
 
 // ─── Species Filter ─────────────────────────────────────
 
-const MONSTER_SPECIES = new Set([
-  "bullywug", "gnoll", "grimlock", "kuo-toa", "skeleton", "troglodyte", "zombie",
-]);
-
-function filterPlayerSpecies(arr: SpeciesData[]): SpeciesData[] {
-  return arr.filter((s) => !MONSTER_SPECIES.has(s.name.toLowerCase()));
-}
-
 export function getFilteredSpecies(): SpeciesData[] {
-  return filterPlayerSpecies(speciesArray);
+  return speciesArray;
 }
 
 // ─── Species Trait Choice (DATA-DRIVEN + Registry) ──────
@@ -1561,26 +1552,7 @@ export function getStartingEquipmentDescription(className: string): { A: string;
 
 // ─── Skill Names ────────────────────────────────────────
 
-export const SKILL_ABILITY_MAP: Record<string, keyof AbilityScores> = {
-  athletics: "strength",
-  acrobatics: "dexterity",
-  "sleight-of-hand": "dexterity",
-  stealth: "dexterity",
-  arcana: "intelligence",
-  history: "intelligence",
-  investigation: "intelligence",
-  nature: "intelligence",
-  religion: "intelligence",
-  "animal-handling": "wisdom",
-  insight: "wisdom",
-  medicine: "wisdom",
-  perception: "wisdom",
-  survival: "wisdom",
-  deception: "charisma",
-  intimidation: "charisma",
-  performance: "charisma",
-  persuasion: "charisma",
-};
+export { SKILL_ABILITY_MAP };
 
 export const ALL_SKILLS = Object.keys(SKILL_ABILITY_MAP);
 
