@@ -60,7 +60,6 @@ If \`targetCharacter\` is provided → Mode 2/2b. Otherwise → Mode 1.`,
       advantage,
       disadvantage,
     }) => {
-      wsClient.sendTypingIndicator(true);
       // Mode 2: Interactive player check
       if (targetCharacter) {
         if (!checkType) {
@@ -142,10 +141,9 @@ If \`targetCharacter\` is provided → Mode 2/2b. Otherwise → Mode 1.`,
       // Send to worker so all players see it in chat
       wsClient.sendDiceRoll(roll, reason);
 
-      const rollsStr =
-        roll.rolls.length > 1 ? ` [${roll.rolls.map((r) => r.result).join(", ")}]` : "";
+      const rollsStr = ` [${roll.rolls.map((r) => r.result).join(", ")}]`;
       const modStr =
-        roll.modifier !== 0 ? (roll.modifier > 0 ? `+${roll.modifier}` : `${roll.modifier}`) : "";
+        roll.modifier !== 0 ? (roll.modifier > 0 ? ` +${roll.modifier}` : ` ${roll.modifier}`) : "";
       const critStr = roll.criticalHit
         ? " (CRITICAL HIT!)"
         : roll.criticalFail
@@ -157,7 +155,7 @@ If \`targetCharacter\` is provided → Mode 2/2b. Otherwise → Mode 1.`,
         content: [
           {
             type: "text" as const,
-            text: `${notation}:${rollsStr} ${roll.rolls.reduce((s, r) => s + r.result, 0)}${modStr} = ${roll.total}${critStr}${reasonStr}`,
+            text: `${notation}:${rollsStr}${modStr} = ${roll.total}${critStr}${reasonStr}`,
           },
         ],
       };

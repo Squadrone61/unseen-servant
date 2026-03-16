@@ -322,6 +322,7 @@ export interface ServerCharacterUpdatedMessage {
   type: "server:character_updated";
   playerName: string;
   character: CharacterData;
+  source?: "player" | "system";
 }
 
 export interface ServerErrorMessage {

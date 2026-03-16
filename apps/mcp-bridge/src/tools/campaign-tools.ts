@@ -113,7 +113,6 @@ export function registerCampaignTools(
         ),
     },
     async ({ summary, activeContext }) => {
-      wsClient.sendTypingIndicator(true);
       try {
         // Pass current characters for snapshotting and player list update
         const characters = wsClient.characters;
@@ -159,7 +158,6 @@ export function registerCampaignTools(
       content: z.string().describe("The file content (markdown or JSON)"),
     },
     async ({ path: filePath, content }) => {
-      wsClient.sendTypingIndicator(true);
       try {
         const savedAs = campaignManager.writeFile(filePath, content);
         return {

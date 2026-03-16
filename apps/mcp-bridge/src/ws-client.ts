@@ -25,6 +25,7 @@ export class WSClient {
   private options: WSClientOptions;
   private reconnectAttempts = 0;
   private closed = false;
+  private wasDisconnected = false;
   private pingInterval: ReturnType<typeof setInterval> | null = null;
   private lastPongAt = 0;
 
@@ -60,7 +61,15 @@ export class WSClient {
     const url = `${wsUrl}/api/rooms/${this.options.roomCode}/ws`;
 
     console.error(`[ws-client] Connecting to ${url}...`);
-    this.ws = new WebSocket(url);
+    try {
+      this.ws = new WebSocket(url);
+    } catch (err) {
+      console.error(
+        `[ws-client] Failed to create WebSocket: ${err instanceof Error ? err.message : String(err)}`,
+      );
+      this.scheduleReconnect();
+      return;
+    }
 
     this.ws.on("open", () => {
       console.error(`[ws-client] WebSocket open, joining room as DM...`);
@@ -133,12 +142,16 @@ export class WSClient {
       console.error(`[ws-client] Disconnected: ${code} ${reason.toString()}`);
       this.connected = false;
       this.configSent = false;
+      this.wasDisconnected = true;
       this.clearPingInterval();
+      this.options.messageQueue.rejectAllWaiters();
       this.scheduleReconnect();
     });
 
     this.ws.on("error", (err) => {
       console.error(`[ws-client] Error: ${err.message}`);
+      // Terminate to trigger close→reconnect flow instead of silently hanging
+      this.ws?.terminate();
     });
   }
 
@@ -147,8 +160,26 @@ export class WSClient {
       case "server:room_joined": {
         this.connected = true;
         this.storyStarted = msg.storyStarted ?? false;
+        if (this.storyStarted) {
+          this.sendTypingIndicator(true);
+        }
         this.gameStateManager.storyStarted = this.storyStarted;
         this.gameStateManager.hostName = msg.hostName;
+
+        const isWsReconnect = this.wasDisconnected;
+        if (isWsReconnect) {
+          console.error(
+            `[ws-client] Reconnected successfully after ${this.reconnectAttempts} attempts`,
+          );
+          this.broadcastViaWorker({
+            type: "server:system",
+            content: "DM has reconnected. Resuming session.",
+            timestamp: Date.now(),
+          });
+          this.gameStateManager.broadcastGameStateSync();
+          this.wasDisconnected = false;
+        }
+
         console.error(
           `[ws-client] Joined room ${msg.roomCode} as DM (host: ${msg.hostName}, players: ${msg.players.join(", ")})`,
         );
@@ -179,8 +210,10 @@ export class WSClient {
           this.configSent = true;
         }
 
-        // Auto-restore session state if reconnecting to active campaign
-        if (msg.activeCampaignSlug && msg.storyStarted) {
+        // Auto-restore session state from campaign files on fresh connect only.
+        // On WS reconnect the in-memory state is still valid — skip file restore
+        // to avoid overwriting live conversation history with stale data.
+        if (msg.activeCampaignSlug && msg.storyStarted && !isWsReconnect) {
           this.restoreSessionFromCampaign(msg.activeCampaignSlug);
         }
         break;
@@ -269,7 +302,7 @@ export class WSClient {
       return;
     }
     if (raw.action.type === "client:save_notes") {
-      this.handleSaveNotes(raw.playerName, raw.action.content);
+      this.handleSaveNotes(raw.playerName, raw.action.content, raw.userId);
       return;
     }
 
@@ -582,12 +615,12 @@ export class WSClient {
   }
 
   /** Save player notes to campaign (private, AI never sees these). */
-  private handleSaveNotes(playerName: string, content: string): void {
+  private handleSaveNotes(playerName: string, content: string, userId?: string): void {
     const cm = this.options.campaignManager;
     if (!cm.activeSlug) return;
 
     try {
-      cm.savePlayerNotes(playerName, content);
+      cm.savePlayerNotes(playerName, content, userId);
     } catch (e) {
       console.error(`[ws-client] Save notes error: ${e instanceof Error ? e.message : String(e)}`);
     }
@@ -599,7 +632,8 @@ export class WSClient {
     if (!cm.activeSlug) return;
 
     try {
-      const notes = cm.loadPlayerNotes(playerName);
+      const userId = this.playerUserIds[playerName];
+      const notes = cm.loadPlayerNotes(playerName, userId);
       if (notes !== null) {
         this.broadcastViaWorker({ type: "server:player_notes_loaded", content: notes }, [
           playerName,

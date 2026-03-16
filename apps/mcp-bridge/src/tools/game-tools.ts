@@ -15,8 +15,23 @@ export function registerGameTools(
     "Block until a player message or DM request arrives via WebSocket. Returns the request with systemPrompt and conversation messages. This is the main loop driver — call this repeatedly to process game turns.",
     {},
     async (_args: Record<string, never>, extra: { signal: AbortSignal }) => {
-      const msg = await messageQueue.waitForNext(extra.signal);
-      wsClient.sendTypingIndicator(true);
+      // Retry on disconnect — rejectAllWaiters throws when DM connection drops
+      wsClient.sendTypingIndicator(false);
+      let msg;
+      while (true) {
+        try {
+          msg = await messageQueue.waitForNext(extra.signal);
+          break;
+        } catch (err) {
+          if (err instanceof Error && err.message === "DM disconnected — reconnecting") {
+            // Wait briefly for reconnection, then retry
+            await new Promise((r) => setTimeout(r, 2000));
+            continue;
+          }
+          throw err;
+        }
+      }
+
       return {
         content: [
           {
@@ -44,7 +59,6 @@ export function registerGameTools(
       requestId: z.string().describe("The requestId from the dm_request to acknowledge"),
     },
     async ({ requestId }) => {
-      wsClient.sendTypingIndicator(false);
       return {
         content: [
           {
@@ -64,7 +78,6 @@ export function registerGameTools(
       text: z.string().describe("The DM narrative text to send back to the players"),
     },
     async ({ requestId, text }) => {
-      wsClient.sendTypingIndicator(false);
       wsClient.sendDMResponse(requestId, text);
       return {
         content: [
@@ -158,7 +171,6 @@ export function registerGameTools(
         .describe("Type of damage (e.g., 'fire', 'slashing', 'psychic')"),
     },
     async ({ target, amount, damage_type }) => {
-      wsClient.sendTypingIndicator(true);
       const result = wsClient.gameStateManager.applyDamage(target, amount, damage_type);
       return { content: [{ type: "text" as const, text: result }] };
     },
@@ -172,7 +184,6 @@ export function registerGameTools(
       amount: z.number().describe("Amount of HP to restore"),
     },
     async ({ target, amount }) => {
-      wsClient.sendTypingIndicator(true);
       const result = wsClient.gameStateManager.heal(target, amount);
       return { content: [{ type: "text" as const, text: result }] };
     },
@@ -186,7 +197,6 @@ export function registerGameTools(
       value: z.number().describe("HP value to set"),
     },
     async ({ target, value }) => {
-      wsClient.sendTypingIndicator(true);
       const result = wsClient.gameStateManager.setHP(target, value);
       return { content: [{ type: "text" as const, text: result }] };
     },
@@ -201,7 +211,6 @@ export function registerGameTools(
       duration: z.number().optional().describe("Duration in rounds (optional)"),
     },
     async ({ target, condition, duration }) => {
-      wsClient.sendTypingIndicator(true);
       const result = wsClient.gameStateManager.addCondition(target, condition, duration);
       return { content: [{ type: "text" as const, text: result }] };
     },
@@ -215,7 +224,6 @@ export function registerGameTools(
       condition: z.string().describe("Condition name to remove"),
     },
     async ({ target, condition }) => {
-      wsClient.sendTypingIndicator(true);
       const result = wsClient.gameStateManager.removeCondition(target, condition);
       return { content: [{ type: "text" as const, text: result }] };
     },
@@ -256,7 +264,6 @@ export function registerGameTools(
         .describe("List of combatants to add to combat"),
     },
     async ({ combatants }) => {
-      wsClient.sendTypingIndicator(true);
       const result = wsClient.gameStateManager.startCombat(combatants);
       return { content: [{ type: "text" as const, text: result }] };
     },
@@ -267,7 +274,6 @@ export function registerGameTools(
     "End the current combat encounter. Clears combat state and returns to exploration.",
     {},
     async () => {
-      wsClient.sendTypingIndicator(true);
       const result = wsClient.gameStateManager.endCombat();
       return { content: [{ type: "text" as const, text: result }] };
     },
@@ -278,7 +284,6 @@ export function registerGameTools(
     "Move to the next combatant's turn in initiative order. Increments round counter on wrap-around.",
     {},
     async () => {
-      wsClient.sendTypingIndicator(true);
       const result = wsClient.gameStateManager.advanceTurnMCP();
       return { content: [{ type: "text" as const, text: result }] };
     },
@@ -305,7 +310,6 @@ export function registerGameTools(
       tokenColor: z.string().optional(),
     },
     async (params) => {
-      wsClient.sendTypingIndicator(true);
       const result = wsClient.gameStateManager.addCombatant(params);
       return { content: [{ type: "text" as const, text: result }] };
     },
@@ -318,7 +322,6 @@ export function registerGameTools(
       name: z.string().describe("Name of the combatant to remove"),
     },
     async ({ name }) => {
-      wsClient.sendTypingIndicator(true);
       const result = wsClient.gameStateManager.removeCombatant(name);
       return { content: [{ type: "text" as const, text: result }] };
     },
@@ -333,7 +336,6 @@ export function registerGameTools(
       y: z.number().describe("Target Y grid position"),
     },
     async ({ name, x, y }) => {
-      wsClient.sendTypingIndicator(true);
       const result = wsClient.gameStateManager.moveCombatant(name, { x, y });
       return { content: [{ type: "text" as const, text: result }] };
     },
@@ -349,7 +351,6 @@ export function registerGameTools(
       level: z.number().describe("Spell slot level (1-9)"),
     },
     async ({ character_name, level }) => {
-      wsClient.sendTypingIndicator(true);
       const result = wsClient.gameStateManager.useSpellSlot(character_name, level);
       return { content: [{ type: "text" as const, text: result }] };
     },
@@ -363,7 +364,6 @@ export function registerGameTools(
       level: z.number().describe("Spell slot level (1-9)"),
     },
     async ({ character_name, level }) => {
-      wsClient.sendTypingIndicator(true);
       const result = wsClient.gameStateManager.restoreSpellSlot(character_name, level);
       return { content: [{ type: "text" as const, text: result }] };
     },
@@ -381,7 +381,6 @@ export function registerGameTools(
         .describe("Resource name (e.g., 'Channel Divinity', 'Rage', 'Bardic Inspiration')"),
     },
     async ({ character_name, resource_name }) => {
-      wsClient.sendTypingIndicator(true);
       const result = wsClient.gameStateManager.useClassResource(character_name, resource_name);
       return { content: [{ type: "text" as const, text: result }] };
     },
@@ -399,7 +398,6 @@ export function registerGameTools(
         .describe("Number of uses to restore (default 1, use 999 to fully restore)"),
     },
     async ({ character_name, resource_name, amount }) => {
-      wsClient.sendTypingIndicator(true);
       const result = wsClient.gameStateManager.restoreClassResource(
         character_name,
         resource_name,
@@ -438,7 +436,6 @@ export function registerGameTools(
         .describe("2D array of tiles [y][x]. If omitted, all floor."),
     },
     async ({ width, height, name, tiles }) => {
-      wsClient.sendTypingIndicator(true);
       const mapTiles =
         tiles ??
         Array.from({ length: height }, () =>
@@ -493,7 +490,6 @@ export function registerGameTools(
       properties,
       weight,
     }) => {
-      wsClient.sendTypingIndicator(true);
       const result = wsClient.gameStateManager.addItem(character_name, {
         name,
         quantity,
@@ -519,7 +515,6 @@ export function registerGameTools(
       quantity: z.number().optional().describe("Quantity to remove (default: all)"),
     },
     async ({ character_name, item_name, quantity }) => {
-      wsClient.sendTypingIndicator(true);
       const result = wsClient.gameStateManager.removeItem(character_name, item_name, quantity);
       return { content: [{ type: "text" as const, text: result }] };
     },
@@ -559,7 +554,6 @@ export function registerGameTools(
       attack_bonus,
       range,
     }) => {
-      wsClient.sendTypingIndicator(true);
       const updates: Record<string, unknown> = {};
       if (equipped !== undefined) updates.equipped = equipped;
       if (quantity !== undefined) updates.quantity = quantity;
@@ -588,7 +582,6 @@ export function registerGameTools(
       pp: z.number().optional().describe("Platinum pieces to add/subtract"),
     },
     async ({ character_name, cp, sp, ep, gp, pp }) => {
-      wsClient.sendTypingIndicator(true);
       const changes: Partial<Record<"cp" | "sp" | "ep" | "gp" | "pp", number>> = {};
       if (cp !== undefined) changes.cp = cp;
       if (sp !== undefined) changes.sp = sp;
@@ -609,7 +602,6 @@ export function registerGameTools(
       character_name: z.string().describe("Character name"),
     },
     async ({ character_name }) => {
-      wsClient.sendTypingIndicator(true);
       const result = wsClient.gameStateManager.grantInspiration(character_name);
       return { content: [{ type: "text" as const, text: result }] };
     },
@@ -622,7 +614,6 @@ export function registerGameTools(
       character_name: z.string().describe("Character name"),
     },
     async ({ character_name }) => {
-      wsClient.sendTypingIndicator(true);
       const result = wsClient.gameStateManager.useInspiration(character_name);
       return { content: [{ type: "text" as const, text: result }] };
     },

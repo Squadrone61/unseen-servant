@@ -954,6 +954,7 @@ export class GameRoom extends DurableObject<Env> {
       type: "server:character_updated",
       playerName: session.playerName,
       character: msg.character,
+      source: "player",
     });
 
     // Forward to bridge for campaign persistence + state tracking

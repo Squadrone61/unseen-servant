@@ -254,16 +254,18 @@ function GameContent({ roomCode, playerName }: { roomCode: string; playerName: s
               libUpdateCharacter(libEntry.id, msg.character);
             }
           }
-          // Activity log entry confirming the update
-          const lvl = msg.character.static.classes.reduce((s, c) => s + c.level, 0);
-          setLogMessages((prev) => [
-            ...prev,
-            {
-              type: "server:system",
-              content: `${msg.playerName} updated character "${msg.character.static.name}" (Lvl ${lvl}, HP ${msg.character.dynamic.currentHP}/${msg.character.static.maxHP}).`,
-              timestamp: Date.now(),
-            } as ServerMessage,
-          ]);
+          // Activity log entry only for player-initiated edits (not DM tool changes)
+          if (msg.source === "player") {
+            const lvl = msg.character.static.classes.reduce((s, c) => s + c.level, 0);
+            setLogMessages((prev) => [
+              ...prev,
+              {
+                type: "server:system",
+                content: `${msg.playerName} updated character "${msg.character.static.name}" (Lvl ${lvl}, HP ${msg.character.dynamic.currentHP}/${msg.character.static.maxHP}).`,
+                timestamp: Date.now(),
+              } as ServerMessage,
+            ]);
+          }
           break;
         }
 

@@ -375,8 +375,6 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
         .describe("Spell name, e.g. 'Fireball', 'Cure Wounds', 'Shield', 'Silvery Barbs'"),
     },
     async ({ spell_name }) => {
-      wsClient.sendTypingIndicator(true);
-
       const spell = getSpell(spell_name);
       if (spell) {
         return { content: [{ type: "text" as const, text: formatSpell(spell) }] };
@@ -396,8 +394,6 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
         .describe("Monster name, e.g. 'Goblin', 'Adult Red Dragon', 'Bugbear'"),
     },
     async ({ monster_name }) => {
-      wsClient.sendTypingIndicator(true);
-
       const monster = getMonster(monster_name);
       if (monster) {
         return { content: [{ type: "text" as const, text: formatMonster(monster) }] };
@@ -417,8 +413,6 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
         .describe("Condition name, e.g. 'Grappled', 'Stunned', 'Prone', 'Frightened'"),
     },
     async ({ condition_name }) => {
-      wsClient.sendTypingIndicator(true);
-
       const condition = getCondition(condition_name);
       if (condition) {
         return { content: [{ type: "text" as const, text: formatCondition(condition) }] };
@@ -436,8 +430,6 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
       item_name: z.string().describe("Magic item name, e.g. 'Bag of Holding', 'Flame Tongue'"),
     },
     async ({ item_name }) => {
-      wsClient.sendTypingIndicator(true);
-
       const item = getMagicItem(item_name);
       if (item) {
         return { content: [{ type: "text" as const, text: formatMagicItemFn(item) }] };
@@ -455,8 +447,6 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
       feat_name: z.string().describe("Feat name, e.g. 'Alert', 'Great Weapon Master'"),
     },
     async ({ feat_name }) => {
-      wsClient.sendTypingIndicator(true);
-
       const feat = getFeat(feat_name);
       if (feat) {
         return { content: [{ type: "text" as const, text: formatFeatFn(feat) }] };
@@ -474,8 +464,6 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
       class_name: z.string().describe("Class name, e.g. 'Paladin', 'Rogue', 'Wizard'"),
     },
     async ({ class_name }) => {
-      wsClient.sendTypingIndicator(true);
-
       const cls = getClass(class_name);
       if (cls) {
         return { content: [{ type: "text" as const, text: formatClassFn(cls) }] };
@@ -495,8 +483,6 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
         .describe("Species name, e.g. 'Tiefling', 'Aasimar', 'Goliath', 'Kenku'"),
     },
     async ({ species_name }) => {
-      wsClient.sendTypingIndicator(true);
-
       const sp = getSpecies(species_name);
       if (sp) {
         return { content: [{ type: "text" as const, text: formatSpeciesFn(sp) }] };
@@ -516,8 +502,6 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
         .describe("Background name, e.g. 'Noble', 'Criminal', 'Sage', 'Haunted One'"),
     },
     async ({ background_name }) => {
-      wsClient.sendTypingIndicator(true);
-
       const bg = getBackground(background_name);
       if (bg) {
         return { content: [{ type: "text" as const, text: formatBackgroundFn(bg) }] };
@@ -539,8 +523,6 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
         .describe("Feature name, e.g. 'Agonizing Blast', 'Riposte', 'Quickened Spell'"),
     },
     async ({ feature_name }) => {
-      wsClient.sendTypingIndicator(true);
-
       const feature = getOptionalFeature(feature_name);
       if (feature) {
         return { content: [{ type: "text" as const, text: formatOptionalFeatureFn(feature) }] };
@@ -558,8 +540,6 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
       action_name: z.string().describe("Action name, e.g. 'Attack', 'Grapple', 'Shove', 'Dodge'"),
     },
     async ({ action_name }) => {
-      wsClient.sendTypingIndicator(true);
-
       const action = getAction(action_name);
       if (action) {
         return { content: [{ type: "text" as const, text: formatActionFn(action) }] };
@@ -577,8 +557,6 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
       language_name: z.string().describe("Language name, e.g. 'Elvish', 'Draconic', 'Infernal'"),
     },
     async ({ language_name }) => {
-      wsClient.sendTypingIndicator(true);
-
       const lang = getLanguage(language_name);
       if (lang) {
         return { content: [{ type: "text" as const, text: formatLanguageFn(lang) }] };
@@ -596,8 +574,6 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
       disease_name: z.string().describe("Disease name, e.g. 'Cackle Fever', 'Sewer Plague'"),
     },
     async ({ disease_name }) => {
-      wsClient.sendTypingIndicator(true);
-
       const disease = getDisease(disease_name);
       if (disease) {
         return { content: [{ type: "text" as const, text: formatDiseaseFn(disease) }] };
@@ -622,8 +598,6 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
       limit: z.number().optional().default(5).describe("Max results to return (default 5)"),
     },
     async ({ query, limit }) => {
-      wsClient.sendTypingIndicator(true);
-
       const results: string[] = [];
       const lowerQuery = query.toLowerCase();
 

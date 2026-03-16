@@ -421,7 +421,7 @@ export function Sidebar({
           </button>
           {!eventLogCollapsed && (
             <div className="px-4 pb-3 overflow-y-auto max-h-48 space-y-1.5">
-              {eventLog.slice(-20).map((event) => (
+              {eventLog.slice(-10).map((event) => (
                 <div key={event.id} className="flex items-start gap-1.5 text-xs group">
                   <div className="flex-1 text-gray-400 min-w-0">
                     <span className="text-gray-600">{event.type.replace(/_/g, " ")}</span>

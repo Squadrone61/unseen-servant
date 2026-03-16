@@ -1,18 +1,23 @@
 import type { DMRequest } from "./types.js";
 
+interface PendingWaiter {
+  resolve: (msg: DMRequest) => void;
+  reject: (err: Error) => void;
+}
+
 /**
  * Async queue: WS pushes dm_requests, wait_for_message pops them.
  * No polling, no timers — pure async await.
  */
 export class MessageQueue {
   private queue: DMRequest[] = [];
-  private waiters: Array<(msg: DMRequest) => void> = [];
+  private waiters: PendingWaiter[] = [];
 
   /** Called by WS client when server:dm_request arrives. */
   push(msg: DMRequest): void {
     const waiter = this.waiters.shift();
     if (waiter) {
-      waiter(msg);
+      waiter.resolve(msg);
     } else {
       this.queue.push(msg);
     }
@@ -26,10 +31,17 @@ export class MessageQueue {
     if (queued) return Promise.resolve(queued);
 
     return new Promise<DMRequest>((resolve, reject) => {
-      const waiter = (msg: DMRequest) => {
+      const waiter: PendingWaiter = { resolve: wrappedResolve, reject: wrappedReject };
+
+      function wrappedResolve(msg: DMRequest) {
         signal?.removeEventListener("abort", onAbort);
         resolve(msg);
-      };
+      }
+
+      function wrappedReject(err: Error) {
+        signal?.removeEventListener("abort", onAbort);
+        reject(err);
+      }
 
       const onAbort = () => {
         const idx = this.waiters.indexOf(waiter);
@@ -45,6 +57,14 @@ export class MessageQueue {
       signal?.addEventListener("abort", onAbort, { once: true });
       this.waiters.push(waiter);
     });
+  }
+
+  /** Reject all pending waiters (e.g. on disconnect) so wait_for_message doesn't hang forever. */
+  rejectAllWaiters(): void {
+    const waiters = this.waiters.splice(0);
+    for (const waiter of waiters) {
+      waiter.reject(new Error("DM disconnected — reconnecting"));
+    }
   }
 
   /** Number of queued messages waiting to be consumed. */

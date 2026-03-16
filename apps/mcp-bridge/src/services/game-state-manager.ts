@@ -29,6 +29,7 @@ import {
   rollInitiative,
   buildCheckLabel,
   computeCheckModifier,
+  formatGridPosition,
 } from "@unseen-servant/shared/utils";
 import { DM_SKILL_COMBAT, DM_SKILL_NARRATION, DM_SKILL_CAMPAIGN } from "@unseen-servant/shared";
 import type { MessageQueue } from "../message-queue.js";
@@ -670,7 +671,7 @@ export class GameStateManager {
 
     // Notify AI of the movement
     if (char) {
-      const systemMsg = `[System: ${char.static.name} moved from (${from.x},${from.y}) to (${to.x},${to.y}), ${distance}ft used (${combatant.speed - combatant.movementUsed}ft remaining)]`;
+      const systemMsg = `[System: ${char.static.name} moved from ${formatGridPosition(from)} to ${formatGridPosition(to)}, ${distance}ft used (${combatant.speed - combatant.movementUsed}ft remaining)]`;
       this.conversationHistory.push({ role: "user", content: systemMsg });
       this.pushDMRequest();
     }
@@ -757,8 +758,8 @@ export class GameStateManager {
     };
 
     this.gameState.eventLog.push(event);
-    if (this.gameState.eventLog.length > 50) {
-      this.gameState.eventLog = this.gameState.eventLog.slice(-50);
+    if (this.gameState.eventLog.length > 10) {
+      this.gameState.eventLog = this.gameState.eventLog.slice(-10);
     }
     this.broadcast({ type: "server:event_log", event });
   }
@@ -928,7 +929,7 @@ export class GameStateManager {
 
     // Build NPC turn context and push to message queue
     const pos = activeCombatant.position;
-    const posStr = pos ? ` at position (${pos.x},${pos.y})` : "";
+    const posStr = pos ? ` at ${formatGridPosition(pos)}` : "";
     const speed = activeCombatant.speed ?? 30;
     const ac = activeCombatant.armorClass ?? "?";
     const hp = `${activeCombatant.currentHP ?? "?"}/${activeCombatant.maxHP ?? "?"}`;
@@ -1493,7 +1494,7 @@ export class GameStateManager {
       timestamp: Date.now(),
     });
 
-    return `${combatant.name} moved to (${to.x}, ${to.y})`;
+    return `${combatant.name} moved to ${formatGridPosition(to)}`;
   }
 
   /** Use a spell slot */

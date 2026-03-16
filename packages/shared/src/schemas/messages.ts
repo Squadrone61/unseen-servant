@@ -494,6 +494,7 @@ export const serverCharacterUpdatedSchema = z.object({
   type: z.literal("server:character_updated"),
   playerName: z.string(),
   character: characterDataSchema,
+  source: z.enum(["player", "system"]).optional(),
 });
 
 export const serverErrorSchema = z.object({
