@@ -108,6 +108,7 @@ export interface CombatState {
   turnOrder: string[]; // combatant IDs sorted by initiative
   combatants: Record<string, Combatant>;
   pendingCheck?: CheckRequest;
+  activeAoE?: AoEOverlay[];
 }
 
 // ─── Encounter ───
@@ -125,8 +126,23 @@ export interface EncounterState {
 
 export type TileType = "floor" | "wall" | "difficult_terrain" | "water" | "pit" | "door" | "stairs";
 
+export type TileObjectCategory = "furniture" | "container" | "hazard" | "interactable" | "weapon";
+
+export interface TileObject {
+  name: string;
+  category: TileObjectCategory;
+  destructible?: boolean;
+  hp?: number;
+  height?: number; // object height in feet
+  description?: string;
+}
+
 export interface MapTile {
   type: TileType;
+  object?: TileObject;
+  elevation?: number; // height in feet (0 = ground, 10 = ledge, -10 = pit)
+  cover?: "half" | "three-quarters" | "full";
+  label?: string; // short label for hover
 }
 
 export interface BattleMapState {
@@ -135,6 +151,22 @@ export interface BattleMapState {
   height: number;
   tiles: MapTile[][]; // [y][x]
   name?: string;
+}
+
+// ─── AoE Overlays ───
+
+export interface AoEOverlay {
+  id: string;
+  shape: "sphere" | "cone" | "line" | "cube";
+  center: GridPosition;
+  radius?: number; // for sphere/cone (in feet)
+  length?: number; // for line/cone (in feet)
+  width?: number; // for line/cube (in feet)
+  direction?: number; // angle in degrees for cone/line (0=north, 90=east)
+  color: string; // direct RGB hex
+  label: string; // "Fireball", "Wall of Fire"
+  persistent: boolean; // stays on map until dismissed?
+  casterName?: string;
 }
 
 // ─── State Changes (atomic operations) ───

@@ -106,19 +106,7 @@ export const combatantSchema = z.object({
   tempHP: z.number().optional(),
   armorClass: z.number().optional(),
   conditions: z.array(conditionEntrySchema).optional(),
-});
-
-// ─── Combat ───
-
-export const combatPhaseSchema = z.enum(["initiative", "active", "ended"]);
-
-export const combatStateSchema = z.object({
-  phase: combatPhaseSchema,
-  round: z.number().int().positive(),
-  turnIndex: z.number().int().min(0),
-  turnOrder: z.array(z.string()),
-  combatants: z.record(z.string(), combatantSchema),
-  pendingCheck: checkRequestSchema.optional(),
+  concentratingOn: z.object({ spellName: z.string(), since: z.number().optional() }).optional(),
 });
 
 // ─── Battle Map ───
@@ -133,8 +121,43 @@ export const tileTypeSchema = z.enum([
   "stairs",
 ]);
 
+export const tileObjectCategorySchema = z.enum([
+  "furniture",
+  "container",
+  "hazard",
+  "interactable",
+  "weapon",
+]);
+
+export const tileObjectSchema = z.object({
+  name: z.string(),
+  category: tileObjectCategorySchema,
+  destructible: z.boolean().optional(),
+  hp: z.number().optional(),
+  height: z.number().optional(),
+  description: z.string().optional(),
+});
+
 export const mapTileSchema = z.object({
   type: tileTypeSchema,
+  object: tileObjectSchema.optional(),
+  elevation: z.number().optional(),
+  cover: z.enum(["half", "three-quarters", "full"]).optional(),
+  label: z.string().optional(),
+});
+
+export const aoeOverlaySchema = z.object({
+  id: z.string(),
+  shape: z.enum(["sphere", "cone", "line", "cube"]),
+  center: gridPositionSchema,
+  radius: z.number().optional(),
+  length: z.number().optional(),
+  width: z.number().optional(),
+  direction: z.number().optional(),
+  color: z.string(),
+  label: z.string(),
+  persistent: z.boolean(),
+  casterName: z.string().optional(),
 });
 
 export const battleMapStateSchema = z.object({
@@ -143,6 +166,20 @@ export const battleMapStateSchema = z.object({
   height: z.number().int().positive(),
   tiles: z.array(z.array(mapTileSchema)),
   name: z.string().optional(),
+});
+
+// ─── Combat ───
+
+export const combatPhaseSchema = z.enum(["initiative", "active", "ended"]);
+
+export const combatStateSchema = z.object({
+  phase: combatPhaseSchema,
+  round: z.number().int().positive(),
+  turnIndex: z.number().int().min(0),
+  turnOrder: z.array(z.string()),
+  combatants: z.record(z.string(), combatantSchema),
+  pendingCheck: checkRequestSchema.optional(),
+  activeAoE: z.array(aoeOverlaySchema).optional(),
 });
 
 // ─── Encounter ───

@@ -49,6 +49,7 @@ packages/shared/   → Shared types (Zod 4 schemas), constants, utils, dice, che
 - **player_action/broadcast** WebSocket contract: worker forwards player actions to bridge as `server:player_action`, bridge processes and sends results back as `client:broadcast`
 - **MCP tool-use** for game state mutation (damage, combat, spell slots), D&D reference (spells, monsters, conditions), dice rolling, campaign persistence
 - **Campaign configuration** flow: host configures campaign (name, pacing, encounter length) before starting story via CampaignConfigModal
+- **A1 coordinate notation** throughout: all tool inputs/outputs use A1 grid coordinates (formatGridPosition/parseGridPosition in shared/utils/grid.ts)
 - **WebSocket Hibernation API** for Durable Objects (persistent connections survive hibernation)
 
 ## Dev Commands
@@ -99,7 +100,7 @@ pnpm deploy:web     # Deploy web only
 - `message-queue.ts` — Async queue: WS pushes player messages, wait_for_message pops
 - `services/game-state-manager.ts` — **Core game engine**: owns GameState, combat, dice, HP, conditions, spell slots, conversation history, check flow, battle map, rollback
 - `services/campaign-manager.ts` — Campaign persistence: create/load/list campaigns, save/read files, session management, character snapshots
-- `tools/game-tools.ts` — MCP tools: wait_for_message, send_response, get_players, get_game_state, get_character, apply_damage, heal, set_hp, add_condition, remove_condition, start_combat, end_combat, advance_turn, add_combatant, remove_combatant, move_combatant, use_spell_slot, restore_spell_slot, update_battle_map, add_item, update_item, remove_item, update_currency, grant_inspiration, use_inspiration, compact_history
+- `tools/game-tools.ts` — MCP tools: wait_for_message, send_response, get_players, get_game_state, get_character, apply_damage, heal, set_hp, add_condition, remove_condition, start_combat, end_combat, advance_turn, add_combatant, remove_combatant, move_combatant, use_spell_slot, restore_spell_slot, update_battle_map, add_item, update_item, remove_item, update_currency, grant_inspiration, use_inspiration, compact_history, get_combat_summary, get_map_info, show_aoe, apply_area_effect, dismiss_aoe
 - `tools/dnd-tools.ts` — roll_dice (supports interactive player checks with targetCharacter)
 - `tools/srd-tools.ts` — D&D 2024 database lookup tools: lookup_spell, lookup_monster, lookup_condition, lookup_magic_item, lookup_feat, lookup_class, lookup_species, lookup_background, search_rules
 - `tools/campaign-tools.ts` — create_campaign, list_campaigns, load_campaign_context, save_campaign_file, read_campaign_file, list_campaign_files, end_session
@@ -139,7 +140,7 @@ pnpm deploy:web     # Deploy web only
 
 - `types/messages.ts` — ClientMessage/ServerMessage unions (WebSocket protocol) — includes player_action, broadcast, campaign config messages
 - `types/character.ts` — CharacterData, CharacterStaticData, CharacterDynamicData
-- `types/game-state.ts` — GameState, CombatState, GameEvent, EncounterState, CampaignJournal
+- `types/game-state.ts` — GameState, CombatState, GameEvent, EncounterState, CampaignJournal, MapTile (with TileObject, cover, elevation), AoEOverlay
 - `types/ai-actions.ts` — AI parsed action types
 - `schemas/messages.ts` — Zod schemas for runtime message validation
 - `constants.ts` — DM_SYSTEM_PROMPT (single source of truth), room limits, token limits
@@ -181,7 +182,22 @@ pnpm deploy:web     # Deploy web only
 | `advance_turn`     | Next combatant's turn, increment round counter.             |
 | `add_combatant`    | Add mid-fight reinforcements.                               |
 | `remove_combatant` | Remove dead/fled/dismissed combatant.                       |
-| `move_combatant`   | Move token on battle map.                                   |
+| `move_combatant`   | Move token on battle map (accepts A1 notation).             |
+
+### Tactical Query
+
+| Tool                 | Description                                                                                 |
+| -------------------- | ------------------------------------------------------------------------------------------- |
+| `get_combat_summary` | Compact combat summary (~200 tokens): turn order, HP, conditions, distances, active AoE.    |
+| `get_map_info`       | Compact map summary of non-floor tiles with objects, cover, elevation. Optional area query. |
+
+### Area of Effect
+
+| Tool                | Description                                                                                 |
+| ------------------- | ------------------------------------------------------------------------------------------- |
+| `show_aoe`          | Place AoE overlay on map (shape, center in A1, radius, color). Returns affected combatants. |
+| `apply_area_effect` | Apply damage to all combatants in area with saving throws. Use after show_aoe confirmation. |
+| `dismiss_aoe`       | Remove a persistent AoE overlay (Wall of Fire, Fog Cloud, etc.).                            |
 
 ### Spell Slots
 
@@ -199,9 +215,9 @@ pnpm deploy:web     # Deploy web only
 
 ### Battle Map
 
-| Tool                | Description                                           |
-| ------------------- | ----------------------------------------------------- |
-| `update_battle_map` | Set/update grid with dimensions, terrain tiles, name. |
+| Tool                | Description                                                                            |
+| ------------------- | -------------------------------------------------------------------------------------- |
+| `update_battle_map` | Set/update grid with dimensions, rich terrain tiles (objects, cover, elevation), name. |
 
 ### Inventory & Currency
 

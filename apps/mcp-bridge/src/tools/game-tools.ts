@@ -1,7 +1,22 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
+import { formatGridPosition, parseGridPosition } from "@unseen-servant/shared/utils";
 import type { MessageQueue } from "../message-queue.js";
 import type { WSClient } from "../ws-client.js";
+
+// Format positions in combat state for AI readability
+function formatPositionsForOutput(state: any): any {
+  // Deep clone to avoid mutating game state
+  const output = JSON.parse(JSON.stringify(state));
+  if (output.gameState?.encounter?.combat?.combatants) {
+    for (const c of Object.values(output.gameState.encounter.combat.combatants) as any[]) {
+      if (c.position) {
+        c.position = formatGridPosition(c.position);
+      }
+    }
+  }
+  return output;
+}
 
 export function registerGameTools(
   server: McpServer,
@@ -122,11 +137,12 @@ export function registerGameTools(
     {},
     async () => {
       const state = wsClient.gameStateManager.getGameState();
+      const output = formatPositionsForOutput(state);
       return {
         content: [
           {
             type: "text" as const,
-            text: JSON.stringify(state, null, 2),
+            text: JSON.stringify(output, null, 2),
           },
         ],
       };
@@ -146,11 +162,20 @@ export function registerGameTools(
           content: [{ type: "text" as const, text: `Character "${character_name}" not found` }],
         };
       }
+      // Format combatant position as A1 notation if in combat
+      const output = JSON.parse(JSON.stringify(result));
+      if (
+        output.combatant?.position &&
+        typeof output.combatant.position === "object" &&
+        "x" in output.combatant.position
+      ) {
+        output.combatant.position = formatGridPosition(output.combatant.position);
+      }
       return {
         content: [
           {
             type: "text" as const,
-            text: JSON.stringify(result, null, 2),
+            text: JSON.stringify(output, null, 2),
           },
         ],
       };
@@ -251,9 +276,9 @@ export function registerGameTools(
             currentHP: z.number().optional().describe("Current HP (defaults to maxHP)"),
             armorClass: z.number().optional().describe("Armor Class"),
             position: z
-              .object({ x: z.number(), y: z.number() })
+              .union([z.object({ x: z.number(), y: z.number() }), z.string()])
               .optional()
-              .describe("Starting grid position"),
+              .describe("Starting grid position as {x, y} or A1 notation (e.g., 'E5')"),
             size: z
               .enum(["tiny", "small", "medium", "large", "huge", "gargantuan"])
               .optional()
@@ -264,7 +289,15 @@ export function registerGameTools(
         .describe("List of combatants to add to combat"),
     },
     async ({ combatants }) => {
-      const result = wsClient.gameStateManager.startCombat(combatants);
+      // Parse A1 notation positions to {x, y}
+      const parsed = combatants.map((c) => {
+        if (typeof c.position === "string") {
+          const pos = parseGridPosition(c.position);
+          return { ...c, position: pos ?? undefined };
+        }
+        return c as typeof c & { position?: { x: number; y: number } };
+      });
+      const result = wsClient.gameStateManager.startCombat(parsed);
       return { content: [{ type: "text" as const, text: result }] };
     },
   );
@@ -305,12 +338,23 @@ export function registerGameTools(
       maxHP: z.number().optional().describe("Maximum HP"),
       currentHP: z.number().optional().describe("Current HP"),
       armorClass: z.number().optional().describe("Armor Class"),
-      position: z.object({ x: z.number(), y: z.number() }).optional().describe("Grid position"),
+      position: z
+        .union([z.object({ x: z.number(), y: z.number() }), z.string()])
+        .optional()
+        .describe("Grid position as {x, y} or A1 notation (e.g., 'C4')"),
       size: z.enum(["tiny", "small", "medium", "large", "huge", "gargantuan"]).optional(),
       tokenColor: z.string().optional(),
     },
     async (params) => {
-      const result = wsClient.gameStateManager.addCombatant(params);
+      // Parse A1 notation position to {x, y}
+      let position = params.position;
+      if (typeof position === "string") {
+        position = parseGridPosition(position) ?? undefined;
+      }
+      const result = wsClient.gameStateManager.addCombatant({
+        ...params,
+        position: position as { x: number; y: number } | undefined,
+      });
       return { content: [{ type: "text" as const, text: result }] };
     },
   );
@@ -329,14 +373,50 @@ export function registerGameTools(
 
   server.tool(
     "move_combatant",
-    "Move a combatant's token on the battle map to a new position.",
+    "Move a combatant's token on the battle map to a new position. Accepts A1 notation (e.g., 'E5') or x/y coordinates.",
     {
       name: z.string().describe("Name of the combatant to move"),
-      x: z.number().describe("Target X grid position"),
-      y: z.number().describe("Target Y grid position"),
+      position: z
+        .string()
+        .optional()
+        .describe("Target position in A1 notation (e.g., 'E5'). Preferred over x/y."),
+      x: z
+        .number()
+        .optional()
+        .describe("Target X grid position (use 'position' param instead for A1 notation)"),
+      y: z
+        .number()
+        .optional()
+        .describe("Target Y grid position (use 'position' param instead for A1 notation)"),
     },
-    async ({ name, x, y }) => {
-      const result = wsClient.gameStateManager.moveCombatant(name, { x, y });
+    async ({ name, position, x, y }) => {
+      let target: { x: number; y: number };
+      if (position) {
+        const parsed = parseGridPosition(position);
+        if (!parsed) {
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: `Invalid position "${position}" — use A1 notation (e.g., 'E5')`,
+              },
+            ],
+          };
+        }
+        target = parsed;
+      } else if (x !== undefined && y !== undefined) {
+        target = { x, y };
+      } else {
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: "Must provide either 'position' (A1 notation) or both 'x' and 'y'",
+            },
+          ],
+        };
+      }
+      const result = wsClient.gameStateManager.moveCombatant(name, target);
       return { content: [{ type: "text" as const, text: result }] };
     },
   );
@@ -429,6 +509,19 @@ export function registerGameTools(
                 "door",
                 "stairs",
               ]),
+              object: z
+                .object({
+                  name: z.string(),
+                  category: z.enum(["furniture", "container", "hazard", "interactable", "weapon"]),
+                  destructible: z.boolean().optional(),
+                  hp: z.number().optional(),
+                  height: z.number().optional(),
+                  description: z.string().optional(),
+                })
+                .optional(),
+              elevation: z.number().optional(),
+              cover: z.enum(["half", "three-quarters", "full"]).optional(),
+              label: z.string().optional(),
             }),
           ),
         )
@@ -449,6 +542,143 @@ export function registerGameTools(
         tiles: mapTiles,
         name,
       });
+      return { content: [{ type: "text" as const, text: result }] };
+    },
+  );
+
+  server.tool(
+    "get_combat_summary",
+    "Get a compact combat summary optimized for tactical decisions. Shows turn order, HP, conditions, positions, distances, and active AoE — much more concise than get_game_state.",
+    {},
+    async () => {
+      const result = wsClient.gameStateManager.getCombatSummary();
+      return { content: [{ type: "text" as const, text: result ?? "No active combat" }] };
+    },
+  );
+
+  server.tool(
+    "get_map_info",
+    "Get a compact summary of the battle map showing all non-floor tiles with objects, cover, and elevation. Optionally query a specific area (e.g., 'C3:F6').",
+    {
+      area: z
+        .string()
+        .optional()
+        .describe(
+          "Optional area to query in 'A1:B2' format (e.g., 'C3:F6'). If omitted, returns all non-floor tiles.",
+        ),
+    },
+    async ({ area }) => {
+      const result = wsClient.gameStateManager.getMapInfo(area);
+      return { content: [{ type: "text" as const, text: result }] };
+    },
+  );
+
+  server.tool(
+    "show_aoe",
+    "Display an Area of Effect overlay on the battle map. AI picks the center and color narratively. Returns a list of affected combatants so you can confirm with the player before applying effects.",
+    {
+      shape: z.enum(["sphere", "cone", "line", "cube"]).describe("AoE shape"),
+      center: z.string().describe("Center position in A1 notation (e.g., 'E8')"),
+      radius: z.number().optional().describe("Radius in feet (for sphere)"),
+      length: z.number().optional().describe("Length in feet (for line/cone)"),
+      width: z.number().optional().describe("Width in feet (for line/cube)"),
+      direction: z
+        .number()
+        .optional()
+        .describe("Direction in degrees (0=north, 90=east) for cone/line"),
+      color: z.string().describe("RGB hex color (e.g., '#FF6B35' for fire, '#4FC3F7' for ice)"),
+      label: z.string().describe("Spell/effect name (e.g., 'Fireball')"),
+      persistent: z
+        .boolean()
+        .optional()
+        .describe("Whether this AoE stays on the map until dismissed (default false)"),
+      caster_name: z.string().optional().describe("Name of the caster"),
+    },
+    async ({
+      shape,
+      center,
+      radius,
+      length,
+      width,
+      direction,
+      color,
+      label,
+      persistent,
+      caster_name,
+    }) => {
+      const result = wsClient.gameStateManager.showAoE({
+        shape,
+        center,
+        radius,
+        length,
+        width,
+        direction,
+        color,
+        label,
+        persistent: persistent ?? false,
+        casterName: caster_name,
+      });
+      return { content: [{ type: "text" as const, text: result }] };
+    },
+  );
+
+  server.tool(
+    "apply_area_effect",
+    "Apply damage to all combatants in an area. Each target makes a saving throw; damage is applied based on pass/fail. Use after show_aoe to confirm targeting.",
+    {
+      shape: z.enum(["sphere", "cone", "line", "cube"]).describe("AoE shape"),
+      center: z.string().describe("Center position in A1 notation"),
+      radius: z.number().optional().describe("Radius in feet"),
+      length: z.number().optional().describe("Length in feet"),
+      width: z.number().optional().describe("Width in feet"),
+      direction: z.number().optional().describe("Direction in degrees"),
+      damage: z.string().describe("Damage dice notation (e.g., '8d6')"),
+      damage_type: z.string().describe("Damage type (e.g., 'fire', 'cold')"),
+      save_ability: z.string().describe("Saving throw ability (e.g., 'dexterity')"),
+      save_dc: z.number().describe("Save DC"),
+      half_on_save: z
+        .boolean()
+        .optional()
+        .describe("Whether targets take half damage on a successful save (default true)"),
+    },
+    async ({
+      shape,
+      center,
+      radius,
+      length,
+      width,
+      direction,
+      damage,
+      damage_type,
+      save_ability,
+      save_dc,
+      half_on_save,
+    }) => {
+      const result = wsClient.gameStateManager.applyAreaEffect({
+        shape,
+        center,
+        radius,
+        length,
+        width,
+        direction,
+        damage,
+        damageType: damage_type,
+        saveAbility: save_ability,
+        saveDC: save_dc,
+        halfOnSave: half_on_save ?? true,
+      });
+      return { content: [{ type: "text" as const, text: result }] };
+    },
+  );
+
+  server.tool(
+    "dismiss_aoe",
+    "Remove a persistent AoE overlay from the battle map (e.g., when Wall of Fire or Fog Cloud ends).",
+    {
+      aoe_id: z.string().describe("The ID of the AoE overlay to dismiss"),
+    },
+    async ({ aoe_id }) => {
+      const result = wsClient.gameStateManager.dismissAoE(aoe_id);
       return { content: [{ type: "text" as const, text: result }] };
     },
   );

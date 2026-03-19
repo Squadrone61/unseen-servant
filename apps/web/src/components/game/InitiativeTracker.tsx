@@ -1,4 +1,4 @@
-import type { CombatState, TileType } from "@unseen-servant/shared/types";
+import type { CharacterData, CombatState, TileType } from "@unseen-servant/shared/types";
 
 const LEGEND_ITEMS: Array<{ type: TileType; label: string; bg: string; extra?: string }> = [
   { type: "floor", label: "Floor", bg: "#26262c" },
@@ -21,9 +21,14 @@ const LEGEND_ITEMS: Array<{ type: TileType; label: string; bg: string; extra?: s
 interface InitiativeTrackerProps {
   combat: CombatState;
   onCombatantClick?: (combatantId: string) => void;
+  partyCharacters?: Record<string, CharacterData>;
 }
 
-export function InitiativeTracker({ combat, onCombatantClick }: InitiativeTrackerProps) {
+export function InitiativeTracker({
+  combat,
+  onCombatantClick,
+  partyCharacters,
+}: InitiativeTrackerProps) {
   if (combat.phase !== "active") return null;
 
   return (
@@ -59,16 +64,34 @@ export function InitiativeTracker({ combat, onCombatantClick }: InitiativeTracke
           const isActive = idx === combat.turnIndex;
           const isPlayer = combatant.type === "player";
           const isEnemy = combatant.type === "enemy";
-          const isDead =
-            combatant.type !== "player" &&
-            combatant.currentHP !== undefined &&
-            combatant.currentHP <= 0;
+          // Resolve HP for any combatant (players from partyCharacters, others from combatant)
+          let currentHP: number | undefined;
+          let maxHP: number | undefined;
+          let concentratingOn: { spellName: string; since?: number } | undefined;
 
-          // HP bar for enemies/NPCs
+          if (combatant.type === "player" && partyCharacters) {
+            const char = Object.values(partyCharacters).find(
+              (p) => p.static.name.toLowerCase() === combatant.name.toLowerCase(),
+            );
+            if (char) {
+              currentHP = char.dynamic.currentHP;
+              maxHP = char.static.maxHP;
+              concentratingOn = char.dynamic.concentratingOn;
+            }
+          } else {
+            currentHP = combatant.currentHP;
+            maxHP = combatant.maxHP;
+          }
+
+          // Combatant-level concentratingOn takes priority (works for enemies too)
+          if (combatant.concentratingOn) {
+            concentratingOn = combatant.concentratingOn;
+          }
+
+          const isDead = currentHP !== undefined && currentHP <= 0;
+
           const hpPercent =
-            combatant.maxHP && combatant.currentHP !== undefined
-              ? Math.max(0, (combatant.currentHP / combatant.maxHP) * 100)
-              : null;
+            maxHP && currentHP !== undefined ? Math.max(0, (currentHP / maxHP) * 100) : null;
 
           return (
             <button
@@ -100,19 +123,36 @@ export function InitiativeTracker({ combat, onCombatantClick }: InitiativeTracke
               </div>
               {/* Initiative */}
               <div className="text-xs text-gray-600">{combatant.initiative}</div>
-              {/* HP bar for non-players */}
+              {/* HP bar */}
               {hpPercent !== null && (
-                <div className="w-full h-1 bg-gray-700 rounded-full mt-0.5 overflow-hidden">
-                  <div
-                    className={`h-full rounded-full transition-all ${
-                      hpPercent > 50
-                        ? "bg-green-500"
-                        : hpPercent > 25
-                          ? "bg-yellow-500"
-                          : "bg-red-500"
-                    }`}
-                    style={{ width: `${hpPercent}%` }}
-                  />
+                <>
+                  <div className="w-full h-1 bg-gray-700 rounded-full mt-0.5 overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all ${
+                        hpPercent > 50
+                          ? "bg-green-500"
+                          : hpPercent > 25
+                            ? "bg-yellow-500"
+                            : "bg-red-500"
+                      }`}
+                      style={{ width: `${hpPercent}%` }}
+                    />
+                  </div>
+                  {/* HP numbers for players */}
+                  {isPlayer && currentHP !== undefined && maxHP !== undefined && (
+                    <div className="text-[10px] text-gray-500 leading-tight">
+                      {currentHP}/{maxHP}
+                    </div>
+                  )}
+                </>
+              )}
+              {/* Concentration indicator */}
+              {concentratingOn && (
+                <div
+                  className="text-[10px] text-purple-400 font-bold mt-0.5"
+                  title={`Concentrating: ${concentratingOn.spellName}`}
+                >
+                  C
                 </div>
               )}
               {/* Conditions */}

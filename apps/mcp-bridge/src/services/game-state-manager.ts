@@ -22,6 +22,7 @@ import type {
   ServerMessage,
   StateChange,
   CreatureSize,
+  AoEOverlay,
 } from "@unseen-servant/shared/types";
 import {
   rollCheck,
@@ -30,6 +31,9 @@ import {
   buildCheckLabel,
   computeCheckModifier,
   formatGridPosition,
+  parseGridPosition,
+  gridDistance,
+  computeAoETiles,
 } from "@unseen-servant/shared/utils";
 import {
   DM_SKILL_COMBAT,
@@ -715,11 +719,10 @@ export class GameStateManager {
       timestamp: Date.now(),
     });
 
-    // Notify AI of the movement
+    // Notify AI of the movement (deferred — AI sees it in history on next real action)
     if (char) {
       const systemMsg = `[System: ${char.static.name} moved from ${formatGridPosition(from)} to ${formatGridPosition(to)}, ${distance}ft used (${combatant.speed - combatant.movementUsed}ft remaining)]`;
       this.conversationHistory.push({ role: "user", content: systemMsg });
-      this.pushDMRequest();
     }
   }
 
@@ -1115,6 +1118,11 @@ export class GameStateManager {
         if (damageType) {
           result += `\nNOTE: Verify whether ${combatant.name} has resistance, immunity, or vulnerability to ${damageType} damage — if so, adjust the amount before calling this tool.`;
         }
+        // Cover reminder
+        const combatantCover = this.getCoverInfo(combatant.name);
+        if (combatantCover) {
+          result += `\n(Note: ${combatantCover.toLowerCase()})`;
+        }
         return result;
       }
     }
@@ -1146,6 +1154,11 @@ export class GameStateManager {
         }
         if (damageType) {
           result += `\nNOTE: Verify whether ${char.static.name} has resistance, immunity, or vulnerability to ${damageType} damage — if so, adjust the amount before calling this tool.`;
+        }
+        // Cover reminder during active combat
+        const charCover = this.getCoverInfo(char.static.name);
+        if (charCover) {
+          result += `\n(Note: ${charCover.toLowerCase()})`;
         }
         return result;
       }
@@ -2355,6 +2368,400 @@ export class GameStateManager {
     });
 
     return `Battle map "${map.name ?? "unnamed"}" set (${map.width}x${map.height})`;
+  }
+
+  /** Get a compact combat summary string (~200-300 tokens) for AI context */
+  getCombatSummary(): string | null {
+    const combat = this.gameState.encounter?.combat;
+    if (!combat || combat.phase !== "active") return null;
+
+    const activeId = combat.turnOrder[combat.turnIndex];
+    const activeCombatant = combat.combatants[activeId];
+    if (!activeCombatant) return null;
+
+    const lines: string[] = [];
+    lines.push(`=== Round ${combat.round} | ${activeCombatant.name}'s turn ===`);
+    lines.push("");
+    lines.push("Turn order:");
+
+    for (const id of combat.turnOrder) {
+      const c = combat.combatants[id];
+      if (!c) continue;
+
+      const isCurrent = id === activeId;
+      const prefix = isCurrent ? "  > " : "    ";
+      const pos = c.position ? `(${formatGridPosition(c.position)})` : "(no pos)";
+
+      // Determine HP and AC
+      let hp: string;
+      let ac: string;
+      let speed: number = c.speed ?? 30;
+      let conditions: string[] = [];
+      let concentration: string | undefined;
+
+      if (c.type === "player") {
+        // Look up from character data
+        const charEntry = Object.entries(this.characters).find(
+          ([, ch]) => ch.static.name.toLowerCase() === c.name.toLowerCase(),
+        );
+        if (charEntry) {
+          const [, ch] = charEntry;
+          hp = `${ch.dynamic.currentHP}/${ch.static.maxHP} HP`;
+          ac = `AC ${ch.static.armorClass}`;
+          speed = c.speed ?? 30;
+          conditions = ch.dynamic.conditions.map((cond) =>
+            cond.duration !== undefined ? `${cond.name}(${cond.duration}rd)` : cond.name,
+          );
+          concentration = ch.dynamic.concentratingOn?.spellName;
+        } else {
+          hp = `${c.currentHP ?? "?"}/${c.maxHP ?? "?"} HP`;
+          ac = `AC ${c.armorClass ?? "?"}`;
+        }
+      } else {
+        hp = `${c.currentHP ?? 0}/${c.maxHP ?? "?"} HP`;
+        ac = `AC ${c.armorClass ?? "?"}`;
+        conditions = (c.conditions ?? []).map((cond) =>
+          cond.duration !== undefined ? `${cond.name}(${cond.duration}rd)` : cond.name,
+        );
+        concentration = c.concentratingOn?.spellName;
+      }
+
+      const dead = c.type !== "player" && (c.currentHP ?? 0) <= 0 ? " [DEAD]" : "";
+      const concStr = concentration ? `, conc: ${concentration}` : "";
+      const condStr = conditions.length > 0 ? `, ${conditions.join(", ")}` : "";
+      const currentTag = isCurrent ? " [CURRENT]" : "";
+
+      lines.push(
+        `${prefix}${c.name} ${pos} ${hp}, ${ac}, ${speed}ft speed${concStr}${condStr}${dead}${currentTag}`,
+      );
+    }
+
+    // Distances from active combatant
+    if (activeCombatant.position) {
+      lines.push("");
+      lines.push("Distances from active:");
+      const distParts: string[] = [];
+      for (const id of combat.turnOrder) {
+        if (id === activeId) continue;
+        const c = combat.combatants[id];
+        if (!c || !c.position) continue;
+        if (c.type !== "player" && (c.currentHP ?? 0) <= 0) continue; // skip dead
+        const dist = gridDistance(activeCombatant.position, c.position);
+        const adj = dist <= 5 ? ", adj" : "";
+        distParts.push(`${c.name} ${dist}ft${adj}`);
+      }
+      if (distParts.length > 0) {
+        lines.push("  " + distParts.map((p) => `→ ${p}`).join(" | "));
+      }
+    }
+
+    // Active AoE overlays
+    if (combat.activeAoE && combat.activeAoE.length > 0) {
+      lines.push("");
+      const aoeDescs = combat.activeAoE.map(
+        (a) =>
+          `${a.label} (${a.shape}, ${formatGridPosition(a.center)}${a.casterName ? `, by ${a.casterName}` : ""})`,
+      );
+      lines.push(`AoE: ${aoeDescs.join("; ")}`);
+    }
+
+    return lines.join("\n");
+  }
+
+  /** Get a compact map info summary of non-floor tiles */
+  getMapInfo(area?: string): string {
+    const map = this.gameState.encounter?.map;
+    if (!map) return "No battle map active";
+
+    let minX = 0;
+    let maxX = map.width - 1;
+    let minY = 0;
+    let maxY = map.height - 1;
+
+    if (area) {
+      const parts = area.split(":");
+      if (parts.length === 2) {
+        const corner1 = parseGridPosition(parts[0]);
+        const corner2 = parseGridPosition(parts[1]);
+        if (corner1 && corner2) {
+          minX = Math.min(corner1.x, corner2.x);
+          maxX = Math.max(corner1.x, corner2.x);
+          minY = Math.min(corner1.y, corner2.y);
+          maxY = Math.max(corner1.y, corner2.y);
+        }
+      }
+    }
+
+    const entries: string[] = [];
+    for (let y = minY; y <= maxY && y < map.height; y++) {
+      const row = map.tiles[y];
+      if (!row) continue;
+      for (let x = minX; x <= maxX && x < map.width; x++) {
+        const tile = row[x];
+        if (!tile) continue;
+
+        // Skip plain floor tiles with no interesting properties
+        const hasObject = !!tile.object;
+        const hasElevation = tile.elevation !== undefined && tile.elevation !== 0;
+        const hasCover = !!tile.cover;
+        const isNonFloor = tile.type !== "floor";
+
+        if (!isNonFloor && !hasObject && !hasElevation && !hasCover) continue;
+
+        const parts: string[] = [tile.type];
+        if (hasObject) {
+          let objStr = `${tile.object!.name} (${tile.object!.category}`;
+          if (tile.cover) objStr += `, ${tile.cover} cover`;
+          if (tile.object!.height) objStr += `, ${tile.object!.height}ft high`;
+          objStr += ")";
+          parts.push(objStr);
+        } else if (hasCover) {
+          parts.push(`${tile.cover} cover`);
+        }
+        if (hasElevation) {
+          parts.push(`elevation ${tile.elevation! > 0 ? "+" : ""}${tile.elevation}`);
+        }
+
+        entries.push(`${formatGridPosition({ x, y })}: ${parts.join(", ")}`);
+      }
+    }
+
+    if (entries.length === 0) return "All tiles in range are plain floor";
+    return entries.join(" | ");
+  }
+
+  /** Place an AoE overlay and return affected combatants */
+  showAoE(params: {
+    shape: "sphere" | "cone" | "line" | "cube";
+    center: string;
+    radius?: number;
+    length?: number;
+    width?: number;
+    direction?: number;
+    color: string;
+    label: string;
+    persistent?: boolean;
+    casterName?: string;
+  }): string {
+    const combat = this.gameState.encounter?.combat;
+    if (!combat || combat.phase !== "active") return "No active combat";
+
+    const centerPos = parseGridPosition(params.center);
+    if (!centerPos) return `Invalid grid position: ${params.center}`;
+
+    const map = this.gameState.encounter?.map;
+    const mapWidth = map?.width ?? 20;
+    const mapHeight = map?.height ?? 20;
+
+    const aoe: AoEOverlay = {
+      id: crypto.randomUUID(),
+      shape: params.shape,
+      center: centerPos,
+      radius: params.radius,
+      length: params.length,
+      width: params.width,
+      direction: params.direction,
+      color: params.color,
+      label: params.label,
+      persistent: params.persistent ?? false,
+      casterName: params.casterName,
+    };
+
+    if (!combat.activeAoE) combat.activeAoE = [];
+    combat.activeAoE.push(aoe);
+
+    // Compute affected tiles
+    const affectedTiles = computeAoETiles(
+      params.shape,
+      centerPos,
+      {
+        radius: params.radius,
+        length: params.length,
+        width: params.width,
+        direction: params.direction,
+      },
+      mapWidth,
+      mapHeight,
+    );
+
+    // Find combatants on affected tiles
+    const affected: string[] = [];
+    for (const c of Object.values(combat.combatants)) {
+      if (!c.position) continue;
+      if (c.type !== "player" && (c.currentHP ?? 0) <= 0) continue;
+      if (affectedTiles.some((t) => t.x === c.position!.x && t.y === c.position!.y)) {
+        affected.push(`${c.name} (${formatGridPosition(c.position)})`);
+      }
+    }
+
+    this.broadcast({
+      type: "server:combat_update",
+      combat,
+      map: this.gameState.encounter?.map ?? null,
+      timestamp: Date.now(),
+    });
+
+    const affectedStr =
+      affected.length > 0 ? `Affected: ${affected.join(", ")}` : "No combatants in area";
+    return `AoE '${params.label}' placed at ${params.center}. ${affectedStr}`;
+  }
+
+  /** Apply area effect damage with saving throws */
+  applyAreaEffect(params: {
+    shape: "sphere" | "cone" | "line" | "cube";
+    center: string;
+    radius?: number;
+    length?: number;
+    width?: number;
+    direction?: number;
+    damage: string;
+    damageType: string;
+    saveAbility: string;
+    saveDC: number;
+    halfOnSave?: boolean;
+  }): string {
+    const combat = this.gameState.encounter?.combat;
+    if (!combat || combat.phase !== "active") return "No active combat";
+
+    const centerPos = parseGridPosition(params.center);
+    if (!centerPos) return `Invalid grid position: ${params.center}`;
+
+    const map = this.gameState.encounter?.map;
+    const mapWidth = map?.width ?? 20;
+    const mapHeight = map?.height ?? 20;
+
+    const affectedTiles = computeAoETiles(
+      params.shape,
+      centerPos,
+      {
+        radius: params.radius,
+        length: params.length,
+        width: params.width,
+        direction: params.direction,
+      },
+      mapWidth,
+      mapHeight,
+    );
+
+    // Find combatants on affected tiles
+    const targets: Combatant[] = [];
+    for (const c of Object.values(combat.combatants)) {
+      if (!c.position) continue;
+      if (c.type !== "player" && (c.currentHP ?? 0) <= 0) continue;
+      if (affectedTiles.some((t) => t.x === c.position!.x && t.y === c.position!.y)) {
+        targets.push(c);
+      }
+    }
+
+    if (targets.length === 0) return "No combatants in affected area";
+
+    const results: string[] = [];
+
+    for (const target of targets) {
+      // Compute save modifier
+      const abilityKey = params.saveAbility.toLowerCase();
+      let saveMod = 0;
+
+      if (target.type === "player") {
+        const charEntry = Object.entries(this.characters).find(
+          ([, ch]) => ch.static.name.toLowerCase() === target.name.toLowerCase(),
+        );
+        if (charEntry) {
+          const [, ch] = charEntry;
+          const abilities = ch.static.abilities;
+          const abilityScore = (abilities as unknown as Record<string, number>)[abilityKey] ?? 10;
+          saveMod = Math.floor((abilityScore - 10) / 2);
+          // Check for saving throw proficiency
+          const saveProf = ch.static.savingThrows.find(
+            (st) => st.ability === abilityKey && st.proficient,
+          );
+          if (saveProf) {
+            saveMod += ch.static.proficiencyBonus ?? 2;
+            if (saveProf.bonus) saveMod += saveProf.bonus;
+          }
+        }
+      } else {
+        // For enemies, estimate from ability if available; default to 0
+        saveMod = 0;
+      }
+
+      // Roll saving throw
+      const saveRoll = rollCheck({
+        modifier: saveMod,
+        label: `${params.saveAbility} save vs DC ${params.saveDC}`,
+      });
+      const passed = saveRoll.total >= params.saveDC;
+
+      // Roll damage
+      const damageRoll = rollDamage(params.damage);
+      let finalDamage = damageRoll.total;
+      if (passed && params.halfOnSave) {
+        finalDamage = Math.floor(finalDamage / 2);
+      } else if (passed && !params.halfOnSave) {
+        finalDamage = 0;
+      }
+
+      // Apply damage
+      if (finalDamage > 0) {
+        this.applyDamage(target.name, finalDamage, params.damageType);
+      }
+
+      const passStr = passed ? "PASS" : "FAIL";
+      const damageStr = finalDamage > 0 ? `${finalDamage} ${params.damageType}` : "no damage";
+      results.push(
+        `${target.name}: ${params.saveAbility} save ${saveRoll.total} (rolled ${saveRoll.rolls[0]?.result ?? "?"}+${saveMod}) — ${passStr} (${damageStr})`,
+      );
+    }
+
+    return results.join("\n");
+  }
+
+  /** Dismiss a persistent AoE overlay */
+  dismissAoE(aoeId: string): string {
+    const combat = this.gameState.encounter?.combat;
+    if (!combat) return "No active combat";
+    if (!combat.activeAoE || combat.activeAoE.length === 0) return "No active AoE overlays";
+
+    const idx = combat.activeAoE.findIndex((a) => a.id === aoeId);
+    if (idx === -1) return `AoE with ID "${aoeId}" not found`;
+
+    const removed = combat.activeAoE.splice(idx, 1)[0];
+
+    this.broadcast({
+      type: "server:combat_update",
+      combat,
+      map: this.gameState.encounter?.map ?? null,
+      timestamp: Date.now(),
+    });
+
+    return `AoE '${removed.label}' dismissed`;
+  }
+
+  /** Get cover info for a target based on their tile */
+  getCoverInfo(targetName: string): string | null {
+    const combat = this.gameState.encounter?.combat;
+    const map = this.gameState.encounter?.map;
+    if (!combat || !map) return null;
+
+    // Find combatant position
+    const combatant = Object.values(combat.combatants).find(
+      (c) => c.name.toLowerCase() === targetName.toLowerCase(),
+    );
+    if (!combatant?.position) return null;
+
+    const tile = map.tiles[combatant.position.y]?.[combatant.position.x];
+    if (!tile?.cover) return null;
+
+    switch (tile.cover) {
+      case "half":
+        return "Target has half cover (+2 AC)";
+      case "three-quarters":
+        return "Target has three-quarters cover (+5 AC)";
+      case "full":
+        return "Target has full cover (cannot be targeted directly)";
+      default:
+        return null;
+    }
   }
 
   /** Request a check from a player (DM-initiated) */

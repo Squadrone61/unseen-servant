@@ -265,7 +265,7 @@ test.describe("Battle Map", () => {
     await expect(page.locator("[data-combatant='npc-1']")).toContainText("GU");
   });
 
-  test("shows condition badges on tokens", async ({ page }) => {
+  test("shows hover tooltip with conditions on token hover", async ({ page }) => {
     const roomCode = await createRoomAndSetup(page, "CondHost");
     await page.goto(`/rooms/${roomCode}`);
     await waitForRoom(page, roomCode);
@@ -275,9 +275,13 @@ test.describe("Battle Map", () => {
 
     await waitForBattleMap(page);
 
-    // Goblin has "poisoned" condition → should show "PSN" badge
-    await expect(page.getByTitle("poisoned")).toBeVisible();
-    await expect(page.getByTitle("poisoned")).toContainText("PSN");
+    // Hover over the Goblin token to see tooltip with conditions
+    const goblinToken = page.locator("[data-combatant='enemy-1']");
+    await goblinToken.hover();
+
+    // Tooltip should show the goblin's name and "poisoned" condition
+    await expect(page.getByText("Goblin").nth(1)).toBeVisible({ timeout: 3_000 });
+    await expect(page.getByText("poisoned")).toBeVisible();
   });
 
   test("shows initiative tracker with combatant names", async ({ page }) => {
@@ -334,26 +338,28 @@ test.describe("Battle Map", () => {
     await expect(page.getByText("30ft remaining")).toBeVisible();
   });
 
-  test("movement range tiles are highlighted on player turn", async ({ page }) => {
-    const roomCode = await createRoomAndSetup(page, "MoveHost");
+  test("tokens use absolute positioning for animation", async ({ page }) => {
+    const roomCode = await createRoomAndSetup(page, "AbsPosHost");
     await page.goto(`/rooms/${roomCode}`);
     await waitForRoom(page, roomCode);
 
-    // Set character name to "Elara"
-    await injectServerMessage(page, buildCharacterUpdate("MoveHost", "Elara"));
-
-    const combat = buildMockCombat(true);
+    const combat = buildMockCombat(false);
     await injectServerMessage(page, buildCombatUpdate(combat));
 
-    await expect(page.getByText("Your turn").first()).toBeVisible({ timeout: 5_000 });
+    await waitForBattleMap(page);
 
-    // Reachable tiles get role="button" — count them.
-    // Player at (3,3) with 30ft movement (6 tiles) — many tiles should be reachable.
-    // Walls are on edges (row 0,7 and col 0,7) so inner tiles are reachable.
-    const reachableTiles = page.locator("[role='button']");
-    const count = await reachableTiles.count();
-    // Should have multiple reachable tiles (at least 10 for 30ft movement on an 8x8 map)
-    expect(count).toBeGreaterThanOrEqual(10);
+    // Tokens should use absolute positioning with left/top and transition
+    const playerToken = page.locator("[data-combatant='player-1']");
+    const style = await playerToken.getAttribute("style");
+    // left/top are set via inline styles for absolute positioning
+    expect(style).toContain("left:");
+    expect(style).toContain("top:");
+    // Should have transition for animation
+    expect(style).toContain("transition");
+    expect(style).toContain("ease-out");
+    // CSS class "absolute" is applied via Tailwind
+    const classes = await playerToken.getAttribute("class");
+    expect(classes).toContain("absolute");
   });
 
   test("combat ending removes the battle map", async ({ page }) => {
@@ -397,7 +403,7 @@ test.describe("Battle Map", () => {
     await expect(page.getByText("1 cond.")).toBeVisible();
   });
 
-  test("large creature token spans multiple tiles", async ({ page }) => {
+  test("large creature token renders at correct position", async ({ page }) => {
     const roomCode = await createRoomAndSetup(page, "LargeHost");
     await page.goto(`/rooms/${roomCode}`);
     await waitForRoom(page, roomCode);
@@ -421,8 +427,26 @@ test.describe("Battle Map", () => {
     await expect(ogreToken).toBeVisible();
     await expect(ogreToken).toContainText("OG");
 
-    // Large token uses grid-row/grid-column span 2 — verify via style
-    const style = await ogreToken.getAttribute("style");
-    expect(style).toContain("span 2");
+    // Token should use absolute positioning (via Tailwind class)
+    const classes = await ogreToken.getAttribute("class");
+    expect(classes).toContain("absolute");
+  });
+
+  test("player HP shows in initiative tracker when character data available", async ({ page }) => {
+    const roomCode = await createRoomAndSetup(page, "PlayerHPHost");
+    await page.goto(`/rooms/${roomCode}`);
+    await waitForRoom(page, roomCode);
+
+    // Inject character data first
+    await injectServerMessage(page, buildCharacterUpdate("PlayerHPHost", "Elara"));
+
+    // Then inject combat
+    const combat = buildMockCombat(false);
+    await injectServerMessage(page, buildCombatUpdate(combat));
+
+    await expect(page.getByText("Combat").first()).toBeVisible({ timeout: 5_000 });
+
+    // Player HP numbers should show in initiative tracker (30/30)
+    await expect(page.getByText("30/30")).toBeVisible();
   });
 });

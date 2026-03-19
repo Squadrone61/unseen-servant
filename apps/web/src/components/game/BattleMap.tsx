@@ -10,7 +10,13 @@ import type {
   Combatant,
   TileType,
   CreatureSize,
+  AoEOverlay,
+  TileObjectCategory,
+  ConditionEntry,
+  MapTile,
 } from "@unseen-servant/shared/types";
+import { formatGridPosition, gridDistance, computeAoETiles } from "@unseen-servant/shared/utils";
+
 // ─── Constants ───
 
 const TILE_SIZE = 40;
@@ -27,11 +33,32 @@ const TILE_BG: Record<TileType, string> = {
   stairs: "#282830",
 };
 
-// ─── Helpers ───
+// Object abbreviation mapping
+const OBJECT_ABBR: Record<string, string> = {
+  table: "Tb",
+  barrel: "Br",
+  chair: "Ch",
+  bookshelf: "Bk",
+  crate: "Cr",
+  door: "Dr",
+  trap: "Tr",
+  hazard: "Tr",
+  pillar: "Pi",
+  statue: "St",
+  altar: "Al",
+  ladder: "Ld",
+};
 
-function condAbbr(c: string): string {
-  return c.slice(0, 3).toUpperCase();
-}
+// Object category colors
+const CATEGORY_COLOR: Record<TileObjectCategory, string> = {
+  furniture: "#D4A24E",
+  hazard: "#DC3545",
+  interactable: "#4FC3F7",
+  container: "#8B8B8B",
+  weapon: "#94A3B8",
+};
+
+// ─── Helpers ───
 
 function sizeSpan(s: CreatureSize): number {
   switch (s) {
@@ -44,6 +71,14 @@ function sizeSpan(s: CreatureSize): number {
     default:
       return 1;
   }
+}
+
+function getObjectAbbr(name: string): string {
+  const lower = name.toLowerCase();
+  for (const [key, abbr] of Object.entries(OBJECT_ABBR)) {
+    if (lower.includes(key)) return abbr;
+  }
+  return name.slice(0, 2).charAt(0).toUpperCase() + name.slice(1, 2);
 }
 
 // ─── BFS reachable tiles ───
@@ -106,6 +141,14 @@ function getReachableTiles(from: GridPosition, budgetFt: number, map: BattleMapS
   return reachable;
 }
 
+// ─── AoE pulse animation style ───
+const AOE_PULSE_KEYFRAMES = `
+@keyframes aoePulse {
+  0%, 100% { opacity: 0.15; }
+  50% { opacity: 0.25; }
+}
+`;
+
 // ─── Component ───
 
 interface BattleMapProps {
@@ -121,6 +164,15 @@ interface BattleMapProps {
   className?: string;
 }
 
+// Drag state stored in ref to avoid re-renders during drag
+interface DragState {
+  active: boolean;
+  combatantId: string | null;
+  startPos: GridPosition | null;
+  currentPixel: { x: number; y: number } | null;
+  currentTile: GridPosition | null;
+}
+
 export function BattleMap({
   map,
   combat,
@@ -133,9 +185,25 @@ export function BattleMap({
   style,
   className,
 }: BattleMapProps) {
-  const [hovered, setHovered] = useState<string | null>(null);
+  const [hoveredTile, setHoveredTile] = useState<string | null>(null);
   const [zoom, setZoom] = useState(1);
+  const [selectedTokenId, setSelectedTokenId] = useState<string | null>(null);
+  const [showReachable, setShowReachable] = useState(false);
+  const [hoveredTokenId, setHoveredTokenId] = useState<string | null>(null);
+  const [shiftHeld, setShiftHeld] = useState(false);
+  const [measureMode, setMeasureMode] = useState(false);
+  const [measureTarget, setMeasureTarget] = useState<GridPosition | null>(null);
+  const [dragRender, setDragRender] = useState(0); // increment to force re-render during drag
+
   const gridRef = useRef<HTMLDivElement>(null);
+  const gridContainerRef = useRef<HTMLDivElement>(null);
+  const dragStateRef = useRef<DragState>({
+    active: false,
+    combatantId: null,
+    startPos: null,
+    currentPixel: null,
+    currentTile: null,
+  });
 
   // My combatant
   const myCombatant = useMemo(() => {
@@ -152,15 +220,32 @@ export function BattleMap({
   const activeId = combat.turnOrder[combat.turnIndex];
   const isMyTurn = myCombatant !== null && activeId === myCombatant.id;
 
-  // Reachable tiles
+  // Reachable tiles — computed on demand
   const reachable = useMemo(() => {
-    if (!isMyTurn || !myCombatant?.position) return new Set<string>();
+    if (!showReachable || !myCombatant?.position) return new Set<string>();
     return getReachableTiles(
       myCombatant.position,
       myCombatant.speed - myCombatant.movementUsed,
       map,
     );
-  }, [isMyTurn, myCombatant, map]);
+  }, [showReachable, myCombatant, map]);
+
+  // Keyboard listeners for shift + M
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Shift") setShiftHeld(true);
+      if (e.key === "m" || e.key === "M") setMeasureMode((prev) => !prev);
+    };
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.key === "Shift") setShiftHeld(false);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
+    };
+  }, []);
 
   // Scroll highlighted combatant into view
   useEffect(() => {
@@ -169,35 +254,171 @@ export function BattleMap({
     el?.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
   }, [highlightedCombatantId]);
 
-  // Resolve conditions for a combatant
-  const getConditions = useCallback(
-    (c: Combatant): string[] => {
+  // Resolve conditions for a combatant (returns ConditionEntry[])
+  const getConditionEntries = useCallback(
+    (c: Combatant): ConditionEntry[] => {
       if (c.type === "player") {
         const char = Object.values(partyCharacters).find(
           (p) => p.static.name.toLowerCase() === c.name.toLowerCase(),
         );
         const conditions = char?.dynamic.conditions ?? c.conditions ?? [];
-        return conditions.map((cond) => (typeof cond === "string" ? cond : cond.name));
+        return conditions.map((cond) => (typeof cond === "string" ? { name: cond } : cond));
       }
       const conditions = c.conditions ?? [];
-      return conditions.map((cond) => (typeof cond === "string" ? cond : cond.name));
+      return conditions.map((cond) => (typeof cond === "string" ? { name: cond } : cond));
     },
     [partyCharacters],
   );
 
-  const handleClick = useCallback(
-    (x: number, y: number) => {
-      if (reachable.has(`${x},${y}`)) onMoveToken({ x, y });
+  // Get condition names only
+  const getConditions = useCallback(
+    (c: Combatant): string[] => {
+      return getConditionEntries(c).map((e) => e.name);
     },
-    [reachable, onMoveToken],
+    [getConditionEntries],
   );
+
+  // Click handler for tiles
+  const handleTileClick = useCallback(
+    (x: number, y: number) => {
+      if (showReachable && reachable.has(`${x},${y}`)) {
+        onMoveToken({ x, y });
+        setShowReachable(false);
+        setSelectedTokenId(null);
+      }
+    },
+    [showReachable, reachable, onMoveToken],
+  );
+
+  // Click on own token to select and show reachable
+  const handleTokenClick = useCallback(
+    (combatant: Combatant) => {
+      if (isMyTurn && myCombatant && combatant.id === myCombatant.id) {
+        if (selectedTokenId === combatant.id) {
+          // Deselect
+          setSelectedTokenId(null);
+          setShowReachable(false);
+        } else {
+          setSelectedTokenId(combatant.id);
+          setShowReachable(true);
+        }
+      }
+      onCombatantClick?.(combatant.id);
+    },
+    [isMyTurn, myCombatant, selectedTokenId, onCombatantClick],
+  );
+
+  // ─── Drag to Move ───
+
+  const pixelToTile = useCallback(
+    (clientX: number, clientY: number): GridPosition | null => {
+      if (!gridContainerRef.current) return null;
+      const rect = gridContainerRef.current.getBoundingClientRect();
+      const x = Math.floor((clientX - rect.left) / ((TILE_SIZE + TILE_GAP) * zoom));
+      const y = Math.floor((clientY - rect.top) / ((TILE_SIZE + TILE_GAP) * zoom));
+      if (x < 0 || x >= map.width || y < 0 || y >= map.height) return null;
+      return { x, y };
+    },
+    [map.width, map.height, zoom],
+  );
+
+  const handleDragStart = useCallback(
+    (e: React.MouseEvent | React.TouchEvent, combatant: Combatant) => {
+      if (!isMyTurn || !myCombatant || combatant.id !== myCombatant.id) return;
+      if (!combatant.position) return;
+
+      e.preventDefault();
+      e.stopPropagation();
+
+      const ds = dragStateRef.current;
+      ds.active = true;
+      ds.combatantId = combatant.id;
+      ds.startPos = { ...combatant.position };
+      ds.currentTile = { ...combatant.position };
+      ds.currentPixel = null;
+
+      setShowReachable(true);
+      setDragRender((prev) => prev + 1);
+    },
+    [isMyTurn, myCombatant],
+  );
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      const ds = dragStateRef.current;
+      if (!ds.active) return;
+
+      ds.currentPixel = { x: e.clientX, y: e.clientY };
+      const tile = pixelToTile(e.clientX, e.clientY);
+      ds.currentTile = tile;
+      setDragRender((prev) => prev + 1);
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      const ds = dragStateRef.current;
+      if (!ds.active) return;
+
+      const touch = e.touches[0];
+      ds.currentPixel = { x: touch.clientX, y: touch.clientY };
+      const tile = pixelToTile(touch.clientX, touch.clientY);
+      ds.currentTile = tile;
+      setDragRender((prev) => prev + 1);
+    };
+
+    const handleDragEnd = () => {
+      const ds = dragStateRef.current;
+      if (!ds.active) return;
+
+      const targetTile = ds.currentTile;
+      const startPos = ds.startPos;
+
+      // Reset drag state
+      ds.active = false;
+      ds.combatantId = null;
+      ds.startPos = null;
+      ds.currentPixel = null;
+      ds.currentTile = null;
+
+      setDragRender((prev) => prev + 1);
+
+      if (
+        targetTile &&
+        startPos &&
+        !(targetTile.x === startPos.x && targetTile.y === startPos.y) &&
+        reachable.has(`${targetTile.x},${targetTile.y}`)
+      ) {
+        onMoveToken(targetTile);
+      }
+
+      setShowReachable(false);
+      setSelectedTokenId(null);
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleDragEnd);
+    window.addEventListener("touchmove", handleTouchMove, { passive: false });
+    window.addEventListener("touchend", handleDragEnd);
+    window.addEventListener("touchcancel", handleDragEnd);
+
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleDragEnd);
+      window.removeEventListener("touchmove", handleTouchMove);
+      window.removeEventListener("touchend", handleDragEnd);
+      window.removeEventListener("touchcancel", handleDragEnd);
+    };
+  }, [pixelToTile, reachable, onMoveToken]);
 
   // Combatants that have map positions
   const tokens = useMemo(
     () =>
       Object.values(combat.combatants)
         .filter((c): c is Combatant & { position: GridPosition } => c.position != null)
-        .map((c) => ({ ...c, span: sizeSpan(c.size), conds: getConditions(c) })),
+        .map((c) => ({
+          ...c,
+          span: sizeSpan(c.size),
+          conds: getConditions(c),
+        })),
     [combat.combatants, getConditions],
   );
 
@@ -209,19 +430,196 @@ export function BattleMap({
     [map.width],
   );
 
+  // AoE tiles computation
+  const aoeTileMap = useMemo(() => {
+    const aoeList = combat.activeAoE;
+    if (!aoeList || aoeList.length === 0) return new Map<string, AoEOverlay[]>();
+
+    const tileMap = new Map<string, AoEOverlay[]>();
+    for (const aoe of aoeList) {
+      const tiles = computeAoETiles(
+        aoe.shape,
+        aoe.center,
+        {
+          radius: aoe.radius,
+          length: aoe.length,
+          width: aoe.width,
+          direction: aoe.direction,
+        },
+        map.width,
+        map.height,
+      );
+      for (const t of tiles) {
+        const key = `${t.x},${t.y}`;
+        const existing = tileMap.get(key);
+        if (existing) {
+          existing.push(aoe);
+        } else {
+          tileMap.set(key, [aoe]);
+        }
+      }
+    }
+    return tileMap;
+  }, [combat.activeAoE, map.width, map.height]);
+
+  // AoE center labels
+  const aoeCenters = useMemo(() => {
+    const aoeList = combat.activeAoE;
+    if (!aoeList || aoeList.length === 0) return [];
+    return aoeList.map((aoe) => ({
+      aoe,
+      key: `${aoe.center.x},${aoe.center.y}`,
+    }));
+  }, [combat.activeAoE]);
+
+  // Set of tiles affected by AoE (for token ring detection)
+  const aoeTileSet = useMemo(() => {
+    const result = new Map<string, string>(); // tileKey -> color
+    for (const [key, aoes] of aoeTileMap.entries()) {
+      result.set(key, aoes[0].color);
+    }
+    return result;
+  }, [aoeTileMap]);
+
+  // Grid dimensions in px
+  const gridWidthPx = map.width * TILE_SIZE + (map.width - 1) * TILE_GAP;
+  const gridHeightPx = map.height * TILE_SIZE + (map.height - 1) * TILE_GAP;
+
+  // Token tooltip data resolver
+  const getTokenTooltipData = useCallback(
+    (c: Combatant) => {
+      const isPlayer = c.type === "player";
+      let currentHP: number | undefined;
+      let maxHP: number | undefined;
+      let ac: number | undefined;
+      let concentration: { spellName: string; since?: number } | undefined;
+      let conditionEntries: ConditionEntry[] = [];
+
+      if (isPlayer) {
+        const char = Object.values(partyCharacters).find(
+          (p) => p.static.name.toLowerCase() === c.name.toLowerCase(),
+        );
+        if (char) {
+          currentHP = char.dynamic.currentHP;
+          maxHP = char.static.maxHP;
+          ac = char.static.armorClass;
+          concentration = char.dynamic.concentratingOn;
+          conditionEntries = char.dynamic.conditions ?? [];
+        }
+      } else {
+        currentHP = c.currentHP;
+        maxHP = c.maxHP;
+        ac = c.armorClass;
+        concentration = c.concentratingOn;
+        conditionEntries = (c.conditions ?? []).map((cond) =>
+          typeof cond === "string" ? { name: cond } : cond,
+        );
+      }
+
+      // Movement remaining (only during their turn)
+      const isActiveTurn = c.id === activeId;
+      const moveRemaining = isActiveTurn ? c.speed - c.movementUsed : undefined;
+
+      // Grid position in A1 notation
+      const posLabel = c.position ? formatGridPosition(c.position) : undefined;
+
+      return {
+        isPlayer,
+        currentHP,
+        maxHP,
+        ac,
+        concentration,
+        conditionEntries,
+        moveRemaining,
+        posLabel,
+      };
+    },
+    [partyCharacters, activeId],
+  );
+
+  // Tile tooltip data
+  const getTileTooltipData = useCallback((tile: MapTile) => {
+    const parts: string[] = [];
+    if (tile.object) {
+      parts.push(tile.object.name);
+      if (tile.object.description) parts.push(tile.object.description);
+    }
+    if (tile.cover) {
+      const coverLabel =
+        tile.cover === "half"
+          ? "Half cover"
+          : tile.cover === "three-quarters"
+            ? "Three-quarters cover"
+            : "Full cover";
+      parts.push(coverLabel);
+    }
+    if (tile.elevation && tile.elevation !== 0) {
+      parts.push(`Elevation: ${tile.elevation > 0 ? "+" : ""}${tile.elevation}ft`);
+    }
+    if (tile.label) {
+      parts.push(tile.label);
+    }
+    return parts.length > 0 ? parts : null;
+  }, []);
+
+  // Measurement: active when shift held or measure mode toggled
+  const isMeasuring = shiftHeld || measureMode;
+
+  // Measurement line data
+  const measureLine = useMemo(() => {
+    if (!isMeasuring || !measureTarget || !myCombatant?.position) return null;
+    const from = myCombatant.position;
+    const to = measureTarget;
+    const dist = gridDistance(from, to);
+
+    const fromPx = {
+      x: from.x * (TILE_SIZE + TILE_GAP) + TILE_SIZE / 2,
+      y: from.y * (TILE_SIZE + TILE_GAP) + TILE_SIZE / 2,
+    };
+    const toPx = {
+      x: to.x * (TILE_SIZE + TILE_GAP) + TILE_SIZE / 2,
+      y: to.y * (TILE_SIZE + TILE_GAP) + TILE_SIZE / 2,
+    };
+    const midPx = {
+      x: (fromPx.x + toPx.x) / 2,
+      y: (fromPx.y + toPx.y) / 2,
+    };
+
+    return { fromPx, toPx, midPx, dist };
+  }, [isMeasuring, measureTarget, myCombatant?.position]);
+
+  // Suppress the dragRender lint warning -- it is intentionally used for side-effect re-render
+  void dragRender;
+
   return (
     <div className={`flex flex-col bg-[#111114] shrink-0 ${className ?? ""}`} style={style}>
+      {/* AoE pulse animation */}
+      <style dangerouslySetInnerHTML={{ __html: AOE_PULSE_KEYFRAMES }} />
+
       {/* Initiative Tracker (merged) */}
-      <InitiativeTracker combat={combat} onCombatantClick={onCombatantClick} />
+      <InitiativeTracker
+        combat={combat}
+        partyCharacters={partyCharacters}
+        onCombatantClick={onCombatantClick}
+      />
 
       {/* Your-turn banner */}
       {isMyTurn && (
         <div className="px-3 py-1.5 bg-amber-950/40 border-b border-amber-800/30 text-amber-300 text-xs font-medium tracking-wide flex items-center justify-between gap-2 shrink-0">
           <div className="flex items-center gap-2">
             <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-            Your turn &mdash; click a highlighted tile to move
+            Your turn &mdash; drag your token or click a highlighted tile to move
             <span className="text-amber-500/70 font-mono ml-1">{movementLeft}ft remaining</span>
           </div>
+        </div>
+      )}
+
+      {/* Measure mode indicator */}
+      {isMeasuring && (
+        <div className="px-3 py-1 bg-blue-950/40 border-b border-blue-800/30 text-blue-300 text-xs font-medium tracking-wide flex items-center gap-2 shrink-0">
+          <span className="inline-block w-1.5 h-1.5 rounded-full bg-blue-400" />
+          Measuring distance {shiftHeld ? "(Shift)" : "(M key)"} &mdash; hover a tile to see
+          distance
         </div>
       )}
 
@@ -294,92 +692,294 @@ export function BattleMap({
               ))}
             </div>
 
-            {/* The grid itself */}
+            {/* Grid + Token overlay container */}
             <div
-              ref={gridRef}
-              className="relative rounded-sm overflow-hidden"
+              ref={gridContainerRef}
+              className="relative"
               style={{
-                display: "grid",
-                gridTemplateColumns: `repeat(${map.width}, ${TILE_SIZE}px)`,
-                gridTemplateRows: `repeat(${map.height}, ${TILE_SIZE}px)`,
-                gap: TILE_GAP,
-                backgroundColor: "#1c1c20",
+                width: gridWidthPx,
+                height: gridHeightPx,
               }}
             >
-              {/* ─── Layer 1: Tiles ─── */}
-              {map.tiles.map((row, y) =>
-                row.map((tile, x) => {
-                  const key = `${x},${y}`;
-                  const isReach = reachable.has(key);
-                  const isHover = hovered === key && isReach;
-                  return (
-                    <div
-                      key={`t-${key}`}
-                      role={isReach ? "button" : undefined}
-                      tabIndex={isReach ? 0 : undefined}
-                      className={isReach ? "cursor-pointer" : ""}
-                      style={{
-                        gridRow: y + 1,
-                        gridColumn: x + 1,
-                        backgroundColor: TILE_BG[tile.type],
-                        position: "relative",
-                      }}
-                      onClick={() => handleClick(x, y)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") handleClick(x, y);
-                      }}
-                      onMouseEnter={() => {
-                        if (isReach) setHovered(key);
-                      }}
-                      onMouseLeave={() => setHovered(null)}
-                    >
-                      {/* Terrain textures */}
-                      {tile.type === "difficult_terrain" && (
-                        <div
-                          className="absolute inset-0 opacity-20 pointer-events-none"
-                          style={{
-                            backgroundImage:
-                              "repeating-linear-gradient(45deg, transparent 0 3px, rgba(180,140,60,.3) 3px 4px)",
-                          }}
-                        />
-                      )}
-                      {tile.type === "water" && (
-                        <div
-                          className="absolute inset-0 opacity-20 pointer-events-none"
-                          style={{
-                            backgroundImage:
-                              "repeating-linear-gradient(160deg, transparent 0 5px, rgba(60,140,200,.25) 5px 6px)",
-                          }}
-                        />
-                      )}
-                      {tile.type === "stairs" && (
-                        <div
-                          className="absolute inset-0 opacity-25 pointer-events-none"
-                          style={{
-                            backgroundImage:
-                              "repeating-linear-gradient(0deg, transparent 0 6px, rgba(200,200,220,.12) 6px 7px)",
-                          }}
-                        />
-                      )}
-                      {tile.type === "door" && (
-                        <div className="absolute inset-[28%] rounded-sm border border-amber-800/40 bg-amber-900/15 pointer-events-none" />
-                      )}
-                      {/* Movement range overlay */}
-                      {isReach && (
-                        <div
-                          className={`absolute inset-0 pointer-events-none transition-colors duration-75 ${
-                            isHover
-                              ? "bg-emerald-400/25 ring-1 ring-inset ring-emerald-400/40"
-                              : "bg-emerald-500/10 ring-1 ring-inset ring-emerald-600/20"
-                          }`}
-                        />
-                      )}
-                    </div>
-                  );
-                }),
+              {/* ─── Layer 1: Tile Grid ─── */}
+              <div
+                ref={gridRef}
+                className="absolute inset-0 rounded-sm overflow-hidden"
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: `repeat(${map.width}, ${TILE_SIZE}px)`,
+                  gridTemplateRows: `repeat(${map.height}, ${TILE_SIZE}px)`,
+                  gap: TILE_GAP,
+                  backgroundColor: "#1c1c20",
+                }}
+              >
+                {map.tiles.map((row, y) =>
+                  row.map((tile, x) => {
+                    const key = `${x},${y}`;
+                    const isReach = reachable.has(key);
+                    const isHoveredHere = hoveredTile === key;
+                    const aoeOverlays = aoeTileMap.get(key);
+                    const ds = dragStateRef.current;
+                    const isDragTarget =
+                      ds.active &&
+                      ds.currentTile &&
+                      ds.currentTile.x === x &&
+                      ds.currentTile.y === y;
+                    const isDragReachable = isDragTarget && isReach;
+                    const isDragUnreachable = isDragTarget && !isReach;
+
+                    // Cover border styling
+                    let coverBorder: React.CSSProperties = {};
+                    if (tile.cover === "half") {
+                      coverBorder = { border: "1px dashed #D4A24E" };
+                    } else if (tile.cover === "three-quarters") {
+                      coverBorder = {
+                        border: "1.5px solid #D4A24E",
+                      };
+                    } else if (tile.cover === "full") {
+                      coverBorder = { border: "2px solid #D4A24E" };
+                    }
+
+                    const tileTooltipData = getTileTooltipData(tile);
+
+                    return (
+                      <div
+                        key={`t-${key}`}
+                        role={isReach ? "button" : undefined}
+                        tabIndex={isReach ? 0 : undefined}
+                        className={isReach ? "cursor-pointer" : ""}
+                        style={{
+                          gridRow: y + 1,
+                          gridColumn: x + 1,
+                          backgroundColor: TILE_BG[tile.type],
+                          position: "relative",
+                          ...coverBorder,
+                        }}
+                        onClick={() => handleTileClick(x, y)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") handleTileClick(x, y);
+                        }}
+                        onMouseEnter={() => {
+                          setHoveredTile(key);
+                          if (isMeasuring) {
+                            setMeasureTarget({ x, y });
+                          }
+                        }}
+                        onMouseLeave={() => {
+                          setHoveredTile(null);
+                          if (isMeasuring) {
+                            setMeasureTarget(null);
+                          }
+                        }}
+                      >
+                        {/* Terrain textures */}
+                        {tile.type === "difficult_terrain" && (
+                          <div
+                            className="absolute inset-0 opacity-20 pointer-events-none"
+                            style={{
+                              backgroundImage:
+                                "repeating-linear-gradient(45deg, transparent 0 3px, rgba(180,140,60,.3) 3px 4px)",
+                            }}
+                          />
+                        )}
+                        {tile.type === "water" && (
+                          <div
+                            className="absolute inset-0 opacity-20 pointer-events-none"
+                            style={{
+                              backgroundImage:
+                                "repeating-linear-gradient(160deg, transparent 0 5px, rgba(60,140,200,.25) 5px 6px)",
+                            }}
+                          />
+                        )}
+                        {tile.type === "stairs" && (
+                          <div
+                            className="absolute inset-0 opacity-25 pointer-events-none"
+                            style={{
+                              backgroundImage:
+                                "repeating-linear-gradient(0deg, transparent 0 6px, rgba(200,200,220,.12) 6px 7px)",
+                            }}
+                          />
+                        )}
+                        {tile.type === "door" && (
+                          <div className="absolute inset-[28%] rounded-sm border border-amber-800/40 bg-amber-900/15 pointer-events-none" />
+                        )}
+
+                        {/* Object abbreviation */}
+                        {tile.object && (
+                          <div
+                            className="absolute inset-0 flex items-center justify-center pointer-events-none select-none"
+                            style={{
+                              color: CATEGORY_COLOR[tile.object.category] ?? "#8B8B8B",
+                              opacity: 0.4,
+                              fontSize: 10,
+                              fontFamily: "monospace",
+                              fontWeight: 700,
+                            }}
+                          >
+                            {getObjectAbbr(tile.object.name)}
+                          </div>
+                        )}
+
+                        {/* Elevation indicator */}
+                        {tile.elevation != null && tile.elevation !== 0 && (
+                          <div
+                            className="absolute top-0 right-0.5 pointer-events-none select-none"
+                            style={{
+                              fontSize: 7,
+                              color: tile.elevation > 0 ? "#94A3B8" : "#F59E0B",
+                              opacity: 0.6,
+                              fontFamily: "monospace",
+                              lineHeight: 1,
+                              paddingTop: 1,
+                            }}
+                          >
+                            {tile.elevation > 0 ? "+" : ""}
+                            {tile.elevation}
+                          </div>
+                        )}
+
+                        {/* AoE overlay */}
+                        {aoeOverlays && aoeOverlays.length > 0 && (
+                          <div
+                            className="absolute inset-0 pointer-events-none"
+                            style={{
+                              backgroundColor: aoeOverlays[0].color,
+                              animation: "aoePulse 3s ease-in-out infinite",
+                            }}
+                          />
+                        )}
+
+                        {/* Movement range overlay (only when showing reachable) */}
+                        {isReach && !isDragTarget && (
+                          <div className="absolute inset-0 pointer-events-none bg-emerald-500/10 ring-1 ring-inset ring-emerald-600/20" />
+                        )}
+
+                        {/* Drag target highlight */}
+                        {isDragReachable && (
+                          <div className="absolute inset-0 pointer-events-none bg-emerald-400/30 ring-2 ring-inset ring-emerald-400/50" />
+                        )}
+                        {isDragUnreachable && (
+                          <div className="absolute inset-0 pointer-events-none bg-red-500/20 ring-1 ring-inset ring-red-500/40" />
+                        )}
+
+                        {/* Coordinate label on hover */}
+                        {isHoveredHere && (
+                          <div
+                            className="absolute bottom-0 left-0 pointer-events-none select-none"
+                            style={{
+                              fontSize: 7,
+                              color: "#9CA3AF",
+                              opacity: 0.6,
+                              fontFamily: "monospace",
+                              lineHeight: 1,
+                              paddingBottom: 1,
+                              paddingLeft: 2,
+                            }}
+                          >
+                            {formatGridPosition({ x, y })}
+                          </div>
+                        )}
+
+                        {/* Tile tooltip on hover */}
+                        {isHoveredHere && tileTooltipData && !isMeasuring && (
+                          <div
+                            className="absolute left-1/2 bottom-full mb-1 -translate-x-1/2 bg-gray-900 border border-gray-600/50 rounded-lg shadow-lg px-3 py-2 text-xs text-gray-200 whitespace-nowrap pointer-events-none"
+                            style={{ zIndex: 35 }}
+                          >
+                            {tileTooltipData.map((line, i) => (
+                              <div
+                                key={i}
+                                className={i > 0 ? "text-gray-400 mt-0.5" : "font-medium"}
+                              >
+                                {line}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  }),
+                )}
+              </div>
+
+              {/* ─── Layer 2: AoE center labels ─── */}
+              {aoeCenters.map(({ aoe }) => {
+                const left = aoe.center.x * (TILE_SIZE + TILE_GAP) + TILE_SIZE / 2;
+                const top = aoe.center.y * (TILE_SIZE + TILE_GAP) + TILE_SIZE / 2;
+                const sizeLabel = aoe.radius
+                  ? `${aoe.radius}ft`
+                  : aoe.length
+                    ? `${aoe.length}ft`
+                    : "";
+                return (
+                  <div
+                    key={`aoe-label-${aoe.id}`}
+                    className="absolute pointer-events-none select-none text-center"
+                    style={{
+                      left,
+                      top,
+                      transform: "translate(-50%, -50%)",
+                      zIndex: 19,
+                      fontSize: 8,
+                      color: aoe.color,
+                      textShadow: "0 0 4px rgba(0,0,0,0.8)",
+                      fontWeight: 700,
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {aoe.label}
+                    {sizeLabel && (
+                      <span style={{ opacity: 0.7, marginLeft: 2 }}>({sizeLabel})</span>
+                    )}
+                  </div>
+                );
+              })}
+
+              {/* ─── Layer 3: Measurement SVG overlay ─── */}
+              {measureLine && (
+                <svg
+                  className="absolute inset-0 pointer-events-none"
+                  style={{
+                    zIndex: 25,
+                    width: gridWidthPx,
+                    height: gridHeightPx,
+                  }}
+                >
+                  <line
+                    x1={measureLine.fromPx.x}
+                    y1={measureLine.fromPx.y}
+                    x2={measureLine.toPx.x}
+                    y2={measureLine.toPx.y}
+                    stroke="#60A5FA"
+                    strokeWidth={1.5}
+                    strokeDasharray="4 3"
+                    opacity={0.7}
+                  />
+                  <rect
+                    x={measureLine.midPx.x - 16}
+                    y={measureLine.midPx.y - 8}
+                    width={32}
+                    height={16}
+                    rx={4}
+                    fill="#1E293B"
+                    stroke="#3B82F6"
+                    strokeWidth={0.5}
+                    opacity={0.9}
+                  />
+                  <text
+                    x={measureLine.midPx.x}
+                    y={measureLine.midPx.y + 4}
+                    textAnchor="middle"
+                    fill="#93C5FD"
+                    fontSize={9}
+                    fontFamily="monospace"
+                  >
+                    {measureLine.dist}ft
+                  </text>
+                </svg>
               )}
 
-              {/* ─── Layer 2: Tokens ─── */}
+              {/* ─── Layer 4: Tokens (absolute positioned) ─── */}
               {tokens.map((c) => {
                 const isActive = c.id === activeId;
                 const isHL = c.id === highlightedCombatantId;
@@ -393,16 +993,62 @@ export function BattleMap({
                 const initials =
                   c.name.length <= 2 ? c.name.toUpperCase() : c.name.slice(0, 2).toUpperCase();
 
+                // Position calculation
+                const ds = dragStateRef.current;
+                const isDragging = ds.active && ds.combatantId === c.id;
+
+                let tokenLeft: number;
+                let tokenTop: number;
+
+                if (isDragging && ds.currentPixel && gridContainerRef.current) {
+                  // While dragging, follow cursor
+                  const rect = gridContainerRef.current.getBoundingClientRect();
+                  tokenLeft = (ds.currentPixel.x - rect.left) / zoom - size / 2;
+                  tokenTop = (ds.currentPixel.y - rect.top) / zoom - size / 2;
+                } else {
+                  // Normal position: center token in tile
+                  const tileSpanPx = c.span * TILE_SIZE + (c.span - 1) * TILE_GAP;
+                  tokenLeft = c.position.x * (TILE_SIZE + TILE_GAP) + tileSpanPx / 2 - size / 2;
+                  tokenTop = c.position.y * (TILE_SIZE + TILE_GAP) + tileSpanPx / 2 - size / 2;
+                }
+
+                // Check if token is in AoE for ring effect
+                const aoeColor = aoeTileSet.get(`${c.position.x},${c.position.y}`);
+
+                // Is this my token?
+                const isMyToken = myCombatant && c.id === myCombatant.id;
+                const canDrag = isMyTurn && isMyToken;
+
+                // Tooltip position: show above by default, below if near top
+                const showTooltipBelow = c.position.y <= 2;
+                const isHovered = hoveredTokenId === c.id;
+
                 return (
                   <div
                     key={`tk-${c.id}`}
                     data-combatant={c.id}
-                    className="flex flex-col items-center justify-center pointer-events-none"
+                    className="absolute flex items-center justify-center"
                     style={{
-                      gridRow: `${c.position.y + 1} / span ${c.span}`,
-                      gridColumn: `${c.position.x + 1} / span ${c.span}`,
-                      zIndex: isActive ? 22 : 20,
+                      left: tokenLeft,
+                      top: tokenTop,
+                      width: size,
+                      height: size,
+                      zIndex: isDragging ? 28 : isActive ? 22 : 20,
+                      transition: isDragging ? "none" : "left 300ms ease-out, top 300ms ease-out",
+                      cursor: canDrag ? "grab" : "default",
                     }}
+                    onMouseDown={(e) => {
+                      if (canDrag) handleDragStart(e, c);
+                    }}
+                    onTouchStart={(e) => {
+                      if (canDrag) handleDragStart(e, c);
+                    }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleTokenClick(c);
+                    }}
+                    onMouseEnter={() => setHoveredTokenId(c.id)}
+                    onMouseLeave={() => setHoveredTokenId(null)}
                   >
                     {/* Circle */}
                     <div
@@ -422,41 +1068,130 @@ export function BattleMap({
                           : isHL
                             ? `0 0 0 2px rgba(56,189,248,.6), 0 0 8px rgba(56,189,248,.25)`
                             : `0 2px 6px rgba(0,0,0,.5)`,
+                        outline: aoeColor ? `2px solid ${aoeColor}` : undefined,
+                        outlineOffset: aoeColor ? 1 : undefined,
                       }}
                     >
                       {initials}
                     </div>
 
-                    {/* Name label */}
-                    <div
-                      className="text-xs text-gray-400 truncate text-center leading-tight mt-px pointer-events-none"
-                      style={{ maxWidth: TILE_SIZE }}
-                    >
-                      {c.name}
-                    </div>
+                    {/* Hover Tooltip */}
+                    {isHovered &&
+                      !isDragging &&
+                      (() => {
+                        const tooltip = getTokenTooltipData(c);
+                        const hpPercent =
+                          tooltip.maxHP && tooltip.currentHP !== undefined
+                            ? Math.max(0, Math.min(100, (tooltip.currentHP / tooltip.maxHP) * 100))
+                            : null;
+                        const hpBarColor =
+                          hpPercent !== null
+                            ? hpPercent > 50
+                              ? "#22C55E"
+                              : hpPercent > 25
+                                ? "#EAB308"
+                                : "#EF4444"
+                            : null;
 
-                    {/* Conditions */}
-                    {c.conds.length > 0 && !isDead && (
-                      <div className="flex gap-px flex-wrap justify-center max-w-full">
-                        {c.conds.slice(0, 2).map((cond) => (
-                          <span
-                            key={cond}
-                            className="text-[6.5px] leading-none px-0.5 py-px rounded-sm bg-orange-900/80 text-orange-300 font-mono font-bold"
-                            title={cond}
+                        return (
+                          <div
+                            className="absolute left-1/2 -translate-x-1/2 bg-gray-900 border border-gray-600/50 rounded-lg shadow-lg px-3 py-2 text-xs min-w-[120px]"
+                            style={{
+                              zIndex: 30,
+                              ...(showTooltipBelow ? { top: size + 4 } : { bottom: size + 4 }),
+                            }}
                           >
-                            {condAbbr(cond)}
-                          </span>
-                        ))}
-                        {c.conds.length > 2 && (
-                          <span
-                            className="text-[6.5px] leading-none px-0.5 py-px rounded-sm bg-gray-700/80 text-gray-400 font-mono"
-                            title={c.conds.join(", ")}
-                          >
-                            +{c.conds.length - 2}
-                          </span>
-                        )}
-                      </div>
-                    )}
+                            {/* Name */}
+                            <div className="text-gray-100 font-medium mb-1 whitespace-nowrap">
+                              {c.name}
+                            </div>
+
+                            {/* HP bar */}
+                            {hpPercent !== null && (
+                              <div className="mb-1">
+                                <div className="flex items-center gap-1.5 mb-0.5">
+                                  <span className="text-gray-400">HP</span>
+                                  {/* Show exact numbers for players, hide for enemies */}
+                                  {tooltip.isPlayer ? (
+                                    <span className="text-gray-200 font-mono">
+                                      {tooltip.currentHP}/{tooltip.maxHP}
+                                    </span>
+                                  ) : (
+                                    <span className="text-gray-400 font-mono">
+                                      {hpPercent > 75
+                                        ? "Healthy"
+                                        : hpPercent > 50
+                                          ? "Wounded"
+                                          : hpPercent > 25
+                                            ? "Bloodied"
+                                            : hpPercent > 0
+                                              ? "Critical"
+                                              : "Down"}
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="w-full h-1.5 bg-gray-700 rounded-full overflow-hidden">
+                                  <div
+                                    className="h-full rounded-full transition-all"
+                                    style={{
+                                      width: `${hpPercent}%`,
+                                      backgroundColor: hpBarColor ?? "#666",
+                                    }}
+                                  />
+                                </div>
+                              </div>
+                            )}
+
+                            {/* AC */}
+                            {tooltip.ac !== undefined && (
+                              <div className="flex items-center gap-1.5 text-gray-400">
+                                <span>AC</span>
+                                <span className="text-gray-200 font-mono">{tooltip.ac}</span>
+                              </div>
+                            )}
+
+                            {/* Conditions */}
+                            {tooltip.conditionEntries.length > 0 && (
+                              <div className="mt-1 pt-1 border-t border-gray-700/50">
+                                {tooltip.conditionEntries.map((cond, i) => (
+                                  <div key={i} className="text-orange-400 flex items-center gap-1">
+                                    <span>{cond.name}</span>
+                                    {cond.duration != null && (
+                                      <span className="text-orange-600 text-[10px]">
+                                        ({cond.duration}
+                                        rd)
+                                      </span>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+
+                            {/* Concentration */}
+                            {tooltip.concentration && (
+                              <div className="mt-1 pt-1 border-t border-gray-700/50 text-purple-400">
+                                Concentrating: {tooltip.concentration.spellName}
+                              </div>
+                            )}
+
+                            {/* Movement remaining */}
+                            {tooltip.moveRemaining !== undefined && (
+                              <div className="mt-1 pt-1 border-t border-gray-700/50 text-gray-400">
+                                Movement:{" "}
+                                <span className="text-gray-200 font-mono">
+                                  {tooltip.moveRemaining}
+                                  ft
+                                </span>
+                              </div>
+                            )}
+
+                            {/* Grid position */}
+                            {tooltip.posLabel && (
+                              <div className="mt-1 text-gray-500 font-mono">{tooltip.posLabel}</div>
+                            )}
+                          </div>
+                        );
+                      })()}
                   </div>
                 );
               })}
