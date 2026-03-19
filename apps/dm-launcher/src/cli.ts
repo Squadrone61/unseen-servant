@@ -20,6 +20,9 @@ import {
   NATIVE_SKILL_TAVERN,
   NATIVE_SKILL_LEVEL_UP,
   NATIVE_SKILL_BATTLE_TACTICS,
+  NATIVE_SKILL_TRAVEL,
+  NATIVE_SKILL_TRAP,
+  NATIVE_SKILL_PUZZLE,
 } from "@unseen-servant/shared";
 
 declare const UNSEEN_VERSION: string;
@@ -49,6 +52,9 @@ const NATIVE_SKILLS: Record<string, string> = {
   tavern: NATIVE_SKILL_TAVERN,
   "level-up": NATIVE_SKILL_LEVEL_UP,
   "battle-tactics": NATIVE_SKILL_BATTLE_TACTICS,
+  travel: NATIVE_SKILL_TRAVEL,
+  trap: NATIVE_SKILL_TRAP,
+  puzzle: NATIVE_SKILL_PUZZLE,
 };
 
 function prompt(rl: readline.Interface, question: string): Promise<string> {
@@ -96,7 +102,10 @@ Use these slash commands for common DM workflows:
 - \`/loot-drop\` — Generate contextual loot for an encounter
 - \`/tavern\` — Generate a tavern or shop with NPCs, rumors, and atmosphere
 - \`/level-up\` — Level up assistant with growth narration
-- \`/battle-tactics\` — Monster AI tactical advisor (combat only, DM-only)`;
+- \`/battle-tactics\` — Monster AI tactical advisor (combat only, DM-only)
+- \`/travel\` — Overland travel with pace, encounters, and weather
+- \`/trap\` — Design a trap with detection, disarm, and effects
+- \`/puzzle\` — Design a puzzle with hints, solution, and resolution`;
 }
 
 export async function startCli(): Promise<void> {
@@ -230,6 +239,16 @@ export async function startCli(): Promise<void> {
         // Heroic Inspiration
         "mcp__unseen-servant__grant_inspiration",
         "mcp__unseen-servant__use_inspiration",
+        // Rest tools
+        "mcp__unseen-servant__short_rest",
+        "mcp__unseen-servant__long_rest",
+        // Death saves
+        "mcp__unseen-servant__death_save",
+        // Concentration
+        "mcp__unseen-servant__set_concentration",
+        "mcp__unseen-servant__break_concentration",
+        // Temp HP
+        "mcp__unseen-servant__set_temp_hp",
         // Inventory & currency
         "mcp__unseen-servant__add_item",
         "mcp__unseen-servant__update_item",
@@ -247,6 +266,10 @@ export async function startCli(): Promise<void> {
         "mcp__unseen-servant__lookup_species",
         "mcp__unseen-servant__lookup_background",
         "mcp__unseen-servant__search_rules",
+        "mcp__unseen-servant__lookup_optional_feature",
+        "mcp__unseen-servant__lookup_action",
+        "mcp__unseen-servant__lookup_language",
+        "mcp__unseen-servant__lookup_disease",
         "mcp__unseen-servant__roll_dice",
         // Context management
         "mcp__unseen-servant__compact_history",
@@ -258,6 +281,7 @@ export async function startCli(): Promise<void> {
         "mcp__unseen-servant__read_campaign_file",
         "mcp__unseen-servant__list_campaign_files",
         "mcp__unseen-servant__end_session",
+        "mcp__unseen-servant__calculate_encounter_difficulty",
       ].join(","),
       "--",
       "Start the DM game loop. Call wait_for_message now and keep looping. ALL narrative output MUST go through send_response — never output text directly.",

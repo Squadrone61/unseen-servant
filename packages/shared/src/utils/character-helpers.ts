@@ -211,7 +211,6 @@ export function createInitialDynamicData(staticData: CharacterStaticData): Chara
     deathSaves: { successes: 0, failures: 0 },
     inventory: [],
     currency: { cp: 0, sp: 0, ep: 0, gp: 0, pp: 0 },
-    xp: 0,
     heroicInspiration: false,
   };
 }

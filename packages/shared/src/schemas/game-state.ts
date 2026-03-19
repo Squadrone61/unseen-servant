@@ -78,6 +78,14 @@ export const creatureSizeSchema = z.enum([
   "gargantuan",
 ]);
 
+// ─── Conditions ───
+
+export const conditionEntrySchema = z.object({
+  name: z.string(),
+  duration: z.number().optional(),
+  startRound: z.number().optional(),
+});
+
 // ─── Combatant ───
 
 export const combatantSchema = z.object({
@@ -97,7 +105,7 @@ export const combatantSchema = z.object({
   currentHP: z.number().optional(),
   tempHP: z.number().optional(),
   armorClass: z.number().optional(),
-  conditions: z.array(z.string()).optional(),
+  conditions: z.array(conditionEntrySchema).optional(),
 });
 
 // ─── Combat ───
@@ -178,7 +186,6 @@ export const stateChangeSchema = z.union([
     amount: z.number(),
   }),
   z.object({ type: z.literal("death_save"), target: z.string(), success: z.boolean() }),
-  z.object({ type: z.literal("xp_gain"), target: z.string(), amount: z.number() }),
   z.object({
     type: z.literal("item_add"),
     target: z.string(),
@@ -236,7 +243,6 @@ export const gameEventTypeSchema = z.enum([
   "item_added",
   "item_removed",
   "item_updated",
-  "xp_gained",
   "inspiration_granted",
   "inspiration_used",
   "ai_response",

@@ -215,8 +215,15 @@ export function CharacterSheet({ character }: CharacterSheetProps) {
                 <span
                   key={i}
                   className="bg-red-900/30 text-red-400 text-xs px-2 py-0.5 rounded-full border border-red-800/50"
+                  title={
+                    typeof c === "string"
+                      ? c
+                      : c.duration
+                        ? `${c.name} (${c.duration} rounds)`
+                        : c.name
+                  }
                 >
-                  {c}
+                  {typeof c === "string" ? c : c.name}
                 </span>
               ))}
             </div>

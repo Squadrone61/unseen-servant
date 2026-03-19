@@ -322,14 +322,15 @@ export class CampaignManager {
 
   /**
    * Get the combined startup context for the AI DM.
-   * Loads: manifest + system prompt + active context + latest session summary.
+   * Loads: manifest + system prompt + active context + world notes + DM planning +
+   * ALL session summaries (newest first) + character summaries.
    */
   getStartupContext(): string {
     if (!this.activeDir) throw new Error("No campaign loaded");
 
     const parts: string[] = [];
 
-    // 1. Campaign manifest summary (use cache)
+    // 1. Campaign manifest summary
     const manifest = this.cachedManifest;
     if (manifest) {
       parts.push(
@@ -340,7 +341,7 @@ export class CampaignManager {
       );
     }
 
-    // 2. System prompt
+    // 2. System prompt (DM instructions)
     const systemPromptPath = path.join(this.activeDir, "system-prompt.md");
     if (fs.existsSync(systemPromptPath)) {
       const prompt = fs.readFileSync(systemPromptPath, "utf-8").trim();
@@ -349,32 +350,72 @@ export class CampaignManager {
       }
     }
 
-    // 3. Active context (most important)
+    // 3. Active context (most important current state)
     const activeContextPath = path.join(this.activeDir, "active-context.md");
     if (fs.existsSync(activeContextPath)) {
       const ctx = fs.readFileSync(activeContextPath, "utf-8").trim();
       if (ctx) {
-        parts.push(ctx);
+        parts.push(`## Current State\n\n${ctx}`);
       }
     }
 
-    // 4. Latest session summary
+    // 4. World notes
+    const worldNotes: string[] = [];
+    const worldFiles: Array<{ label: string; file: string }> = [
+      { label: "NPCs", file: "world/npcs.md" },
+      { label: "Locations", file: "world/locations.md" },
+      { label: "Quests", file: "world/quests.md" },
+      { label: "Factions", file: "world/factions.md" },
+      { label: "Notable Items", file: "world/items.md" },
+    ];
+    for (const { label, file } of worldFiles) {
+      const filePath = path.join(this.activeDir, file);
+      if (fs.existsSync(filePath)) {
+        const content = fs.readFileSync(filePath, "utf-8").trim();
+        if (content && !content.includes("_No ") && !content.includes("_no ")) {
+          worldNotes.push(`### ${label}\n${content}`);
+        }
+      }
+    }
+    if (worldNotes.length > 0) {
+      parts.push(`## World Notes\n\n${worldNotes.join("\n\n")}`);
+    }
+
+    // 5. DM Planning notes (private — never reveal to players)
+    const storyArcPath = path.join(this.activeDir, "dm", "story-arc.md");
+    if (fs.existsSync(storyArcPath)) {
+      const arc = fs.readFileSync(storyArcPath, "utf-8").trim();
+      if (arc) {
+        parts.push(`## DM Planning (PRIVATE — never reveal to players)\n\n${arc}`);
+      }
+    }
+
+    // 6. ALL session summaries (newest first)
     const sessionsDir = path.join(this.activeDir, "sessions");
     if (fs.existsSync(sessionsDir)) {
       const sessionFiles = fs
         .readdirSync(sessionsDir)
         .filter((f) => f.endsWith(".md"))
-        .sort();
+        .sort()
+        .reverse(); // newest first
       if (sessionFiles.length > 0) {
-        const latestPath = path.join(sessionsDir, sessionFiles[sessionFiles.length - 1]);
-        const summary = fs.readFileSync(latestPath, "utf-8").trim();
-        if (summary) {
-          parts.push(`## Previous Session Summary\n\n${summary}`);
+        const sessionSummaries: string[] = [];
+        for (const file of sessionFiles) {
+          const sessionPath = path.join(sessionsDir, file);
+          const summary = fs.readFileSync(sessionPath, "utf-8").trim();
+          if (summary) {
+            // Extract session number from filename (session-001.md → 1)
+            const num = parseInt(file.replace("session-", "").replace(".md", ""), 10);
+            sessionSummaries.push(`### Session ${num || file}\n${summary}`);
+          }
+        }
+        if (sessionSummaries.length > 0) {
+          parts.push(`## Session History (newest first)\n\n${sessionSummaries.join("\n\n")}`);
         }
       }
     }
 
-    // 5. Character summaries
+    // 7. Character summaries
     const charDir = path.join(this.activeDir, "characters");
     if (fs.existsSync(charDir)) {
       const charFiles = fs.readdirSync(charDir).filter((f) => f.endsWith(".json"));

@@ -113,7 +113,7 @@ function buildMockCombat(playerIsActive = true) {
         maxHP: 12,
         currentHP: 8,
         armorClass: 13,
-        conditions: ["poisoned"],
+        conditions: [{ name: "poisoned" }],
       },
       "npc-1": {
         id: "npc-1",
@@ -197,7 +197,6 @@ function buildCharacterUpdate(playerName: string, charName: string) {
         deathSaves: { successes: 0, failures: 0 },
         inventory: [],
         currency: { cp: 0, sp: 0, ep: 0, gp: 50, pp: 0 },
-        xp: 0,
       },
     },
   };

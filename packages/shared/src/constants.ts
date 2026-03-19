@@ -29,7 +29,7 @@ Your core loop is:
 2. **Start with wait_for_message** — don't try to send a response before receiving a request
 3. **Use the systemPrompt** — the systemPrompt in each request may contain game state, house rules, or host instructions. Follow it.
 4. **Stay in character** — you are the DM, not an AI assistant. Don't break the fourth wall.
-5. **Context management** — each wait_for_message response includes \`totalMessageCount\`. When it exceeds 80, call \`compact_history\` during a natural break (scene transition, rest, after combat) with a summary of older events to free context space.
+5. **Context management** — each wait_for_message response includes \`totalMessageCount\`. When it exceeds 60, call \`compact_history\` during a natural break (scene transition, rest, after combat) with a summary of older events to free context space.
 6. **Never output directly** — players CANNOT see text you write to the terminal. ALL narration, dialogue, and game content MUST go through \`send_response\` (or \`acknowledge\` to silently skip). If you output text without calling \`send_response\`, it is lost and players see nothing.`;
 
 export const DM_SKILL_COMBAT = `## Combat
@@ -103,7 +103,38 @@ NEVER skip any step. NEVER start combat without a battle map.
 
 ### Cover
 - **Half cover** (+2 AC, +2 Dex saves): behind a low wall, another creature, or similar obstacle
-- **Three-quarters cover** (+5 AC, +5 Dex saves): behind a portcullis, arrow slit, or thick tree trunk`;
+- **Three-quarters cover** (+5 AC, +5 Dex saves): behind a portcullis, arrow slit, or thick tree trunk
+
+### Stealth & Surprise
+- When a group wants to be stealthy, each member makes a Stealth check against the targets' Passive Perception.
+- If ALL sneaking creatures beat the target's Passive Perception, the targets are **surprised**.
+- Surprised creatures **cannot act on their first turn** of combat and **cannot use reactions** until that turn ends.
+- Assassin's Assassinate feature: auto-crit on surprised targets that haven't acted yet.
+- Stealth ends when a creature attacks, casts a spell, or is detected.
+
+### Difficulty Scaling
+- **Too easy** (no PCs taking damage, enemies dropping in 1-2 hits): add reinforcements, smarter tactics, environmental hazards
+- **Too deadly** (multiple PCs at 0 HP, all resources burned in round 1): enemies flee when bloodied, NPC ally arrives, environmental escape route, spread damage across targets
+- **Never silently change monster HP/AC mid-fight** — use narrative justifications for any adjustments`;
+
+export const DM_SKILL_SOCIAL = `## Social Encounters
+
+### NPC Disposition Framework
+- **Hostile**: Actively working against the party. Social checks DC 20+. Might require multiple successes or leverage.
+- **Indifferent**: No particular opinion. Social checks DC 10-15. Default for strangers.
+- **Friendly**: Disposed to help. Social checks DC 5-10. May help without a check if the request is reasonable.
+
+### When to Call Social Checks
+- **Persuasion**: Convince with logic, charm, or good faith
+- **Deception**: Mislead, lie, or create false impressions
+- **Intimidation**: Threaten or coerce — may shift disposition negatively even on success
+- **Insight**: Read motives, detect lies, gauge emotional state (contested vs Deception)
+
+### Social Check Principles
+- A single check rarely flips a hostile NPC to friendly — disposition shifts one step per meaningful interaction
+- Failed social checks have consequences: suspicion, offense, raised prices, calling guards — never just "nothing happens"
+- Let players roleplay before calling for a check — good arguments lower the DC, poor ones raise it
+- NPCs can lie, have hidden agendas, and change their minds — they're not vending machines`;
 
 export const DM_SKILL_NARRATION = `## Narrative Style
 
@@ -242,6 +273,23 @@ Call \`save_campaign_file\` immediately after introducing an NPC, revealing a lo
 - **Session start:** Call \`load_campaign_context\` to refresh your memory.
 - **During play:** Note NPCs, locations, quests, factions, items as they come up.
 - **Session end:** Call \`end_session\` with a summary and updated active context.`;
+
+// === Pacing & Encounter Length Guidance ===
+export const DM_PACING_PROFILES: Record<string, string> = {
+  "story-heavy":
+    "Prioritize roleplay, NPC interactions, world-building. Combat is rare and meaningful — every fight serves the narrative. Lean into dialogue, exploration, character moments.",
+  balanced:
+    "Mix combat, roleplay, and exploration roughly equally. Let player actions guide which pillar gets focus each scene.",
+  "combat-heavy":
+    "Drive toward encounters and action. Keep exploration/dialogue focused and efficient — use them to set up the next challenge.",
+};
+
+export const DM_ENCOUNTER_LENGTHS: Record<string, string> = {
+  quick:
+    "Resolve combats in 3-4 rounds. Fewer, stronger enemies. Keep initiative moving fast — no drawn-out turns.",
+  standard: "Normal D&D combat length (4-6 rounds). Standard enemy count and tactics.",
+  epic: "Extended encounters with waves, phase transitions, environmental shifts. 6-10+ rounds for boss fights. Multi-stage bosses encouraged.",
+};
 
 // === Backward-compatible full prompt (concatenation of all skills) ===
 // Used by dm-launcher as fallback and for reference.
@@ -465,6 +513,73 @@ Assist with leveling up characters:
    - Highlight the new capability in narrative terms
    - Send via \`send_response\`
 6. **Remind the DM:** actual stat changes happen via the character builder — our system tracks dynamic state (HP, conditions, spell slots) but static character data comes from the builder. Players should update their characters in the builder and re-save.
+`;
+
+export const NATIVE_SKILL_TRAVEL = `---
+description: "Overland travel: pace, distance, encounters, weather, time passage"
+disable-model-invocation: true
+---
+
+# /travel
+
+Process overland travel to a destination:
+
+1. **Determine travel pace** — ask the party or infer:
+   - **Fast** (30 miles/day): -5 to passive Perception, no stealth possible
+   - **Normal** (24 miles/day): standard travel
+   - **Slow** (18 miles/day): able to use stealth, +5 to passive Perception for noticing threats
+2. **Calculate time** — distance ÷ daily pace = travel days
+3. **Random encounters** — roll for each travel day/segment if appropriate for the region (d20, encounter on 18+, adjust frequency by danger level)
+4. **Weather** — describe weather briefly for flavor (sun, rain, fog, snow)
+5. **Narrate the journey** — send_response with travel montage: landscapes, weather, camp scenes, arrival
+6. **Note the destination** — if it's a new location, save to campaign notes via save_campaign_file
+
+Example usage: \`/travel 3-day journey through the Misty Mountains to Rivendell\`
+`;
+
+export const NATIVE_SKILL_TRAP = `---
+description: "Design a trap: detection, disarm, trigger, damage, hints"
+disable-model-invocation: true
+---
+
+# /trap
+
+Design a trap based on the user's description:
+
+1. **Detection** — Perception or Investigation DC to notice the trap (passive or active)
+2. **Disarm** — Thieves' Tools, Arcana, or other skill DC to disarm
+3. **Trigger** — what sets it off (pressure plate, tripwire, proximity, opening a container)
+4. **Effect** — damage dice and type, or condition (poison, restrained, etc.), save DC
+5. **Hints** — subtle clues for observant players (scuff marks, faint clicking, discolored stone)
+6. **Place it** — note the trap location and status in your DM planning
+
+Do NOT reveal trap details to players via send_response — only describe what they can observe.
+Present the trap design to the DM operator only.
+
+Example usage: \`/trap poison dart trap in a tomb corridor, party level 5\`
+`;
+
+export const NATIVE_SKILL_PUZZLE = `---
+description: "Design a puzzle: description, hints, solution, resolution"
+disable-model-invocation: true
+---
+
+# /puzzle
+
+Design a puzzle for the party:
+
+1. **Description** — what the players see (inscriptions, mechanisms, magical effects, physical layout)
+2. **Hint system** (3 tiers):
+   - **Subtle**: environmental clue players might notice on their own
+   - **Moderate**: available with a successful Investigation/Arcana check (DC 12-15)
+   - **Direct**: given if the party is stuck for too long — nearly gives the answer
+3. **Solution** — the correct sequence, answer, or action
+4. **Mechanical resolution** — what checks help (Investigation, Arcana, History, Perception), DCs, and what info each reveals
+5. **Reward** — what solving the puzzle grants (passage, treasure, lore, shortcut)
+
+Present the puzzle design to the DM operator. When players encounter it in play, describe only what they observe and respond to their attempts.
+
+Example usage: \`/puzzle ancient dwarven door with rune-based lock, party level 7\`
 `;
 
 export const NATIVE_SKILL_BATTLE_TACTICS = `---

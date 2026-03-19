@@ -61,6 +61,14 @@ export interface GridPosition {
 
 export type CreatureSize = "tiny" | "small" | "medium" | "large" | "huge" | "gargantuan";
 
+// ─── Conditions ───
+
+export interface ConditionEntry {
+  name: string;
+  duration?: number;
+  startRound?: number;
+}
+
 // ─── Combatant ───
 // Player combatants bind to CharacterDynamicData — HP, conditions, etc. are
 // read/written via the character entry. Only enemy/npc combatants carry
@@ -85,7 +93,8 @@ export interface Combatant {
   currentHP?: number;
   tempHP?: number;
   armorClass?: number;
-  conditions?: string[];
+  conditions?: ConditionEntry[];
+  concentratingOn?: { spellName: string; since?: number };
 }
 
 // ─── Combat ───
@@ -142,7 +151,6 @@ export type StateChange =
   | { type: "resource_use"; target: string; resource: string }
   | { type: "resource_restore"; target: string; resource: string; amount: number }
   | { type: "death_save"; target: string; success: boolean }
-  | { type: "xp_gain"; target: string; amount: number }
   | { type: "item_add"; target: string; item: string; quantity: number }
   | { type: "item_remove"; target: string; item: string; quantity: number }
   | { type: "item_update"; target: string; item: string; changes: string }
@@ -179,7 +187,6 @@ export type GameEventType =
   | "item_added"
   | "item_removed"
   | "item_updated"
-  | "xp_gained"
   | "inspiration_granted"
   | "inspiration_used"
   | "ai_response"

@@ -1,6 +1,8 @@
 // === Character Data Types ===
 // Structured to separate static (imported) data from dynamic (gameplay) data.
 
+import type { ConditionEntry } from "./game-state";
+
 export interface AbilityScores {
   strength: number;
   dexterity: number;
@@ -181,12 +183,12 @@ export interface CharacterDynamicData {
   spellSlotsUsed: SpellSlotLevel[];
   pactMagicSlots: SpellSlotLevel[]; // Warlock pact magic (tracked separately, recharges on short rest)
   resourcesUsed: Record<string, number>; // class resource usage keyed by name
-  conditions: string[]; // "poisoned", "stunned", etc.
+  conditions: ConditionEntry[]; // "poisoned", "stunned", etc.
   deathSaves: DeathSaves;
   inventory: InventoryItem[];
   currency: Currency;
-  xp: number;
   heroicInspiration: boolean;
+  concentratingOn?: { spellName: string; since?: number };
 }
 
 /**

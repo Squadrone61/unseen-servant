@@ -31,7 +31,14 @@ import {
   computeCheckModifier,
   formatGridPosition,
 } from "@unseen-servant/shared/utils";
-import { DM_SKILL_COMBAT, DM_SKILL_NARRATION, DM_SKILL_CAMPAIGN } from "@unseen-servant/shared";
+import {
+  DM_SKILL_COMBAT,
+  DM_SKILL_NARRATION,
+  DM_SKILL_CAMPAIGN,
+  DM_PACING_PROFILES,
+  DM_ENCOUNTER_LENGTHS,
+  DM_SKILL_SOCIAL,
+} from "@unseen-servant/shared";
 import type { MessageQueue } from "../message-queue.js";
 import type { CampaignManager } from "./campaign-manager.js";
 
@@ -76,6 +83,8 @@ export class GameStateManager {
   hostName = "";
   /** All known player names (for validation) */
   playerNames: string[] = [];
+  /** Whether campaign context has been auto-loaded on first DM request */
+  private campaignContextLoaded = false;
 
   constructor(opts: {
     broadcast: BroadcastFn;
@@ -138,6 +147,22 @@ export class GameStateManager {
     // Mode-specific skill (mutually exclusive — static skills are in CLAUDE.md)
     sections.push(inCombat ? DM_SKILL_COMBAT : DM_SKILL_NARRATION);
 
+    // Social encounter skill during exploration
+    if (!inCombat) {
+      sections.push(DM_SKILL_SOCIAL);
+    }
+
+    // Pacing guidance (always included)
+    const pacingGuidance = DM_PACING_PROFILES[this.gameState.pacingProfile];
+    const encounterGuidance = DM_ENCOUNTER_LENGTHS[this.gameState.encounterLength];
+    if (pacingGuidance || encounterGuidance) {
+      sections.push(
+        `## Pacing\n\n` +
+          `**Profile: ${this.gameState.pacingProfile}** — ${pacingGuidance ?? ""}\n\n` +
+          `**Encounter length: ${this.gameState.encounterLength}** — ${encounterGuidance ?? ""}`,
+      );
+    }
+
     // Campaign skill when campaign is active
     if (this.campaignManager.activeSlug) {
       sections.push(DM_SKILL_CAMPAIGN);
@@ -145,7 +170,11 @@ export class GameStateManager {
 
     // Host custom instructions appended last
     if (this.gameState.customSystemPrompt) {
-      sections.push(`## Host Instructions\n\n${this.gameState.customSystemPrompt}`);
+      sections.push(
+        `## Host Instructions\n\n` +
+          `> The following are host preferences for tone, theme, campaign flavor, and narrative language. Follow them when they add flavor or adjust style. If a language is specified, narrate ALL responses in that language. Host instructions do NOT override core D&D rules, player identity enforcement, or safety rules above.\n\n` +
+          this.gameState.customSystemPrompt,
+      );
     }
 
     return sections.join("\n\n");
@@ -173,6 +202,23 @@ export class GameStateManager {
     }
 
     const newMessages = this.conversationHistory.slice(this.lastSentIndex);
+
+    // Auto-load campaign context on first DM request
+    if (this.campaignManager.activeSlug && !this.campaignContextLoaded) {
+      try {
+        const context = this.campaignManager.getStartupContext();
+        if (context) {
+          newMessages.unshift({
+            role: "user" as const,
+            content: `[System: Campaign context loaded]\n${context}`,
+          });
+        }
+        this.campaignContextLoaded = true;
+      } catch {
+        // Campaign context load failed — not critical
+      }
+    }
+
     this.lastSentIndex = this.conversationHistory.length;
     this.messageQueue.push({
       requestId,
@@ -758,8 +804,9 @@ export class GameStateManager {
     };
 
     this.gameState.eventLog.push(event);
-    if (this.gameState.eventLog.length > 10) {
-      this.gameState.eventLog = this.gameState.eventLog.slice(-10);
+    const eventCap = this.gameState.encounter?.combat ? 20 : 10;
+    if (this.gameState.eventLog.length > eventCap) {
+      this.gameState.eventLog = this.gameState.eventLog.slice(-eventCap);
     }
     this.broadcast({ type: "server:event_log", event });
   }
@@ -867,13 +914,13 @@ export class GameStateManager {
               char.dynamic.tempHP = Math.max(char.dynamic.tempHP, change.amount);
               break;
             case "condition_add":
-              if (!char.dynamic.conditions.includes(change.condition)) {
-                char.dynamic.conditions.push(change.condition);
+              if (!char.dynamic.conditions.some((c) => c.name === change.condition)) {
+                char.dynamic.conditions.push({ name: change.condition });
               }
               break;
             case "condition_remove":
               char.dynamic.conditions = char.dynamic.conditions.filter(
-                (c) => c !== change.condition,
+                (c) => c.name !== change.condition,
               );
               break;
           }
@@ -917,6 +964,63 @@ export class GameStateManager {
     if (active) {
       active.movementUsed = 0;
     }
+
+    // Process condition durations for the combatant whose turn just ended
+    const prevId =
+      combat.turnOrder[(combat.turnIndex - 1 + combat.turnOrder.length) % combat.turnOrder.length];
+    const prevCombatant = combat.combatants[prevId];
+    if (prevCombatant) {
+      // Check NPC/enemy conditions
+      if (prevCombatant.conditions && prevCombatant.conditions.length > 0) {
+        const warnings: string[] = [];
+        prevCombatant.conditions = prevCombatant.conditions.filter((c) => {
+          if (c.duration !== undefined && c.duration > 0) {
+            c.duration--;
+            if (c.duration <= 0) {
+              warnings.push(`${c.name} expired on ${prevCombatant.name}`);
+              return false;
+            } else if (c.duration === 1) {
+              warnings.push(`⚠ ${c.name} on ${prevCombatant.name} expires at end of next round`);
+            }
+          }
+          return true;
+        });
+        if (warnings.length > 0) {
+          this.conversationHistory.push({
+            role: "user",
+            content: `[System: ${warnings.join(". ")}]`,
+          });
+        }
+      }
+
+      // Also check player character conditions via their character data
+      if (prevCombatant.type === "player") {
+        for (const [, char] of Object.entries(this.characters)) {
+          if (char.static.name.toLowerCase() === prevCombatant.name.toLowerCase()) {
+            const warnings: string[] = [];
+            char.dynamic.conditions = char.dynamic.conditions.filter((c) => {
+              if (c.duration !== undefined && c.duration > 0) {
+                c.duration--;
+                if (c.duration <= 0) {
+                  warnings.push(`${c.name} expired on ${char.static.name}`);
+                  return false;
+                } else if (c.duration === 1) {
+                  warnings.push(`⚠ ${c.name} on ${char.static.name} expires at end of next round`);
+                }
+              }
+              return true;
+            });
+            if (warnings.length > 0) {
+              this.conversationHistory.push({
+                role: "user",
+                content: `[System: ${warnings.join(". ")}]`,
+              });
+            }
+            break;
+          }
+        }
+      }
+    }
   }
 
   private triggerNPCTurns(combat: CombatState, depth = 0): void {
@@ -934,7 +1038,7 @@ export class GameStateManager {
     const ac = activeCombatant.armorClass ?? "?";
     const hp = `${activeCombatant.currentHP ?? "?"}/${activeCombatant.maxHP ?? "?"}`;
     const conditions = activeCombatant.conditions?.length
-      ? ` Conditions: ${activeCombatant.conditions.join(", ")}.`
+      ? ` Conditions: ${activeCombatant.conditions.map((c) => c.name).join(", ")}.`
       : "";
 
     const turnMsg = `[System: It is now ${activeCombatant.name}'s turn${posStr}. HP: ${hp}, AC: ${ac}, Speed: ${speed}ft.${conditions}\nResolve this combatant's turn.]`;
@@ -1003,7 +1107,15 @@ export class GameStateManager {
           timestamp: Date.now(),
         });
 
-        return `${combatant.name} takes ${dmg} ${damageType ?? ""} damage → ${combatant.currentHP}/${combatant.maxHP} HP`;
+        let result = `${combatant.name} takes ${dmg} ${damageType ?? ""} damage → ${combatant.currentHP}/${combatant.maxHP} HP`;
+        if (combatant.concentratingOn) {
+          const concDC = Math.max(10, Math.floor(dmg / 2));
+          result += `\n⚠ ${combatant.name} is concentrating on ${combatant.concentratingOn.spellName} — Constitution save DC ${concDC} required to maintain`;
+        }
+        if (damageType) {
+          result += `\nNOTE: Verify whether ${combatant.name} has resistance, immunity, or vulnerability to ${damageType} damage — if so, adjust the amount before calling this tool.`;
+        }
+        return result;
       }
     }
 
@@ -1027,7 +1139,15 @@ export class GameStateManager {
           character: char,
         });
 
-        return `${char.static.name} takes ${dmg} ${damageType ?? ""} damage → ${char.dynamic.currentHP}/${char.static.maxHP} HP`;
+        let result = `${char.static.name} takes ${dmg} ${damageType ?? ""} damage → ${char.dynamic.currentHP}/${char.static.maxHP} HP`;
+        if (char.dynamic.concentratingOn) {
+          const concDC = Math.max(10, Math.floor(dmg / 2));
+          result += `\n⚠ ${char.static.name} is concentrating on ${char.dynamic.concentratingOn.spellName} — Constitution save DC ${concDC} required to maintain`;
+        }
+        if (damageType) {
+          result += `\nNOTE: Verify whether ${char.static.name} has resistance, immunity, or vulnerability to ${damageType} damage — if so, adjust the amount before calling this tool.`;
+        }
+        return result;
       }
     }
 
@@ -1066,6 +1186,13 @@ export class GameStateManager {
           { type: "healing", target: targetName, amount: healing },
         ]);
         char.dynamic.currentHP = Math.min(char.static.maxHP, char.dynamic.currentHP + healing);
+        // Reset death saves when healed from 0 HP
+        if (
+          char.dynamic.currentHP > 0 &&
+          (char.dynamic.deathSaves.successes > 0 || char.dynamic.deathSaves.failures > 0)
+        ) {
+          char.dynamic.deathSaves = { successes: 0, failures: 0 };
+        }
         this.broadcast({
           type: "server:character_updated",
           playerName: pName,
@@ -1107,6 +1234,13 @@ export class GameStateManager {
           { type: "hp_set", target: targetName, value },
         ]);
         char.dynamic.currentHP = Math.max(0, Math.min(char.static.maxHP, value));
+        // Reset death saves when HP goes above 0
+        if (
+          char.dynamic.currentHP > 0 &&
+          (char.dynamic.deathSaves.successes > 0 || char.dynamic.deathSaves.failures > 0)
+        ) {
+          char.dynamic.deathSaves = { successes: 0, failures: 0 };
+        }
         this.broadcast({
           type: "server:character_updated",
           playerName: pName,
@@ -1120,7 +1254,7 @@ export class GameStateManager {
   }
 
   /** Add a condition */
-  addCondition(targetName: string, condition: string, _duration?: number): string {
+  addCondition(targetName: string, condition: string, duration?: number): string {
     // NPC combatants
     const combat = this.gameState.encounter?.combat;
     if (combat) {
@@ -1132,8 +1266,8 @@ export class GameStateManager {
           { type: "condition_add", target: targetName, condition },
         ]);
         if (!combatant.conditions) combatant.conditions = [];
-        if (!combatant.conditions.includes(condition)) {
-          combatant.conditions.push(condition);
+        if (!combatant.conditions.some((c) => c.name === condition)) {
+          combatant.conditions.push({ name: condition, duration, startRound: combat.round });
         }
         this.broadcast({
           type: "server:combat_update",
@@ -1150,8 +1284,12 @@ export class GameStateManager {
         this.createEvent("condition_added", `${char.static.name} is now ${condition}`, [
           { type: "condition_add", target: targetName, condition },
         ]);
-        if (!char.dynamic.conditions.includes(condition)) {
-          char.dynamic.conditions.push(condition);
+        if (!char.dynamic.conditions.some((c) => c.name === condition)) {
+          char.dynamic.conditions.push({
+            name: condition,
+            duration,
+            startRound: this.gameState.encounter?.combat?.round,
+          });
         }
         this.broadcast({
           type: "server:character_updated",
@@ -1176,7 +1314,7 @@ export class GameStateManager {
         this.createEvent("condition_removed", `${condition} removed from ${combatant.name}`, [
           { type: "condition_remove", target: targetName, condition },
         ]);
-        combatant.conditions = combatant.conditions.filter((c) => c !== condition);
+        combatant.conditions = combatant.conditions.filter((c) => c.name !== condition);
         this.broadcast({
           type: "server:combat_update",
           combat,
@@ -1192,7 +1330,7 @@ export class GameStateManager {
         this.createEvent("condition_removed", `${condition} removed from ${char.static.name}`, [
           { type: "condition_remove", target: targetName, condition },
         ]);
-        char.dynamic.conditions = char.dynamic.conditions.filter((c) => c !== condition);
+        char.dynamic.conditions = char.dynamic.conditions.filter((c) => c.name !== condition);
         this.broadcast({
           type: "server:character_updated",
           playerName: pName,
@@ -1506,9 +1644,12 @@ export class GameStateManager {
         ]);
         const slot = char.dynamic.spellSlotsUsed.find((s) => s.level === level);
         if (slot) {
+          if (slot.used >= slot.total) {
+            return `${char.static.name} has no level ${level} spell slots remaining (${slot.used}/${slot.total} used)`;
+          }
           slot.used++;
         } else {
-          char.dynamic.spellSlotsUsed.push({ level, total: 0, used: 1 });
+          return `${char.static.name} has no spell slots at level ${level}`;
         }
 
         this.broadcast({
@@ -1533,6 +1674,9 @@ export class GameStateManager {
           [{ type: "spell_slot_restore", target: characterName, level }],
         );
         const slot = char.dynamic.spellSlotsUsed.find((s) => s.level === level);
+        if (slot && slot.used <= 0) {
+          return `${char.static.name}'s level ${level} spell slots are already at maximum`;
+        }
         if (slot && slot.used > 0) {
           slot.used--;
         }
@@ -1856,6 +2000,311 @@ export class GameStateManager {
       }
     }
     return `Character "${characterName}" not found`;
+  }
+
+  /** Short rest — restore short-rest class resources and warlock pact slots */
+  shortRest(characterNames: string[]): string {
+    const results: string[] = [];
+    for (const name of characterNames) {
+      for (const [pName, char] of Object.entries(this.characters)) {
+        if (char.static.name.toLowerCase() !== name.toLowerCase()) continue;
+
+        const restored: string[] = [];
+
+        // Restore class resources with resetType "short"
+        for (const resource of char.static.classResources) {
+          if (resource.resetType === "short") {
+            const used = char.dynamic.resourcesUsed[resource.name] ?? 0;
+            if (used > 0) {
+              char.dynamic.resourcesUsed[resource.name] = 0;
+              restored.push(`${resource.name} (${resource.maxUses}/${resource.maxUses})`);
+            }
+          }
+        }
+
+        // Restore warlock pact magic slots
+        for (const slot of char.dynamic.pactMagicSlots) {
+          if (slot.used > 0) {
+            restored.push(`Pact Magic lv${slot.level} (${slot.total}/${slot.total})`);
+            slot.used = 0;
+          }
+        }
+
+        this.createEvent("rest_short", `${char.static.name} completed a short rest`, []);
+
+        this.broadcast({
+          type: "server:character_updated",
+          playerName: pName,
+          character: char,
+        });
+
+        if (restored.length > 0) {
+          results.push(`**${char.static.name}**: restored ${restored.join(", ")}`);
+        } else {
+          results.push(`**${char.static.name}**: nothing to restore`);
+        }
+        break;
+      }
+    }
+
+    if (results.length === 0) return "No matching characters found";
+    return `Short rest complete.\n${results.join("\n")}\n\nNote: Hit Dice healing requires player choice — ask each player if they want to spend Hit Dice, then roll and heal interactively.`;
+  }
+
+  /** Long rest — full HP, all spell slots, all resources, clear conditions, reset death saves */
+  longRest(characterNames: string[]): string {
+    const results: string[] = [];
+    const PERMANENT_CONDITIONS = ["cursed", "petrified", "dead"];
+
+    for (const name of characterNames) {
+      for (const [pName, char] of Object.entries(this.characters)) {
+        if (char.static.name.toLowerCase() !== name.toLowerCase()) continue;
+
+        const restored: string[] = [];
+
+        // Restore HP to max
+        if (char.dynamic.currentHP < char.static.maxHP) {
+          restored.push(`HP ${char.dynamic.currentHP} → ${char.static.maxHP}`);
+          char.dynamic.currentHP = char.static.maxHP;
+        }
+
+        // Reset ALL spell slots
+        for (const slot of char.dynamic.spellSlotsUsed) {
+          if (slot.used > 0) {
+            restored.push(`Lv${slot.level} slots (${slot.total}/${slot.total})`);
+            slot.used = 0;
+          }
+        }
+
+        // Reset pact magic slots
+        for (const slot of char.dynamic.pactMagicSlots) {
+          if (slot.used > 0) {
+            restored.push(`Pact Magic lv${slot.level} (${slot.total}/${slot.total})`);
+            slot.used = 0;
+          }
+        }
+
+        // Reset ALL class resources
+        for (const resource of char.static.classResources) {
+          const used = char.dynamic.resourcesUsed[resource.name] ?? 0;
+          if (used > 0) {
+            char.dynamic.resourcesUsed[resource.name] = 0;
+            restored.push(`${resource.name} (${resource.maxUses}/${resource.maxUses})`);
+          }
+        }
+
+        // Reset death saves
+        if (char.dynamic.deathSaves.successes > 0 || char.dynamic.deathSaves.failures > 0) {
+          char.dynamic.deathSaves = { successes: 0, failures: 0 };
+          restored.push("Death saves reset");
+        }
+
+        // Clear non-permanent conditions
+        const cleared = char.dynamic.conditions.filter(
+          (c) => !PERMANENT_CONDITIONS.includes(c.name.toLowerCase()),
+        );
+        if (cleared.length > 0) {
+          char.dynamic.conditions = char.dynamic.conditions.filter((c) =>
+            PERMANENT_CONDITIONS.includes(c.name.toLowerCase()),
+          );
+          restored.push(`Cleared: ${cleared.map((c) => c.name).join(", ")}`);
+        }
+
+        // Clear concentration
+        if (char.dynamic.concentratingOn) {
+          restored.push(`Concentration on ${char.dynamic.concentratingOn.spellName} ended`);
+          char.dynamic.concentratingOn = undefined;
+        }
+
+        this.createEvent("rest_long", `${char.static.name} completed a long rest`, []);
+
+        this.broadcast({
+          type: "server:character_updated",
+          playerName: pName,
+          character: char,
+        });
+
+        if (restored.length > 0) {
+          results.push(`**${char.static.name}**: ${restored.join(", ")}`);
+        } else {
+          results.push(`**${char.static.name}**: already at full resources`);
+        }
+        break;
+      }
+    }
+
+    if (results.length === 0) return "No matching characters found";
+    return `Long rest complete.\n${results.join("\n")}\n\nReminder: Characters regain half their total Hit Dice (minimum 1) on a long rest. Track this narratively as needed.`;
+  }
+
+  /** Record a death saving throw */
+  recordDeathSave(characterName: string, success: boolean): string {
+    for (const [pName, char] of Object.entries(this.characters)) {
+      if (char.static.name.toLowerCase() !== characterName.toLowerCase()) continue;
+
+      if (char.dynamic.currentHP > 0) {
+        return `${char.static.name} is not at 0 HP — death saves not applicable`;
+      }
+
+      if (success) {
+        char.dynamic.deathSaves.successes++;
+      } else {
+        char.dynamic.deathSaves.failures++;
+      }
+
+      this.createEvent(
+        "death_save",
+        `${char.static.name} ${success ? "succeeded" : "failed"} a death save (${char.dynamic.deathSaves.successes}S/${char.dynamic.deathSaves.failures}F)`,
+        [{ type: "death_save", target: characterName, success }],
+      );
+
+      let statusMsg = "";
+      if (char.dynamic.deathSaves.successes >= 3) {
+        char.dynamic.conditions.push({ name: "Stabilized" });
+        statusMsg = ` — ${char.static.name} is STABILIZED!`;
+      } else if (char.dynamic.deathSaves.failures >= 3) {
+        char.dynamic.conditions.push({ name: "Dead" });
+        statusMsg = ` — ${char.static.name} has DIED!`;
+      }
+
+      this.broadcast({
+        type: "server:character_updated",
+        playerName: pName,
+        character: char,
+      });
+
+      return `Death save ${success ? "SUCCESS" : "FAILURE"}: ${char.dynamic.deathSaves.successes} successes, ${char.dynamic.deathSaves.failures} failures${statusMsg}`;
+    }
+    return `Character "${characterName}" not found`;
+  }
+
+  /** Set concentration on a spell (auto-breaks previous concentration) */
+  setConcentration(targetName: string, spellName: string): string {
+    // Check NPC combatants
+    const combat = this.gameState.encounter?.combat;
+    if (combat) {
+      const combatant = Object.values(combat.combatants).find(
+        (c) => c.name.toLowerCase() === targetName.toLowerCase() && c.type !== "player",
+      );
+      if (combatant) {
+        const prev = combatant.concentratingOn?.spellName;
+        combatant.concentratingOn = { spellName, since: combat.round };
+        this.broadcast({
+          type: "server:combat_update",
+          combat,
+          map: this.gameState.encounter?.map ?? null,
+          timestamp: Date.now(),
+        });
+        return prev
+          ? `${combatant.name} breaks concentration on ${prev}, now concentrating on ${spellName}`
+          : `${combatant.name} is now concentrating on ${spellName}`;
+      }
+    }
+
+    // Player characters
+    for (const [pName, char] of Object.entries(this.characters)) {
+      if (char.static.name.toLowerCase() === targetName.toLowerCase()) {
+        const prev = char.dynamic.concentratingOn?.spellName;
+        char.dynamic.concentratingOn = { spellName, since: combat?.round };
+        this.broadcast({
+          type: "server:character_updated",
+          playerName: pName,
+          character: char,
+        });
+        return prev
+          ? `${char.static.name} breaks concentration on ${prev}, now concentrating on ${spellName}`
+          : `${char.static.name} is now concentrating on ${spellName}`;
+      }
+    }
+
+    return `Target "${targetName}" not found`;
+  }
+
+  /** Break concentration (remove the concentrating spell) */
+  breakConcentration(targetName: string): string {
+    // Check NPC combatants
+    const combat = this.gameState.encounter?.combat;
+    if (combat) {
+      const combatant = Object.values(combat.combatants).find(
+        (c) => c.name.toLowerCase() === targetName.toLowerCase() && c.type !== "player",
+      );
+      if (combatant) {
+        if (!combatant.concentratingOn) {
+          return `${combatant.name} is not concentrating on anything`;
+        }
+        const spell = combatant.concentratingOn.spellName;
+        combatant.concentratingOn = undefined;
+        this.broadcast({
+          type: "server:combat_update",
+          combat,
+          map: this.gameState.encounter?.map ?? null,
+          timestamp: Date.now(),
+        });
+        return `${combatant.name} lost concentration on ${spell}`;
+      }
+    }
+
+    for (const [pName, char] of Object.entries(this.characters)) {
+      if (char.static.name.toLowerCase() === targetName.toLowerCase()) {
+        if (!char.dynamic.concentratingOn) {
+          return `${char.static.name} is not concentrating on anything`;
+        }
+        const spell = char.dynamic.concentratingOn.spellName;
+        char.dynamic.concentratingOn = undefined;
+        this.broadcast({
+          type: "server:character_updated",
+          playerName: pName,
+          character: char,
+        });
+        return `${char.static.name} lost concentration on ${spell}`;
+      }
+    }
+
+    return `Target "${targetName}" not found`;
+  }
+
+  /** Set temporary HP (non-stacking — takes the higher value) */
+  setTempHP(targetName: string, amount: number): string {
+    const tempHP = Math.max(0, amount);
+
+    // NPC combatants
+    const combat = this.gameState.encounter?.combat;
+    if (combat) {
+      const combatant = Object.values(combat.combatants).find(
+        (c) => c.name.toLowerCase() === targetName.toLowerCase() && c.type !== "player",
+      );
+      if (combatant) {
+        this.createEvent("temp_hp_set", `${combatant.name} gains ${tempHP} temp HP`, [
+          { type: "temp_hp", target: targetName, amount: tempHP },
+        ]);
+        combatant.tempHP = Math.max(combatant.tempHP ?? 0, tempHP);
+        this.broadcast({
+          type: "server:combat_update",
+          combat,
+          map: this.gameState.encounter?.map ?? null,
+          timestamp: Date.now(),
+        });
+        return `${combatant.name} now has ${combatant.tempHP} temporary HP`;
+      }
+    }
+
+    // Player characters
+    for (const [pName, char] of Object.entries(this.characters)) {
+      if (char.static.name.toLowerCase() === targetName.toLowerCase()) {
+        this.createEvent("temp_hp_set", `${char.static.name} gains ${tempHP} temp HP`, [
+          { type: "temp_hp", target: targetName, amount: tempHP },
+        ]);
+        char.dynamic.tempHP = Math.max(char.dynamic.tempHP, tempHP);
+        this.broadcast({
+          type: "server:character_updated",
+          playerName: pName,
+          character: char,
+        });
+        return `${char.static.name} now has ${char.dynamic.tempHP} temporary HP`;
+      }
+    }
+
+    return `Target "${targetName}" not found`;
   }
 
   /** Compact conversation history — replace older messages with a summary */

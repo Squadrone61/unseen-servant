@@ -636,4 +636,105 @@ export function registerGameTools(
       return { content: [{ type: "text" as const, text: result }] };
     },
   );
+
+  // ─── Rest Tools ───
+
+  server.tool(
+    "short_rest",
+    "Process a short rest for specified characters. Restores short-rest class resources and Warlock pact magic slots. Does NOT auto-heal — Hit Dice healing requires interactive player choice.",
+    {
+      character_names: z.array(z.string()).describe("Names of characters taking the short rest"),
+    },
+    async ({ character_names }) => {
+      const result = wsClient.gameStateManager.shortRest(character_names);
+      return { content: [{ type: "text" as const, text: result }] };
+    },
+  );
+
+  server.tool(
+    "long_rest",
+    "Process a long rest for specified characters. Restores full HP, all spell slots, all class resources, resets death saves, clears non-permanent conditions.",
+    {
+      character_names: z.array(z.string()).describe("Names of characters taking the long rest"),
+    },
+    async ({ character_names }) => {
+      const result = wsClient.gameStateManager.longRest(character_names);
+      return { content: [{ type: "text" as const, text: result }] };
+    },
+  );
+
+  // ─── Death Saves ───
+
+  server.tool(
+    "death_save",
+    "Record a death saving throw for a character at 0 HP. Tracks successes/failures, auto-stabilizes at 3 successes, marks dead at 3 failures.",
+    {
+      character_name: z.string().describe("Character name"),
+      success: z.boolean().describe("Whether the death save succeeded"),
+    },
+    async ({ character_name, success }) => {
+      const result = wsClient.gameStateManager.recordDeathSave(character_name, success);
+      return { content: [{ type: "text" as const, text: result }] };
+    },
+  );
+
+  // ─── Concentration ───
+
+  server.tool(
+    "set_concentration",
+    "Set a character or combatant as concentrating on a spell. Auto-breaks any previous concentration.",
+    {
+      target: z.string().describe("Name of the character or combatant"),
+      spell_name: z.string().describe("Name of the concentration spell"),
+    },
+    async ({ target, spell_name }) => {
+      const result = wsClient.gameStateManager.setConcentration(target, spell_name);
+      return { content: [{ type: "text" as const, text: result }] };
+    },
+  );
+
+  server.tool(
+    "break_concentration",
+    "Break a character or combatant's concentration, ending their concentration spell.",
+    {
+      target: z.string().describe("Name of the character or combatant"),
+    },
+    async ({ target }) => {
+      const result = wsClient.gameStateManager.breakConcentration(target);
+      return { content: [{ type: "text" as const, text: result }] };
+    },
+  );
+
+  // ─── Temp HP ───
+
+  server.tool(
+    "set_temp_hp",
+    "Set temporary HP for a character or combatant. Non-stacking: takes the higher of current temp HP and new amount.",
+    {
+      target: z.string().describe("Name of the character or combatant"),
+      amount: z.number().describe("Amount of temporary HP"),
+    },
+    async ({ target, amount }) => {
+      const result = wsClient.gameStateManager.setTempHP(target, amount);
+      return { content: [{ type: "text" as const, text: result }] };
+    },
+  );
+
+  // ─── Encounter Difficulty ───
+
+  server.tool(
+    "calculate_encounter_difficulty",
+    "Calculate encounter difficulty given party levels and monster CRs. Uses 2024 encounter building rules.",
+    {
+      party_levels: z.array(z.number()).describe("Array of party member levels"),
+      monster_crs: z
+        .array(z.string())
+        .describe("Array of monster CRs as strings (e.g., '1/4', '2', '5')"),
+    },
+    async ({ party_levels, monster_crs }) => {
+      const { calculateEncounterDifficulty } = await import("@unseen-servant/shared/utils");
+      const result = calculateEncounterDifficulty(party_levels, monster_crs);
+      return { content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }] };
+    },
+  );
 }

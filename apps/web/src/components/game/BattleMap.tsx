@@ -176,9 +176,11 @@ export function BattleMap({
         const char = Object.values(partyCharacters).find(
           (p) => p.static.name.toLowerCase() === c.name.toLowerCase(),
         );
-        return char?.dynamic.conditions ?? c.conditions ?? [];
+        const conditions = char?.dynamic.conditions ?? c.conditions ?? [];
+        return conditions.map((cond) => (typeof cond === "string" ? cond : cond.name));
       }
-      return c.conditions ?? [];
+      const conditions = c.conditions ?? [];
+      return conditions.map((cond) => (typeof cond === "string" ? cond : cond.name));
     },
     [partyCharacters],
   );

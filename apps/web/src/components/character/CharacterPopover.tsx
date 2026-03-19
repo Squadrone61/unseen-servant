@@ -85,7 +85,7 @@ export function CharacterPopover({ character, playerName, online }: CharacterPop
         <div className="mt-2 flex flex-wrap gap-1">
           {d.conditions.map((c, i) => (
             <span key={i} className="bg-red-900/30 text-red-400 text-xs px-1.5 py-0.5 rounded-full">
-              {c}
+              {typeof c === "string" ? c : c.name}
             </span>
           ))}
         </div>

@@ -11,6 +11,7 @@ import {
   gameEventSchema,
   pacingProfileSchema,
   encounterLengthSchema,
+  conditionEntrySchema,
 } from "./game-state";
 
 // === Auth schemas ===
@@ -193,11 +194,10 @@ export const characterDynamicDataSchema = z.object({
   spellSlotsUsed: z.array(spellSlotLevelSchema),
   pactMagicSlots: z.array(spellSlotLevelSchema).optional().default([]),
   resourcesUsed: z.record(z.string(), z.number()).optional().default({}),
-  conditions: z.array(z.string()),
+  conditions: z.array(conditionEntrySchema),
   deathSaves: deathSavesSchema,
   inventory: z.array(inventoryItemSchema),
   currency: currencySchema,
-  xp: z.number(),
   heroicInspiration: z.boolean().optional().default(false),
 });
 

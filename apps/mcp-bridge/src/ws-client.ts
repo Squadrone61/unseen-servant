@@ -670,7 +670,7 @@ export class WSClient {
             level: totalLevel,
             hp: `${char.dynamic.currentHP}/${char.static.maxHP}`,
             ac: char.static.armorClass,
-            conditions: char.dynamic.conditions,
+            conditions: char.dynamic.conditions.map((c) => c.name),
           };
         }
         return summary;
