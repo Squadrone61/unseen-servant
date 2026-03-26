@@ -775,26 +775,27 @@ function GameContent({ roomCode, playerName }: { roomCode: string; playerName: s
               </p>
               <div className="w-10 h-px bg-amber-500/25" />
 
-              {campaignConfigured && dmConnected ? (
-                <Button variant="outline" size="lg" onClick={handleStartStory}>
-                  <span>⚔</span>
-                  Begin the Adventure
-                </Button>
-              ) : (
-                <>
-                  <Button
-                    variant="outline"
-                    size="lg"
-                    onClick={() => setShowCampaignConfig(true)}
-                    disabled={!dmConnected}
-                  >
-                    Configure Campaign
+              {isHost &&
+                (campaignConfigured && dmConnected ? (
+                  <Button variant="outline" size="lg" onClick={handleStartStory}>
+                    <span>⚔</span>
+                    Begin the Adventure
                   </Button>
-                  {!dmConnected && (
-                    <p className="text-xs text-gray-600">Waiting for DM to connect...</p>
-                  )}
-                </>
-              )}
+                ) : (
+                  <>
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      onClick={() => setShowCampaignConfig(true)}
+                      disabled={!dmConnected}
+                    >
+                      Configure Campaign
+                    </Button>
+                    {!dmConnected && (
+                      <p className="text-xs text-gray-600">Waiting for DM to connect...</p>
+                    )}
+                  </>
+                ))}
             </div>
           )}
 

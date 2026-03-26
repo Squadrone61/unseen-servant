@@ -474,9 +474,13 @@ export class WSClient {
       // Send saved notes to all connected players
       this.sendAllPlayerNotes();
     } catch (e) {
-      console.error(
-        `[ws-client] Campaign configure error: ${e instanceof Error ? e.message : String(e)}`,
-      );
+      const errMsg = e instanceof Error ? e.message : String(e);
+      console.error(`[ws-client] Campaign configure error: ${errMsg}`);
+      this.broadcastViaWorker({
+        type: "server:error",
+        message: `Campaign configuration failed: ${errMsg}`,
+        code: "CAMPAIGN_CONFIG_FAILED",
+      });
     }
   }
 
