@@ -1,6 +1,7 @@
 export * from "./types/index";
 export * from "./schemas/index";
 export * from "./constants";
+export * from "./skills";
 export * from "./data/index";
 export * from "./builders/index";
 // Re-export 5etools utils (avoid conflicts with data/index getCasterMultiplier)

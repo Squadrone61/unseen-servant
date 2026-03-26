@@ -560,6 +560,10 @@ export function getClassResources(className: string): ClassResourceTemplate[] {
   return CLASS_RESOURCES[className.toLowerCase()] ?? [];
 }
 
+// ─── Fuzzy lookup ────────────────────────────────────────
+
+export { fuzzyLookup, type FuzzyResult } from "./fuzzy-lookup";
+
 // ─── Re-export types ───────────────────────────────────
 
 export type {

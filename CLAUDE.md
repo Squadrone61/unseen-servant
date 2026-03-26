@@ -144,7 +144,8 @@ pnpm deploy:web     # Deploy web only
 - `types/game-state.ts` — GameState, CombatState, GameEvent, EncounterState, CampaignJournal, MapTile (with TileObject, cover, elevation), AoEOverlay
 - `types/ai-actions.ts` — AI parsed action types
 - `schemas/messages.ts` — Zod schemas for runtime message validation
-- `constants.ts` — DM_SYSTEM_PROMPT (single source of truth), room limits, token limits
+- `constants.ts` — DM*SYSTEM_PROMPT (single source of truth), DM_SKILL*\* modules, room limits, token limits
+- `skills.ts` — Native Claude Code skill definitions (9 slash commands: recap, npc-voice, story-arc, loot-drop, tavern, battle-tactics, travel, trap, puzzle)
 - `utils/dice.ts` — Shared dice rolling (rollDie, rollDice, rollCheck, rollInitiative, rollDamage)
 - `utils/check-helpers.ts` — Check modifier computation, label building from character sheets
 - `data/index.ts` — D&D 2024 database: type-safe lookup maps + helpers (getSpell, getMonster, getClass, getClassSpellSlots, getCasterMultiplier, etc.)

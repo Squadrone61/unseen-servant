@@ -2,28 +2,36 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { WSClient } from "../ws-client.js";
 import {
-  getSpell,
-  getMonster,
-  getCondition,
-  getMagicItem,
-  getFeat,
-  getClass,
-  getSpecies,
-  getBackground,
-  getOptionalFeature,
-  getAction,
-  getLanguage,
-  getDisease,
   searchSpells,
   searchMonsters,
   searchMagicItems,
   searchFeats,
   searchOptionalFeatures,
-  classesArray,
-  speciesArray,
-  backgroundsArray,
+  fuzzyLookup,
+  spells,
+  spellsArray,
+  monsters,
+  monstersArray,
+  conditions,
   conditionsArray,
+  magicItems,
+  magicItemsArray,
+  feats,
+  featsArray,
+  classes,
+  classesArray,
+  species,
+  speciesArray,
+  backgrounds,
+  backgroundsArray,
+  optionalFeatures,
+  optionalFeaturesArray,
+  actions,
   actionsArray,
+  languages,
+  languagesArray,
+  diseases,
+  diseasesArray,
   getClassResources,
   type SpellData,
   type MonsterData,
@@ -544,6 +552,45 @@ function notFoundResult(category: string, name: string) {
   };
 }
 
+type ToolResult = { content: { type: "text"; text: string }[] };
+
+function fuzzyLookupOrSuggest<T extends { name: string }>(
+  query: string,
+  exactMap: Map<string, T>,
+  allItems: T[],
+  category: string,
+  formatSummary: (item: T) => string,
+  formatFull: (item: T) => string,
+  detail: "summary" | "full",
+  wsClient: WSClient,
+): ToolResult {
+  const result = fuzzyLookup(query, exactMap, allItems);
+
+  if (result.match) {
+    const text = detail === "full" ? formatFull(result.match) : formatSummary(result.match);
+    const prefix =
+      result.matchType !== "exact"
+        ? `(Matched "${result.match.name}" from query "${query}")\n\n`
+        : "";
+    return { content: [{ type: "text", text: prefix + text }] };
+  }
+
+  if (result.suggestions.length > 0) {
+    const list = result.suggestions.map((s) => `- ${s.name}`).join("\n");
+    return {
+      content: [
+        {
+          type: "text",
+          text: `"${query}" matched multiple ${category.toLowerCase()}s. Did you mean one of:\n${list}\n\nCall lookup again with the exact name.`,
+        },
+      ],
+    };
+  }
+
+  logLookupFailure(wsClient, category, query);
+  return notFoundResult(category, query);
+}
+
 // ─── Tool Registration ──────────────────────────────────────
 
 export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
@@ -563,14 +610,16 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
         ),
     },
     async ({ spell_name, detail }) => {
-      const spell = getSpell(spell_name);
-      if (spell) {
-        const text = detail === "full" ? formatSpell(spell) : formatSpellSummary(spell);
-        return { content: [{ type: "text" as const, text }] };
-      }
-
-      logLookupFailure(wsClient, "Spell", spell_name);
-      return notFoundResult("Spell", spell_name);
+      return fuzzyLookupOrSuggest(
+        spell_name,
+        spells,
+        spellsArray,
+        "Spell",
+        formatSpellSummary,
+        formatSpell,
+        detail,
+        wsClient,
+      );
     },
   );
 
@@ -590,14 +639,16 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
         ),
     },
     async ({ monster_name, detail }) => {
-      const monster = getMonster(monster_name);
-      if (monster) {
-        const text = detail === "full" ? formatMonster(monster) : formatMonsterSummary(monster);
-        return { content: [{ type: "text" as const, text }] };
-      }
-
-      logLookupFailure(wsClient, "Monster", monster_name);
-      return notFoundResult("Monster", monster_name);
+      return fuzzyLookupOrSuggest(
+        monster_name,
+        monsters,
+        monstersArray,
+        "Monster",
+        formatMonsterSummary,
+        formatMonster,
+        detail,
+        wsClient,
+      );
     },
   );
 
@@ -617,15 +668,16 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
         ),
     },
     async ({ condition_name, detail }) => {
-      const condition = getCondition(condition_name);
-      if (condition) {
-        const text =
-          detail === "full" ? formatCondition(condition) : formatConditionSummary(condition);
-        return { content: [{ type: "text" as const, text }] };
-      }
-
-      logLookupFailure(wsClient, "Condition", condition_name);
-      return notFoundResult("Condition", condition_name);
+      return fuzzyLookupOrSuggest(
+        condition_name,
+        conditions,
+        conditionsArray,
+        "Condition",
+        formatConditionSummary,
+        formatCondition,
+        detail,
+        wsClient,
+      );
     },
   );
 
@@ -643,14 +695,16 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
         ),
     },
     async ({ item_name, detail }) => {
-      const item = getMagicItem(item_name);
-      if (item) {
-        const text = detail === "full" ? formatMagicItemFn(item) : formatMagicItemSummary(item);
-        return { content: [{ type: "text" as const, text }] };
-      }
-
-      logLookupFailure(wsClient, "Magic Item", item_name);
-      return notFoundResult("Magic Item", item_name);
+      return fuzzyLookupOrSuggest(
+        item_name,
+        magicItems,
+        magicItemsArray,
+        "Magic Item",
+        formatMagicItemSummary,
+        formatMagicItemFn,
+        detail,
+        wsClient,
+      );
     },
   );
 
@@ -668,14 +722,16 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
         ),
     },
     async ({ feat_name, detail }) => {
-      const feat = getFeat(feat_name);
-      if (feat) {
-        const text = detail === "full" ? formatFeatFn(feat) : formatFeatSummary(feat);
-        return { content: [{ type: "text" as const, text }] };
-      }
-
-      logLookupFailure(wsClient, "Feat", feat_name);
-      return notFoundResult("Feat", feat_name);
+      return fuzzyLookupOrSuggest(
+        feat_name,
+        feats,
+        featsArray,
+        "Feat",
+        formatFeatSummary,
+        formatFeatFn,
+        detail,
+        wsClient,
+      );
     },
   );
 
@@ -693,14 +749,16 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
         ),
     },
     async ({ class_name, detail }) => {
-      const cls = getClass(class_name);
-      if (cls) {
-        const text = detail === "full" ? formatClassFn(cls) : formatClassSummary(cls);
-        return { content: [{ type: "text" as const, text }] };
-      }
-
-      logLookupFailure(wsClient, "Class", class_name);
-      return notFoundResult("Class", class_name);
+      return fuzzyLookupOrSuggest(
+        class_name,
+        classes,
+        classesArray,
+        "Class",
+        formatClassSummary,
+        formatClassFn,
+        detail,
+        wsClient,
+      );
     },
   );
 
@@ -720,14 +778,16 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
         ),
     },
     async ({ species_name, detail }) => {
-      const sp = getSpecies(species_name);
-      if (sp) {
-        const text = detail === "full" ? formatSpeciesFn(sp) : formatSpeciesSummary(sp);
-        return { content: [{ type: "text" as const, text }] };
-      }
-
-      logLookupFailure(wsClient, "Species", species_name);
-      return notFoundResult("Species", species_name);
+      return fuzzyLookupOrSuggest(
+        species_name,
+        species,
+        speciesArray,
+        "Species",
+        formatSpeciesSummary,
+        formatSpeciesFn,
+        detail,
+        wsClient,
+      );
     },
   );
 
@@ -747,14 +807,16 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
         ),
     },
     async ({ background_name, detail }) => {
-      const bg = getBackground(background_name);
-      if (bg) {
-        const text = detail === "full" ? formatBackgroundFn(bg) : formatBackgroundSummary(bg);
-        return { content: [{ type: "text" as const, text }] };
-      }
-
-      logLookupFailure(wsClient, "Background", background_name);
-      return notFoundResult("Background", background_name);
+      return fuzzyLookupOrSuggest(
+        background_name,
+        backgrounds,
+        backgroundsArray,
+        "Background",
+        formatBackgroundSummary,
+        formatBackgroundFn,
+        detail,
+        wsClient,
+      );
     },
   );
 
@@ -776,17 +838,16 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
         ),
     },
     async ({ feature_name, detail }) => {
-      const feature = getOptionalFeature(feature_name);
-      if (feature) {
-        const text =
-          detail === "full"
-            ? formatOptionalFeatureFn(feature)
-            : formatOptionalFeatureSummary(feature);
-        return { content: [{ type: "text" as const, text }] };
-      }
-
-      logLookupFailure(wsClient, "Optional Feature", feature_name);
-      return notFoundResult("Optional Feature", feature_name);
+      return fuzzyLookupOrSuggest(
+        feature_name,
+        optionalFeatures,
+        optionalFeaturesArray,
+        "Optional Feature",
+        formatOptionalFeatureSummary,
+        formatOptionalFeatureFn,
+        detail,
+        wsClient,
+      );
     },
   );
 
@@ -804,14 +865,16 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
         ),
     },
     async ({ action_name, detail }) => {
-      const action = getAction(action_name);
-      if (action) {
-        const text = detail === "full" ? formatActionFn(action) : formatActionSummary(action);
-        return { content: [{ type: "text" as const, text }] };
-      }
-
-      logLookupFailure(wsClient, "Action", action_name);
-      return notFoundResult("Action", action_name);
+      return fuzzyLookupOrSuggest(
+        action_name,
+        actions,
+        actionsArray,
+        "Action",
+        formatActionSummary,
+        formatActionFn,
+        detail,
+        wsClient,
+      );
     },
   );
 
@@ -829,14 +892,16 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
         ),
     },
     async ({ language_name, detail }) => {
-      const lang = getLanguage(language_name);
-      if (lang) {
-        const text = detail === "full" ? formatLanguageFn(lang) : formatLanguageSummary(lang);
-        return { content: [{ type: "text" as const, text }] };
-      }
-
-      logLookupFailure(wsClient, "Language", language_name);
-      return notFoundResult("Language", language_name);
+      return fuzzyLookupOrSuggest(
+        language_name,
+        languages,
+        languagesArray,
+        "Language",
+        formatLanguageSummary,
+        formatLanguageFn,
+        detail,
+        wsClient,
+      );
     },
   );
 
@@ -854,14 +919,16 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
         ),
     },
     async ({ disease_name, detail }) => {
-      const disease = getDisease(disease_name);
-      if (disease) {
-        const text = detail === "full" ? formatDiseaseFn(disease) : formatDiseaseSummary(disease);
-        return { content: [{ type: "text" as const, text }] };
-      }
-
-      logLookupFailure(wsClient, "Disease", disease_name);
-      return notFoundResult("Disease", disease_name);
+      return fuzzyLookupOrSuggest(
+        disease_name,
+        diseases,
+        diseasesArray,
+        "Disease",
+        formatDiseaseSummary,
+        formatDiseaseFn,
+        detail,
+        wsClient,
+      );
     },
   );
 

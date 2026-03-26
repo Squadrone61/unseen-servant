@@ -10,15 +10,11 @@ import {
   DM_CORE_PROMPT,
   DM_SKILL_PLAYER_IDENTITY,
   DM_SKILL_RULES,
-  NATIVE_SKILL_COMBAT_SETUP,
-  NATIVE_SKILL_SHORT_REST,
-  NATIVE_SKILL_LONG_REST,
   NATIVE_SKILL_RECAP,
   NATIVE_SKILL_NPC_VOICE,
   NATIVE_SKILL_STORY_ARC,
   NATIVE_SKILL_LOOT_DROP,
   NATIVE_SKILL_TAVERN,
-  NATIVE_SKILL_LEVEL_UP,
   NATIVE_SKILL_BATTLE_TACTICS,
   NATIVE_SKILL_TRAVEL,
   NATIVE_SKILL_TRAP,
@@ -42,15 +38,11 @@ const BANNER = `
 
 /** Native Claude Code skills — user-invocable slash commands written to .claude/skills/ */
 const NATIVE_SKILLS: Record<string, string> = {
-  "combat-setup": NATIVE_SKILL_COMBAT_SETUP,
-  "short-rest": NATIVE_SKILL_SHORT_REST,
-  "long-rest": NATIVE_SKILL_LONG_REST,
   recap: NATIVE_SKILL_RECAP,
   "npc-voice": NATIVE_SKILL_NPC_VOICE,
   "story-arc": NATIVE_SKILL_STORY_ARC,
   "loot-drop": NATIVE_SKILL_LOOT_DROP,
   tavern: NATIVE_SKILL_TAVERN,
-  "level-up": NATIVE_SKILL_LEVEL_UP,
   "battle-tactics": NATIVE_SKILL_BATTLE_TACTICS,
   travel: NATIVE_SKILL_TRAVEL,
   trap: NATIVE_SKILL_TRAP,
@@ -91,17 +83,13 @@ The \`systemPrompt\` field in each \`wait_for_message\` response contains contex
 
 ## Slash Commands
 
-Use these slash commands for common DM workflows:
+Use these slash commands for DM creative workflows and prep:
 
-- \`/combat-setup\` — Guided encounter setup with monster lookup, battle map, and initiative
-- \`/short-rest\` — Hit Dice healing and class feature recovery
-- \`/long-rest\` — Full HP restore, spell slots, condition clearing
 - \`/recap\` — Narrate story-so-far from campaign notes
 - \`/npc-voice\` — Generate an NPC with personality, speech patterns, and secrets
 - \`/story-arc\` — Design a multi-session story arc (DM-only planning)
 - \`/loot-drop\` — Generate contextual loot for an encounter
 - \`/tavern\` — Generate a tavern or shop with NPCs, rumors, and atmosphere
-- \`/level-up\` — Level up assistant with growth narration
 - \`/battle-tactics\` — Monster AI tactical advisor (combat only, DM-only)
 - \`/travel\` — Overland travel with pace, encounters, and weather
 - \`/trap\` — Design a trap with detection, disarm, and effects
