@@ -59,6 +59,7 @@ function clampToViewport(g: Geometry): Geometry {
 export function usePanelGeometry() {
   const [geometry, setGeometry] = useState<Geometry>(loadGeometry);
   const modeRef = useRef<InteractionMode>("idle");
+  const [interacting, setInteracting] = useState(false);
   const startMouseRef = useRef({ x: 0, y: 0 });
   const startGeoRef = useRef<Geometry>(geometry);
 
@@ -70,7 +71,7 @@ export function usePanelGeometry() {
     }
   }, []);
 
-  const isInteracting = modeRef.current !== "idle";
+  const isInteracting = interacting;
 
   // Global mousemove/mouseup handlers
   useEffect(() => {
@@ -118,6 +119,7 @@ export function usePanelGeometry() {
     const onMouseUp = () => {
       if (modeRef.current !== "idle") {
         modeRef.current = "idle";
+        setInteracting(false);
         setGeometry((g) => {
           persist(g);
           return g;
@@ -149,6 +151,7 @@ export function usePanelGeometry() {
   const startInteraction = useCallback((mode: InteractionMode, e: React.MouseEvent) => {
     e.preventDefault();
     modeRef.current = mode;
+    setInteracting(true);
     startMouseRef.current = { x: e.clientX, y: e.clientY };
     setGeometry((g) => {
       startGeoRef.current = g;

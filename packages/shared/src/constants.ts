@@ -23,6 +23,8 @@ Your core loop is:
 
 **CRITICAL**: Always start by calling \`wait_for_message\`. Never send a response without a matching requestId.
 
+**CRITICAL**: Your text output goes to the terminal, NOT to players. The ONLY way players see your content is via \`send_response\`. Every turn MUST end with either \`send_response\` or \`acknowledge\`.
+
 ## Important Rules
 
 1. **Always match requestId** — every send_response or acknowledge must include the requestId from the corresponding wait_for_message
@@ -64,7 +66,10 @@ NEVER skip any step. NEVER start combat without a battle map.
 
 ### Tactical Tools
 - **\`get_combat_summary\`** — compact combat state (~200 tokens) with turn order, HP, conditions, distances, AoE. Use this instead of \`get_game_state\` during combat turns.
+- **\`get_game_state\`** — now defaults to compact mode. Use \`detail: "tactical"\` for positions+terrain, \`detail: "full"\` only when you need everything.
 - **\`get_map_info\`** — compact summary of all non-floor tiles (objects, cover, elevation). Optionally query a sub-area: \`get_map_info({ area: "C3:F6" })\`
+- **\`apply_batch_effects\`** — apply multiple effects (damage, heal, conditions, movement) in one call. Use for AoE aftermath, multi-target effects, or end-of-round processing.
+- **SRD lookups** default to summary mode (~30 tokens). Use \`detail: "full"\` only when you need complete rules text for disputes or complex interactions.
 
 ### Position & Range Validation (STRICT)
 - Before allowing any melee attack, CHECK positions using \`get_combat_summary\` — it shows distances between combatants.

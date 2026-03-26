@@ -290,14 +290,10 @@ export function Sidebar({
               </div>
               {dmConnected && (
                 <>
-                  <button
-                    onClick={onStartStory}
-                    className="w-full bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/50 text-amber-300 hover:text-amber-200 py-2.5 rounded-lg
-                               font-medium transition-colors text-sm flex items-center justify-center gap-2"
-                  >
+                  <Button variant="outline" size="lg" fullWidth onClick={onStartStory}>
                     <span className="text-lg">&#9876;</span>
                     Begin the Adventure
-                  </button>
+                  </Button>
                   <p className="text-xs text-gray-600 text-center">
                     This will introduce the party and start the story
                   </p>
@@ -306,16 +302,15 @@ export function Sidebar({
             </>
           ) : (
             <>
-              <button
+              <Button
+                variant="outline"
+                size="lg"
+                fullWidth
                 onClick={onOpenCampaignConfig}
                 disabled={!dmConnected}
-                className="w-full bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30
-                           disabled:opacity-40 disabled:hover:bg-amber-500/10
-                           text-amber-300 py-2.5 rounded-lg
-                           font-medium transition-colors text-sm"
               >
                 Configure Campaign
-              </button>
+              </Button>
               {!dmConnected && (
                 <p className="text-xs text-gray-600 text-center">Waiting for DM to connect...</p>
               )}

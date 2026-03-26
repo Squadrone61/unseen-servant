@@ -78,14 +78,36 @@ export function rollInitiative(modifier: number): number {
 }
 
 /**
- * Parse a dice string like "2d6", "1d8+3", "4d6-1" and roll it.
+ * Parse a dice string like "2d6", "1d8+3", "4d6-1", or compound "2d10+4d6" and roll it.
  * Returns a RollResult with individual dice and total.
  */
 export function rollDamage(diceStr: string, extraModifier = 0): RollResult {
-  // Parse "NdS" or "NdS+M" or "NdS-M"
-  const match = diceStr.match(/^(\d*)d(\d+)(?:([+-])(\d+))?$/i);
-  if (!match) {
-    // Fallback: treat as flat damage
+  const allRolls: DieRoll[] = [];
+  let total = 0;
+
+  // Split on +/- while keeping the sign: "2d10+4d6-2" → ["2d10", "+4d6", "-2"]
+  const terms = diceStr.match(/[+-]?[^+-]+/g) || [];
+
+  for (const rawTerm of terms) {
+    const term = rawTerm.trim();
+    const diceMatch = term.match(/^([+-]?\d*)d(\d+)$/i);
+    if (diceMatch) {
+      const countStr = diceMatch[1];
+      const sign = countStr.startsWith("-") ? -1 : 1;
+      const abs = Math.abs(countStr ? parseInt(countStr, 10) || 1 : 1);
+      const sides = parseInt(diceMatch[2], 10) as DieSize;
+      const rolls = rollDice(abs, sides);
+      allRolls.push(...rolls);
+      total += sign * rolls.reduce((s, r) => s + r.result, 0);
+    } else {
+      const num = parseInt(term, 10);
+      if (!isNaN(num)) total += num;
+    }
+  }
+
+  total += extraModifier;
+
+  if (allRolls.length === 0 && total === extraModifier) {
     return {
       id: crypto.randomUUID(),
       rolls: [],
@@ -95,20 +117,11 @@ export function rollDamage(diceStr: string, extraModifier = 0): RollResult {
     };
   }
 
-  const count = match[1] ? parseInt(match[1], 10) : 1;
-  const sides = parseInt(match[2], 10) as DieSize;
-  const sign = match[3] === "-" ? -1 : 1;
-  const diceModifier = match[4] ? parseInt(match[4], 10) * sign : 0;
-
-  const totalModifier = diceModifier + extraModifier;
-  const rolls = rollDice(count, sides);
-  const rollTotal = rolls.reduce((sum, r) => sum + r.result, 0);
-
   return {
     id: crypto.randomUUID(),
-    rolls,
-    modifier: totalModifier,
-    total: rollTotal + totalModifier,
+    rolls: allRolls,
+    modifier: extraModifier,
+    total,
     label: diceStr,
   };
 }

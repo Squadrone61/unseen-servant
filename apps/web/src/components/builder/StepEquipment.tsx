@@ -8,6 +8,7 @@ import {
   categorizeBaseItem,
   DMG_TYPE_MAP,
 } from "@unseen-servant/shared";
+import { TabBar } from "@/components/ui/TabBar";
 import type { StepProps, EquipmentEntry, BuilderAction } from "./types";
 import { resolveStartingEquipment, getStartingEquipmentDescription } from "./utils";
 
@@ -37,11 +38,11 @@ const TAB_ICONS: Record<EquipmentTab, React.ReactNode> = {
   ),
 };
 
-const TABS: { value: EquipmentTab; label: string }[] = [
-  { value: "weapon", label: "Weapons" },
-  { value: "armor", label: "Armor" },
-  { value: "other", label: "Other" },
-  { value: "custom", label: "Custom" },
+const TABS: { value: EquipmentTab; label: string; icon: React.ReactNode }[] = [
+  { value: "weapon", label: "Weapons", icon: TAB_ICONS.weapon },
+  { value: "armor", label: "Armor", icon: TAB_ICONS.armor },
+  { value: "other", label: "Other", icon: TAB_ICONS.other },
+  { value: "custom", label: "Custom", icon: TAB_ICONS.custom },
 ];
 
 // Category grouping definitions
@@ -168,25 +169,15 @@ export function StepEquipment({ state, dispatch }: StepProps) {
         {/* Left: Browser */}
         <div className="flex-1 min-w-0 space-y-3">
           {/* Tabs */}
-          <div className="flex border-b border-gray-700">
-            {TABS.map((t) => (
-              <button
-                key={t.value}
-                onClick={() => {
-                  setTab(t.value);
-                  setSearch("");
-                }}
-                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors ${
-                  tab === t.value
-                    ? "text-amber-300 border-b-2 border-amber-400/70"
-                    : "text-gray-500 hover:text-gray-300"
-                }`}
-              >
-                {TAB_ICONS[t.value]}
-                {t.label}
-              </button>
-            ))}
-          </div>
+          <TabBar
+            tabs={TABS}
+            active={tab}
+            onChange={(value) => {
+              setTab(value);
+              setSearch("");
+            }}
+            size="sm"
+          />
 
           {tab !== "custom" && (
             <input

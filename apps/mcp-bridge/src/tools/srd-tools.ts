@@ -82,6 +82,39 @@ import {
 
 // ─── Formatting Helpers ─────────────────────────────────────
 
+function formatSpellSummary(s: SpellData): string {
+  const parts: string[] = [
+    `${s.name}: ${formatSpellLevel(s)} ${formatSchool(s.school).toLowerCase()}`,
+  ];
+  parts.push(`Range: ${formatRange(s.range)}`);
+  // Extract area from entries text (look for common patterns like "Xft sphere/cone/cube/line/cylinder")
+  const entriesText = entriesToText(s.entries);
+  const areaMatch = entriesText.match(
+    /(\d+-foot(?:-radius)?)\s+(sphere|cone|cube|line|cylinder|emanation)/i,
+  );
+  if (areaMatch) parts.push(`${areaMatch[1]} ${areaMatch[2]}`);
+  // Damage/effect + save
+  if (s.damageInflict?.length) {
+    const dmgMatch = entriesText.match(/(\d+d\d+)\s/);
+    const dmgStr = dmgMatch
+      ? `${dmgMatch[1]} ${s.damageInflict.join("/")}`
+      : s.damageInflict.join("/");
+    if (s.savingThrow?.length) {
+      parts.push(`${dmgStr}, ${s.savingThrow.map((st) => st.toUpperCase()).join("/")} save half`);
+    } else {
+      parts.push(dmgStr);
+    }
+  } else if (s.savingThrow?.length) {
+    parts.push(`${s.savingThrow.map((st) => st.toUpperCase()).join("/")} save`);
+  } else if (s.spellAttack?.length) {
+    parts.push(`spell attack (${s.spellAttack.join("/")})`);
+  }
+  parts.push(formatComponents(s));
+  parts.push(`Conc: ${isConcentration(s) ? "Yes" : "No"}`);
+  if (isRitual(s)) parts.push("Ritual");
+  return parts.join(" | ");
+}
+
 function formatSpell(s: SpellData): string {
   let text = `# ${s.name}\n*${formatSpellLevel(s)} ${formatSchool(s.school)}*`;
   if (isRitual(s)) text += " (ritual)";
@@ -100,6 +133,34 @@ function formatSpell(s: SpellData): string {
     text += `\n\n**At Higher Levels.** ${entriesToText(s.entriesHigherLevel)}`;
   text += `\n\n*Source: ${s.source}*`;
   return text;
+}
+
+function formatMonsterSummary(m: MonsterData): string {
+  const crStr = formatMonsterCr(m.cr);
+  const xp = crToXp(m.cr).toLocaleString();
+  const parts: string[] = [
+    `${m.name}: CR ${crStr} (${xp} XP)`,
+    `${formatMonsterSize(m.size)} ${formatMonsterType(m.type)}`,
+    `AC ${formatMonsterAc(m.ac)}`,
+    `HP ${formatMonsterHp(m.hp)}`,
+  ];
+  // First 1-2 actions: name + to-hit + damage
+  if (m.action?.length) {
+    const actionSummaries = m.action.slice(0, 2).map((a) => {
+      const text = entriesToText(a.entries);
+      const hitMatch = text.match(/\{@hit (\+?\d+)\}/i) ?? text.match(/(\+\d+) to hit/i);
+      const dmgMatch =
+        text.match(/(\d+d\d+(?:\s*\+\s*\d+)?)\s+(\w+)\s+damage/i) ??
+        text.match(/\((\d+d\d+(?:\s*\+\s*\d+)?)\)/);
+      let summary = a.name;
+      if (hitMatch) summary += ` ${hitMatch[1]}`;
+      if (dmgMatch) summary += ` ${dmgMatch[1]}${dmgMatch[2] ? " " + dmgMatch[2] : ""}`;
+      return summary;
+    });
+    parts.push(actionSummaries.join(", "));
+  }
+  parts.push(`STR ${m.str} DEX ${m.dex} CON ${m.con} INT ${m.int} WIS ${m.wis} CHA ${m.cha}`);
+  return parts.join(" | ");
 }
 
 function formatMonster(m: MonsterData): string {
@@ -171,10 +232,38 @@ function formatMonster(m: MonsterData): string {
   return text;
 }
 
+function formatConditionSummary(c: ConditionData): string {
+  const fullText = entriesToText(c.entries);
+  // Take the first ~120 chars, cut at sentence boundary if possible
+  let summary = fullText.slice(0, 150);
+  const sentenceEnd = summary.lastIndexOf(". ");
+  if (sentenceEnd > 40) summary = summary.slice(0, sentenceEnd + 1);
+  else if (summary.length >= 150) summary += "...";
+  return `${c.name}: ${summary}`;
+}
+
 function formatCondition(c: ConditionData): string {
   let text = `# ${c.name}\n\n${entriesToText(c.entries)}`;
   text += `\n\n*Source: ${c.source}*`;
   return text;
+}
+
+function formatMagicItemSummary(item: MagicItemData): string {
+  const parts: string[] = [`${item.name}: ${item.type ?? "Wondrous item"}, ${item.rarity}`];
+  if (item.reqAttune) {
+    parts.push(typeof item.reqAttune === "string" ? `attunement ${item.reqAttune}` : "attunement");
+  }
+  if (item.bonusAc) parts.push(`AC +${item.bonusAc}`);
+  if (item.bonusWeapon) parts.push(`Weapon +${item.bonusWeapon}`);
+  if (item.bonusSpellAttack) parts.push(`Spell Attack +${item.bonusSpellAttack}`);
+  if (item.charges) parts.push(`${item.charges} charges`);
+  // Brief description from entries
+  const desc = entriesToText(item.entries);
+  const brief = desc.slice(0, 100);
+  const sentenceEnd = brief.lastIndexOf(". ");
+  if (sentenceEnd > 20) parts.push(brief.slice(0, sentenceEnd + 1));
+  else parts.push(brief + (desc.length > 100 ? "..." : ""));
+  return parts.join(" | ");
 }
 
 function formatMagicItemFn(item: MagicItemData): string {
@@ -194,6 +283,18 @@ function formatMagicItemFn(item: MagicItemData): string {
   text += entriesToText(item.entries);
   text += `\n\n*Source: ${item.source}*`;
   return text;
+}
+
+function formatFeatSummary(f: FeatData): string {
+  const parts: string[] = [`${f.name}: ${formatFeatCategory(f.category)} feat`];
+  if (f.prerequisite?.length) parts.push(`Prereq: ${formatPrerequisite(f.prerequisite)}`);
+  // Brief mechanical description
+  const desc = entriesToText(f.entries);
+  const brief = desc.slice(0, 120);
+  const sentenceEnd = brief.lastIndexOf(". ");
+  if (sentenceEnd > 20) parts.push(brief.slice(0, sentenceEnd + 1));
+  else parts.push(brief + (desc.length > 120 ? "..." : ""));
+  return parts.join(" | ");
 }
 
 function formatFeatFn(f: FeatData): string {
@@ -224,6 +325,22 @@ function formatFeatFn(f: FeatData): string {
   }
   text += `\n\n*Source: ${f.source}*`;
   return text;
+}
+
+function formatClassSummary(c: ClassAssembled): string {
+  const primaryAbs = c.primaryAbility.flatMap((a) =>
+    Object.keys(a)
+      .filter((k) => a[k])
+      .map((k) => ABILITY_MAP[k] ?? k),
+  );
+  const parts: string[] = [`${c.name}: ${getHitDice(c)} HD`, `${primaryAbs.join("/")} primary`];
+  const armorProfs = getArmorProfs(c);
+  if (armorProfs.length) parts.push(armorProfs.join(", "));
+  const casterType = getCasterType(c);
+  if (casterType) parts.push(casterType);
+  else parts.push("non-caster");
+  parts.push(`${c.resolvedSubclasses.length} subclasses`);
+  return parts.join(" | ");
 }
 
 function formatClassFn(c: ClassAssembled): string {
@@ -275,6 +392,18 @@ function formatClassFn(c: ClassAssembled): string {
   return text;
 }
 
+function formatSpeciesSummary(s: SpeciesData): string {
+  const parts: string[] = [`${s.name}: ${formatSpeciesSize(s.size)}, ${getSpeciesSpeed(s)} ft.`];
+  if (s.darkvision) parts.push(`Darkvision ${s.darkvision} ft.`);
+  if (s.resist?.length) {
+    const resistances = s.resist
+      .map((r) => (typeof r === "string" ? r : `choose ${r.choose.from.join("/")}`))
+      .join(", ");
+    parts.push(`${resistances} resistance`);
+  }
+  return parts.join(" | ");
+}
+
 function formatSpeciesFn(s: SpeciesData): string {
   let text = `# ${s.name}\n\n`;
   text += `**Size:** ${formatSpeciesSize(s.size)}\n`;
@@ -289,6 +418,17 @@ function formatSpeciesFn(s: SpeciesData): string {
 
   text += `\n\n*Source: ${s.source}*`;
   return text;
+}
+
+function formatBackgroundSummary(b: BackgroundData): string {
+  const parts: string[] = [b.name + ":"];
+  const skills = getBackgroundSkills(b);
+  if (skills.length) parts.push(skills.join(" + "));
+  const tools = getBackgroundTools(b);
+  if (tools.length) parts.push(tools.join(", "));
+  const feat = getBackgroundFeat(b);
+  if (feat) parts.push(`Feat: ${feat}`);
+  return parts.join(" | ");
 }
 
 function formatBackgroundFn(b: BackgroundData): string {
@@ -307,6 +447,17 @@ function formatBackgroundFn(b: BackgroundData): string {
   return text;
 }
 
+function formatOptionalFeatureSummary(f: OptionalFeatureData): string {
+  const parts: string[] = [`${f.name}: ${formatOptionalFeatureType(f.featureType)}`];
+  if (f.prerequisite?.length) parts.push(`Prereq: ${formatPrerequisite(f.prerequisite)}`);
+  const desc = entriesToText(f.entries);
+  const brief = desc.slice(0, 120);
+  const sentenceEnd = brief.lastIndexOf(". ");
+  if (sentenceEnd > 20) parts.push(brief.slice(0, sentenceEnd + 1));
+  else parts.push(brief + (desc.length > 120 ? "..." : ""));
+  return parts.join(" | ");
+}
+
 function formatOptionalFeatureFn(f: OptionalFeatureData): string {
   let text = `# ${f.name}\n*${formatOptionalFeatureType(f.featureType)}*`;
   if (f.prerequisite?.length) text += ` *(Prerequisite: ${formatPrerequisite(f.prerequisite)})*`;
@@ -314,6 +465,19 @@ function formatOptionalFeatureFn(f: OptionalFeatureData): string {
   text += entriesToText(f.entries);
   text += `\n\n*Source: ${f.source}*`;
   return text;
+}
+
+function formatActionSummary(a: ActionData): string {
+  const parts: string[] = [a.name + ":"];
+  if (a.time?.length) {
+    parts.push(a.time.map((t) => `${t.number} ${t.unit}`).join(", "));
+  }
+  const desc = entriesToText(a.entries);
+  const brief = desc.slice(0, 120);
+  const sentenceEnd = brief.lastIndexOf(". ");
+  if (sentenceEnd > 20) parts.push(brief.slice(0, sentenceEnd + 1));
+  else parts.push(brief + (desc.length > 120 ? "..." : ""));
+  return parts.join(" | ");
 }
 
 function formatActionFn(a: ActionData): string {
@@ -326,6 +490,13 @@ function formatActionFn(a: ActionData): string {
   return text;
 }
 
+function formatLanguageSummary(l: LanguageData): string {
+  const parts: string[] = [`${l.name}: ${l.type} language`];
+  if (l.typicalSpeakers?.length) parts.push(`Spoken by ${l.typicalSpeakers.join(", ")}`);
+  if (l.script) parts.push(`${l.script} script`);
+  return parts.join(" | ");
+}
+
 function formatLanguageFn(l: LanguageData): string {
   let text = `# ${l.name}\n*${l.type} language*\n\n`;
   if (l.typicalSpeakers?.length) text += `**Typical Speakers:** ${l.typicalSpeakers.join(", ")}\n`;
@@ -333,6 +504,16 @@ function formatLanguageFn(l: LanguageData): string {
   if (l.entries) text += "\n" + entriesToText(l.entries);
   text += `\n\n*Source: ${l.source}*`;
   return text;
+}
+
+function formatDiseaseSummary(d: DiseaseData): string {
+  const desc = entriesToText(d.entries);
+  const brief = desc.slice(0, 150);
+  const sentenceEnd = brief.lastIndexOf(". ");
+  let summary: string;
+  if (sentenceEnd > 20) summary = brief.slice(0, sentenceEnd + 1);
+  else summary = brief + (desc.length > 150 ? "..." : "");
+  return `${d.name}: ${summary}`;
 }
 
 function formatDiseaseFn(d: DiseaseData): string {
@@ -373,11 +554,19 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
       spell_name: z
         .string()
         .describe("Spell name, e.g. 'Fireball', 'Cure Wounds', 'Shield', 'Silvery Barbs'"),
+      detail: z
+        .enum(["summary", "full"])
+        .optional()
+        .default("summary")
+        .describe(
+          "Level of detail: 'summary' for a compact one-liner, 'full' for complete rules text",
+        ),
     },
-    async ({ spell_name }) => {
+    async ({ spell_name, detail }) => {
       const spell = getSpell(spell_name);
       if (spell) {
-        return { content: [{ type: "text" as const, text: formatSpell(spell) }] };
+        const text = detail === "full" ? formatSpell(spell) : formatSpellSummary(spell);
+        return { content: [{ type: "text" as const, text }] };
       }
 
       logLookupFailure(wsClient, "Spell", spell_name);
@@ -392,11 +581,19 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
       monster_name: z
         .string()
         .describe("Monster name, e.g. 'Goblin', 'Adult Red Dragon', 'Bugbear'"),
+      detail: z
+        .enum(["summary", "full"])
+        .optional()
+        .default("summary")
+        .describe(
+          "Level of detail: 'summary' for a compact one-liner, 'full' for complete rules text",
+        ),
     },
-    async ({ monster_name }) => {
+    async ({ monster_name, detail }) => {
       const monster = getMonster(monster_name);
       if (monster) {
-        return { content: [{ type: "text" as const, text: formatMonster(monster) }] };
+        const text = detail === "full" ? formatMonster(monster) : formatMonsterSummary(monster);
+        return { content: [{ type: "text" as const, text }] };
       }
 
       logLookupFailure(wsClient, "Monster", monster_name);
@@ -411,11 +608,20 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
       condition_name: z
         .string()
         .describe("Condition name, e.g. 'Grappled', 'Stunned', 'Prone', 'Frightened'"),
+      detail: z
+        .enum(["summary", "full"])
+        .optional()
+        .default("summary")
+        .describe(
+          "Level of detail: 'summary' for a compact one-liner, 'full' for complete rules text",
+        ),
     },
-    async ({ condition_name }) => {
+    async ({ condition_name, detail }) => {
       const condition = getCondition(condition_name);
       if (condition) {
-        return { content: [{ type: "text" as const, text: formatCondition(condition) }] };
+        const text =
+          detail === "full" ? formatCondition(condition) : formatConditionSummary(condition);
+        return { content: [{ type: "text" as const, text }] };
       }
 
       logLookupFailure(wsClient, "Condition", condition_name);
@@ -428,11 +634,19 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
     "Look up a magic item from the D&D 2024 database. Returns rarity, attunement, and full description.",
     {
       item_name: z.string().describe("Magic item name, e.g. 'Bag of Holding', 'Flame Tongue'"),
+      detail: z
+        .enum(["summary", "full"])
+        .optional()
+        .default("summary")
+        .describe(
+          "Level of detail: 'summary' for a compact one-liner, 'full' for complete rules text",
+        ),
     },
-    async ({ item_name }) => {
+    async ({ item_name, detail }) => {
       const item = getMagicItem(item_name);
       if (item) {
-        return { content: [{ type: "text" as const, text: formatMagicItemFn(item) }] };
+        const text = detail === "full" ? formatMagicItemFn(item) : formatMagicItemSummary(item);
+        return { content: [{ type: "text" as const, text }] };
       }
 
       logLookupFailure(wsClient, "Magic Item", item_name);
@@ -445,11 +659,19 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
     "Look up a feat from the D&D 2024 database. Returns prerequisites, description, and mechanical effects.",
     {
       feat_name: z.string().describe("Feat name, e.g. 'Alert', 'Great Weapon Master'"),
+      detail: z
+        .enum(["summary", "full"])
+        .optional()
+        .default("summary")
+        .describe(
+          "Level of detail: 'summary' for a compact one-liner, 'full' for complete rules text",
+        ),
     },
-    async ({ feat_name }) => {
+    async ({ feat_name, detail }) => {
       const feat = getFeat(feat_name);
       if (feat) {
-        return { content: [{ type: "text" as const, text: formatFeatFn(feat) }] };
+        const text = detail === "full" ? formatFeatFn(feat) : formatFeatSummary(feat);
+        return { content: [{ type: "text" as const, text }] };
       }
 
       logLookupFailure(wsClient, "Feat", feat_name);
@@ -462,11 +684,19 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
     "Look up a D&D class from the D&D 2024 database. Returns hit die, spellcasting, features, subclasses, and resources.",
     {
       class_name: z.string().describe("Class name, e.g. 'Paladin', 'Rogue', 'Wizard'"),
+      detail: z
+        .enum(["summary", "full"])
+        .optional()
+        .default("summary")
+        .describe(
+          "Level of detail: 'summary' for a compact one-liner, 'full' for complete rules text",
+        ),
     },
-    async ({ class_name }) => {
+    async ({ class_name, detail }) => {
       const cls = getClass(class_name);
       if (cls) {
-        return { content: [{ type: "text" as const, text: formatClassFn(cls) }] };
+        const text = detail === "full" ? formatClassFn(cls) : formatClassSummary(cls);
+        return { content: [{ type: "text" as const, text }] };
       }
 
       logLookupFailure(wsClient, "Class", class_name);
@@ -481,11 +711,19 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
       species_name: z
         .string()
         .describe("Species name, e.g. 'Tiefling', 'Aasimar', 'Goliath', 'Kenku'"),
+      detail: z
+        .enum(["summary", "full"])
+        .optional()
+        .default("summary")
+        .describe(
+          "Level of detail: 'summary' for a compact one-liner, 'full' for complete rules text",
+        ),
     },
-    async ({ species_name }) => {
+    async ({ species_name, detail }) => {
       const sp = getSpecies(species_name);
       if (sp) {
-        return { content: [{ type: "text" as const, text: formatSpeciesFn(sp) }] };
+        const text = detail === "full" ? formatSpeciesFn(sp) : formatSpeciesSummary(sp);
+        return { content: [{ type: "text" as const, text }] };
       }
 
       logLookupFailure(wsClient, "Species", species_name);
@@ -500,11 +738,19 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
       background_name: z
         .string()
         .describe("Background name, e.g. 'Noble', 'Criminal', 'Sage', 'Haunted One'"),
+      detail: z
+        .enum(["summary", "full"])
+        .optional()
+        .default("summary")
+        .describe(
+          "Level of detail: 'summary' for a compact one-liner, 'full' for complete rules text",
+        ),
     },
-    async ({ background_name }) => {
+    async ({ background_name, detail }) => {
       const bg = getBackground(background_name);
       if (bg) {
-        return { content: [{ type: "text" as const, text: formatBackgroundFn(bg) }] };
+        const text = detail === "full" ? formatBackgroundFn(bg) : formatBackgroundSummary(bg);
+        return { content: [{ type: "text" as const, text }] };
       }
 
       logLookupFailure(wsClient, "Background", background_name);
@@ -521,11 +767,22 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
       feature_name: z
         .string()
         .describe("Feature name, e.g. 'Agonizing Blast', 'Riposte', 'Quickened Spell'"),
+      detail: z
+        .enum(["summary", "full"])
+        .optional()
+        .default("summary")
+        .describe(
+          "Level of detail: 'summary' for a compact one-liner, 'full' for complete rules text",
+        ),
     },
-    async ({ feature_name }) => {
+    async ({ feature_name, detail }) => {
       const feature = getOptionalFeature(feature_name);
       if (feature) {
-        return { content: [{ type: "text" as const, text: formatOptionalFeatureFn(feature) }] };
+        const text =
+          detail === "full"
+            ? formatOptionalFeatureFn(feature)
+            : formatOptionalFeatureSummary(feature);
+        return { content: [{ type: "text" as const, text }] };
       }
 
       logLookupFailure(wsClient, "Optional Feature", feature_name);
@@ -538,11 +795,19 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
     "Look up a game action (Attack, Dash, Dodge, Disengage, Help, Hide, etc.) from the D&D 2024 database.",
     {
       action_name: z.string().describe("Action name, e.g. 'Attack', 'Grapple', 'Shove', 'Dodge'"),
+      detail: z
+        .enum(["summary", "full"])
+        .optional()
+        .default("summary")
+        .describe(
+          "Level of detail: 'summary' for a compact one-liner, 'full' for complete rules text",
+        ),
     },
-    async ({ action_name }) => {
+    async ({ action_name, detail }) => {
       const action = getAction(action_name);
       if (action) {
-        return { content: [{ type: "text" as const, text: formatActionFn(action) }] };
+        const text = detail === "full" ? formatActionFn(action) : formatActionSummary(action);
+        return { content: [{ type: "text" as const, text }] };
       }
 
       logLookupFailure(wsClient, "Action", action_name);
@@ -555,11 +820,19 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
     "Look up a D&D language from the 2024 database.",
     {
       language_name: z.string().describe("Language name, e.g. 'Elvish', 'Draconic', 'Infernal'"),
+      detail: z
+        .enum(["summary", "full"])
+        .optional()
+        .default("summary")
+        .describe(
+          "Level of detail: 'summary' for a compact one-liner, 'full' for complete rules text",
+        ),
     },
-    async ({ language_name }) => {
+    async ({ language_name, detail }) => {
       const lang = getLanguage(language_name);
       if (lang) {
-        return { content: [{ type: "text" as const, text: formatLanguageFn(lang) }] };
+        const text = detail === "full" ? formatLanguageFn(lang) : formatLanguageSummary(lang);
+        return { content: [{ type: "text" as const, text }] };
       }
 
       logLookupFailure(wsClient, "Language", language_name);
@@ -572,11 +845,19 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
     "Look up a disease from the D&D 2024 database.",
     {
       disease_name: z.string().describe("Disease name, e.g. 'Cackle Fever', 'Sewer Plague'"),
+      detail: z
+        .enum(["summary", "full"])
+        .optional()
+        .default("summary")
+        .describe(
+          "Level of detail: 'summary' for a compact one-liner, 'full' for complete rules text",
+        ),
     },
-    async ({ disease_name }) => {
+    async ({ disease_name, detail }) => {
       const disease = getDisease(disease_name);
       if (disease) {
-        return { content: [{ type: "text" as const, text: formatDiseaseFn(disease) }] };
+        const text = detail === "full" ? formatDiseaseFn(disease) : formatDiseaseSummary(disease);
+        return { content: [{ type: "text" as const, text }] };
       }
 
       logLookupFailure(wsClient, "Disease", disease_name);

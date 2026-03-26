@@ -190,10 +190,9 @@ export function BattleMap({
   const [selectedTokenId, setSelectedTokenId] = useState<string | null>(null);
   const [showReachable, setShowReachable] = useState(false);
   const [hoveredTokenId, setHoveredTokenId] = useState<string | null>(null);
-  const [shiftHeld, setShiftHeld] = useState(false);
-  const [measureMode, setMeasureMode] = useState(false);
   const [measureTarget, setMeasureTarget] = useState<GridPosition | null>(null);
   const [dragRender, setDragRender] = useState(0); // increment to force re-render during drag
+  const [hoveredAoeId, setHoveredAoeId] = useState<string | null>(null);
 
   const gridRef = useRef<HTMLDivElement>(null);
   const gridContainerRef = useRef<HTMLDivElement>(null);
@@ -204,6 +203,7 @@ export function BattleMap({
     currentPixel: null,
     currentTile: null,
   });
+  const justDraggedRef = useRef(false);
 
   // My combatant
   const myCombatant = useMemo(() => {
@@ -229,23 +229,6 @@ export function BattleMap({
       map,
     );
   }, [showReachable, myCombatant, map]);
-
-  // Keyboard listeners for shift + M
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Shift") setShiftHeld(true);
-      if (e.key === "m" || e.key === "M") setMeasureMode((prev) => !prev);
-    };
-    const handleKeyUp = (e: KeyboardEvent) => {
-      if (e.key === "Shift") setShiftHeld(false);
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    window.addEventListener("keyup", handleKeyUp);
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-      window.removeEventListener("keyup", handleKeyUp);
-    };
-  }, []);
 
   // Scroll highlighted combatant into view
   useEffect(() => {
@@ -293,6 +276,8 @@ export function BattleMap({
   // Click on own token to select and show reachable
   const handleTokenClick = useCallback(
     (combatant: Combatant) => {
+      // Ignore clicks that fire immediately after a drag release
+      if (justDraggedRef.current) return;
       if (isMyTurn && myCombatant && combatant.id === myCombatant.id) {
         if (selectedTokenId === combatant.id) {
           // Deselect
@@ -378,6 +363,12 @@ export function BattleMap({
       ds.startPos = null;
       ds.currentPixel = null;
       ds.currentTile = null;
+
+      // Suppress the click event that fires right after mouseup on the same element
+      justDraggedRef.current = true;
+      requestAnimationFrame(() => {
+        justDraggedRef.current = false;
+      });
 
       setDragRender((prev) => prev + 1);
 
@@ -562,12 +553,9 @@ export function BattleMap({
     return parts.length > 0 ? parts : null;
   }, []);
 
-  // Measurement: active when shift held or measure mode toggled
-  const isMeasuring = shiftHeld || measureMode;
-
-  // Measurement line data
+  // Measurement line data (always active)
   const measureLine = useMemo(() => {
-    if (!isMeasuring || !measureTarget || !myCombatant?.position) return null;
+    if (!measureTarget || !myCombatant?.position) return null;
     const from = myCombatant.position;
     const to = measureTarget;
     const dist = gridDistance(from, to);
@@ -586,7 +574,7 @@ export function BattleMap({
     };
 
     return { fromPx, toPx, midPx, dist };
-  }, [isMeasuring, measureTarget, myCombatant?.position]);
+  }, [measureTarget, myCombatant?.position]);
 
   // Suppress the dragRender lint warning -- it is intentionally used for side-effect re-render
   void dragRender;
@@ -611,15 +599,6 @@ export function BattleMap({
             Your turn &mdash; drag your token or click a highlighted tile to move
             <span className="text-amber-500/70 font-mono ml-1">{movementLeft}ft remaining</span>
           </div>
-        </div>
-      )}
-
-      {/* Measure mode indicator */}
-      {isMeasuring && (
-        <div className="px-3 py-1 bg-blue-950/40 border-b border-blue-800/30 text-blue-300 text-xs font-medium tracking-wide flex items-center gap-2 shrink-0">
-          <span className="inline-block w-1.5 h-1.5 rounded-full bg-blue-400" />
-          Measuring distance {shiftHeld ? "(Shift)" : "(M key)"} &mdash; hover a tile to see
-          distance
         </div>
       )}
 
@@ -761,15 +740,11 @@ export function BattleMap({
                         }}
                         onMouseEnter={() => {
                           setHoveredTile(key);
-                          if (isMeasuring) {
-                            setMeasureTarget({ x, y });
-                          }
+                          setMeasureTarget({ x, y });
                         }}
                         onMouseLeave={() => {
                           setHoveredTile(null);
-                          if (isMeasuring) {
-                            setMeasureTarget(null);
-                          }
+                          setMeasureTarget(null);
                         }}
                       >
                         {/* Terrain textures */}
@@ -881,7 +856,7 @@ export function BattleMap({
                         )}
 
                         {/* Tile tooltip on hover */}
-                        {isHoveredHere && tileTooltipData && !isMeasuring && (
+                        {isHoveredHere && tileTooltipData && (
                           <div
                             className="absolute left-1/2 bottom-full mb-1 -translate-x-1/2 bg-gray-900 border border-gray-600/50 rounded-lg shadow-lg px-3 py-2 text-xs text-gray-200 whitespace-nowrap pointer-events-none"
                             style={{ zIndex: 35 }}
@@ -902,34 +877,52 @@ export function BattleMap({
                 )}
               </div>
 
-              {/* ─── Layer 2: AoE center labels ─── */}
+              {/* ─── Layer 2: AoE center markers + hover tooltips ─── */}
               {aoeCenters.map(({ aoe }) => {
                 const left = aoe.center.x * (TILE_SIZE + TILE_GAP) + TILE_SIZE / 2;
                 const top = aoe.center.y * (TILE_SIZE + TILE_GAP) + TILE_SIZE / 2;
                 const sizeLabel = aoe.radius
-                  ? `${aoe.radius}ft`
+                  ? `${aoe.radius}ft ${aoe.shape}`
                   : aoe.length
-                    ? `${aoe.length}ft`
-                    : "";
+                    ? `${aoe.length}ft ${aoe.shape}`
+                    : aoe.shape;
+                const isHovered = hoveredAoeId === aoe.id;
                 return (
                   <div
-                    key={`aoe-label-${aoe.id}`}
-                    className="absolute pointer-events-none select-none text-center"
+                    key={`aoe-marker-${aoe.id}`}
+                    className="absolute"
                     style={{
                       left,
                       top,
                       transform: "translate(-50%, -50%)",
                       zIndex: 19,
-                      fontSize: 8,
-                      color: aoe.color,
-                      textShadow: "0 0 4px rgba(0,0,0,0.8)",
-                      fontWeight: 700,
-                      whiteSpace: "nowrap",
                     }}
+                    onMouseEnter={() => setHoveredAoeId(aoe.id)}
+                    onMouseLeave={() => setHoveredAoeId(null)}
                   >
-                    {aoe.label}
-                    {sizeLabel && (
-                      <span style={{ opacity: 0.7, marginLeft: 2 }}>({sizeLabel})</span>
+                    {/* Pulsing dot marker */}
+                    <div
+                      className="w-3 h-3 rounded-full border border-white/40"
+                      style={{
+                        backgroundColor: aoe.color,
+                        boxShadow: `0 0 6px ${aoe.color}`,
+                        animation: "aoePulse 3s ease-in-out infinite",
+                      }}
+                    />
+                    {/* Tooltip on hover */}
+                    {isHovered && (
+                      <div
+                        className="absolute left-1/2 bottom-full mb-1 -translate-x-1/2 bg-gray-900 border border-gray-600/50 rounded-lg shadow-lg px-3 py-2 text-xs text-gray-200 whitespace-nowrap pointer-events-none"
+                        style={{ zIndex: 35 }}
+                      >
+                        <div className="font-medium" style={{ color: aoe.color }}>
+                          {aoe.label}
+                        </div>
+                        <div className="text-gray-400 mt-0.5">{sizeLabel}</div>
+                        {aoe.casterName && (
+                          <div className="text-gray-500 mt-0.5">Cast by {aoe.casterName}</div>
+                        )}
+                      </div>
                     )}
                   </div>
                 );

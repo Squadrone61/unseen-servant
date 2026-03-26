@@ -51,6 +51,27 @@ interface ConversationMessage {
   content: string;
 }
 
+/** Structured tool response returned by GSM methods for MCP tools */
+export interface ToolResponse {
+  /** Human-readable summary (backwards-compatible with old string returns) */
+  text: string;
+  /** Machine-parseable structured data */
+  data: Record<string, unknown>;
+  /** Whether this represents an error */
+  error?: boolean;
+  /** Recovery hints shown to the AI on error */
+  hints?: string[];
+}
+
+function toResponse(
+  text: string,
+  data: Record<string, unknown>,
+  error?: boolean,
+  hints?: string[],
+): ToolResponse {
+  return { text, data, ...(error ? { error } : {}), ...(hints ? { hints } : {}) };
+}
+
 export interface SessionStateSnapshot {
   /** @deprecated Chat history now stored separately in chat-history.json */
   conversationHistory?: ConversationMessage[];
@@ -1071,6 +1092,142 @@ export class GameStateManager {
     };
   }
 
+  /** Get stratified game state: compact (~200 tokens), tactical (~500 tokens), or full (everything) */
+  getGameStateStratified(detail: "compact" | "tactical" | "full"): ToolResponse {
+    if (detail === "full") {
+      const state = this.getGameState();
+      return toResponse("Full game state", { ...state });
+    }
+
+    const combat = this.gameState.encounter?.combat;
+    const inCombat = !!combat && combat.phase === "active";
+    const mode = inCombat ? "combat" : "exploration";
+
+    // Build character summaries
+    const characters = Object.values(this.characters).map((char) => {
+      const c: Record<string, unknown> = {
+        name: char.static.name,
+        hp: `${char.dynamic.currentHP}/${char.static.maxHP}`,
+        ac: char.static.armorClass,
+        classes: char.static.classes.map((cl) => `${cl.name} ${cl.level}`).join("/"),
+      };
+      if (char.dynamic.tempHP > 0) c.tempHP = char.dynamic.tempHP;
+      if (char.dynamic.conditions.length > 0)
+        c.conditions = char.dynamic.conditions.map((cd) => cd.name);
+      if (char.dynamic.concentratingOn) c.concentrating = char.dynamic.concentratingOn.spellName;
+      if (char.dynamic.heroicInspiration) c.inspiration = true;
+      return c;
+    });
+
+    if (!inCombat) {
+      // Exploration mode — characters only
+      const text = `[${mode.toUpperCase()}] ${characters.length} characters`;
+      return toResponse(text, { mode, characters });
+    }
+
+    // Combat mode — turn order + HP/conditions
+    const activeId = combat!.turnOrder[combat!.turnIndex];
+    const turnOrder = combat!.turnOrder
+      .map((id) => {
+        const cb = combat!.combatants[id];
+        if (!cb) return null;
+        const entry: Record<string, unknown> = {
+          name: cb.name,
+          type: cb.type,
+          initiative: cb.initiative,
+          hp:
+            cb.type === "player"
+              ? (() => {
+                  const ch = Object.values(this.characters).find(
+                    (c) => c.static.name.toLowerCase() === cb.name.toLowerCase(),
+                  );
+                  return ch
+                    ? `${ch.dynamic.currentHP}/${ch.static.maxHP}`
+                    : `${cb.currentHP ?? "?"}/${cb.maxHP ?? "?"}`;
+                })()
+              : `${cb.currentHP ?? 0}/${cb.maxHP ?? "?"}`,
+          ac:
+            cb.type === "player"
+              ? (Object.values(this.characters).find(
+                  (c) => c.static.name.toLowerCase() === cb.name.toLowerCase(),
+                )?.static.armorClass ?? cb.armorClass)
+              : cb.armorClass,
+        };
+        if (id === activeId) entry.current = true;
+        const conditions =
+          cb.type === "player"
+            ? (Object.values(this.characters)
+                .find((c) => c.static.name.toLowerCase() === cb.name.toLowerCase())
+                ?.dynamic.conditions.map((cd) => cd.name) ?? [])
+            : (cb.conditions ?? []).map((cd) => cd.name);
+        if (conditions.length > 0) entry.conditions = conditions;
+        const conc =
+          cb.type === "player"
+            ? Object.values(this.characters).find(
+                (c) => c.static.name.toLowerCase() === cb.name.toLowerCase(),
+              )?.dynamic.concentratingOn?.spellName
+            : cb.concentratingOn?.spellName;
+        if (conc) entry.concentrating = conc;
+        if (cb.type !== "player" && (cb.currentHP ?? 0) <= 0) entry.dead = true;
+        return entry;
+      })
+      .filter(Boolean);
+
+    const activeName = combat!.combatants[activeId]?.name ?? "unknown";
+
+    if (detail === "compact") {
+      return toResponse(
+        `[COMBAT] Round ${combat!.round} | ${activeName}'s turn | ${turnOrder.length} combatants`,
+        { mode, round: combat!.round, currentTurn: activeName, turnOrder },
+      );
+    }
+
+    // Tactical — add positions, distances, terrain, AoE
+    const activeCombatant = combat!.combatants[activeId];
+    for (const entry of turnOrder) {
+      if (!entry) continue;
+      const e = entry as Record<string, unknown>;
+      const cb = Object.values(combat!.combatants).find((c) => c.name === e.name);
+      if (cb?.position) {
+        e.position = formatGridPosition(cb.position);
+        if (activeCombatant?.position && cb.name !== activeCombatant.name) {
+          e.distance = gridDistance(activeCombatant.position, cb.position) + "ft";
+        }
+      }
+      e.speed = (cb?.speed ?? 30) + "ft";
+    }
+
+    const data: Record<string, unknown> = {
+      mode,
+      round: combat!.round,
+      currentTurn: activeName,
+      turnOrder,
+    };
+
+    // Map terrain near combatants
+    const map = this.gameState.encounter?.map;
+    if (map) {
+      data.mapName = map.name;
+      data.mapSize = `${map.width}x${map.height}`;
+    }
+
+    // Active AoE
+    if (combat!.activeAoE && combat!.activeAoE.length > 0) {
+      data.activeAoE = combat!.activeAoE.map((a) => ({
+        id: a.id,
+        label: a.label,
+        shape: a.shape,
+        center: formatGridPosition(a.center),
+        caster: a.casterName,
+      }));
+    }
+
+    return toResponse(
+      `[COMBAT TACTICAL] Round ${combat!.round} | ${activeName}'s turn | ${turnOrder.length} combatants`,
+      data,
+    );
+  }
+
   /** Get a specific character */
   getCharacter(characterName: string): { playerName: string; character: CharacterData } | null {
     for (const [pName, char] of Object.entries(this.characters)) {
@@ -1082,7 +1239,7 @@ export class GameStateManager {
   }
 
   /** Apply damage to a character or combatant */
-  applyDamage(targetName: string, amount: number, damageType?: string): string {
+  applyDamage(targetName: string, amount: number, damageType?: string): ToolResponse {
     const dmg = Math.max(0, amount);
 
     // Check combatants first (NPCs/enemies)
@@ -1096,10 +1253,11 @@ export class GameStateManager {
           { type: "damage", target: targetName, amount: dmg, damageType },
         ]);
         let remaining = dmg;
+        let tempAbsorbed = 0;
         if ((combatant.tempHP ?? 0) > 0) {
-          const absorbed = Math.min(combatant.tempHP!, remaining);
-          combatant.tempHP! -= absorbed;
-          remaining -= absorbed;
+          tempAbsorbed = Math.min(combatant.tempHP!, remaining);
+          combatant.tempHP! -= tempAbsorbed;
+          remaining -= tempAbsorbed;
         }
         combatant.currentHP = Math.max(0, (combatant.currentHP ?? 0) - remaining);
 
@@ -1110,20 +1268,29 @@ export class GameStateManager {
           timestamp: Date.now(),
         });
 
-        let result = `${combatant.name} takes ${dmg} ${damageType ?? ""} damage → ${combatant.currentHP}/${combatant.maxHP} HP`;
+        let text = `${combatant.name} takes ${dmg} ${damageType ?? ""} damage → ${combatant.currentHP}/${combatant.maxHP} HP`;
+        const data: Record<string, unknown> = {
+          target: combatant.name,
+          damageDealt: dmg,
+          tempHpAbsorbed: tempAbsorbed,
+          currentHP: combatant.currentHP,
+          maxHP: combatant.maxHP,
+          damageType,
+        };
         if (combatant.concentratingOn) {
           const concDC = Math.max(10, Math.floor(dmg / 2));
-          result += `\n⚠ ${combatant.name} is concentrating on ${combatant.concentratingOn.spellName} — Constitution save DC ${concDC} required to maintain`;
+          text += `\n⚠ ${combatant.name} is concentrating on ${combatant.concentratingOn.spellName} — Constitution save DC ${concDC} required to maintain`;
+          data.concentrating = combatant.concentratingOn.spellName;
+          data.concentrationDC = concDC;
         }
         if (damageType) {
-          result += `\nNOTE: Verify whether ${combatant.name} has resistance, immunity, or vulnerability to ${damageType} damage — if so, adjust the amount before calling this tool.`;
+          text += `\nNOTE: Verify whether ${combatant.name} has resistance, immunity, or vulnerability to ${damageType} damage — if so, adjust the amount before calling this tool.`;
         }
-        // Cover reminder
         const combatantCover = this.getCoverInfo(combatant.name);
         if (combatantCover) {
-          result += `\n(Note: ${combatantCover.toLowerCase()})`;
+          text += `\n(Note: ${combatantCover.toLowerCase()})`;
         }
-        return result;
+        return toResponse(text, data);
       }
     }
 
@@ -1134,10 +1301,11 @@ export class GameStateManager {
           { type: "damage", target: targetName, amount: dmg, damageType },
         ]);
         let remaining = dmg;
+        let tempAbsorbed = 0;
         if (char.dynamic.tempHP > 0) {
-          const absorbed = Math.min(char.dynamic.tempHP, remaining);
-          char.dynamic.tempHP -= absorbed;
-          remaining -= absorbed;
+          tempAbsorbed = Math.min(char.dynamic.tempHP, remaining);
+          char.dynamic.tempHP -= tempAbsorbed;
+          remaining -= tempAbsorbed;
         }
         char.dynamic.currentHP = Math.max(0, char.dynamic.currentHP - remaining);
 
@@ -1147,28 +1315,39 @@ export class GameStateManager {
           character: char,
         });
 
-        let result = `${char.static.name} takes ${dmg} ${damageType ?? ""} damage → ${char.dynamic.currentHP}/${char.static.maxHP} HP`;
+        let text = `${char.static.name} takes ${dmg} ${damageType ?? ""} damage → ${char.dynamic.currentHP}/${char.static.maxHP} HP`;
+        const data: Record<string, unknown> = {
+          target: char.static.name,
+          damageDealt: dmg,
+          tempHpAbsorbed: tempAbsorbed,
+          currentHP: char.dynamic.currentHP,
+          maxHP: char.static.maxHP,
+          damageType,
+        };
         if (char.dynamic.concentratingOn) {
           const concDC = Math.max(10, Math.floor(dmg / 2));
-          result += `\n⚠ ${char.static.name} is concentrating on ${char.dynamic.concentratingOn.spellName} — Constitution save DC ${concDC} required to maintain`;
+          text += `\n⚠ ${char.static.name} is concentrating on ${char.dynamic.concentratingOn.spellName} — Constitution save DC ${concDC} required to maintain`;
+          data.concentrating = char.dynamic.concentratingOn.spellName;
+          data.concentrationDC = concDC;
         }
         if (damageType) {
-          result += `\nNOTE: Verify whether ${char.static.name} has resistance, immunity, or vulnerability to ${damageType} damage — if so, adjust the amount before calling this tool.`;
+          text += `\nNOTE: Verify whether ${char.static.name} has resistance, immunity, or vulnerability to ${damageType} damage — if so, adjust the amount before calling this tool.`;
         }
-        // Cover reminder during active combat
         const charCover = this.getCoverInfo(char.static.name);
         if (charCover) {
-          result += `\n(Note: ${charCover.toLowerCase()})`;
+          text += `\n(Note: ${charCover.toLowerCase()})`;
         }
-        return result;
+        return toResponse(text, data);
       }
     }
 
-    return `Target "${targetName}" not found`;
+    return toResponse(`Target "${targetName}" not found`, { target: targetName }, true, [
+      `Available targets: ${this.listTargetNames().join(", ")}`,
+    ]);
   }
 
   /** Heal a character or combatant */
-  heal(targetName: string, amount: number): string {
+  heal(targetName: string, amount: number): ToolResponse {
     const healing = Math.max(0, amount);
 
     // Check NPC combatants
@@ -1181,14 +1360,25 @@ export class GameStateManager {
         this.createEvent("healing", `${combatant.name} healed for ${healing}`, [
           { type: "healing", target: targetName, amount: healing },
         ]);
-        combatant.currentHP = Math.min(combatant.maxHP, (combatant.currentHP ?? 0) + healing);
+        const prevHP = combatant.currentHP ?? 0;
+        combatant.currentHP = Math.min(combatant.maxHP, prevHP + healing);
+        const overheal = Math.max(0, prevHP + healing - combatant.maxHP);
         this.broadcast({
           type: "server:combat_update",
           combat,
           map: this.gameState.encounter?.map ?? null,
           timestamp: Date.now(),
         });
-        return `${combatant.name} healed ${healing} → ${combatant.currentHP}/${combatant.maxHP} HP`;
+        return toResponse(
+          `${combatant.name} healed ${healing} → ${combatant.currentHP}/${combatant.maxHP} HP`,
+          {
+            target: combatant.name,
+            healed: healing,
+            currentHP: combatant.currentHP,
+            maxHP: combatant.maxHP,
+            overheal,
+          },
+        );
       }
     }
 
@@ -1198,7 +1388,9 @@ export class GameStateManager {
         this.createEvent("healing", `${char.static.name} healed for ${healing}`, [
           { type: "healing", target: targetName, amount: healing },
         ]);
+        const prevHP = char.dynamic.currentHP;
         char.dynamic.currentHP = Math.min(char.static.maxHP, char.dynamic.currentHP + healing);
+        const overheal = Math.max(0, prevHP + healing - char.static.maxHP);
         // Reset death saves when healed from 0 HP
         if (
           char.dynamic.currentHP > 0 &&
@@ -1211,15 +1403,26 @@ export class GameStateManager {
           playerName: pName,
           character: char,
         });
-        return `${char.static.name} healed ${healing} → ${char.dynamic.currentHP}/${char.static.maxHP} HP`;
+        return toResponse(
+          `${char.static.name} healed ${healing} → ${char.dynamic.currentHP}/${char.static.maxHP} HP`,
+          {
+            target: char.static.name,
+            healed: healing,
+            currentHP: char.dynamic.currentHP,
+            maxHP: char.static.maxHP,
+            overheal,
+          },
+        );
       }
     }
 
-    return `Target "${targetName}" not found`;
+    return toResponse(`Target "${targetName}" not found`, { target: targetName }, true, [
+      `Available targets: ${this.listTargetNames().join(", ")}`,
+    ]);
   }
 
   /** Set HP to exact value */
-  setHP(targetName: string, value: number): string {
+  setHP(targetName: string, value: number): ToolResponse {
     // NPC combatants
     const combat = this.gameState.encounter?.combat;
     if (combat) {
@@ -1227,6 +1430,7 @@ export class GameStateManager {
         (c) => c.name.toLowerCase() === targetName.toLowerCase() && c.type !== "player",
       );
       if (combatant && combatant.maxHP) {
+        const prevHP = combatant.currentHP ?? 0;
         this.createEvent("hp_set", `${combatant.name} HP set to ${value}`, [
           { type: "hp_set", target: targetName, value },
         ]);
@@ -1237,17 +1441,22 @@ export class GameStateManager {
           map: this.gameState.encounter?.map ?? null,
           timestamp: Date.now(),
         });
-        return `${combatant.name} HP set to ${combatant.currentHP}/${combatant.maxHP}`;
+        return toResponse(`${combatant.name} HP set to ${combatant.currentHP}/${combatant.maxHP}`, {
+          target: combatant.name,
+          previousHP: prevHP,
+          newHP: combatant.currentHP,
+          maxHP: combatant.maxHP,
+        });
       }
     }
 
     for (const [pName, char] of Object.entries(this.characters)) {
       if (char.static.name.toLowerCase() === targetName.toLowerCase()) {
+        const prevHP = char.dynamic.currentHP;
         this.createEvent("hp_set", `${char.static.name} HP set to ${value}`, [
           { type: "hp_set", target: targetName, value },
         ]);
         char.dynamic.currentHP = Math.max(0, Math.min(char.static.maxHP, value));
-        // Reset death saves when HP goes above 0
         if (
           char.dynamic.currentHP > 0 &&
           (char.dynamic.deathSaves.successes > 0 || char.dynamic.deathSaves.failures > 0)
@@ -1259,15 +1468,25 @@ export class GameStateManager {
           playerName: pName,
           character: char,
         });
-        return `${char.static.name} HP set to ${char.dynamic.currentHP}/${char.static.maxHP}`;
+        return toResponse(
+          `${char.static.name} HP set to ${char.dynamic.currentHP}/${char.static.maxHP}`,
+          {
+            target: char.static.name,
+            previousHP: prevHP,
+            newHP: char.dynamic.currentHP,
+            maxHP: char.static.maxHP,
+          },
+        );
       }
     }
 
-    return `Target "${targetName}" not found`;
+    return toResponse(`Target "${targetName}" not found`, { target: targetName }, true, [
+      `Available targets: ${this.listTargetNames().join(", ")}`,
+    ]);
   }
 
   /** Add a condition */
-  addCondition(targetName: string, condition: string, duration?: number): string {
+  addCondition(targetName: string, condition: string, duration?: number): ToolResponse {
     // NPC combatants
     const combat = this.gameState.encounter?.combat;
     if (combat) {
@@ -1288,7 +1507,12 @@ export class GameStateManager {
           map: this.gameState.encounter?.map ?? null,
           timestamp: Date.now(),
         });
-        return `${combatant.name} is now ${condition}`;
+        return toResponse(`${combatant.name} is now ${condition}`, {
+          target: combatant.name,
+          condition,
+          duration,
+          conditions: combatant.conditions.map((c) => c.name),
+        });
       }
     }
 
@@ -1309,15 +1533,22 @@ export class GameStateManager {
           playerName: pName,
           character: char,
         });
-        return `${char.static.name} is now ${condition}`;
+        return toResponse(`${char.static.name} is now ${condition}`, {
+          target: char.static.name,
+          condition,
+          duration,
+          conditions: char.dynamic.conditions.map((c) => c.name),
+        });
       }
     }
 
-    return `Target "${targetName}" not found`;
+    return toResponse(`Target "${targetName}" not found`, { target: targetName }, true, [
+      `Available targets: ${this.listTargetNames().join(", ")}`,
+    ]);
   }
 
   /** Remove a condition */
-  removeCondition(targetName: string, condition: string): string {
+  removeCondition(targetName: string, condition: string): ToolResponse {
     const combat = this.gameState.encounter?.combat;
     if (combat) {
       const combatant = Object.values(combat.combatants).find(
@@ -1334,7 +1565,11 @@ export class GameStateManager {
           map: this.gameState.encounter?.map ?? null,
           timestamp: Date.now(),
         });
-        return `${condition} removed from ${combatant.name}`;
+        return toResponse(`${condition} removed from ${combatant.name}`, {
+          target: combatant.name,
+          removed: condition,
+          conditions: combatant.conditions.map((c) => c.name),
+        });
       }
     }
 
@@ -1349,11 +1584,17 @@ export class GameStateManager {
           playerName: pName,
           character: char,
         });
-        return `${condition} removed from ${char.static.name}`;
+        return toResponse(`${condition} removed from ${char.static.name}`, {
+          target: char.static.name,
+          removed: condition,
+          conditions: char.dynamic.conditions.map((c) => c.name),
+        });
       }
     }
 
-    return `Target "${targetName}" not found`;
+    return toResponse(`Target "${targetName}" not found`, { target: targetName }, true, [
+      `Available targets: ${this.listTargetNames().join(", ")}`,
+    ]);
   }
 
   /** Start combat */
@@ -1370,7 +1611,7 @@ export class GameStateManager {
       size?: CreatureSize;
       tokenColor?: string;
     }>,
-  ): string {
+  ): ToolResponse {
     const combatantMap: Record<string, Combatant> = {};
     const initiativeOrder: Array<{ id: string; initiative: number }> = [];
 
@@ -1447,24 +1688,34 @@ export class GameStateManager {
       timestamp: Date.now(),
     });
 
-    const initSummary = initiativeOrder
-      .map((i) => `${combatantMap[i.id].name}: ${i.initiative}`)
-      .join(", ");
+    const turnOrder = initiativeOrder.map((i) => ({
+      name: combatantMap[i.id].name,
+      initiative: i.initiative,
+      type: combatantMap[i.id].type,
+    }));
+    const initSummary = turnOrder.map((t) => `${t.name}: ${t.initiative}`).join(", ");
 
-    return `Combat started! Initiative order: ${initSummary}. Round 1, ${combatantMap[initiativeOrder[0].id].name}'s turn.`;
+    return toResponse(
+      `Combat started! Initiative order: ${initSummary}. Round 1, ${turnOrder[0].name}'s turn.`,
+      { round: 1, currentTurn: turnOrder[0].name, turnOrder, combatantCount: combatants.length },
+    );
   }
 
   /** End combat */
-  endCombat(): string {
+  endCombat(): ToolResponse {
     if (!this.gameState.encounter?.combat) {
-      return "No active combat to end";
+      return toResponse("No active combat to end", {}, true, ["Use start_combat to begin combat"]);
     }
+
+    const totalRounds = this.gameState.encounter.combat.round;
+    const survivors = Object.values(this.gameState.encounter.combat.combatants)
+      .filter((c) => (c.currentHP ?? 0) > 0)
+      .map((c) => c.name);
 
     this.createEvent("combat_end", "Combat ended", [{ type: "combat_phase", phase: "ended" }]);
 
     this.gameState.encounter.combat.phase = "ended";
     this.gameState.encounter.phase = "exploration";
-    const _combat = this.gameState.encounter.combat;
     this.gameState.encounter.combat = undefined;
     this.gameState.encounter.map = undefined;
 
@@ -1475,21 +1726,25 @@ export class GameStateManager {
       timestamp: Date.now(),
     });
 
-    return "Combat ended.";
+    return toResponse("Combat ended.", { ended: true, totalRounds, survivors });
   }
 
   /** Advance to next turn */
-  advanceTurnMCP(): string {
+  advanceTurnMCP(): ToolResponse {
     const combat = this.gameState.encounter?.combat;
     if (!combat || combat.phase !== "active") {
-      return "No active combat";
+      return toResponse("No active combat", {}, true, ["Use start_combat to begin combat"]);
     }
 
     // Guard: AI cannot end a player's turn — players click End Turn themselves
     const activeId = combat.turnOrder[combat.turnIndex];
     const activeCombatant = combat.combatants[activeId];
     if (activeCombatant?.type === "player") {
-      return `Cannot advance turn: it is ${activeCombatant.name}'s turn (a player character). Players end their own turns via the End Turn button.`;
+      return toResponse(
+        `Cannot advance turn: it is ${activeCombatant.name}'s turn (a player character). Players end their own turns via the End Turn button.`,
+        { currentTurn: activeCombatant.name, isPlayerTurn: true },
+        true,
+      );
     }
 
     this.advanceTurn(combat);
@@ -1503,7 +1758,13 @@ export class GameStateManager {
 
     const newActiveId = combat.turnOrder[combat.turnIndex];
     const active = combat.combatants[newActiveId];
-    return `Advanced to ${active?.name ?? "unknown"}'s turn (Round ${combat.round})`;
+    const nextIdx = (combat.turnIndex + 1) % combat.turnOrder.length;
+    const nextUp = combat.combatants[combat.turnOrder[nextIdx]];
+    return toResponse(`Advanced to ${active?.name ?? "unknown"}'s turn (Round ${combat.round})`, {
+      currentTurn: active?.name,
+      round: combat.round,
+      nextUp: nextUp?.name,
+    });
   }
 
   /** Add combatant mid-fight */
@@ -1518,10 +1779,10 @@ export class GameStateManager {
     position?: GridPosition;
     size?: CreatureSize;
     tokenColor?: string;
-  }): string {
+  }): ToolResponse {
     const combat = this.gameState.encounter?.combat;
     if (!combat || combat.phase !== "active") {
-      return "No active combat";
+      return toResponse("No active combat", {}, true, ["Use start_combat to begin combat"]);
     }
 
     const id = crypto.randomUUID();
@@ -1581,18 +1842,27 @@ export class GameStateManager {
       timestamp: Date.now(),
     });
 
-    return `${c.name} joined combat (initiative ${initiative})`;
+    return toResponse(`${c.name} joined combat (initiative ${initiative})`, {
+      name: c.name,
+      initiative,
+      position: c.position ? formatGridPosition(c.position) : null,
+    });
   }
 
   /** Remove combatant */
-  removeCombatant(combatantName: string): string {
+  removeCombatant(combatantName: string): ToolResponse {
     const combat = this.gameState.encounter?.combat;
-    if (!combat) return "No active combat";
+    if (!combat) return toResponse("No active combat", {}, true);
 
     const entry = Object.entries(combat.combatants).find(
       ([, c]) => c.name.toLowerCase() === combatantName.toLowerCase(),
     );
-    if (!entry) return `Combatant "${combatantName}" not found`;
+    if (!entry) {
+      const names = Object.values(combat.combatants).map((c) => c.name);
+      return toResponse(`Combatant "${combatantName}" not found`, { target: combatantName }, true, [
+        `Active combatants: ${names.join(", ")}`,
+      ]);
+    }
 
     const [id] = entry;
 
@@ -1623,19 +1893,28 @@ export class GameStateManager {
       timestamp: Date.now(),
     });
 
-    return `${combatantName} removed from combat`;
+    return toResponse(`${combatantName} removed from combat`, {
+      name: combatantName,
+      removed: true,
+    });
   }
 
   /** Move a combatant on the battle map */
-  moveCombatant(combatantName: string, to: GridPosition): string {
+  moveCombatant(combatantName: string, to: GridPosition): ToolResponse {
     const combat = this.gameState.encounter?.combat;
-    if (!combat) return "No active combat";
+    if (!combat) return toResponse("No active combat", {}, true);
 
     const combatant = Object.values(combat.combatants).find(
       (c) => c.name.toLowerCase() === combatantName.toLowerCase(),
     );
-    if (!combatant) return `Combatant "${combatantName}" not found`;
+    if (!combatant) {
+      const names = Object.values(combat.combatants).map((c) => c.name);
+      return toResponse(`Combatant "${combatantName}" not found`, { target: combatantName }, true, [
+        `Active combatants: ${names.join(", ")}`,
+      ]);
+    }
 
+    const from = combatant.position ? formatGridPosition(combatant.position) : null;
     combatant.position = to;
 
     this.broadcast({
@@ -1645,24 +1924,47 @@ export class GameStateManager {
       timestamp: Date.now(),
     });
 
-    return `${combatant.name} moved to ${formatGridPosition(to)}`;
+    return toResponse(`${combatant.name} moved to ${formatGridPosition(to)}`, {
+      name: combatant.name,
+      from,
+      to: formatGridPosition(to),
+    });
   }
 
   /** Use a spell slot */
-  useSpellSlot(characterName: string, level: number): string {
+  useSpellSlot(characterName: string, level: number): ToolResponse {
     for (const [pName, char] of Object.entries(this.characters)) {
       if (char.static.name.toLowerCase() === characterName.toLowerCase()) {
-        this.createEvent("spell_slot_used", `${char.static.name} used level ${level} slot`, [
-          { type: "spell_slot_use", target: characterName, level },
-        ]);
         const slot = char.dynamic.spellSlotsUsed.find((s) => s.level === level);
         if (slot) {
           if (slot.used >= slot.total) {
-            return `${char.static.name} has no level ${level} spell slots remaining (${slot.used}/${slot.total} used)`;
+            const otherSlots = char.dynamic.spellSlotsUsed
+              .filter((s) => s.used < s.total)
+              .map((s) => `Level ${s.level}: ${s.total - s.used}/${s.total}`)
+              .join(", ");
+            return toResponse(
+              `${char.static.name} has no level ${level} spell slots remaining (${slot.used}/${slot.total} used)`,
+              { character: char.static.name, level, remaining: 0, total: slot.total },
+              true,
+              [
+                otherSlots ? `Available slots: ${otherSlots}` : "No spell slots available",
+                "Slots recover on long rest",
+              ],
+            );
           }
+          this.createEvent("spell_slot_used", `${char.static.name} used level ${level} slot`, [
+            { type: "spell_slot_use", target: characterName, level },
+          ]);
           slot.used++;
         } else {
-          return `${char.static.name} has no spell slots at level ${level}`;
+          return toResponse(
+            `${char.static.name} has no spell slots at level ${level}`,
+            { character: char.static.name, level },
+            true,
+            [
+              `Available levels: ${char.dynamic.spellSlotsUsed.map((s) => s.level).join(", ") || "none"}`,
+            ],
+          );
         }
 
         this.broadcast({
@@ -1671,25 +1973,39 @@ export class GameStateManager {
           character: char,
         });
 
-        return `${char.static.name} used a level ${level} spell slot`;
+        const remaining = slot.total - slot.used;
+        return toResponse(`${char.static.name} used a level ${level} spell slot`, {
+          character: char.static.name,
+          level,
+          remaining,
+          total: slot.total,
+        });
       }
     }
-    return `Character "${characterName}" not found`;
+    return toResponse(
+      `Character "${characterName}" not found`,
+      { character: characterName },
+      true,
+      [`Available characters: ${this.listCharacterNames().join(", ")}`],
+    );
   }
 
   /** Restore a spell slot */
-  restoreSpellSlot(characterName: string, level: number): string {
+  restoreSpellSlot(characterName: string, level: number): ToolResponse {
     for (const [pName, char] of Object.entries(this.characters)) {
       if (char.static.name.toLowerCase() === characterName.toLowerCase()) {
+        const slot = char.dynamic.spellSlotsUsed.find((s) => s.level === level);
+        if (slot && slot.used <= 0) {
+          return toResponse(
+            `${char.static.name}'s level ${level} spell slots are already at maximum`,
+            { character: char.static.name, level, remaining: slot.total, total: slot.total },
+          );
+        }
         this.createEvent(
           "spell_slot_restored",
           `${char.static.name} restored level ${level} slot`,
           [{ type: "spell_slot_restore", target: characterName, level }],
         );
-        const slot = char.dynamic.spellSlotsUsed.find((s) => s.level === level);
-        if (slot && slot.used <= 0) {
-          return `${char.static.name}'s level ${level} spell slots are already at maximum`;
-        }
         if (slot && slot.used > 0) {
           slot.used--;
         }
@@ -1700,27 +2016,55 @@ export class GameStateManager {
           character: char,
         });
 
-        return `${char.static.name} restored a level ${level} spell slot`;
+        const remaining = slot ? slot.total - slot.used : 0;
+        return toResponse(`${char.static.name} restored a level ${level} spell slot`, {
+          character: char.static.name,
+          level,
+          remaining,
+          total: slot?.total ?? 0,
+        });
       }
     }
-    return `Character "${characterName}" not found`;
+    return toResponse(
+      `Character "${characterName}" not found`,
+      { character: characterName },
+      true,
+      [`Available characters: ${this.listCharacterNames().join(", ")}`],
+    );
   }
 
   /** Use a class resource (Bardic Inspiration, Channel Divinity, Rage, etc.) */
-  useClassResource(characterName: string, resourceName: string): string {
+  useClassResource(characterName: string, resourceName: string): ToolResponse {
     for (const [pName, char] of Object.entries(this.characters)) {
       if (char.static.name.toLowerCase() === characterName.toLowerCase()) {
         const resource = char.static.classResources.find(
           (r) => r.name.toLowerCase() === resourceName.toLowerCase(),
         );
         if (!resource) {
-          return `Resource "${resourceName}" not found on ${char.static.name}. Available: ${char.static.classResources.map((r) => r.name).join(", ") || "none"}`;
+          return toResponse(
+            `Resource "${resourceName}" not found on ${char.static.name}`,
+            { character: char.static.name, resource: resourceName },
+            true,
+            [
+              `Available resources: ${char.static.classResources.map((r) => r.name).join(", ") || "none"}`,
+            ],
+          );
         }
 
         const canonicalName = resource.name;
         const used = char.dynamic.resourcesUsed[canonicalName] ?? 0;
         if (used >= resource.maxUses) {
-          return `${char.static.name} has no ${canonicalName} uses remaining (0/${resource.maxUses})`;
+          return toResponse(
+            `${char.static.name} has no ${canonicalName} uses remaining (0/${resource.maxUses})`,
+            {
+              character: char.static.name,
+              resource: canonicalName,
+              remaining: 0,
+              maxUses: resource.maxUses,
+            },
+            true,
+            [`Resets on ${resource.resetType} rest`],
+          );
         }
 
         this.createEvent("resource_used", `${char.static.name} used ${canonicalName}`, [
@@ -1735,21 +2079,41 @@ export class GameStateManager {
           character: char,
         });
 
-        return `${char.static.name} used ${canonicalName} (${remaining}/${resource.maxUses} remaining)`;
+        return toResponse(
+          `${char.static.name} used ${canonicalName} (${remaining}/${resource.maxUses} remaining)`,
+          {
+            character: char.static.name,
+            resource: canonicalName,
+            remaining,
+            maxUses: resource.maxUses,
+          },
+        );
       }
     }
-    return `Character "${characterName}" not found`;
+    return toResponse(
+      `Character "${characterName}" not found`,
+      { character: characterName },
+      true,
+      [`Available characters: ${this.listCharacterNames().join(", ")}`],
+    );
   }
 
   /** Restore a class resource. amount defaults to 1; use 999+ to fully restore. */
-  restoreClassResource(characterName: string, resourceName: string, amount = 1): string {
+  restoreClassResource(characterName: string, resourceName: string, amount = 1): ToolResponse {
     for (const [pName, char] of Object.entries(this.characters)) {
       if (char.static.name.toLowerCase() === characterName.toLowerCase()) {
         const resource = char.static.classResources.find(
           (r) => r.name.toLowerCase() === resourceName.toLowerCase(),
         );
         if (!resource) {
-          return `Resource "${resourceName}" not found on ${char.static.name}. Available: ${char.static.classResources.map((r) => r.name).join(", ") || "none"}`;
+          return toResponse(
+            `Resource "${resourceName}" not found on ${char.static.name}`,
+            { character: char.static.name, resource: resourceName },
+            true,
+            [
+              `Available resources: ${char.static.classResources.map((r) => r.name).join(", ") || "none"}`,
+            ],
+          );
         }
 
         const canonicalName = resource.name;
@@ -1774,10 +2138,23 @@ export class GameStateManager {
           character: char,
         });
 
-        return `${char.static.name} restored ${canonicalName} (${remaining}/${resource.maxUses} remaining)`;
+        return toResponse(
+          `${char.static.name} restored ${canonicalName} (${remaining}/${resource.maxUses} remaining)`,
+          {
+            character: char.static.name,
+            resource: canonicalName,
+            remaining,
+            maxUses: resource.maxUses,
+          },
+        );
       }
     }
-    return `Character "${characterName}" not found`;
+    return toResponse(
+      `Character "${characterName}" not found`,
+      { character: characterName },
+      true,
+      [`Available characters: ${this.listCharacterNames().join(", ")}`],
+    );
   }
 
   /** Add item to a character's inventory */
@@ -1795,7 +2172,7 @@ export class GameStateManager {
       properties?: string[];
       weight?: number;
     },
-  ): string {
+  ): ToolResponse {
     for (const [pName, char] of Object.entries(this.characters)) {
       if (char.static.name.toLowerCase() === characterName.toLowerCase()) {
         this.createEvent("item_added", `Added ${item.name} to ${char.static.name}`, [
@@ -1834,21 +2211,41 @@ export class GameStateManager {
         });
 
         const qty = existing ? existing.quantity : (item.quantity ?? 1);
-        return `Added ${item.name}${qty > 1 ? ` (x${qty})` : ""} to ${char.static.name}'s inventory`;
+        return toResponse(
+          `Added ${item.name}${qty > 1 ? ` (x${qty})` : ""} to ${char.static.name}'s inventory`,
+          {
+            character: char.static.name,
+            item: item.name,
+            quantity: qty,
+          },
+        );
       }
     }
-    return `Character "${characterName}" not found`;
+    return toResponse(
+      `Character "${characterName}" not found`,
+      { character: characterName },
+      true,
+      [`Available characters: ${this.listCharacterNames().join(", ")}`],
+    );
   }
 
   /** Remove item from a character's inventory */
-  removeItem(characterName: string, itemName: string, quantity?: number): string {
+  removeItem(characterName: string, itemName: string, quantity?: number): ToolResponse {
     for (const [pName, char] of Object.entries(this.characters)) {
       if (char.static.name.toLowerCase() === characterName.toLowerCase()) {
         const idx = char.dynamic.inventory.findIndex(
           (i) => i.name.toLowerCase() === itemName.toLowerCase(),
         );
         if (idx === -1) {
-          return `Item "${itemName}" not found in ${char.static.name}'s inventory`;
+          return toResponse(
+            `Item "${itemName}" not found in ${char.static.name}'s inventory`,
+            {
+              character: char.static.name,
+              item: itemName,
+            },
+            true,
+            [`Inventory: ${char.dynamic.inventory.map((i) => i.name).join(", ") || "empty"}`],
+          );
         }
 
         const existing = char.dynamic.inventory[idx];
@@ -1870,10 +2267,22 @@ export class GameStateManager {
           character: char,
         });
 
-        return `Removed ${removeQty}x ${itemName} from ${char.static.name}'s inventory`;
+        return toResponse(
+          `Removed ${removeQty}x ${itemName} from ${char.static.name}'s inventory`,
+          {
+            character: char.static.name,
+            item: itemName,
+            removed: removeQty,
+          },
+        );
       }
     }
-    return `Character "${characterName}" not found`;
+    return toResponse(
+      `Character "${characterName}" not found`,
+      { character: characterName },
+      true,
+      [`Available characters: ${this.listCharacterNames().join(", ")}`],
+    );
   }
 
   /** Update properties of an existing inventory item */
@@ -1881,14 +2290,19 @@ export class GameStateManager {
     characterName: string,
     itemName: string,
     updates: Partial<Omit<import("@unseen-servant/shared/types").InventoryItem, "name">>,
-  ): string {
+  ): ToolResponse {
     for (const [pName, char] of Object.entries(this.characters)) {
       if (char.static.name.toLowerCase() === characterName.toLowerCase()) {
         const item = char.dynamic.inventory.find(
           (i) => i.name.toLowerCase() === itemName.toLowerCase(),
         );
         if (!item) {
-          return `Item "${itemName}" not found in ${char.static.name}'s inventory`;
+          return toResponse(
+            `Item "${itemName}" not found in ${char.static.name}'s inventory`,
+            { character: char.static.name, item: itemName },
+            true,
+            [`Available items: ${char.dynamic.inventory.map((i) => i.name).join(", ") || "none"}`],
+          );
         }
 
         this.createEvent("item_updated", `Updated ${itemName} for ${char.static.name}`, [
@@ -1934,17 +2348,26 @@ export class GameStateManager {
         });
 
         const summary = changesList.length > 0 ? changesList.join(", ") : "no changes";
-        return `Updated ${item.name} for ${char.static.name}: ${summary}`;
+        return toResponse(`Updated ${item.name} for ${char.static.name}: ${summary}`, {
+          character: char.static.name,
+          item: item.name,
+          changes: updates,
+        });
       }
     }
-    return `Character "${characterName}" not found`;
+    return toResponse(
+      `Character "${characterName}" not found`,
+      { character: characterName },
+      true,
+      [`Available characters: ${this.listTargetNames().join(", ")}`],
+    );
   }
 
   /** Update currency for a character (additive — positive adds, negative subtracts) */
   updateCurrency(
     characterName: string,
     changes: Partial<Record<"cp" | "sp" | "ep" | "gp" | "pp", number>>,
-  ): string {
+  ): ToolResponse {
     for (const [pName, char] of Object.entries(this.characters)) {
       if (char.static.name.toLowerCase() === characterName.toLowerCase()) {
         this.createEvent("custom", `${char.static.name} currency updated`, []);
@@ -1961,18 +2384,36 @@ export class GameStateManager {
         });
 
         const { cp, sp, ep, gp, pp } = char.dynamic.currency;
-        return `${char.static.name}'s currency updated → ${gp}gp, ${sp}sp, ${cp}cp, ${ep}ep, ${pp}pp`;
+        return toResponse(
+          `${char.static.name}'s currency updated → ${gp}gp, ${sp}sp, ${cp}cp, ${ep}ep, ${pp}pp`,
+          {
+            character: char.static.name,
+            cp,
+            sp,
+            ep,
+            gp,
+            pp,
+          },
+        );
       }
     }
-    return `Character "${characterName}" not found`;
+    return toResponse(
+      `Character "${characterName}" not found`,
+      { character: characterName },
+      true,
+      [`Available characters: ${this.listTargetNames().join(", ")}`],
+    );
   }
 
   /** Grant heroic inspiration to a character */
-  grantInspiration(characterName: string): string {
+  grantInspiration(characterName: string): ToolResponse {
     for (const [pName, char] of Object.entries(this.characters)) {
       if (char.static.name.toLowerCase() === characterName.toLowerCase()) {
         if (char.dynamic.heroicInspiration) {
-          return `${char.static.name} already has Heroic Inspiration`;
+          return toResponse(`${char.static.name} already has Heroic Inspiration`, {
+            character: char.static.name,
+            hasInspiration: true,
+          });
         }
         this.createEvent(
           "inspiration_granted",
@@ -1987,18 +2428,31 @@ export class GameStateManager {
           character: char,
         });
 
-        return `Granted Heroic Inspiration to ${char.static.name}`;
+        return toResponse(`Granted Heroic Inspiration to ${char.static.name}`, {
+          character: char.static.name,
+          hasInspiration: true,
+        });
       }
     }
-    return `Character "${characterName}" not found`;
+    return toResponse(
+      `Character "${characterName}" not found`,
+      { character: characterName },
+      true,
+      [`Available characters: ${this.listTargetNames().join(", ")}`],
+    );
   }
 
   /** Use (spend) heroic inspiration for a character */
-  useInspiration(characterName: string): string {
+  useInspiration(characterName: string): ToolResponse {
     for (const [pName, char] of Object.entries(this.characters)) {
       if (char.static.name.toLowerCase() === characterName.toLowerCase()) {
         if (!char.dynamic.heroicInspiration) {
-          return `${char.static.name} does not have Heroic Inspiration to spend`;
+          return toResponse(
+            `${char.static.name} does not have Heroic Inspiration to spend`,
+            { character: char.static.name, hasInspiration: false },
+            true,
+            ["Grant inspiration first with grant_inspiration before trying to use it."],
+          );
         }
         this.createEvent("inspiration_used", `${char.static.name} spent Heroic Inspiration`, []);
         char.dynamic.heroicInspiration = false;
@@ -2009,15 +2463,24 @@ export class GameStateManager {
           character: char,
         });
 
-        return `${char.static.name} spent Heroic Inspiration`;
+        return toResponse(`${char.static.name} spent Heroic Inspiration`, {
+          character: char.static.name,
+          hasInspiration: false,
+        });
       }
     }
-    return `Character "${characterName}" not found`;
+    return toResponse(
+      `Character "${characterName}" not found`,
+      { character: characterName },
+      true,
+      [`Available characters: ${this.listTargetNames().join(", ")}`],
+    );
   }
 
   /** Short rest — restore short-rest class resources and warlock pact slots */
-  shortRest(characterNames: string[]): string {
+  shortRest(characterNames: string[]): ToolResponse {
     const results: string[] = [];
+    const charactersData: Array<{ character: string; restored: string[] }> = [];
     for (const name of characterNames) {
       for (const [pName, char] of Object.entries(this.characters)) {
         if (char.static.name.toLowerCase() !== name.toLowerCase()) continue;
@@ -2056,17 +2519,26 @@ export class GameStateManager {
         } else {
           results.push(`**${char.static.name}**: nothing to restore`);
         }
+        charactersData.push({ character: char.static.name, restored });
         break;
       }
     }
 
-    if (results.length === 0) return "No matching characters found";
-    return `Short rest complete.\n${results.join("\n")}\n\nNote: Hit Dice healing requires player choice — ask each player if they want to spend Hit Dice, then roll and heal interactively.`;
+    if (results.length === 0) {
+      return toResponse("No matching characters found", { characters: [] }, true, [
+        `Available characters: ${this.listTargetNames().join(", ")}`,
+      ]);
+    }
+    return toResponse(
+      `Short rest complete.\n${results.join("\n")}\n\nNote: Hit Dice healing requires player choice — ask each player if they want to spend Hit Dice, then roll and heal interactively.`,
+      { characters: charactersData },
+    );
   }
 
   /** Long rest — full HP, all spell slots, all resources, clear conditions, reset death saves */
-  longRest(characterNames: string[]): string {
+  longRest(characterNames: string[]): ToolResponse {
     const results: string[] = [];
+    const charactersData: Array<{ character: string; restored: string[] }> = [];
     const PERMANENT_CONDITIONS = ["cursed", "petrified", "dead"];
 
     for (const name of characterNames) {
@@ -2142,21 +2614,34 @@ export class GameStateManager {
         } else {
           results.push(`**${char.static.name}**: already at full resources`);
         }
+        charactersData.push({ character: char.static.name, restored });
         break;
       }
     }
 
-    if (results.length === 0) return "No matching characters found";
-    return `Long rest complete.\n${results.join("\n")}\n\nReminder: Characters regain half their total Hit Dice (minimum 1) on a long rest. Track this narratively as needed.`;
+    if (results.length === 0) {
+      return toResponse("No matching characters found", { characters: [] }, true, [
+        `Available characters: ${this.listTargetNames().join(", ")}`,
+      ]);
+    }
+    return toResponse(
+      `Long rest complete.\n${results.join("\n")}\n\nReminder: Characters regain half their total Hit Dice (minimum 1) on a long rest. Track this narratively as needed.`,
+      { characters: charactersData },
+    );
   }
 
   /** Record a death saving throw */
-  recordDeathSave(characterName: string, success: boolean): string {
+  recordDeathSave(characterName: string, success: boolean): ToolResponse {
     for (const [pName, char] of Object.entries(this.characters)) {
       if (char.static.name.toLowerCase() !== characterName.toLowerCase()) continue;
 
       if (char.dynamic.currentHP > 0) {
-        return `${char.static.name} is not at 0 HP — death saves not applicable`;
+        return toResponse(
+          `${char.static.name} is not at 0 HP — death saves not applicable`,
+          { character: char.static.name, currentHP: char.dynamic.currentHP },
+          true,
+          ["Death saves only apply to characters at 0 HP."],
+        );
       }
 
       if (success) {
@@ -2172,12 +2657,15 @@ export class GameStateManager {
       );
 
       let statusMsg = "";
+      let status: "alive" | "stable" | "dead" | "saving" = "saving";
       if (char.dynamic.deathSaves.successes >= 3) {
         char.dynamic.conditions.push({ name: "Stabilized" });
         statusMsg = ` — ${char.static.name} is STABILIZED!`;
+        status = "stable";
       } else if (char.dynamic.deathSaves.failures >= 3) {
         char.dynamic.conditions.push({ name: "Dead" });
         statusMsg = ` — ${char.static.name} has DIED!`;
+        status = "dead";
       }
 
       this.broadcast({
@@ -2186,13 +2674,27 @@ export class GameStateManager {
         character: char,
       });
 
-      return `Death save ${success ? "SUCCESS" : "FAILURE"}: ${char.dynamic.deathSaves.successes} successes, ${char.dynamic.deathSaves.failures} failures${statusMsg}`;
+      return toResponse(
+        `Death save ${success ? "SUCCESS" : "FAILURE"}: ${char.dynamic.deathSaves.successes} successes, ${char.dynamic.deathSaves.failures} failures${statusMsg}`,
+        {
+          character: char.static.name,
+          success,
+          successes: char.dynamic.deathSaves.successes,
+          failures: char.dynamic.deathSaves.failures,
+          status,
+        },
+      );
     }
-    return `Character "${characterName}" not found`;
+    return toResponse(
+      `Character "${characterName}" not found`,
+      { character: characterName },
+      true,
+      [`Available characters: ${this.listTargetNames().join(", ")}`],
+    );
   }
 
   /** Set concentration on a spell (auto-breaks previous concentration) */
-  setConcentration(targetName: string, spellName: string): string {
+  setConcentration(targetName: string, spellName: string): ToolResponse {
     // Check NPC combatants
     const combat = this.gameState.encounter?.combat;
     if (combat) {
@@ -2208,9 +2710,14 @@ export class GameStateManager {
           map: this.gameState.encounter?.map ?? null,
           timestamp: Date.now(),
         });
-        return prev
+        const text = prev
           ? `${combatant.name} breaks concentration on ${prev}, now concentrating on ${spellName}`
           : `${combatant.name} is now concentrating on ${spellName}`;
+        return toResponse(text, {
+          target: combatant.name,
+          spell: spellName,
+          previousSpell: prev ?? null,
+        });
       }
     }
 
@@ -2224,17 +2731,24 @@ export class GameStateManager {
           playerName: pName,
           character: char,
         });
-        return prev
+        const text = prev
           ? `${char.static.name} breaks concentration on ${prev}, now concentrating on ${spellName}`
           : `${char.static.name} is now concentrating on ${spellName}`;
+        return toResponse(text, {
+          target: char.static.name,
+          spell: spellName,
+          previousSpell: prev ?? null,
+        });
       }
     }
 
-    return `Target "${targetName}" not found`;
+    return toResponse(`Target "${targetName}" not found`, { target: targetName }, true, [
+      `Available targets: ${this.listTargetNames().join(", ")}`,
+    ]);
   }
 
   /** Break concentration (remove the concentrating spell) */
-  breakConcentration(targetName: string): string {
+  breakConcentration(targetName: string): ToolResponse {
     // Check NPC combatants
     const combat = this.gameState.encounter?.combat;
     if (combat) {
@@ -2243,7 +2757,10 @@ export class GameStateManager {
       );
       if (combatant) {
         if (!combatant.concentratingOn) {
-          return `${combatant.name} is not concentrating on anything`;
+          return toResponse(`${combatant.name} is not concentrating on anything`, {
+            target: combatant.name,
+            spell: null,
+          });
         }
         const spell = combatant.concentratingOn.spellName;
         combatant.concentratingOn = undefined;
@@ -2253,14 +2770,20 @@ export class GameStateManager {
           map: this.gameState.encounter?.map ?? null,
           timestamp: Date.now(),
         });
-        return `${combatant.name} lost concentration on ${spell}`;
+        return toResponse(`${combatant.name} lost concentration on ${spell}`, {
+          target: combatant.name,
+          spell,
+        });
       }
     }
 
     for (const [pName, char] of Object.entries(this.characters)) {
       if (char.static.name.toLowerCase() === targetName.toLowerCase()) {
         if (!char.dynamic.concentratingOn) {
-          return `${char.static.name} is not concentrating on anything`;
+          return toResponse(`${char.static.name} is not concentrating on anything`, {
+            target: char.static.name,
+            spell: null,
+          });
         }
         const spell = char.dynamic.concentratingOn.spellName;
         char.dynamic.concentratingOn = undefined;
@@ -2269,15 +2792,20 @@ export class GameStateManager {
           playerName: pName,
           character: char,
         });
-        return `${char.static.name} lost concentration on ${spell}`;
+        return toResponse(`${char.static.name} lost concentration on ${spell}`, {
+          target: char.static.name,
+          spell,
+        });
       }
     }
 
-    return `Target "${targetName}" not found`;
+    return toResponse(`Target "${targetName}" not found`, { target: targetName }, true, [
+      `Available targets: ${this.listTargetNames().join(", ")}`,
+    ]);
   }
 
   /** Set temporary HP (non-stacking — takes the higher value) */
-  setTempHP(targetName: string, amount: number): string {
+  setTempHP(targetName: string, amount: number): ToolResponse {
     const tempHP = Math.max(0, amount);
 
     // NPC combatants
@@ -2287,44 +2815,59 @@ export class GameStateManager {
         (c) => c.name.toLowerCase() === targetName.toLowerCase() && c.type !== "player",
       );
       if (combatant) {
+        const prev = combatant.tempHP ?? 0;
         this.createEvent("temp_hp_set", `${combatant.name} gains ${tempHP} temp HP`, [
           { type: "temp_hp", target: targetName, amount: tempHP },
         ]);
-        combatant.tempHP = Math.max(combatant.tempHP ?? 0, tempHP);
+        combatant.tempHP = Math.max(prev, tempHP);
         this.broadcast({
           type: "server:combat_update",
           combat,
           map: this.gameState.encounter?.map ?? null,
           timestamp: Date.now(),
         });
-        return `${combatant.name} now has ${combatant.tempHP} temporary HP`;
+        return toResponse(`${combatant.name} now has ${combatant.tempHP} temporary HP`, {
+          target: combatant.name,
+          tempHP: combatant.tempHP,
+          previousTempHP: prev,
+        });
       }
     }
 
     // Player characters
     for (const [pName, char] of Object.entries(this.characters)) {
       if (char.static.name.toLowerCase() === targetName.toLowerCase()) {
+        const prev = char.dynamic.tempHP;
         this.createEvent("temp_hp_set", `${char.static.name} gains ${tempHP} temp HP`, [
           { type: "temp_hp", target: targetName, amount: tempHP },
         ]);
-        char.dynamic.tempHP = Math.max(char.dynamic.tempHP, tempHP);
+        char.dynamic.tempHP = Math.max(prev, tempHP);
         this.broadcast({
           type: "server:character_updated",
           playerName: pName,
           character: char,
         });
-        return `${char.static.name} now has ${char.dynamic.tempHP} temporary HP`;
+        return toResponse(`${char.static.name} now has ${char.dynamic.tempHP} temporary HP`, {
+          target: char.static.name,
+          tempHP: char.dynamic.tempHP,
+          previousTempHP: prev,
+        });
       }
     }
 
-    return `Target "${targetName}" not found`;
+    return toResponse(`Target "${targetName}" not found`, { target: targetName }, true, [
+      `Available targets: ${this.listTargetNames().join(", ")}`,
+    ]);
   }
 
   /** Compact conversation history — replace older messages with a summary */
-  compactHistory(keepRecent: number, summary: string): string {
+  compactHistory(keepRecent: number, summary: string): ToolResponse {
     const totalBefore = this.conversationHistory.length;
     if (totalBefore <= keepRecent) {
-      return `History only has ${totalBefore} messages — no compaction needed (threshold: ${keepRecent})`;
+      return toResponse(
+        `History only has ${totalBefore} messages — no compaction needed (threshold: ${keepRecent})`,
+        { compacted: 0, remaining: totalBefore, totalBefore },
+      );
     }
 
     const recentMessages = this.conversationHistory.slice(-keepRecent);
@@ -2346,11 +2889,15 @@ export class GameStateManager {
       timestamp: Date.now(),
     });
 
-    return `Compacted history: ${totalBefore} → ${this.conversationHistory.length} messages (1 summary + ${keepRecent} recent)`;
+    const compacted = totalBefore - keepRecent;
+    return toResponse(
+      `Compacted history: ${totalBefore} → ${this.conversationHistory.length} messages (1 summary + ${keepRecent} recent)`,
+      { compacted, remaining: this.conversationHistory.length, totalBefore },
+    );
   }
 
   /** Update/set the battle map */
-  updateBattleMap(map: BattleMapState): string {
+  updateBattleMap(map: BattleMapState): ToolResponse {
     if (!this.gameState.encounter) {
       this.gameState.encounter = {
         id: crypto.randomUUID(),
@@ -2367,7 +2914,94 @@ export class GameStateManager {
       timestamp: Date.now(),
     });
 
-    return `Battle map "${map.name ?? "unnamed"}" set (${map.width}x${map.height})`;
+    return toResponse(`Battle map "${map.name ?? "unnamed"}" set (${map.width}x${map.height})`, {
+      width: map.width,
+      height: map.height,
+      name: map.name ?? "unnamed",
+    });
+  }
+
+  /** Apply multiple effects in a single call (damage, heal, conditions, movement) */
+  applyBatchEffects(
+    effects: Array<
+      | { type: "damage"; target: string; amount: number; damage_type?: string }
+      | { type: "heal"; target: string; amount: number }
+      | { type: "set_hp"; target: string; value: number }
+      | { type: "condition_add"; target: string; condition: string; duration?: number }
+      | { type: "condition_remove"; target: string; condition: string }
+      | { type: "move"; target: string; position: string }
+    >,
+  ): ToolResponse {
+    if (effects.length > 10) {
+      return toResponse("Too many effects (max 10)", { count: effects.length }, true);
+    }
+
+    const results: Array<{
+      index: number;
+      type: string;
+      target: string;
+      result: string;
+      error?: boolean;
+    }> = [];
+    let applied = 0;
+    let failed = 0;
+
+    for (let i = 0; i < effects.length; i++) {
+      const effect = effects[i];
+      let r: ToolResponse;
+      switch (effect.type) {
+        case "damage":
+          r = this.applyDamage(effect.target, effect.amount, effect.damage_type);
+          break;
+        case "heal":
+          r = this.heal(effect.target, effect.amount);
+          break;
+        case "set_hp":
+          r = this.setHP(effect.target, effect.value);
+          break;
+        case "condition_add":
+          r = this.addCondition(effect.target, effect.condition, effect.duration);
+          break;
+        case "condition_remove":
+          r = this.removeCondition(effect.target, effect.condition);
+          break;
+        case "move": {
+          const pos = parseGridPosition(effect.position);
+          if (!pos) {
+            r = toResponse(
+              `Invalid position "${effect.position}"`,
+              { target: effect.target },
+              true,
+            );
+          } else {
+            r = this.moveCombatant(effect.target, pos);
+          }
+          break;
+        }
+      }
+      if (r!.error) {
+        failed++;
+        results.push({
+          index: i,
+          type: effect.type,
+          target: effect.target,
+          result: r!.text,
+          error: true,
+        });
+      } else {
+        applied++;
+        results.push({ index: i, type: effect.type, target: effect.target, result: r!.text });
+      }
+    }
+
+    const summary = results
+      .map((r) => `${r.error ? "✗" : "✓"} [${r.type}] ${r.target}: ${r.result}`)
+      .join("\n");
+    return toResponse(`Batch: ${applied} applied, ${failed} failed\n${summary}`, {
+      applied,
+      failed,
+      results,
+    });
   }
 
   /** Get a compact combat summary string (~200-300 tokens) for AI context */
@@ -2542,12 +3176,23 @@ export class GameStateManager {
     label: string;
     persistent?: boolean;
     casterName?: string;
-  }): string {
+  }): ToolResponse {
     const combat = this.gameState.encounter?.combat;
-    if (!combat || combat.phase !== "active") return "No active combat";
+    if (!combat || combat.phase !== "active") {
+      return toResponse("No active combat", {}, true, [
+        "Start combat first with start_combat before placing AoE.",
+      ]);
+    }
 
     const centerPos = parseGridPosition(params.center);
-    if (!centerPos) return `Invalid grid position: ${params.center}`;
+    if (!centerPos) {
+      return toResponse(
+        `Invalid grid position: ${params.center}`,
+        { center: params.center },
+        true,
+        ["Use A1 notation (e.g., 'A1', 'E5', 'J10')."],
+      );
+    }
 
     const map = this.gameState.encounter?.map;
     const mapWidth = map?.width ?? 20;
@@ -2590,7 +3235,7 @@ export class GameStateManager {
       if (!c.position) continue;
       if (c.type !== "player" && (c.currentHP ?? 0) <= 0) continue;
       if (affectedTiles.some((t) => t.x === c.position!.x && t.y === c.position!.y)) {
-        affected.push(`${c.name} (${formatGridPosition(c.position)})`);
+        affected.push(c.name);
       }
     }
 
@@ -2601,9 +3246,22 @@ export class GameStateManager {
       timestamp: Date.now(),
     });
 
+    const affectedDisplay =
+      affected.length > 0
+        ? affected
+            .map((name) => {
+              const c = Object.values(combat.combatants).find((cb) => cb.name === name);
+              return `${name} (${c?.position ? formatGridPosition(c.position) : "?"})`;
+            })
+            .join(", ")
+        : "none";
     const affectedStr =
-      affected.length > 0 ? `Affected: ${affected.join(", ")}` : "No combatants in area";
-    return `AoE '${params.label}' placed at ${params.center}. ${affectedStr}`;
+      affected.length > 0 ? `Affected: ${affectedDisplay}` : "No combatants in area";
+    return toResponse(`AoE '${params.label}' placed at ${params.center}. ${affectedStr}`, {
+      aoeId: aoe.id,
+      label: params.label,
+      affected,
+    });
   }
 
   /** Apply area effect damage with saving throws */
@@ -2619,12 +3277,23 @@ export class GameStateManager {
     saveAbility: string;
     saveDC: number;
     halfOnSave?: boolean;
-  }): string {
+  }): ToolResponse {
     const combat = this.gameState.encounter?.combat;
-    if (!combat || combat.phase !== "active") return "No active combat";
+    if (!combat || combat.phase !== "active") {
+      return toResponse("No active combat", {}, true, [
+        "Start combat first with start_combat before applying area effects.",
+      ]);
+    }
 
     const centerPos = parseGridPosition(params.center);
-    if (!centerPos) return `Invalid grid position: ${params.center}`;
+    if (!centerPos) {
+      return toResponse(
+        `Invalid grid position: ${params.center}`,
+        { center: params.center },
+        true,
+        ["Use A1 notation (e.g., 'A1', 'E5', 'J10')."],
+      );
+    }
 
     const map = this.gameState.encounter?.map;
     const mapWidth = map?.width ?? 20;
@@ -2653,9 +3322,19 @@ export class GameStateManager {
       }
     }
 
-    if (targets.length === 0) return "No combatants in affected area";
+    if (targets.length === 0) {
+      return toResponse("No combatants in affected area", { results: [] });
+    }
 
-    const results: string[] = [];
+    const textResults: string[] = [];
+    const dataResults: Array<{
+      target: string;
+      saveRoll: number;
+      saveMod: number;
+      passed: boolean;
+      damage: number;
+      damageType: string;
+    }> = [];
 
     for (const target of targets) {
       // Compute save modifier
@@ -2708,22 +3387,40 @@ export class GameStateManager {
 
       const passStr = passed ? "PASS" : "FAIL";
       const damageStr = finalDamage > 0 ? `${finalDamage} ${params.damageType}` : "no damage";
-      results.push(
+      textResults.push(
         `${target.name}: ${params.saveAbility} save ${saveRoll.total} (rolled ${saveRoll.rolls[0]?.result ?? "?"}+${saveMod}) — ${passStr} (${damageStr})`,
       );
+      dataResults.push({
+        target: target.name,
+        saveRoll: saveRoll.total,
+        saveMod,
+        passed,
+        damage: finalDamage,
+        damageType: params.damageType,
+      });
     }
 
-    return results.join("\n");
+    return toResponse(textResults.join("\n"), { results: dataResults });
   }
 
   /** Dismiss a persistent AoE overlay */
-  dismissAoE(aoeId: string): string {
+  dismissAoE(aoeId: string): ToolResponse {
     const combat = this.gameState.encounter?.combat;
-    if (!combat) return "No active combat";
-    if (!combat.activeAoE || combat.activeAoE.length === 0) return "No active AoE overlays";
+    if (!combat) {
+      return toResponse("No active combat", {}, true, [
+        "There is no active combat session to dismiss AoE from.",
+      ]);
+    }
+    if (!combat.activeAoE || combat.activeAoE.length === 0) {
+      return toResponse("No active AoE overlays", {}, true, ["Place an AoE first with show_aoe."]);
+    }
 
     const idx = combat.activeAoE.findIndex((a) => a.id === aoeId);
-    if (idx === -1) return `AoE with ID "${aoeId}" not found`;
+    if (idx === -1) {
+      return toResponse(`AoE with ID "${aoeId}" not found`, { aoeId }, true, [
+        `Active AoE IDs: ${combat.activeAoE.map((a) => `${a.id} (${a.label})`).join(", ")}`,
+      ]);
+    }
 
     const removed = combat.activeAoE.splice(idx, 1)[0];
 
@@ -2734,7 +3431,10 @@ export class GameStateManager {
       timestamp: Date.now(),
     });
 
-    return `AoE '${removed.label}' dismissed`;
+    return toResponse(`AoE '${removed.label}' dismissed`, {
+      aoeId: removed.id,
+      label: removed.label,
+    });
   }
 
   /** Get cover info for a target based on their tile */
@@ -2840,5 +3540,25 @@ export class GameStateManager {
 
   private findCharacterByPlayerName(playerName: string): CharacterData | null {
     return this.characters[playerName] ?? null;
+  }
+
+  /** List all valid target names (for error hints) */
+  private listTargetNames(): string[] {
+    const names: string[] = [];
+    const combat = this.gameState.encounter?.combat;
+    if (combat) {
+      for (const c of Object.values(combat.combatants)) {
+        if (c.type !== "player") names.push(c.name);
+      }
+    }
+    for (const char of Object.values(this.characters)) {
+      names.push(char.static.name);
+    }
+    return names;
+  }
+
+  /** List all valid character names (players only, for error hints) */
+  private listCharacterNames(): string[] {
+    return Object.values(this.characters).map((c) => c.static.name);
   }
 }

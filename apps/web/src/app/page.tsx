@@ -1,10 +1,22 @@
 "use client";
 
-import { Suspense, useState, useEffect, useRef } from "react";
+import { Suspense, useState, useEffect, useRef, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 
 import { useAuth } from "@/hooks/useAuth";
+import { useCharacterLibrary } from "@/hooks/useCharacterLibrary";
 import { Button } from "@/components/ui/Button";
+import { charColor } from "@/utils/char-color";
+import { timeAgo } from "@/utils/time-ago";
+
+interface RoomMeta {
+  roomCode: string;
+  hostName: string;
+  playerCount: number;
+  hasPassword: boolean;
+  createdAt: number;
+}
 
 function getWorkerUrl(): string {
   return process.env.NEXT_PUBLIC_WORKER_URL || "http://localhost:8787";
@@ -22,6 +34,7 @@ function HomePageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, loading: authLoading, login, logout } = useAuth();
+  const { characters } = useCharacterLibrary();
   const [playerName, setPlayerName] = useState("");
   const playerNameLoadedRef = useRef(false);
   const [joinCode, setJoinCode] = useState("");
@@ -29,14 +42,13 @@ function HomePageInner() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [kickMessage, setKickMessage] = useState("");
+  const [rooms, setRooms] = useState<RoomMeta[]>([]);
 
   // Load saved state on mount
   useEffect(() => {
-    // Clean up legacy ai_config from localStorage
     localStorage.removeItem("ai_config");
     localStorage.removeItem("anthropic_api_key");
 
-    // Restore player name from localStorage
     const storedName = localStorage.getItem("playerName");
     if (storedName) {
       setPlayerName(storedName);
@@ -49,21 +61,36 @@ function HomePageInner() {
       sessionStorage.removeItem("kick_message");
     }
 
-    // Support ?join=ROOMCODE query param (redirect-back from room page)
     const joinParam = searchParams.get("join");
     if (joinParam) {
       setJoinCode(joinParam.toUpperCase().slice(0, 6));
     }
   }, [searchParams]);
 
-  // Pre-fill character name from Google account only if user hasn't set one
+  // Fetch active rooms
+  const fetchRooms = useCallback(async () => {
+    try {
+      const res = await fetch(`${getWorkerUrl()}/api/rooms`);
+      if (!res.ok) return;
+      const data = await res.json();
+      setRooms(data.rooms ?? []);
+    } catch {
+      // Silently fail — rooms strip is optional context
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchRooms();
+  }, [fetchRooms]);
+
+  // Pre-fill character name from Google account
   useEffect(() => {
     if (user?.displayName && !playerName && !playerNameLoadedRef.current) {
       setPlayerName(user.displayName);
     }
   }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Debounce-save playerName to sessionStorage as user types
+  // Debounce-save playerName to localStorage
   useEffect(() => {
     const trimmed = playerName.trim();
     const timer = setTimeout(() => {
@@ -84,7 +111,6 @@ function HomePageInner() {
 
     try {
       localStorage.setItem("playerName", playerName.trim());
-
       const res = await fetch(`${getWorkerUrl()}/api/rooms/create`, {
         method: "POST",
       });
@@ -96,12 +122,13 @@ function HomePageInner() {
     }
   };
 
-  const handleJoin = () => {
+  const handleJoin = (roomCode?: string) => {
+    const code = roomCode || joinCode.trim();
     if (!playerName.trim()) {
       setError("Enter your player name");
       return;
     }
-    if (joinCode.trim().length !== 6) {
+    if (code.length !== 6) {
       setError("Room code must be 6 characters");
       return;
     }
@@ -110,67 +137,43 @@ function HomePageInner() {
     if (joinPassword.trim()) {
       sessionStorage.setItem("roomPassword", joinPassword.trim());
     }
-    router.push(`/rooms/${joinCode.trim().toUpperCase()}`);
+    router.push(`/rooms/${code.toUpperCase()}`);
   };
 
+  const topCharacters = characters.slice(0, 4);
+
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <div className="w-full max-w-2xl">
-        <div className="text-center mb-8">
-          <h1
-            className="text-4xl font-bold text-amber-200/90 mb-2"
-            style={{
-              fontFamily: "var(--font-cinzel)",
-              textShadow: "0 0 40px rgba(245,158,11,0.25)",
-            }}
-          >
-            Unseen Servant
-          </h1>
-          <p className="text-gray-500 tracking-wide uppercase text-sm font-medium">
-            D&D 5e with an AI Game Master
-          </p>
-          <div className="w-24 h-px bg-gradient-to-r from-transparent via-amber-500/40 to-transparent mx-auto mt-4" />
+    <div className="min-h-screen flex flex-col">
+      {/* ── Nav Bar ── */}
+      <nav className="flex items-center justify-between h-11 px-7 bg-gray-950 border-b border-gray-700/25 shrink-0">
+        <div className="flex items-center gap-2">
+          <img src="/icon.svg" alt="Unseen Servant" className="w-5 h-5" />
         </div>
 
-        {/* Kick/Reject message */}
-        {kickMessage && (
-          <div className="bg-red-900/20 border border-red-700/50 rounded-lg p-3 mb-4 text-center">
-            <p className="text-sm text-red-400">{kickMessage}</p>
-          </div>
-        )}
-
-        <div className="relative bg-gray-800/40 backdrop-blur-sm rounded-xl border border-gray-700/30 p-6 space-y-5 shadow-[0_0_60px_rgba(0,0,0,0.3)]">
-          {/* Top accent line */}
-          <div className="absolute top-0 left-6 right-6 h-px bg-gradient-to-r from-transparent via-amber-500/20 to-transparent" />
-          {/* Auth Section */}
-          <div className="flex items-center justify-between pb-3 border-b border-gray-700/40">
-            {authLoading ? (
-              <span className="text-sm text-gray-500">Loading...</span>
-            ) : user ? (
-              <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5">
+          {authLoading ? (
+            <span className="text-xs text-gray-600">Loading...</span>
+          ) : user ? (
+            <>
+              <div className="flex items-center gap-2">
                 {user.avatarUrl && (
-                  <img src={user.avatarUrl} alt="" className="w-8 h-8 rounded-full" />
+                  <img src={user.avatarUrl} alt="" className="w-6 h-6 rounded-full" />
                 )}
-                <div>
-                  <div className="text-sm font-medium text-gray-200">{user.displayName}</div>
-                  <div className="text-xs text-gray-500">{user.email}</div>
-                </div>
+                <span className="text-xs text-gray-400">{user.displayName}</span>
               </div>
-            ) : (
-              <span className="text-sm text-gray-500">Playing as guest</span>
-            )}
-
-            {user ? (
-              <Button variant="ghost" size="xs" onClick={logout}>
+              <Button variant="ghost" size="sm" onClick={logout}>
                 Sign out
               </Button>
-            ) : (
+            </>
+          ) : (
+            <>
+              <span className="text-xs text-gray-600">Playing as guest</span>
               <button
                 onClick={login}
-                className="flex items-center gap-2 bg-white hover:bg-gray-100 text-gray-800
-                           text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+                className="flex items-center gap-1.5 bg-white hover:bg-gray-100 text-gray-800
+                           text-xs font-medium px-3 py-1.5 rounded-md transition-colors"
               >
-                <svg className="w-4 h-4" viewBox="0 0 24 24">
+                <svg className="w-3 h-3" viewBox="0 0 24 24">
                   <path
                     fill="#4285F4"
                     d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"
@@ -190,104 +193,295 @@ function HomePageInner() {
                 </svg>
                 Sign in with Google
               </button>
-            )}
-          </div>
+            </>
+          )}
+        </div>
+      </nav>
 
-          {/* Character Name */}
-          <div>
-            <label
-              className="block text-sm text-gray-500 uppercase tracking-wider font-medium mb-1.5"
+      {/* ── Hero Area ── */}
+      <div
+        className="flex-1 flex flex-col items-center justify-center gap-5 px-8"
+        style={{
+          background: "radial-gradient(ellipse at center, #1a1610 0%, #111318 70%)",
+        }}
+      >
+        <img src="/icon.svg" alt="" className="w-24 h-24" />
+        <h1
+          className="text-4xl font-bold text-amber-200/90"
+          style={{
+            fontFamily: "var(--font-cinzel)",
+            textShadow: "0 0 40px rgba(245,158,11,0.2)",
+          }}
+        >
+          Unseen Servant
+        </h1>
+        <p className="text-gray-600 text-xs tracking-widest uppercase">
+          D&D 5E WITH AN AI GAME MASTER
+        </p>
+        <div className="w-10 h-px bg-amber-500/25" />
+
+        {/* Kick/Reject message */}
+        {kickMessage && (
+          <div className="bg-red-900/20 border border-red-700/50 rounded-lg p-3 max-w-lg w-full text-center">
+            <p className="text-sm text-red-400">{kickMessage}</p>
+          </div>
+        )}
+
+        {/* Player Name */}
+        <div className="w-full max-w-xl space-y-1">
+          <label
+            className="text-xs text-gray-600 uppercase tracking-wider font-medium"
+            style={{ fontFamily: "var(--font-cinzel)" }}
+          >
+            Player Name
+          </label>
+          <input
+            type="text"
+            value={playerName}
+            onChange={(e) => setPlayerName(e.target.value)}
+            placeholder="What should we call you?"
+            maxLength={30}
+            className="w-full h-10 bg-gray-900/80 border border-gray-700/40 rounded-lg px-4
+                       text-sm text-gray-100 placeholder-gray-600 focus:outline-none focus:ring-1
+                       focus:ring-amber-500/40 focus:border-amber-500/25 transition-colors"
+          />
+        </div>
+
+        {error && <p className="text-red-400 text-sm">{error}</p>}
+
+        {/* Create / Join Cards */}
+        <div className="w-full max-w-xl flex gap-4">
+          {/* Create Room — primary */}
+          <div className="flex-1 flex flex-col gap-3 p-5 bg-gray-800/50 border border-amber-500/15 rounded-xl">
+            <div
+              className="text-xs text-amber-200/90 uppercase tracking-widest"
               style={{ fontFamily: "var(--font-cinzel)" }}
             >
-              Player Name
-            </label>
-            <input
-              type="text"
-              value={playerName}
-              onChange={(e) => setPlayerName(e.target.value)}
-              placeholder="What should we call you?"
-              maxLength={30}
-              className="w-full bg-gray-900/60 border border-gray-700/50 rounded-lg px-4 py-2.5
-                         text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-1
-                         focus:ring-amber-500/50 focus:border-amber-500/30"
-            />
+              Create Room
+            </div>
+            <p className="text-xs text-gray-500 leading-relaxed flex-1">
+              Start a new adventure as the host. Configure your campaign and invite players.
+            </p>
+            <Button onClick={handleCreate} disabled={loading} size="lg" fullWidth>
+              {loading ? "Creating..." : "Create Room"}
+            </Button>
           </div>
 
-          {error && <p className="text-red-400 text-sm">{error}</p>}
-
-          {/* Two-column: Create Room | Join Room */}
-          <div className="grid grid-cols-2 gap-6 pt-1">
-            {/* Left column: Create Room */}
-            <div className="space-y-3">
-              <div
-                className="text-sm text-amber-200/50 uppercase tracking-wider font-medium"
-                style={{ fontFamily: "var(--font-cinzel)" }}
-              >
-                Create Room
-              </div>
-
-              <p className="text-sm text-gray-500">
-                Start a new adventure as the host. An unseen force will guide your story.
-              </p>
-
-              <Button onClick={handleCreate} disabled={loading} size="lg" fullWidth>
-                {loading ? "Creating..." : "Create Room"}
-              </Button>
+          {/* Join Room — secondary */}
+          <div className="flex-1 flex flex-col gap-3 p-5 bg-gray-800/30 border border-gray-700/50 rounded-xl">
+            <div
+              className="text-xs text-gray-600 uppercase tracking-widest"
+              style={{ fontFamily: "var(--font-cinzel)" }}
+            >
+              Join Room
             </div>
-
-            {/* Right column: Join Room */}
-            <div className="space-y-3">
-              <div
-                className="text-sm text-amber-200/50 uppercase tracking-wider font-medium"
-                style={{ fontFamily: "var(--font-cinzel)" }}
-              >
-                Join Room
-              </div>
-
-              <div>
-                <label className="block text-xs text-gray-400 mb-1">Room Code</label>
+            <div className="flex gap-2 flex-1">
+              <div className="flex-1 space-y-1">
+                <label className="text-xs text-gray-600">Room Code</label>
                 <input
                   type="text"
                   value={joinCode}
                   onChange={(e) => setJoinCode(e.target.value.toUpperCase().slice(0, 6))}
                   placeholder="ABCDEF"
                   maxLength={6}
-                  className="w-full bg-gray-900/60 border border-gray-700/50 rounded-lg px-3 py-2
-                             text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-1
-                             focus:ring-amber-500/50 focus:border-amber-500/30 font-mono text-center
-                             text-lg tracking-widest"
+                  className="w-full h-10 bg-gray-900/60 border border-gray-700/40 rounded-lg px-3
+                             text-sm text-gray-100 placeholder-gray-600 focus:outline-none focus:ring-1
+                             focus:ring-amber-500/40 focus:border-amber-500/25 font-mono text-center
+                             tracking-widest transition-colors"
                 />
               </div>
-
-              <div>
-                <label className="block text-xs text-gray-400 mb-1">
-                  Password <span className="text-gray-600">(if required)</span>
-                </label>
+              <div className="flex-1 space-y-1">
+                <label className="text-xs text-gray-600">Password (optional)</label>
                 <input
                   type="password"
                   value={joinPassword}
                   onChange={(e) => setJoinPassword(e.target.value)}
                   placeholder="Leave blank if none"
-                  className="w-full bg-gray-900/60 border border-gray-700/50 rounded-lg px-3 py-2
-                             text-sm text-gray-100 placeholder-gray-500 focus:outline-none
-                             focus:ring-1 focus:ring-amber-500/50 focus:border-amber-500/30"
+                  className="w-full h-10 bg-gray-900/60 border border-gray-700/40 rounded-lg px-3
+                             text-xs text-gray-100 placeholder-gray-600 focus:outline-none focus:ring-1
+                             focus:ring-amber-500/40 focus:border-amber-500/25 transition-colors"
                 />
               </div>
+            </div>
+            <Button variant="secondary" size="lg" fullWidth onClick={() => handleJoin()}>
+              Join Room
+            </Button>
+          </div>
+        </div>
+      </div>
 
-              <Button variant="secondary" size="md" fullWidth onClick={handleJoin}>
-                Join Room
+      {/* ── Bottom Context Strip ── */}
+      <div className="flex h-72 bg-gray-950 border-t border-gray-700/20 px-7 py-5 gap-6 shrink-0">
+        {/* Active Rooms */}
+        <div className="flex-1 flex flex-col gap-2.5 min-w-0">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span
+                className="text-xs text-gray-500 uppercase tracking-widest"
+                style={{ fontFamily: "var(--font-cinzel)" }}
+              >
+                Active Rooms
+              </span>
+              <Button variant="icon" onClick={() => fetchRooms()} title="Refresh rooms">
+                <svg
+                  className="w-3 h-3"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                  <path d="M3 3v5h5" />
+                  <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
+                  <path d="M16 16h5v5" />
+                </svg>
               </Button>
             </div>
+            <Link
+              href="/rooms"
+              className="text-xs text-amber-500/60 hover:text-amber-500/90 transition-colors"
+            >
+              Browse all →
+            </Link>
           </div>
 
-          {/* Browse Rooms & Characters */}
-          <div className="pt-2 border-t border-gray-700/40 grid grid-cols-2 gap-3">
-            <Button variant="secondary" size="md" href="/rooms">
-              Browse Rooms
-            </Button>
-            <Button variant="secondary" size="md" href="/characters">
-              My Characters
-            </Button>
+          <div className="flex gap-2.5 flex-1 min-h-0">
+            {rooms.length === 0 ? (
+              <div className="flex-1 flex items-center justify-center text-xs text-gray-700">
+                No active rooms
+              </div>
+            ) : (
+              rooms.slice(0, 3).map((room) => (
+                <div
+                  key={room.roomCode}
+                  className="w-56 h-24 shrink-0 flex flex-col gap-2 p-3 bg-gray-900/60 border border-gray-700/25
+                             rounded-lg hover:border-gray-700/40 transition-colors"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-sm font-semibold text-gray-300 tracking-wide truncate">
+                      {room.hostName ? `${room.hostName}'s Room` : room.roomCode}
+                    </span>
+                    <Button variant="outline" size="xs" onClick={() => handleJoin(room.roomCode)}>
+                      Join
+                    </Button>
+                  </div>
+                  <span className="text-xs text-gray-600 font-mono tracking-wide">
+                    {room.roomCode}
+                  </span>
+                  <div className="flex items-center gap-1.5 text-xs text-gray-600">
+                    <svg
+                      className="w-2.5 h-2.5"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                      <circle cx="9" cy="7" r="4" />
+                      <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+                      <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                    </svg>
+                    <span>{room.playerCount}</span>
+                    {room.hasPassword && (
+                      <svg
+                        className="w-2.5 h-2.5 text-yellow-500/60 ml-1"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                      >
+                        <rect width="18" height="11" x="3" y="11" rx="2" />
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                      </svg>
+                    )}
+                    <span className="ml-auto">{timeAgo(room.createdAt)}</span>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* Divider */}
+        <div className="w-px bg-gray-700/20 self-stretch" />
+
+        {/* Characters */}
+        <div className="flex-1 flex flex-col gap-2.5 min-w-0">
+          <div className="flex items-center justify-between">
+            <span
+              className="text-xs text-gray-500 uppercase tracking-widest"
+              style={{ fontFamily: "var(--font-cinzel)" }}
+            >
+              Characters
+            </span>
+            <Link
+              href="/characters"
+              className="text-xs text-gray-500 hover:text-gray-400 transition-colors"
+            >
+              Manage all →
+            </Link>
+          </div>
+
+          <div className="flex gap-2.5 flex-1 min-h-0">
+            {topCharacters.length === 0 ? (
+              <div className="flex-1 flex flex-col items-center justify-center gap-2">
+                <span className="text-xs text-gray-700">No characters yet</span>
+                <Link
+                  href="/characters/create"
+                  className="text-xs text-gray-500 hover:text-gray-400 transition-colors"
+                >
+                  Create one →
+                </Link>
+              </div>
+            ) : (
+              topCharacters.map((saved) => {
+                const c = saved.character;
+                const name = c.static?.name || "Unnamed";
+                const color = charColor(name);
+                const mainClass = c.static?.classes?.[0];
+                const level = c.static?.classes?.reduce((sum, cl) => sum + (cl.level || 0), 0) || 0;
+
+                return (
+                  <Link
+                    key={saved.id}
+                    href={`/characters/${saved.id}`}
+                    className="w-56 h-24 shrink-0 flex items-center gap-3 p-3 bg-gray-900/60 border border-gray-700/25
+                               rounded-lg hover:border-gray-700/40 transition-colors"
+                  >
+                    <div
+                      className={`w-10 h-10 shrink-0 rounded-md ${color.bg} border ${color.border}
+                                  flex items-center justify-center`}
+                    >
+                      <span
+                        className={`text-base ${color.text}`}
+                        style={{ fontFamily: "var(--font-cinzel)" }}
+                      >
+                        {name[0]?.toUpperCase()}
+                      </span>
+                    </div>
+                    <div className="min-w-0 flex flex-col gap-0.5">
+                      <span
+                        className="text-xs text-gray-300 truncate"
+                        style={{ fontFamily: "var(--font-cinzel)" }}
+                      >
+                        {name}
+                      </span>
+                      <span className="text-xs text-gray-600 truncate">
+                        Lv {level} {mainClass?.name || ""}
+                        {c.static?.species ? ` · ${c.static.species}` : ""}
+                      </span>
+                      {saved.campaignSlug && (
+                        <span className="text-xs text-amber-500/40 bg-amber-500/5 border border-amber-500/10 rounded px-1.5 py-0.5 truncate w-fit">
+                          {saved.campaignSlug}
+                        </span>
+                      )}
+                    </div>
+                  </Link>
+                );
+              })
+            )}
           </div>
         </div>
       </div>

@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { motion } from "framer-motion";
 import type { AbilityScores } from "@unseen-servant/shared/types";
 
+import { TabBar } from "@/components/ui/TabBar";
 import type { StepProps, AbilityMethod, ASIMode } from "./types";
 import {
   STANDARD_ARRAY,
@@ -84,21 +85,11 @@ export function StepAbilities({ state, dispatch }: StepProps) {
       </div>
 
       {/* Method Tabs */}
-      <div className="flex border-b border-gray-700">
-        {METHODS.map((m) => (
-          <button
-            key={m.value}
-            onClick={() => dispatch({ type: "SET_ABILITY_METHOD", method: m.value })}
-            className={`px-4 py-2.5 text-xs font-medium transition-colors ${
-              state.abilityMethod === m.value
-                ? "text-amber-300 border-b-2 border-amber-400/70"
-                : "text-gray-500 hover:text-gray-300"
-            }`}
-          >
-            {m.label}
-          </button>
-        ))}
-      </div>
+      <TabBar
+        tabs={METHODS}
+        active={state.abilityMethod}
+        onChange={(value) => dispatch({ type: "SET_ABILITY_METHOD", method: value })}
+      />
 
       {/* Point Buy progress bar */}
       {state.abilityMethod === "point-buy" && (

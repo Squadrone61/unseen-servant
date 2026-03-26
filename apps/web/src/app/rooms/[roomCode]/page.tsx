@@ -3,16 +3,21 @@
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useState, useEffect, useRef, useMemo } from "react";
 import { ChatPanel } from "@/components/chat/ChatPanel";
-import { Sidebar } from "@/components/sidebar/Sidebar";
 import { LeftSidebar } from "@/components/character/LeftSidebar";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { BattleMap } from "@/components/game/BattleMap";
+
 import { CampaignConfigModal } from "@/components/sidebar/CampaignConfigModal";
 import { SettingsModal } from "@/components/sidebar/SettingsModal";
 import { PlayerNotesPanel } from "@/components/notes/PlayerNotesPanel";
+import { GameNavBar } from "@/components/game/GameNavBar";
+import { Button } from "@/components/ui/Button";
+import { Drawer } from "@/components/game/Drawer";
+import { CharacterTrigger } from "@/components/game/CharacterTrigger";
+import { CharacterSheet } from "@/components/character/CharacterSheet";
 import { usePlayerNotes } from "@/hooks/usePlayerNotes";
 import { useCharacterLibrary } from "@/hooks/useCharacterLibrary";
-import { mergeReimport } from "@unseen-servant/shared/utils";
+import { mergeReimport, formatClassString, getTotalLevel } from "@unseen-servant/shared/utils";
 import type {
   BattleMapState,
   CharacterData,
@@ -92,8 +97,12 @@ function GameContent({ roomCode, playerName }: { roomCode: string; playerName: s
   const [showSettings, setShowSettings] = useState(false);
   const [showNotes, setShowNotes] = useState(false);
   const [typingPlayers, setTypingPlayers] = useState<Map<string, number>>(new Map());
-  const [rightSidebarCollapsed, setRightSidebarCollapsed] = useState(false);
+
   const [battleMapWidth, setBattleMapWidth] = useState(50);
+  const [showActivity, setShowActivity] = useState(false);
+  const [showEvents, setShowEvents] = useState(false);
+  const [showParty, setShowParty] = useState(false);
+  const [showCharacterDrawer, setShowCharacterDrawer] = useState(false);
 
   // Join state — don't render game UI until successfully joined
   const [joined, setJoined] = useState(false);
@@ -683,13 +692,9 @@ function GameContent({ roomCode, playerName }: { roomCode: string; playerName: s
           />
 
           <div className="flex gap-3">
-            <button
-              onClick={handlePasswordSubmit}
-              className="flex-1 bg-amber-600/80 hover:bg-amber-500/80 text-amber-50 py-2.5 rounded-lg
-                         font-medium transition-colors text-sm"
-            >
+            <Button variant="primary" size="lg" className="flex-1" onClick={handlePasswordSubmit}>
               Join Room
-            </button>
+            </Button>
             <button
               onClick={() => router.push("/")}
               className="px-4 text-gray-500 hover:text-gray-300 text-sm transition-colors"
@@ -717,72 +722,250 @@ function GameContent({ roomCode, playerName }: { roomCode: string; playerName: s
   }
 
   return (
-    <div className="flex h-screen">
-      <LeftSidebar
-        character={myCharacter}
-        libraryId={myCharacterLibraryId}
-        onCharacterImported={handleCharacterImported}
+    <div className="flex flex-col h-screen">
+      <GameNavBar
+        roomCode={roomCode}
+        isHost={isHost}
+        dmConnected={dmConnected}
+        connectionState={connectionState}
+        playerCount={players.length}
+        storyStarted={storyStarted}
+        campaignConfigured={campaignConfigured}
+        logMessageCount={logMessages.length}
+        eventLogCount={eventLog.length}
+        showNotes={showNotes}
+        onToggleNotes={() => setShowNotes((v) => !v)}
+        onToggleActivity={() => setShowActivity((v) => !v)}
+        onToggleEvents={() => setShowEvents((v) => !v)}
+        onToggleParty={() => setShowParty((v) => !v)}
         onOpenSettings={() => setShowSettings(true)}
       />
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {battleMap && combatState && combatState.phase === "active" ? (
-          <CombatLayout
-            battleMap={battleMap}
-            combatState={combatState}
-            partyCharacters={partyCharacters}
-            myCharacterName={myCharacter?.static.name}
-            onMoveToken={handleMoveToken}
-            onEndTurn={handleEndTurn}
-            onCombatantClick={setHighlightedCombatantId}
-            highlightedCombatantId={highlightedCombatantId}
-            battleMapWidth={battleMapWidth}
-            onBattleMapWidthChange={setBattleMapWidth}
-            storyMessages={storyMessages}
-            onSend={handleSend}
-            connectionState={connectionState}
-            onRollDice={handleRollDice}
-            isMyTurn={isMyTurn}
-            typingPlayers={Array.from(typingPlayers.keys())}
-            onTypingChange={handleTypingChange}
-          />
-        ) : (
-          <ChatPanel
-            messages={storyMessages}
-            onSend={handleSend}
-            connectionState={connectionState}
-            onRollDice={handleRollDice}
-            myCharacterName={myCharacter?.static.name}
-            isMyTurn={isMyTurn}
-            onEndTurn={handleEndTurn}
-            typingPlayers={Array.from(typingPlayers.keys())}
-            onTypingChange={handleTypingChange}
-          />
+      {/* Main Content Area */}
+      <div className="flex flex-1 min-h-0">
+        {/* Lobby: inline character picker sidebar (only until a character is selected) */}
+        {!storyStarted && !myCharacter && (
+          <div className="w-52 border-r border-gray-700/20 flex flex-col bg-gray-950 shrink-0">
+            <LeftSidebar character={myCharacter} onCharacterImported={handleCharacterImported} />
+          </div>
         )}
+
+        {/* Inline character sheet panel (all states) */}
+        {showCharacterDrawer && myCharacter && (
+          <div className="w-80 shrink-0 border-r border-gray-700/20 overflow-y-auto bg-gray-900">
+            <CharacterSheet character={myCharacter} />
+          </div>
+        )}
+
+        {/* Center content */}
+        <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+          {/* Lobby center: waiting state + campaign config */}
+          {!storyStarted && (
+            <div className="flex-1 flex flex-col items-center justify-center gap-3">
+              {campaignConfigured && activeCampaignName && (
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                  <span className="text-sm font-medium text-emerald-400">{activeCampaignName}</span>
+                </div>
+              )}
+
+              <p className="text-base text-gray-600" style={{ fontFamily: "var(--font-cinzel)" }}>
+                Waiting for the adventure to begin…
+              </p>
+              <div className="w-10 h-px bg-amber-500/25" />
+
+              {campaignConfigured && dmConnected ? (
+                <Button variant="outline" size="lg" onClick={handleStartStory}>
+                  <span>⚔</span>
+                  Begin the Adventure
+                </Button>
+              ) : (
+                <>
+                  <Button
+                    variant="outline"
+                    size="lg"
+                    onClick={() => setShowCampaignConfig(true)}
+                    disabled={!dmConnected}
+                  >
+                    Configure Campaign
+                  </Button>
+                  {!dmConnected && (
+                    <p className="text-xs text-gray-600">Waiting for DM to connect...</p>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+
+          {/* Active gameplay */}
+          {storyStarted && (
+            <>
+              {battleMap && combatState && combatState.phase === "active" ? (
+                <CombatLayout
+                  battleMap={battleMap}
+                  combatState={combatState}
+                  partyCharacters={partyCharacters}
+                  myCharacterName={myCharacter?.static.name}
+                  onMoveToken={handleMoveToken}
+                  onEndTurn={handleEndTurn}
+                  onCombatantClick={setHighlightedCombatantId}
+                  highlightedCombatantId={highlightedCombatantId}
+                  battleMapWidth={battleMapWidth}
+                  onBattleMapWidthChange={setBattleMapWidth}
+                  storyMessages={storyMessages}
+                  onSend={handleSend}
+                  connectionState={connectionState}
+                  onRollDice={handleRollDice}
+                  isMyTurn={isMyTurn}
+                  typingPlayers={Array.from(typingPlayers.keys())}
+                  onTypingChange={handleTypingChange}
+                  characterTrigger={
+                    myCharacter ? (
+                      <CharacterTrigger
+                        character={myCharacter}
+                        onClick={() => setShowCharacterDrawer((v) => !v)}
+                        compact
+                      />
+                    ) : undefined
+                  }
+                />
+              ) : (
+                <ChatPanel
+                  messages={storyMessages}
+                  onSend={handleSend}
+                  connectionState={connectionState}
+                  onRollDice={handleRollDice}
+                  myCharacterName={myCharacter?.static.name}
+                  isMyTurn={isMyTurn}
+                  onEndTurn={handleEndTurn}
+                  typingPlayers={Array.from(typingPlayers.keys())}
+                  onTypingChange={handleTypingChange}
+                  characterTrigger={
+                    myCharacter ? (
+                      <CharacterTrigger
+                        character={myCharacter}
+                        onClick={() => setShowCharacterDrawer((v) => !v)}
+                      />
+                    ) : undefined
+                  }
+                />
+              )}
+            </>
+          )}
+
+          {/* Bottom bar: chat input for lobby */}
+          {!storyStarted && (
+            <div className="flex items-center gap-3 h-14 px-4 border-t border-gray-700/20 bg-gray-950 shrink-0">
+              {/* Character trigger (shown after character is selected) */}
+              {myCharacter && (
+                <CharacterTrigger
+                  character={myCharacter}
+                  onClick={() => setShowCharacterDrawer((v) => !v)}
+                />
+              )}
+              <input
+                type="text"
+                placeholder="What do you do?"
+                disabled
+                className="flex-1 h-9 bg-gray-900/60 border border-gray-700/30 rounded-md px-3
+                           text-sm text-gray-100 placeholder-gray-600 disabled:opacity-50"
+              />
+              <Button disabled size="sm">
+                Send
+              </Button>
+              <div className="w-px h-6 bg-gray-700/20" />
+              <div className="text-xs text-gray-600 truncate max-w-48">
+                {logMessages.length > 0 &&
+                logMessages[logMessages.length - 1].type === "server:system"
+                  ? (logMessages[logMessages.length - 1] as { content?: string }).content || ""
+                  : ""}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
-      <Sidebar
-        roomCode={roomCode}
-        players={players}
-        allPlayers={allPlayers}
-        hostName={hostName}
-        dmConnected={dmConnected}
-        isHost={isHost}
-        logMessages={logMessages}
-        partyCharacters={partyCharacters}
-        storyStarted={storyStarted}
-        combatState={combatState}
-        eventLog={eventLog}
-        campaignConfigured={campaignConfigured}
-        activeCampaignName={activeCampaignName}
-        connectionState={connectionState}
-        collapsed={rightSidebarCollapsed}
-        onToggleCollapse={() => setRightSidebarCollapsed((v) => !v)}
-        onKick={handleKick}
-        onStartStory={handleStartStory}
-        onRollback={handleRollback}
-        onOpenCampaignConfig={() => setShowCampaignConfig(true)}
-        onToggleNotes={() => setShowNotes((v) => !v)}
-        showNotes={showNotes}
-      />
+
+      {/* ─── Drawers ─── */}
+      <Drawer open={showParty} onClose={() => setShowParty(false)} title="Party">
+        <div className="p-4 space-y-3">
+          {(allPlayers.length > 0
+            ? allPlayers
+            : players.map((name) => ({ name, online: true, isHost: name === hostName }))
+          ).map((player) => {
+            const charData = partyCharacters[player.name];
+            return (
+              <div key={player.name} className="flex items-center gap-2 text-sm group">
+                <div
+                  className={`w-2 h-2 rounded-full shrink-0 ${player.online ? "bg-green-500" : "bg-gray-600"}`}
+                />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <span className={player.online ? "text-gray-200" : "text-gray-500"}>
+                      {player.name}
+                    </span>
+                    {player.isHost && <span className="text-xs text-amber-300">(host)</span>}
+                    {!player.online && <span className="text-xs text-gray-600">(offline)</span>}
+                  </div>
+                  {charData && (
+                    <div className="text-xs text-gray-500">
+                      {formatClassString(charData.static.classes)} · Lvl{" "}
+                      {getTotalLevel(charData.static.classes)}
+                    </div>
+                  )}
+                </div>
+                {isHost && !player.isHost && player.online && (
+                  <button
+                    onClick={() => handleKick(player.name)}
+                    className="text-xs text-red-400/60 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    Kick
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </Drawer>
+
+      <Drawer open={showActivity} onClose={() => setShowActivity(false)} title="Activity Log">
+        <div className="p-4 space-y-1.5">
+          {logMessages.length === 0 ? (
+            <p className="text-xs text-gray-600 italic">No activity yet</p>
+          ) : (
+            logMessages.map((msg, i) => (
+              <p
+                key={i}
+                className={`text-xs ${msg.type === "server:error" ? "text-red-400" : "text-gray-500"}`}
+              >
+                {"content" in msg ? (msg as { content: string }).content : ""}
+              </p>
+            ))
+          )}
+        </div>
+      </Drawer>
+
+      <Drawer open={showEvents} onClose={() => setShowEvents(false)} title="Event Log">
+        <div className="p-4 space-y-2">
+          {!eventLog || eventLog.length === 0 ? (
+            <p className="text-xs text-gray-600 italic">No events yet</p>
+          ) : (
+            eventLog.slice(-10).map((evt) => (
+              <div key={evt.id} className="flex items-start justify-between gap-2 group">
+                <p className="text-xs text-gray-400 flex-1">
+                  {evt.type} — {evt.description}
+                </p>
+                {isHost && (
+                  <button
+                    onClick={() => handleRollback(evt.id)}
+                    className="text-xs text-red-400/60 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                  >
+                    Undo
+                  </button>
+                )}
+              </div>
+            ))
+          )}
+        </div>
+      </Drawer>
 
       {/* Player Notes Panel */}
       {showNotes && (
@@ -836,6 +1019,7 @@ function CombatLayout({
   isMyTurn,
   typingPlayers,
   onTypingChange,
+  characterTrigger,
 }: {
   battleMap: import("@unseen-servant/shared/types").BattleMapState;
   combatState: import("@unseen-servant/shared/types").CombatState;
@@ -854,6 +1038,7 @@ function CombatLayout({
   isMyTurn: boolean;
   typingPlayers: string[];
   onTypingChange: (isTyping: boolean) => void;
+  characterTrigger?: React.ReactNode;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const draggingRef = useRef(false);
@@ -906,6 +1091,7 @@ function CombatLayout({
         onEndTurn={onEndTurn}
         typingPlayers={typingPlayers}
         onTypingChange={onTypingChange}
+        characterTrigger={characterTrigger}
       />
     </div>
   );

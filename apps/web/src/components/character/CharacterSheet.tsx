@@ -27,6 +27,7 @@ import { SpellsTab } from "./tabs/SpellsTab";
 import { InventoryTab } from "./tabs/InventoryTab";
 import { FeaturesTab } from "./tabs/FeaturesTab";
 import { StatsTab } from "./tabs/StatsTab";
+import { TabBar } from "@/components/ui/TabBar";
 
 // ─── Helpers ───
 
@@ -51,9 +52,9 @@ interface CharacterSheetProps {
   character: CharacterData;
 }
 
-// ─── Tab Bar ───
+// ─── Tab Bar Helper ───
 
-function TabBar({
+function SheetTabBar({
   activeTab,
   onTabChange,
   showSpells,
@@ -62,30 +63,23 @@ function TabBar({
   onTabChange: (tab: TabId) => void;
   showSpells: boolean;
 }) {
-  const tabs: { id: TabId; label: string }[] = [
-    { id: "stats", label: "Stats" },
-    { id: "actions", label: "Actions" },
-    ...(showSpells ? [{ id: "spells" as TabId, label: "Spells" }] : []),
-    { id: "inventory", label: "Items" },
-    { id: "features", label: "Feats" },
+  const tabs: { value: TabId; label: string }[] = [
+    { value: "stats", label: "Stats" },
+    { value: "actions", label: "Actions" },
+    ...(showSpells ? [{ value: "spells" as TabId, label: "Spells" }] : []),
+    { value: "inventory", label: "Items" },
+    { value: "features", label: "Feats" },
   ];
 
   return (
-    <div className="flex border-t border-b border-gray-700/40 bg-gray-800/60 shrink-0">
-      {tabs.map((tab) => (
-        <button
-          key={tab.id}
-          onClick={() => onTabChange(tab.id)}
-          className={`flex-1 py-2 text-xs font-medium transition-colors ${
-            activeTab === tab.id
-              ? "text-amber-400 border-b-2 border-amber-500"
-              : "text-gray-500 hover:text-gray-300"
-          }`}
-        >
-          {tab.label}
-        </button>
-      ))}
-    </div>
+    <TabBar
+      tabs={tabs}
+      active={activeTab}
+      onChange={onTabChange}
+      stretch
+      size="sm"
+      className="border-t border-gray-700/40 bg-gray-800/60 shrink-0"
+    />
   );
 }
 
@@ -307,7 +301,7 @@ export function CharacterSheet({ character }: CharacterSheetProps) {
       </div>
 
       {/* ═══ TAB BAR ═══ */}
-      <TabBar
+      <SheetTabBar
         activeTab={activeTab}
         onTabChange={setActiveTab}
         showSpells={isCaster || s.spells.length > 0}

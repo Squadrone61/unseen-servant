@@ -3,7 +3,7 @@
 import { useReducer, useEffect, useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 
-import { Breadcrumb } from "@/components/ui/Breadcrumb";
+import { TopBar } from "@/components/ui/TopBar";
 import { Button } from "@/components/ui/Button";
 import { motion, AnimatePresence } from "framer-motion";
 import { buildCharacter } from "@unseen-servant/shared/builders";
@@ -227,56 +227,47 @@ export function CharacterBuilder({ editId }: CharacterBuilderProps) {
   return (
     <div className="min-h-screen flex flex-col">
       {/* Header */}
-      <div className="relative bg-gray-800/80 border-b border-gray-700/50 px-6 py-3 shrink-0 backdrop-blur-sm">
-        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-amber-500/40 to-transparent" />
-
+      {editId ? (
+        <TopBar
+          items={[
+            { label: "Characters", href: "/characters" },
+            {
+              label: getCharacter(editId)?.character.static.name ?? "Character",
+              href: `/characters/${editId}`,
+            },
+          ]}
+          current="Edit"
+        >
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => {
+              clearImportedCharacter();
+              setShowImportModal(true);
+            }}
+          >
+            Import
+          </Button>
+          <Button variant="ghost" size="sm" href={`/characters/${editId}`}>
+            Cancel
+          </Button>
+        </TopBar>
+      ) : (
+        <TopBar items={[{ label: "Characters", href: "/characters" }]} current="Create">
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => {
+              clearImportedCharacter();
+              setShowImportModal(true);
+            }}
+          >
+            Import
+          </Button>
+        </TopBar>
+      )}
+      <div className="bg-gray-950 border-b border-gray-700/25 px-6 py-2 shrink-0">
         <div className="max-w-6xl mx-auto">
-          {editId ? (
-            <Breadcrumb
-              items={[
-                { label: "Home", href: "/" },
-                { label: "Characters", href: "/characters" },
-                {
-                  label: getCharacter(editId)?.character.static.name ?? "Character",
-                  href: `/characters/${editId}`,
-                },
-              ]}
-              current="Edit"
-            >
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => {
-                  clearImportedCharacter();
-                  setShowImportModal(true);
-                }}
-              >
-                Import
-              </Button>
-              <Button variant="ghost" size="sm" href={`/characters/${editId}`}>
-                Cancel
-              </Button>
-            </Breadcrumb>
-          ) : (
-            <Breadcrumb
-              items={[
-                { label: "Home", href: "/" },
-                { label: "Characters", href: "/characters" },
-              ]}
-              current="Create"
-            >
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => {
-                  clearImportedCharacter();
-                  setShowImportModal(true);
-                }}
-              >
-                Import
-              </Button>
-            </Breadcrumb>
-          )}
           <ProgressStepper
             steps={visibleSteps}
             currentStep={state.currentStep}

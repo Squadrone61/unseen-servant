@@ -68,6 +68,8 @@ interface ChatPanelProps {
   onEndTurn?: () => void;
   typingPlayers?: string[];
   onTypingChange?: (isTyping: boolean) => void;
+  /** Optional element rendered left of the input (e.g. character trigger button) */
+  characterTrigger?: React.ReactNode;
 }
 
 export function ChatPanel({
@@ -80,6 +82,7 @@ export function ChatPanel({
   onEndTurn,
   typingPlayers,
   onTypingChange,
+  characterTrigger,
 }: ChatPanelProps) {
   const [input, setInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -151,7 +154,8 @@ export function ChatPanel({
 
       {/* Input */}
       <form onSubmit={handleSubmit} className="border-t border-gray-700/40 p-4 shrink-0">
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
+          {characterTrigger}
           <input
             type="text"
             value={input}

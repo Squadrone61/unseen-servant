@@ -48,6 +48,7 @@ packages/shared/   → Shared types (Zod 4 schemas), constants, utils, dice, che
 - **Bridge-owned game state:** GameStateManager in the MCP bridge owns all game logic — combat, dice, HP, conditions, conversation history, game state sync
 - **player_action/broadcast** WebSocket contract: worker forwards player actions to bridge as `server:player_action`, bridge processes and sends results back as `client:broadcast`
 - **MCP tool-use** for game state mutation (damage, combat, spell slots), D&D reference (spells, monsters, conditions), dice rolling, campaign persistence
+- **Dual-format tool results:** MCP tools return `"Human summary\n---\n{json}"` — human-readable text line + structured JSON after separator. GSM methods return `ToolResponse { text, data, error?, hints? }`
 - **Campaign configuration** flow: host configures campaign (name, pacing, encounter length) before starting story via CampaignConfigModal
 - **A1 coordinate notation** throughout: all tool inputs/outputs use A1 grid coordinates (formatGridPosition/parseGridPosition in shared/utils/grid.ts)
 - **WebSocket Hibernation API** for Durable Objects (persistent connections survive hibernation)
@@ -160,7 +161,7 @@ pnpm deploy:web     # Deploy web only
 | `acknowledge`      | Silently observe a player message without responding. Use when players are talking to each other or roleplaying among themselves. |
 | `send_response`    | Sends DM narrative back, stores in conversation history, broadcasts to all players.                                               |
 | `get_players`      | Returns current player list with character summaries.                                                                             |
-| `get_game_state`   | Full game state snapshot (combat, encounter, checks, events, characters).                                                         |
+| `get_game_state`   | Game state snapshot. Accepts `detail`: `"compact"` (default, ~200 tokens), `"tactical"` (~500 tokens), `"full"` (everything).     |
 | `get_character`    | Specific character's full data (static + dynamic) by name.                                                                        |
 
 ### HP & Conditions
@@ -193,11 +194,12 @@ pnpm deploy:web     # Deploy web only
 
 ### Area of Effect
 
-| Tool                | Description                                                                                 |
-| ------------------- | ------------------------------------------------------------------------------------------- |
-| `show_aoe`          | Place AoE overlay on map (shape, center in A1, radius, color). Returns affected combatants. |
-| `apply_area_effect` | Apply damage to all combatants in area with saving throws. Use after show_aoe confirmation. |
-| `dismiss_aoe`       | Remove a persistent AoE overlay (Wall of Fire, Fog Cloud, etc.).                            |
+| Tool                  | Description                                                                                 |
+| --------------------- | ------------------------------------------------------------------------------------------- |
+| `show_aoe`            | Place AoE overlay on map (shape, center in A1, radius, color). Returns affected combatants. |
+| `apply_area_effect`   | Apply damage to all combatants in area with saving throws. Use after show_aoe confirmation. |
+| `dismiss_aoe`         | Remove a persistent AoE overlay (Wall of Fire, Fog Cloud, etc.).                            |
+| `apply_batch_effects` | Apply multiple effects (damage, heal, conditions, move) in one call. Max 10 effects.        |
 
 ### Spell Slots
 
@@ -236,6 +238,8 @@ pnpm deploy:web     # Deploy web only
 | `restore_class_resource` | Restore uses of a class resource (e.g., after rest). Use amount=999 to fully restore.          |
 
 ### D&D Reference (Unified 2024 Database)
+
+All lookup tools accept `detail`: `"summary"` (default, ~30 tokens) or `"full"` (complete rules text).
 
 | Tool                | Description                                                                                                                    |
 | ------------------- | ------------------------------------------------------------------------------------------------------------------------------ |

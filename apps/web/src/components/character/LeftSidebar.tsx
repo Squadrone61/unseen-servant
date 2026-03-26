@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import type { CharacterData } from "@unseen-servant/shared/types";
 import { formatClassString, getTotalLevel } from "@unseen-servant/shared/utils";
 import { CharacterSheet } from "./CharacterSheet";
@@ -9,104 +8,24 @@ import { useCharacterLibrary } from "@/hooks/useCharacterLibrary";
 
 interface LeftSidebarProps {
   character: CharacterData | null;
-  libraryId: string | null;
   onCharacterImported: (character: CharacterData, libraryId: string) => void;
-  onOpenSettings: () => void;
 }
 
-export function LeftSidebar({
-  character,
-  libraryId,
-  onCharacterImported,
-  onOpenSettings,
-}: LeftSidebarProps) {
-  const [collapsed, setCollapsed] = useState(false);
+export function LeftSidebar({ character, onCharacterImported }: LeftSidebarProps) {
   const { characters, touchCharacter } = useCharacterLibrary();
 
-  if (collapsed) {
-    return (
-      <div className="w-10 bg-gray-800/60 border-r border-gray-700/40 flex flex-col items-center pt-3 shrink-0">
-        <Button variant="icon" onClick={() => setCollapsed(false)} title="Show character sheet">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-          </svg>
-        </Button>
-      </div>
-    );
+  if (character) {
+    return <CharacterSheet character={character} />;
   }
 
   return (
-    <div className="w-80 bg-gray-800/60 border-r border-gray-700/40 flex flex-col shrink-0 relative">
-      {/* Top bar */}
-      <div className="flex items-center justify-between px-3 py-1.5 border-b border-gray-700/40 shrink-0">
-        <div className="flex items-center gap-1">
-          <Button variant="danger" size="xs" href="/">
-            Quit
-          </Button>
-          <Button variant="icon" onClick={onOpenSettings} title="Settings">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.573-1.066z"
-              />
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-              />
-            </svg>
-          </Button>
-          {character &&
-            libraryId &&
-            characters.find((c) => c.id === libraryId && c.builderChoices) && (
-              <Button
-                variant="ghost"
-                size="xs"
-                href={`/characters/${libraryId}/edit`}
-                target="_blank"
-              >
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                  />
-                </svg>
-                Update Character
-              </Button>
-            )}
-        </div>
-        <Button variant="icon" onClick={() => setCollapsed(true)} title="Collapse">
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M15 19l-7-7 7-7"
-            />
-          </svg>
-        </Button>
-      </div>
-
-      {/* Content */}
-      <div className="flex-1 overflow-hidden flex flex-col">
-        {character ? (
-          <CharacterSheet character={character} />
-        ) : (
-          <CharacterPicker
-            characters={characters}
-            onSelect={(saved) => {
-              touchCharacter(saved.id);
-              onCharacterImported(saved.character, saved.id);
-            }}
-          />
-        )}
-      </div>
-    </div>
+    <CharacterPicker
+      characters={characters}
+      onSelect={(saved) => {
+        touchCharacter(saved.id);
+        onCharacterImported(saved.character, saved.id);
+      }}
+    />
   );
 }
 

@@ -256,6 +256,12 @@ export async function startCli(): Promise<void> {
         "mcp__unseen-servant__update_currency",
         // Battle map
         "mcp__unseen-servant__update_battle_map",
+        // Tactical & AoE
+        "mcp__unseen-servant__get_combat_summary",
+        "mcp__unseen-servant__get_map_info",
+        "mcp__unseen-servant__show_aoe",
+        "mcp__unseen-servant__apply_area_effect",
+        "mcp__unseen-servant__dismiss_aoe",
         // D&D reference
         "mcp__unseen-servant__lookup_spell",
         "mcp__unseen-servant__lookup_monster",

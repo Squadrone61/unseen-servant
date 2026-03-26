@@ -6,6 +6,7 @@ import remarkGfm from "remark-gfm";
 import { preprocessEntityTags } from "../../utils/entity-tags";
 import type { DisplayMessage } from "./ChatPanel";
 import { useTTS } from "../../hooks/useTTS";
+import { Button } from "@/components/ui/Button";
 
 interface ChatMessageProps {
   message: DisplayMessage;
@@ -332,13 +333,9 @@ function CheckCard({
 
       {/* Roll button for bare check_request */}
       {isBare && isMyCheck && onRollDice && (
-        <button
-          onClick={() => onRollDice(request.id)}
-          className="mt-2 bg-amber-600 hover:bg-amber-700 text-white text-sm px-4 py-1.5
-                     rounded-lg font-medium transition-colors"
-        >
+        <Button variant="primary" size="sm" className="mt-2" onClick={() => onRollDice(request.id)}>
           {isDamage ? `Roll Damage${request.notation ? ` (${request.notation})` : ""}` : "Roll d20"}
-        </button>
+        </Button>
       )}
     </div>
   );

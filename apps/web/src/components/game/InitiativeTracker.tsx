@@ -1,22 +1,4 @@
-import type { CharacterData, CombatState, TileType } from "@unseen-servant/shared/types";
-
-const LEGEND_ITEMS: Array<{ type: TileType; label: string; bg: string; extra?: string }> = [
-  { type: "floor", label: "Floor", bg: "#26262c" },
-  { type: "wall", label: "Wall", bg: "#131318" },
-  {
-    type: "water",
-    label: "Water",
-    bg: "#182535",
-    extra: "repeating-linear-gradient(160deg, transparent 0 4px, rgba(60,160,220,.35) 4px 5px)",
-  },
-  {
-    type: "difficult_terrain",
-    label: "Difficult",
-    bg: "#28221a",
-    extra: "repeating-linear-gradient(45deg, transparent 0 3px, rgba(200,150,50,.35) 3px 4px)",
-  },
-  { type: "door", label: "Door", bg: "#34291a" },
-];
+import type { CharacterData, CombatState } from "@unseen-servant/shared/types";
 
 interface InitiativeTrackerProps {
   combat: CombatState;
@@ -32,139 +14,142 @@ export function InitiativeTracker({
   if (combat.phase !== "active") return null;
 
   return (
-    <div className="bg-gray-900/70 border-b border-gray-700/50 px-4 py-2">
-      <div className="flex items-center gap-2 mb-1.5">
-        <span
-          className="text-xs text-gray-500 uppercase tracking-wider"
-          style={{ fontFamily: "var(--font-cinzel)" }}
-        >
-          Combat
-        </span>
-        <span className="text-xs text-gray-600">Round {combat.round}</span>
-        <div className="flex items-center gap-2.5 ml-auto">
-          {LEGEND_ITEMS.map(({ type, label, bg, extra }) => (
-            <div key={type} className="flex items-center gap-1">
-              <div
-                className="w-3.5 h-3.5 rounded-[3px] border border-gray-600/60"
-                style={{
-                  backgroundColor: bg,
-                  backgroundImage: extra,
-                }}
-              />
-              <span className="text-xs text-gray-500">{label}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-      <div className="flex gap-1.5 overflow-x-auto p-1">
-        {combat.turnOrder.map((id, idx) => {
-          const combatant = combat.combatants[id];
-          if (!combatant) return null;
+    <div className="flex items-stretch gap-1.5 px-3 py-1.5 bg-gray-950 border-b border-gray-700/20 shrink-0 overflow-x-auto">
+      {/* Divider */}
+      <div className="w-px h-9 bg-gray-700/20 shrink-0" />
 
-          const isActive = idx === combat.turnIndex;
-          const isPlayer = combatant.type === "player";
-          const isEnemy = combatant.type === "enemy";
-          // Resolve HP for any combatant (players from partyCharacters, others from combatant)
-          let currentHP: number | undefined;
-          let maxHP: number | undefined;
-          let concentratingOn: { spellName: string; since?: number } | undefined;
+      {combat.turnOrder.map((id, idx) => {
+        const combatant = combat.combatants[id];
+        if (!combatant) return null;
 
-          if (combatant.type === "player" && partyCharacters) {
-            const char = Object.values(partyCharacters).find(
-              (p) => p.static.name.toLowerCase() === combatant.name.toLowerCase(),
-            );
-            if (char) {
-              currentHP = char.dynamic.currentHP;
-              maxHP = char.static.maxHP;
-              concentratingOn = char.dynamic.concentratingOn;
-            }
-          } else {
-            currentHP = combatant.currentHP;
-            maxHP = combatant.maxHP;
+        const isActive = idx === combat.turnIndex;
+        const isPlayer = combatant.type === "player";
+        const isEnemy = combatant.type === "enemy";
+
+        let currentHP: number | undefined;
+        let maxHP: number | undefined;
+        let concentratingOn: { spellName: string; since?: number } | undefined;
+
+        if (combatant.type === "player" && partyCharacters) {
+          const char = Object.values(partyCharacters).find(
+            (p) => p.static.name.toLowerCase() === combatant.name.toLowerCase(),
+          );
+          if (char) {
+            currentHP = char.dynamic.currentHP;
+            maxHP = char.static.maxHP;
+            concentratingOn = char.dynamic.concentratingOn;
           }
+        } else {
+          currentHP = combatant.currentHP;
+          maxHP = combatant.maxHP;
+        }
 
-          // Combatant-level concentratingOn takes priority (works for enemies too)
-          if (combatant.concentratingOn) {
-            concentratingOn = combatant.concentratingOn;
-          }
+        if (combatant.concentratingOn) {
+          concentratingOn = combatant.concentratingOn;
+        }
 
-          const isDead = currentHP !== undefined && currentHP <= 0;
+        const isDead = currentHP !== undefined && currentHP <= 0;
+        const hpPercent =
+          maxHP && currentHP !== undefined ? Math.max(0, (currentHP / maxHP) * 100) : null;
 
-          const hpPercent =
-            maxHP && currentHP !== undefined ? Math.max(0, (currentHP / maxHP) * 100) : null;
-
-          return (
-            <button
-              key={id}
-              type="button"
-              onClick={() => onCombatantClick?.(id)}
-              className={`
-                flex flex-col items-center px-2.5 py-1.5 rounded-lg text-center min-w-[72px]
-                transition-all
-                ${onCombatantClick ? "cursor-pointer hover:bg-gray-700/40" : ""}
-                ${isActive ? "ring-2 ring-amber-400 bg-amber-900/20" : "bg-gray-800/50"}
-                ${isDead ? "opacity-40" : ""}
-              `}
-            >
-              {/* Token dot */}
+        return (
+          <button
+            key={id}
+            type="button"
+            onClick={() => onCombatantClick?.(id)}
+            className={`
+              flex flex-col items-center shrink-0 w-20 px-2.5 py-1.5 rounded-lg gap-0.5
+              transition-all
+              ${onCombatantClick ? "cursor-pointer hover:bg-gray-700/40" : ""}
+              ${isActive ? "ring-2 ring-amber-400 bg-amber-900/20" : isEnemy ? "border border-red-500/20 bg-gray-800/50" : "border border-gray-700/30 bg-gray-800/50"}
+              ${isDead ? "opacity-40" : ""}
+            `}
+          >
+            {/* Top: dot + name */}
+            <div className="flex items-center gap-1 w-full min-w-0">
               <div
-                className={`w-3 h-3 rounded-full mb-0.5 ${
+                className={`w-2 h-2 rounded-full shrink-0 ${
                   isPlayer ? "bg-blue-500" : isEnemy ? "bg-red-500" : "bg-gray-500"
                 }`}
                 style={combatant.tokenColor ? { backgroundColor: combatant.tokenColor } : undefined}
               />
-              {/* Name */}
-              <div
-                className={`text-xs font-medium truncate max-w-[68px] ${
+              <span
+                className={`text-xs font-medium truncate ${
                   isActive ? "text-amber-300" : "text-gray-300"
                 }`}
               >
                 {combatant.name}
-              </div>
-              {/* Initiative */}
-              <div className="text-xs text-gray-600">{combatant.initiative}</div>
-              {/* HP bar */}
-              {hpPercent !== null && (
-                <>
-                  <div className="w-full h-1 bg-gray-700 rounded-full mt-0.5 overflow-hidden">
-                    <div
-                      className={`h-full rounded-full transition-all ${
-                        hpPercent > 50
-                          ? "bg-green-500"
-                          : hpPercent > 25
-                            ? "bg-yellow-500"
-                            : "bg-red-500"
-                      }`}
-                      style={{ width: `${hpPercent}%` }}
-                    />
+              </span>
+            </div>
+
+            {/* Initiative */}
+            <div className="text-xs text-gray-600">{combatant.initiative}</div>
+
+            {/* HP bar */}
+            {hpPercent !== null && (
+              <>
+                <div className="w-full h-1 bg-gray-700 rounded-full mt-0.5 overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all ${
+                      hpPercent > 50
+                        ? "bg-green-500"
+                        : hpPercent > 25
+                          ? "bg-yellow-500"
+                          : "bg-red-500"
+                    }`}
+                    style={{ width: `${hpPercent}%` }}
+                  />
+                </div>
+                {isPlayer && currentHP !== undefined && maxHP !== undefined && (
+                  <div className="text-[10px] text-gray-500 leading-tight">
+                    {currentHP}/{maxHP}
                   </div>
-                  {/* HP numbers for players */}
-                  {isPlayer && currentHP !== undefined && maxHP !== undefined && (
-                    <div className="text-[10px] text-gray-500 leading-tight">
-                      {currentHP}/{maxHP}
-                    </div>
-                  )}
-                </>
-              )}
-              {/* Concentration indicator */}
-              {concentratingOn && (
-                <div
-                  className="text-[10px] text-purple-400 font-bold mt-0.5"
-                  title={`Concentrating: ${concentratingOn.spellName}`}
-                >
-                  C
-                </div>
-              )}
-              {/* Conditions */}
-              {combatant.conditions && combatant.conditions.length > 0 && (
-                <div className="text-xs text-orange-400 mt-0.5 truncate max-w-[68px]">
-                  {combatant.conditions.length} cond.
-                </div>
-              )}
-            </button>
-          );
-        })}
-      </div>
+                )}
+              </>
+            )}
+
+            {/* Concentration */}
+            {concentratingOn && (
+              <div
+                className="text-[10px] text-purple-400 font-bold mt-0.5"
+                title={`Concentrating: ${concentratingOn.spellName}`}
+              >
+                C
+              </div>
+            )}
+
+            {/* Conditions */}
+            {combatant.conditions && combatant.conditions.length > 0 && (
+              <div
+                className="flex items-center gap-0.5 mt-0.5"
+                title={combatant.conditions.map((c) => c.name).join(", ")}
+              >
+                {combatant.conditions.slice(0, 3).map((cond, ci) => (
+                  <svg
+                    key={ci}
+                    className="w-3 h-3 text-orange-400"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="12" x2="12" y1="8" y2="12" />
+                    <line x1="12" x2="12.01" y1="16" y2="16" />
+                  </svg>
+                ))}
+                {combatant.conditions.length > 3 && (
+                  <span className="text-xs text-orange-400">
+                    +{combatant.conditions.length - 3}
+                  </span>
+                )}
+              </div>
+            )}
+          </button>
+        );
+      })}
     </div>
   );
 }
