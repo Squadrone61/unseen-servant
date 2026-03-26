@@ -129,7 +129,9 @@ export function ChatPanel({
         {messages.length === 0 && (
           <div className="text-center text-gray-600 mt-16">
             <p className="text-lg mb-2 text-gray-500" style={{ fontFamily: "var(--font-cinzel)" }}>
-              Waiting for the adventure to begin&hellip;
+              {typingPlayers?.includes("DM")
+                ? "The Dungeon Master is preparing\u2026"
+                : "Waiting for the adventure to begin\u2026"}
             </p>
             <div className="w-16 h-px bg-gradient-to-r from-transparent via-amber-500/30 to-transparent mx-auto" />
           </div>

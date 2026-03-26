@@ -42,7 +42,7 @@ If \`targetCharacter\` is provided → Mode 2/2b. Otherwise → Mode 1.`,
         .string()
         .optional()
         .describe("Skill name for skill checks, e.g. 'perception', 'stealth'"),
-      dc: z.number().optional().describe("Difficulty Class for the check"),
+      dc: z.coerce.number().optional().describe("Difficulty Class for the check"),
       advantage: z.boolean().optional().describe("Roll with advantage (roll 2d20, take higher)"),
       disadvantage: z
         .boolean()
@@ -86,6 +86,22 @@ If \`targetCharacter\` is provided → Mode 2/2b. Otherwise → Mode 1.`,
             notation: checkType === "damage" ? notation : undefined,
           });
 
+          // Damage rolls: report individual dice + total
+          if (checkType === "damage") {
+            const diceStr =
+              result.roll.rolls.length > 0
+                ? `[${result.roll.rolls.map((r) => r.result).join(", ")}]`
+                : "";
+            return {
+              content: [
+                {
+                  type: "text" as const,
+                  text: `${result.characterName} rolled ${notation}: ${diceStr} = ${result.roll.total} damage (${result.roll.label})`,
+                },
+              ],
+            };
+          }
+
           const successStr =
             result.dc !== undefined
               ? ` — ${result.success ? "SUCCESS" : "FAILURE"} (DC ${result.dc})`
@@ -98,15 +114,7 @@ If \`targetCharacter\` is provided → Mode 2/2b. Otherwise → Mode 1.`,
 
           // Extract natural d20 roll so Claude can report it accurately
           const naturalRoll =
-            result.roll.rolls.length > 0
-              ? result.roll.rolls.length > 1 // advantage/disadvantage: pick the used die
-                ? result.roll.advantage
-                  ? Math.max(...result.roll.rolls.map((r) => r.result))
-                  : result.roll.disadvantage
-                    ? Math.min(...result.roll.rolls.map((r) => r.result))
-                    : result.roll.rolls[0].result
-                : result.roll.rolls[0].result
-              : result.roll.total;
+            result.roll.rolls.length > 0 ? result.roll.rolls[0].result : result.roll.total;
 
           const modStr =
             result.roll.modifier !== 0

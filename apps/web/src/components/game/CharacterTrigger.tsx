@@ -1,5 +1,4 @@
 import type { CharacterData } from "@unseen-servant/shared/types";
-import { formatClassString, getTotalLevel } from "@unseen-servant/shared/utils";
 
 interface CharacterTriggerProps {
   character: CharacterData;
@@ -30,9 +29,7 @@ export function CharacterTrigger({ character, onClick, compact }: CharacterTrigg
       {!compact && (
         <>
           <span className="text-gray-600">&middot;</span>
-          <span className="text-gray-500">
-            {formatClassString(character.static.classes)} {getTotalLevel(character.static.classes)}
-          </span>
+          <span className="text-gray-500">{character.static.species || character.static.race}</span>
           <span className="text-gray-600">&middot;</span>
         </>
       )}

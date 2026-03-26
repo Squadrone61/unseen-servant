@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { formatClassString, getTotalLevel } from "@unseen-servant/shared/utils";
+import { formatClassString } from "@unseen-servant/shared/utils";
 import type {
   CharacterData,
   CombatState,
@@ -244,8 +244,8 @@ export function Sidebar({
                       <div
                         className={`text-xs ${player.online ? "text-gray-500" : "text-gray-600"}`}
                       >
-                        {formatClassString(charData.static.classes)} &middot; Lvl{" "}
-                        {getTotalLevel(charData.static.classes)}
+                        {formatClassString(charData.static.classes)} &middot;{" "}
+                        {charData.static.species || charData.static.race}
                       </div>
                     )}
                   </div>

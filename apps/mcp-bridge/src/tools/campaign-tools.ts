@@ -152,12 +152,26 @@ export function registerCampaignTools(
     {
       path: z
         .string()
+        .optional()
         .describe(
           "Relative file path within the campaign folder (without extension for markdown), e.g. 'world/npcs', 'world/locations', 'sessions/session-001', 'active-context'",
         ),
+      filename: z.string().optional().describe("Alias for path"),
       content: z.string().describe("The file content (markdown or JSON)"),
     },
-    async ({ path: filePath, content }) => {
+    async ({ path: pathParam, filename, content }) => {
+      const filePath = pathParam || filename;
+      if (!filePath) {
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: `ERROR: save_campaign_file requires a "path" parameter.`,
+            },
+          ],
+          isError: true,
+        };
+      }
       try {
         const savedAs = campaignManager.writeFile(filePath, content);
         return {
@@ -188,9 +202,23 @@ export function registerCampaignTools(
     {
       path: z
         .string()
+        .optional()
         .describe("Relative file path within the campaign folder (without extension for markdown)"),
+      filename: z.string().optional().describe("Alias for path"),
     },
-    async ({ path: filePath }) => {
+    async ({ path: pathParam, filename }) => {
+      const filePath = pathParam || filename;
+      if (!filePath) {
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: `ERROR: read_campaign_file requires a "path" parameter.`,
+            },
+          ],
+          isError: true,
+        };
+      }
       try {
         const content = campaignManager.readFile(filePath);
         if (content === null) {

@@ -23,6 +23,7 @@ import type {
   StateChange,
   CreatureSize,
   AoEOverlay,
+  DieRoll,
 } from "@unseen-servant/shared/types";
 import {
   rollCheck,
@@ -110,6 +111,22 @@ export class GameStateManager {
   playerNames: string[] = [];
   /** Whether campaign context has been auto-loaded on first DM request */
   private campaignContextLoaded = false;
+  /** Debounce timer for batching chat messages */
+  private pushDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+  private readonly BATCH_DELAY_MS = 2000;
+  /** Last completed check result — consumed by sendCheckRequest resolver */
+  lastCheckResult: {
+    characterName: string;
+    total: number;
+    rolls: DieRoll[];
+    modifier: number;
+    label: string;
+    success?: boolean;
+    dc?: number;
+    criticalHit?: boolean;
+    criticalFail?: boolean;
+    notation?: string;
+  } | null = null;
 
   constructor(opts: {
     broadcast: BroadcastFn;
@@ -205,10 +222,27 @@ export class GameStateManager {
     return sections.join("\n\n");
   }
 
+  /** Schedule a batched push — collects chat messages for BATCH_DELAY_MS before pushing.
+   *  If a direct pushDMRequest() fires during the window, the timer is cancelled
+   *  and all accumulated messages flush immediately. */
+  private schedulePushDMRequest(): void {
+    if (this.pushDebounceTimer) clearTimeout(this.pushDebounceTimer);
+    this.pushDebounceTimer = setTimeout(() => {
+      this.pushDebounceTimer = null;
+      this.pushDMRequest();
+    }, this.BATCH_DELAY_MS);
+  }
+
   /** Push a DM request with only new messages since last send.
    *  Uses hash-based delta delivery — only sends the full dynamic prompt
    *  when it changes or every FULL_PROMPT_INTERVAL turns. */
   private pushDMRequest(): void {
+    // Cancel any pending batch timer — direct pushes take priority
+    if (this.pushDebounceTimer) {
+      clearTimeout(this.pushDebounceTimer);
+      this.pushDebounceTimer = null;
+    }
+
     const requestId = crypto.randomUUID();
     const fullPrompt = this.composeContextualPrompt();
     const promptHash = this.simpleHash(fullPrompt);
@@ -245,6 +279,9 @@ export class GameStateManager {
     }
 
     this.lastSentIndex = this.conversationHistory.length;
+    console.error(
+      `[game-state] pushDMRequest: requestId=${requestId}, messages=${newMessages.length}, total=${this.conversationHistory.length}`,
+    );
     this.messageQueue.push({
       requestId,
       systemPrompt,
@@ -323,13 +360,16 @@ export class GameStateManager {
     const userMessage = `[${speakerName}]: ${sanitizedContent}`;
     this.conversationHistory.push({ role: "user", content: userMessage });
 
-    // Push to message queue for Claude Code to pick up
-    this.pushDMRequest();
+    // Batch chat messages — waits BATCH_DELAY_MS for more messages before pushing
+    this.schedulePushDMRequest();
   }
 
   // ─── Start Story ───
 
   handleStartStory(playerName: string): void {
+    console.error(
+      `[game-state] handleStartStory: playerName="${playerName}", hostName="${this.hostName}", storyStarted=${this.storyStarted}`,
+    );
     if (playerName !== this.hostName) {
       this.broadcast(
         {
@@ -372,20 +412,32 @@ export class GameStateManager {
       timestamp: Date.now(),
     });
 
-    // Build greeting dm_request
-    const partyDescriptions = Object.entries(this.characters).map(([pName, char]) => {
-      const classes = char.static.classes.map((c) => `${c.name} ${c.level}`).join("/");
-      return `${pName} (${char.static.name}, ${char.static.species || char.static.race} ${classes})`;
-    });
+    try {
+      // Build greeting dm_request
+      const partyDescriptions = Object.entries(this.characters).map(([pName, char]) => {
+        const classes = char.static.classes?.map((c) => `${c.name} ${c.level}`).join("/");
+        return `${pName} (${char.static.name}, ${char.static.species || char.static.race} ${classes || "Unknown"})`;
+      });
 
-    const userMsg = `The adventuring party has gathered: ${partyDescriptions.join(", ")}. Set the scene and introduce each character!`;
+      const userMsg = `The adventuring party has gathered: ${partyDescriptions.join(", ")}. Set the scene and introduce each character!`;
 
-    this.conversationHistory.push({
-      role: "user",
-      content: userMsg,
-    });
+      this.conversationHistory.push({
+        role: "user",
+        content: userMsg,
+      });
 
-    this.pushDMRequest();
+      this.pushDMRequest();
+    } catch (e) {
+      console.error(
+        `[game-state] handleStartStory FAILED after broadcast: ${e instanceof Error ? e.message : String(e)}`,
+      );
+      // Still push a basic request so the game doesn't hang
+      this.conversationHistory.push({
+        role: "user",
+        content: "The adventuring party has gathered. Set the scene and begin the adventure!",
+      });
+      this.pushDMRequest();
+    }
   }
 
   // ─── Send Response (called by MCP tool) ───
@@ -474,6 +526,16 @@ export class GameStateManager {
         this.gameState.pendingCheck = undefined;
       }
 
+      this.lastCheckResult = {
+        characterName: char.static.name,
+        total: roll.total,
+        rolls: roll.rolls,
+        modifier: 0,
+        label: pendingCheck.reason,
+        success: true,
+        notation: pendingCheck.notation,
+      };
+
       this.createEvent(
         "check_resolved",
         `${char.static.name} rolled ${roll.total} damage (${pendingCheck.notation}) for ${pendingCheck.reason}`,
@@ -520,6 +582,19 @@ export class GameStateManager {
       timestamp: Date.now(),
       id: crypto.randomUUID(),
     });
+
+    // Store result for sendCheckRequest resolver
+    this.lastCheckResult = {
+      characterName: char.static.name,
+      total: roll.total,
+      rolls: roll.rolls,
+      modifier: roll.modifier,
+      label: roll.label,
+      success,
+      dc: pendingCheck.dc,
+      criticalHit: roll.criticalHit,
+      criticalFail: roll.criticalFail,
+    };
 
     // Clear pending check
     if (combat?.pendingCheck?.id === pendingCheck.id) {

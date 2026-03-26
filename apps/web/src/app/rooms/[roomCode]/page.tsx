@@ -15,9 +15,10 @@ import { Button } from "@/components/ui/Button";
 import { Drawer } from "@/components/game/Drawer";
 import { CharacterTrigger } from "@/components/game/CharacterTrigger";
 import { CharacterSheet } from "@/components/character/CharacterSheet";
+import { CharacterPopover } from "@/components/character/CharacterPopover";
 import { usePlayerNotes } from "@/hooks/usePlayerNotes";
 import { useCharacterLibrary } from "@/hooks/useCharacterLibrary";
-import { mergeReimport, formatClassString, getTotalLevel } from "@unseen-servant/shared/utils";
+import { mergeReimport, formatClassString } from "@unseen-servant/shared/utils";
 import type {
   BattleMapState,
   CharacterData,
@@ -102,6 +103,7 @@ function GameContent({ roomCode, playerName }: { roomCode: string; playerName: s
   const [showActivity, setShowActivity] = useState(false);
   const [showEvents, setShowEvents] = useState(false);
   const [showParty, setShowParty] = useState(false);
+  const [hoveredPartyPlayer, setHoveredPartyPlayer] = useState<string | null>(null);
   const [showCharacterDrawer, setShowCharacterDrawer] = useState(false);
 
   // Join state — don't render game UI until successfully joined
@@ -872,59 +874,100 @@ function GameContent({ roomCode, playerName }: { roomCode: string; playerName: s
               <Button disabled size="sm">
                 Send
               </Button>
-              <div className="w-px h-6 bg-gray-700/20" />
-              <div className="text-xs text-gray-600 truncate max-w-48">
-                {logMessages.length > 0 &&
-                logMessages[logMessages.length - 1].type === "server:system"
-                  ? (logMessages[logMessages.length - 1] as { content?: string }).content || ""
-                  : ""}
-              </div>
             </div>
           )}
         </div>
       </div>
 
-      {/* ─── Drawers ─── */}
-      <Drawer open={showParty} onClose={() => setShowParty(false)} title="Party">
-        <div className="p-4 space-y-3">
-          {(allPlayers.length > 0
-            ? allPlayers
-            : players.map((name) => ({ name, online: true, isHost: name === hostName }))
-          ).map((player) => {
-            const charData = partyCharacters[player.name];
-            return (
-              <div key={player.name} className="flex items-center gap-2 text-sm group">
-                <div
-                  className={`w-2 h-2 rounded-full shrink-0 ${player.online ? "bg-green-500" : "bg-gray-600"}`}
-                />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    <span className={player.online ? "text-gray-200" : "text-gray-500"}>
-                      {player.name}
-                    </span>
-                    {player.isHost && <span className="text-xs text-amber-300">(host)</span>}
-                    {!player.online && <span className="text-xs text-gray-600">(offline)</span>}
-                  </div>
-                  {charData && (
-                    <div className="text-xs text-gray-500">
-                      {formatClassString(charData.static.classes)} · Lvl{" "}
-                      {getTotalLevel(charData.static.classes)}
-                    </div>
-                  )}
-                </div>
-                {isHost && !player.isHost && player.online && (
-                  <button
-                    onClick={() => handleKick(player.name)}
-                    className="text-xs text-red-400/60 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+      {/* ─── Party Popup ─── */}
+      {showParty && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setShowParty(false)} />
+          <div className="fixed top-12 right-24 z-50 w-72 bg-gray-900 border border-gray-700/40 rounded-lg shadow-2xl">
+            <div className="flex items-center justify-between px-3 py-2 border-b border-gray-700/30">
+              <span
+                className="text-xs text-gray-400 uppercase tracking-wider font-medium"
+                style={{ fontFamily: "var(--font-cinzel)" }}
+              >
+                Party
+              </span>
+              <button
+                onClick={() => setShowParty(false)}
+                className="text-gray-500 hover:text-gray-300 text-lg leading-none"
+              >
+                ×
+              </button>
+            </div>
+            <div className="p-3 space-y-2.5 max-h-80 overflow-y-auto">
+              {(allPlayers.length > 0
+                ? allPlayers
+                : players.map((name) => ({ name, online: true, isHost: name === hostName }))
+              ).map((player) => {
+                const charData = partyCharacters[player.name];
+                return (
+                  <div
+                    key={player.name}
+                    className="group"
+                    onMouseEnter={() => setHoveredPartyPlayer(player.name)}
+                    onMouseLeave={() => setHoveredPartyPlayer(null)}
                   >
-                    Kick
-                  </button>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </Drawer>
+                    <div className="flex items-center gap-2 text-sm">
+                      <div
+                        className={`w-2 h-2 rounded-full shrink-0 ${player.online ? "bg-green-500" : "bg-gray-600"}`}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <span className={player.online ? "text-gray-200" : "text-gray-500"}>
+                            {player.name}
+                          </span>
+                          {player.isHost && <span className="text-xs text-amber-300">(host)</span>}
+                          {!player.online && (
+                            <span className="text-xs text-gray-600">(offline)</span>
+                          )}
+                        </div>
+                        {charData && (
+                          <div className="text-xs text-gray-500">
+                            {formatClassString(charData.static.classes)} ·{" "}
+                            {charData.static.species || charData.static.race}
+                          </div>
+                        )}
+                      </div>
+                      {isHost && !player.isHost && player.online && (
+                        <button
+                          onClick={() => handleKick(player.name)}
+                          className="text-xs text-red-400/60 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          Kick
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+          {/* Character popover — rendered outside the popup so it's not clipped by overflow */}
+          {hoveredPartyPlayer &&
+            (() => {
+              const player = (
+                allPlayers.length > 0
+                  ? allPlayers
+                  : players.map((name) => ({ name, online: true, isHost: name === hostName }))
+              ).find((p) => p.name === hoveredPartyPlayer);
+              const charData = player ? partyCharacters[player.name] : undefined;
+              if (!player || !charData) return null;
+              return (
+                <div className="fixed z-[60]" style={{ top: "3rem", right: "calc(6rem + 18rem)" }}>
+                  <CharacterPopover
+                    character={charData}
+                    playerName={player.name}
+                    online={player.online}
+                  />
+                </div>
+              );
+            })()}
+        </>
+      )}
 
       <Drawer open={showActivity} onClose={() => setShowActivity(false)} title="Activity Log">
         <div className="p-4 space-y-1.5">

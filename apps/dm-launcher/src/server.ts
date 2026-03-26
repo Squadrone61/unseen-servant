@@ -3,6 +3,8 @@
  * Reuses all code from apps/mcp-bridge/src/ (bundled by esbuild).
  */
 
+import * as fs from "fs";
+import * as path from "path";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { MessageQueue } from "../../mcp-bridge/src/message-queue.js";
 import { WSClient } from "../../mcp-bridge/src/ws-client.js";
@@ -12,6 +14,17 @@ import { createMcpServer } from "../../mcp-bridge/src/mcp-server.js";
 declare const PRODUCTION_WORKER_URL: string;
 
 export async function startServer(): Promise<void> {
+  // Tee stderr to a log file so bridge diagnostics are visible
+  const campaignsDir = process.env.UNSEEN_CAMPAIGNS_DIR || ".";
+  const logPath = path.join(campaignsDir, "..", "bridge.log");
+  const logStream = fs.createWriteStream(logPath, { flags: "a" });
+  const origWrite = process.stderr.write.bind(process.stderr);
+  process.stderr.write = ((chunk: any, ...args: any[]) => {
+    logStream.write(chunk);
+    return origWrite(chunk, ...args);
+  }) as typeof process.stderr.write;
+  console.error(`\n[bridge] === Started at ${new Date().toISOString()} ===`);
+
   const roomCode = process.env.UNSEEN_ROOM_CODE;
   const workerUrl =
     process.env.UNSEEN_WORKER_URL ||

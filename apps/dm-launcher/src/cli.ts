@@ -195,8 +195,6 @@ export async function startCli(): Promise<void> {
       model,
       "--system-prompt",
       "You are the Unseen Servant. Follow all instructions in CLAUDE.md. Begin by calling wait_for_message.",
-      "--tools",
-      "",
       "--allowedTools",
       "mcp__unseen-servant__*",
       "--",

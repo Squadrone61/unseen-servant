@@ -598,7 +598,7 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
     "lookup_spell",
     "Look up a spell from the D&D 2024 database. Call this BEFORE resolving any spell cast.",
     {
-      spell_name: z
+      name: z
         .string()
         .describe("Spell name, e.g. 'Fireball', 'Cure Wounds', 'Shield', 'Silvery Barbs'"),
       detail: z
@@ -609,9 +609,9 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
           "Level of detail: 'summary' for a compact one-liner, 'full' for complete rules text",
         ),
     },
-    async ({ spell_name, detail }) => {
+    async ({ name, detail }) => {
       return fuzzyLookupOrSuggest(
-        spell_name,
+        name,
         spells,
         spellsArray,
         "Spell",
@@ -627,9 +627,7 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
     "lookup_monster",
     "Look up a monster/creature stat block from the D&D 2024 database. Call this for every enemy type BEFORE combat.",
     {
-      monster_name: z
-        .string()
-        .describe("Monster name, e.g. 'Goblin', 'Adult Red Dragon', 'Bugbear'"),
+      name: z.string().describe("Monster name, e.g. 'Goblin', 'Adult Red Dragon', 'Bugbear'"),
       detail: z
         .enum(["summary", "full"])
         .optional()
@@ -638,9 +636,9 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
           "Level of detail: 'summary' for a compact one-liner, 'full' for complete rules text",
         ),
     },
-    async ({ monster_name, detail }) => {
+    async ({ name, detail }) => {
       return fuzzyLookupOrSuggest(
-        monster_name,
+        name,
         monsters,
         monstersArray,
         "Monster",
@@ -656,7 +654,7 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
     "lookup_condition",
     "Look up the exact mechanical effects of a D&D condition from the D&D 2024 database. Call this BEFORE applying any condition.",
     {
-      condition_name: z
+      name: z
         .string()
         .describe("Condition name, e.g. 'Grappled', 'Stunned', 'Prone', 'Frightened'"),
       detail: z
@@ -667,9 +665,9 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
           "Level of detail: 'summary' for a compact one-liner, 'full' for complete rules text",
         ),
     },
-    async ({ condition_name, detail }) => {
+    async ({ name, detail }) => {
       return fuzzyLookupOrSuggest(
-        condition_name,
+        name,
         conditions,
         conditionsArray,
         "Condition",
@@ -685,7 +683,7 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
     "lookup_magic_item",
     "Look up a magic item from the D&D 2024 database. Returns rarity, attunement, and full description.",
     {
-      item_name: z.string().describe("Magic item name, e.g. 'Bag of Holding', 'Flame Tongue'"),
+      name: z.string().describe("Magic item name, e.g. 'Bag of Holding', 'Flame Tongue'"),
       detail: z
         .enum(["summary", "full"])
         .optional()
@@ -694,9 +692,9 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
           "Level of detail: 'summary' for a compact one-liner, 'full' for complete rules text",
         ),
     },
-    async ({ item_name, detail }) => {
+    async ({ name, detail }) => {
       return fuzzyLookupOrSuggest(
-        item_name,
+        name,
         magicItems,
         magicItemsArray,
         "Magic Item",
@@ -712,7 +710,7 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
     "lookup_feat",
     "Look up a feat from the D&D 2024 database. Returns prerequisites, description, and mechanical effects.",
     {
-      feat_name: z.string().describe("Feat name, e.g. 'Alert', 'Great Weapon Master'"),
+      name: z.string().describe("Feat name, e.g. 'Alert', 'Great Weapon Master'"),
       detail: z
         .enum(["summary", "full"])
         .optional()
@@ -721,9 +719,9 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
           "Level of detail: 'summary' for a compact one-liner, 'full' for complete rules text",
         ),
     },
-    async ({ feat_name, detail }) => {
+    async ({ name, detail }) => {
       return fuzzyLookupOrSuggest(
-        feat_name,
+        name,
         feats,
         featsArray,
         "Feat",
@@ -739,7 +737,7 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
     "lookup_class",
     "Look up a D&D class from the D&D 2024 database. Returns hit die, spellcasting, features, subclasses, and resources.",
     {
-      class_name: z.string().describe("Class name, e.g. 'Paladin', 'Rogue', 'Wizard'"),
+      name: z.string().describe("Class name, e.g. 'Paladin', 'Rogue', 'Wizard'"),
       detail: z
         .enum(["summary", "full"])
         .optional()
@@ -748,9 +746,9 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
           "Level of detail: 'summary' for a compact one-liner, 'full' for complete rules text",
         ),
     },
-    async ({ class_name, detail }) => {
+    async ({ name, detail }) => {
       return fuzzyLookupOrSuggest(
-        class_name,
+        name,
         classes,
         classesArray,
         "Class",
@@ -766,9 +764,7 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
     "lookup_species",
     "Look up a D&D species/race from the D&D 2024 database. Returns size, speed, traits, and abilities.",
     {
-      species_name: z
-        .string()
-        .describe("Species name, e.g. 'Tiefling', 'Aasimar', 'Goliath', 'Kenku'"),
+      name: z.string().describe("Species name, e.g. 'Tiefling', 'Aasimar', 'Goliath', 'Kenku'"),
       detail: z
         .enum(["summary", "full"])
         .optional()
@@ -777,9 +773,9 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
           "Level of detail: 'summary' for a compact one-liner, 'full' for complete rules text",
         ),
     },
-    async ({ species_name, detail }) => {
+    async ({ name, detail }) => {
       return fuzzyLookupOrSuggest(
-        species_name,
+        name,
         species,
         speciesArray,
         "Species",
@@ -795,9 +791,7 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
     "lookup_background",
     "Look up a D&D background from the D&D 2024 database. Returns skill proficiencies, feat, ability scores, and equipment.",
     {
-      background_name: z
-        .string()
-        .describe("Background name, e.g. 'Noble', 'Criminal', 'Sage', 'Haunted One'"),
+      name: z.string().describe("Background name, e.g. 'Noble', 'Criminal', 'Sage', 'Haunted One'"),
       detail: z
         .enum(["summary", "full"])
         .optional()
@@ -806,9 +800,9 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
           "Level of detail: 'summary' for a compact one-liner, 'full' for complete rules text",
         ),
     },
-    async ({ background_name, detail }) => {
+    async ({ name, detail }) => {
       return fuzzyLookupOrSuggest(
-        background_name,
+        name,
         backgrounds,
         backgroundsArray,
         "Background",
@@ -826,7 +820,7 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
     "lookup_optional_feature",
     "Look up an optional class feature (Eldritch Invocation, Battle Master Maneuver, Metamagic, etc.) from the D&D 2024 database.",
     {
-      feature_name: z
+      name: z
         .string()
         .describe("Feature name, e.g. 'Agonizing Blast', 'Riposte', 'Quickened Spell'"),
       detail: z
@@ -837,9 +831,9 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
           "Level of detail: 'summary' for a compact one-liner, 'full' for complete rules text",
         ),
     },
-    async ({ feature_name, detail }) => {
+    async ({ name, detail }) => {
       return fuzzyLookupOrSuggest(
-        feature_name,
+        name,
         optionalFeatures,
         optionalFeaturesArray,
         "Optional Feature",
@@ -855,7 +849,7 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
     "lookup_action",
     "Look up a game action (Attack, Dash, Dodge, Disengage, Help, Hide, etc.) from the D&D 2024 database.",
     {
-      action_name: z.string().describe("Action name, e.g. 'Attack', 'Grapple', 'Shove', 'Dodge'"),
+      name: z.string().describe("Action name, e.g. 'Attack', 'Grapple', 'Shove', 'Dodge'"),
       detail: z
         .enum(["summary", "full"])
         .optional()
@@ -864,9 +858,9 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
           "Level of detail: 'summary' for a compact one-liner, 'full' for complete rules text",
         ),
     },
-    async ({ action_name, detail }) => {
+    async ({ name, detail }) => {
       return fuzzyLookupOrSuggest(
-        action_name,
+        name,
         actions,
         actionsArray,
         "Action",
@@ -882,7 +876,7 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
     "lookup_language",
     "Look up a D&D language from the 2024 database.",
     {
-      language_name: z.string().describe("Language name, e.g. 'Elvish', 'Draconic', 'Infernal'"),
+      name: z.string().describe("Language name, e.g. 'Elvish', 'Draconic', 'Infernal'"),
       detail: z
         .enum(["summary", "full"])
         .optional()
@@ -891,9 +885,9 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
           "Level of detail: 'summary' for a compact one-liner, 'full' for complete rules text",
         ),
     },
-    async ({ language_name, detail }) => {
+    async ({ name, detail }) => {
       return fuzzyLookupOrSuggest(
-        language_name,
+        name,
         languages,
         languagesArray,
         "Language",
@@ -909,7 +903,7 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
     "lookup_disease",
     "Look up a disease from the D&D 2024 database.",
     {
-      disease_name: z.string().describe("Disease name, e.g. 'Cackle Fever', 'Sewer Plague'"),
+      name: z.string().describe("Disease name, e.g. 'Cackle Fever', 'Sewer Plague'"),
       detail: z
         .enum(["summary", "full"])
         .optional()
@@ -918,9 +912,9 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
           "Level of detail: 'summary' for a compact one-liner, 'full' for complete rules text",
         ),
     },
-    async ({ disease_name, detail }) => {
+    async ({ name, detail }) => {
       return fuzzyLookupOrSuggest(
-        disease_name,
+        name,
         diseases,
         diseasesArray,
         "Disease",
@@ -943,7 +937,7 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
         .describe(
           "Search query, e.g. 'opportunity attack', 'fire damage spell', 'flying creature'",
         ),
-      limit: z.number().optional().default(5).describe("Max results to return (default 5)"),
+      limit: z.coerce.number().optional().default(5).describe("Max results to return (default 5)"),
     },
     async ({ query, limit }) => {
       const results: string[] = [];

@@ -31,15 +31,36 @@ export function registerGameTools(
   messageQueue: MessageQueue,
   wsClient: WSClient,
 ): void {
+  // ─── Response Guard ───
+  // Tracks whether send_response/acknowledge was called for the current request.
+  // wait_for_message refuses to return the next message until the previous one is handled.
+  let pendingRequestId: string | null = null;
+
   // ─── Core Game Loop ───
 
   server.tool(
     "wait_for_message",
-    "Block until a player message or DM request arrives via WebSocket. Returns the request with systemPrompt and conversation messages. This is the main loop driver — call this repeatedly to process game turns.",
+    "Block until a player message or DM request arrives via WebSocket. Returns the request with systemPrompt and conversation messages. This is the main loop driver — call this repeatedly to process game turns. You MUST call send_response or acknowledge before calling this again.",
     {},
     async (_args: Record<string, never>, extra: { signal: AbortSignal }) => {
+      console.error(`[game-tools] wait_for_message CALLED, pendingRequestId=${pendingRequestId}`);
+      // Guard: block if previous request wasn't responded to
+      if (pendingRequestId) {
+        console.error(
+          `[game-tools] wait_for_message BLOCKED: pending requestId=${pendingRequestId}`,
+        );
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: `ERROR: You must call send_response(requestId: "${pendingRequestId}") or acknowledge(requestId: "${pendingRequestId}") before calling wait_for_message again. Players CANNOT see text you output to the terminal — you MUST use send_response to deliver your narrative.`,
+            },
+          ],
+          isError: true,
+        };
+      }
+
       // Retry on disconnect — rejectAllWaiters throws when DM connection drops
-      wsClient.sendTypingIndicator(false);
       let msg;
       while (true) {
         try {
@@ -54,6 +75,15 @@ export function registerGameTools(
           throw err;
         }
       }
+
+      // DM is now processing — show typing indicator to players
+      wsClient.sendTypingIndicator(true);
+
+      // Track this request — must be responded to before next wait_for_message
+      pendingRequestId = msg.requestId;
+      console.error(
+        `[game-tools] wait_for_message resolved: requestId=${msg.requestId}, messages=${msg.messages.length}`,
+      );
 
       return {
         content: [
@@ -82,6 +112,8 @@ export function registerGameTools(
       requestId: z.string().describe("The requestId from the dm_request to acknowledge"),
     },
     async ({ requestId }) => {
+      wsClient.sendTypingIndicator(false);
+      pendingRequestId = null;
       return {
         content: [
           {
@@ -95,18 +127,36 @@ export function registerGameTools(
 
   server.tool(
     "send_response",
-    "Send the DM narrative response back to all players. This broadcasts the AI message, stores it in conversation history, and updates game state.",
+    "Send the DM narrative response back to all players. This broadcasts the AI message, stores it in conversation history, and updates game state. You MUST call this for every request — players cannot see text you output directly.",
     {
       requestId: z.string().describe("The requestId from the dm_request to respond to"),
-      text: z.string().describe("The DM narrative text to send back to the players"),
+      text: z.string().optional().describe("The DM narrative text to send back to the players"),
+      response: z.string().optional().describe("Alias for text"),
     },
-    async ({ requestId, text }) => {
-      wsClient.sendDMResponse(requestId, text);
+    async ({ requestId, text, response }) => {
+      const narrative = text || response;
+      if (!narrative) {
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: `ERROR: send_response requires a "text" parameter with the DM narrative.`,
+            },
+          ],
+          isError: true,
+        };
+      }
+      wsClient.sendDMResponse(requestId, narrative);
+      wsClient.sendTypingIndicator(false);
+      pendingRequestId = null;
+      console.error(
+        `[game-tools] send_response: requestId=${requestId}, ${narrative.length} chars`,
+      );
       return {
         content: [
           {
             type: "text" as const,
-            text: `Response sent for request ${requestId} (${text.length} chars)`,
+            text: `Response sent for request ${requestId} (${narrative.length} chars)`,
           },
         ],
       };
@@ -208,7 +258,7 @@ export function registerGameTools(
     "Deal damage to a character or combatant. Handles temp HP absorption automatically. Use for monster attacks, traps, environmental damage.",
     {
       target: z.string().describe("Name of the character or combatant to damage"),
-      amount: z.number().describe("Amount of damage to deal"),
+      amount: z.coerce.number().describe("Amount of damage to deal"),
       damage_type: z
         .string()
         .optional()
@@ -224,7 +274,7 @@ export function registerGameTools(
     "Restore HP to a character or combatant. Cannot exceed max HP.",
     {
       target: z.string().describe("Name of the character or combatant to heal"),
-      amount: z.number().describe("Amount of HP to restore"),
+      amount: z.coerce.number().describe("Amount of HP to restore"),
     },
     async ({ target, amount }) => {
       return fromToolResponse(wsClient.gameStateManager.heal(target, amount));
@@ -236,7 +286,7 @@ export function registerGameTools(
     "Set a character or combatant's HP to an exact value. Useful for special effects or corrections.",
     {
       target: z.string().describe("Name of the character or combatant"),
-      value: z.number().describe("HP value to set"),
+      value: z.coerce.number().describe("HP value to set"),
     },
     async ({ target, value }) => {
       return fromToolResponse(wsClient.gameStateManager.setHP(target, value));
@@ -249,7 +299,7 @@ export function registerGameTools(
     {
       target: z.string().describe("Name of the character or combatant"),
       condition: z.string().describe("Condition name (e.g., 'poisoned', 'stunned', 'prone')"),
-      duration: z.number().optional().describe("Duration in rounds (optional)"),
+      duration: z.coerce.number().optional().describe("Duration in rounds (optional)"),
     },
     async ({ target, condition, duration }) => {
       return fromToolResponse(wsClient.gameStateManager.addCondition(target, condition, duration));
@@ -285,12 +335,12 @@ export function registerGameTools(
               .describe(
                 "Initiative modifier (Dex mod). For players, auto-read from character sheet if omitted.",
               ),
-            speed: z.number().optional().describe("Movement speed in feet (default 30)"),
-            maxHP: z.number().optional().describe("Maximum HP (required for NPCs/enemies)"),
-            currentHP: z.number().optional().describe("Current HP (defaults to maxHP)"),
-            armorClass: z.number().optional().describe("Armor Class"),
+            speed: z.coerce.number().optional().describe("Movement speed in feet (default 30)"),
+            maxHP: z.coerce.number().optional().describe("Maximum HP (required for NPCs/enemies)"),
+            currentHP: z.coerce.number().optional().describe("Current HP (defaults to maxHP)"),
+            armorClass: z.coerce.number().optional().describe("Armor Class"),
             position: z
-              .union([z.object({ x: z.number(), y: z.number() }), z.string()])
+              .union([z.object({ x: z.coerce.number(), y: z.coerce.number() }), z.string()])
               .optional()
               .describe("Starting grid position as {x, y} or A1 notation (e.g., 'E5')"),
             size: z
@@ -346,12 +396,12 @@ export function registerGameTools(
         .describe(
           "Initiative modifier (Dex mod). For players, auto-read from character sheet if omitted.",
         ),
-      speed: z.number().optional().describe("Movement speed in feet"),
-      maxHP: z.number().optional().describe("Maximum HP"),
-      currentHP: z.number().optional().describe("Current HP"),
-      armorClass: z.number().optional().describe("Armor Class"),
+      speed: z.coerce.number().optional().describe("Movement speed in feet"),
+      maxHP: z.coerce.number().optional().describe("Maximum HP"),
+      currentHP: z.coerce.number().optional().describe("Current HP"),
+      armorClass: z.coerce.number().optional().describe("Armor Class"),
       position: z
-        .union([z.object({ x: z.number(), y: z.number() }), z.string()])
+        .union([z.object({ x: z.coerce.number(), y: z.coerce.number() }), z.string()])
         .optional()
         .describe("Grid position as {x, y} or A1 notation (e.g., 'C4')"),
       size: z.enum(["tiny", "small", "medium", "large", "huge", "gargantuan"]).optional(),
@@ -439,7 +489,7 @@ export function registerGameTools(
     "Expend a spell slot at a given level for a character.",
     {
       character_name: z.string().describe("Character name"),
-      level: z.number().describe("Spell slot level (1-9)"),
+      level: z.coerce.number().describe("Spell slot level (1-9)"),
     },
     async ({ character_name, level }) => {
       const result = wsClient.gameStateManager.useSpellSlot(character_name, level);
@@ -452,7 +502,7 @@ export function registerGameTools(
     "Restore a spell slot at a given level (e.g., after short rest, Arcane Recovery).",
     {
       character_name: z.string().describe("Character name"),
-      level: z.number().describe("Spell slot level (1-9)"),
+      level: z.coerce.number().describe("Spell slot level (1-9)"),
     },
     async ({ character_name, level }) => {
       const result = wsClient.gameStateManager.restoreSpellSlot(character_name, level);
@@ -504,8 +554,8 @@ export function registerGameTools(
     "update_battle_map",
     "Set or update the battle map grid. Define the grid dimensions, terrain tiles, and optional name.",
     {
-      width: z.number().describe("Grid width in tiles"),
-      height: z.number().describe("Grid height in tiles"),
+      width: z.coerce.number().describe("Grid width in tiles"),
+      height: z.coerce.number().describe("Grid height in tiles"),
       name: z.string().optional().describe("Map name (e.g., 'Goblin Cave', 'Town Square')"),
       tiles: z
         .array(
@@ -525,12 +575,12 @@ export function registerGameTools(
                   name: z.string(),
                   category: z.enum(["furniture", "container", "hazard", "interactable", "weapon"]),
                   destructible: z.boolean().optional(),
-                  hp: z.number().optional(),
-                  height: z.number().optional(),
+                  hp: z.coerce.number().optional(),
+                  height: z.coerce.number().optional(),
                   description: z.string().optional(),
                 })
                 .optional(),
-              elevation: z.number().optional(),
+              elevation: z.coerce.number().optional(),
               cover: z.enum(["half", "three-quarters", "full"]).optional(),
               label: z.string().optional(),
             }),
@@ -590,9 +640,9 @@ export function registerGameTools(
     {
       shape: z.enum(["sphere", "cone", "line", "cube"]).describe("AoE shape"),
       center: z.string().describe("Center position in A1 notation (e.g., 'E8')"),
-      radius: z.number().optional().describe("Radius in feet (for sphere)"),
-      length: z.number().optional().describe("Length in feet (for line/cone)"),
-      width: z.number().optional().describe("Width in feet (for line/cube)"),
+      radius: z.coerce.number().optional().describe("Radius in feet (for sphere)"),
+      length: z.coerce.number().optional().describe("Length in feet (for line/cone)"),
+      width: z.coerce.number().optional().describe("Width in feet (for line/cube)"),
       direction: z
         .number()
         .optional()
@@ -639,14 +689,14 @@ export function registerGameTools(
     {
       shape: z.enum(["sphere", "cone", "line", "cube"]).describe("AoE shape"),
       center: z.string().describe("Center position in A1 notation"),
-      radius: z.number().optional().describe("Radius in feet"),
-      length: z.number().optional().describe("Length in feet"),
-      width: z.number().optional().describe("Width in feet"),
-      direction: z.number().optional().describe("Direction in degrees"),
+      radius: z.coerce.number().optional().describe("Radius in feet"),
+      length: z.coerce.number().optional().describe("Length in feet"),
+      width: z.coerce.number().optional().describe("Width in feet"),
+      direction: z.coerce.number().optional().describe("Direction in degrees"),
       damage: z.string().describe("Damage dice notation (e.g., '8d6')"),
       damage_type: z.string().describe("Damage type (e.g., 'fire', 'cold')"),
       save_ability: z.string().describe("Saving throw ability (e.g., 'dexterity')"),
-      save_dc: z.number().describe("Save DC"),
+      save_dc: z.coerce.number().describe("Save DC"),
       half_on_save: z
         .boolean()
         .optional()
@@ -706,24 +756,24 @@ export function registerGameTools(
             z.object({
               type: z.literal("damage"),
               target: z.string().describe("Target name"),
-              amount: z.number().describe("Damage amount"),
+              amount: z.coerce.number().describe("Damage amount"),
               damage_type: z.string().optional().describe("Damage type"),
             }),
             z.object({
               type: z.literal("heal"),
               target: z.string().describe("Target name"),
-              amount: z.number().describe("Heal amount"),
+              amount: z.coerce.number().describe("Heal amount"),
             }),
             z.object({
               type: z.literal("set_hp"),
               target: z.string().describe("Target name"),
-              value: z.number().describe("HP value"),
+              value: z.coerce.number().describe("HP value"),
             }),
             z.object({
               type: z.literal("condition_add"),
               target: z.string().describe("Target name"),
               condition: z.string().describe("Condition name"),
-              duration: z.number().optional().describe("Duration in rounds"),
+              duration: z.coerce.number().optional().describe("Duration in rounds"),
             }),
             z.object({
               type: z.literal("condition_remove"),
@@ -753,7 +803,7 @@ export function registerGameTools(
     {
       character_name: z.string().describe("Character name"),
       name: z.string().describe("Item name"),
-      quantity: z.number().optional().describe("Quantity (default 1)"),
+      quantity: z.coerce.number().optional().describe("Quantity (default 1)"),
       type: z.string().optional().describe("Item type (e.g., 'Weapon', 'Armor', 'Gear', 'Potion')"),
       description: z.string().optional().describe("Item description"),
       rarity: z
@@ -767,7 +817,7 @@ export function registerGameTools(
         .array(z.string())
         .optional()
         .describe("Item properties (e.g., ['Versatile', 'Light'])"),
-      weight: z.number().optional().describe("Item weight in pounds"),
+      weight: z.coerce.number().optional().describe("Item weight in pounds"),
     },
     async ({
       character_name,
@@ -804,7 +854,7 @@ export function registerGameTools(
     {
       character_name: z.string().describe("Character name"),
       item_name: z.string().describe("Item name to remove"),
-      quantity: z.number().optional().describe("Quantity to remove (default: all)"),
+      quantity: z.coerce.number().optional().describe("Quantity to remove (default: all)"),
     },
     async ({ character_name, item_name, quantity }) => {
       const result = wsClient.gameStateManager.removeItem(character_name, item_name, quantity);
@@ -819,7 +869,7 @@ export function registerGameTools(
       character_name: z.string().describe("Character name"),
       item_name: z.string().describe("Item name to update (lookup key)"),
       equipped: z.boolean().optional().describe("Equip or unequip the item"),
-      quantity: z.number().optional().describe("Set exact quantity"),
+      quantity: z.coerce.number().optional().describe("Set exact quantity"),
       is_attuned: z.boolean().optional().describe("Toggle attunement"),
       description: z.string().optional().describe("Update description"),
       damage: z.string().optional().describe("Update damage dice (e.g., '1d8', '2d6+1')"),
@@ -828,8 +878,8 @@ export function registerGameTools(
         .array(z.string())
         .optional()
         .describe("Update item properties (e.g., ['Versatile', 'Light'])"),
-      armor_class: z.number().optional().describe("Update AC value"),
-      attack_bonus: z.number().optional().describe("Update attack bonus"),
+      armor_class: z.coerce.number().optional().describe("Update AC value"),
+      attack_bonus: z.coerce.number().optional().describe("Update attack bonus"),
       range: z.string().optional().describe("Update range (e.g., '5 ft.', '20/60 ft.')"),
     },
     async ({
@@ -867,11 +917,11 @@ export function registerGameTools(
     "Add or subtract currency for a character. Positive values add, negative values subtract. Floors at 0.",
     {
       character_name: z.string().describe("Character name"),
-      cp: z.number().optional().describe("Copper pieces to add/subtract"),
-      sp: z.number().optional().describe("Silver pieces to add/subtract"),
-      ep: z.number().optional().describe("Electrum pieces to add/subtract"),
-      gp: z.number().optional().describe("Gold pieces to add/subtract"),
-      pp: z.number().optional().describe("Platinum pieces to add/subtract"),
+      cp: z.coerce.number().optional().describe("Copper pieces to add/subtract"),
+      sp: z.coerce.number().optional().describe("Silver pieces to add/subtract"),
+      ep: z.coerce.number().optional().describe("Electrum pieces to add/subtract"),
+      gp: z.coerce.number().optional().describe("Gold pieces to add/subtract"),
+      pp: z.coerce.number().optional().describe("Platinum pieces to add/subtract"),
     },
     async ({ character_name, cp, sp, ep, gp, pp }) => {
       const changes: Partial<Record<"cp" | "sp" | "ep" | "gp" | "pp", number>> = {};
@@ -1004,7 +1054,7 @@ export function registerGameTools(
     "Set temporary HP for a character or combatant. Non-stacking: takes the higher of current temp HP and new amount.",
     {
       target: z.string().describe("Name of the character or combatant"),
-      amount: z.number().describe("Amount of temporary HP"),
+      amount: z.coerce.number().describe("Amount of temporary HP"),
     },
     async ({ target, amount }) => {
       return fromToolResponse(wsClient.gameStateManager.setTempHP(target, amount));
@@ -1017,7 +1067,7 @@ export function registerGameTools(
     "calculate_encounter_difficulty",
     "Calculate encounter difficulty given party levels and monster CRs. Uses 2024 encounter building rules.",
     {
-      party_levels: z.array(z.number()).describe("Array of party member levels"),
+      party_levels: z.array(z.coerce.number()).describe("Array of party member levels"),
       monster_crs: z
         .array(z.string())
         .describe("Array of monster CRs as strings (e.g., '1/4', '2', '5')"),

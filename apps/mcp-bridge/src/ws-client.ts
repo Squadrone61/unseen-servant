@@ -133,8 +133,12 @@ export class WSClient {
 
         const msg = raw as ServerMessage;
         this.handleMessage(msg);
-      } catch {
-        // ignore non-JSON (e.g. "pong")
+      } catch (e) {
+        // Only ignore JSON parse errors (non-JSON messages like "pong")
+        if (e instanceof SyntaxError) return;
+        console.error(
+          `[ws-client] Message handler error: ${e instanceof Error ? e.message : String(e)}`,
+        );
       }
     });
 
@@ -688,6 +692,10 @@ export class WSClient {
   send(msg: Record<string, unknown>): void {
     if (this.ws?.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify(msg));
+    } else {
+      console.error(
+        `[ws-client] send() dropped (readyState=${this.ws?.readyState ?? "no ws"}): ${String(msg.type ?? "unknown")}`,
+      );
     }
   }
 
@@ -769,32 +777,23 @@ export class WSClient {
           clearInterval(interval);
           clearTimeout(timeout);
 
-          // Extract the last check result from conversation history
-          const lastMsg = this.gameStateManager.conversationHistory
-            .filter(
-              (m) =>
-                m.role === "user" && m.content.includes("[System:") && m.content.includes("rolled"),
-            )
-            .pop();
-
-          if (lastMsg) {
-            // Parse basic info from system message
-            const totalMatch = lastMsg.content.match(/rolled (\d+)/);
-            const successMatch = lastMsg.content.match(/— (Success|Failure)/);
-            const charMatch = lastMsg.content.match(/\[System: (.+?) rolled/);
-
+          const cr = this.gameStateManager.lastCheckResult;
+          if (cr) {
+            this.gameStateManager.lastCheckResult = null;
             resolve({
               requestId: checkId,
               roll: {
                 id: crypto.randomUUID(),
-                rolls: [],
-                modifier: 0,
-                total: totalMatch ? parseInt(totalMatch[1]) : 0,
-                label: params.reason,
+                rolls: cr.rolls,
+                modifier: cr.modifier,
+                total: cr.total,
+                label: cr.label,
+                criticalHit: cr.criticalHit,
+                criticalFail: cr.criticalFail,
               },
-              dc: params.dc,
-              success: successMatch?.[1] === "Success",
-              characterName: charMatch?.[1] ?? params.targetCharacter,
+              dc: cr.dc,
+              success: cr.success,
+              characterName: cr.characterName,
             });
           } else {
             resolve({
