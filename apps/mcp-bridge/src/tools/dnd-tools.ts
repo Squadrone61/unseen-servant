@@ -6,7 +6,9 @@ import { rollDamage } from "@unseen-servant/shared/utils";
 export function registerDndTools(server: McpServer, wsClient: WSClient): void {
   server.tool(
     "roll_dice",
-    `Roll dice — ALL rolls are shown to players in chat.
+    `Roll dice. Two modes: (1) DM/direct roll — provide notation only (e.g. '2d6+3'). Do NOT provide targetCharacter for monster attacks or DM-only rolls. (2) Interactive player check — provide targetCharacter + checkType + ability. The player rolls on their client. checkType values: 'ability_check', 'saving_throw', 'attack', 'damage'. notation is REQUIRED when checkType is 'damage'.
+
+ALL rolls are shown to players in chat.
 
 **Mode 1 — Direct DM roll** (monster attacks, damage, hidden rolls):
 Just provide \`notation\` and optional \`reason\`. Roll happens immediately, result appears in chat.
@@ -32,7 +34,7 @@ If \`targetCharacter\` is provided → Mode 2/2b. Otherwise → Mode 1.`,
         .enum(["ability", "skill", "saving_throw", "attack", "custom", "damage"])
         .optional()
         .describe(
-          "Type of check (required when targetCharacter is set). Use 'damage' for interactive player damage rolls.",
+          "Type of check: 'ability_check', 'saving_throw', 'attack', or 'damage'. Required when targetCharacter is provided. 'damage' also requires notation.",
         ),
       ability: z
         .string()

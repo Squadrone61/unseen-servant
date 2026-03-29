@@ -278,6 +278,7 @@ export interface ServerSystemMessage {
   type: "server:system";
   content: string;
   timestamp: number;
+  id?: string;
 }
 
 export interface ServerRoomJoinedMessage {

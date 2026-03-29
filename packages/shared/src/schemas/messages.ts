@@ -453,6 +453,7 @@ export const serverSystemSchema = z.object({
   type: z.literal("server:system"),
   content: z.string(),
   timestamp: z.number(),
+  id: z.string().optional(),
 });
 
 export const serverRoomJoinedSchema = z.object({

@@ -351,6 +351,40 @@ export class GameRoom extends DurableObject<Env> {
     const session = this.sessions.get(ws);
     this.sessions.delete(ws);
     console.error("WebSocket error:", error, "Player:", session?.playerName);
+
+    if (session?.playerName) {
+      // Mirror cleanup from webSocketClose — clear DM state, notify players
+      if (session.isDM) {
+        this.dmBridgeConfig = null;
+        this.ctx.storage.delete("dmBridgeConfig");
+      }
+
+      this.broadcast({
+        type: "server:player_left",
+        playerName: session.playerName,
+        players: this.getPlayerNames(),
+        hostName: this.getHostName(),
+        allPlayers: this.getAllPlayersWithStatus(),
+        isDM: session.isDM || undefined,
+      });
+      this.broadcast({
+        type: "server:system",
+        content: `${session.playerName} has disconnected.`,
+        timestamp: Date.now(),
+      });
+
+      if (!session.isDM) {
+        this.forwardToBridgeDirect({
+          type: "server:player_left",
+          playerName: session.playerName,
+          players: this.getPlayerNames(),
+          hostName: this.getHostName(),
+          allPlayers: this.getAllPlayersWithStatus(),
+        });
+      }
+
+      this.updateRoomMeta();
+    }
   }
 
   // --- Bridge Relay ---
@@ -999,6 +1033,11 @@ export class GameRoom extends DurableObject<Env> {
   }
 
   private broadcast(message: ServerMessage): void {
+    // Ensure system messages have an id for client-side deduplication
+    if (message.type === "server:system" && !message.id) {
+      message.id = crypto.randomUUID();
+    }
+
     if (message.type !== "server:player_joined" && message.type !== "server:player_left") {
       this.appendToChatLog(message);
     }

@@ -11,6 +11,17 @@ import type {
 } from "@unseen-servant/shared/types";
 import { CharacterPopover } from "@/components/character/CharacterPopover";
 import { Button } from "@/components/ui/Button";
+
+function formatRelativeTime(timestamp: number): string {
+  const seconds = Math.floor((Date.now() - timestamp) / 1000);
+  if (seconds < 60) return "just now";
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  return `${Math.floor(hours / 24)}d ago`;
+}
+
 interface SidebarProps {
   roomCode: string;
   players: string[];
@@ -422,6 +433,12 @@ export function Sidebar({
                     <span className="text-gray-600">{event.type.replace(/_/g, " ")}</span>
                     {" — "}
                     <span>{event.description}</span>
+                    <span
+                      className="text-gray-600 ml-1"
+                      title={new Date(event.timestamp).toLocaleTimeString()}
+                    >
+                      {formatRelativeTime(event.timestamp)}
+                    </span>
                   </div>
                   {onRollback &&
                     (confirmingRollbackId === event.id ? (

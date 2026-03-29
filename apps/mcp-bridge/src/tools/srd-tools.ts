@@ -600,13 +600,15 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
     {
       name: z
         .string()
-        .describe("Spell name, e.g. 'Fireball', 'Cure Wounds', 'Shield', 'Silvery Barbs'"),
+        .describe(
+          "Spell name, e.g. 'Fireball', 'Cure Wounds', 'Shield', 'Silvery Barbs'. Case-insensitive with fuzzy matching — close matches auto-selected, ambiguous ones return suggestions.",
+        ),
       detail: z
         .enum(["summary", "full"])
         .optional()
         .default("summary")
         .describe(
-          "Level of detail: 'summary' for a compact one-liner, 'full' for complete rules text",
+          "Level of detail (default: summary). 'summary' (~30 tokens) or 'full' (complete rules text).",
         ),
     },
     async ({ name, detail }) => {
@@ -627,13 +629,17 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
     "lookup_monster",
     "Look up a monster/creature stat block from the D&D 2024 database. Call this for every enemy type BEFORE combat.",
     {
-      name: z.string().describe("Monster name, e.g. 'Goblin', 'Adult Red Dragon', 'Bugbear'"),
+      name: z
+        .string()
+        .describe(
+          "Monster name, e.g. 'Goblin', 'Adult Red Dragon', 'Bugbear'. Case-insensitive with fuzzy matching — close matches auto-selected, ambiguous ones return suggestions.",
+        ),
       detail: z
         .enum(["summary", "full"])
         .optional()
         .default("summary")
         .describe(
-          "Level of detail: 'summary' for a compact one-liner, 'full' for complete rules text",
+          "Level of detail (default: summary). 'summary' (~30 tokens) or 'full' (complete rules text).",
         ),
     },
     async ({ name, detail }) => {
@@ -656,13 +662,15 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
     {
       name: z
         .string()
-        .describe("Condition name, e.g. 'Grappled', 'Stunned', 'Prone', 'Frightened'"),
+        .describe(
+          "Condition name, e.g. 'Grappled', 'Stunned', 'Prone', 'Frightened'. Case-insensitive with fuzzy matching — close matches auto-selected, ambiguous ones return suggestions.",
+        ),
       detail: z
         .enum(["summary", "full"])
         .optional()
         .default("summary")
         .describe(
-          "Level of detail: 'summary' for a compact one-liner, 'full' for complete rules text",
+          "Level of detail (default: summary). 'summary' (~30 tokens) or 'full' (complete rules text).",
         ),
     },
     async ({ name, detail }) => {
@@ -683,13 +691,17 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
     "lookup_magic_item",
     "Look up a magic item from the D&D 2024 database. Returns rarity, attunement, and full description.",
     {
-      name: z.string().describe("Magic item name, e.g. 'Bag of Holding', 'Flame Tongue'"),
+      name: z
+        .string()
+        .describe(
+          "Magic item name, e.g. 'Bag of Holding', 'Flame Tongue'. Case-insensitive with fuzzy matching — close matches auto-selected, ambiguous ones return suggestions.",
+        ),
       detail: z
         .enum(["summary", "full"])
         .optional()
         .default("summary")
         .describe(
-          "Level of detail: 'summary' for a compact one-liner, 'full' for complete rules text",
+          "Level of detail (default: summary). 'summary' (~30 tokens) or 'full' (complete rules text).",
         ),
     },
     async ({ name, detail }) => {
@@ -710,13 +722,17 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
     "lookup_feat",
     "Look up a feat from the D&D 2024 database. Returns prerequisites, description, and mechanical effects.",
     {
-      name: z.string().describe("Feat name, e.g. 'Alert', 'Great Weapon Master'"),
+      name: z
+        .string()
+        .describe(
+          "Feat name, e.g. 'Alert', 'Great Weapon Master'. Case-insensitive with fuzzy matching — close matches auto-selected, ambiguous ones return suggestions.",
+        ),
       detail: z
         .enum(["summary", "full"])
         .optional()
         .default("summary")
         .describe(
-          "Level of detail: 'summary' for a compact one-liner, 'full' for complete rules text",
+          "Level of detail (default: summary). 'summary' (~30 tokens) or 'full' (complete rules text).",
         ),
     },
     async ({ name, detail }) => {
@@ -737,13 +753,17 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
     "lookup_class",
     "Look up a D&D class from the D&D 2024 database. Returns hit die, spellcasting, features, subclasses, and resources.",
     {
-      name: z.string().describe("Class name, e.g. 'Paladin', 'Rogue', 'Wizard'"),
+      name: z
+        .string()
+        .describe(
+          "Class name, e.g. 'Paladin', 'Rogue', 'Wizard'. Case-insensitive with fuzzy matching — close matches auto-selected, ambiguous ones return suggestions.",
+        ),
       detail: z
         .enum(["summary", "full"])
         .optional()
         .default("summary")
         .describe(
-          "Level of detail: 'summary' for a compact one-liner, 'full' for complete rules text",
+          "Level of detail (default: summary). 'summary' (~30 tokens) or 'full' (complete rules text).",
         ),
     },
     async ({ name, detail }) => {
@@ -764,13 +784,17 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
     "lookup_species",
     "Look up a D&D species/race from the D&D 2024 database. Returns size, speed, traits, and abilities.",
     {
-      name: z.string().describe("Species name, e.g. 'Tiefling', 'Aasimar', 'Goliath', 'Kenku'"),
+      name: z
+        .string()
+        .describe(
+          "Species name, e.g. 'Tiefling', 'Aasimar', 'Goliath', 'Kenku'. Case-insensitive with fuzzy matching — close matches auto-selected, ambiguous ones return suggestions.",
+        ),
       detail: z
         .enum(["summary", "full"])
         .optional()
         .default("summary")
         .describe(
-          "Level of detail: 'summary' for a compact one-liner, 'full' for complete rules text",
+          "Level of detail (default: summary). 'summary' (~30 tokens) or 'full' (complete rules text).",
         ),
     },
     async ({ name, detail }) => {
@@ -791,13 +815,17 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
     "lookup_background",
     "Look up a D&D background from the D&D 2024 database. Returns skill proficiencies, feat, ability scores, and equipment.",
     {
-      name: z.string().describe("Background name, e.g. 'Noble', 'Criminal', 'Sage', 'Haunted One'"),
+      name: z
+        .string()
+        .describe(
+          "Background name, e.g. 'Noble', 'Criminal', 'Sage', 'Haunted One'. Case-insensitive with fuzzy matching — close matches auto-selected, ambiguous ones return suggestions.",
+        ),
       detail: z
         .enum(["summary", "full"])
         .optional()
         .default("summary")
         .describe(
-          "Level of detail: 'summary' for a compact one-liner, 'full' for complete rules text",
+          "Level of detail (default: summary). 'summary' (~30 tokens) or 'full' (complete rules text).",
         ),
     },
     async ({ name, detail }) => {
@@ -828,7 +856,7 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
         .optional()
         .default("summary")
         .describe(
-          "Level of detail: 'summary' for a compact one-liner, 'full' for complete rules text",
+          "Level of detail (default: summary). 'summary' (~30 tokens) or 'full' (complete rules text).",
         ),
     },
     async ({ name, detail }) => {
@@ -855,7 +883,7 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
         .optional()
         .default("summary")
         .describe(
-          "Level of detail: 'summary' for a compact one-liner, 'full' for complete rules text",
+          "Level of detail (default: summary). 'summary' (~30 tokens) or 'full' (complete rules text).",
         ),
     },
     async ({ name, detail }) => {
@@ -882,7 +910,7 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
         .optional()
         .default("summary")
         .describe(
-          "Level of detail: 'summary' for a compact one-liner, 'full' for complete rules text",
+          "Level of detail (default: summary). 'summary' (~30 tokens) or 'full' (complete rules text).",
         ),
     },
     async ({ name, detail }) => {
@@ -909,7 +937,7 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
         .optional()
         .default("summary")
         .describe(
-          "Level of detail: 'summary' for a compact one-liner, 'full' for complete rules text",
+          "Level of detail (default: summary). 'summary' (~30 tokens) or 'full' (complete rules text).",
         ),
     },
     async ({ name, detail }) => {
@@ -937,7 +965,13 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
         .describe(
           "Search query, e.g. 'opportunity attack', 'fire damage spell', 'flying creature'",
         ),
-      limit: z.coerce.number().optional().default(5).describe("Max results to return (default 5)"),
+      limit: z.coerce
+        .number()
+        .optional()
+        .default(5)
+        .describe(
+          "Max results per category (default 5). Total results may be higher since limit applies per category.",
+        ),
     },
     async ({ query, limit }) => {
       const results: string[] = [];

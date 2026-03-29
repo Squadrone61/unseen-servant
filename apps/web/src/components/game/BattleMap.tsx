@@ -603,7 +603,7 @@ export function BattleMap({
       )}
 
       {/* Scrollable map area */}
-      <div className="flex-1 min-h-0 overflow-auto p-2 relative">
+      <div className="flex-1 min-h-0 overflow-auto p-2 relative flex items-start justify-center">
         {/* Zoom Controls */}
         <div className="absolute top-2 right-2 z-10 bg-gray-800/80 rounded flex gap-1 p-1">
           <button
@@ -858,7 +858,7 @@ export function BattleMap({
                         {/* Tile tooltip on hover */}
                         {isHoveredHere && tileTooltipData && (
                           <div
-                            className="absolute left-1/2 bottom-full mb-1 -translate-x-1/2 bg-gray-900 border border-gray-600/50 rounded-lg shadow-lg px-3 py-2 text-xs text-gray-200 whitespace-nowrap pointer-events-none"
+                            className="absolute left-1/2 bottom-full mb-1 -translate-x-1/2 bg-gray-900 border border-gray-600/50 rounded-lg shadow-lg px-3 py-2 text-xs text-gray-200 max-w-xs pointer-events-none"
                             style={{ zIndex: 35 }}
                           >
                             {tileTooltipData.map((line, i) => (
@@ -912,7 +912,7 @@ export function BattleMap({
                     {/* Tooltip on hover */}
                     {isHovered && (
                       <div
-                        className="absolute left-1/2 bottom-full mb-1 -translate-x-1/2 bg-gray-900 border border-gray-600/50 rounded-lg shadow-lg px-3 py-2 text-xs text-gray-200 whitespace-nowrap pointer-events-none"
+                        className="absolute left-1/2 bottom-full mb-1 -translate-x-1/2 bg-gray-900 border border-gray-600/50 rounded-lg shadow-lg px-3 py-2 text-xs text-gray-200 max-w-xs pointer-events-none"
                         style={{ zIndex: 35 }}
                       >
                         <div className="font-medium" style={{ color: aoe.color }}>
@@ -1088,7 +1088,7 @@ export function BattleMap({
 
                         return (
                           <div
-                            className="absolute left-1/2 -translate-x-1/2 bg-gray-900 border border-gray-600/50 rounded-lg shadow-lg px-3 py-2 text-xs min-w-[120px]"
+                            className="absolute left-1/2 -translate-x-1/2 bg-gray-900 border border-gray-600/50 rounded-lg shadow-lg px-3 py-2 text-xs min-w-[120px] max-w-[220px]"
                             style={{
                               zIndex: 30,
                               ...(showTooltipBelow ? { top: size + 4 } : { bottom: size + 4 }),

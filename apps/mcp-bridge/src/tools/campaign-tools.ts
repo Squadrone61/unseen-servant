@@ -109,7 +109,7 @@ export function registerCampaignTools(
       activeContext: z
         .string()
         .describe(
-          'Updated active-context.md content: "What\'s happening now" — current scene, pending threads, next steps. Keep under ~800 tokens.',
+          'Updated active-context.md content: "What\'s happening now" — current scene, pending threads, next steps. Keep under ~800 tokens (~3000 characters of prose).',
         ),
     },
     async ({ summary, activeContext }) => {
@@ -156,7 +156,12 @@ export function registerCampaignTools(
         .describe(
           "Relative file path within the campaign folder (without extension for markdown), e.g. 'world/npcs', 'world/locations', 'sessions/session-001', 'active-context'",
         ),
-      filename: z.string().optional().describe("Alias for path"),
+      filename: z
+        .string()
+        .optional()
+        .describe(
+          "Alias for 'path'. Use 'path' instead (preferred). .md extension added automatically if not provided.",
+        ),
       content: z.string().describe("The file content (markdown or JSON)"),
     },
     async ({ path: pathParam, filename, content }) => {

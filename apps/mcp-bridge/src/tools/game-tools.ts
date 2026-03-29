@@ -198,7 +198,7 @@ export function registerGameTools(
         .optional()
         .default("compact")
         .describe(
-          "Level of detail: compact (~200 tokens), tactical (~500 tokens), or full (everything)",
+          "Level of detail (default: compact). 'compact' (~200 tokens), 'tactical' (~500 tokens with combat focus), 'full' (everything).",
         ),
     },
     async ({ detail }) => {
@@ -322,7 +322,7 @@ export function registerGameTools(
 
   server.tool(
     "start_combat",
-    "Initialize combat with a list of combatants. Initiative is rolled automatically by the system for all combatants. Creates turn order and broadcasts combat state to all players.",
+    "Initialize combat with a list of combatants. Initiative is rolled automatically by the system for all combatants. Creates turn order and broadcasts combat state to all players. IMPORTANT: Before starting combat, use update_battle_map to set up the battlefield so players can see token positions. When a player initiates combat (ambush/surprise), resolve their opening action BEFORE calling this tool, then start standard initiative.",
     {
       combatants: z
         .array(
@@ -333,7 +333,7 @@ export function registerGameTools(
               .number()
               .optional()
               .describe(
-                "Initiative modifier (Dex mod). For players, auto-read from character sheet if omitted.",
+                "Initiative modifier (Dex mod). Required for NPCs/enemies — look up the monster first. For players, auto-read from character sheet if omitted.",
               ),
             speed: z.coerce.number().optional().describe("Movement speed in feet (default 30)"),
             maxHP: z.coerce.number().optional().describe("Maximum HP (required for NPCs/enemies)"),
@@ -342,7 +342,9 @@ export function registerGameTools(
             position: z
               .union([z.object({ x: z.coerce.number(), y: z.coerce.number() }), z.string()])
               .optional()
-              .describe("Starting grid position as {x, y} or A1 notation (e.g., 'E5')"),
+              .describe(
+                "Starting grid position in A1 notation (e.g. 'E5'). Also accepts {x, y} object but A1 is preferred.",
+              ),
             size: z
               .enum(["tiny", "small", "medium", "large", "huge", "gargantuan"])
               .optional()
@@ -394,7 +396,7 @@ export function registerGameTools(
         .number()
         .optional()
         .describe(
-          "Initiative modifier (Dex mod). For players, auto-read from character sheet if omitted.",
+          "Initiative modifier (Dex mod). Required for NPCs/enemies — look up the monster first. For players, auto-read from character sheet if omitted.",
         ),
       speed: z.coerce.number().optional().describe("Movement speed in feet"),
       maxHP: z.coerce.number().optional().describe("Maximum HP"),
@@ -440,7 +442,9 @@ export function registerGameTools(
       position: z
         .string()
         .optional()
-        .describe("Target position in A1 notation (e.g., 'E5'). Preferred over x/y."),
+        .describe(
+          "Grid position in A1 notation (e.g. 'E5'). Use this OR x/y, not both. Preferred over x/y.",
+        ),
       x: z
         .number()
         .optional()
@@ -587,7 +591,9 @@ export function registerGameTools(
           ),
         )
         .optional()
-        .describe("2D array of tiles [y][x]. If omitted, all floor."),
+        .describe(
+          "2D array of tiles [row][col] where [0][0] is top-left (A1). Each tile: { type, object?, cover?, elevation? }. Omitted tiles default to floor.",
+        ),
     },
     async ({ width, height, name, tiles }) => {
       const mapTiles =
@@ -636,7 +642,7 @@ export function registerGameTools(
 
   server.tool(
     "show_aoe",
-    "Display an Area of Effect overlay on the battle map. AI picks the center and color narratively. Returns a list of affected combatants so you can confirm with the player before applying effects.",
+    "Display an Area of Effect overlay on the battle map. AI picks the center and color narratively. Returns a list of affected combatants so you can confirm with the player before applying effects. Shape-specific required params: sphere/circle: radius required. cone/line: length + direction required. cube: length required.",
     {
       shape: z.enum(["sphere", "cone", "line", "cube"]).describe("AoE shape"),
       center: z.string().describe("Center position in A1 notation (e.g., 'E8')"),
@@ -685,7 +691,7 @@ export function registerGameTools(
 
   server.tool(
     "apply_area_effect",
-    "Apply damage to all combatants in an area. Each target makes a saving throw; damage is applied based on pass/fail. Use after show_aoe to confirm targeting.",
+    "Apply damage to all combatants in an area. Each target makes a saving throw; damage is applied based on pass/fail. Use after show_aoe to confirm targeting. Shape-specific required params: sphere/circle: radius required. cone/line: length + direction required. cube: length required.",
     {
       shape: z.enum(["sphere", "cone", "line", "cube"]).describe("AoE shape"),
       center: z.string().describe("Center position in A1 notation"),
@@ -748,7 +754,7 @@ export function registerGameTools(
 
   server.tool(
     "apply_batch_effects",
-    "Apply multiple effects in a single call — damage, heal, conditions, movement. Max 10 effects. Use for AoE aftermath, multi-target spells, or end-of-round effects.",
+    "Apply multiple effects in a single call — damage, heal, conditions, movement. Use for AoE aftermath, multi-target spells, or end-of-round effects. Effects are applied sequentially in array order. Max 10 effects per call.",
     {
       effects: z
         .array(
@@ -864,7 +870,7 @@ export function registerGameTools(
 
   server.tool(
     "update_item",
-    "Modify an existing item in a character's inventory — equip/unequip, toggle attunement, change quantity, update description, or set combat stats.",
+    "Modify an existing item in a character's inventory — equip/unequip, toggle attunement, change quantity, update description, or set combat stats. Specify only the fields you want to change. All fields are independent.",
     {
       character_name: z.string().describe("Character name"),
       item_name: z.string().describe("Item name to update (lookup key)"),
@@ -914,7 +920,10 @@ export function registerGameTools(
 
   server.tool(
     "update_currency",
-    "Add or subtract currency for a character. Positive values add, negative values subtract. Floors at 0.",
+    "Add or subtract currency for a character. Positive values add, negative values subtract. " +
+      "Each denomination is tracked independently. When auto_convert is true (default), spending more " +
+      "than available in one denomination will auto-borrow from higher ones using D&D exchange rates " +
+      "(1pp=10gp, 1gp=10sp, 1sp=10cp, 1ep=5sp). Without auto_convert, shortfalls are silently floored at 0.",
     {
       character_name: z.string().describe("Character name"),
       cp: z.coerce.number().optional().describe("Copper pieces to add/subtract"),
@@ -922,15 +931,26 @@ export function registerGameTools(
       ep: z.coerce.number().optional().describe("Electrum pieces to add/subtract"),
       gp: z.coerce.number().optional().describe("Gold pieces to add/subtract"),
       pp: z.coerce.number().optional().describe("Platinum pieces to add/subtract"),
+      auto_convert: z
+        .boolean()
+        .optional()
+        .default(true)
+        .describe(
+          "Auto-convert from higher denominations when spending more than available (default: true)",
+        ),
     },
-    async ({ character_name, cp, sp, ep, gp, pp }) => {
+    async ({ character_name, cp, sp, ep, gp, pp, auto_convert }) => {
       const changes: Partial<Record<"cp" | "sp" | "ep" | "gp" | "pp", number>> = {};
       if (cp !== undefined) changes.cp = cp;
       if (sp !== undefined) changes.sp = sp;
       if (ep !== undefined) changes.ep = ep;
       if (gp !== undefined) changes.gp = gp;
       if (pp !== undefined) changes.pp = pp;
-      const result = wsClient.gameStateManager.updateCurrency(character_name, changes);
+      const result = wsClient.gameStateManager.updateCurrency(
+        character_name,
+        changes,
+        auto_convert ?? true,
+      );
       return fromToolResponse(result);
     },
   );
@@ -971,7 +991,11 @@ export function registerGameTools(
         .number()
         .default(30)
         .describe("Number of recent messages to keep (default 30)"),
-      summary: z.string().describe("Your summary of the older events being compacted"),
+      summary: z
+        .string()
+        .describe(
+          "Prose summary of older events to preserve (2-4 sentences, e.g. 'The party fought goblins, looted a cave, and rested at the inn.')",
+        ),
     },
     async ({ keep_recent, summary }) => {
       const result = wsClient.gameStateManager.compactHistory(keep_recent, summary);

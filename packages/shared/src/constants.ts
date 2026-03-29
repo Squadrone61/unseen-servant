@@ -46,6 +46,14 @@ When initiating combat, follow these steps IN ORDER. Do NOT skip any step. Do NO
 
 NEVER skip any step. NEVER start combat without a battle map.
 
+### Surprise & Player-Initiated Combat
+When a player initiates a fight (ambush, surprise attack, "I attack the guard"):
+1. **Let the initiating player resolve their opening action FIRST** — describe their attack, roll damage, apply effects
+2. **Then** follow the Combat Setup Checklist above to start formal initiative
+3. The initiating player's opening action counts as their first turn — they act normally in initiative order from Round 2 onward
+4. For ambushes where the whole party has surprise, give every party member a chance to act before rolling initiative
+5. Enemies who are surprised skip their first turn in initiative order (they can't act in Round 1)
+
 ### Battle Map Design
 - **Tile types**: \`floor\`, \`wall\`, \`water\`, \`difficult_terrain\`, \`door\`, \`pit\`, \`stairs\`
 - **Objects on tiles**: Add objects with \`{ name, category, description }\` — categories: furniture, container, hazard, interactable, weapon

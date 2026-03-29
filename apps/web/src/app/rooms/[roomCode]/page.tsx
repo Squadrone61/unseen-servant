@@ -124,6 +124,8 @@ function GameContent({ roomCode, playerName }: { roomCode: string; playerName: s
   const sentCharacterRef = useRef(false);
   // Ref for player notes loaded callback (set after useWebSocket)
   const playerNotesLoadedRef = useRef<((content: string) => void) | null>(null);
+  // Track seen message IDs for deduplication on reconnect
+  const seenMessageIds = useRef<Set<string>>(new Set());
 
   // Character library for auto-sync and reconciliation
   const {
@@ -207,6 +209,13 @@ function GameContent({ roomCode, playerName }: { roomCode: string; playerName: s
 
   const handleMessage = useCallback(
     (msg: ServerMessage) => {
+      // Deduplicate messages using their id (prevents doubles on reconnect replay)
+      const msgId = "id" in msg ? (msg as { id?: string }).id : undefined;
+      if (msgId) {
+        if (seenMessageIds.current.has(msgId)) return;
+        seenMessageIds.current.add(msgId);
+      }
+
       switch (msg.type) {
         case "server:room_joined":
           setJoined(true);
@@ -220,6 +229,7 @@ function GameContent({ roomCode, playerName }: { roomCode: string; playerName: s
           if (msg.isReconnect) {
             setStoryMessages([]);
             setLogMessages([]);
+            seenMessageIds.current.clear();
           }
           if (msg.allPlayers) setAllPlayers(msg.allPlayers);
           if (msg.characters) {
@@ -480,6 +490,8 @@ function GameContent({ roomCode, playerName }: { roomCode: string; playerName: s
         default:
           if (isStoryMessage(msg)) {
             setStoryMessages((prev) => [...prev, msg]);
+            // Ensure chat panel is visible for non-host players who missed the start_story event
+            setStoryStarted(true);
           } else if (isLogMessage(msg)) {
             setLogMessages((prev) => [...prev, msg]);
           }
