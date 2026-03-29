@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useAuth } from "@/hooks/useAuth";
 import { useCharacterLibrary } from "@/hooks/useCharacterLibrary";
 import { Button } from "@/components/ui/Button";
+import { HowToPlayModal } from "@/components/guide/HowToPlayModal";
 import { charColor } from "@/utils/char-color";
 import { timeAgo } from "@/utils/time-ago";
 
@@ -43,6 +44,8 @@ function HomePageInner() {
   const [error, setError] = useState("");
   const [kickMessage, setKickMessage] = useState("");
   const [rooms, setRooms] = useState<RoomMeta[]>([]);
+  const [showGuide, setShowGuide] = useState(false);
+  const [guideBannerDismissed, setGuideBannerDismissed] = useState(true);
 
   // Load saved state on mount
   useEffect(() => {
@@ -64,6 +67,10 @@ function HomePageInner() {
     const joinParam = searchParams.get("join");
     if (joinParam) {
       setJoinCode(joinParam.toUpperCase().slice(0, 6));
+    }
+
+    if (!localStorage.getItem("unseen-guide-dismissed")) {
+      setGuideBannerDismissed(false);
     }
   }, [searchParams]);
 
@@ -151,6 +158,10 @@ function HomePageInner() {
         </div>
 
         <div className="flex items-center gap-2.5">
+          <Button variant="ghost" size="sm" onClick={() => setShowGuide(true)}>
+            How to Play
+          </Button>
+          <div className="w-px h-4 bg-gray-700/30" />
           {authLoading ? (
             <span className="text-xs text-gray-600">Loading...</span>
           ) : user ? (
@@ -219,6 +230,30 @@ function HomePageInner() {
           D&D 5E WITH AN AI GAME MASTER
         </p>
         <div className="w-10 h-px bg-amber-500/25" />
+
+        {/* First-time guide banner */}
+        {!guideBannerDismissed && (
+          <div className="w-full max-w-xl flex items-center gap-3 px-4 py-2.5 bg-amber-500/5 border border-amber-500/15 rounded-lg">
+            <span className="text-sm text-gray-400 flex-1">
+              New to Unseen Servant?{" "}
+              <button
+                onClick={() => setShowGuide(true)}
+                className="text-amber-400 hover:text-amber-300 underline underline-offset-2 transition-colors"
+              >
+                Learn how to play
+              </button>
+            </span>
+            <button
+              onClick={() => {
+                setGuideBannerDismissed(true);
+                localStorage.setItem("unseen-guide-dismissed", "1");
+              }}
+              className="text-gray-600 hover:text-gray-400 transition-colors text-lg leading-none"
+            >
+              &times;
+            </button>
+          </div>
+        )}
 
         {/* Kick/Reject message */}
         {kickMessage && (
@@ -485,6 +520,7 @@ function HomePageInner() {
           </div>
         </div>
       </div>
+      {showGuide && <HowToPlayModal onClose={() => setShowGuide(false)} />}
     </div>
   );
 }

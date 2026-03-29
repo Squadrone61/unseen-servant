@@ -4,8 +4,6 @@
 
 AI-powered D&D 5e web app where an AI acts as the Dungeon Master. Players create characters via the built-in character builder (powered by native 5e.tools data), join multiplayer rooms via WebSocket, and play through AI-generated campaigns. Claude Code acts as the AI DM via an MCP bridge that owns all game logic and connects to the game server as a participant.
 
-**Notion GDD:** https://www.notion.so/309fc254bf8381c18e37c2b5ee4d8641
-
 ## Architecture
 
 ```
@@ -309,7 +307,7 @@ All lookup tools accept `detail`: `"summary"` (default, ~30 tokens) or `"full"` 
 6. Bridge stores response in conversation history, sends `client:broadcast` with `server:ai` payload
 7. Worker receives `client:broadcast` → relays AI narrative to all players
 
-## GDD Progress (Phase Completion)
+## Phase Completion
 
 - Phase 1 (Foundation): COMPLETE — multiplayer chat, multi-provider AI, OAuth, reconnection
 - Phase 2 (Character Integration): COMPLETE — character builder, character sheet, party list, native 5e.tools database

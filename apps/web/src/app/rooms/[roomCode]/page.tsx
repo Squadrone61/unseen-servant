@@ -9,6 +9,7 @@ import { BattleMap } from "@/components/game/BattleMap";
 
 import { CampaignConfigModal } from "@/components/sidebar/CampaignConfigModal";
 import { SettingsModal } from "@/components/sidebar/SettingsModal";
+import { HowToPlayModal } from "@/components/guide/HowToPlayModal";
 import { PlayerNotesPanel } from "@/components/notes/PlayerNotesPanel";
 import { GameNavBar } from "@/components/game/GameNavBar";
 import { Button } from "@/components/ui/Button";
@@ -96,6 +97,7 @@ function GameContent({ roomCode, playerName }: { roomCode: string; playerName: s
   const [campaignConfigured, setCampaignConfigured] = useState(false);
   const [showCampaignConfig, setShowCampaignConfig] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showGuide, setShowGuide] = useState(false);
   const [showNotes, setShowNotes] = useState(false);
   const [typingPlayers, setTypingPlayers] = useState<Map<string, number>>(new Map());
 
@@ -753,6 +755,7 @@ function GameContent({ roomCode, playerName }: { roomCode: string; playerName: s
         onToggleEvents={() => setShowEvents((v) => !v)}
         onToggleParty={() => setShowParty((v) => !v)}
         onOpenSettings={() => setShowSettings(true)}
+        onOpenGuide={() => setShowGuide(true)}
       />
       {/* Main Content Area */}
       <div className="flex flex-1 min-h-0">
@@ -1051,6 +1054,9 @@ function GameContent({ roomCode, playerName }: { roomCode: string; playerName: s
           onClose={() => setShowCampaignConfig(false)}
         />
       )}
+
+      {/* How to Play Guide */}
+      {showGuide && <HowToPlayModal onClose={() => setShowGuide(false)} />}
     </div>
   );
 }

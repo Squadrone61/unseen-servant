@@ -17,6 +17,7 @@ interface GameNavBarProps {
   onToggleEvents: () => void;
   onToggleParty: () => void;
   onOpenSettings: () => void;
+  onOpenGuide: () => void;
 }
 
 export function GameNavBar({
@@ -35,6 +36,7 @@ export function GameNavBar({
   onToggleEvents,
   onToggleParty,
   onOpenSettings,
+  onOpenGuide,
 }: GameNavBarProps) {
   const [copied, setCopied] = useState(false);
 
@@ -189,6 +191,22 @@ export function GameNavBar({
 
         <Button variant="danger" size="sm" href="/">
           Quit
+        </Button>
+
+        <Button variant="icon" onClick={onOpenGuide} title="How to Play">
+          <svg
+            className="w-3.5 h-3.5"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <circle cx="12" cy="12" r="10" />
+            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+            <line x1="12" x2="12.01" y1="17" y2="17" />
+          </svg>
         </Button>
 
         <Button variant="icon" onClick={onOpenSettings} title="Settings">

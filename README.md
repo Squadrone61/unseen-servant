@@ -11,6 +11,7 @@ A multiplayer D&D 5e web app where an AI plays the Dungeon Master. Players creat
 - **Battle Map** — Tactical grid with tokens, click-to-move, range highlighting, terrain, and conditions
 - **Combat** — Initiative, turn order, attack rolls, saving throws, HP/damage/healing, spell slots
 - **Campaign Persistence** — Save progress between sessions (campaign notes, character snapshots, system prompt)
+- **In-App Guide** — Built-in "Tome of Knowledge" tutorial covering character creation, campaign setup, narrative play, and combat
 
 ## Prerequisites
 
