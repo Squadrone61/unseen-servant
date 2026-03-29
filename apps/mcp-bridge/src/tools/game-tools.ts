@@ -38,11 +38,13 @@ export function registerGameTools(
 
   // ─── Core Game Loop ───
 
-  server.tool(
+  server.registerTool(
     "wait_for_message",
-    "Block until a player message or DM request arrives via WebSocket. Returns the request with systemPrompt and conversation messages. This is the main loop driver — call this repeatedly to process game turns. You MUST call send_response or acknowledge before calling this again.",
-    {},
-    async (_args: Record<string, never>, extra: { signal: AbortSignal }) => {
+    {
+      description:
+        "Block until a player message or DM request arrives. Returns { requestId, systemPrompt, messages, totalMessageCount }. Must call send_response or acknowledge before calling again.",
+    },
+    async (extra: { signal: AbortSignal }) => {
       console.error(`[game-tools] wait_for_message CALLED, pendingRequestId=${pendingRequestId}`);
       // Guard: block if previous request wasn't responded to
       if (pendingRequestId) {
@@ -105,11 +107,14 @@ export function registerGameTools(
     },
   );
 
-  server.tool(
+  server.registerTool(
     "acknowledge",
-    "Silently observe player messages without sending a visible response. Use when players are talking to each other, roleplaying between characters, or having conversations that don't need DM input.",
     {
-      requestId: z.string().describe("The requestId from the dm_request to acknowledge"),
+      description:
+        "Silently observe a player message without responding. Clears the pending requestId.",
+      inputSchema: {
+        requestId: z.string().describe("The requestId from the dm_request to acknowledge"),
+      },
     },
     async ({ requestId }) => {
       wsClient.sendTypingIndicator(false);
@@ -125,13 +130,16 @@ export function registerGameTools(
     },
   );
 
-  server.tool(
+  server.registerTool(
     "send_response",
-    "Send the DM narrative response back to all players. This broadcasts the AI message, stores it in conversation history, and updates game state. You MUST call this for every request — players cannot see text you output directly.",
     {
-      requestId: z.string().describe("The requestId from the dm_request to respond to"),
-      text: z.string().optional().describe("The DM narrative text to send back to the players"),
-      response: z.string().optional().describe("Alias for text"),
+      description:
+        "Send the DM narrative response back to all players. Broadcasts the message and stores it in conversation history.",
+      inputSchema: {
+        requestId: z.string().describe("The requestId from the dm_request to respond to"),
+        text: z.string().optional().describe("The DM narrative text to send back to the players"),
+        response: z.string().optional().describe("Alias for text"),
+      },
     },
     async ({ requestId, text, response }) => {
       const narrative = text || response;
@@ -163,10 +171,9 @@ export function registerGameTools(
     },
   );
 
-  server.tool(
+  server.registerTool(
     "get_players",
-    "Get the current player list with character summaries. Useful for understanding who is in the party and their current state.",
-    {},
+    { description: "Get the current player list with character summaries." },
     async () => {
       return {
         content: [
@@ -189,17 +196,20 @@ export function registerGameTools(
 
   // ─── State Query Tools ───
 
-  server.tool(
+  server.registerTool(
     "get_game_state",
-    "Game state snapshot. 'compact' (default): HP/conditions/turn order. 'tactical': +positions/distances/terrain. 'full': complete JSON dump.",
     {
-      detail: z
-        .enum(["compact", "tactical", "full"])
-        .optional()
-        .default("compact")
-        .describe(
-          "Level of detail (default: compact). 'compact' (~200 tokens), 'tactical' (~500 tokens with combat focus), 'full' (everything).",
-        ),
+      description:
+        "Game state snapshot. 'compact' (default): HP/conditions/turn order. 'tactical': +positions/distances/terrain. 'full': complete JSON dump.",
+      inputSchema: {
+        detail: z
+          .enum(["compact", "tactical", "full"])
+          .optional()
+          .default("compact")
+          .describe(
+            "Level of detail (default: compact). 'compact' (~200 tokens), 'tactical' (~500 tokens with combat focus), 'full' (everything).",
+          ),
+      },
     },
     async ({ detail }) => {
       if (detail === "full") {
@@ -218,11 +228,14 @@ export function registerGameTools(
     },
   );
 
-  server.tool(
+  server.registerTool(
     "get_character",
-    "Get a specific player's full character data including stats, HP, spell slots, conditions, inventory.",
     {
-      character_name: z.string().describe("The character name to look up"),
+      description:
+        "Get a specific player's full character data including stats, HP, spell slots, conditions, inventory.",
+      inputSchema: {
+        character_name: z.string().describe("The character name to look up"),
+      },
     },
     async ({ character_name }) => {
       const result = wsClient.gameStateManager.getCharacter(character_name);
@@ -253,65 +266,77 @@ export function registerGameTools(
 
   // ─── HP & Conditions ───
 
-  server.tool(
+  server.registerTool(
     "apply_damage",
-    "Deal damage to a character or combatant. Handles temp HP absorption automatically. Use for monster attacks, traps, environmental damage.",
     {
-      target: z.string().describe("Name of the character or combatant to damage"),
-      amount: z.coerce.number().describe("Amount of damage to deal"),
-      damage_type: z
-        .string()
-        .optional()
-        .describe("Type of damage (e.g., 'fire', 'slashing', 'psychic')"),
+      description:
+        "Deal damage to a character or combatant. Handles temp HP absorption automatically.",
+      inputSchema: {
+        target: z.string().describe("Name of the character or combatant to damage"),
+        amount: z.coerce.number().describe("Amount of damage to deal"),
+        damage_type: z
+          .string()
+          .optional()
+          .describe("Type of damage (e.g., 'fire', 'slashing', 'psychic')"),
+      },
     },
     async ({ target, amount, damage_type }) => {
       return fromToolResponse(wsClient.gameStateManager.applyDamage(target, amount, damage_type));
     },
   );
 
-  server.tool(
+  server.registerTool(
     "heal",
-    "Restore HP to a character or combatant. Cannot exceed max HP.",
     {
-      target: z.string().describe("Name of the character or combatant to heal"),
-      amount: z.coerce.number().describe("Amount of HP to restore"),
+      description: "Restore HP to a character or combatant. Cannot exceed max HP.",
+      inputSchema: {
+        target: z.string().describe("Name of the character or combatant to heal"),
+        amount: z.coerce.number().describe("Amount of HP to restore"),
+      },
     },
     async ({ target, amount }) => {
       return fromToolResponse(wsClient.gameStateManager.heal(target, amount));
     },
   );
 
-  server.tool(
+  server.registerTool(
     "set_hp",
-    "Set a character or combatant's HP to an exact value. Useful for special effects or corrections.",
     {
-      target: z.string().describe("Name of the character or combatant"),
-      value: z.coerce.number().describe("HP value to set"),
+      description: "Set a character or combatant's HP to an exact value.",
+      inputSchema: {
+        target: z.string().describe("Name of the character or combatant"),
+        value: z.coerce.number().describe("HP value to set"),
+      },
     },
     async ({ target, value }) => {
       return fromToolResponse(wsClient.gameStateManager.setHP(target, value));
     },
   );
 
-  server.tool(
+  server.registerTool(
     "add_condition",
-    "Add a condition to a character or combatant (e.g., poisoned, stunned, prone, frightened).",
     {
-      target: z.string().describe("Name of the character or combatant"),
-      condition: z.string().describe("Condition name (e.g., 'poisoned', 'stunned', 'prone')"),
-      duration: z.coerce.number().optional().describe("Duration in rounds (optional)"),
+      description:
+        "Add a condition to a character or combatant (e.g., poisoned, stunned, prone, frightened).",
+      inputSchema: {
+        target: z.string().describe("Name of the character or combatant"),
+        condition: z.string().describe("Condition name (e.g., 'poisoned', 'stunned', 'prone')"),
+        duration: z.coerce.number().optional().describe("Duration in rounds (optional)"),
+      },
     },
     async ({ target, condition, duration }) => {
       return fromToolResponse(wsClient.gameStateManager.addCondition(target, condition, duration));
     },
   );
 
-  server.tool(
+  server.registerTool(
     "remove_condition",
-    "Remove a condition from a character or combatant.",
     {
-      target: z.string().describe("Name of the character or combatant"),
-      condition: z.string().describe("Condition name to remove"),
+      description: "Remove a condition from a character or combatant.",
+      inputSchema: {
+        target: z.string().describe("Name of the character or combatant"),
+        condition: z.string().describe("Condition name to remove"),
+      },
     },
     async ({ target, condition }) => {
       return fromToolResponse(wsClient.gameStateManager.removeCondition(target, condition));
@@ -320,39 +345,45 @@ export function registerGameTools(
 
   // ─── Combat Management ───
 
-  server.tool(
+  server.registerTool(
     "start_combat",
-    "Initialize combat with a list of combatants. Initiative is rolled automatically by the system for all combatants. Creates turn order and broadcasts combat state to all players. IMPORTANT: Before starting combat, use update_battle_map to set up the battlefield so players can see token positions. When a player initiates combat (ambush/surprise), resolve their opening action BEFORE calling this tool, then start standard initiative.",
     {
-      combatants: z
-        .array(
-          z.object({
-            name: z.string().describe("Combatant name"),
-            type: z.enum(["player", "npc", "enemy"]).describe("Combatant type"),
-            initiativeModifier: z
-              .number()
-              .optional()
-              .describe(
-                "Initiative modifier (Dex mod). Required for NPCs/enemies — look up the monster first. For players, auto-read from character sheet if omitted.",
-              ),
-            speed: z.coerce.number().optional().describe("Movement speed in feet (default 30)"),
-            maxHP: z.coerce.number().optional().describe("Maximum HP (required for NPCs/enemies)"),
-            currentHP: z.coerce.number().optional().describe("Current HP (defaults to maxHP)"),
-            armorClass: z.coerce.number().optional().describe("Armor Class"),
-            position: z
-              .union([z.object({ x: z.coerce.number(), y: z.coerce.number() }), z.string()])
-              .optional()
-              .describe(
-                "Starting grid position in A1 notation (e.g. 'E5'). Also accepts {x, y} object but A1 is preferred.",
-              ),
-            size: z
-              .enum(["tiny", "small", "medium", "large", "huge", "gargantuan"])
-              .optional()
-              .describe("Creature size (default medium)"),
-            tokenColor: z.string().optional().describe("Token color for battle map"),
-          }),
-        )
-        .describe("List of combatants to add to combat"),
+      description:
+        "Initialize combat with a list of combatants. Initiative is rolled automatically. Creates turn order and broadcasts combat state.",
+      inputSchema: {
+        combatants: z
+          .array(
+            z.object({
+              name: z.string().describe("Combatant name"),
+              type: z.enum(["player", "npc", "enemy"]).describe("Combatant type"),
+              initiativeModifier: z
+                .number()
+                .optional()
+                .describe(
+                  "Initiative modifier (Dex mod). Required for NPCs/enemies — look up the monster first. For players, auto-read from character sheet if omitted.",
+                ),
+              speed: z.coerce.number().optional().describe("Movement speed in feet (default 30)"),
+              maxHP: z.coerce
+                .number()
+                .optional()
+                .describe("Maximum HP (required for NPCs/enemies)"),
+              currentHP: z.coerce.number().optional().describe("Current HP (defaults to maxHP)"),
+              armorClass: z.coerce.number().optional().describe("Armor Class"),
+              position: z
+                .union([z.object({ x: z.coerce.number(), y: z.coerce.number() }), z.string()])
+                .optional()
+                .describe(
+                  "Starting grid position in A1 notation (e.g. 'E5'). Also accepts {x, y} object but A1 is preferred.",
+                ),
+              size: z
+                .enum(["tiny", "small", "medium", "large", "huge", "gargantuan"])
+                .optional()
+                .describe("Creature size (default medium)"),
+              tokenColor: z.string().optional().describe("Token color for battle map"),
+            }),
+          )
+          .describe("List of combatants to add to combat"),
+      },
     },
     async ({ combatants }) => {
       // Parse A1 notation positions to {x, y}
@@ -368,46 +399,53 @@ export function registerGameTools(
     },
   );
 
-  server.tool(
+  server.registerTool(
     "end_combat",
-    "End the current combat encounter. Clears combat state and returns to exploration.",
-    {},
+    {
+      description:
+        "End the current combat encounter. Clears combat state and returns to exploration.",
+    },
     async () => {
       return fromToolResponse(wsClient.gameStateManager.endCombat());
     },
   );
 
-  server.tool(
+  server.registerTool(
     "advance_turn",
-    "Move to the next combatant's turn in initiative order. Increments round counter on wrap-around.",
-    {},
+    {
+      description:
+        "Move to the next combatant's turn in initiative order. Increments round counter on wrap-around.",
+    },
     async () => {
       return fromToolResponse(wsClient.gameStateManager.advanceTurnMCP());
     },
   );
 
-  server.tool(
+  server.registerTool(
     "add_combatant",
-    "Add a new combatant to active combat mid-fight (reinforcements, summoned creatures, etc.). Initiative is rolled automatically.",
     {
-      name: z.string().describe("Combatant name"),
-      type: z.enum(["player", "npc", "enemy"]).describe("Combatant type"),
-      initiativeModifier: z
-        .number()
-        .optional()
-        .describe(
-          "Initiative modifier (Dex mod). Required for NPCs/enemies — look up the monster first. For players, auto-read from character sheet if omitted.",
-        ),
-      speed: z.coerce.number().optional().describe("Movement speed in feet"),
-      maxHP: z.coerce.number().optional().describe("Maximum HP"),
-      currentHP: z.coerce.number().optional().describe("Current HP"),
-      armorClass: z.coerce.number().optional().describe("Armor Class"),
-      position: z
-        .union([z.object({ x: z.coerce.number(), y: z.coerce.number() }), z.string()])
-        .optional()
-        .describe("Grid position as {x, y} or A1 notation (e.g., 'C4')"),
-      size: z.enum(["tiny", "small", "medium", "large", "huge", "gargantuan"]).optional(),
-      tokenColor: z.string().optional(),
+      description:
+        "Add a new combatant to active combat mid-fight (reinforcements, summoned creatures, etc.). Initiative is rolled automatically.",
+      inputSchema: {
+        name: z.string().describe("Combatant name"),
+        type: z.enum(["player", "npc", "enemy"]).describe("Combatant type"),
+        initiativeModifier: z
+          .number()
+          .optional()
+          .describe(
+            "Initiative modifier (Dex mod). Required for NPCs/enemies — look up the monster first. For players, auto-read from character sheet if omitted.",
+          ),
+        speed: z.coerce.number().optional().describe("Movement speed in feet"),
+        maxHP: z.coerce.number().optional().describe("Maximum HP"),
+        currentHP: z.coerce.number().optional().describe("Current HP"),
+        armorClass: z.coerce.number().optional().describe("Armor Class"),
+        position: z
+          .union([z.object({ x: z.coerce.number(), y: z.coerce.number() }), z.string()])
+          .optional()
+          .describe("Grid position as {x, y} or A1 notation (e.g., 'C4')"),
+        size: z.enum(["tiny", "small", "medium", "large", "huge", "gargantuan"]).optional(),
+        tokenColor: z.string().optional(),
+      },
     },
     async (params) => {
       // Parse A1 notation position to {x, y}
@@ -423,36 +461,41 @@ export function registerGameTools(
     },
   );
 
-  server.tool(
+  server.registerTool(
     "remove_combatant",
-    "Remove a combatant from combat (dead, fled, dismissed, etc.).",
     {
-      name: z.string().describe("Name of the combatant to remove"),
+      description: "Remove a combatant from combat (dead, fled, dismissed, etc.).",
+      inputSchema: {
+        name: z.string().describe("Name of the combatant to remove"),
+      },
     },
     async ({ name }) => {
       return fromToolResponse(wsClient.gameStateManager.removeCombatant(name));
     },
   );
 
-  server.tool(
+  server.registerTool(
     "move_combatant",
-    "Move a combatant's token on the battle map to a new position. Accepts A1 notation (e.g., 'E5') or x/y coordinates.",
     {
-      name: z.string().describe("Name of the combatant to move"),
-      position: z
-        .string()
-        .optional()
-        .describe(
-          "Grid position in A1 notation (e.g. 'E5'). Use this OR x/y, not both. Preferred over x/y.",
-        ),
-      x: z
-        .number()
-        .optional()
-        .describe("Target X grid position (use 'position' param instead for A1 notation)"),
-      y: z
-        .number()
-        .optional()
-        .describe("Target Y grid position (use 'position' param instead for A1 notation)"),
+      description:
+        "Move a combatant's token on the battle map to a new position. Accepts A1 notation (e.g., 'E5') or x/y coordinates.",
+      inputSchema: {
+        name: z.string().describe("Name of the combatant to move"),
+        position: z
+          .string()
+          .optional()
+          .describe(
+            "Grid position in A1 notation (e.g. 'E5'). Use this OR x/y, not both. Preferred over x/y.",
+          ),
+        x: z
+          .number()
+          .optional()
+          .describe("Target X grid position (use 'position' param instead for A1 notation)"),
+        y: z
+          .number()
+          .optional()
+          .describe("Target Y grid position (use 'position' param instead for A1 notation)"),
+      },
     },
     async ({ name, position, x, y }) => {
       let target: { x: number; y: number };
@@ -488,12 +531,14 @@ export function registerGameTools(
 
   // ─── Spell Slots ───
 
-  server.tool(
+  server.registerTool(
     "use_spell_slot",
-    "Expend a spell slot at a given level for a character.",
     {
-      character_name: z.string().describe("Character name"),
-      level: z.coerce.number().describe("Spell slot level (1-9)"),
+      description: "Expend a spell slot at a given level for a character.",
+      inputSchema: {
+        character_name: z.string().describe("Character name"),
+        level: z.coerce.number().describe("Spell slot level (1-9)"),
+      },
     },
     async ({ character_name, level }) => {
       const result = wsClient.gameStateManager.useSpellSlot(character_name, level);
@@ -501,12 +546,15 @@ export function registerGameTools(
     },
   );
 
-  server.tool(
+  server.registerTool(
     "restore_spell_slot",
-    "Restore a spell slot at a given level (e.g., after short rest, Arcane Recovery).",
     {
-      character_name: z.string().describe("Character name"),
-      level: z.coerce.number().describe("Spell slot level (1-9)"),
+      description:
+        "Restore a spell slot at a given level (e.g., after short rest, Arcane Recovery).",
+      inputSchema: {
+        character_name: z.string().describe("Character name"),
+        level: z.coerce.number().describe("Spell slot level (1-9)"),
+      },
     },
     async ({ character_name, level }) => {
       const result = wsClient.gameStateManager.restoreSpellSlot(character_name, level);
@@ -516,14 +564,17 @@ export function registerGameTools(
 
   // ─── Class Resources ───
 
-  server.tool(
+  server.registerTool(
     "use_class_resource",
-    "Expend a use of a class resource (e.g., Bardic Inspiration, Channel Divinity, Rage, Ki Points, Wild Shape, Lay on Hands).",
     {
-      character_name: z.string().describe("Character name"),
-      resource_name: z
-        .string()
-        .describe("Resource name (e.g., 'Channel Divinity', 'Rage', 'Bardic Inspiration')"),
+      description:
+        "Expend a use of a class resource (e.g., Bardic Inspiration, Channel Divinity, Rage, Ki Points, Wild Shape, Lay on Hands).",
+      inputSchema: {
+        character_name: z.string().describe("Character name"),
+        resource_name: z
+          .string()
+          .describe("Resource name (e.g., 'Channel Divinity', 'Rage', 'Bardic Inspiration')"),
+      },
     },
     async ({ character_name, resource_name }) => {
       const result = wsClient.gameStateManager.useClassResource(character_name, resource_name);
@@ -531,16 +582,19 @@ export function registerGameTools(
     },
   );
 
-  server.tool(
+  server.registerTool(
     "restore_class_resource",
-    "Restore uses of a class resource (e.g., after a rest). Use amount=999 to fully restore.",
     {
-      character_name: z.string().describe("Character name"),
-      resource_name: z.string().describe("Resource name (e.g., 'Channel Divinity', 'Rage')"),
-      amount: z
-        .number()
-        .optional()
-        .describe("Number of uses to restore (default 1, use 999 to fully restore)"),
+      description:
+        "Restore uses of a class resource (e.g., after a rest). Use amount=999 to fully restore.",
+      inputSchema: {
+        character_name: z.string().describe("Character name"),
+        resource_name: z.string().describe("Resource name (e.g., 'Channel Divinity', 'Rage')"),
+        amount: z
+          .number()
+          .optional()
+          .describe("Number of uses to restore (default 1, use 999 to fully restore)"),
+      },
     },
     async ({ character_name, resource_name, amount }) => {
       const result = wsClient.gameStateManager.restoreClassResource(
@@ -554,46 +608,55 @@ export function registerGameTools(
 
   // ─── Battle Map ───
 
-  server.tool(
+  server.registerTool(
     "update_battle_map",
-    "Set or update the battle map grid. Define the grid dimensions, terrain tiles, and optional name.",
     {
-      width: z.coerce.number().describe("Grid width in tiles"),
-      height: z.coerce.number().describe("Grid height in tiles"),
-      name: z.string().optional().describe("Map name (e.g., 'Goblin Cave', 'Town Square')"),
-      tiles: z
-        .array(
-          z.array(
-            z.object({
-              type: z.enum([
-                "floor",
-                "wall",
-                "difficult_terrain",
-                "water",
-                "pit",
-                "door",
-                "stairs",
-              ]),
-              object: z
-                .object({
-                  name: z.string(),
-                  category: z.enum(["furniture", "container", "hazard", "interactable", "weapon"]),
-                  destructible: z.boolean().optional(),
-                  hp: z.coerce.number().optional(),
-                  height: z.coerce.number().optional(),
-                  description: z.string().optional(),
-                })
-                .optional(),
-              elevation: z.coerce.number().optional(),
-              cover: z.enum(["half", "three-quarters", "full"]).optional(),
-              label: z.string().optional(),
-            }),
+      description:
+        "Set or update the battle map grid. Define the grid dimensions, terrain tiles, and optional name.",
+      inputSchema: {
+        width: z.coerce.number().describe("Grid width in tiles"),
+        height: z.coerce.number().describe("Grid height in tiles"),
+        name: z.string().optional().describe("Map name (e.g., 'Goblin Cave', 'Town Square')"),
+        tiles: z
+          .array(
+            z.array(
+              z.object({
+                type: z.enum([
+                  "floor",
+                  "wall",
+                  "difficult_terrain",
+                  "water",
+                  "pit",
+                  "door",
+                  "stairs",
+                ]),
+                object: z
+                  .object({
+                    name: z.string(),
+                    category: z.enum([
+                      "furniture",
+                      "container",
+                      "hazard",
+                      "interactable",
+                      "weapon",
+                    ]),
+                    destructible: z.boolean().optional(),
+                    hp: z.coerce.number().optional(),
+                    height: z.coerce.number().optional(),
+                    description: z.string().optional(),
+                  })
+                  .optional(),
+                elevation: z.coerce.number().optional(),
+                cover: z.enum(["half", "three-quarters", "full"]).optional(),
+                label: z.string().optional(),
+              }),
+            ),
+          )
+          .optional()
+          .describe(
+            "2D array of tiles [row][col] where [0][0] is top-left (A1). Each tile: { type, object?, cover?, elevation? }. Omitted tiles default to floor.",
           ),
-        )
-        .optional()
-        .describe(
-          "2D array of tiles [row][col] where [0][0] is top-left (A1). Each tile: { type, object?, cover?, elevation? }. Omitted tiles default to floor.",
-        ),
+      },
     },
     async ({ width, height, name, tiles }) => {
       const mapTiles =
@@ -613,26 +676,31 @@ export function registerGameTools(
     },
   );
 
-  server.tool(
+  server.registerTool(
     "get_combat_summary",
-    "Get a compact combat summary optimized for tactical decisions. Shows turn order, HP, conditions, positions, distances, and active AoE — much more concise than get_game_state.",
-    {},
+    {
+      description:
+        "Get a compact combat summary: turn order, HP, conditions, positions, distances, active AoE.",
+    },
     async () => {
       const result = wsClient.gameStateManager.getCombatSummary();
       return { content: [{ type: "text" as const, text: result ?? "No active combat" }] };
     },
   );
 
-  server.tool(
+  server.registerTool(
     "get_map_info",
-    "Get a compact summary of the battle map showing all non-floor tiles with objects, cover, and elevation. Optionally query a specific area (e.g., 'C3:F6').",
     {
-      area: z
-        .string()
-        .optional()
-        .describe(
-          "Optional area to query in 'A1:B2' format (e.g., 'C3:F6'). If omitted, returns all non-floor tiles.",
-        ),
+      description:
+        "Get a compact summary of the battle map showing all non-floor tiles with objects, cover, and elevation. Optionally query a specific area (e.g., 'C3:F6').",
+      inputSchema: {
+        area: z
+          .string()
+          .optional()
+          .describe(
+            "Optional area to query in 'A1:B2' format (e.g., 'C3:F6'). If omitted, returns all non-floor tiles.",
+          ),
+      },
     },
     async ({ area }) => {
       const result = wsClient.gameStateManager.getMapInfo(area);
@@ -640,26 +708,29 @@ export function registerGameTools(
     },
   );
 
-  server.tool(
+  server.registerTool(
     "show_aoe",
-    "Display an Area of Effect overlay on the battle map. AI picks the center and color narratively. Returns a list of affected combatants so you can confirm with the player before applying effects. Shape-specific required params: sphere/circle: radius required. cone/line: length + direction required. cube: length required.",
     {
-      shape: z.enum(["sphere", "cone", "line", "cube"]).describe("AoE shape"),
-      center: z.string().describe("Center position in A1 notation (e.g., 'E8')"),
-      radius: z.coerce.number().optional().describe("Radius in feet (for sphere)"),
-      length: z.coerce.number().optional().describe("Length in feet (for line/cone)"),
-      width: z.coerce.number().optional().describe("Width in feet (for line/cube)"),
-      direction: z
-        .number()
-        .optional()
-        .describe("Direction in degrees (0=north, 90=east) for cone/line"),
-      color: z.string().describe("RGB hex color (e.g., '#FF6B35' for fire, '#4FC3F7' for ice)"),
-      label: z.string().describe("Spell/effect name (e.g., 'Fireball')"),
-      persistent: z
-        .boolean()
-        .optional()
-        .describe("Whether this AoE stays on the map until dismissed (default false)"),
-      caster_name: z.string().optional().describe("Name of the caster"),
+      description:
+        "Display an AoE overlay on the battle map. Returns affected combatants. Shape params: sphere needs radius, cone/line need length + direction, cube needs length.",
+      inputSchema: {
+        shape: z.enum(["sphere", "cone", "line", "cube"]).describe("AoE shape"),
+        center: z.string().describe("Center position in A1 notation (e.g., 'E8')"),
+        radius: z.coerce.number().optional().describe("Radius in feet (for sphere)"),
+        length: z.coerce.number().optional().describe("Length in feet (for line/cone)"),
+        width: z.coerce.number().optional().describe("Width in feet (for line/cube)"),
+        direction: z
+          .number()
+          .optional()
+          .describe("Direction in degrees (0=north, 90=east) for cone/line"),
+        color: z.string().describe("RGB hex color (e.g., '#FF6B35' for fire, '#4FC3F7' for ice)"),
+        label: z.string().describe("Spell/effect name (e.g., 'Fireball')"),
+        persistent: z
+          .boolean()
+          .optional()
+          .describe("Whether this AoE stays on the map until dismissed (default false)"),
+        caster_name: z.string().optional().describe("Name of the caster"),
+      },
     },
     async ({
       shape,
@@ -689,24 +760,27 @@ export function registerGameTools(
     },
   );
 
-  server.tool(
+  server.registerTool(
     "apply_area_effect",
-    "Apply damage to all combatants in an area. Each target makes a saving throw; damage is applied based on pass/fail. Use after show_aoe to confirm targeting. Shape-specific required params: sphere/circle: radius required. cone/line: length + direction required. cube: length required.",
     {
-      shape: z.enum(["sphere", "cone", "line", "cube"]).describe("AoE shape"),
-      center: z.string().describe("Center position in A1 notation"),
-      radius: z.coerce.number().optional().describe("Radius in feet"),
-      length: z.coerce.number().optional().describe("Length in feet"),
-      width: z.coerce.number().optional().describe("Width in feet"),
-      direction: z.coerce.number().optional().describe("Direction in degrees"),
-      damage: z.string().describe("Damage dice notation (e.g., '8d6')"),
-      damage_type: z.string().describe("Damage type (e.g., 'fire', 'cold')"),
-      save_ability: z.string().describe("Saving throw ability (e.g., 'dexterity')"),
-      save_dc: z.coerce.number().describe("Save DC"),
-      half_on_save: z
-        .boolean()
-        .optional()
-        .describe("Whether targets take half damage on a successful save (default true)"),
+      description:
+        "Apply damage to all combatants in an area with saving throws. Shape params: sphere needs radius, cone/line need length + direction, cube needs length.",
+      inputSchema: {
+        shape: z.enum(["sphere", "cone", "line", "cube"]).describe("AoE shape"),
+        center: z.string().describe("Center position in A1 notation"),
+        radius: z.coerce.number().optional().describe("Radius in feet"),
+        length: z.coerce.number().optional().describe("Length in feet"),
+        width: z.coerce.number().optional().describe("Width in feet"),
+        direction: z.coerce.number().optional().describe("Direction in degrees"),
+        damage: z.string().describe("Damage dice notation (e.g., '8d6')"),
+        damage_type: z.string().describe("Damage type (e.g., 'fire', 'cold')"),
+        save_ability: z.string().describe("Saving throw ability (e.g., 'dexterity')"),
+        save_dc: z.coerce.number().describe("Save DC"),
+        half_on_save: z
+          .boolean()
+          .optional()
+          .describe("Whether targets take half damage on a successful save (default true)"),
+      },
     },
     async ({
       shape,
@@ -738,11 +812,14 @@ export function registerGameTools(
     },
   );
 
-  server.tool(
+  server.registerTool(
     "dismiss_aoe",
-    "Remove a persistent AoE overlay from the battle map (e.g., when Wall of Fire or Fog Cloud ends).",
     {
-      aoe_id: z.string().describe("The ID of the AoE overlay to dismiss"),
+      description:
+        "Remove a persistent AoE overlay from the battle map (e.g., when Wall of Fire or Fog Cloud ends).",
+      inputSchema: {
+        aoe_id: z.string().describe("The ID of the AoE overlay to dismiss"),
+      },
     },
     async ({ aoe_id }) => {
       const result = wsClient.gameStateManager.dismissAoE(aoe_id);
@@ -752,49 +829,52 @@ export function registerGameTools(
 
   // ─── Batch Effects ───
 
-  server.tool(
+  server.registerTool(
     "apply_batch_effects",
-    "Apply multiple effects in a single call — damage, heal, conditions, movement. Use for AoE aftermath, multi-target spells, or end-of-round effects. Effects are applied sequentially in array order. Max 10 effects per call.",
     {
-      effects: z
-        .array(
-          z.discriminatedUnion("type", [
-            z.object({
-              type: z.literal("damage"),
-              target: z.string().describe("Target name"),
-              amount: z.coerce.number().describe("Damage amount"),
-              damage_type: z.string().optional().describe("Damage type"),
-            }),
-            z.object({
-              type: z.literal("heal"),
-              target: z.string().describe("Target name"),
-              amount: z.coerce.number().describe("Heal amount"),
-            }),
-            z.object({
-              type: z.literal("set_hp"),
-              target: z.string().describe("Target name"),
-              value: z.coerce.number().describe("HP value"),
-            }),
-            z.object({
-              type: z.literal("condition_add"),
-              target: z.string().describe("Target name"),
-              condition: z.string().describe("Condition name"),
-              duration: z.coerce.number().optional().describe("Duration in rounds"),
-            }),
-            z.object({
-              type: z.literal("condition_remove"),
-              target: z.string().describe("Target name"),
-              condition: z.string().describe("Condition name"),
-            }),
-            z.object({
-              type: z.literal("move"),
-              target: z.string().describe("Target name"),
-              position: z.string().describe("Target position in A1 notation"),
-            }),
-          ]),
-        )
-        .max(10)
-        .describe("Array of effects to apply (max 10)"),
+      description:
+        "Apply multiple effects in a single call — damage, heal, conditions, movement. Max 10 effects.",
+      inputSchema: {
+        effects: z
+          .array(
+            z.discriminatedUnion("type", [
+              z.object({
+                type: z.literal("damage"),
+                target: z.string().describe("Target name"),
+                amount: z.coerce.number().describe("Damage amount"),
+                damage_type: z.string().optional().describe("Damage type"),
+              }),
+              z.object({
+                type: z.literal("heal"),
+                target: z.string().describe("Target name"),
+                amount: z.coerce.number().describe("Heal amount"),
+              }),
+              z.object({
+                type: z.literal("set_hp"),
+                target: z.string().describe("Target name"),
+                value: z.coerce.number().describe("HP value"),
+              }),
+              z.object({
+                type: z.literal("condition_add"),
+                target: z.string().describe("Target name"),
+                condition: z.string().describe("Condition name"),
+                duration: z.coerce.number().optional().describe("Duration in rounds"),
+              }),
+              z.object({
+                type: z.literal("condition_remove"),
+                target: z.string().describe("Target name"),
+                condition: z.string().describe("Condition name"),
+              }),
+              z.object({
+                type: z.literal("move"),
+                target: z.string().describe("Target name"),
+                position: z.string().describe("Target position in A1 notation"),
+              }),
+            ]),
+          )
+          .max(10)
+          .describe("Array of effects to apply (max 10)"),
+      },
     },
     async ({ effects }) => {
       return fromToolResponse(wsClient.gameStateManager.applyBatchEffects(effects));
@@ -803,27 +883,33 @@ export function registerGameTools(
 
   // ─── Inventory & Currency ───
 
-  server.tool(
+  server.registerTool(
     "add_item",
-    "Add an item to a character's inventory. Stacks by name if the item already exists.",
     {
-      character_name: z.string().describe("Character name"),
-      name: z.string().describe("Item name"),
-      quantity: z.coerce.number().optional().describe("Quantity (default 1)"),
-      type: z.string().optional().describe("Item type (e.g., 'Weapon', 'Armor', 'Gear', 'Potion')"),
-      description: z.string().optional().describe("Item description"),
-      rarity: z
-        .string()
-        .optional()
-        .describe("Rarity (Common, Uncommon, Rare, Very Rare, Legendary)"),
-      is_magic_item: z.boolean().optional().describe("Whether this is a magic item"),
-      damage: z.string().optional().describe("Damage dice (e.g., '1d8', '2d6')"),
-      damage_type: z.string().optional().describe("Damage type (e.g., 'slashing', 'fire')"),
-      properties: z
-        .array(z.string())
-        .optional()
-        .describe("Item properties (e.g., ['Versatile', 'Light'])"),
-      weight: z.coerce.number().optional().describe("Item weight in pounds"),
+      description:
+        "Add an item to a character's inventory. Stacks by name if the item already exists.",
+      inputSchema: {
+        character_name: z.string().describe("Character name"),
+        name: z.string().describe("Item name"),
+        quantity: z.coerce.number().optional().describe("Quantity (default 1)"),
+        type: z
+          .string()
+          .optional()
+          .describe("Item type (e.g., 'Weapon', 'Armor', 'Gear', 'Potion')"),
+        description: z.string().optional().describe("Item description"),
+        rarity: z
+          .string()
+          .optional()
+          .describe("Rarity (Common, Uncommon, Rare, Very Rare, Legendary)"),
+        is_magic_item: z.boolean().optional().describe("Whether this is a magic item"),
+        damage: z.string().optional().describe("Damage dice (e.g., '1d8', '2d6')"),
+        damage_type: z.string().optional().describe("Damage type (e.g., 'slashing', 'fire')"),
+        properties: z
+          .array(z.string())
+          .optional()
+          .describe("Item properties (e.g., ['Versatile', 'Light'])"),
+        weight: z.coerce.number().optional().describe("Item weight in pounds"),
+      },
     },
     async ({
       character_name,
@@ -854,13 +940,16 @@ export function registerGameTools(
     },
   );
 
-  server.tool(
+  server.registerTool(
     "remove_item",
-    "Remove an item from a character's inventory. Decrements quantity or removes entirely.",
     {
-      character_name: z.string().describe("Character name"),
-      item_name: z.string().describe("Item name to remove"),
-      quantity: z.coerce.number().optional().describe("Quantity to remove (default: all)"),
+      description:
+        "Remove an item from a character's inventory. Decrements quantity or removes entirely.",
+      inputSchema: {
+        character_name: z.string().describe("Character name"),
+        item_name: z.string().describe("Item name to remove"),
+        quantity: z.coerce.number().optional().describe("Quantity to remove (default: all)"),
+      },
     },
     async ({ character_name, item_name, quantity }) => {
       const result = wsClient.gameStateManager.removeItem(character_name, item_name, quantity);
@@ -868,25 +957,31 @@ export function registerGameTools(
     },
   );
 
-  server.tool(
+  server.registerTool(
     "update_item",
-    "Modify an existing item in a character's inventory — equip/unequip, toggle attunement, change quantity, update description, or set combat stats. Specify only the fields you want to change. All fields are independent.",
     {
-      character_name: z.string().describe("Character name"),
-      item_name: z.string().describe("Item name to update (lookup key)"),
-      equipped: z.boolean().optional().describe("Equip or unequip the item"),
-      quantity: z.coerce.number().optional().describe("Set exact quantity"),
-      is_attuned: z.boolean().optional().describe("Toggle attunement"),
-      description: z.string().optional().describe("Update description"),
-      damage: z.string().optional().describe("Update damage dice (e.g., '1d8', '2d6+1')"),
-      damage_type: z.string().optional().describe("Update damage type (e.g., 'slashing', 'fire')"),
-      properties: z
-        .array(z.string())
-        .optional()
-        .describe("Update item properties (e.g., ['Versatile', 'Light'])"),
-      armor_class: z.coerce.number().optional().describe("Update AC value"),
-      attack_bonus: z.coerce.number().optional().describe("Update attack bonus"),
-      range: z.string().optional().describe("Update range (e.g., '5 ft.', '20/60 ft.')"),
+      description:
+        "Modify an existing item in a character's inventory. Specify only the fields you want to change.",
+      inputSchema: {
+        character_name: z.string().describe("Character name"),
+        item_name: z.string().describe("Item name to update (lookup key)"),
+        equipped: z.boolean().optional().describe("Equip or unequip the item"),
+        quantity: z.coerce.number().optional().describe("Set exact quantity"),
+        is_attuned: z.boolean().optional().describe("Toggle attunement"),
+        description: z.string().optional().describe("Update description"),
+        damage: z.string().optional().describe("Update damage dice (e.g., '1d8', '2d6+1')"),
+        damage_type: z
+          .string()
+          .optional()
+          .describe("Update damage type (e.g., 'slashing', 'fire')"),
+        properties: z
+          .array(z.string())
+          .optional()
+          .describe("Update item properties (e.g., ['Versatile', 'Light'])"),
+        armor_class: z.coerce.number().optional().describe("Update AC value"),
+        attack_bonus: z.coerce.number().optional().describe("Update attack bonus"),
+        range: z.string().optional().describe("Update range (e.g., '5 ft.', '20/60 ft.')"),
+      },
     },
     async ({
       character_name,
@@ -918,26 +1013,26 @@ export function registerGameTools(
     },
   );
 
-  server.tool(
+  server.registerTool(
     "update_currency",
-    "Add or subtract currency for a character. Positive values add, negative values subtract. " +
-      "Each denomination is tracked independently. When auto_convert is true (default), spending more " +
-      "than available in one denomination will auto-borrow from higher ones using D&D exchange rates " +
-      "(1pp=10gp, 1gp=10sp, 1sp=10cp, 1ep=5sp). Without auto_convert, shortfalls are silently floored at 0.",
     {
-      character_name: z.string().describe("Character name"),
-      cp: z.coerce.number().optional().describe("Copper pieces to add/subtract"),
-      sp: z.coerce.number().optional().describe("Silver pieces to add/subtract"),
-      ep: z.coerce.number().optional().describe("Electrum pieces to add/subtract"),
-      gp: z.coerce.number().optional().describe("Gold pieces to add/subtract"),
-      pp: z.coerce.number().optional().describe("Platinum pieces to add/subtract"),
-      auto_convert: z
-        .boolean()
-        .optional()
-        .default(true)
-        .describe(
-          "Auto-convert from higher denominations when spending more than available (default: true)",
-        ),
+      description:
+        "Add or subtract currency for a character. Positive adds, negative subtracts. Auto-converts from higher denominations when spending more than available.",
+      inputSchema: {
+        character_name: z.string().describe("Character name"),
+        cp: z.coerce.number().optional().describe("Copper pieces to add/subtract"),
+        sp: z.coerce.number().optional().describe("Silver pieces to add/subtract"),
+        ep: z.coerce.number().optional().describe("Electrum pieces to add/subtract"),
+        gp: z.coerce.number().optional().describe("Gold pieces to add/subtract"),
+        pp: z.coerce.number().optional().describe("Platinum pieces to add/subtract"),
+        auto_convert: z
+          .boolean()
+          .optional()
+          .default(true)
+          .describe(
+            "Auto-convert from higher denominations when spending more than available (default: true)",
+          ),
+      },
     },
     async ({ character_name, cp, sp, ep, gp, pp, auto_convert }) => {
       const changes: Partial<Record<"cp" | "sp" | "ep" | "gp" | "pp", number>> = {};
@@ -957,11 +1052,14 @@ export function registerGameTools(
 
   // ─── Heroic Inspiration ───
 
-  server.tool(
+  server.registerTool(
     "grant_inspiration",
-    "Grant Heroic Inspiration to a character. The player can spend it for advantage on any d20 roll.",
     {
-      character_name: z.string().describe("Character name"),
+      description:
+        "Grant Heroic Inspiration to a character. The player can spend it for advantage on any d20 roll.",
+      inputSchema: {
+        character_name: z.string().describe("Character name"),
+      },
     },
     async ({ character_name }) => {
       const result = wsClient.gameStateManager.grantInspiration(character_name);
@@ -969,11 +1067,13 @@ export function registerGameTools(
     },
   );
 
-  server.tool(
+  server.registerTool(
     "use_inspiration",
-    "Spend a character's Heroic Inspiration to gain advantage on a d20 roll.",
     {
-      character_name: z.string().describe("Character name"),
+      description: "Spend a character's Heroic Inspiration to gain advantage on a d20 roll.",
+      inputSchema: {
+        character_name: z.string().describe("Character name"),
+      },
     },
     async ({ character_name }) => {
       const result = wsClient.gameStateManager.useInspiration(character_name);
@@ -983,19 +1083,22 @@ export function registerGameTools(
 
   // ─── Context Management ───
 
-  server.tool(
+  server.registerTool(
     "compact_history",
-    "Compact conversation history to free context space. Replaces older messages with your summary, keeping recent messages. Call during natural breaks when totalMessageCount is high.",
     {
-      keep_recent: z
-        .number()
-        .default(30)
-        .describe("Number of recent messages to keep (default 30)"),
-      summary: z
-        .string()
-        .describe(
-          "Prose summary of older events to preserve (2-4 sentences, e.g. 'The party fought goblins, looted a cave, and rested at the inn.')",
-        ),
+      description:
+        "Compact conversation history by replacing older messages with a summary, keeping recent ones.",
+      inputSchema: {
+        keep_recent: z
+          .number()
+          .default(30)
+          .describe("Number of recent messages to keep (default 30)"),
+        summary: z
+          .string()
+          .describe(
+            "Prose summary of older events to preserve (2-4 sentences, e.g. 'The party fought goblins, looted a cave, and rested at the inn.')",
+          ),
+      },
     },
     async ({ keep_recent, summary }) => {
       const result = wsClient.gameStateManager.compactHistory(keep_recent, summary);
@@ -1005,11 +1108,14 @@ export function registerGameTools(
 
   // ─── Rest Tools ───
 
-  server.tool(
+  server.registerTool(
     "short_rest",
-    "Process a short rest for specified characters. Restores short-rest class resources and Warlock pact magic slots. Does NOT auto-heal — Hit Dice healing requires interactive player choice.",
     {
-      character_names: z.array(z.string()).describe("Names of characters taking the short rest"),
+      description:
+        "Process a short rest for specified characters. Restores short-rest class resources and Warlock pact magic slots. Does NOT auto-heal — Hit Dice healing requires interactive player choice.",
+      inputSchema: {
+        character_names: z.array(z.string()).describe("Names of characters taking the short rest"),
+      },
     },
     async ({ character_names }) => {
       const result = wsClient.gameStateManager.shortRest(character_names);
@@ -1017,11 +1123,14 @@ export function registerGameTools(
     },
   );
 
-  server.tool(
+  server.registerTool(
     "long_rest",
-    "Process a long rest for specified characters. Restores full HP, all spell slots, all class resources, resets death saves, clears non-permanent conditions.",
     {
-      character_names: z.array(z.string()).describe("Names of characters taking the long rest"),
+      description:
+        "Process a long rest for specified characters. Restores full HP, all spell slots, all class resources, resets death saves, clears non-permanent conditions.",
+      inputSchema: {
+        character_names: z.array(z.string()).describe("Names of characters taking the long rest"),
+      },
     },
     async ({ character_names }) => {
       const result = wsClient.gameStateManager.longRest(character_names);
@@ -1031,12 +1140,15 @@ export function registerGameTools(
 
   // ─── Death Saves ───
 
-  server.tool(
+  server.registerTool(
     "death_save",
-    "Record a death saving throw for a character at 0 HP. Tracks successes/failures, auto-stabilizes at 3 successes, marks dead at 3 failures.",
     {
-      character_name: z.string().describe("Character name"),
-      success: z.boolean().describe("Whether the death save succeeded"),
+      description:
+        "Record a death saving throw for a character at 0 HP. Tracks successes/failures, auto-stabilizes at 3 successes, marks dead at 3 failures.",
+      inputSchema: {
+        character_name: z.string().describe("Character name"),
+        success: z.boolean().describe("Whether the death save succeeded"),
+      },
     },
     async ({ character_name, success }) => {
       const result = wsClient.gameStateManager.recordDeathSave(character_name, success);
@@ -1046,12 +1158,15 @@ export function registerGameTools(
 
   // ─── Concentration ───
 
-  server.tool(
+  server.registerTool(
     "set_concentration",
-    "Set a character or combatant as concentrating on a spell. Auto-breaks any previous concentration.",
     {
-      target: z.string().describe("Name of the character or combatant"),
-      spell_name: z.string().describe("Name of the concentration spell"),
+      description:
+        "Set a character or combatant as concentrating on a spell. Auto-breaks any previous concentration.",
+      inputSchema: {
+        target: z.string().describe("Name of the character or combatant"),
+        spell_name: z.string().describe("Name of the concentration spell"),
+      },
     },
     async ({ target, spell_name }) => {
       const result = wsClient.gameStateManager.setConcentration(target, spell_name);
@@ -1059,11 +1174,14 @@ export function registerGameTools(
     },
   );
 
-  server.tool(
+  server.registerTool(
     "break_concentration",
-    "Break a character or combatant's concentration, ending their concentration spell.",
     {
-      target: z.string().describe("Name of the character or combatant"),
+      description:
+        "Break a character or combatant's concentration, ending their concentration spell.",
+      inputSchema: {
+        target: z.string().describe("Name of the character or combatant"),
+      },
     },
     async ({ target }) => {
       const result = wsClient.gameStateManager.breakConcentration(target);
@@ -1073,12 +1191,15 @@ export function registerGameTools(
 
   // ─── Temp HP ───
 
-  server.tool(
+  server.registerTool(
     "set_temp_hp",
-    "Set temporary HP for a character or combatant. Non-stacking: takes the higher of current temp HP and new amount.",
     {
-      target: z.string().describe("Name of the character or combatant"),
-      amount: z.coerce.number().describe("Amount of temporary HP"),
+      description:
+        "Set temporary HP for a character or combatant. Non-stacking: takes the higher of current temp HP and new amount.",
+      inputSchema: {
+        target: z.string().describe("Name of the character or combatant"),
+        amount: z.coerce.number().describe("Amount of temporary HP"),
+      },
     },
     async ({ target, amount }) => {
       return fromToolResponse(wsClient.gameStateManager.setTempHP(target, amount));
@@ -1087,14 +1208,17 @@ export function registerGameTools(
 
   // ─── Encounter Difficulty ───
 
-  server.tool(
+  server.registerTool(
     "calculate_encounter_difficulty",
-    "Calculate encounter difficulty given party levels and monster CRs. Uses 2024 encounter building rules.",
     {
-      party_levels: z.array(z.coerce.number()).describe("Array of party member levels"),
-      monster_crs: z
-        .array(z.string())
-        .describe("Array of monster CRs as strings (e.g., '1/4', '2', '5')"),
+      description:
+        "Calculate encounter difficulty given party levels and monster CRs. Uses 2024 encounter building rules.",
+      inputSchema: {
+        party_levels: z.array(z.coerce.number()).describe("Array of party member levels"),
+        monster_crs: z
+          .array(z.string())
+          .describe("Array of monster CRs as strings (e.g., '1/4', '2', '5')"),
+      },
     },
     async ({ party_levels, monster_crs }) => {
       const { calculateEncounterDifficulty } = await import("@unseen-servant/shared/utils");

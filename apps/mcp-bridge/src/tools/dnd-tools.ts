@@ -4,52 +4,42 @@ import type { WSClient } from "../ws-client.js";
 import { rollDamage } from "@unseen-servant/shared/utils";
 
 export function registerDndTools(server: McpServer, wsClient: WSClient): void {
-  server.tool(
+  server.registerTool(
     "roll_dice",
-    `Roll dice. Two modes: (1) DM/direct roll — provide notation only (e.g. '2d6+3'). Do NOT provide targetCharacter for monster attacks or DM-only rolls. (2) Interactive player check — provide targetCharacter + checkType + ability. The player rolls on their client. checkType values: 'ability_check', 'saving_throw', 'attack', 'damage'. notation is REQUIRED when checkType is 'damage'.
-
-ALL rolls are shown to players in chat.
-
-**Mode 1 — Direct DM roll** (monster attacks, damage, hidden rolls):
-Just provide \`notation\` and optional \`reason\`. Roll happens immediately, result appears in chat.
-
-**Mode 2 — Player check** (interactive):
-Include \`targetCharacter\` + \`checkType\`. The player sees a "Roll d20" button, clicks it, modifiers are computed from their character sheet, and the result appears in chat.
-
-**Mode 2b — Player damage roll** (interactive):
-Include \`targetCharacter\` + \`checkType: "damage"\` + full \`notation\`. The player sees a "Roll Damage" button and rolls the provided dice notation.
-
-If \`targetCharacter\` is provided → Mode 2/2b. Otherwise → Mode 1.`,
     {
-      notation: z.string().describe("Dice notation, e.g. '2d6+3', 'd20', '4d8', '1d20+5'"),
-      reason: z
-        .string()
-        .optional()
-        .describe("Why the roll is happening, e.g. 'Goblin attack damage', 'Spot the trap'"),
-      targetCharacter: z
-        .string()
-        .optional()
-        .describe("Character name for interactive player check (triggers Mode 2)"),
-      checkType: z
-        .enum(["ability", "skill", "saving_throw", "attack", "custom", "damage"])
-        .optional()
-        .describe(
-          "Type of check: 'ability_check', 'saving_throw', 'attack', or 'damage'. Required when targetCharacter is provided. 'damage' also requires notation.",
-        ),
-      ability: z
-        .string()
-        .optional()
-        .describe("Ability score for the check, e.g. 'wisdom', 'strength'"),
-      skill: z
-        .string()
-        .optional()
-        .describe("Skill name for skill checks, e.g. 'perception', 'stealth'"),
-      dc: z.coerce.number().optional().describe("Difficulty Class for the check"),
-      advantage: z.boolean().optional().describe("Roll with advantage (roll 2d20, take higher)"),
-      disadvantage: z
-        .boolean()
-        .optional()
-        .describe("Roll with disadvantage (roll 2d20, take lower)"),
+      description:
+        "Roll dice. Two modes: (1) DM/direct roll — just notation + reason. (2) Interactive player roll — add targetCharacter + checkType so the player rolls on their client. If targetCharacter is provided → Mode 2, otherwise → Mode 1. All rolls are shown to players in chat.",
+      inputSchema: {
+        notation: z.string().describe("Dice notation, e.g. '2d6+3', 'd20', '4d8', '1d20+5'"),
+        reason: z
+          .string()
+          .optional()
+          .describe("Why the roll is happening, e.g. 'Goblin attack damage', 'Spot the trap'"),
+        targetCharacter: z
+          .string()
+          .optional()
+          .describe("Character name for interactive player check (triggers Mode 2)"),
+        checkType: z
+          .enum(["ability", "skill", "saving_throw", "attack", "custom", "damage"])
+          .optional()
+          .describe(
+            "Type of check: 'ability', 'skill', 'saving_throw', 'attack', 'custom', or 'damage'. Required when targetCharacter is provided. 'damage' also requires notation.",
+          ),
+        ability: z
+          .string()
+          .optional()
+          .describe("Ability score for the check, e.g. 'wisdom', 'strength'"),
+        skill: z
+          .string()
+          .optional()
+          .describe("Skill name for skill checks, e.g. 'perception', 'stealth'"),
+        dc: z.coerce.number().optional().describe("Difficulty Class for the check"),
+        advantage: z.boolean().optional().describe("Roll with advantage (roll 2d20, take higher)"),
+        disadvantage: z
+          .boolean()
+          .optional()
+          .describe("Roll with disadvantage (roll 2d20, take lower)"),
+      },
     },
     async ({
       notation,

@@ -101,9 +101,9 @@ pnpm deploy:web     # Deploy web only
 - `message-queue.ts` — Async queue: WS pushes player messages, wait_for_message pops
 - `services/game-state-manager.ts` — **Core game engine**: owns GameState, combat, dice, HP, conditions, spell slots, conversation history, check flow, battle map, rollback
 - `services/campaign-manager.ts` — Campaign persistence: create/load/list campaigns, save/read files, session management, character snapshots
-- `tools/game-tools.ts` — MCP tools: wait_for_message, send_response, get_players, get_game_state, get_character, apply_damage, heal, set_hp, add_condition, remove_condition, start_combat, end_combat, advance_turn, add_combatant, remove_combatant, move_combatant, use_spell_slot, restore_spell_slot, update_battle_map, add_item, update_item, remove_item, update_currency, grant_inspiration, use_inspiration, compact_history, get_combat_summary, get_map_info, show_aoe, apply_area_effect, dismiss_aoe
+- `tools/game-tools.ts` — MCP tools: wait_for_message, send_response, get_players, get_game_state, get_character, apply_damage, heal, set_hp, set_temp_hp, add_condition, remove_condition, start_combat, end_combat, advance_turn, add_combatant, remove_combatant, move_combatant, use_spell_slot, restore_spell_slot, use_class_resource, restore_class_resource, update_battle_map, add_item, update_item, remove_item, update_currency, grant_inspiration, use_inspiration, compact_history, get_combat_summary, get_map_info, show_aoe, apply_area_effect, dismiss_aoe, apply_batch_effects, short_rest, long_rest, death_save, set_concentration, break_concentration, calculate_encounter_difficulty
 - `tools/dnd-tools.ts` — roll_dice (supports interactive player checks with targetCharacter)
-- `tools/srd-tools.ts` — D&D 2024 database lookup tools: lookup_spell, lookup_monster, lookup_condition, lookup_magic_item, lookup_feat, lookup_class, lookup_species, lookup_background, search_rules
+- `tools/srd-tools.ts` — D&D 2024 database lookup tools: lookup_spell, lookup_monster, lookup_condition, lookup_magic_item, lookup_feat, lookup_class, lookup_species, lookup_background, lookup_optional_feature, lookup_action, lookup_language, lookup_disease, search_rules
 - `tools/campaign-tools.ts` — create_campaign, list_campaigns, load_campaign_context, save_campaign_file, read_campaign_file, list_campaign_files, end_session
 - `types.ts` — Bridge message types, CampaignManifest, CampaignSummary
 
@@ -172,19 +172,41 @@ pnpm deploy:web     # Deploy web only
 | `apply_damage`     | Deal damage to a character/combatant (handles temp HP absorption). |
 | `heal`             | Restore HP (capped at max).                                        |
 | `set_hp`           | Set exact HP value.                                                |
+| `set_temp_hp`      | Set temporary HP (non-stacking: takes higher of current and new).  |
 | `add_condition`    | Add condition (poisoned, stunned, etc.) with optional duration.    |
 | `remove_condition` | Remove a condition.                                                |
 
 ### Combat Management
 
-| Tool               | Description                                                 |
-| ------------------ | ----------------------------------------------------------- |
-| `start_combat`     | Initialize combat, auto-roll initiative, create turn order. |
-| `end_combat`       | End combat, return to exploration phase.                    |
-| `advance_turn`     | Next combatant's turn, increment round counter.             |
-| `add_combatant`    | Add mid-fight reinforcements.                               |
-| `remove_combatant` | Remove dead/fled/dismissed combatant.                       |
-| `move_combatant`   | Move token on battle map (accepts A1 notation).             |
+| Tool               | Description                                                                       |
+| ------------------ | --------------------------------------------------------------------------------- |
+| `start_combat`     | Initialize combat, auto-roll initiative, create turn order.                       |
+| `end_combat`       | End combat, return to exploration phase.                                          |
+| `advance_turn`     | Next combatant's turn, increment round counter.                                   |
+| `add_combatant`    | Add mid-fight reinforcements.                                                     |
+| `remove_combatant` | Remove dead/fled/dismissed combatant.                                             |
+| `move_combatant`   | Move token on battle map (accepts A1 notation).                                   |
+| `death_save`       | Record a death saving throw (auto-stabilize at 3 successes, death at 3 failures). |
+
+### Rests
+
+| Tool         | Description                                                                                       |
+| ------------ | ------------------------------------------------------------------------------------------------- |
+| `short_rest` | Short rest for specified characters — restores short-rest class resources and Warlock pact slots. |
+| `long_rest`  | Long rest for specified characters — full HP, all spell slots, all resources, clears conditions.  |
+
+### Concentration
+
+| Tool                  | Description                                                          |
+| --------------------- | -------------------------------------------------------------------- |
+| `set_concentration`   | Set a character as concentrating on a spell (auto-breaks previous).  |
+| `break_concentration` | Break a character's concentration, ending their concentration spell. |
+
+### Encounter Building
+
+| Tool                             | Description                                                                    |
+| -------------------------------- | ------------------------------------------------------------------------------ |
+| `calculate_encounter_difficulty` | Calculate encounter difficulty from party levels and monster CRs (2024 rules). |
 
 ### Tactical Query
 
@@ -242,18 +264,22 @@ pnpm deploy:web     # Deploy web only
 
 All lookup tools accept `detail`: `"summary"` (default, ~30 tokens) or `"full"` (complete rules text).
 
-| Tool                | Description                                                                                                                    |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| `lookup_spell`      | Look up spell details from D&D 2024 database (490 spells).                                                                     |
-| `lookup_monster`    | Look up monster stat block from D&D 2024 database (580 monsters).                                                              |
-| `lookup_condition`  | Look up condition effects from D&D 2024 database (15 conditions).                                                              |
-| `lookup_magic_item` | Look up a magic item from D&D 2024 database (563 items).                                                                       |
-| `lookup_feat`       | Look up a feat from D&D 2024 database (103 feats).                                                                             |
-| `lookup_class`      | Look up class details from D&D 2024 database (12 classes with subclasses).                                                     |
-| `lookup_species`    | Look up species from D&D 2024 database (28 species).                                                                           |
-| `lookup_background` | Look up background from D&D 2024 database (27 backgrounds).                                                                    |
-| `search_rules`      | Search across all D&D data categories by keyword.                                                                              |
-| `roll_dice`         | Roll dice — direct DM rolls (notation only) or interactive player checks (with targetCharacter, checkType, ability, skill, dc) |
+| Tool                      | Description                                                                                                                    |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `lookup_spell`            | Look up spell details from D&D 2024 database (490 spells).                                                                     |
+| `lookup_monster`          | Look up monster stat block from D&D 2024 database (580 monsters).                                                              |
+| `lookup_condition`        | Look up condition effects from D&D 2024 database (15 conditions).                                                              |
+| `lookup_magic_item`       | Look up a magic item from D&D 2024 database (563 items).                                                                       |
+| `lookup_feat`             | Look up a feat from D&D 2024 database (103 feats).                                                                             |
+| `lookup_class`            | Look up class details from D&D 2024 database (12 classes with subclasses).                                                     |
+| `lookup_species`          | Look up species from D&D 2024 database (28 species).                                                                           |
+| `lookup_background`       | Look up background from D&D 2024 database (27 backgrounds).                                                                    |
+| `lookup_optional_feature` | Look up optional class feature (Eldritch Invocations, Maneuvers, Metamagic, etc.).                                             |
+| `lookup_action`           | Look up a standard game action (Attack, Dash, Dodge, Disengage, Help, Hide, etc.).                                             |
+| `lookup_language`         | Look up a D&D language from the 2024 database.                                                                                 |
+| `lookup_disease`          | Look up a disease from the D&D 2024 database.                                                                                  |
+| `search_rules`            | Search across all D&D data categories by keyword.                                                                              |
+| `roll_dice`               | Roll dice — direct DM rolls (notation only) or interactive player checks (with targetCharacter, checkType, ability, skill, dc) |
 
 ### Campaign Persistence
 

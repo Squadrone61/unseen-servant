@@ -10,11 +10,14 @@ export function registerCampaignTools(
 ): void {
   // --- Campaign lifecycle ---
 
-  server.tool(
+  server.registerTool(
     "create_campaign",
-    "Create a new campaign folder with manifest and empty structure. Returns the campaign manifest.",
     {
-      name: z.string().describe("Human-readable campaign name, e.g. 'Curse of the Crimson Keep'"),
+      description:
+        "Create a new campaign folder with manifest and empty structure. Returns the campaign manifest.",
+      inputSchema: {
+        name: z.string().describe("Human-readable campaign name, e.g. 'Curse of the Crimson Keep'"),
+      },
     },
     async ({ name }) => {
       try {
@@ -41,10 +44,12 @@ export function registerCampaignTools(
     },
   );
 
-  server.tool(
+  server.registerTool(
     "list_campaigns",
-    "List all campaigns on disk. Returns slug, name, session count, and last played date for each.",
-    {},
+    {
+      description:
+        "List all campaigns on disk. Returns slug, name, session count, and last played date for each.",
+    },
     async () => {
       const campaigns = campaignManager.listCampaigns();
       if (campaigns.length === 0) {
@@ -73,10 +78,11 @@ export function registerCampaignTools(
     },
   );
 
-  server.tool(
+  server.registerTool(
     "load_campaign_context",
-    "Load the startup context for the active campaign: manifest + system prompt + active context + latest session summary + character summaries. Call once at session start.",
-    {},
+    {
+      description: "Load the startup context for the active campaign.",
+    },
     async () => {
       try {
         const context = campaignManager.getStartupContext();
@@ -97,20 +103,23 @@ export function registerCampaignTools(
     },
   );
 
-  server.tool(
+  server.registerTool(
     "end_session",
-    "End the current session: write a session summary, update active-context, snapshot characters, and increment session count. Call at session end.",
     {
-      summary: z
-        .string()
-        .describe(
-          "Session summary: key events, state at end, open threads. Will be saved as sessions/session-NNN.md",
-        ),
-      activeContext: z
-        .string()
-        .describe(
-          'Updated active-context.md content: "What\'s happening now" — current scene, pending threads, next steps. Keep under ~800 tokens (~3000 characters of prose).',
-        ),
+      description:
+        "End the current session: save summary, update context, snapshot characters, increment session count.",
+      inputSchema: {
+        summary: z
+          .string()
+          .describe(
+            "Session summary: key events, state at end, open threads. Will be saved as sessions/session-NNN.md",
+          ),
+        activeContext: z
+          .string()
+          .describe(
+            'Updated active-context.md content: "What\'s happening now" — current scene, pending threads, next steps. Keep under ~800 tokens (~3000 characters of prose).',
+          ),
+      },
     },
     async ({ summary, activeContext }) => {
       try {
@@ -146,23 +155,25 @@ export function registerCampaignTools(
 
   // --- File operations ---
 
-  server.tool(
+  server.registerTool(
     "save_campaign_file",
-    "Save or update a campaign file. Supports subdirectory paths like 'world/npcs', 'sessions/session-003'. Automatically adds .md extension if none provided.",
     {
-      path: z
-        .string()
-        .optional()
-        .describe(
-          "Relative file path within the campaign folder (without extension for markdown), e.g. 'world/npcs', 'world/locations', 'sessions/session-001', 'active-context'",
-        ),
-      filename: z
-        .string()
-        .optional()
-        .describe(
-          "Alias for 'path'. Use 'path' instead (preferred). .md extension added automatically if not provided.",
-        ),
-      content: z.string().describe("The file content (markdown or JSON)"),
+      description: "Save or update a campaign file. Auto-adds .md extension.",
+      inputSchema: {
+        path: z
+          .string()
+          .optional()
+          .describe(
+            "Relative file path within the campaign folder (without extension for markdown), e.g. 'world/npcs', 'world/locations', 'sessions/session-001', 'active-context'",
+          ),
+        filename: z
+          .string()
+          .optional()
+          .describe(
+            "Alias for 'path'. Use 'path' instead (preferred). .md extension added automatically if not provided.",
+          ),
+        content: z.string().describe("The file content (markdown or JSON)"),
+      },
     },
     async ({ path: pathParam, filename, content }) => {
       const filePath = pathParam || filename;
@@ -201,15 +212,19 @@ export function registerCampaignTools(
     },
   );
 
-  server.tool(
+  server.registerTool(
     "read_campaign_file",
-    "Read a file from the active campaign. Supports paths like 'world/npcs', 'world/locations', 'active-context', 'system-prompt'.",
     {
-      path: z
-        .string()
-        .optional()
-        .describe("Relative file path within the campaign folder (without extension for markdown)"),
-      filename: z.string().optional().describe("Alias for path"),
+      description: "Read a file from the active campaign.",
+      inputSchema: {
+        path: z
+          .string()
+          .optional()
+          .describe(
+            "Relative file path within the campaign folder (without extension for markdown)",
+          ),
+        filename: z.string().optional().describe("Alias for path"),
+      },
     },
     async ({ path: pathParam, filename }) => {
       const filePath = pathParam || filename;
@@ -253,10 +268,11 @@ export function registerCampaignTools(
     },
   );
 
-  server.tool(
+  server.registerTool(
     "list_campaign_files",
-    "List all files in the active campaign as a tree.",
-    {},
+    {
+      description: "List all files in the active campaign as a tree.",
+    },
     async () => {
       try {
         const files = campaignManager.listFiles();
