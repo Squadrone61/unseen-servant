@@ -100,7 +100,7 @@ pnpm deploy:web     # Deploy web only
 - `services/game-state-manager.ts` — **Core game engine**: owns GameState, combat, dice, HP, conditions, spell slots, conversation history, check flow, battle map, rollback
 - `services/campaign-manager.ts` — Campaign persistence: create/load/list campaigns, save/read files, session management, character snapshots
 - `tools/game-tools.ts` — MCP tools: wait_for_message, send_response, get_players, get_game_state, get_character, apply_damage, heal, set_hp, set_temp_hp, add_condition, remove_condition, start_combat, end_combat, advance_turn, add_combatant, remove_combatant, move_combatant, use_spell_slot, restore_spell_slot, use_class_resource, restore_class_resource, update_battle_map, add_item, update_item, remove_item, update_currency, grant_inspiration, use_inspiration, compact_history, get_combat_summary, get_map_info, show_aoe, apply_area_effect, dismiss_aoe, apply_batch_effects, short_rest, long_rest, death_save, set_concentration, break_concentration, calculate_encounter_difficulty
-- `tools/dnd-tools.ts` — roll_dice (supports interactive player checks with targetCharacter)
+- `tools/dnd-tools.ts` — roll_dice (supports interactive player checks with target, checkType, ability, skill, dc)
 - `tools/srd-tools.ts` — D&D 2024 database lookup tools: lookup_spell, lookup_monster, lookup_condition, lookup_magic_item, lookup_feat, lookup_class, lookup_species, lookup_background, lookup_optional_feature, lookup_action, lookup_language, lookup_disease, search_rules
 - `tools/campaign-tools.ts` — create_campaign, list_campaigns, load_campaign_context, save_campaign_file, read_campaign_file, list_campaign_files, end_session
 - `types.ts` — Bridge message types, CampaignManifest, CampaignSummary
@@ -122,7 +122,7 @@ pnpm deploy:web     # Deploy web only
 ### Frontend (apps/web/src/)
 
 - `app/page.tsx` — Home: create/join room
-- `app/rooms/[roomCode]/page.tsx` — Game room page (handles campaign config, DM config updates, character restoration)
+- `app/rooms/[roomCode]/page.tsx` — Game room page (campaign config, DM config, character restoration, right sidebar with room info/player list/activity log)
 - `hooks/useWebSocket.ts` — WebSocket lifecycle, reconnection, message validation
 - `hooks/useAuth.ts` — Google OAuth flow
 - `hooks/useCharacterImport.ts` — Character file import (.unseen.json)
@@ -131,7 +131,6 @@ pnpm deploy:web     # Deploy web only
 - `components/character/LeftSidebar.tsx` — Left sidebar with character details
 - `components/game/BattleMap.tsx` — Tactical grid combat map (CSS Grid, tokens, click-to-move)
 - `components/game/InitiativeTracker.tsx` — Combat turn order
-- `components/sidebar/Sidebar.tsx` — Right sidebar (room info, player list, campaign status, activity log)
 - `components/sidebar/CampaignConfigModal.tsx` — Campaign configuration: new/existing campaign, pacing, encounter length, system prompt editor
 - `components/sidebar/SystemPromptModal.tsx` — Standalone system prompt editor
 
@@ -262,22 +261,22 @@ pnpm deploy:web     # Deploy web only
 
 All lookup tools accept `detail`: `"summary"` (default, ~30 tokens) or `"full"` (complete rules text).
 
-| Tool                      | Description                                                                                                                    |
-| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| `lookup_spell`            | Look up spell details from D&D 2024 database (490 spells).                                                                     |
-| `lookup_monster`          | Look up monster stat block from D&D 2024 database (580 monsters).                                                              |
-| `lookup_condition`        | Look up condition effects from D&D 2024 database (15 conditions).                                                              |
-| `lookup_magic_item`       | Look up a magic item from D&D 2024 database (563 items).                                                                       |
-| `lookup_feat`             | Look up a feat from D&D 2024 database (103 feats).                                                                             |
-| `lookup_class`            | Look up class details from D&D 2024 database (12 classes with subclasses).                                                     |
-| `lookup_species`          | Look up species from D&D 2024 database (28 species).                                                                           |
-| `lookup_background`       | Look up background from D&D 2024 database (27 backgrounds).                                                                    |
-| `lookup_optional_feature` | Look up optional class feature (Eldritch Invocations, Maneuvers, Metamagic, etc.).                                             |
-| `lookup_action`           | Look up a standard game action (Attack, Dash, Dodge, Disengage, Help, Hide, etc.).                                             |
-| `lookup_language`         | Look up a D&D language from the 2024 database.                                                                                 |
-| `lookup_disease`          | Look up a disease from the D&D 2024 database.                                                                                  |
-| `search_rules`            | Search across all D&D data categories by keyword.                                                                              |
-| `roll_dice`               | Roll dice — direct DM rolls (notation only) or interactive player checks (with targetCharacter, checkType, ability, skill, dc) |
+| Tool                      | Description                                                                                                           |
+| ------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `lookup_spell`            | Look up spell details from D&D 2024 database (490 spells).                                                            |
+| `lookup_monster`          | Look up monster stat block from D&D 2024 database (580 monsters).                                                     |
+| `lookup_condition`        | Look up condition effects from D&D 2024 database (15 conditions).                                                     |
+| `lookup_magic_item`       | Look up a magic item from D&D 2024 database (563 items).                                                              |
+| `lookup_feat`             | Look up a feat from D&D 2024 database (103 feats).                                                                    |
+| `lookup_class`            | Look up class details from D&D 2024 database (12 classes with subclasses).                                            |
+| `lookup_species`          | Look up species from D&D 2024 database (28 species).                                                                  |
+| `lookup_background`       | Look up background from D&D 2024 database (27 backgrounds).                                                           |
+| `lookup_optional_feature` | Look up optional class feature (Eldritch Invocations, Maneuvers, Metamagic, etc.).                                    |
+| `lookup_action`           | Look up a standard game action (Attack, Dash, Dodge, Disengage, Help, Hide, etc.).                                    |
+| `lookup_language`         | Look up a D&D language from the 2024 database.                                                                        |
+| `lookup_disease`          | Look up a disease from the D&D 2024 database.                                                                         |
+| `search_rules`            | Search across all D&D data categories by keyword.                                                                     |
+| `roll_dice`               | Roll dice — direct DM rolls (notation only) or interactive player checks (with target, checkType, ability, skill, dc) |
 
 ### Campaign Persistence
 
@@ -303,7 +302,7 @@ All lookup tools accept `detail`: `"summary"` (default, ~30 tokens) or `"full"` 
 2. Bridge's GameStateManager processes the action (adds to conversation history, creates dm_request)
 3. Message queue resolves `wait_for_message` → Claude Code receives `{ requestId, systemPrompt, messages }`
 4. Claude Code thinks, optionally calls MCP tools (`roll_dice`, `apply_damage`, `start_combat`, etc.)
-5. Claude Code calls `send_response({ requestId, text: "The dragon..." })`
+5. Claude Code calls `send_response({ requestId, message: "The dragon..." })`
 6. Bridge stores response in conversation history, sends `client:broadcast` with `server:ai` payload
 7. Worker receives `client:broadcast` → relays AI narrative to all players
 

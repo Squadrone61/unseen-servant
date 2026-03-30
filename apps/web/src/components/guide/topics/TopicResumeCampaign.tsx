@@ -9,21 +9,22 @@ export function TopicResumeCampaign() {
 
       <Section title="Resuming the DM Session">
         <p>
-          The host needs to re-launch the DM in their terminal. Use the{" "}
+          The host needs to re-launch the DM in their terminal with the same{" "}
           <code className="text-amber-300/70 bg-gray-800/60 px-1 py-0.5 rounded text-xs">
-            --resume
+            --campaign
           </code>{" "}
-          flag with the campaign name to pick up the DM's conversation where it left off:
+          name used in the first session:
         </p>
         <pre className="bg-gray-900/60 border border-gray-700/30 rounded-lg px-4 py-3 text-xs text-gray-300 font-mono overflow-x-auto whitespace-pre-wrap">
-          {`node unseen-servant.mjs --room ABC123 --resume "Curse of Strahd"`}
+          {`node unseen-servant.mjs --room ABC123 --campaign "curse-of-strahd"`}
         </pre>
         <p>
-          This restores the DM's full conversation history, so it remembers everything from previous
-          sessions without needing to reload context.
+          The launcher automatically detects whether this is a new or returning session. On return
+          visits, it restores the DM's full conversation history, so it remembers everything from
+          previous sessions without needing to reload context.
         </p>
         <GuideCallout type="host">
-          If you don't use <strong>--resume</strong>, you can still load the campaign through the
+          If you don't use <strong>--campaign</strong>, you can still load the campaign through the
           in-app <strong>Configure Campaign</strong> dialog — choose <strong>Load Existing</strong>{" "}
           and select your campaign. The DM will load saved campaign notes, but won't have the
           previous conversation history.

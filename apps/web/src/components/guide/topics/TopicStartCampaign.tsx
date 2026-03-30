@@ -47,14 +47,15 @@ export function TopicStartCampaign() {
           {`node unseen-servant.mjs --room ABC123 --model opus`}
         </pre>
         <GuideCallout type="tip">
-          To resume a previous campaign's DM session, use the{" "}
+          To name your session for future resumption, use the{" "}
           <code className="text-amber-300/70 bg-gray-800/60 px-1 py-0.5 rounded text-xs">
-            --resume
+            --campaign
           </code>{" "}
-          flag with the campaign name:{" "}
+          flag:{" "}
           <code className="text-amber-300/70 bg-gray-800/60 px-1 py-0.5 rounded text-xs">
-            node unseen-servant.mjs --room ABC123 --resume "Curse of Strahd"
+            node unseen-servant.mjs --room ABC123 --campaign "curse-of-strahd"
           </code>
+          . The next time you launch with the same campaign name, the DM picks up where it left off.
         </GuideCallout>
       </Section>
 
