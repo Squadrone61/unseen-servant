@@ -99,7 +99,6 @@ Use these slash commands for DM creative workflows and prep:
 export async function startCli(): Promise<void> {
   console.log(BANNER);
 
-  // Check that Claude CLI is available
   if (!checkClaudeCli()) {
     console.error(
       "Error: 'claude' CLI not found in PATH.\n" +
@@ -109,90 +108,77 @@ export async function startCli(): Promise<void> {
     process.exit(1);
   }
 
-  // Get room code, model, and resume campaign from args or interactive prompt
+  // Parse CLI args (falls back to interactive prompt for room code + model)
   let roomCode = findArg("--room");
   let model = findArg("--model") || "sonnet";
   const workerUrl = findArg("--worker-url") || process.env.UNSEEN_WORKER_URL || DEFAULT_WORKER_URL;
   const campaignName = findArg("--campaign");
 
   if (!roomCode) {
-    const rl = readline.createInterface({
-      input: process.stdin,
-      output: process.stdout,
-    });
-
-    roomCode = await prompt(rl, "Room code: ");
-    roomCode = roomCode.trim().toUpperCase();
-
+    const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+    roomCode = (await prompt(rl, "Room code: ")).trim().toUpperCase();
     if (!roomCode) {
       console.error("Error: Room code is required.");
       process.exit(1);
     }
-
-    const modelInput = await prompt(rl, `Model [${model}] (sonnet/opus/haiku): `);
-    if (modelInput.trim()) {
-      model = modelInput.trim().toLowerCase();
-    }
-
+    const modelInput = (await prompt(rl, `Model [${model}] (sonnet/opus/haiku): `)).trim();
+    if (modelInput) model = modelInput.toLowerCase();
     rl.close();
   }
 
-  // Resolve the path to this script (the bundled .mjs file)
+  // Work dir = script's directory (campaigns, sessions, skills all persist here)
   const scriptPath = path.resolve(process.argv[1]);
-  const scriptDir = path.dirname(scriptPath);
+  const workDir = path.dirname(scriptPath);
+  const campaignsDir = path.join(workDir, ".unseen", "campaigns");
+  const sessionsDir = path.join(workDir, ".unseen", "sessions");
 
-  // Use the script's directory as the working directory
-  // Campaigns, Claude sessions, and skills all persist here
-  const workDir = scriptDir;
-
-  // Create native Claude Code skills (.claude/skills/<name>/SKILL.md)
+  // Write native Claude Code skills
   for (const [name, content] of Object.entries(NATIVE_SKILLS)) {
     const skillDir = path.join(workDir, ".claude", "skills", name);
     fs.mkdirSync(skillDir, { recursive: true });
     fs.writeFileSync(path.join(skillDir, "SKILL.md"), content);
   }
 
-  // Campaigns persist alongside the launcher
-  const campaignsDir = path.join(workDir, ".unseen", "campaigns");
+  // Write .mcp.json (use "node" directly — cmd eats stdin)
   fs.mkdirSync(campaignsDir, { recursive: true });
-
-  // Write .mcp.json — command points to this script with --serve
-  // Note: always use "node" directly, not "cmd /c node" — cmd eats stdin
-  const mcpConfig = {
-    mcpServers: {
-      "unseen-servant": {
-        command: "node",
-        args: [scriptPath, "--serve"],
-        env: {
-          UNSEEN_ROOM_CODE: roomCode,
-          UNSEEN_CAMPAIGNS_DIR: campaignsDir,
-          UNSEEN_WORKER_URL: workerUrl,
+  fs.writeFileSync(
+    path.join(workDir, ".mcp.json"),
+    JSON.stringify(
+      {
+        mcpServers: {
+          "unseen-servant": {
+            command: "node",
+            args: [scriptPath, "--serve"],
+            env: {
+              UNSEEN_ROOM_CODE: roomCode,
+              UNSEEN_CAMPAIGNS_DIR: campaignsDir,
+              UNSEEN_WORKER_URL: workerUrl,
+            },
+          },
         },
       },
-    },
-  };
+      null,
+      2,
+    ),
+  );
 
-  fs.writeFileSync(path.join(workDir, ".mcp.json"), JSON.stringify(mcpConfig, null, 2));
-
-  // Write CLAUDE.md — slim core prompt + skill file index
+  // Write CLAUDE.md
   fs.writeFileSync(path.join(workDir, "CLAUDE.md"), buildClaudeMd());
 
+  // Detect resume vs new campaign
+  const isResume = campaignName && fs.existsSync(path.join(sessionsDir, campaignName));
+
+  // Print launch info
   console.log(`Room:       ${roomCode}`);
   console.log(`Model:      ${model}`);
   console.log(`Worker:     ${workerUrl}`);
   console.log(`Campaigns:  ${campaignsDir}`);
   console.log(`Work dir:   ${workDir}`);
-  // Detect whether to resume or start a fresh named session
-  const sessionsDir = path.join(workDir, ".unseen", "sessions");
-  const isResume = campaignName && fs.existsSync(path.join(sessionsDir, campaignName));
   if (campaignName)
     console.log(`Campaign:   ${campaignName}${isResume ? " (resuming)" : " (new)"}`);
+  console.log("\nLaunching Claude Code...\n");
 
-  console.log("");
-  console.log("Launching Claude Code...\n");
-
-  // Spawn Claude Code with core DM system prompt (replaces default coding assistant prompt)
-  // Auto-allow all unseen-servant MCP tools so the DM can run without permission prompts
+  // Build Claude Code args
   const claudeArgs = [
     "--mcp-config",
     path.join(workDir, ".mcp.json"),
@@ -204,39 +190,22 @@ export async function startCli(): Promise<void> {
     "mcp__unseen-servant__*",
   ];
 
-  // Named session: --campaign enables resumable Claude sessions
   if (campaignName && isResume) {
     claudeArgs.push("--resume", campaignName, "--name", campaignName);
   } else if (campaignName) {
-    // First session — name it and create marker for future resume
     claudeArgs.push("--name", campaignName);
     fs.mkdirSync(sessionsDir, { recursive: true });
     fs.writeFileSync(path.join(sessionsDir, campaignName), "");
-    claudeArgs.push(
-      "--",
-      "Start the DM game loop. Call wait_for_message now and keep looping. ALL narrative output MUST go through send_response — never output text directly.",
-    );
-  } else {
-    claudeArgs.push(
-      "--",
-      "Start the DM game loop. Call wait_for_message now and keep looping. ALL narrative output MUST go through send_response — never output text directly.",
-    );
   }
 
-  const claude = spawn("claude", claudeArgs, {
-    cwd: workDir,
-    stdio: "inherit",
-  });
+  claudeArgs.push(
+    "--",
+    "Start the DM game loop. Call wait_for_message now and keep looping. ALL narrative output MUST go through send_response — never output text directly.",
+  );
 
-  claude.on("exit", (code) => {
-    process.exit(code ?? 0);
-  });
-
-  process.on("SIGINT", () => {
-    claude.kill("SIGINT");
-  });
-
-  process.on("SIGTERM", () => {
-    claude.kill("SIGTERM");
-  });
+  // Spawn Claude Code
+  const claude = spawn("claude", claudeArgs, { cwd: workDir, stdio: "inherit" });
+  claude.on("exit", (code) => process.exit(code ?? 0));
+  process.on("SIGINT", () => claude.kill("SIGINT"));
+  process.on("SIGTERM", () => claude.kill("SIGTERM"));
 }
