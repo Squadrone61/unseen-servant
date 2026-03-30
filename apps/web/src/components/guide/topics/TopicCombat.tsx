@@ -35,12 +35,20 @@ export function TopicCombat() {
         </p>
         <ul className="list-disc list-inside space-y-1 text-gray-400">
           <li>
-            <strong className="text-gray-300">Your token</strong> — Click it to select it, then
-            click an empty highlighted cell to move there
+            <strong className="text-gray-300">Your token</strong> — Drag it to a highlighted cell to
+            move there
           </li>
           <li>
-            <strong className="text-gray-300">Movement range</strong> — When you select your token,
+            <strong className="text-gray-300">Movement range</strong> — When you drag your token,
             cells you can reach are highlighted based on your movement speed
+          </li>
+          <li>
+            <strong className="text-gray-300">Zoom</strong> — Scroll the mouse wheel to zoom in and
+            out, centered on your cursor
+          </li>
+          <li>
+            <strong className="text-gray-300">Pan</strong> — Middle-click drag or right-click drag
+            to pan the map around
           </li>
           <li>
             <strong className="text-gray-300">Terrain</strong> — Some cells may have objects (walls,
@@ -53,7 +61,7 @@ export function TopicCombat() {
         </ul>
         <GuideCallout type="tip">
           You can also describe movement in chat ("I move behind the pillar") and the DM will move
-          your token for you.
+          your token for you. Hover over any token to see its stats.
         </GuideCallout>
       </Section>
 
@@ -61,8 +69,8 @@ export function TopicCombat() {
         <p>When it's your turn, the initiative tracker highlights your name. You can:</p>
         <ol className="list-decimal list-inside space-y-1 text-gray-400">
           <li>
-            <strong className="text-gray-300">Move</strong> — Click your token, then click where you
-            want to go
+            <strong className="text-gray-300">Move</strong> — Drag your token to where you want to
+            go
           </li>
           <li>
             <strong className="text-gray-300">Act</strong> — Describe your action in chat: "I attack

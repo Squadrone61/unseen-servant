@@ -1,6 +1,7 @@
 import type { KnipConfig } from "knip";
 
 const config: KnipConfig = {
+  include: ["files", "exports", "types", "duplicates"],
   workspaces: {
     "packages/shared": {},
     "apps/web": {

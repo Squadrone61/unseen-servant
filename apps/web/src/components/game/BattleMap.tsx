@@ -157,7 +157,6 @@ interface BattleMapProps {
   partyCharacters: Record<string, CharacterData>;
   myCharacterName?: string;
   onMoveToken: (to: GridPosition) => void;
-  onEndTurn: () => void;
   onCombatantClick?: (combatantId: string) => void;
   highlightedCombatantId?: string | null;
   style?: React.CSSProperties;
@@ -173,13 +172,21 @@ interface DragState {
   currentTile: GridPosition | null;
 }
 
+// Pan state stored in ref to avoid re-renders during pan
+interface PanState {
+  active: boolean;
+  startX: number;
+  startY: number;
+  startPanX: number;
+  startPanY: number;
+}
+
 export function BattleMap({
   map,
   combat,
   partyCharacters,
   myCharacterName,
   onMoveToken,
-  onEndTurn: _onEndTurn,
   onCombatantClick,
   highlightedCombatantId,
   style,
@@ -187,15 +194,20 @@ export function BattleMap({
 }: BattleMapProps) {
   const [hoveredTile, setHoveredTile] = useState<string | null>(null);
   const [zoom, setZoom] = useState(1);
-  const [selectedTokenId, setSelectedTokenId] = useState<string | null>(null);
+  const [panX, setPanX] = useState(0);
+  const [panY, setPanY] = useState(0);
+  const [panInitialized, setPanInitialized] = useState(false);
   const [showReachable, setShowReachable] = useState(false);
   const [hoveredTokenId, setHoveredTokenId] = useState<string | null>(null);
   const [measureTarget, setMeasureTarget] = useState<GridPosition | null>(null);
   const [dragRender, setDragRender] = useState(0); // increment to force re-render during drag
   const [hoveredAoeId, setHoveredAoeId] = useState<string | null>(null);
+  const [isPanning, setIsPanning] = useState(false);
+  const [tooltipMouse, setTooltipMouse] = useState<{ x: number; y: number } | null>(null);
 
   const gridRef = useRef<HTMLDivElement>(null);
   const gridContainerRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const dragStateRef = useRef<DragState>({
     active: false,
     combatantId: null,
@@ -203,7 +215,13 @@ export function BattleMap({
     currentPixel: null,
     currentTile: null,
   });
-  const justDraggedRef = useRef(false);
+  const panStateRef = useRef<PanState>({
+    active: false,
+    startX: 0,
+    startY: 0,
+    startPanX: 0,
+    startPanY: 0,
+  });
 
   // My combatant
   const myCombatant = useMemo(() => {
@@ -230,12 +248,18 @@ export function BattleMap({
     );
   }, [showReachable, myCombatant, map]);
 
-  // Scroll highlighted combatant into view
+  // Pan to highlighted combatant
   useEffect(() => {
-    if (!highlightedCombatantId || !gridRef.current) return;
-    const el = gridRef.current.querySelector(`[data-combatant="${highlightedCombatantId}"]`);
-    el?.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
-  }, [highlightedCombatantId]);
+    if (!highlightedCombatantId || !containerRef.current) return;
+    const c = Object.values(combat.combatants).find((c) => c.id === highlightedCombatantId);
+    if (!c?.position) return;
+
+    const container = containerRef.current;
+    const contentX = c.position.x * (TILE_SIZE + TILE_GAP) + TILE_SIZE / 2 + LABEL_SIZE;
+    const contentY = c.position.y * (TILE_SIZE + TILE_GAP) + TILE_SIZE / 2 + LABEL_SIZE;
+    setPanX(container.clientWidth / 2 - contentX * zoom);
+    setPanY(container.clientHeight / 2 - contentY * zoom);
+  }, [highlightedCombatantId, combat.combatants, zoom]);
 
   // Resolve conditions for a combatant (returns ConditionEntry[])
   const getConditionEntries = useCallback(
@@ -259,38 +283,6 @@ export function BattleMap({
       return getConditionEntries(c).map((e) => e.name);
     },
     [getConditionEntries],
-  );
-
-  // Click handler for tiles
-  const handleTileClick = useCallback(
-    (x: number, y: number) => {
-      if (showReachable && reachable.has(`${x},${y}`)) {
-        onMoveToken({ x, y });
-        setShowReachable(false);
-        setSelectedTokenId(null);
-      }
-    },
-    [showReachable, reachable, onMoveToken],
-  );
-
-  // Click on own token to select and show reachable
-  const handleTokenClick = useCallback(
-    (combatant: Combatant) => {
-      // Ignore clicks that fire immediately after a drag release
-      if (justDraggedRef.current) return;
-      if (isMyTurn && myCombatant && combatant.id === myCombatant.id) {
-        if (selectedTokenId === combatant.id) {
-          // Deselect
-          setSelectedTokenId(null);
-          setShowReachable(false);
-        } else {
-          setSelectedTokenId(combatant.id);
-          setShowReachable(true);
-        }
-      }
-      onCombatantClick?.(combatant.id);
-    },
-    [isMyTurn, myCombatant, selectedTokenId, onCombatantClick],
   );
 
   // ─── Drag to Move ───
@@ -364,12 +356,6 @@ export function BattleMap({
       ds.currentPixel = null;
       ds.currentTile = null;
 
-      // Suppress the click event that fires right after mouseup on the same element
-      justDraggedRef.current = true;
-      requestAnimationFrame(() => {
-        justDraggedRef.current = false;
-      });
-
       setDragRender((prev) => prev + 1);
 
       if (
@@ -382,7 +368,6 @@ export function BattleMap({
       }
 
       setShowReachable(false);
-      setSelectedTokenId(null);
     };
 
     window.addEventListener("mousemove", handleMouseMove);
@@ -400,6 +385,119 @@ export function BattleMap({
     };
   }, [pixelToTile, reachable, onMoveToken]);
 
+  // Grid dimensions in px
+  const gridWidthPx = map.width * TILE_SIZE + (map.width - 1) * TILE_GAP;
+  const gridHeightPx = map.height * TILE_SIZE + (map.height - 1) * TILE_GAP;
+
+  // ─── Pan (middle-click or right-click drag) ───
+
+  const panXRef = useRef(panX);
+  panXRef.current = panX;
+  const panYRef = useRef(panY);
+  panYRef.current = panY;
+
+  const handlePanStart = useCallback((e: React.MouseEvent) => {
+    // Middle button (1) or right button (2) for pan — left-click reserved for tokens
+    if (e.button !== 1 && e.button !== 2) return;
+    e.preventDefault();
+
+    const ps = panStateRef.current;
+    ps.active = true;
+    ps.startX = e.clientX;
+    ps.startY = e.clientY;
+    ps.startPanX = panXRef.current;
+    ps.startPanY = panYRef.current;
+    setIsPanning(true);
+  }, []);
+
+  useEffect(() => {
+    const handlePanMove = (e: MouseEvent) => {
+      const ps = panStateRef.current;
+      if (!ps.active) return;
+
+      setPanX(ps.startPanX + (e.clientX - ps.startX));
+      setPanY(ps.startPanY + (e.clientY - ps.startY));
+    };
+
+    const handlePanEnd = () => {
+      if (!panStateRef.current.active) return;
+      panStateRef.current.active = false;
+      setIsPanning(false);
+    };
+
+    window.addEventListener("mousemove", handlePanMove);
+    window.addEventListener("mouseup", handlePanEnd);
+    return () => {
+      window.removeEventListener("mousemove", handlePanMove);
+      window.removeEventListener("mouseup", handlePanEnd);
+    };
+  }, []);
+
+  // ─── Initial centering ───
+
+  useEffect(() => {
+    if (panInitialized) return;
+    const container = containerRef.current;
+    if (!container) return;
+
+    const totalW = gridWidthPx + LABEL_SIZE;
+    const totalH = gridHeightPx + LABEL_SIZE;
+    setPanX((container.clientWidth - totalW * zoom) / 2);
+    setPanY((container.clientHeight - totalH * zoom) / 2);
+    setPanInitialized(true);
+  }, [panInitialized, gridWidthPx, gridHeightPx, zoom]);
+
+  // ─── Wheel Zoom (centered on cursor) ───
+
+  const zoomRef = useRef(zoom);
+  zoomRef.current = zoom;
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      e.preventDefault();
+
+      const oldZoom = zoomRef.current;
+      const delta = e.deltaY > 0 ? -0.1 : 0.1;
+      const newZoom = Math.max(0.5, Math.min(2, oldZoom + delta));
+      if (newZoom === oldZoom) return;
+
+      const containerRect = container.getBoundingClientRect();
+      const cursorViewX = e.clientX - containerRect.left;
+      const cursorViewY = e.clientY - containerRect.top;
+
+      // Content point under cursor in unscaled coordinates
+      const contentX = (cursorViewX - panXRef.current) / oldZoom;
+      const contentY = (cursorViewY - panYRef.current) / oldZoom;
+
+      // Adjust pan so cursor stays over the same content point
+      setPanX(cursorViewX - contentX * newZoom);
+      setPanY(cursorViewY - contentY * newZoom);
+      setZoom(newZoom);
+    };
+
+    container.addEventListener("wheel", handleWheel, { passive: false });
+    return () => container.removeEventListener("wheel", handleWheel);
+  }, []);
+
+  // Center-preserving zoom for buttons
+  const zoomTo = useCallback((newZoom: number) => {
+    const container = containerRef.current;
+    if (!container) {
+      setZoom(newZoom);
+      return;
+    }
+    const cw = container.clientWidth;
+    const ch = container.clientHeight;
+    const contentX = (cw / 2 - panXRef.current) / zoomRef.current;
+    const contentY = (ch / 2 - panYRef.current) / zoomRef.current;
+    setPanX(cw / 2 - contentX * newZoom);
+    setPanY(ch / 2 - contentY * newZoom);
+    setZoom(newZoom);
+  }, []);
+
   // Combatants that have map positions
   const tokens = useMemo(
     () =>
@@ -412,6 +510,18 @@ export function BattleMap({
         })),
     [combat.combatants, getConditions],
   );
+
+  // Group tokens by cell for stacking detection
+  const tokenStacks = useMemo(() => {
+    const stacks = new Map<string, string[]>();
+    for (const t of tokens) {
+      const key = `${t.position.x},${t.position.y}`;
+      const ids = stacks.get(key) || [];
+      ids.push(t.id);
+      stacks.set(key, ids);
+    }
+    return stacks;
+  }, [tokens]);
 
   const movementLeft = myCombatant ? myCombatant.speed - myCombatant.movementUsed : 0;
 
@@ -471,10 +581,6 @@ export function BattleMap({
     }
     return result;
   }, [aoeTileMap]);
-
-  // Grid dimensions in px
-  const gridWidthPx = map.width * TILE_SIZE + (map.width - 1) * TILE_GAP;
-  const gridHeightPx = map.height * TILE_SIZE + (map.height - 1) * TILE_GAP;
 
   // Token tooltip data resolver
   const getTokenTooltipData = useCallback(
@@ -596,32 +702,38 @@ export function BattleMap({
         <div className="px-3 py-1.5 bg-amber-950/40 border-b border-amber-800/30 text-amber-300 text-xs font-medium tracking-wide flex items-center justify-between gap-2 shrink-0">
           <div className="flex items-center gap-2">
             <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-            Your turn &mdash; drag your token or click a highlighted tile to move
+            Your turn &mdash; drag your token to move
             <span className="text-amber-500/70 font-mono ml-1">{movementLeft}ft remaining</span>
           </div>
         </div>
       )}
 
-      {/* Scrollable map area */}
-      <div className="flex-1 min-h-0 overflow-auto p-2 relative flex items-start justify-center">
+      {/* Map viewport (transform-based pan/zoom) */}
+      <div
+        ref={containerRef}
+        className="flex-1 min-h-0 overflow-hidden relative"
+        style={{ cursor: isPanning ? "grabbing" : "default" }}
+        onMouseDown={handlePanStart}
+        onContextMenu={(e) => e.preventDefault()}
+      >
         {/* Zoom Controls */}
         <div className="absolute top-2 right-2 z-10 bg-gray-800/80 rounded flex gap-1 p-1">
           <button
-            onClick={() => setZoom((z) => Math.max(0.5, z - 0.25))}
+            onClick={() => zoomTo(Math.max(0.5, zoom - 0.25))}
             className="w-6 h-6 flex items-center justify-center text-xs text-gray-400 hover:text-gray-200 rounded hover:bg-gray-700/60 transition-colors"
             title="Zoom out"
           >
             -
           </button>
           <button
-            onClick={() => setZoom(1)}
+            onClick={() => zoomTo(1)}
             className="px-1.5 h-6 flex items-center justify-center text-xs text-gray-400 hover:text-gray-200 rounded hover:bg-gray-700/60 transition-colors font-mono"
             title="Reset zoom"
           >
             {Math.round(zoom * 100)}%
           </button>
           <button
-            onClick={() => setZoom((z) => Math.min(2, z + 0.25))}
+            onClick={() => zoomTo(Math.min(2, zoom + 0.25))}
             className="w-6 h-6 flex items-center justify-center text-xs text-gray-400 hover:text-gray-200 rounded hover:bg-gray-700/60 transition-colors"
             title="Zoom in"
           >
@@ -629,12 +741,13 @@ export function BattleMap({
           </button>
         </div>
 
-        {/* Labeled grid wrapper */}
+        {/* Labeled grid wrapper (transform-based pan/zoom) */}
         <div
           style={{
-            transform: `scale(${zoom})`,
-            transformOrigin: "top left",
+            transform: `translate(${panX}px, ${panY}px) scale(${zoom})`,
+            transformOrigin: "0 0",
             display: "inline-block",
+            willChange: "transform",
           }}
         >
           {/* Column labels row */}
@@ -719,8 +832,6 @@ export function BattleMap({
                       coverBorder = { border: "2px solid #D4A24E" };
                     }
 
-                    const tileTooltipData = getTileTooltipData(tile);
-
                     return (
                       <div
                         key={`t-${key}`}
@@ -734,17 +845,22 @@ export function BattleMap({
                           position: "relative",
                           ...coverBorder,
                         }}
-                        onClick={() => handleTileClick(x, y)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") handleTileClick(x, y);
-                        }}
-                        onMouseEnter={() => {
+                        onMouseEnter={(e) => {
                           setHoveredTile(key);
                           setMeasureTarget({ x, y });
+                          if (getTileTooltipData(tile)) {
+                            setTooltipMouse({ x: e.clientX, y: e.clientY });
+                          }
+                        }}
+                        onMouseMove={(e) => {
+                          if (hoveredTile === key && getTileTooltipData(tile)) {
+                            setTooltipMouse({ x: e.clientX, y: e.clientY });
+                          }
                         }}
                         onMouseLeave={() => {
                           setHoveredTile(null);
                           setMeasureTarget(null);
+                          if (!hoveredTokenId) setTooltipMouse(null);
                         }}
                       >
                         {/* Terrain textures */}
@@ -852,23 +968,6 @@ export function BattleMap({
                             }}
                           >
                             {formatGridPosition({ x, y })}
-                          </div>
-                        )}
-
-                        {/* Tile tooltip on hover */}
-                        {isHoveredHere && tileTooltipData && (
-                          <div
-                            className="absolute left-1/2 bottom-full mb-1 -translate-x-1/2 bg-gray-900 border border-gray-600/50 rounded-lg shadow-lg px-3 py-2 text-xs text-gray-200 max-w-xs pointer-events-none"
-                            style={{ zIndex: 35 }}
-                          >
-                            {tileTooltipData.map((line, i) => (
-                              <div
-                                key={i}
-                                className={i > 0 ? "text-gray-400 mt-0.5" : "font-medium"}
-                              >
-                                {line}
-                              </div>
-                            ))}
                           </div>
                         )}
                       </div>
@@ -1003,7 +1102,24 @@ export function BattleMap({
                   const tileSpanPx = c.span * TILE_SIZE + (c.span - 1) * TILE_GAP;
                   tokenLeft = c.position.x * (TILE_SIZE + TILE_GAP) + tileSpanPx / 2 - size / 2;
                   tokenTop = c.position.y * (TILE_SIZE + TILE_GAP) + tileSpanPx / 2 - size / 2;
+
+                  // Fan offset for stacked tokens
+                  const stackKey = `${c.position.x},${c.position.y}`;
+                  const stackIds = tokenStacks.get(stackKey);
+                  if (stackIds && stackIds.length > 1) {
+                    const idx = stackIds.indexOf(c.id);
+                    const total = stackIds.length;
+                    const step = 6;
+                    tokenLeft += idx * step - ((total - 1) * step) / 2;
+                    tokenTop += idx * step - ((total - 1) * step) / 2;
+                  }
                 }
+
+                // Stack info for z-index and badge
+                const stackKey2 = `${c.position.x},${c.position.y}`;
+                const stackIds2 = tokenStacks.get(stackKey2);
+                const stackSize = stackIds2?.length ?? 1;
+                const stackIndex = stackIds2 ? stackIds2.indexOf(c.id) : 0;
 
                 // Check if token is in AoE for ring effect
                 const aoeColor = aoeTileSet.get(`${c.position.x},${c.position.y}`);
@@ -1011,10 +1127,6 @@ export function BattleMap({
                 // Is this my token?
                 const isMyToken = myCombatant && c.id === myCombatant.id;
                 const canDrag = isMyTurn && isMyToken;
-
-                // Tooltip position: show above by default, below if near top
-                const showTooltipBelow = c.position.y <= 2;
-                const isHovered = hoveredTokenId === c.id;
 
                 return (
                   <div
@@ -1026,7 +1138,7 @@ export function BattleMap({
                       top: tokenTop,
                       width: size,
                       height: size,
-                      zIndex: isDragging ? 28 : isActive ? 22 : 20,
+                      zIndex: isDragging ? 28 : isActive ? 22 : 20 + stackIndex,
                       transition: isDragging ? "none" : "left 300ms ease-out, top 300ms ease-out",
                       cursor: canDrag ? "grab" : "default",
                     }}
@@ -1038,10 +1150,21 @@ export function BattleMap({
                     }}
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleTokenClick(c);
+                      onCombatantClick?.(c.id);
                     }}
-                    onMouseEnter={() => setHoveredTokenId(c.id)}
-                    onMouseLeave={() => setHoveredTokenId(null)}
+                    onMouseEnter={(e) => {
+                      setHoveredTokenId(c.id);
+                      setTooltipMouse({ x: e.clientX, y: e.clientY });
+                    }}
+                    onMouseMove={(e) => {
+                      if (hoveredTokenId === c.id) {
+                        setTooltipMouse({ x: e.clientX, y: e.clientY });
+                      }
+                    }}
+                    onMouseLeave={() => {
+                      setHoveredTokenId(null);
+                      setTooltipMouse(null);
+                    }}
                   >
                     {/* Circle */}
                     <div
@@ -1068,123 +1191,15 @@ export function BattleMap({
                       {initials}
                     </div>
 
-                    {/* Hover Tooltip */}
-                    {isHovered &&
-                      !isDragging &&
-                      (() => {
-                        const tooltip = getTokenTooltipData(c);
-                        const hpPercent =
-                          tooltip.maxHP && tooltip.currentHP !== undefined
-                            ? Math.max(0, Math.min(100, (tooltip.currentHP / tooltip.maxHP) * 100))
-                            : null;
-                        const hpBarColor =
-                          hpPercent !== null
-                            ? hpPercent > 50
-                              ? "#22C55E"
-                              : hpPercent > 25
-                                ? "#EAB308"
-                                : "#EF4444"
-                            : null;
-
-                        return (
-                          <div
-                            className="absolute left-1/2 -translate-x-1/2 bg-gray-900 border border-gray-600/50 rounded-lg shadow-lg px-3 py-2 text-xs min-w-[120px] max-w-[220px]"
-                            style={{
-                              zIndex: 30,
-                              ...(showTooltipBelow ? { top: size + 4 } : { bottom: size + 4 }),
-                            }}
-                          >
-                            {/* Name */}
-                            <div className="text-gray-100 font-medium mb-1 whitespace-nowrap">
-                              {c.name}
-                            </div>
-
-                            {/* HP bar */}
-                            {hpPercent !== null && (
-                              <div className="mb-1">
-                                <div className="flex items-center gap-1.5 mb-0.5">
-                                  <span className="text-gray-400">HP</span>
-                                  {/* Show exact numbers for players, hide for enemies */}
-                                  {tooltip.isPlayer ? (
-                                    <span className="text-gray-200 font-mono">
-                                      {tooltip.currentHP}/{tooltip.maxHP}
-                                    </span>
-                                  ) : (
-                                    <span className="text-gray-400 font-mono">
-                                      {hpPercent > 75
-                                        ? "Healthy"
-                                        : hpPercent > 50
-                                          ? "Wounded"
-                                          : hpPercent > 25
-                                            ? "Bloodied"
-                                            : hpPercent > 0
-                                              ? "Critical"
-                                              : "Down"}
-                                    </span>
-                                  )}
-                                </div>
-                                <div className="w-full h-1.5 bg-gray-700 rounded-full overflow-hidden">
-                                  <div
-                                    className="h-full rounded-full transition-all"
-                                    style={{
-                                      width: `${hpPercent}%`,
-                                      backgroundColor: hpBarColor ?? "#666",
-                                    }}
-                                  />
-                                </div>
-                              </div>
-                            )}
-
-                            {/* AC */}
-                            {tooltip.ac !== undefined && (
-                              <div className="flex items-center gap-1.5 text-gray-400">
-                                <span>AC</span>
-                                <span className="text-gray-200 font-mono">{tooltip.ac}</span>
-                              </div>
-                            )}
-
-                            {/* Conditions */}
-                            {tooltip.conditionEntries.length > 0 && (
-                              <div className="mt-1 pt-1 border-t border-gray-700/50">
-                                {tooltip.conditionEntries.map((cond, i) => (
-                                  <div key={i} className="text-orange-400 flex items-center gap-1">
-                                    <span>{cond.name}</span>
-                                    {cond.duration != null && (
-                                      <span className="text-orange-600 text-[10px]">
-                                        ({cond.duration}
-                                        rd)
-                                      </span>
-                                    )}
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-
-                            {/* Concentration */}
-                            {tooltip.concentration && (
-                              <div className="mt-1 pt-1 border-t border-gray-700/50 text-purple-400">
-                                Concentrating: {tooltip.concentration.spellName}
-                              </div>
-                            )}
-
-                            {/* Movement remaining */}
-                            {tooltip.moveRemaining !== undefined && (
-                              <div className="mt-1 pt-1 border-t border-gray-700/50 text-gray-400">
-                                Movement:{" "}
-                                <span className="text-gray-200 font-mono">
-                                  {tooltip.moveRemaining}
-                                  ft
-                                </span>
-                              </div>
-                            )}
-
-                            {/* Grid position */}
-                            {tooltip.posLabel && (
-                              <div className="mt-1 text-gray-500 font-mono">{tooltip.posLabel}</div>
-                            )}
-                          </div>
-                        );
-                      })()}
+                    {/* Stack count badge — shown on topmost token */}
+                    {stackSize > 1 && stackIndex === stackSize - 1 && (
+                      <div
+                        className="absolute -top-1 -right-1 bg-amber-500 text-black text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center shadow pointer-events-none"
+                        style={{ zIndex: 30 }}
+                      >
+                        {stackSize}
+                      </div>
+                    )}
                   </div>
                 );
               })}
@@ -1192,6 +1207,157 @@ export function BattleMap({
           </div>
         </div>
       </div>
+
+      {/* ─── Fixed Tooltip (rendered outside scaled wrapper) ─── */}
+      {tooltipMouse &&
+        !isPanning &&
+        !dragStateRef.current.active &&
+        (() => {
+          // Token tooltip
+          const hoveredCombatant = hoveredTokenId
+            ? Object.values(combat.combatants).find((c) => c.id === hoveredTokenId)
+            : null;
+
+          if (hoveredCombatant) {
+            const tooltip = getTokenTooltipData(hoveredCombatant);
+            const hpPercent =
+              tooltip.maxHP && tooltip.currentHP !== undefined
+                ? Math.max(0, Math.min(100, (tooltip.currentHP / tooltip.maxHP) * 100))
+                : null;
+            const hpBarColor =
+              hpPercent !== null
+                ? hpPercent > 50
+                  ? "#22C55E"
+                  : hpPercent > 25
+                    ? "#EAB308"
+                    : "#EF4444"
+                : null;
+
+            // Position: offset from cursor, clamped to viewport
+            const margin = 12;
+            const left = Math.min(tooltipMouse.x + margin, window.innerWidth - 260);
+            const top = Math.max(margin, tooltipMouse.y - margin - 40);
+
+            return (
+              <div
+                className="fixed z-50 bg-gray-900/95 border border-gray-600/50 rounded-lg shadow-xl px-3 py-2 text-xs pointer-events-none backdrop-blur-sm"
+                style={{ left, top, minWidth: 140, maxWidth: 240 }}
+              >
+                {/* Name + Position */}
+                <div className="flex items-center justify-between gap-2 mb-1">
+                  <span className="text-gray-100 font-medium whitespace-nowrap">
+                    {hoveredCombatant.name}
+                  </span>
+                  {tooltip.posLabel && (
+                    <span className="text-gray-500 font-mono">{tooltip.posLabel}</span>
+                  )}
+                </div>
+
+                {/* HP + AC inline */}
+                <div className="flex items-center gap-3">
+                  {hpPercent !== null && (
+                    <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                      <span className="text-gray-400 shrink-0">HP</span>
+                      {tooltip.isPlayer ? (
+                        <span className="text-gray-200 font-mono">
+                          {tooltip.currentHP}/{tooltip.maxHP}
+                        </span>
+                      ) : (
+                        <span className="text-gray-400 font-mono">
+                          {hpPercent > 75
+                            ? "Healthy"
+                            : hpPercent > 50
+                              ? "Wounded"
+                              : hpPercent > 25
+                                ? "Bloodied"
+                                : hpPercent > 0
+                                  ? "Critical"
+                                  : "Down"}
+                        </span>
+                      )}
+                      <div className="flex-1 h-1 bg-gray-700 rounded-full overflow-hidden min-w-[30px]">
+                        <div
+                          className="h-full rounded-full"
+                          style={{ width: `${hpPercent}%`, backgroundColor: hpBarColor ?? "#666" }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                  {tooltip.ac !== undefined && (
+                    <span className="text-gray-400 shrink-0">
+                      AC <span className="text-gray-200 font-mono">{tooltip.ac}</span>
+                    </span>
+                  )}
+                </div>
+
+                {/* Conditions inline */}
+                {tooltip.conditionEntries.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {tooltip.conditionEntries.map((cond, i) => (
+                      <span
+                        key={i}
+                        className="text-orange-400 bg-orange-500/10 px-1.5 py-0.5 rounded"
+                      >
+                        {cond.name}
+                        {cond.duration != null ? ` (${cond.duration}rd)` : ""}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                {/* Concentration + Movement inline */}
+                {(tooltip.concentration || tooltip.moveRemaining !== undefined) && (
+                  <div className="flex items-center gap-3 mt-1 text-gray-400">
+                    {tooltip.concentration && (
+                      <span className="text-purple-400">
+                        Conc: {tooltip.concentration.spellName}
+                      </span>
+                    )}
+                    {tooltip.moveRemaining !== undefined && (
+                      <span>
+                        Move:{" "}
+                        <span className="text-gray-200 font-mono">{tooltip.moveRemaining}ft</span>
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          }
+
+          // Tile tooltip
+          if (hoveredTile) {
+            const [tx, ty] = hoveredTile.split(",").map(Number);
+            const tile = map.tiles[ty]?.[tx];
+            if (tile) {
+              const data = getTileTooltipData(tile);
+              if (data) {
+                const margin = 12;
+                const left = Math.min(tooltipMouse.x + margin, window.innerWidth - 200);
+                const top = Math.max(margin, tooltipMouse.y - margin - 20);
+
+                return (
+                  <div
+                    className="fixed z-50 bg-gray-900/95 border border-gray-600/50 rounded-lg shadow-xl px-3 py-1.5 text-xs pointer-events-none backdrop-blur-sm"
+                    style={{ left, top, maxWidth: 200 }}
+                  >
+                    {data.map((line, i) => (
+                      <span
+                        key={i}
+                        className={i > 0 ? "text-gray-400" : "text-gray-200 font-medium"}
+                      >
+                        {i > 0 ? " · " : ""}
+                        {line}
+                      </span>
+                    ))}
+                  </div>
+                );
+              }
+            }
+          }
+
+          return null;
+        })()}
     </div>
   );
 }

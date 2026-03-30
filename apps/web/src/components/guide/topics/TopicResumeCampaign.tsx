@@ -7,17 +7,27 @@ export function TopicResumeCampaign() {
         The story does not end when the candles burn low. It waits, patient, for your return.
       </p>
 
-      <Section title="Loading an Existing Campaign">
+      <Section title="Resuming the DM Session">
         <p>
-          When the host opens <strong>Configure Campaign</strong>, they can choose{" "}
-          <strong>Load Existing</strong> instead of starting a new campaign. The dropdown shows all
-          saved campaigns with their session counts.
+          The host needs to re-launch the DM in their terminal. Use the{" "}
+          <code className="text-amber-300/70 bg-gray-800/60 px-1 py-0.5 rounded text-xs">
+            --resume
+          </code>{" "}
+          flag with the campaign name to pick up the DM's conversation where it left off:
         </p>
+        <pre className="bg-gray-900/60 border border-gray-700/30 rounded-lg px-4 py-3 text-xs text-gray-300 font-mono overflow-x-auto whitespace-pre-wrap">
+          {`node unseen-servant.mjs --room ABC123 --resume "Curse of Strahd"`}
+        </pre>
         <p>
-          Select the campaign you want to continue and click <strong>Configure</strong>. The DM will
-          load the full campaign context — previous session summaries, character snapshots, world
-          notes — and pick up the story where you left off.
+          This restores the DM's full conversation history, so it remembers everything from previous
+          sessions without needing to reload context.
         </p>
+        <GuideCallout type="host">
+          If you don't use <strong>--resume</strong>, you can still load the campaign through the
+          in-app <strong>Configure Campaign</strong> dialog — choose <strong>Load Existing</strong>{" "}
+          and select your campaign. The DM will load saved campaign notes, but won't have the
+          previous conversation history.
+        </GuideCallout>
       </Section>
 
       <Section title="What Gets Restored">

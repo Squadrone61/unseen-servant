@@ -1687,6 +1687,16 @@ export class GameStateManager {
       tokenColor?: string;
     }>,
   ): ToolResponse {
+    // Require a battle map before starting combat
+    if (!this.gameState.encounter?.map) {
+      return toResponse(
+        "Cannot start combat: no battle map exists. Use update_battle_map first to create a tactical grid.",
+        {},
+        true,
+        ["Call update_battle_map to create a map, then call start_combat again."],
+      );
+    }
+
     const combatantMap: Record<string, Combatant> = {};
     const initiativeOrder: Array<{ id: string; initiative: number }> = [];
 
@@ -1770,18 +1780,9 @@ export class GameStateManager {
     }));
     const initSummary = turnOrder.map((t) => `${t.name}: ${t.initiative}`).join(", ");
 
-    const hints: string[] = [];
-    if (!this.gameState.encounter?.map) {
-      hints.push(
-        "No battle map set — use update_battle_map to create a tactical grid for this encounter.",
-      );
-    }
-
     return toResponse(
       `Combat started! Initiative order: ${initSummary}. Round 1, ${turnOrder[0].name}'s turn.`,
       { round: 1, currentTurn: turnOrder[0].name, turnOrder, combatantCount: combatants.length },
-      false,
-      hints.length > 0 ? hints : undefined,
     );
   }
 
@@ -1926,7 +1927,12 @@ export class GameStateManager {
       timestamp: Date.now(),
     });
 
-    return toResponse(`${c.name} joined combat (initiative ${initiative})`, {
+    const overlapWarning = c.position
+      ? this.checkTokenOverlap(c.position, c.size ?? "medium", id)
+      : null;
+
+    const text = `${c.name} joined combat (initiative ${initiative})`;
+    return toResponse(overlapWarning ? `${text}. ${overlapWarning}` : text, {
       name: c.name,
       initiative,
       position: c.position ? formatGridPosition(c.position) : null,
@@ -1983,6 +1989,44 @@ export class GameStateManager {
     });
   }
 
+  /** Check if a position overlaps with any existing combatant's footprint */
+  private checkTokenOverlap(
+    position: GridPosition,
+    size: CreatureSize,
+    excludeId?: string,
+  ): string | null {
+    const combat = this.gameState.encounter?.combat;
+    if (!combat) return null;
+
+    const span = (s: CreatureSize) =>
+      s === "large" ? 2 : s === "huge" ? 3 : s === "gargantuan" ? 4 : 1;
+
+    const getCells = (pos: GridPosition, s: CreatureSize): string[] => {
+      const cells: string[] = [];
+      const n = span(s);
+      for (let dx = 0; dx < n; dx++)
+        for (let dy = 0; dy < n; dy++) cells.push(`${pos.x + dx},${pos.y + dy}`);
+      return cells;
+    };
+
+    const myCells = new Set(getCells(position, size));
+    const overlapping: string[] = [];
+
+    for (const c of Object.values(combat.combatants)) {
+      if (c.id === excludeId || !c.position) continue;
+      for (const cell of getCells(c.position, c.size)) {
+        if (myCells.has(cell)) {
+          overlapping.push(c.name);
+          break;
+        }
+      }
+    }
+
+    return overlapping.length > 0
+      ? `Note: ${overlapping.join(", ")} already at this position`
+      : null;
+  }
+
   /** Move a combatant on the battle map */
   moveCombatant(combatantName: string, to: GridPosition): ToolResponse {
     const combat = this.gameState.encounter?.combat;
@@ -1999,6 +2043,7 @@ export class GameStateManager {
     }
 
     const from = combatant.position ? formatGridPosition(combatant.position) : null;
+    const overlapWarning = this.checkTokenOverlap(to, combatant.size, combatant.id);
     combatant.position = to;
 
     this.broadcast({
@@ -2008,7 +2053,8 @@ export class GameStateManager {
       timestamp: Date.now(),
     });
 
-    return toResponse(`${combatant.name} moved to ${formatGridPosition(to)}`, {
+    const text = `${combatant.name} moved to ${formatGridPosition(to)}`;
+    return toResponse(overlapWarning ? `${text}. ${overlapWarning}` : text, {
       name: combatant.name,
       from,
       to: formatGridPosition(to),

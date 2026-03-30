@@ -5,9 +5,9 @@ import { TopicEndSession } from "./TopicEndSession";
 import { TopicNarrative } from "./TopicNarrative";
 import { TopicCombat } from "./TopicCombat";
 
-export type GuideRole = "all" | "host" | "player";
+type GuideRole = "all" | "host" | "player";
 
-export interface GuideTopic {
+interface GuideTopic {
   id: string;
   title: string;
   subtitle: string;

@@ -8,14 +8,14 @@ export function registerDndTools(server: McpServer, wsClient: WSClient): void {
     "roll_dice",
     {
       description:
-        "Roll dice. Two modes: (1) DM/direct roll — just notation + reason. (2) Interactive player roll — add targetCharacter + checkType so the player rolls on their client. If targetCharacter is provided → Mode 2, otherwise → Mode 1. All rolls are shown to players in chat.",
+        "Roll dice. Two modes: (1) DM/direct roll — just notation + reason. (2) Interactive player roll — add target + checkType so the player rolls on their client. If target is provided → Mode 2, otherwise → Mode 1. All rolls are shown to players in chat.",
       inputSchema: {
         notation: z.string().describe("Dice notation, e.g. '2d6+3', 'd20', '4d8', '1d20+5'"),
         reason: z
           .string()
           .optional()
           .describe("Why the roll is happening, e.g. 'Goblin attack damage', 'Spot the trap'"),
-        targetCharacter: z
+        target: z
           .string()
           .optional()
           .describe("Character name for interactive player check (triggers Mode 2)"),
@@ -23,7 +23,7 @@ export function registerDndTools(server: McpServer, wsClient: WSClient): void {
           .enum(["ability", "skill", "saving_throw", "attack", "custom", "damage"])
           .optional()
           .describe(
-            "Type of check: 'ability', 'skill', 'saving_throw', 'attack', 'custom', or 'damage'. Required when targetCharacter is provided. 'damage' also requires notation.",
+            "Type of check: 'ability', 'skill', 'saving_throw', 'attack', 'custom', or 'damage'. Required when target is provided. 'damage' also requires notation.",
           ),
         ability: z
           .string()
@@ -44,7 +44,7 @@ export function registerDndTools(server: McpServer, wsClient: WSClient): void {
     async ({
       notation,
       reason,
-      targetCharacter,
+      target,
       checkType,
       ability,
       skill,
@@ -53,13 +53,13 @@ export function registerDndTools(server: McpServer, wsClient: WSClient): void {
       disadvantage,
     }) => {
       // Mode 2: Interactive player check
-      if (targetCharacter) {
+      if (target) {
         if (!checkType) {
           return {
             content: [
               {
                 type: "text" as const,
-                text: "Error: checkType is required when targetCharacter is provided. Use 'ability', 'skill', 'saving_throw', 'attack', or 'custom'.",
+                text: "Error: checkType is required when target is provided. Use 'ability', 'skill', 'saving_throw', 'attack', or 'custom'.",
               },
             ],
           };
@@ -68,7 +68,7 @@ export function registerDndTools(server: McpServer, wsClient: WSClient): void {
         try {
           const result = await wsClient.sendCheckRequest({
             checkType,
-            targetCharacter,
+            targetCharacter: target,
             ability,
             skill,
             dc,

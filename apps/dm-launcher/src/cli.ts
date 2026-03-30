@@ -109,10 +109,11 @@ export async function startCli(): Promise<void> {
     process.exit(1);
   }
 
-  // Get room code and model from args or interactive prompt
+  // Get room code, model, and resume campaign from args or interactive prompt
   let roomCode = findArg("--room");
   let model = findArg("--model") || "sonnet";
   const workerUrl = findArg("--worker-url") || process.env.UNSEEN_WORKER_URL || DEFAULT_WORKER_URL;
+  const campaignName = findArg("--campaign");
 
   if (!roomCode) {
     const rl = readline.createInterface({
@@ -181,30 +182,51 @@ export async function startCli(): Promise<void> {
   console.log(`Worker:     ${workerUrl}`);
   console.log(`Campaigns:  ${campaignsDir}`);
   console.log(`Work dir:   ${workDir}`);
+  // Detect whether to resume or start a fresh named session
+  const sessionsDir = path.join(workDir, ".unseen", "sessions");
+  const isResume = campaignName && fs.existsSync(path.join(sessionsDir, campaignName));
+  if (campaignName)
+    console.log(`Campaign:   ${campaignName}${isResume ? " (resuming)" : " (new)"}`);
+
   console.log("");
   console.log("Launching Claude Code...\n");
 
   // Spawn Claude Code with core DM system prompt (replaces default coding assistant prompt)
   // Auto-allow all unseen-servant MCP tools so the DM can run without permission prompts
-  const claude = spawn(
-    "claude",
-    [
-      "--mcp-config",
-      path.join(workDir, ".mcp.json"),
-      "--model",
-      model,
-      "--system-prompt",
-      "You are the Unseen Servant. Follow all instructions in CLAUDE.md. Begin by calling wait_for_message.",
-      "--allowedTools",
-      "mcp__unseen-servant__*",
+  const claudeArgs = [
+    "--mcp-config",
+    path.join(workDir, ".mcp.json"),
+    "--model",
+    model,
+    "--system-prompt",
+    "You are the Unseen Servant. Follow all instructions in CLAUDE.md. Begin by calling wait_for_message.",
+    "--allowedTools",
+    "mcp__unseen-servant__*",
+  ];
+
+  // Named session: --campaign enables resumable Claude sessions
+  if (campaignName && isResume) {
+    claudeArgs.push("--resume", campaignName, "--name", campaignName);
+  } else if (campaignName) {
+    // First session — name it and create marker for future resume
+    claudeArgs.push("--name", campaignName);
+    fs.mkdirSync(sessionsDir, { recursive: true });
+    fs.writeFileSync(path.join(sessionsDir, campaignName), "");
+    claudeArgs.push(
       "--",
       "Start the DM game loop. Call wait_for_message now and keep looping. ALL narrative output MUST go through send_response — never output text directly.",
-    ],
-    {
-      cwd: workDir,
-      stdio: "inherit",
-    },
-  );
+    );
+  } else {
+    claudeArgs.push(
+      "--",
+      "Start the DM game loop. Call wait_for_message now and keep looping. ALL narrative output MUST go through send_response — never output text directly.",
+    );
+  }
+
+  const claude = spawn("claude", claudeArgs, {
+    cwd: workDir,
+    stdio: "inherit",
+  });
 
   claude.on("exit", (code) => {
     process.exit(code ?? 0);

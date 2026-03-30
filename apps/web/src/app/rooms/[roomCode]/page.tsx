@@ -991,12 +991,20 @@ function GameContent({ roomCode, playerName }: { roomCode: string; playerName: s
             <p className="text-xs text-gray-600 italic">No activity yet</p>
           ) : (
             logMessages.map((msg, i) => (
-              <p
+              <div
                 key={i}
-                className={`text-xs ${msg.type === "server:error" ? "text-red-400" : "text-gray-500"}`}
+                className={`flex items-start gap-2 text-xs ${msg.type === "server:error" ? "text-red-400" : "text-gray-500"}`}
               >
-                {"content" in msg ? (msg as { content: string }).content : ""}
-              </p>
+                {"timestamp" in msg && typeof msg.timestamp === "number" && (
+                  <span className="shrink-0 text-gray-600 font-mono">
+                    {new Date(msg.timestamp).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </span>
+                )}
+                <span>{"content" in msg ? (msg as { content: string }).content : ""}</span>
+              </div>
             ))
           )}
         </div>
@@ -1009,9 +1017,17 @@ function GameContent({ roomCode, playerName }: { roomCode: string; playerName: s
           ) : (
             eventLog.slice(-10).map((evt) => (
               <div key={evt.id} className="flex items-start justify-between gap-2 group">
-                <p className="text-xs text-gray-400 flex-1">
-                  {evt.type} — {evt.description}
-                </p>
+                <div className="text-xs text-gray-400 flex-1 flex items-start gap-2">
+                  <span className="shrink-0 text-gray-600 font-mono">
+                    {new Date(evt.timestamp).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </span>
+                  <span>
+                    {evt.type.replace(/_/g, " ")} — {evt.description}
+                  </span>
+                </div>
                 {isHost && (
                   <button
                     onClick={() => handleRollback(evt.id)}
@@ -1131,7 +1147,6 @@ function CombatLayout({
         partyCharacters={partyCharacters}
         myCharacterName={myCharacterName}
         onMoveToken={onMoveToken}
-        onEndTurn={onEndTurn}
         onCombatantClick={onCombatantClick}
         highlightedCombatantId={highlightedCombatantId}
         style={{ width: `${battleMapWidth}%` }}

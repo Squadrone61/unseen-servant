@@ -10,14 +10,14 @@
  * so existing tools can adopt buildResult() incrementally.
  */
 
-export interface ToolResultOpts {
+interface ToolResultOpts {
   /** Human-readable summary line(s) */
   text: string;
   /** Structured data appended as JSON after the --- separator */
   data?: Record<string, unknown>;
 }
 
-export interface CallToolResult {
+interface CallToolResult {
   [x: string]: unknown;
   content: Array<{ type: "text"; text: string }>;
   isError?: boolean;

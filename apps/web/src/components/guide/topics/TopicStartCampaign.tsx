@@ -23,11 +23,16 @@ export function TopicStartCampaign() {
         <p>
           The AI Dungeon Master runs through a separate launcher. You need{" "}
           <strong>Claude Code CLI</strong> installed on your machine, plus the Unseen Servant
-          launcher file (
-          <code className="text-amber-300/70 bg-gray-800/60 px-1.5 py-0.5 rounded text-xs">
-            unseen-servant.mjs
-          </code>
-          ).
+          launcher file &mdash;{" "}
+          <a
+            href="https://github.com/Squadrone61/unseen-servant/releases"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-amber-400 underline hover:text-amber-300"
+          >
+            download it here
+          </a>
+          .
         </p>
         <p>In your terminal, run:</p>
         <pre className="bg-gray-900/60 border border-gray-700/30 rounded-lg px-4 py-3 text-xs text-gray-300 font-mono overflow-x-auto">
@@ -37,11 +42,25 @@ export function TopicStartCampaign() {
           The launcher will ask for the room code and which Claude model to use. Once connected,
           you'll see the DM status indicator turn green in the top bar.
         </p>
+        <p>You can also pass arguments directly to skip the interactive prompts:</p>
+        <pre className="bg-gray-900/60 border border-gray-700/30 rounded-lg px-4 py-3 text-xs text-gray-300 font-mono overflow-x-auto whitespace-pre-wrap">
+          {`node unseen-servant.mjs --room ABC123 --model opus`}
+        </pre>
+        <GuideCallout type="tip">
+          To resume a previous campaign's DM session, use the{" "}
+          <code className="text-amber-300/70 bg-gray-800/60 px-1 py-0.5 rounded text-xs">
+            --resume
+          </code>{" "}
+          flag with the campaign name:{" "}
+          <code className="text-amber-300/70 bg-gray-800/60 px-1 py-0.5 rounded text-xs">
+            node unseen-servant.mjs --room ABC123 --resume "Curse of Strahd"
+          </code>
+        </GuideCallout>
       </Section>
 
       <Section title="Configuring the Campaign">
         <p>
-          Once the DM is connected, click <strong>Configure Campaign</strong> in the sidebar. You
+          Once the DM is connected, click <strong>Configure Campaign</strong> in the top bar. You
           can start a new campaign or load an existing one.
         </p>
         <p>For a new campaign, you'll set:</p>

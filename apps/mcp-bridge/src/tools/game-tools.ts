@@ -137,18 +137,21 @@ export function registerGameTools(
         "Send the DM narrative response back to all players. Broadcasts the message and stores it in conversation history.",
       inputSchema: {
         requestId: z.string().describe("The requestId from the dm_request to respond to"),
-        text: z.string().optional().describe("The DM narrative text to send back to the players"),
-        response: z.string().optional().describe("Alias for text"),
+        message: z
+          .string()
+          .optional()
+          .describe("The DM narrative message to send back to the players"),
+        text: z.string().optional().describe("Alias for message (backwards-compatible)"),
       },
     },
-    async ({ requestId, text, response }) => {
-      const narrative = text || response;
+    async ({ requestId, message, text }) => {
+      const narrative = message || text;
       if (!narrative) {
         return {
           content: [
             {
               type: "text" as const,
-              text: `ERROR: send_response requires a "text" parameter with the DM narrative.`,
+              text: `ERROR: send_response requires a "message" parameter with the DM narrative.`,
             },
           ],
           isError: true,
@@ -234,14 +237,14 @@ export function registerGameTools(
       description:
         "Get a specific player's full character data including stats, HP, spell slots, conditions, inventory.",
       inputSchema: {
-        character_name: z.string().describe("The character name to look up"),
+        name: z.string().describe("The character name to look up"),
       },
     },
-    async ({ character_name }) => {
-      const result = wsClient.gameStateManager.getCharacter(character_name);
+    async ({ name }) => {
+      const result = wsClient.gameStateManager.getCharacter(name);
       if (!result) {
         return {
-          content: [{ type: "text" as const, text: `Character "${character_name}" not found` }],
+          content: [{ type: "text" as const, text: `Character "${name}" not found` }],
         };
       }
       // Format combatant position as A1 notation if in combat

@@ -8,6 +8,10 @@ import type { DisplayMessage } from "./ChatPanel";
 import { useTTS } from "../../hooks/useTTS";
 import { Button } from "@/components/ui/Button";
 
+function formatTime(ts: number): string {
+  return new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
+
 interface ChatMessageProps {
   message: DisplayMessage;
   onRollDice?: (checkRequestId: string) => void;
@@ -347,7 +351,12 @@ export function ChatMessage({ message, onRollDice, myCharacterName }: ChatMessag
       return (
         <div className="flex gap-2">
           <span className="font-bold text-blue-400 shrink-0">{message.playerName}:</span>
-          <span className="text-gray-200">{message.content}</span>
+          <span className="text-gray-200 flex-1">{message.content}</span>
+          {"timestamp" in message && typeof message.timestamp === "number" && (
+            <span className="text-xs text-gray-600 shrink-0 self-start">
+              {formatTime(message.timestamp)}
+            </span>
+          )}
         </div>
       );
 
@@ -355,11 +364,16 @@ export function ChatMessage({ message, onRollDice, myCharacterName }: ChatMessag
       return (
         <div className="bg-amber-900/20 border-l-4 border-amber-500 p-3 rounded-r-lg">
           <div className="flex items-center justify-between mb-1">
-            <div
-              className="text-sm text-amber-400 font-semibold"
-              style={{ fontFamily: "var(--font-cinzel)" }}
-            >
-              Dungeon Master
+            <div className="flex items-center gap-2">
+              <div
+                className="text-sm text-amber-400 font-semibold"
+                style={{ fontFamily: "var(--font-cinzel)" }}
+              >
+                Dungeon Master
+              </div>
+              {"timestamp" in message && typeof message.timestamp === "number" && (
+                <span className="text-xs text-gray-600">{formatTime(message.timestamp)}</span>
+              )}
             </div>
             <TTSButton text={message.content} />
           </div>
