@@ -204,7 +204,7 @@ export function buildCharacter(ids: CharacterIdentifiers): {
     conditions: [],
     deathSaves: { successes: 0, failures: 0 },
     inventory: ids.equipment,
-    currency: ids.currency ?? { cp: 0, sp: 0, ep: 0, gp: 0, pp: 0 },
+    currency: ids.currency ?? { cp: 0, sp: 0, gp: 0, pp: 0 },
     heroicInspiration: false,
   };
 

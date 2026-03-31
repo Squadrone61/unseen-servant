@@ -1625,7 +1625,7 @@ export function resolveStartingEquipment(
 ): { items: EquipmentEntry[]; currency: Currency } {
   const cls = getClass(className);
   if (!cls?.startingEquipment?.defaultData?.[0])
-    return { items: [], currency: { cp: 0, sp: 0, ep: 0, gp: 0, pp: 0 } };
+    return { items: [], currency: { cp: 0, sp: 0, gp: 0, pp: 0 } };
 
   const data = cls.startingEquipment.defaultData[0];
   const entries = (data[choice] ?? []) as {
@@ -1635,7 +1635,7 @@ export function resolveStartingEquipment(
     equipmentType?: string;
   }[];
   const items: EquipmentEntry[] = [];
-  const currency: Currency = { cp: 0, sp: 0, ep: 0, gp: 0, pp: 0 };
+  const currency: Currency = { cp: 0, sp: 0, gp: 0, pp: 0 };
 
   for (const entry of entries) {
     if (entry.value != null) {

@@ -46,11 +46,7 @@ export function InventoryTab({ character, onItemClick }: InventoryTabProps) {
   }, [filtered]);
 
   const hasCurrency =
-    d.currency.gp > 0 ||
-    d.currency.sp > 0 ||
-    d.currency.cp > 0 ||
-    d.currency.ep > 0 ||
-    d.currency.pp > 0;
+    d.currency.gp > 0 || d.currency.sp > 0 || d.currency.cp > 0 || d.currency.pp > 0;
 
   return (
     <div className="space-y-2">
@@ -66,7 +62,6 @@ export function InventoryTab({ character, onItemClick }: InventoryTabProps) {
           <div className="flex flex-wrap gap-2 text-xs">
             {d.currency.pp > 0 && <span className="text-gray-300">{d.currency.pp} PP</span>}
             {d.currency.gp > 0 && <span className="text-yellow-400">{d.currency.gp} GP</span>}
-            {d.currency.ep > 0 && <span className="text-gray-300">{d.currency.ep} EP</span>}
             {d.currency.sp > 0 && <span className="text-gray-400">{d.currency.sp} SP</span>}
             {d.currency.cp > 0 && <span className="text-orange-400">{d.currency.cp} CP</span>}
           </div>

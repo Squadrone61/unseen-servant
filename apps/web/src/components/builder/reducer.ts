@@ -40,7 +40,7 @@ export function createInitialState(editingId?: string | null): BuilderState {
     spellSelections: {},
     startingEquipmentChoice: "A",
     equipment: [],
-    currency: { cp: 0, sp: 0, ep: 0, gp: 0, pp: 0 },
+    currency: { cp: 0, sp: 0, gp: 0, pp: 0 },
     name: "",
     alignment: "",
     backstory: "",
@@ -458,7 +458,6 @@ export function builderReducer(state: BuilderState, action: BuilderAction): Buil
       const newCurrency: Currency = {
         cp: state.currency.cp + action.currency.cp,
         sp: state.currency.sp + action.currency.sp,
-        ep: state.currency.ep + action.currency.ep,
         gp: state.currency.gp + action.currency.gp,
         pp: state.currency.pp + action.currency.pp,
       };

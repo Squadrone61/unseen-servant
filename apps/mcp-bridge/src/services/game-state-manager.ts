@@ -2496,7 +2496,7 @@ export class GameStateManager {
   /** Update currency for a character (additive — positive adds, negative subtracts) */
   updateCurrency(
     characterName: string,
-    changes: Partial<Record<"cp" | "sp" | "ep" | "gp" | "pp", number>>,
+    changes: Partial<Record<"cp" | "sp" | "gp" | "pp", number>>,
     autoConvert = true,
   ): ToolResponse {
     for (const [pName, char] of Object.entries(this.characters)) {
@@ -2505,7 +2505,7 @@ export class GameStateManager {
         const conversions: string[] = [];
 
         for (const [coin, delta] of Object.entries(changes) as Array<
-          ["cp" | "sp" | "ep" | "gp" | "pp", number]
+          ["cp" | "sp" | "gp" | "pp", number]
         >) {
           const newVal = char.dynamic.currency[coin] + delta;
           if (newVal >= 0) {
@@ -2532,15 +2532,14 @@ export class GameStateManager {
           character: char,
         });
 
-        const { cp, sp, ep, gp, pp } = char.dynamic.currency;
+        const { cp, sp, gp, pp } = char.dynamic.currency;
         const conversionNote = conversions.length > 0 ? ` (${conversions.join("; ")})` : "";
         return toResponse(
-          `${char.static.name}'s currency updated${conversionNote} → ${gp}gp, ${sp}sp, ${cp}cp, ${ep}ep, ${pp}pp`,
+          `${char.static.name}'s currency updated${conversionNote} → ${gp}gp, ${sp}sp, ${cp}cp, ${pp}pp`,
           {
             character: char.static.name,
             cp,
             sp,
-            ep,
             gp,
             pp,
             conversions: conversions.length > 0 ? conversions : undefined,
@@ -2558,34 +2557,28 @@ export class GameStateManager {
 
   /**
    * Borrow from higher denominations to cover a shortfall.
-   * D&D exchange rates: 1pp=10gp, 1gp=10sp, 1sp=10cp, 1ep=5sp.
+   * D&D exchange rates: 1pp=10gp, 1gp=10sp, 1sp=10cp.
    * Returns conversion descriptions, or null if insufficient total funds.
    */
   private borrowCurrency(
-    currency: Record<"cp" | "sp" | "ep" | "gp" | "pp", number>,
-    targetCoin: "cp" | "sp" | "ep" | "gp" | "pp",
+    currency: Record<"cp" | "sp" | "gp" | "pp", number>,
+    targetCoin: "cp" | "sp" | "gp" | "pp",
     shortfall: number,
   ): string[] | null {
     // Define conversion chains: for each coin, which higher coins can be broken down
     // and how many of the target coin each produces
     const conversionChains: Record<
       string,
-      Array<{ from: "cp" | "sp" | "ep" | "gp" | "pp"; rate: number }>
+      Array<{ from: "cp" | "sp" | "gp" | "pp"; rate: number }>
     > = {
       cp: [
         { from: "sp", rate: 10 }, // 1sp = 10cp
-        { from: "ep", rate: 50 }, // 1ep = 5sp = 50cp
         { from: "gp", rate: 100 }, // 1gp = 100cp
         { from: "pp", rate: 1000 }, // 1pp = 1000cp
       ],
       sp: [
-        { from: "ep", rate: 5 }, // 1ep = 5sp
         { from: "gp", rate: 10 }, // 1gp = 10sp
         { from: "pp", rate: 100 }, // 1pp = 100sp
-      ],
-      ep: [
-        { from: "gp", rate: 2 }, // 1gp = 2ep
-        { from: "pp", rate: 20 }, // 1pp = 20ep
       ],
       gp: [
         { from: "pp", rate: 10 }, // 1pp = 10gp

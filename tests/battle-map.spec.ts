@@ -196,7 +196,7 @@ function buildCharacterUpdate(playerName: string, charName: string) {
         conditions: [],
         deathSaves: { successes: 0, failures: 0 },
         inventory: [],
-        currency: { cp: 0, sp: 0, ep: 0, gp: 50, pp: 0 },
+        currency: { cp: 0, sp: 0, gp: 50, pp: 0 },
       },
     },
   };

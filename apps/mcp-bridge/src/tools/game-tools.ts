@@ -1020,14 +1020,21 @@ export function registerGameTools(
     "update_currency",
     {
       description:
-        "Add or subtract currency for a character. Positive adds, negative subtracts. Auto-converts from higher denominations when spending more than available.",
+        "Add or subtract currency for a character. Use positive numbers to add, negative to subtract. Auto-converts from higher denominations when spending more than available.",
       inputSchema: {
         character_name: z.string().describe("Character name"),
-        cp: z.coerce.number().optional().describe("Copper pieces to add/subtract"),
-        sp: z.coerce.number().optional().describe("Silver pieces to add/subtract"),
-        ep: z.coerce.number().optional().describe("Electrum pieces to add/subtract"),
-        gp: z.coerce.number().optional().describe("Gold pieces to add/subtract"),
-        pp: z.coerce.number().optional().describe("Platinum pieces to add/subtract"),
+        copper: z.coerce
+          .number()
+          .describe("Copper pieces delta (+add / -subtract). Pass 0 for no change."),
+        silver: z.coerce
+          .number()
+          .describe("Silver pieces delta (+add / -subtract). Pass 0 for no change."),
+        gold: z.coerce
+          .number()
+          .describe("Gold pieces delta (+add / -subtract). Pass 0 for no change."),
+        platinum: z.coerce
+          .number()
+          .describe("Platinum pieces delta (+add / -subtract). Pass 0 for no change."),
         auto_convert: z
           .boolean()
           .optional()
@@ -1037,13 +1044,12 @@ export function registerGameTools(
           ),
       },
     },
-    async ({ character_name, cp, sp, ep, gp, pp, auto_convert }) => {
-      const changes: Partial<Record<"cp" | "sp" | "ep" | "gp" | "pp", number>> = {};
-      if (cp !== undefined) changes.cp = cp;
-      if (sp !== undefined) changes.sp = sp;
-      if (ep !== undefined) changes.ep = ep;
-      if (gp !== undefined) changes.gp = gp;
-      if (pp !== undefined) changes.pp = pp;
+    async ({ character_name, copper, silver, gold, platinum, auto_convert }) => {
+      const changes: Partial<Record<"cp" | "sp" | "gp" | "pp", number>> = {};
+      if (copper) changes.cp = copper;
+      if (silver) changes.sp = silver;
+      if (gold) changes.gp = gold;
+      if (platinum) changes.pp = platinum;
       const result = wsClient.gameStateManager.updateCurrency(
         character_name,
         changes,

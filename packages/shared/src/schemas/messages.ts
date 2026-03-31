@@ -86,7 +86,6 @@ export const inventoryItemSchema = z.object({
 export const currencySchema = z.object({
   cp: z.number(),
   sp: z.number(),
-  ep: z.number(),
   gp: z.number(),
   pp: z.number(),
 });

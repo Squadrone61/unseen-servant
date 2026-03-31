@@ -280,8 +280,8 @@ export function StepEquipment({ state, dispatch }: StepProps) {
           {/* Currency */}
           <div className="bg-gray-800/60 border border-gray-700/40 rounded-lg p-4 space-y-2">
             <div className="text-sm font-medium text-gray-300">Currency</div>
-            <div className="grid grid-cols-5 gap-1">
-              {(["cp", "sp", "ep", "gp", "pp"] as const).map((coin) => (
+            <div className="grid grid-cols-4 gap-1">
+              {(["cp", "sp", "gp", "pp"] as const).map((coin) => (
                 <div key={coin} className="text-center">
                   <div className="text-xs text-gray-500 uppercase">{coin}</div>
                   <input
