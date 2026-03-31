@@ -53,8 +53,15 @@ function getMessageKey(msg: DisplayMessage, index: number): string {
 }
 
 function formatTypingText(names: string[]): string {
-  if (names.length === 1) return `${names[0]} is typing...`;
-  if (names.length === 2) return `${names[0]} and ${names[1]} are typing...`;
+  if (names.length === 1) {
+    const verb = names[0] === "DM" ? "thinking" : "typing";
+    return `${names[0]} is ${verb}...`;
+  }
+  if (names.length === 2) {
+    // If DM is one of two, just show both actions
+    const parts = names.map((n) => `${n} is ${n === "DM" ? "thinking" : "typing"}`);
+    return `${parts.join(" and ")}...`;
+  }
   return `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]} are typing...`;
 }
 

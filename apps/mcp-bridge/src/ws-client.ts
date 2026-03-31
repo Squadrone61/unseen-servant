@@ -164,9 +164,6 @@ export class WSClient {
       case "server:room_joined": {
         this.connected = true;
         this.storyStarted = msg.storyStarted ?? false;
-        if (this.storyStarted) {
-          this.sendTypingIndicator(true);
-        }
         this.gameStateManager.storyStarted = this.storyStarted;
         this.gameStateManager.hostName = msg.hostName;
 
