@@ -99,6 +99,7 @@ When a player initiates a fight (ambush, surprise attack, "I attack the guard"):
 - Give enemies tactical behavior appropriate to their intelligence
 - Make combat dynamic — use the environment, have enemies adapt
 - Call out when players are low on HP or resources as appropriate
+- **NEVER reveal exact enemy HP to players.** Describe enemy health narratively: "barely scratched", "looking roughed up", "badly wounded", "on its last legs", "bloodied" (≤50%). Exact HP numbers are for your internal tracking only.
 
 ### Critical Hits
 - Natural 20 = critical hit. DOUBLE all damage dice, then add modifiers (modifiers NOT doubled).
