@@ -1,30 +1,35 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { WSClient } from "../ws-client.js";
-import { rollDamage } from "@unseen-servant/shared/utils";
+import type { RollResult } from "@unseen-servant/shared/types";
+import { rollDamage, rollCheck } from "@unseen-servant/shared/utils";
 
 export function registerDndTools(server: McpServer, wsClient: WSClient): void {
   server.registerTool(
     "roll_dice",
     {
       description:
-        "Roll dice. Two modes: (1) DM/direct roll — just notation + reason. (2) Interactive player roll — add target + checkType so the player rolls on their client. If target is provided → Mode 2, otherwise → Mode 1. All rolls are shown to players in chat.",
+        "Roll dice. With player → interactive roll (player sees a Roll button on their client). Without player → DM rolls server-side (for monsters/NPCs). checkType is always required. Use 'damage' for damage rolls (notation required), 'custom' for arbitrary rolls (notation required), or 'ability'/'skill'/'saving_throw'/'attack' for d20 checks. All rolls are shown to players in chat.",
       inputSchema: {
-        notation: z.string().describe("Dice notation, e.g. '2d6+3', 'd20', '4d8', '1d20+5'"),
+        checkType: z
+          .enum(["ability", "skill", "saving_throw", "attack", "custom", "damage"])
+          .describe(
+            "Type of roll. 'ability'/'skill'/'saving_throw'/'attack' = d20 check. 'damage' = damage dice (notation required). 'custom' = arbitrary roll (notation required).",
+          ),
+        notation: z
+          .string()
+          .optional()
+          .describe(
+            "Dice notation, e.g. '2d6+3', '1d20+5'. Required for 'damage' and 'custom'. Optional for d20 checks (modifier is auto-calculated from character sheet when player is provided).",
+          ),
         reason: z
           .string()
           .optional()
           .describe("Why the roll is happening, e.g. 'Goblin attack damage', 'Spot the trap'"),
-        target: z
+        player: z
           .string()
           .optional()
-          .describe("Character name for interactive player check (triggers Mode 2)"),
-        checkType: z
-          .enum(["ability", "skill", "saving_throw", "attack", "custom", "damage"])
-          .optional()
-          .describe(
-            "Type of check: 'ability', 'skill', 'saving_throw', 'attack', 'custom', or 'damage'. Required when target is provided. 'damage' also requires notation.",
-          ),
+          .describe("Character name for interactive player roll. Omit for DM server-side roll."),
         ability: z
           .string()
           .optional()
@@ -42,33 +47,22 @@ export function registerDndTools(server: McpServer, wsClient: WSClient): void {
       },
     },
     async ({
+      checkType,
       notation,
       reason,
-      target,
-      checkType,
+      player,
       ability,
       skill,
       dc,
       advantage,
       disadvantage,
     }) => {
-      // Mode 2: Interactive player check
-      if (target) {
-        if (!checkType) {
-          return {
-            content: [
-              {
-                type: "text" as const,
-                text: "Error: checkType is required when target is provided. Use 'ability', 'skill', 'saving_throw', 'attack', or 'custom'.",
-              },
-            ],
-          };
-        }
-
+      // Interactive player roll
+      if (player) {
         try {
           const result = await wsClient.sendCheckRequest({
             checkType,
-            targetCharacter: target,
+            targetCharacter: player,
             ability,
             skill,
             dc,
@@ -135,13 +129,44 @@ export function registerDndTools(server: McpServer, wsClient: WSClient): void {
         }
       }
 
-      // Mode 1: Direct DM roll
-      const roll = rollDamage(notation);
+      // DM server-side roll
+      // For d20-based check types, use rollCheck to support advantage/disadvantage
+      const isD20Check = checkType !== "damage" && checkType !== "custom";
+
+      let roll: RollResult;
+
+      if (isD20Check) {
+        // Parse modifier from notation if provided (e.g. "1d20+5" → 5), otherwise 0
+        let modifier = 0;
+        if (notation) {
+          const modMatch = notation.match(/^1?d20([+-]\d+)$/i);
+          if (modMatch) modifier = parseInt(modMatch[1], 10);
+        }
+        roll = rollCheck({
+          modifier,
+          advantage,
+          disadvantage,
+          label: reason || notation || `${checkType} check`,
+        });
+      } else {
+        if (!notation) {
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: `Error: notation is required for '${checkType}' rolls.`,
+              },
+            ],
+          };
+        }
+        roll = rollDamage(notation);
+      }
 
       // Send to worker so all players see it in chat
       wsClient.sendDiceRoll(roll, reason);
 
       const rollsStr = ` [${roll.rolls.map((r) => r.result).join(", ")}]`;
+      const advStr = roll.advantage ? " (advantage)" : roll.disadvantage ? " (disadvantage)" : "";
       const modStr =
         roll.modifier !== 0 ? (roll.modifier > 0 ? ` +${roll.modifier}` : ` ${roll.modifier}`) : "";
       const critStr = roll.criticalHit
@@ -150,12 +175,13 @@ export function registerDndTools(server: McpServer, wsClient: WSClient): void {
           ? " (CRITICAL FAIL!)"
           : "";
       const reasonStr = reason ? ` (${reason})` : "";
+      const displayNotation = notation || "d20";
 
       return {
         content: [
           {
             type: "text" as const,
-            text: `${notation}:${rollsStr}${modStr} = ${roll.total}${critStr}${reasonStr}`,
+            text: `${displayNotation}:${rollsStr}${modStr} = ${roll.total}${advStr}${critStr}${reasonStr}`,
           },
         ],
       };
