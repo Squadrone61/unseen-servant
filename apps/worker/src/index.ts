@@ -96,7 +96,7 @@ export default {
         createdAt: Date.now(),
       };
       await env.ROOMS.put(`room:${roomCode}`, JSON.stringify(meta), {
-        expirationTtl: 86400 * 7,
+        expirationTtl: 300, // 5 min — upgraded to 7 days once host joins
       });
 
       return new Response(JSON.stringify({ roomCode }), {
@@ -113,9 +113,7 @@ export default {
         if (val) {
           try {
             const meta = JSON.parse(val);
-            if (meta.playerCount > 0) {
-              rooms.push(meta);
-            }
+            rooms.push(meta);
           } catch {
             // skip malformed entries
           }
