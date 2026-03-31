@@ -40,6 +40,8 @@ export interface CheckRequest {
   reason: string;
   /** Dice notation for damage rolls, e.g. "2d6+3" */
   notation?: string;
+  /** For attack rolls: whether this is a melee, ranged, or spell attack */
+  attackType?: "melee" | "ranged" | "spell";
   /** When true, this check was initiated by the DM bridge (not parsed from AI text) */
   dmInitiated?: boolean;
 }

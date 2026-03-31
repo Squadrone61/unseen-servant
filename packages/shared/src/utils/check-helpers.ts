@@ -26,8 +26,10 @@ export function buildCheckLabel(check: CheckRequest): string {
       return abilityAbbr
         ? `${abilityAbbr} Check${check.reason ? ` — ${check.reason}` : ""}`
         : check.reason;
-    case "attack":
-      return `Attack${check.reason ? ` — ${check.reason}` : ""}`;
+    case "attack": {
+      const atkType = check.attackType ? ` (${check.attackType})` : "";
+      return `Attack${atkType}${check.reason ? ` — ${check.reason}` : ""}`;
+    }
     default:
       return check.reason;
   }
@@ -64,14 +66,38 @@ export function computeCheckModifier(char: CharacterData, check: CheckRequest): 
   }
 
   if (check.type === "attack") {
-    // Use spell attack bonus or proficiency + STR/DEX
-    if (s.spellAttackBonus !== undefined) {
+    // Spell attacks use spellAttackBonus directly
+    if (check.attackType === "spell" && s.spellAttackBonus !== undefined) {
       return s.spellAttackBonus;
     }
-    // Melee: STR + prof, Ranged: DEX + prof
-    const strMod = getModifier(s.abilities.strength);
-    const dexMod = getModifier(s.abilities.dexterity);
-    return Math.max(strMod, dexMod) + s.proficiencyBonus;
+
+    // Weapon attacks: ability mod + proficiency + combat bonuses
+    // If ability is explicitly provided (e.g. Finesse weapon choosing DEX), use that.
+    // Otherwise: melee → STR, ranged → DEX
+    let abilityMod: number;
+    if (check.ability) {
+      const key = check.ability as keyof typeof s.abilities;
+      abilityMod = s.abilities[key] !== undefined ? getModifier(s.abilities[key]) : 0;
+    } else if (check.attackType === "ranged") {
+      abilityMod = getModifier(s.abilities.dexterity);
+    } else {
+      // melee (default)
+      abilityMod = getModifier(s.abilities.strength);
+    }
+    let modifier = abilityMod + s.proficiencyBonus;
+
+    // Apply unconditional combat bonuses matching the attack type
+    if (s.combatBonuses) {
+      for (const bonus of s.combatBonuses) {
+        if (bonus.type === "attack" && !bonus.condition) {
+          if (!bonus.attackType || bonus.attackType === check.attackType) {
+            modifier += bonus.value;
+          }
+        }
+      }
+    }
+
+    return modifier;
   }
 
   return 0;

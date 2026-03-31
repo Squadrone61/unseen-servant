@@ -94,7 +94,7 @@ When a player initiates a fight (ambush, surprise attack, "I attack the guard"):
 - For monster attacks: roll attack with \`roll_dice({ checkType: "attack", notation: "1d20+X", reason: "Monster attack" })\` — if it hits, roll damage
 - For player attacks: the player describes the attack, you determine if it hits using the attack roll, then have the player roll damage with \`roll_dice({ player: "CharName", checkType: "damage", notation: "..." })\`
 - **Players ALWAYS roll their own damage.** When a player's attack/spell hits, use roll_dice with player + checkType="damage" so the player sees "Roll Damage". NEVER roll damage on behalf of a player.
-- **Always pass DC for attack rolls.** Use roll_dice with player, checkType="attack", dc=TARGET_AC so the result shows Success/Failure in the UI.
+- **Always pass DC and attackType for attack rolls.** Use roll_dice with player, checkType="attack", attackType="melee"/"ranged"/"spell", dc=TARGET_AC. Melee attacks also require ability ("strength" or "dexterity" for Finesse weapons). "ranged" uses DEX automatically. "spell" uses spellAttackBonus. Combat bonuses like Archery +2 are applied automatically.
 - Describe attacks cinematically, not just mechanically
 - Give enemies tactical behavior appropriate to their intelligence
 - Make combat dynamic — use the environment, have enemies adapt

@@ -99,6 +99,14 @@ export interface CharacterFeature {
   activationType?: string; // "1 action", "1 bonus action", "1 reaction", etc.
 }
 
+export interface CombatBonus {
+  type: "attack" | "damage" | "initiative";
+  value: number;
+  attackType?: "melee" | "ranged" | "spell";
+  source: string;
+  condition?: string;
+}
+
 export interface ClassResource {
   name: string;
   maxUses: number;
@@ -165,6 +173,7 @@ export interface CharacterStaticData {
   spellSaveDC?: number;
   spellAttackBonus?: number;
   advantages: AdvantageEntry[];
+  combatBonuses?: CombatBonus[];
   traits: CharacterTraits;
   appearance?: CharacterAppearance;
   backstory?: string;

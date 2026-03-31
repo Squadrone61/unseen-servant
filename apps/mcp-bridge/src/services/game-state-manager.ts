@@ -1720,6 +1720,14 @@ export class GameStateManager {
           linkedPlayerId = charEntry[0];
           const dex = charEntry[1].static.abilities.dexterity;
           initMod = c.initiativeModifier ?? Math.floor((dex - 10) / 2);
+          // Apply initiative bonuses from feats (e.g. Alert)
+          const initBonuses =
+            charEntry[1].static.combatBonuses?.filter(
+              (b) => b.type === "initiative" && !b.condition,
+            ) ?? [];
+          for (const b of initBonuses) {
+            initMod += b.value;
+          }
         }
       }
 
@@ -3689,6 +3697,7 @@ export class GameStateManager {
     disadvantage?: boolean;
     reason: string;
     notation?: string;
+    attackType?: "melee" | "ranged" | "spell";
   }): string {
     // Verify target character exists
     const charEntry = Object.entries(this.characters).find(
@@ -3709,6 +3718,7 @@ export class GameStateManager {
       disadvantage: params.disadvantage,
       reason: params.reason,
       notation: params.notation,
+      attackType: params.attackType,
       dmInitiated: true,
     };
 

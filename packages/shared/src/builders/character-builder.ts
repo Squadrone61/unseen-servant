@@ -10,6 +10,7 @@ import type {
   CharacterStaticData,
   CharacterDynamicData,
   CharacterFeature,
+  CombatBonus,
   ClassResource,
   ProficiencyGroup,
   SkillProficiency,
@@ -187,6 +188,7 @@ export function buildCharacter(ids: CharacterIdentifiers): {
     spellcastingAbility: spellcasting.spellcastingAbility,
     spellSaveDC: spellcasting.spellSaveDC,
     spellAttackBonus: spellcasting.spellAttackBonus,
+    combatBonuses: computeCombatBonuses(ids, proficiencyBonus),
     advantages: ids.advantages ?? [],
     traits: ids.traits ?? {},
     appearance: ids.appearance,
@@ -512,6 +514,47 @@ function computeSpellSlots(ids: CharacterIdentifiers): {
   return { regularSlots, pactSlots };
 }
 
+// ─── Combat Bonuses ─────────────────────────────────────
+
+function computeCombatBonuses(ids: CharacterIdentifiers, proficiencyBonus: number): CombatBonus[] {
+  const bonuses: CombatBonus[] = [];
+  const featNames = (ids.additionalFeatures ?? []).map((f) => f.name.toLowerCase());
+
+  // Archery: +2 to ranged attack rolls
+  if (featNames.includes("archery")) {
+    bonuses.push({ type: "attack", value: 2, attackType: "ranged", source: "Archery" });
+  }
+
+  // Alert: add proficiency bonus to initiative rolls
+  if (featNames.includes("alert")) {
+    bonuses.push({ type: "initiative", value: proficiencyBonus, source: "Alert" });
+  }
+
+  // Dueling: +2 melee damage (conditional — stored for DM visibility)
+  if (featNames.includes("dueling")) {
+    bonuses.push({
+      type: "damage",
+      value: 2,
+      attackType: "melee",
+      source: "Dueling",
+      condition: "holding a melee weapon in one hand and no other weapons",
+    });
+  }
+
+  // Thrown Weapon Fighting: +2 ranged damage with thrown weapons (conditional)
+  if (featNames.includes("thrown weapon fighting")) {
+    bonuses.push({
+      type: "damage",
+      value: 2,
+      attackType: "ranged",
+      source: "Thrown Weapon Fighting",
+      condition: "thrown weapon ranged attacks only",
+    });
+  }
+
+  return bonuses;
+}
+
 // ─── Features ────────────────────────────────────────────
 
 function computeFeatures(ids: CharacterIdentifiers, _warnings: string[]): CharacterFeature[] {
@@ -581,7 +624,7 @@ function computeFeatures(ids: CharacterIdentifiers, _warnings: string[]): Charac
   // Feat features from DB
   for (const feat of ids.additionalFeatures?.filter((f) => f.source === "feat") ?? []) {
     const dbFeat = getFeat(feat.name);
-    if (dbFeat && !feat.description) {
+    if (dbFeat && (!feat.description || feat.description === feat.name)) {
       // Enrich with DB description
       const idx = features.findIndex((f) => f.name === feat.name);
       if (idx >= 0) {

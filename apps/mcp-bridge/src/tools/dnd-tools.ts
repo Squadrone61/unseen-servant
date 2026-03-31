@@ -33,7 +33,9 @@ export function registerDndTools(server: McpServer, wsClient: WSClient): void {
         ability: z
           .string()
           .optional()
-          .describe("Ability score for the check, e.g. 'wisdom', 'strength'"),
+          .describe(
+            "Ability score for the check, e.g. 'wisdom', 'strength'. For attacks: overrides the default ability (STR for melee, DEX for ranged) — use for Finesse weapons.",
+          ),
         skill: z
           .string()
           .optional()
@@ -44,6 +46,12 @@ export function registerDndTools(server: McpServer, wsClient: WSClient): void {
           .boolean()
           .optional()
           .describe("Roll with disadvantage (roll 2d20, take lower)"),
+        attackType: z
+          .enum(["melee", "ranged", "spell"])
+          .optional()
+          .describe(
+            "For attack rolls: 'melee' for weapon melee, 'ranged' for weapon ranged (enables bonuses like Archery +2), 'spell' for spell attacks (uses spellAttackBonus).",
+          ),
       },
     },
     async ({
@@ -56,7 +64,42 @@ export function registerDndTools(server: McpServer, wsClient: WSClient): void {
       dc,
       advantage,
       disadvantage,
+      attackType,
     }) => {
+      // ── Validate conditionally required parameters ──
+      const errors: string[] = [];
+
+      if ((checkType === "damage" || checkType === "custom") && !notation) {
+        errors.push(`notation is required for '${checkType}' rolls.`);
+      }
+      if (checkType === "attack" && !attackType) {
+        errors.push(
+          "attackType ('melee', 'ranged', or 'spell') is required for attack rolls — it determines modifier calculation and enables combat bonuses.",
+        );
+      }
+      if (checkType === "attack" && attackType === "melee" && !ability) {
+        errors.push(
+          "ability is required for melee attacks (e.g. 'strength', or 'dexterity' for Finesse weapons like rapier/shortsword).",
+        );
+      }
+      if (checkType === "attack" && dc === undefined) {
+        errors.push(
+          "dc (target AC) is required for attack rolls — it shows Success/Failure in the player UI.",
+        );
+      }
+      if (checkType === "skill" && !skill) {
+        errors.push("skill is required for skill checks (e.g. 'perception', 'stealth').");
+      }
+      if ((checkType === "saving_throw" || checkType === "ability") && !ability) {
+        errors.push(`ability is required for '${checkType}' checks (e.g. 'wisdom', 'strength').`);
+      }
+
+      if (errors.length > 0) {
+        return {
+          content: [{ type: "text" as const, text: `Error: ${errors.join(" ")}` }],
+        };
+      }
+
       // Interactive player roll
       if (player) {
         try {
@@ -70,6 +113,7 @@ export function registerDndTools(server: McpServer, wsClient: WSClient): void {
             disadvantage,
             reason: reason || `${checkType} check`,
             notation: checkType === "damage" ? notation : undefined,
+            attackType: checkType === "attack" ? attackType : undefined,
           });
 
           // Damage rolls: report individual dice + total
@@ -149,17 +193,7 @@ export function registerDndTools(server: McpServer, wsClient: WSClient): void {
           label: reason || notation || `${checkType} check`,
         });
       } else {
-        if (!notation) {
-          return {
-            content: [
-              {
-                type: "text" as const,
-                text: `Error: notation is required for '${checkType}' rolls.`,
-              },
-            ],
-          };
-        }
-        roll = rollDamage(notation);
+        roll = rollDamage(notation!);
       }
 
       // Send to worker so all players see it in chat

@@ -734,6 +734,7 @@ export class WSClient {
     disadvantage?: boolean;
     reason: string;
     notation?: string;
+    attackType?: "melee" | "ranged" | "spell";
   }): Promise<CheckResult> {
     return new Promise((resolve, reject) => {
       // Use GameStateManager to create the check request

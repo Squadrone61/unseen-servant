@@ -51,6 +51,7 @@ export const checkRequestSchema = z.object({
   disadvantage: z.boolean().optional(),
   reason: z.string(),
   notation: z.string().optional(),
+  attackType: z.enum(["melee", "ranged", "spell"]).optional(),
   dmInitiated: z.boolean().optional(),
 });
 
