@@ -44,6 +44,7 @@ import {
   DM_ENCOUNTER_LENGTHS,
   DM_SKILL_SOCIAL,
 } from "@unseen-servant/shared";
+import { log } from "../logger.js";
 import type { MessageQueue } from "../message-queue.js";
 import type { CampaignManager } from "./campaign-manager.js";
 
@@ -172,8 +173,9 @@ export class GameStateManager {
         JSON.stringify(this.conversationHistory, null, 2),
       );
     } catch (e) {
-      console.error(
-        `[game-state] Failed to save session state: ${e instanceof Error ? e.message : String(e)}`,
+      log(
+        "game-state",
+        `Failed to save session state: ${e instanceof Error ? e.message : String(e)}`,
       );
     }
   }
@@ -279,8 +281,9 @@ export class GameStateManager {
     }
 
     this.lastSentIndex = this.conversationHistory.length;
-    console.error(
-      `[game-state] pushDMRequest: requestId=${requestId}, messages=${newMessages.length}, total=${this.conversationHistory.length}`,
+    log(
+      "game-state",
+      `pushDMRequest: requestId=${requestId}, messages=${newMessages.length}, total=${this.conversationHistory.length}`,
     );
     this.messageQueue.push({
       requestId,
@@ -367,8 +370,9 @@ export class GameStateManager {
   // ─── Start Story ───
 
   handleStartStory(playerName: string): void {
-    console.error(
-      `[game-state] handleStartStory: playerName="${playerName}", hostName="${this.hostName}", storyStarted=${this.storyStarted}`,
+    log(
+      "game-state",
+      `handleStartStory: playerName="${playerName}", hostName="${this.hostName}", storyStarted=${this.storyStarted}`,
     );
     if (playerName !== this.hostName) {
       this.broadcast(
@@ -428,8 +432,9 @@ export class GameStateManager {
 
       this.pushDMRequest();
     } catch (e) {
-      console.error(
-        `[game-state] handleStartStory FAILED after broadcast: ${e instanceof Error ? e.message : String(e)}`,
+      log(
+        "game-state",
+        `handleStartStory FAILED after broadcast: ${e instanceof Error ? e.message : String(e)}`,
       );
       // Still push a basic request so the game doesn't hang
       this.conversationHistory.push({

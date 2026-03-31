@@ -1,4 +1,5 @@
 import type { DMRequest } from "./types.js";
+import { log } from "./logger.js";
 
 interface PendingWaiter {
   resolve: (msg: DMRequest) => void;
@@ -15,15 +16,16 @@ export class MessageQueue {
 
   /** Called by WS client when server:dm_request arrives. */
   push(msg: DMRequest): void {
-    console.error(
-      `[msg-queue] push: requestId=${msg.requestId}, waiters=${this.waiters.length}, queued=${this.queue.length}`,
+    log(
+      "msg-queue",
+      `push: requestId=${msg.requestId}, waiters=${this.waiters.length}, queued=${this.queue.length}`,
     );
     const waiter = this.waiters.shift();
     if (waiter) {
-      console.error(`[msg-queue] push: resolved waiting consumer`);
+      log("msg-queue", "push: resolved waiting consumer");
       waiter.resolve(msg);
     } else {
-      console.error(`[msg-queue] push: buffered (no waiter)`);
+      log("msg-queue", "push: buffered (no waiter)");
       this.queue.push(msg);
     }
   }
@@ -32,12 +34,13 @@ export class MessageQueue {
    *  Accepts an optional AbortSignal so the MCP SDK can cancel stale waiters
    *  (e.g. after context compression) without deadlocking the queue. */
   waitForNext(signal?: AbortSignal): Promise<DMRequest> {
-    console.error(
-      `[msg-queue] waitForNext: queued=${this.queue.length}, aborted=${signal?.aborted ?? "no signal"}`,
+    log(
+      "msg-queue",
+      `waitForNext: queued=${this.queue.length}, aborted=${signal?.aborted ?? "no signal"}`,
     );
     const queued = this.queue.shift();
     if (queued) {
-      console.error(`[msg-queue] waitForNext: returning buffered message immediately`);
+      log("msg-queue", "waitForNext: returning buffered message immediately");
       return Promise.resolve(queued);
     }
 

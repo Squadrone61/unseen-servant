@@ -1,6 +1,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { formatGridPosition, parseGridPosition } from "@unseen-servant/shared/utils";
+import { log } from "../logger.js";
 import type { MessageQueue } from "../message-queue.js";
 import type { WSClient } from "../ws-client.js";
 import { buildResult, buildError } from "./tool-result.js";
@@ -45,12 +46,10 @@ export function registerGameTools(
         "Block until a player message or DM request arrives. Returns { requestId, systemPrompt, messages, totalMessageCount }. Must call send_response or acknowledge before calling again.",
     },
     async (extra: { signal: AbortSignal }) => {
-      console.error(`[game-tools] wait_for_message CALLED, pendingRequestId=${pendingRequestId}`);
+      log("game-tools", `wait_for_message CALLED, pendingRequestId=${pendingRequestId}`);
       // Guard: block if previous request wasn't responded to
       if (pendingRequestId) {
-        console.error(
-          `[game-tools] wait_for_message BLOCKED: pending requestId=${pendingRequestId}`,
-        );
+        log("game-tools", `wait_for_message BLOCKED: pending requestId=${pendingRequestId}`);
         return {
           content: [
             {
@@ -89,8 +88,9 @@ export function registerGameTools(
 
       // Track this request — must be responded to before next wait_for_message
       pendingRequestId = msg.requestId;
-      console.error(
-        `[game-tools] wait_for_message resolved: requestId=${msg.requestId}, messages=${msg.messages.length}`,
+      log(
+        "game-tools",
+        `wait_for_message resolved: requestId=${msg.requestId}, messages=${msg.messages.length}`,
       );
 
       return {
@@ -166,9 +166,7 @@ export function registerGameTools(
       wsClient.sendDMResponse(requestId, narrative);
       wsClient.sendTypingIndicator(false);
       pendingRequestId = null;
-      console.error(
-        `[game-tools] send_response: requestId=${requestId}, ${narrative.length} chars`,
-      );
+      log("game-tools", `send_response: requestId=${requestId}, ${narrative.length} chars`);
       return {
         content: [
           {

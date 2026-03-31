@@ -1,5 +1,6 @@
 import * as fs from "fs";
 import * as path from "path";
+import { log } from "../logger.js";
 import { campaignManifestSchema } from "../types.js";
 import type { CampaignManifest, CampaignSummary } from "../types.js";
 
@@ -187,13 +188,12 @@ export class CampaignManager {
             sessionCount: result.data.sessionCount,
           });
         } else {
-          console.error(
-            `[campaign-manager] Corrupt manifest in ${entry.name}: ${result.error.message}`,
-          );
+          log("campaign-mgr", `Corrupt manifest in ${entry.name}: ${result.error.message}`);
         }
       } catch (e) {
-        console.error(
-          `[campaign-manager] Failed to read manifest in ${entry.name}: ${e instanceof Error ? e.message : String(e)}`,
+        log(
+          "campaign-mgr",
+          `Failed to read manifest in ${entry.name}: ${e instanceof Error ? e.message : String(e)}`,
         );
       }
     }

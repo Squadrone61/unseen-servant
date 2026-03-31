@@ -1,4 +1,5 @@
 import WebSocket from "ws";
+import { log } from "./logger.js";
 import type { MessageQueue } from "./message-queue.js";
 import type { CampaignManager } from "./services/campaign-manager.js";
 import { GameStateManager, type SessionStateSnapshot } from "./services/game-state-manager.js";
@@ -60,19 +61,20 @@ export class WSClient {
     const wsUrl = this.options.workerUrl.replace(/^http/, "ws").replace(/\/$/, "");
     const url = `${wsUrl}/api/rooms/${this.options.roomCode}/ws`;
 
-    console.error(`[ws-client] Connecting to ${url}...`);
+    log("ws-client", `Connecting to ${url}...`);
     try {
       this.ws = new WebSocket(url);
     } catch (err) {
-      console.error(
-        `[ws-client] Failed to create WebSocket: ${err instanceof Error ? err.message : String(err)}`,
+      log(
+        "ws-client",
+        `Failed to create WebSocket: ${err instanceof Error ? err.message : String(err)}`,
       );
       this.scheduleReconnect();
       return;
     }
 
     this.ws.on("open", () => {
-      console.error(`[ws-client] WebSocket open, joining room as DM...`);
+      log("ws-client", "WebSocket open, joining room as DM...");
       this.reconnectAttempts = 0;
       this.lastPongAt = Date.now();
       this.send({
@@ -87,7 +89,7 @@ export class WSClient {
       this.clearPingInterval();
       this.pingInterval = setInterval(() => {
         if (Date.now() - this.lastPongAt > 60_000) {
-          console.error(`[ws-client] No pong received in 60s, terminating connection...`);
+          log("ws-client", "No pong received in 60s, terminating connection...");
           this.ws?.terminate();
           return;
         }
@@ -136,14 +138,12 @@ export class WSClient {
       } catch (e) {
         // Only ignore JSON parse errors (non-JSON messages like "pong")
         if (e instanceof SyntaxError) return;
-        console.error(
-          `[ws-client] Message handler error: ${e instanceof Error ? e.message : String(e)}`,
-        );
+        log("ws-client", `Message handler error: ${e instanceof Error ? e.message : String(e)}`);
       }
     });
 
     this.ws.on("close", (code, reason) => {
-      console.error(`[ws-client] Disconnected: ${code} ${reason.toString()}`);
+      log("ws-client", `Disconnected: ${code} ${reason.toString()}`);
       this.connected = false;
       this.configSent = false;
       this.wasDisconnected = true;
@@ -153,7 +153,7 @@ export class WSClient {
     });
 
     this.ws.on("error", (err) => {
-      console.error(`[ws-client] Error: ${err.message}`);
+      log("ws-client", `Error: ${err.message}`);
       // Terminate to trigger close→reconnect flow instead of silently hanging
       this.ws?.terminate();
     });
@@ -172,9 +172,7 @@ export class WSClient {
 
         const isWsReconnect = this.wasDisconnected;
         if (isWsReconnect) {
-          console.error(
-            `[ws-client] Reconnected successfully after ${this.reconnectAttempts} attempts`,
-          );
+          log("ws-client", `Reconnected successfully after ${this.reconnectAttempts} attempts`);
           this.broadcastViaWorker({
             type: "server:system",
             content: "DM has reconnected. Resuming session.",
@@ -184,8 +182,9 @@ export class WSClient {
           this.wasDisconnected = false;
         }
 
-        console.error(
-          `[ws-client] Joined room ${msg.roomCode} as DM (host: ${msg.hostName}, players: ${msg.players.join(", ")})`,
+        log(
+          "ws-client",
+          `Joined room ${msg.roomCode} as DM (host: ${msg.hostName}, players: ${msg.players.join(", ")})`,
         );
 
         // Store initial character data
@@ -230,7 +229,7 @@ export class WSClient {
             .filter((p) => !p.isDM)
             .map((p) => p.name);
         }
-        console.error(`[ws-client] + ${msg.playerName} (${msg.players.length} players)`);
+        log("ws-client", `+ ${msg.playerName} (${msg.players.length} players)`);
 
         // Send game state sync to newly joined player
         if (!msg.isDM) {
@@ -249,7 +248,7 @@ export class WSClient {
             .filter((p) => !p.isDM)
             .map((p) => p.name);
         }
-        console.error(`[ws-client] - ${msg.playerName} (${msg.players.length} players)`);
+        log("ws-client", `- ${msg.playerName} (${msg.players.length} players)`);
         break;
       }
 
@@ -260,17 +259,17 @@ export class WSClient {
       }
 
       case "server:system": {
-        console.error(`[ws-client] System: ${msg.content}`);
+        log("ws-client", `System: ${msg.content}`);
         break;
       }
 
       case "server:error": {
-        console.error(`[ws-client] Error: ${msg.message} (${msg.code})`);
+        log("ws-client", `Error: ${msg.message} (${msg.code})`);
         break;
       }
 
       case "server:room_destroyed": {
-        console.error(`[ws-client] Room destroyed.`);
+        log("ws-client", "Room destroyed.");
         this.autoSnapshot();
         this.close();
         break;
@@ -289,7 +288,7 @@ export class WSClient {
     action: ClientMessage;
     requestId: string;
   }): void {
-    console.error(`[ws-client] Player action from ${raw.playerName}: ${raw.action.type}`);
+    log("ws-client", `Player action from ${raw.playerName}: ${raw.action.type}`);
 
     // Track playerName → userId mapping for campaign persistence
     if (raw.userId) {
@@ -330,12 +329,12 @@ export class WSClient {
       let manifest;
       if (msg.newCampaignName) {
         manifest = cm.createCampaign(msg.newCampaignName);
-        console.error(`[ws-client] Created campaign: ${manifest.name} (${manifest.slug})`);
+        log("ws-client", `Created campaign: ${manifest.name} (${manifest.slug})`);
       } else if (msg.campaignSlug) {
         manifest = cm.loadCampaign(msg.campaignSlug);
-        console.error(`[ws-client] Loaded campaign: ${manifest.name} (${manifest.slug})`);
+        log("ws-client", `Loaded campaign: ${manifest.name} (${manifest.slug})`);
       } else {
-        console.error(`[ws-client] set_campaign: no slug or name provided`);
+        log("ws-client", "set_campaign: no slug or name provided");
         return;
       }
 
@@ -357,7 +356,7 @@ export class WSClient {
         campaigns: campaigns.length > 0 ? campaigns : undefined,
       });
     } catch (e) {
-      console.error(`[ws-client] Campaign error: ${e instanceof Error ? e.message : String(e)}`);
+      log("ws-client", `Campaign error: ${e instanceof Error ? e.message : String(e)}`);
     }
   }
 
@@ -384,11 +383,9 @@ export class WSClient {
         }
       }
 
-      console.error(`[ws-client] Restored ${count} character(s) from campaign snapshots`);
+      log("ws-client", `Restored ${count} character(s) from campaign snapshots`);
     } catch (e) {
-      console.error(
-        `[ws-client] Character restore error: ${e instanceof Error ? e.message : String(e)}`,
-      );
+      log("ws-client", `Character restore error: ${e instanceof Error ? e.message : String(e)}`);
     }
   }
 
@@ -408,20 +405,18 @@ export class WSClient {
 
       if (msg.existingCampaignSlug) {
         manifest = cm.loadCampaign(msg.existingCampaignSlug);
-        console.error(`[ws-client] Loaded campaign: ${manifest.name} (${manifest.slug})`);
+        log("ws-client", `Loaded campaign: ${manifest.name} (${manifest.slug})`);
 
         const { characters: chars, userIds } = cm.loadCharacterSnapshotsWithIds();
         if (Object.keys(chars).length > 0) {
           restoredCharacters = chars;
           // Restore userId mappings from saved snapshots
           Object.assign(this.playerUserIds, userIds);
-          console.error(
-            `[ws-client] Restored ${Object.keys(chars).length} character(s) from campaign`,
-          );
+          log("ws-client", `Restored ${Object.keys(chars).length} character(s) from campaign`);
         }
       } else {
         manifest = cm.createCampaign(msg.campaignName);
-        console.error(`[ws-client] Created campaign: ${manifest.name} (${manifest.slug})`);
+        log("ws-client", `Created campaign: ${manifest.name} (${manifest.slug})`);
       }
 
       if (msg.systemPrompt) {
@@ -475,7 +470,7 @@ export class WSClient {
       this.sendAllPlayerNotes();
     } catch (e) {
       const errMsg = e instanceof Error ? e.message : String(e);
-      console.error(`[ws-client] Campaign configure error: ${errMsg}`);
+      log("ws-client", `Campaign configure error: ${errMsg}`);
       this.broadcastViaWorker({
         type: "server:error",
         message: `Campaign configuration failed: ${errMsg}`,
@@ -506,13 +501,9 @@ export class WSClient {
         { [msg.playerName]: msg.character },
         { [msg.playerName]: msg.userId || this.playerUserIds[msg.playerName] },
       );
-      console.error(
-        `[ws-client] Saved character "${msg.character.static.name}" for ${msg.playerName}`,
-      );
+      log("ws-client", `Saved character "${msg.character.static.name}" for ${msg.playerName}`);
     } catch (e) {
-      console.error(
-        `[ws-client] Character save error: ${e instanceof Error ? e.message : String(e)}`,
-      );
+      log("ws-client", `Character save error: ${e instanceof Error ? e.message : String(e)}`);
     }
   }
 
@@ -527,14 +518,12 @@ export class WSClient {
 
       if (Object.keys(this.characters).length > 0) {
         const count = cm.snapshotCharacters(this.characters, this.playerUserIds);
-        console.error(`[ws-client] Auto-snapshot: saved ${count} character(s) to campaign`);
+        log("ws-client", `Auto-snapshot: saved ${count} character(s) to campaign`);
       }
       cm.touchManifest();
       cm.flushManifest();
     } catch (e) {
-      console.error(
-        `[ws-client] Auto-snapshot error: ${e instanceof Error ? e.message : String(e)}`,
-      );
+      log("ws-client", `Auto-snapshot error: ${e instanceof Error ? e.message : String(e)}`);
     }
   }
 
@@ -545,12 +534,12 @@ export class WSClient {
     try {
       // Load campaign (sets activeSlug)
       const manifest = cm.loadCampaign(slug);
-      console.error(`[ws-client] Restoring session for campaign: ${manifest.name} (${slug})`);
+      log("ws-client", `Restoring session for campaign: ${manifest.name} (${slug})`);
 
       // Read session-state.json
       const raw = cm.readFile("session-state");
       if (!raw) {
-        console.error(`[ws-client] No session-state.json found, skipping state restoration`);
+        log("ws-client", "No session-state.json found, skipping state restoration");
         return;
       }
 
@@ -563,7 +552,7 @@ export class WSClient {
         try {
           chatHistory = JSON.parse(chatRaw);
         } catch {
-          console.error(`[ws-client] Failed to parse chat-history.json, falling back to snapshot`);
+          log("ws-client", "Failed to parse chat-history.json, falling back to snapshot");
         }
       }
 
@@ -610,15 +599,14 @@ export class WSClient {
       this.sendAllPlayerNotes();
 
       const msgCount = chatHistory?.length ?? snapshot.conversationHistory?.length ?? 0;
-      console.error(
-        `[ws-client] Session restored: ${msgCount} messages, ` +
+      log(
+        "ws-client",
+        `Session restored: ${msgCount} messages, ` +
           `story=${snapshot.storyStarted}, combat=${!!snapshot.gameState.encounter?.combat}, ` +
           `saved at ${snapshot.savedAt}`,
       );
     } catch (e) {
-      console.error(
-        `[ws-client] Session restore error: ${e instanceof Error ? e.message : String(e)}`,
-      );
+      log("ws-client", `Session restore error: ${e instanceof Error ? e.message : String(e)}`);
     }
   }
 
@@ -630,7 +618,7 @@ export class WSClient {
     try {
       cm.savePlayerNotes(playerName, content, userId);
     } catch (e) {
-      console.error(`[ws-client] Save notes error: ${e instanceof Error ? e.message : String(e)}`);
+      log("ws-client", `Save notes error: ${e instanceof Error ? e.message : String(e)}`);
     }
   }
 
@@ -648,7 +636,7 @@ export class WSClient {
         ]);
       }
     } catch (e) {
-      console.error(`[ws-client] Load notes error: ${e instanceof Error ? e.message : String(e)}`);
+      log("ws-client", `Load notes error: ${e instanceof Error ? e.message : String(e)}`);
     }
   }
 
@@ -697,8 +685,9 @@ export class WSClient {
     if (this.ws?.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify(msg));
     } else {
-      console.error(
-        `[ws-client] send() dropped (readyState=${this.ws?.readyState ?? "no ws"}): ${String(msg.type ?? "unknown")}`,
+      log(
+        "ws-client",
+        `send() dropped (readyState=${this.ws?.readyState ?? "no ws"}): ${String(msg.type ?? "unknown")}`,
       );
     }
   }
@@ -824,9 +813,7 @@ export class WSClient {
         );
         if (charEntry) {
           const [targetPlayerName] = charEntry;
-          console.error(
-            `[ws-client] Check timed out for ${params.targetCharacter}, auto-resolving...`,
-          );
+          log("ws-client", `Check timed out for ${params.targetCharacter}, auto-resolving...`);
           this.gameStateManager.handleRollDice(targetPlayerName, checkId);
           // The polling interval will detect the cleared check and resolve normally
         } else {
@@ -855,11 +842,12 @@ export class WSClient {
     const delay = Math.min(1000 * 2 ** Math.min(this.reconnectAttempts, 5), 30_000);
     this.reconnectAttempts++;
     if (this.reconnectAttempts % 10 === 0) {
-      console.error(
-        `[ws-client] WARNING: ${this.reconnectAttempts} reconnect attempts so far — still trying...`,
+      log(
+        "ws-client",
+        `WARNING: ${this.reconnectAttempts} reconnect attempts so far — still trying...`,
       );
     }
-    console.error(`[ws-client] Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts})...`);
+    log("ws-client", `Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts})...`);
     setTimeout(() => this.connect(), delay);
   }
 

@@ -1,5 +1,6 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
+import { log } from "../logger.js";
 import type { WSClient } from "../ws-client.js";
 import {
   searchSpells,
@@ -538,7 +539,7 @@ function logLookupFailure(wsClient: WSClient, category: string, name: string): v
   wsClient.broadcastSystemEvent(
     `[Rules] "${name}" not found in any source — DM is using training knowledge`,
   );
-  console.error(`[srd-tools] ${category} lookup failed: "${name}"`);
+  log("srd-tools", `${category} lookup failed: "${name}"`);
 }
 
 function notFoundResult(category: string, name: string) {

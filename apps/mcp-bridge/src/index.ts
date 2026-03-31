@@ -5,6 +5,7 @@ import { MessageQueue } from "./message-queue.js";
 import { WSClient } from "./ws-client.js";
 import { CampaignManager } from "./services/campaign-manager.js";
 import { createMcpServer } from "./mcp-server.js";
+import { log } from "./logger.js";
 
 // Redirect stderr to a log file so bridge diagnostics are visible
 const logPath = path.join(process.env.UNSEEN_CAMPAIGNS_DIR || ".", "..", "bridge.log");
@@ -15,13 +16,14 @@ process.stderr.write = ((chunk: any, ...args: any[]) => {
   return origStderrWrite(chunk, ...args);
 }) as typeof process.stderr.write;
 
-console.error(`\n[mcp-bridge] === Bridge started at ${new Date().toISOString()} ===`);
+log("mcp-bridge", `=== Bridge started at ${new Date().toISOString()} ===`);
 
 const roomCode = process.env.UNSEEN_ROOM_CODE;
 const workerUrl = process.env.UNSEEN_WORKER_URL || "http://127.0.0.1:8787";
 
 if (!roomCode) {
-  console.error(
+  log(
+    "mcp-bridge",
     "Error: UNSEEN_ROOM_CODE environment variable is required.\n" +
       "Usage: UNSEEN_ROOM_CODE=ABC123 npx tsx apps/mcp-bridge/src/index.ts",
   );
@@ -50,12 +52,12 @@ wsClient.connect();
 const transport = new StdioServerTransport();
 await mcpServer.connect(transport);
 
-console.error(`[mcp-bridge] MCP server started, connected to room ${roomCode}`);
+log("mcp-bridge", `MCP server started, connected to room ${roomCode}`);
 
 // Graceful shutdown: close WebSocket cleanly so the worker detects DM disconnect
 for (const sig of ["SIGINT", "SIGTERM"] as const) {
   process.on(sig, () => {
-    console.error(`[mcp-bridge] Received ${sig}, closing WebSocket...`);
+    log("mcp-bridge", `Received ${sig}, closing WebSocket...`);
     wsClient.close();
     process.exit(0);
   });
