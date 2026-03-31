@@ -62,20 +62,26 @@ export function registerGameTools(
         };
       }
 
-      // Retry on disconnect — rejectAllWaiters throws when DM connection drops
+      // If WS disconnects, rejectAllWaiters throws — let it surface to Claude Code
+      // so it can re-call wait_for_message after reconnect (instead of silently retrying)
       let msg;
-      while (true) {
-        try {
-          msg = await messageQueue.waitForNext(extra.signal);
-          break;
-        } catch (err) {
-          if (err instanceof Error && err.message === "DM disconnected — reconnecting") {
-            // Wait briefly for reconnection, then retry
-            await new Promise((r) => setTimeout(r, 2000));
-            continue;
-          }
-          throw err;
+      try {
+        msg = await messageQueue.waitForNext(extra.signal);
+      } catch (err) {
+        if (err instanceof Error && err.message === "DM disconnected — reconnecting") {
+          // Clear pending guard — the old request is void after disconnect
+          pendingRequestId = null;
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: "WebSocket disconnected — the bridge is reconnecting automatically. Call wait_for_message again in a moment to resume.",
+              },
+            ],
+            isError: true,
+          };
         }
+        throw err;
       }
 
       // DM is now processing — show typing indicator to players

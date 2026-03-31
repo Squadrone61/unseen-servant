@@ -51,3 +51,12 @@ const transport = new StdioServerTransport();
 await mcpServer.connect(transport);
 
 console.error(`[mcp-bridge] MCP server started, connected to room ${roomCode}`);
+
+// Graceful shutdown: close WebSocket cleanly so the worker detects DM disconnect
+for (const sig of ["SIGINT", "SIGTERM"] as const) {
+  process.on(sig, () => {
+    console.error(`[mcp-bridge] Received ${sig}, closing WebSocket...`);
+    wsClient.close();
+    process.exit(0);
+  });
+}
