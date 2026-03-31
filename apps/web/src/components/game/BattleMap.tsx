@@ -460,8 +460,8 @@ export function BattleMap({
       e.preventDefault();
 
       const oldZoom = zoomRef.current;
-      const delta = e.deltaY > 0 ? -0.1 : 0.1;
-      const newZoom = Math.max(0.5, Math.min(2, oldZoom + delta));
+      const factor = e.deltaY > 0 ? 0.9 : 1.1;
+      const newZoom = Math.max(0.25, Math.min(3, oldZoom * factor));
       if (newZoom === oldZoom) return;
 
       const containerRect = container.getBoundingClientRect();
@@ -719,7 +719,7 @@ export function BattleMap({
         {/* Zoom Controls */}
         <div className="absolute top-2 right-2 z-10 bg-gray-800/80 rounded flex gap-1 p-1">
           <button
-            onClick={() => zoomTo(Math.max(0.5, zoom - 0.25))}
+            onClick={() => zoomTo(Math.max(0.25, zoom / 1.25))}
             className="w-6 h-6 flex items-center justify-center text-xs text-gray-400 hover:text-gray-200 rounded hover:bg-gray-700/60 transition-colors"
             title="Zoom out"
           >
@@ -733,7 +733,7 @@ export function BattleMap({
             {Math.round(zoom * 100)}%
           </button>
           <button
-            onClick={() => zoomTo(Math.min(2, zoom + 0.25))}
+            onClick={() => zoomTo(Math.min(3, zoom * 1.25))}
             className="w-6 h-6 flex items-center justify-center text-xs text-gray-400 hover:text-gray-200 rounded hover:bg-gray-700/60 transition-colors"
             title="Zoom in"
           >
@@ -741,468 +741,478 @@ export function BattleMap({
           </button>
         </div>
 
-        {/* Labeled grid wrapper (transform-based pan/zoom) */}
+        {/* Pan layer (translate only — not affected by zoom) */}
         <div
           style={{
-            transform: `translate(${panX}px, ${panY}px) scale(${zoom})`,
+            transform: `translate(${panX}px, ${panY}px)`,
             transformOrigin: "0 0",
             display: "inline-block",
             willChange: "transform",
           }}
         >
-          {/* Column labels row */}
-          <div className="flex" style={{ marginLeft: LABEL_SIZE }}>
-            {colLabels.map((label, i) => (
-              <div
-                key={`cl-${i}`}
-                className="text-xs text-gray-600 flex items-center justify-center select-none"
-                style={{
-                  width: TILE_SIZE + (i < map.width - 1 ? TILE_GAP : 0),
-                  height: LABEL_SIZE,
-                }}
-              >
-                {label}
-              </div>
-            ))}
-          </div>
-
-          {/* Row labels + grid */}
-          <div className="flex">
-            {/* Row labels column */}
-            <div className="flex flex-col" style={{ width: LABEL_SIZE }}>
-              {Array.from({ length: map.height }, (_, i) => (
+          {/* Zoom layer (scale, re-rasterized for crisp rendering) */}
+          <div
+            style={{
+              transform: `scale(${zoom})`,
+              transformOrigin: "0 0",
+              display: "inline-block",
+            }}
+          >
+            {/* Column labels row */}
+            <div className="flex" style={{ marginLeft: LABEL_SIZE }}>
+              {colLabels.map((label, i) => (
                 <div
-                  key={`rl-${i}`}
+                  key={`cl-${i}`}
                   className="text-xs text-gray-600 flex items-center justify-center select-none"
                   style={{
-                    height: TILE_SIZE + (i < map.height - 1 ? TILE_GAP : 0),
-                    width: LABEL_SIZE,
+                    width: TILE_SIZE + (i < map.width - 1 ? TILE_GAP : 0),
+                    height: LABEL_SIZE,
                   }}
                 >
-                  {i + 1}
+                  {label}
                 </div>
               ))}
             </div>
 
-            {/* Grid + Token overlay container */}
-            <div
-              ref={gridContainerRef}
-              className="relative"
-              style={{
-                width: gridWidthPx,
-                height: gridHeightPx,
-              }}
-            >
-              {/* ─── Layer 1: Tile Grid ─── */}
-              <div
-                ref={gridRef}
-                className="absolute inset-0 rounded-sm overflow-hidden"
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: `repeat(${map.width}, ${TILE_SIZE}px)`,
-                  gridTemplateRows: `repeat(${map.height}, ${TILE_SIZE}px)`,
-                  gap: TILE_GAP,
-                  backgroundColor: "#1c1c20",
-                }}
-              >
-                {map.tiles.map((row, y) =>
-                  row.map((tile, x) => {
-                    const key = `${x},${y}`;
-                    const isReach = reachable.has(key);
-                    const isHoveredHere = hoveredTile === key;
-                    const aoeOverlays = aoeTileMap.get(key);
-                    const ds = dragStateRef.current;
-                    const isDragTarget =
-                      ds.active &&
-                      ds.currentTile &&
-                      ds.currentTile.x === x &&
-                      ds.currentTile.y === y;
-                    const isDragReachable = isDragTarget && isReach;
-                    const isDragUnreachable = isDragTarget && !isReach;
-
-                    // Cover border styling
-                    let coverBorder: React.CSSProperties = {};
-                    if (tile.cover === "half") {
-                      coverBorder = { border: "1px dashed #D4A24E" };
-                    } else if (tile.cover === "three-quarters") {
-                      coverBorder = {
-                        border: "1.5px solid #D4A24E",
-                      };
-                    } else if (tile.cover === "full") {
-                      coverBorder = { border: "2px solid #D4A24E" };
-                    }
-
-                    return (
-                      <div
-                        key={`t-${key}`}
-                        role={isReach ? "button" : undefined}
-                        tabIndex={isReach ? 0 : undefined}
-                        className={isReach ? "cursor-pointer" : ""}
-                        style={{
-                          gridRow: y + 1,
-                          gridColumn: x + 1,
-                          backgroundColor: TILE_BG[tile.type],
-                          position: "relative",
-                          ...coverBorder,
-                        }}
-                        onMouseEnter={(e) => {
-                          setHoveredTile(key);
-                          setMeasureTarget({ x, y });
-                          if (getTileTooltipData(tile)) {
-                            setTooltipMouse({ x: e.clientX, y: e.clientY });
-                          }
-                        }}
-                        onMouseMove={(e) => {
-                          if (hoveredTile === key && getTileTooltipData(tile)) {
-                            setTooltipMouse({ x: e.clientX, y: e.clientY });
-                          }
-                        }}
-                        onMouseLeave={() => {
-                          setHoveredTile(null);
-                          setMeasureTarget(null);
-                          if (!hoveredTokenId) setTooltipMouse(null);
-                        }}
-                      >
-                        {/* Terrain textures */}
-                        {tile.type === "difficult_terrain" && (
-                          <div
-                            className="absolute inset-0 opacity-20 pointer-events-none"
-                            style={{
-                              backgroundImage:
-                                "repeating-linear-gradient(45deg, transparent 0 3px, rgba(180,140,60,.3) 3px 4px)",
-                            }}
-                          />
-                        )}
-                        {tile.type === "water" && (
-                          <div
-                            className="absolute inset-0 opacity-20 pointer-events-none"
-                            style={{
-                              backgroundImage:
-                                "repeating-linear-gradient(160deg, transparent 0 5px, rgba(60,140,200,.25) 5px 6px)",
-                            }}
-                          />
-                        )}
-                        {tile.type === "stairs" && (
-                          <div
-                            className="absolute inset-0 opacity-25 pointer-events-none"
-                            style={{
-                              backgroundImage:
-                                "repeating-linear-gradient(0deg, transparent 0 6px, rgba(200,200,220,.12) 6px 7px)",
-                            }}
-                          />
-                        )}
-                        {tile.type === "door" && (
-                          <div className="absolute inset-[28%] rounded-sm border border-amber-800/40 bg-amber-900/15 pointer-events-none" />
-                        )}
-
-                        {/* Object abbreviation */}
-                        {tile.object && (
-                          <div
-                            className="absolute inset-0 flex items-center justify-center pointer-events-none select-none"
-                            style={{
-                              color: CATEGORY_COLOR[tile.object.category] ?? "#8B8B8B",
-                              opacity: 0.4,
-                              fontSize: 10,
-                              fontFamily: "monospace",
-                              fontWeight: 700,
-                            }}
-                          >
-                            {getObjectAbbr(tile.object.name)}
-                          </div>
-                        )}
-
-                        {/* Elevation indicator */}
-                        {tile.elevation != null && tile.elevation !== 0 && (
-                          <div
-                            className="absolute top-0 right-0.5 pointer-events-none select-none"
-                            style={{
-                              fontSize: 7,
-                              color: tile.elevation > 0 ? "#94A3B8" : "#F59E0B",
-                              opacity: 0.6,
-                              fontFamily: "monospace",
-                              lineHeight: 1,
-                              paddingTop: 1,
-                            }}
-                          >
-                            {tile.elevation > 0 ? "+" : ""}
-                            {tile.elevation}
-                          </div>
-                        )}
-
-                        {/* AoE overlay */}
-                        {aoeOverlays && aoeOverlays.length > 0 && (
-                          <div
-                            className="absolute inset-0 pointer-events-none"
-                            style={{
-                              backgroundColor: aoeOverlays[0].color,
-                              animation: "aoePulse 3s ease-in-out infinite",
-                            }}
-                          />
-                        )}
-
-                        {/* Movement range overlay (only when showing reachable) */}
-                        {isReach && !isDragTarget && (
-                          <div className="absolute inset-0 pointer-events-none bg-emerald-500/10 ring-1 ring-inset ring-emerald-600/20" />
-                        )}
-
-                        {/* Drag target highlight */}
-                        {isDragReachable && (
-                          <div className="absolute inset-0 pointer-events-none bg-emerald-400/30 ring-2 ring-inset ring-emerald-400/50" />
-                        )}
-                        {isDragUnreachable && (
-                          <div className="absolute inset-0 pointer-events-none bg-red-500/20 ring-1 ring-inset ring-red-500/40" />
-                        )}
-
-                        {/* Coordinate label on hover */}
-                        {isHoveredHere && (
-                          <div
-                            className="absolute bottom-0 left-0 pointer-events-none select-none"
-                            style={{
-                              fontSize: 7,
-                              color: "#9CA3AF",
-                              opacity: 0.6,
-                              fontFamily: "monospace",
-                              lineHeight: 1,
-                              paddingBottom: 1,
-                              paddingLeft: 2,
-                            }}
-                          >
-                            {formatGridPosition({ x, y })}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  }),
-                )}
+            {/* Row labels + grid */}
+            <div className="flex">
+              {/* Row labels column */}
+              <div className="flex flex-col" style={{ width: LABEL_SIZE }}>
+                {Array.from({ length: map.height }, (_, i) => (
+                  <div
+                    key={`rl-${i}`}
+                    className="text-xs text-gray-600 flex items-center justify-center select-none"
+                    style={{
+                      height: TILE_SIZE + (i < map.height - 1 ? TILE_GAP : 0),
+                      width: LABEL_SIZE,
+                    }}
+                  >
+                    {i + 1}
+                  </div>
+                ))}
               </div>
 
-              {/* ─── Layer 2: AoE center markers + hover tooltips ─── */}
-              {aoeCenters.map(({ aoe }) => {
-                const left = aoe.center.x * (TILE_SIZE + TILE_GAP) + TILE_SIZE / 2;
-                const top = aoe.center.y * (TILE_SIZE + TILE_GAP) + TILE_SIZE / 2;
-                const sizeLabel = aoe.radius
-                  ? `${aoe.radius}ft ${aoe.shape}`
-                  : aoe.length
-                    ? `${aoe.length}ft ${aoe.shape}`
-                    : aoe.shape;
-                const isHovered = hoveredAoeId === aoe.id;
-                return (
-                  <div
-                    key={`aoe-marker-${aoe.id}`}
-                    className="absolute"
-                    style={{
-                      left,
-                      top,
-                      transform: "translate(-50%, -50%)",
-                      zIndex: 19,
-                    }}
-                    onMouseEnter={() => setHoveredAoeId(aoe.id)}
-                    onMouseLeave={() => setHoveredAoeId(null)}
-                  >
-                    {/* Pulsing dot marker */}
-                    <div
-                      className="w-3 h-3 rounded-full border border-white/40"
-                      style={{
-                        backgroundColor: aoe.color,
-                        boxShadow: `0 0 6px ${aoe.color}`,
-                        animation: "aoePulse 3s ease-in-out infinite",
-                      }}
-                    />
-                    {/* Tooltip on hover */}
-                    {isHovered && (
-                      <div
-                        className="absolute left-1/2 bottom-full mb-1 -translate-x-1/2 bg-gray-900 border border-gray-600/50 rounded-lg shadow-lg px-3 py-2 text-xs text-gray-200 max-w-xs pointer-events-none"
-                        style={{ zIndex: 35 }}
-                      >
-                        <div className="font-medium" style={{ color: aoe.color }}>
-                          {aoe.label}
-                        </div>
-                        <div className="text-gray-400 mt-0.5">{sizeLabel}</div>
-                        {aoe.casterName && (
-                          <div className="text-gray-500 mt-0.5">Cast by {aoe.casterName}</div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-
-              {/* ─── Layer 3: Measurement SVG overlay ─── */}
-              {measureLine && (
-                <svg
-                  className="absolute inset-0 pointer-events-none"
+              {/* Grid + Token overlay container */}
+              <div
+                ref={gridContainerRef}
+                className="relative"
+                style={{
+                  width: gridWidthPx,
+                  height: gridHeightPx,
+                }}
+              >
+                {/* ─── Layer 1: Tile Grid ─── */}
+                <div
+                  ref={gridRef}
+                  className="absolute inset-0 rounded-sm overflow-hidden"
                   style={{
-                    zIndex: 25,
-                    width: gridWidthPx,
-                    height: gridHeightPx,
+                    display: "grid",
+                    gridTemplateColumns: `repeat(${map.width}, ${TILE_SIZE}px)`,
+                    gridTemplateRows: `repeat(${map.height}, ${TILE_SIZE}px)`,
+                    gap: TILE_GAP,
+                    backgroundColor: "#1c1c20",
                   }}
                 >
-                  <line
-                    x1={measureLine.fromPx.x}
-                    y1={measureLine.fromPx.y}
-                    x2={measureLine.toPx.x}
-                    y2={measureLine.toPx.y}
-                    stroke="#60A5FA"
-                    strokeWidth={1.5}
-                    strokeDasharray="4 3"
-                    opacity={0.7}
-                  />
-                  <rect
-                    x={measureLine.midPx.x - 16}
-                    y={measureLine.midPx.y - 8}
-                    width={32}
-                    height={16}
-                    rx={4}
-                    fill="#1E293B"
-                    stroke="#3B82F6"
-                    strokeWidth={0.5}
-                    opacity={0.9}
-                  />
-                  <text
-                    x={measureLine.midPx.x}
-                    y={measureLine.midPx.y + 4}
-                    textAnchor="middle"
-                    fill="#93C5FD"
-                    fontSize={9}
-                    fontFamily="monospace"
-                  >
-                    {measureLine.dist}ft
-                  </text>
-                </svg>
-              )}
+                  {map.tiles.map((row, y) =>
+                    row.map((tile, x) => {
+                      const key = `${x},${y}`;
+                      const isReach = reachable.has(key);
+                      const isHoveredHere = hoveredTile === key;
+                      const aoeOverlays = aoeTileMap.get(key);
+                      const ds = dragStateRef.current;
+                      const isDragTarget =
+                        ds.active &&
+                        ds.currentTile &&
+                        ds.currentTile.x === x &&
+                        ds.currentTile.y === y;
+                      const isDragReachable = isDragTarget && isReach;
+                      const isDragUnreachable = isDragTarget && !isReach;
 
-              {/* ─── Layer 4: Tokens (absolute positioned) ─── */}
-              {tokens.map((c) => {
-                const isActive = c.id === activeId;
-                const isHL = c.id === highlightedCombatantId;
-                const isPlayer = c.type === "player";
-                const isEnemy = c.type === "enemy";
-                const isDead = c.type !== "player" && c.currentHP !== undefined && c.currentHP <= 0;
-
-                const color =
-                  c.tokenColor ?? (isPlayer ? "#4a7cf7" : isEnemy ? "#dc3545" : "#3ea864");
-                const size = c.span * TILE_SIZE + (c.span - 1) * TILE_GAP - 8;
-                const initials =
-                  c.name.length <= 2 ? c.name.toUpperCase() : c.name.slice(0, 2).toUpperCase();
-
-                // Position calculation
-                const ds = dragStateRef.current;
-                const isDragging = ds.active && ds.combatantId === c.id;
-
-                let tokenLeft: number;
-                let tokenTop: number;
-
-                if (isDragging && ds.currentPixel && gridContainerRef.current) {
-                  // While dragging, follow cursor
-                  const rect = gridContainerRef.current.getBoundingClientRect();
-                  tokenLeft = (ds.currentPixel.x - rect.left) / zoom - size / 2;
-                  tokenTop = (ds.currentPixel.y - rect.top) / zoom - size / 2;
-                } else {
-                  // Normal position: center token in tile
-                  const tileSpanPx = c.span * TILE_SIZE + (c.span - 1) * TILE_GAP;
-                  tokenLeft = c.position.x * (TILE_SIZE + TILE_GAP) + tileSpanPx / 2 - size / 2;
-                  tokenTop = c.position.y * (TILE_SIZE + TILE_GAP) + tileSpanPx / 2 - size / 2;
-
-                  // Fan offset for stacked tokens
-                  const stackKey = `${c.position.x},${c.position.y}`;
-                  const stackIds = tokenStacks.get(stackKey);
-                  if (stackIds && stackIds.length > 1) {
-                    const idx = stackIds.indexOf(c.id);
-                    const total = stackIds.length;
-                    const step = 6;
-                    tokenLeft += idx * step - ((total - 1) * step) / 2;
-                    tokenTop += idx * step - ((total - 1) * step) / 2;
-                  }
-                }
-
-                // Stack info for z-index and badge
-                const stackKey2 = `${c.position.x},${c.position.y}`;
-                const stackIds2 = tokenStacks.get(stackKey2);
-                const stackSize = stackIds2?.length ?? 1;
-                const stackIndex = stackIds2 ? stackIds2.indexOf(c.id) : 0;
-
-                // Check if token is in AoE for ring effect
-                const aoeColor = aoeTileSet.get(`${c.position.x},${c.position.y}`);
-
-                // Is this my token?
-                const isMyToken = myCombatant && c.id === myCombatant.id;
-                const canDrag = isMyTurn && isMyToken;
-
-                return (
-                  <div
-                    key={`tk-${c.id}`}
-                    data-combatant={c.id}
-                    className="absolute flex items-center justify-center"
-                    style={{
-                      left: tokenLeft,
-                      top: tokenTop,
-                      width: size,
-                      height: size,
-                      zIndex: isDragging ? 28 : isActive ? 22 : 20 + stackIndex,
-                      transition: isDragging ? "none" : "left 300ms ease-out, top 300ms ease-out",
-                      cursor: canDrag ? "grab" : "default",
-                    }}
-                    onMouseDown={(e) => {
-                      if (canDrag) handleDragStart(e, c);
-                    }}
-                    onTouchStart={(e) => {
-                      if (canDrag) handleDragStart(e, c);
-                    }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onCombatantClick?.(c.id);
-                    }}
-                    onMouseEnter={(e) => {
-                      setHoveredTokenId(c.id);
-                      setTooltipMouse({ x: e.clientX, y: e.clientY });
-                    }}
-                    onMouseMove={(e) => {
-                      if (hoveredTokenId === c.id) {
-                        setTooltipMouse({ x: e.clientX, y: e.clientY });
+                      // Cover border styling
+                      let coverBorder: React.CSSProperties = {};
+                      if (tile.cover === "half") {
+                        coverBorder = { border: "1px dashed #D4A24E" };
+                      } else if (tile.cover === "three-quarters") {
+                        coverBorder = {
+                          border: "1.5px solid #D4A24E",
+                        };
+                      } else if (tile.cover === "full") {
+                        coverBorder = { border: "2px solid #D4A24E" };
                       }
-                    }}
-                    onMouseLeave={() => {
-                      setHoveredTokenId(null);
-                      setTooltipMouse(null);
+
+                      return (
+                        <div
+                          key={`t-${key}`}
+                          role={isReach ? "button" : undefined}
+                          tabIndex={isReach ? 0 : undefined}
+                          className={isReach ? "cursor-pointer" : ""}
+                          style={{
+                            gridRow: y + 1,
+                            gridColumn: x + 1,
+                            backgroundColor: TILE_BG[tile.type],
+                            position: "relative",
+                            ...coverBorder,
+                          }}
+                          onMouseEnter={(e) => {
+                            setHoveredTile(key);
+                            setMeasureTarget({ x, y });
+                            if (getTileTooltipData(tile)) {
+                              setTooltipMouse({ x: e.clientX, y: e.clientY });
+                            }
+                          }}
+                          onMouseMove={(e) => {
+                            if (hoveredTile === key && getTileTooltipData(tile)) {
+                              setTooltipMouse({ x: e.clientX, y: e.clientY });
+                            }
+                          }}
+                          onMouseLeave={() => {
+                            setHoveredTile(null);
+                            setMeasureTarget(null);
+                            if (!hoveredTokenId) setTooltipMouse(null);
+                          }}
+                        >
+                          {/* Terrain textures */}
+                          {tile.type === "difficult_terrain" && (
+                            <div
+                              className="absolute inset-0 opacity-20 pointer-events-none"
+                              style={{
+                                backgroundImage:
+                                  "repeating-linear-gradient(45deg, transparent 0 3px, rgba(180,140,60,.3) 3px 4px)",
+                              }}
+                            />
+                          )}
+                          {tile.type === "water" && (
+                            <div
+                              className="absolute inset-0 opacity-20 pointer-events-none"
+                              style={{
+                                backgroundImage:
+                                  "repeating-linear-gradient(160deg, transparent 0 5px, rgba(60,140,200,.25) 5px 6px)",
+                              }}
+                            />
+                          )}
+                          {tile.type === "stairs" && (
+                            <div
+                              className="absolute inset-0 opacity-25 pointer-events-none"
+                              style={{
+                                backgroundImage:
+                                  "repeating-linear-gradient(0deg, transparent 0 6px, rgba(200,200,220,.12) 6px 7px)",
+                              }}
+                            />
+                          )}
+                          {tile.type === "door" && (
+                            <div className="absolute inset-[28%] rounded-sm border border-amber-800/40 bg-amber-900/15 pointer-events-none" />
+                          )}
+
+                          {/* Object abbreviation */}
+                          {tile.object && (
+                            <div
+                              className="absolute inset-0 flex items-center justify-center pointer-events-none select-none"
+                              style={{
+                                color: CATEGORY_COLOR[tile.object.category] ?? "#8B8B8B",
+                                opacity: 0.4,
+                                fontSize: 10,
+                                fontFamily: "monospace",
+                                fontWeight: 700,
+                              }}
+                            >
+                              {getObjectAbbr(tile.object.name)}
+                            </div>
+                          )}
+
+                          {/* Elevation indicator */}
+                          {tile.elevation != null && tile.elevation !== 0 && (
+                            <div
+                              className="absolute top-0 right-0.5 pointer-events-none select-none"
+                              style={{
+                                fontSize: 7,
+                                color: tile.elevation > 0 ? "#94A3B8" : "#F59E0B",
+                                opacity: 0.6,
+                                fontFamily: "monospace",
+                                lineHeight: 1,
+                                paddingTop: 1,
+                              }}
+                            >
+                              {tile.elevation > 0 ? "+" : ""}
+                              {tile.elevation}
+                            </div>
+                          )}
+
+                          {/* AoE overlay */}
+                          {aoeOverlays && aoeOverlays.length > 0 && (
+                            <div
+                              className="absolute inset-0 pointer-events-none"
+                              style={{
+                                backgroundColor: aoeOverlays[0].color,
+                                animation: "aoePulse 3s ease-in-out infinite",
+                              }}
+                            />
+                          )}
+
+                          {/* Movement range overlay (only when showing reachable) */}
+                          {isReach && !isDragTarget && (
+                            <div className="absolute inset-0 pointer-events-none bg-emerald-500/10 ring-1 ring-inset ring-emerald-600/20" />
+                          )}
+
+                          {/* Drag target highlight */}
+                          {isDragReachable && (
+                            <div className="absolute inset-0 pointer-events-none bg-emerald-400/30 ring-2 ring-inset ring-emerald-400/50" />
+                          )}
+                          {isDragUnreachable && (
+                            <div className="absolute inset-0 pointer-events-none bg-red-500/20 ring-1 ring-inset ring-red-500/40" />
+                          )}
+
+                          {/* Coordinate label on hover */}
+                          {isHoveredHere && (
+                            <div
+                              className="absolute bottom-0 left-0 pointer-events-none select-none"
+                              style={{
+                                fontSize: 7,
+                                color: "#9CA3AF",
+                                opacity: 0.6,
+                                fontFamily: "monospace",
+                                lineHeight: 1,
+                                paddingBottom: 1,
+                                paddingLeft: 2,
+                              }}
+                            >
+                              {formatGridPosition({ x, y })}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    }),
+                  )}
+                </div>
+
+                {/* ─── Layer 2: AoE center markers + hover tooltips ─── */}
+                {aoeCenters.map(({ aoe }) => {
+                  const left = aoe.center.x * (TILE_SIZE + TILE_GAP) + TILE_SIZE / 2;
+                  const top = aoe.center.y * (TILE_SIZE + TILE_GAP) + TILE_SIZE / 2;
+                  const sizeLabel = aoe.radius
+                    ? `${aoe.radius}ft ${aoe.shape}`
+                    : aoe.length
+                      ? `${aoe.length}ft ${aoe.shape}`
+                      : aoe.shape;
+                  const isHovered = hoveredAoeId === aoe.id;
+                  return (
+                    <div
+                      key={`aoe-marker-${aoe.id}`}
+                      className="absolute"
+                      style={{
+                        left,
+                        top,
+                        transform: "translate(-50%, -50%)",
+                        zIndex: 19,
+                      }}
+                      onMouseEnter={() => setHoveredAoeId(aoe.id)}
+                      onMouseLeave={() => setHoveredAoeId(null)}
+                    >
+                      {/* Pulsing dot marker */}
+                      <div
+                        className="w-3 h-3 rounded-full border border-white/40"
+                        style={{
+                          backgroundColor: aoe.color,
+                          boxShadow: `0 0 6px ${aoe.color}`,
+                          animation: "aoePulse 3s ease-in-out infinite",
+                        }}
+                      />
+                      {/* Tooltip on hover */}
+                      {isHovered && (
+                        <div
+                          className="absolute left-1/2 bottom-full mb-1 -translate-x-1/2 bg-gray-900 border border-gray-600/50 rounded-lg shadow-lg px-3 py-2 text-xs text-gray-200 max-w-xs pointer-events-none"
+                          style={{ zIndex: 35 }}
+                        >
+                          <div className="font-medium" style={{ color: aoe.color }}>
+                            {aoe.label}
+                          </div>
+                          <div className="text-gray-400 mt-0.5">{sizeLabel}</div>
+                          {aoe.casterName && (
+                            <div className="text-gray-500 mt-0.5">Cast by {aoe.casterName}</div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+
+                {/* ─── Layer 3: Measurement SVG overlay ─── */}
+                {measureLine && (
+                  <svg
+                    className="absolute inset-0 pointer-events-none"
+                    style={{
+                      zIndex: 25,
+                      width: gridWidthPx,
+                      height: gridHeightPx,
                     }}
                   >
-                    {/* Circle */}
+                    <line
+                      x1={measureLine.fromPx.x}
+                      y1={measureLine.fromPx.y}
+                      x2={measureLine.toPx.x}
+                      y2={measureLine.toPx.y}
+                      stroke="#60A5FA"
+                      strokeWidth={1.5}
+                      strokeDasharray="4 3"
+                      opacity={0.7}
+                    />
+                    <rect
+                      x={measureLine.midPx.x - 16}
+                      y={measureLine.midPx.y - 8}
+                      width={32}
+                      height={16}
+                      rx={4}
+                      fill="#1E293B"
+                      stroke="#3B82F6"
+                      strokeWidth={0.5}
+                      opacity={0.9}
+                    />
+                    <text
+                      x={measureLine.midPx.x}
+                      y={measureLine.midPx.y + 4}
+                      textAnchor="middle"
+                      fill="#93C5FD"
+                      fontSize={9}
+                      fontFamily="monospace"
+                    >
+                      {measureLine.dist}ft
+                    </text>
+                  </svg>
+                )}
+
+                {/* ─── Layer 4: Tokens (absolute positioned) ─── */}
+                {tokens.map((c) => {
+                  const isActive = c.id === activeId;
+                  const isHL = c.id === highlightedCombatantId;
+                  const isPlayer = c.type === "player";
+                  const isEnemy = c.type === "enemy";
+                  const isDead =
+                    c.type !== "player" && c.currentHP !== undefined && c.currentHP <= 0;
+
+                  const color =
+                    c.tokenColor ?? (isPlayer ? "#4a7cf7" : isEnemy ? "#dc3545" : "#3ea864");
+                  const size = c.span * TILE_SIZE + (c.span - 1) * TILE_GAP - 8;
+                  const initials =
+                    c.name.length <= 2 ? c.name.toUpperCase() : c.name.slice(0, 2).toUpperCase();
+
+                  // Position calculation
+                  const ds = dragStateRef.current;
+                  const isDragging = ds.active && ds.combatantId === c.id;
+
+                  let tokenLeft: number;
+                  let tokenTop: number;
+
+                  if (isDragging && ds.currentPixel && gridContainerRef.current) {
+                    // While dragging, follow cursor
+                    const rect = gridContainerRef.current.getBoundingClientRect();
+                    tokenLeft = (ds.currentPixel.x - rect.left) / zoom - size / 2;
+                    tokenTop = (ds.currentPixel.y - rect.top) / zoom - size / 2;
+                  } else {
+                    // Normal position: center token in tile
+                    const tileSpanPx = c.span * TILE_SIZE + (c.span - 1) * TILE_GAP;
+                    tokenLeft = c.position.x * (TILE_SIZE + TILE_GAP) + tileSpanPx / 2 - size / 2;
+                    tokenTop = c.position.y * (TILE_SIZE + TILE_GAP) + tileSpanPx / 2 - size / 2;
+
+                    // Fan offset for stacked tokens
+                    const stackKey = `${c.position.x},${c.position.y}`;
+                    const stackIds = tokenStacks.get(stackKey);
+                    if (stackIds && stackIds.length > 1) {
+                      const idx = stackIds.indexOf(c.id);
+                      const total = stackIds.length;
+                      const step = 6;
+                      tokenLeft += idx * step - ((total - 1) * step) / 2;
+                      tokenTop += idx * step - ((total - 1) * step) / 2;
+                    }
+                  }
+
+                  // Stack info for z-index and badge
+                  const stackKey2 = `${c.position.x},${c.position.y}`;
+                  const stackIds2 = tokenStacks.get(stackKey2);
+                  const stackSize = stackIds2?.length ?? 1;
+                  const stackIndex = stackIds2 ? stackIds2.indexOf(c.id) : 0;
+
+                  // Check if token is in AoE for ring effect
+                  const aoeColor = aoeTileSet.get(`${c.position.x},${c.position.y}`);
+
+                  // Is this my token?
+                  const isMyToken = myCombatant && c.id === myCombatant.id;
+                  const canDrag = isMyTurn && isMyToken;
+
+                  return (
                     <div
-                      className={`rounded-full flex items-center justify-center border-2 font-bold select-none shrink-0 ${
-                        isDead ? "opacity-25 grayscale" : ""
-                      }`}
+                      key={`tk-${c.id}`}
+                      data-combatant={c.id}
+                      className="absolute flex items-center justify-center"
                       style={{
+                        left: tokenLeft,
+                        top: tokenTop,
                         width: size,
                         height: size,
-                        backgroundColor: color,
-                        borderColor: `color-mix(in srgb, ${color} 60%, black)`,
-                        fontSize: c.span > 1 ? 14 : 11,
-                        color: "#fff",
-                        textShadow: "0 1px 2px rgba(0,0,0,.5)",
-                        boxShadow: isActive
-                          ? `0 0 0 2px rgba(251,191,36,.7), 0 0 10px 2px rgba(251,191,36,.3), 0 0 4px ${color}80`
-                          : isHL
-                            ? `0 0 0 2px rgba(56,189,248,.6), 0 0 8px rgba(56,189,248,.25)`
-                            : `0 2px 6px rgba(0,0,0,.5)`,
-                        outline: aoeColor ? `2px solid ${aoeColor}` : undefined,
-                        outlineOffset: aoeColor ? 1 : undefined,
+                        zIndex: isDragging ? 28 : isActive ? 22 : 20 + stackIndex,
+                        transition: isDragging ? "none" : "left 300ms ease-out, top 300ms ease-out",
+                        cursor: canDrag ? "grab" : "default",
+                      }}
+                      onMouseDown={(e) => {
+                        if (canDrag) handleDragStart(e, c);
+                      }}
+                      onTouchStart={(e) => {
+                        if (canDrag) handleDragStart(e, c);
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onCombatantClick?.(c.id);
+                      }}
+                      onMouseEnter={(e) => {
+                        setHoveredTokenId(c.id);
+                        setTooltipMouse({ x: e.clientX, y: e.clientY });
+                      }}
+                      onMouseMove={(e) => {
+                        if (hoveredTokenId === c.id) {
+                          setTooltipMouse({ x: e.clientX, y: e.clientY });
+                        }
+                      }}
+                      onMouseLeave={() => {
+                        setHoveredTokenId(null);
+                        setTooltipMouse(null);
                       }}
                     >
-                      {initials}
-                    </div>
-
-                    {/* Stack count badge — shown on topmost token */}
-                    {stackSize > 1 && stackIndex === stackSize - 1 && (
+                      {/* Circle */}
                       <div
-                        className="absolute -top-1 -right-1 bg-amber-500 text-black text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center shadow pointer-events-none"
-                        style={{ zIndex: 30 }}
+                        className={`rounded-full flex items-center justify-center border-2 font-bold select-none shrink-0 ${
+                          isDead ? "opacity-25 grayscale" : ""
+                        }`}
+                        style={{
+                          width: size,
+                          height: size,
+                          backgroundColor: color,
+                          borderColor: `color-mix(in srgb, ${color} 60%, black)`,
+                          fontSize: c.span > 1 ? 14 : 11,
+                          color: "#fff",
+                          textShadow: "0 1px 2px rgba(0,0,0,.5)",
+                          boxShadow: isActive
+                            ? `0 0 0 2px rgba(251,191,36,.7), 0 0 10px 2px rgba(251,191,36,.3), 0 0 4px ${color}80`
+                            : isHL
+                              ? `0 0 0 2px rgba(56,189,248,.6), 0 0 8px rgba(56,189,248,.25)`
+                              : `0 2px 6px rgba(0,0,0,.5)`,
+                          outline: aoeColor ? `2px solid ${aoeColor}` : undefined,
+                          outlineOffset: aoeColor ? 1 : undefined,
+                        }}
                       >
-                        {stackSize}
+                        {initials}
                       </div>
-                    )}
-                  </div>
-                );
-              })}
+
+                      {/* Stack count badge — shown on topmost token */}
+                      {stackSize > 1 && stackIndex === stackSize - 1 && (
+                        <div
+                          className="absolute -top-1 -right-1 bg-amber-500 text-black text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center shadow pointer-events-none"
+                          style={{ zIndex: 30 }}
+                        >
+                          {stackSize}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>
