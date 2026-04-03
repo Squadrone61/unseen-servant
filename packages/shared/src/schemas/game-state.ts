@@ -15,6 +15,7 @@ export const dieSizeSchema = z.union([
 export const dieRollSchema = z.object({
   die: dieSizeSchema,
   result: z.number().int().positive(),
+  dropped: z.boolean().optional(),
 });
 
 export const rollResultSchema = z.object({
@@ -22,36 +23,21 @@ export const rollResultSchema = z.object({
   rolls: z.array(dieRollSchema),
   modifier: z.number(),
   total: z.number(),
-  advantage: z.boolean().optional(),
-  disadvantage: z.boolean().optional(),
   criticalHit: z.boolean().optional(),
   criticalFail: z.boolean().optional(),
   label: z.string(),
+  notation: z.string().optional(),
 });
 
 // ─── Check schemas ───
 
-export const checkTypeSchema = z.enum([
-  "ability",
-  "skill",
-  "saving_throw",
-  "attack",
-  "custom",
-  "damage",
-]);
-
 export const checkRequestSchema = z.object({
   id: z.string(),
-  type: checkTypeSchema,
-  ability: z.string().optional(),
-  skill: z.string().optional(),
+  checkType: z.string().optional(),
   dc: z.number().optional(),
   targetCharacter: z.string(),
-  advantage: z.boolean().optional(),
-  disadvantage: z.boolean().optional(),
   reason: z.string(),
-  notation: z.string().optional(),
-  attackType: z.enum(["melee", "ranged", "spell"]).optional(),
+  notation: z.string(),
   dmInitiated: z.boolean().optional(),
 });
 

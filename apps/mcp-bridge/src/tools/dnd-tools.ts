@@ -1,167 +1,110 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { WSClient } from "../ws-client.js";
-import type { RollResult } from "@unseen-servant/shared/types";
-import { rollDamage, rollCheck } from "@unseen-servant/shared/utils";
+import { rollNotation, buildOutputFromResult, formatRollOutput } from "../services/dice-engine.js";
+import { parseCheckType } from "@unseen-servant/shared/utils";
 
 export function registerDndTools(server: McpServer, wsClient: WSClient): void {
   server.registerTool(
     "roll_dice",
     {
-      description:
-        "Roll dice. With player → interactive roll (player sees a Roll button on their client). Without player → DM rolls server-side (for monsters/NPCs). checkType is always required. Use 'damage' for damage rolls (notation required), 'custom' for arbitrary rolls (notation required), or 'ability'/'skill'/'saving_throw'/'attack' for d20 checks. All rolls are shown to players in chat.",
+      description: `Roll dice. notation is always required.
+
+When checkType is provided with player, the modifier is auto-computed from the character sheet — do NOT include a modifier in notation. Just use bare dice:
+  - "1d20" for a normal check
+  - "2d20kh1" for advantage
+  - "2d20kl1" for disadvantage
+
+checkType values (modifier auto-calculated, requires player):
+  Skills: "perception", "stealth", "athletics", "acrobatics", "arcana", "deception", "history", "insight", "intimidation", "investigation", "medicine", "nature", "performance", "persuasion", "religion", "sleight_of_hand", "animal_handling", "survival"
+  Abilities: "strength", "dexterity", "constitution", "intelligence", "wisdom", "charisma"
+  Saves: "strength_save", "dexterity_save", "constitution_save", "intelligence_save", "wisdom_save", "charisma_save"
+  Attacks: "melee_attack" (STR + prof), "ranged_attack" (DEX + prof), "spell_attack" (spell bonus), "finesse_attack" (max(STR,DEX) + prof)
+
+When checkType is omitted, notation is rolled exactly as-is — include any modifiers yourself.
+
+Examples:
+  Player perception check:  { notation: "1d20", player: "Arlon", checkType: "perception", dc: 15 }
+  Player DEX save (adv):    { notation: "2d20kh1", player: "Arlon", checkType: "dexterity_save", dc: 14 }
+  Monster attack (DM roll): { notation: "1d20+6", dc: 15, reason: "Goblin attacks Arlon" }
+  Damage roll:              { notation: "2d6+3", reason: "Goblin shortsword damage" }
+  Player rolls damage:      { notation: "1d8+2d6+3", player: "Rogue", reason: "Sneak attack" }`,
       inputSchema: {
-        checkType: z
-          .enum(["ability", "skill", "saving_throw", "attack", "custom", "damage"])
-          .describe(
-            "Type of roll. 'ability'/'skill'/'saving_throw'/'attack' = d20 check. 'damage' = damage dice (notation required). 'custom' = arbitrary roll (notation required).",
-          ),
         notation: z
           .string()
-          .optional()
           .describe(
-            "Dice notation, e.g. '2d6+3', '1d20+5'. Required for 'damage' and 'custom'. Optional for d20 checks (modifier is auto-calculated from character sheet when player is provided).",
+            "Dice notation: '1d20', '2d20kh1' (advantage), '2d20kl1' (disadvantage), '2d6+3', '4d6dl1'. When using checkType, omit modifier — it's auto-calculated.",
           ),
-        reason: z
+        checkType: z
           .string()
           .optional()
-          .describe("Why the roll is happening, e.g. 'Goblin attack damage', 'Spot the trap'"),
+          .describe(
+            "Auto-compute modifier from character sheet. Requires player. See tool description for valid values.",
+          ),
         player: z
           .string()
           .optional()
-          .describe("Character name for interactive player roll. Omit for DM server-side roll."),
-        ability: z
+          .describe(
+            "Character name for interactive roll (player sees Roll button). Omit for DM server-side roll.",
+          ),
+        dc: z.coerce
+          .number()
+          .optional()
+          .describe("Difficulty Class — shows Success/Failure to players."),
+        reason: z
           .string()
           .optional()
-          .describe(
-            "Ability score for the check, e.g. 'wisdom', 'strength'. For attacks: overrides the default ability (STR for melee, DEX for ranged) — use for Finesse weapons.",
-          ),
-        skill: z
-          .string()
-          .optional()
-          .describe("Skill name for skill checks, e.g. 'perception', 'stealth'"),
-        dc: z.coerce.number().optional().describe("Difficulty Class for the check"),
-        advantage: z.boolean().optional().describe("Roll with advantage (roll 2d20, take higher)"),
-        disadvantage: z
-          .boolean()
-          .optional()
-          .describe("Roll with disadvantage (roll 2d20, take lower)"),
-        attackType: z
-          .enum(["melee", "ranged", "spell"])
-          .optional()
-          .describe(
-            "For attack rolls: 'melee' for weapon melee, 'ranged' for weapon ranged (enables bonuses like Archery +2), 'spell' for spell attacks (uses spellAttackBonus).",
-          ),
+          .describe("Why: 'Goblin attack', 'Spot the trap', 'Fireball damage'"),
       },
     },
-    async ({
-      checkType,
-      notation,
-      reason,
-      player,
-      ability,
-      skill,
-      dc,
-      advantage,
-      disadvantage,
-      attackType,
-    }) => {
-      // ── Validate conditionally required parameters ──
-      const errors: string[] = [];
-
-      if ((checkType === "damage" || checkType === "custom") && !notation) {
-        errors.push(`notation is required for '${checkType}' rolls.`);
-      }
-      if (checkType === "attack" && !attackType) {
-        errors.push(
-          "attackType ('melee', 'ranged', or 'spell') is required for attack rolls — it determines modifier calculation and enables combat bonuses.",
-        );
-      }
-      if (checkType === "attack" && attackType === "melee" && !ability) {
-        errors.push(
-          "ability is required for melee attacks (e.g. 'strength', or 'dexterity' for Finesse weapons like rapier/shortsword).",
-        );
-      }
-      if (checkType === "attack" && dc === undefined) {
-        errors.push(
-          "dc (target AC) is required for attack rolls — it shows Success/Failure in the player UI.",
-        );
-      }
-      if (checkType === "skill" && !skill) {
-        errors.push("skill is required for skill checks (e.g. 'perception', 'stealth').");
-      }
-      if ((checkType === "saving_throw" || checkType === "ability") && !ability) {
-        errors.push(`ability is required for '${checkType}' checks (e.g. 'wisdom', 'strength').`);
-      }
-
-      if (errors.length > 0) {
-        return {
-          content: [{ type: "text" as const, text: `Error: ${errors.join(" ")}` }],
-        };
-      }
-
-      // Interactive player roll
-      if (player) {
-        try {
-          const result = await wsClient.sendCheckRequest({
-            checkType,
-            targetCharacter: player,
-            ability,
-            skill,
-            dc,
-            advantage,
-            disadvantage,
-            reason: reason || `${checkType} check`,
-            notation: checkType === "damage" || checkType === "custom" ? notation : undefined,
-            attackType: checkType === "attack" ? attackType : undefined,
-          });
-
-          // Damage/custom rolls: report individual dice + total
-          if (checkType === "damage" || checkType === "custom") {
-            const diceStr =
-              result.roll.rolls.length > 0
-                ? `[${result.roll.rolls.map((r) => r.result).join(", ")}]`
-                : "";
-            const suffix = checkType === "damage" ? " damage" : "";
-            return {
-              content: [
-                {
-                  type: "text" as const,
-                  text: `${result.characterName} rolled ${notation}: ${diceStr} = ${result.roll.total}${suffix} (${result.roll.label})`,
-                },
-              ],
-            };
-          }
-
-          const successStr =
-            result.dc !== undefined
-              ? ` — ${result.success ? "SUCCESS" : "FAILURE"} (DC ${result.dc})`
-              : "";
-          const critStr = result.roll.criticalHit
-            ? " CRITICAL HIT!"
-            : result.roll.criticalFail
-              ? " CRITICAL FAIL!"
-              : "";
-
-          // Extract natural d20 roll so Claude can report it accurately
-          const naturalRoll =
-            result.roll.rolls.length > 0 ? result.roll.rolls[0].result : result.roll.total;
-
-          const modStr =
-            result.roll.modifier !== 0
-              ? result.roll.modifier > 0
-                ? `+${result.roll.modifier}`
-                : `${result.roll.modifier}`
-              : "";
-
+    async ({ notation, checkType, player, dc, reason }) => {
+      // ── Validate checkType ──
+      if (checkType) {
+        const parsed = parseCheckType(checkType);
+        if (!parsed) {
           return {
             content: [
               {
                 type: "text" as const,
-                text: `${result.characterName} rolled d20(${naturalRoll})${modStr} = ${result.roll.total} on ${result.roll.label}${successStr}${critStr}`,
+                text: `Error: Unrecognized checkType "${checkType}". Valid values: skill names (perception, stealth...), ability names (strength, dexterity...), saves (dexterity_save...), attacks (melee_attack, ranged_attack, spell_attack, finesse_attack).`,
               },
             ],
           };
+        }
+        if (!player) {
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: `Error: checkType requires player — need a character sheet to compute modifier. Either provide player or include modifier in notation directly.`,
+              },
+            ],
+          };
+        }
+      }
+
+      // ── Interactive player roll ──
+      if (player) {
+        try {
+          const result = await wsClient.sendCheckRequest({
+            notation,
+            checkType,
+            targetCharacter: player,
+            dc,
+            reason: reason || "Roll",
+          });
+
+          const output = buildOutputFromResult(result.roll, notation);
+          const formatted = formatRollOutput(output, {
+            dc: result.dc,
+            success: result.success,
+            criticalHit: result.roll.criticalHit,
+            criticalFail: result.roll.criticalFail,
+            characterName: result.characterName,
+            checkLabel: result.roll.label,
+          });
+
+          return { content: [{ type: "text" as const, text: formatted }] };
         } catch (error) {
           return {
             content: [
@@ -174,52 +117,23 @@ export function registerDndTools(server: McpServer, wsClient: WSClient): void {
         }
       }
 
-      // DM server-side roll
-      // For d20-based check types, use rollCheck to support advantage/disadvantage
-      const isD20Check = checkType !== "damage" && checkType !== "custom";
+      // ── DM server-side roll ──
+      const { result: roll, output } = rollNotation(notation, reason || notation);
 
-      let roll: RollResult;
-
-      if (isD20Check) {
-        // Parse modifier from notation if provided (e.g. "1d20+5" → 5), otherwise 0
-        let modifier = 0;
-        if (notation) {
-          const modMatch = notation.match(/^1?d20([+-]\d+)$/i);
-          if (modMatch) modifier = parseInt(modMatch[1], 10);
-        }
-        roll = rollCheck({
-          modifier,
-          advantage,
-          disadvantage,
-          label: reason || notation || `${checkType} check`,
-        });
-      } else {
-        roll = rollDamage(notation!);
-      }
-
-      // Send to worker so all players see it in chat
+      // Send to all players
       wsClient.sendDiceRoll(roll, reason);
 
-      const rollsStr = ` [${roll.rolls.map((r) => r.result).join(", ")}]`;
-      const advStr = roll.advantage ? " (advantage)" : roll.disadvantage ? " (disadvantage)" : "";
-      const modStr =
-        roll.modifier !== 0 ? (roll.modifier > 0 ? ` +${roll.modifier}` : ` ${roll.modifier}`) : "";
-      const critStr = roll.criticalHit
-        ? " (CRITICAL HIT!)"
-        : roll.criticalFail
-          ? " (CRITICAL FAIL!)"
-          : "";
-      const reasonStr = reason ? ` (${reason})` : "";
-      const displayNotation = notation || "d20";
+      // Check success against DC
+      const success = dc !== undefined ? roll.total >= dc : undefined;
 
-      return {
-        content: [
-          {
-            type: "text" as const,
-            text: `${displayNotation}:${rollsStr}${modStr} = ${roll.total}${advStr}${critStr}${reasonStr}`,
-          },
-        ],
-      };
+      const formatted = formatRollOutput(output, {
+        dc,
+        success,
+        criticalHit: roll.criticalHit,
+        criticalFail: roll.criticalFail,
+      });
+
+      return { content: [{ type: "text" as const, text: formatted }] };
     },
   );
 }

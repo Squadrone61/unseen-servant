@@ -177,14 +177,13 @@ export interface ClientDMDiceRollMessage {
 /** DM Bridge → Server: DM requests a check from a player */
 export interface ClientDMCheckRequestMessage {
   type: "client:dm_check_request";
-  checkType: CheckRequest["type"];
+  /** Flat check type string: "perception", "dexterity_save", "melee_attack", etc. */
+  checkType?: string;
   targetCharacter: string;
-  ability?: string;
-  skill?: string;
   dc?: number;
-  advantage?: boolean;
-  disadvantage?: boolean;
   reason: string;
+  /** Dice notation — always required, e.g. "1d20", "2d20kh1", "2d6+3" */
+  notation: string;
 }
 
 /** DM Bridge → Server: computed check result after player rolled */

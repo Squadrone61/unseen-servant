@@ -3,7 +3,6 @@ import {
   gridPositionSchema,
   checkRequestSchema,
   checkResultSchema,
-  checkTypeSchema,
   rollResultSchema,
   combatStateSchema,
   battleMapStateSchema,
@@ -365,14 +364,11 @@ export const clientDMDiceRollSchema = z.object({
 
 export const clientDMCheckRequestSchema = z.object({
   type: z.literal("client:dm_check_request"),
-  checkType: checkTypeSchema,
+  checkType: z.string().optional(),
   targetCharacter: z.string(),
-  ability: z.string().optional(),
-  skill: z.string().optional(),
   dc: z.number().optional(),
-  advantage: z.boolean().optional(),
-  disadvantage: z.boolean().optional(),
   reason: z.string(),
+  notation: z.string(),
 });
 
 export const clientDMCheckResultSchema = z.object({

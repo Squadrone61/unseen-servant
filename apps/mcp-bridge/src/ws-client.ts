@@ -8,7 +8,6 @@ import type {
   ClientMessage,
   ServerMessage,
   CharacterData,
-  CheckRequest,
   CheckResult,
   PlayerInfo,
   RollResult,
@@ -733,16 +732,11 @@ export class WSClient {
 
   /** Send a check request and wait for the result. */
   sendCheckRequest(params: {
-    checkType: CheckRequest["type"];
+    notation: string;
+    checkType?: string;
     targetCharacter: string;
-    ability?: string;
-    skill?: string;
     dc?: number;
-    advantage?: boolean;
-    disadvantage?: boolean;
     reason: string;
-    notation?: string;
-    attackType?: "melee" | "ranged" | "spell";
   }): Promise<CheckResult> {
     return new Promise((resolve, reject) => {
       // Use GameStateManager to create the check request

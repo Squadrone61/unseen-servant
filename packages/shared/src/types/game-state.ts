@@ -10,6 +10,8 @@ export type DieSize = 4 | 6 | 8 | 10 | 12 | 20 | 100;
 export interface DieRoll {
   die: DieSize;
   result: number;
+  /** True if this die was discarded by kl/dl/dh notation (e.g. 4d6dl1 or 2d20kl1) */
+  dropped?: boolean;
 }
 
 export interface RollResult {
@@ -17,31 +19,25 @@ export interface RollResult {
   rolls: DieRoll[];
   modifier: number;
   total: number;
-  advantage?: boolean;
-  disadvantage?: boolean;
   criticalHit?: boolean;
   criticalFail?: boolean;
   label: string;
+  /** Original notation string used to produce this roll, e.g. "2d20kh1+5" */
+  notation?: string;
 }
 
 // ─── Checks ───
 
-export type CheckType = "ability" | "skill" | "saving_throw" | "attack" | "custom" | "damage";
-
 export interface CheckRequest {
   id: string;
-  type: CheckType;
-  ability?: string;
-  skill?: string;
+  /** Flat check type string: "perception", "dexterity_save", "melee_attack", etc.
+   *  Undefined for pure notation rolls with no auto-modifier lookup. */
+  checkType?: string;
   dc?: number;
   targetCharacter: string;
-  advantage?: boolean;
-  disadvantage?: boolean;
   reason: string;
-  /** Dice notation for damage rolls, e.g. "2d6+3" */
-  notation?: string;
-  /** For attack rolls: whether this is a melee, ranged, or spell attack */
-  attackType?: "melee" | "ranged" | "spell";
+  /** Dice notation — always required, e.g. "1d20", "2d20kh1", "2d6+3" */
+  notation: string;
   /** When true, this check was initiated by the DM bridge (not parsed from AI text) */
   dmInitiated?: boolean;
 }

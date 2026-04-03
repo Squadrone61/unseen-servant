@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@unseen-servant/shared": "workspace:*",
+    "@dice-roller/rpg-dice-roller": "^5.x",
     "@modelcontextprotocol/sdk": "^1.12.1",
     "ws": "^8.18.0",
     "zod": "^4"

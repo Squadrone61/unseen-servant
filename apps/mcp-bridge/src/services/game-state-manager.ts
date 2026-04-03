@@ -26,8 +26,6 @@ import type {
   DieRoll,
 } from "@unseen-servant/shared/types";
 import {
-  rollCheck,
-  rollDamage,
   rollInitiative,
   buildCheckLabel,
   computeCheckModifier,
@@ -36,6 +34,7 @@ import {
   gridDistance,
   computeAoETiles,
 } from "@unseen-servant/shared/utils";
+import { rollNotation } from "./dice-engine.js";
 import {
   DM_SKILL_COMBAT,
   DM_SKILL_NARRATION,
@@ -496,71 +495,19 @@ export class GameStateManager {
       return;
     }
 
-    // Damage rolls use the provided notation directly (no d20, no modifier computation)
-    if (pendingCheck.type === "damage" && pendingCheck.notation) {
-      const roll = rollDamage(pendingCheck.notation);
+    // ── Unified roll path ──
+    // If checkType is set, compute modifier from character sheet and append to notation
+    let finalNotation = pendingCheck.notation;
+    const label = buildCheckLabel(pendingCheck);
 
-      // Broadcast dice roll
-      this.broadcast({
-        type: "server:dice_roll",
-        roll,
-        playerName,
-        timestamp: Date.now(),
-        id: crypto.randomUUID(),
-        checkRequestId: pendingCheck.id,
-      });
-
-      // Broadcast check result (success is always true for damage — it's just a roll)
-      this.broadcast({
-        type: "server:check_result",
-        result: {
-          requestId: pendingCheck.id,
-          roll,
-          success: true,
-          characterName: char.static.name,
-        },
-        timestamp: Date.now(),
-        id: crypto.randomUUID(),
-      });
-
-      // Clear pending check
-      if (combat?.pendingCheck?.id === pendingCheck.id) {
-        combat.pendingCheck = undefined;
+    if (pendingCheck.checkType) {
+      const modifier = computeCheckModifier(char, pendingCheck);
+      if (modifier !== 0) {
+        finalNotation = `${pendingCheck.notation}${modifier >= 0 ? "+" : ""}${modifier}`;
       }
-      if (this.gameState.pendingCheck?.id === pendingCheck.id) {
-        this.gameState.pendingCheck = undefined;
-      }
-
-      this.lastCheckResult = {
-        characterName: char.static.name,
-        total: roll.total,
-        rolls: roll.rolls,
-        modifier: 0,
-        label: pendingCheck.reason,
-        success: true,
-        notation: pendingCheck.notation,
-      };
-
-      this.createEvent(
-        "check_resolved",
-        `${char.static.name} rolled ${roll.total} damage (${pendingCheck.notation}) for ${pendingCheck.reason}`,
-        [],
-      );
-
-      const systemMsg = `[System: ${char.static.name} rolled ${roll.total} damage (${pendingCheck.notation}) for ${pendingCheck.reason}]`;
-      this.conversationHistory.push({ role: "user", content: systemMsg });
-      this.pushDMRequest();
-      return;
     }
 
-    // Compute modifier and roll
-    const modifier = computeCheckModifier(char, pendingCheck);
-    const roll = rollCheck({
-      modifier,
-      advantage: pendingCheck.advantage,
-      disadvantage: pendingCheck.disadvantage,
-      label: buildCheckLabel(pendingCheck),
-    });
+    const { result: roll } = rollNotation(finalNotation, label);
 
     const success = pendingCheck.dc !== undefined ? roll.total >= pendingCheck.dc : undefined;
 
@@ -599,6 +546,7 @@ export class GameStateManager {
       dc: pendingCheck.dc,
       criticalHit: roll.criticalHit,
       criticalFail: roll.criticalFail,
+      notation: finalNotation,
     };
 
     // Clear pending check
@@ -4037,14 +3985,15 @@ export class GameStateManager {
       }
 
       // Roll saving throw
-      const saveRoll = rollCheck({
-        modifier: saveMod,
-        label: `${params.saveAbility} save vs DC ${params.saveDC}`,
-      });
+      const saveNotation = `1d20${saveMod >= 0 ? "+" : ""}${saveMod}`;
+      const { result: saveRoll } = rollNotation(
+        saveNotation,
+        `${params.saveAbility} save vs DC ${params.saveDC}`,
+      );
       const passed = saveRoll.total >= params.saveDC;
 
       // Roll damage
-      const damageRoll = rollDamage(params.damage);
+      const { result: damageRoll } = rollNotation(params.damage);
       let finalDamage = damageRoll.total;
       if (passed && params.halfOnSave) {
         finalDamage = Math.floor(finalDamage / 2);
@@ -4138,16 +4087,11 @@ export class GameStateManager {
 
   /** Request a check from a player (DM-initiated) */
   requestCheck(params: {
-    checkType: CheckRequest["type"];
+    notation: string;
+    checkType?: string;
     targetCharacter: string;
-    ability?: string;
-    skill?: string;
     dc?: number;
-    advantage?: boolean;
-    disadvantage?: boolean;
     reason: string;
-    notation?: string;
-    attackType?: "melee" | "ranged" | "spell";
   }): string {
     // Verify target character exists
     const charEntry = Object.entries(this.characters).find(
@@ -4159,16 +4103,11 @@ export class GameStateManager {
 
     const checkRequest: CheckRequest = {
       id: crypto.randomUUID(),
-      type: params.checkType,
+      checkType: params.checkType,
       targetCharacter: params.targetCharacter,
-      ability: params.ability,
-      skill: params.skill,
       dc: params.dc,
-      advantage: params.advantage,
-      disadvantage: params.disadvantage,
       reason: params.reason,
       notation: params.notation,
-      attackType: params.attackType,
       dmInitiated: true,
     };
 

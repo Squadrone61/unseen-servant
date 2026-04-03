@@ -118,14 +118,25 @@ function TTSButton({ text }: { text: string }) {
   );
 }
 
-/** Renders individual die results as small badges: d20 [15] */
+/** Renders individual die results as small badges: d20 [15] (dropped dice are dimmed + struck through) */
 function DieBadges({ roll }: { roll: RollResult }) {
   return (
     <span className="inline-flex items-center gap-1 flex-wrap">
       {roll.rolls.map((r, i) => (
-        <span key={i} className="inline-flex items-center gap-0.5">
-          <span className="text-gray-500 text-xs">d{r.die}</span>
-          <span className="bg-gray-700/80 text-gray-200 text-xs font-mono font-semibold px-1.5 py-0.5 rounded">
+        <span
+          key={i}
+          className={`inline-flex items-center gap-0.5 ${r.dropped ? "opacity-40" : ""}`}
+        >
+          <span className={`text-gray-500 text-xs ${r.dropped ? "line-through" : ""}`}>
+            d{r.die}
+          </span>
+          <span
+            className={`text-xs font-mono font-semibold px-1.5 py-0.5 rounded ${
+              r.dropped
+                ? "bg-gray-700/50 text-gray-500 line-through"
+                : "bg-gray-700/80 text-gray-200"
+            }`}
+          >
             {r.result}
           </span>
         </span>
@@ -241,8 +252,17 @@ function CheckCard({
 
   const roll = isMerged ? message.roll : isPending ? message.roll : null;
   const result = isMerged ? message.result : null;
-  const isDamage = request.type === "damage";
-  const checkLabel = request.skill || request.ability || request.type.replace("_", " ");
+  // A check is a "damage roll" when checkType is explicitly "damage",
+  // or when there is no checkType and no dc (pure notation roll).
+  const isDamage =
+    request.checkType === "damage" || (!request.checkType && request.dc === undefined);
+  // Label: capitalize checkType with underscores → spaces, fall back to reason
+  const checkLabel = request.checkType
+    ? request.checkType
+        .split("_")
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(" ")
+    : request.reason;
 
   const isCrit = roll?.criticalHit;
   const isFail = roll?.criticalFail;
@@ -308,22 +328,6 @@ function CheckCard({
         {request.reason}
       </div>
 
-      {/* Advantage/disadvantage */}
-      {(request.advantage || request.disadvantage) && (
-        <div className="mb-1.5">
-          {request.advantage && (
-            <span className="text-xs text-green-400 bg-green-500/10 px-1.5 py-0.5 rounded mr-1">
-              Advantage
-            </span>
-          )}
-          {request.disadvantage && (
-            <span className="text-xs text-red-400 bg-red-500/10 px-1.5 py-0.5 rounded mr-1">
-              Disadvantage
-            </span>
-          )}
-        </div>
-      )}
-
       {/* Dice roll display */}
       {roll && (
         <div className="mt-1">
@@ -338,7 +342,7 @@ function CheckCard({
       {/* Roll button for bare check_request */}
       {isBare && isMyCheck && onRollDice && (
         <Button variant="primary" size="sm" className="mt-2" onClick={() => onRollDice(request.id)}>
-          {isDamage ? `Roll Damage${request.notation ? ` (${request.notation})` : ""}` : "Roll d20"}
+          {`Roll ${request.notation}`}
         </Button>
       )}
     </div>
@@ -461,8 +465,6 @@ export function ChatMessage({ message, onRollDice, myCharacterName }: ChatMessag
           <div className="text-xs text-gray-400 mt-0.5">{roll.label}</div>
           {isCrit && <div className="text-xs text-yellow-400 font-bold mt-1">CRITICAL HIT!</div>}
           {isFail && <div className="text-xs text-red-400 font-bold mt-1">CRITICAL FAIL!</div>}
-          {roll.advantage && <span className="text-xs text-green-400">Advantage</span>}
-          {roll.disadvantage && <span className="text-xs text-red-400">Disadvantage</span>}
         </div>
       );
     }
