@@ -85,6 +85,8 @@ export const conditionEntrySchema = z.object({
   name: z.string(),
   duration: z.number().optional(),
   startRound: z.number().optional(),
+  endsOnLongRest: z.boolean().optional(),
+  expiresAt: z.enum(["start-of-turn", "end-of-turn"]).optional(),
 });
 
 // ─── Combatant ───
@@ -101,6 +103,9 @@ export const combatantSchema = z.object({
   position: gridPositionSchema.optional(),
   size: creatureSizeSchema,
   tokenColor: z.string().optional(),
+  surprised: z.boolean().optional(),
+  reactionUsed: z.boolean().optional(),
+  bonusActionUsed: z.boolean().optional(),
   // Enemy/NPC only fields
   maxHP: z.number().optional(),
   currentHP: z.number().optional(),
@@ -108,6 +113,7 @@ export const combatantSchema = z.object({
   armorClass: z.number().optional(),
   conditions: z.array(conditionEntrySchema).optional(),
   concentratingOn: z.object({ spellName: z.string(), since: z.number().optional() }).optional(),
+  saveBonuses: z.record(z.string(), z.number()).optional(),
 });
 
 // ─── Battle Map ───
@@ -298,6 +304,9 @@ export const gameEventSchema = z.object({
   stateBefore: z.object({
     characters: z.record(z.string(), z.any()),
     combatants: z.record(z.string(), combatantSchema).optional(),
+    encounterPhase: encounterPhaseSchema.optional(),
+    pendingCheck: checkRequestSchema.optional(),
+    map: battleMapStateSchema.optional(),
   }),
   conversationIndex: z.number(),
   changes: z.array(stateChangeSchema),

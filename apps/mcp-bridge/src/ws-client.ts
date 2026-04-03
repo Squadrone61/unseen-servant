@@ -306,7 +306,13 @@ export class WSClient {
       return;
     }
 
+    const wasStoryStarted = this.gameStateManager.storyStarted;
     this.gameStateManager.handlePlayerAction(raw.playerName, raw.action, raw.requestId);
+
+    // Signal worker that story has started (replaces string-sniffing)
+    if (!wasStoryStarted && this.gameStateManager.storyStarted) {
+      this.send({ type: "client:story_started" });
+    }
   }
 
   /** Send a ServerMessage to all clients via the worker's client:broadcast relay */
@@ -513,8 +519,10 @@ export class WSClient {
       // Save session state before character snapshots
       this.gameStateManager.saveSessionStateToCampaign();
 
-      if (Object.keys(this.characters).length > 0) {
-        const count = cm.snapshotCharacters(this.characters, this.playerUserIds);
+      // Use GSM's characters — they have up-to-date dynamic data from tool mutations
+      const chars = this.gameStateManager.characters;
+      if (Object.keys(chars).length > 0) {
+        const count = cm.snapshotCharacters(chars, this.playerUserIds);
         log("ws-client", `Auto-snapshot: saved ${count} character(s) to campaign`);
       }
       cm.touchManifest();
@@ -648,7 +656,7 @@ export class WSClient {
     this.players = allPlayers
       .filter((p) => !p.isDM)
       .map((p) => {
-        const char = this.characters[p.name];
+        const char = this.gameStateManager.characters[p.name];
         const summary: PlayerSummary = {
           name: p.name,
           online: p.online,

@@ -85,9 +85,6 @@ function GameContent({ roomCode, playerName }: { roomCode: string; playerName: s
   const [combatState, setCombatState] = useState<CombatState | null>(null);
   const [battleMap, setBattleMap] = useState<BattleMapState | null>(null);
   const [eventLog, setEventLog] = useState<GameEvent[]>([]);
-  const [_pacingProfile, setPacingProfile] = useState<PacingProfile>("balanced");
-  const [_encounterLength, setEncounterLength] = useState<EncounterLength>("standard");
-  const [_customSystemPrompt, setCustomSystemPrompt] = useState<string | undefined>(undefined);
   const [highlightedCombatantId, setHighlightedCombatantId] = useState<string | null>(null);
   const [campaigns, setCampaigns] = useState<
     { slug: string; name: string; lastPlayedAt: string; sessionCount: number }[]
@@ -326,14 +323,9 @@ function GameContent({ roomCode, playerName }: { roomCode: string; playerName: s
           break;
 
         case "server:game_state_sync":
-          if (msg.gameState.encounter?.combat) {
-            setCombatState(msg.gameState.encounter.combat);
-          }
+          setCombatState(msg.gameState.encounter?.combat ?? null);
           setBattleMap(msg.gameState.encounter?.map ?? null);
           setEventLog(msg.gameState.eventLog);
-          setPacingProfile(msg.gameState.pacingProfile);
-          setEncounterLength(msg.gameState.encounterLength);
-          setCustomSystemPrompt(msg.gameState.customSystemPrompt);
           setGameStateSynced(true);
           break;
 
@@ -352,9 +344,6 @@ function GameContent({ roomCode, playerName }: { roomCode: string; playerName: s
           }
           setBattleMap(msg.gameState.encounter?.map ?? null);
           setEventLog(msg.gameState.eventLog);
-          setPacingProfile(msg.gameState.pacingProfile);
-          setEncounterLength(msg.gameState.encounterLength);
-          setCustomSystemPrompt(msg.gameState.customSystemPrompt);
           break;
 
         case "server:dm_config_update":
@@ -371,9 +360,6 @@ function GameContent({ roomCode, playerName }: { roomCode: string; playerName: s
           setCampaignConfigured(true);
           setActiveCampaignSlug(msg.campaignSlug);
           setActiveCampaignName(msg.campaignName);
-          setPacingProfile(msg.pacingProfile);
-          setEncounterLength(msg.encounterLength);
-          if (msg.systemPrompt) setCustomSystemPrompt(msg.systemPrompt);
           // Restore characters from campaign if provided
           if (msg.restoredCharacters) {
             setPartyCharacters((prev) => ({ ...prev, ...msg.restoredCharacters }));

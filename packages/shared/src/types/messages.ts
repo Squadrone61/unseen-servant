@@ -103,6 +103,11 @@ export interface ClientCampaignLoadedMessage {
   sessionCount: number;
 }
 
+/** DM Bridge → Server: story has started (replaces string-sniffing) */
+export interface ClientStoryStartedMessage {
+  type: "client:story_started";
+}
+
 export interface ClientSetPasswordMessage {
   type: "client:set_password";
   password: string;
@@ -234,6 +239,7 @@ export type ClientMessage =
   | ClientDMConfigMessage
   | ClientSetCampaignMessage
   | ClientCampaignLoadedMessage
+  | ClientStoryStartedMessage
   | ClientConfigureCampaignMessage
   | ClientCampaignConfiguredAckMessage
   | ClientSetPasswordMessage

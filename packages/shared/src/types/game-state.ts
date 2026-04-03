@@ -69,6 +69,15 @@ export interface ConditionEntry {
   name: string;
   duration?: number;
   startRound?: number;
+  /** If true, this condition is cleared when the character completes a long rest */
+  endsOnLongRest?: boolean;
+  /**
+   * When the duration countdown fires relative to the afflicted creature's turn.
+   * "end-of-turn" (default): countdown happens at the end of that creature's turn.
+   * "start-of-turn": the condition expires at the start of that creature's turn
+   *   (e.g. Paralyzed from Hold Person — the target repeats the save at start of turn).
+   */
+  expiresAt?: "start-of-turn" | "end-of-turn";
 }
 
 // ─── Combatant ───
@@ -90,6 +99,25 @@ export interface Combatant {
   size: CreatureSize;
   tokenColor?: string;
 
+  /**
+   * True during the first round of combat if this combatant was surprised.
+   * Surprised creatures cannot act, react, or move on their first turn.
+   * Cleared automatically when advanceTurn passes their first turn.
+   */
+  surprised?: boolean;
+
+  /**
+   * Whether this combatant has used their reaction this round.
+   * Reset at the start of their next turn.
+   */
+  reactionUsed?: boolean;
+
+  /**
+   * Whether this combatant has used their bonus action this turn.
+   * Reset at the start of their next turn.
+   */
+  bonusActionUsed?: boolean;
+
   // Enemy/NPC only — players read these from CharacterDynamicData
   maxHP?: number;
   currentHP?: number;
@@ -97,6 +125,12 @@ export interface Combatant {
   armorClass?: number;
   conditions?: ConditionEntry[];
   concentratingOn?: { spellName: string; since?: number };
+  /**
+   * Optional per-ability saving throw bonuses for NPC/enemy combatants.
+   * Keys are lowercase ability names (e.g. "dexterity", "wisdom").
+   * The AI DM populates this from lookup_monster data when adding combatants.
+   */
+  saveBonuses?: Partial<Record<string, number>>;
 }
 
 // ─── Combat ───
@@ -235,6 +269,12 @@ export interface GameEvent {
   stateBefore: {
     characters: Record<string, CharacterDynamicData>;
     combatants?: Record<string, Combatant>;
+    /** Encounter phase snapshot (exploration, combat, social, rest) */
+    encounterPhase?: EncounterPhase;
+    /** Pending check snapshot (exploration-phase checks) */
+    pendingCheck?: CheckRequest;
+    /** Battle map snapshot */
+    map?: BattleMapState;
   };
   /** Conversation history length at this point (for AI rollback) */
   conversationIndex: number;

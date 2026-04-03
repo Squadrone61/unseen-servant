@@ -146,6 +146,14 @@ export const classResourceSchema = z.object({
   source: z.string(),
 });
 
+export const combatBonusSchema = z.object({
+  type: z.enum(["attack", "damage", "initiative"]),
+  value: z.number(),
+  attackType: z.enum(["melee", "ranged", "spell"]).optional(),
+  source: z.string(),
+  condition: z.string().optional(),
+});
+
 export const characterAppearanceSchema = z.object({
   gender: z.string().optional(),
   age: z.string().optional(),
@@ -180,6 +188,7 @@ export const characterStaticDataSchema = z.object({
   spellSaveDC: z.number().optional(),
   spellAttackBonus: z.number().optional(),
   advantages: z.array(advantageEntrySchema),
+  combatBonuses: z.array(combatBonusSchema).optional(),
   traits: characterTraitsSchema,
   appearance: characterAppearanceSchema.optional(),
   backstory: z.string().optional(),
@@ -194,10 +203,12 @@ export const characterDynamicDataSchema = z.object({
   pactMagicSlots: z.array(spellSlotLevelSchema).optional().default([]),
   resourcesUsed: z.record(z.string(), z.number()).optional().default({}),
   conditions: z.array(conditionEntrySchema),
+  exhaustionLevel: z.number().optional(),
   deathSaves: deathSavesSchema,
   inventory: z.array(inventoryItemSchema),
   currency: currencySchema,
   heroicInspiration: z.boolean().optional().default(false),
+  concentratingOn: z.object({ spellName: z.string(), since: z.number().optional() }).optional(),
 });
 
 export const characterDataSchema = z.object({
@@ -264,6 +275,10 @@ export const clientCampaignLoadedSchema = z.object({
   campaignSlug: z.string(),
   campaignName: z.string(),
   sessionCount: z.number(),
+});
+
+export const clientStoryStartedSchema = z.object({
+  type: z.literal("client:story_started"),
 });
 
 export const clientConfigureCampaignSchema = z.object({
@@ -407,6 +422,7 @@ export const clientMessageSchema = z.discriminatedUnion("type", [
   clientDMConfigSchema,
   clientSetCampaignSchema,
   clientCampaignLoadedSchema,
+  clientStoryStartedSchema,
   clientConfigureCampaignSchema,
   clientCampaignConfiguredAckSchema,
   clientSetPasswordSchema,

@@ -123,8 +123,8 @@ export function registerCampaignTools(
     },
     async ({ summary, activeContext }) => {
       try {
-        // Pass current characters for snapshotting and player list update
-        const characters = wsClient.characters;
+        // Use GSM's characters — they have up-to-date dynamic data from tool mutations
+        const characters = wsClient.gameStateManager.characters;
         const hasCharacters = Object.keys(characters).length > 0;
         const result = campaignManager.endSession(
           summary,

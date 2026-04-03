@@ -277,7 +277,7 @@ export function registerGameTools(
     "apply_damage",
     {
       description:
-        "Deal damage to a character or combatant. Handles temp HP absorption automatically.",
+        "Deal damage to a character or combatant. Handles temp HP absorption automatically. If the target was already at 0 HP, records a death save failure instead (2 failures if is_critical_hit is true).",
       inputSchema: {
         target: z.string().describe("Name of the character or combatant to damage"),
         amount: z.coerce.number().describe("Amount of damage to deal"),
@@ -285,10 +285,18 @@ export function registerGameTools(
           .string()
           .optional()
           .describe("Type of damage (e.g., 'fire', 'slashing', 'psychic')"),
+        is_critical_hit: z
+          .boolean()
+          .optional()
+          .describe(
+            "Whether this is a critical hit — causes 2 death save failures if target is already at 0 HP",
+          ),
       },
     },
-    async ({ target, amount, damage_type }) => {
-      return fromToolResponse(wsClient.gameStateManager.applyDamage(target, amount, damage_type));
+    async ({ target, amount, damage_type, is_critical_hit }) => {
+      return fromToolResponse(
+        wsClient.gameStateManager.applyDamage(target, amount, damage_type, is_critical_hit),
+      );
     },
   );
 
@@ -1157,14 +1165,27 @@ export function registerGameTools(
     "death_save",
     {
       description:
-        "Record a death saving throw for a character at 0 HP. Tracks successes/failures, auto-stabilizes at 3 successes, marks dead at 3 failures.",
+        "Record a death saving throw for a character at 0 HP. Tracks successes/failures, auto-stabilizes at 3 successes, marks dead at 3 failures. Nat 1 = 2 failures (pass critical_fail: true). Nat 20 = regain 1 HP immediately, reset saves (pass success: true AND critical_success: true).",
       inputSchema: {
         character_name: z.string().describe("Character name"),
         success: z.boolean().describe("Whether the death save succeeded"),
+        critical_fail: z
+          .boolean()
+          .optional()
+          .describe("True if the d20 roll was a natural 1 — causes 2 failures instead of 1"),
+        critical_success: z
+          .boolean()
+          .optional()
+          .describe(
+            "True if the d20 roll was a natural 20 — character regains 1 HP immediately and wakes up",
+          ),
       },
     },
-    async ({ character_name, success }) => {
-      const result = wsClient.gameStateManager.recordDeathSave(character_name, success);
+    async ({ character_name, success, critical_fail, critical_success }) => {
+      const result = wsClient.gameStateManager.recordDeathSave(character_name, success, {
+        criticalFail: critical_fail,
+        criticalSuccess: critical_success,
+      });
       return fromToolResponse(result);
     },
   );
@@ -1199,6 +1220,28 @@ export function registerGameTools(
     async ({ target }) => {
       const result = wsClient.gameStateManager.breakConcentration(target);
       return fromToolResponse(result);
+    },
+  );
+
+  // ─── Exhaustion ───
+
+  server.registerTool(
+    "set_exhaustion",
+    {
+      description:
+        "Set a character's exhaustion level (0–10). PHB 2024: each level applies -2 to all d20 rolls and spell save DC, speed reduced by 5ft per level. Level 0 removes exhaustion. Level 10 = death. Long rest reduces exhaustion by 1.",
+      inputSchema: {
+        character_name: z.string().describe("Name of the character"),
+        level: z.coerce
+          .number()
+          .int()
+          .min(0)
+          .max(10)
+          .describe("Exhaustion level to set (0 = no exhaustion, 10 = dead)"),
+      },
+    },
+    async ({ character_name, level }) => {
+      return fromToolResponse(wsClient.gameStateManager.setExhaustion(character_name, level));
     },
   );
 

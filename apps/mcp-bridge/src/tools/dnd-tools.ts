@@ -112,21 +112,22 @@ export function registerDndTools(server: McpServer, wsClient: WSClient): void {
             advantage,
             disadvantage,
             reason: reason || `${checkType} check`,
-            notation: checkType === "damage" ? notation : undefined,
+            notation: checkType === "damage" || checkType === "custom" ? notation : undefined,
             attackType: checkType === "attack" ? attackType : undefined,
           });
 
-          // Damage rolls: report individual dice + total
-          if (checkType === "damage") {
+          // Damage/custom rolls: report individual dice + total
+          if (checkType === "damage" || checkType === "custom") {
             const diceStr =
               result.roll.rolls.length > 0
                 ? `[${result.roll.rolls.map((r) => r.result).join(", ")}]`
                 : "";
+            const suffix = checkType === "damage" ? " damage" : "";
             return {
               content: [
                 {
                   type: "text" as const,
-                  text: `${result.characterName} rolled ${notation}: ${diceStr} = ${result.roll.total} damage (${result.roll.label})`,
+                  text: `${result.characterName} rolled ${notation}: ${diceStr} = ${result.roll.total}${suffix} (${result.roll.label})`,
                 },
               ],
             };

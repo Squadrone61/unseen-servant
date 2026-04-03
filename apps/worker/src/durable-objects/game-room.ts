@@ -80,6 +80,7 @@ export class GameRoom extends DurableObject<Env> {
         campaignConfigured,
         activeCampaignSlug,
         activeCampaignName,
+        approvedUserIds,
       ] = await Promise.all([
         this.ctx.storage.get<ServerMessage[]>("chatLog"),
         this.ctx.storage.get<string>("roomCode"),
@@ -94,6 +95,7 @@ export class GameRoom extends DurableObject<Env> {
         this.ctx.storage.get<boolean>("campaignConfigured"),
         this.ctx.storage.get<string>("activeCampaignSlug"),
         this.ctx.storage.get<string>("activeCampaignName"),
+        this.ctx.storage.get<string[]>("approvedUserIds"),
       ]);
       if (chatLog) this.chatLog = chatLog;
       if (roomCode) this.roomCode = roomCode;
@@ -108,6 +110,12 @@ export class GameRoom extends DurableObject<Env> {
       if (campaignConfigured) this.campaignConfigured = campaignConfigured;
       if (activeCampaignSlug) this.activeCampaignSlug = activeCampaignSlug;
       if (activeCampaignName) this.activeCampaignName = activeCampaignName;
+      // Merge persisted approvedUserIds with any active session userIds already added above
+      if (approvedUserIds) {
+        for (const id of approvedUserIds) {
+          this.approvedUserIds.add(id);
+        }
+      }
     });
   }
 
@@ -241,6 +249,10 @@ export class GameRoom extends DurableObject<Env> {
       case "client:campaign_configured_ack":
         await this.handleCampaignConfiguredAck(ws, msg);
         break;
+      case "client:story_started":
+        this.storyStarted = true;
+        this.ctx.storage.put("storyStarted", true);
+        break;
       case "client:set_password":
         await this.handleSetPassword(ws, msg);
         break;
@@ -251,7 +263,7 @@ export class GameRoom extends DurableObject<Env> {
         await this.handleDestroyRoom(ws);
         break;
       case "client:broadcast":
-        this.handleBroadcast(ws, msg);
+        await this.handleBroadcast(ws, msg);
         break;
       case "client:action_result":
         // Bridge acknowledges a forwarded action — currently no-op
@@ -494,10 +506,10 @@ export class GameRoom extends DurableObject<Env> {
    * Handle client:broadcast from the DM bridge.
    * Validates sender is DM, extracts payload, broadcasts to targets.
    */
-  private handleBroadcast(
+  private async handleBroadcast(
     ws: WebSocket,
     msg: Extract<ClientMessage, { type: "client:broadcast" }>,
-  ): void {
+  ): Promise<void> {
     const session = this.sessions.get(ws);
     if (!session?.isDM) {
       this.sendTo(ws, {
@@ -515,16 +527,10 @@ export class GameRoom extends DurableObject<Env> {
       for (const [userId, record] of this.allPlayerRecords.entries()) {
         if (record.name === payload.playerName) {
           this.characters.set(userId, payload.character);
-          this.persistCharacters();
+          await this.persistCharacters();
           break;
         }
       }
-    }
-
-    // Handle story started state
-    if (payload.type === "server:system" && payload.content === "The adventure begins...") {
-      this.storyStarted = true;
-      this.ctx.storage.put("storyStarted", true);
     }
 
     if (msg.targets && msg.targets.length > 0) {
@@ -662,6 +668,7 @@ export class GameRoom extends DurableObject<Env> {
       this.hostPlayerName = msg.playerName;
       this.approvedUserIds.add(userId);
       this.ctx.storage.put("hostPlayerName", this.hostPlayerName);
+      this.ctx.storage.put("approvedUserIds", Array.from(this.approvedUserIds));
     } else if (this.hostUserId === userId) {
       status = "host";
       this.hostPlayerName = msg.playerName;
@@ -669,6 +676,7 @@ export class GameRoom extends DurableObject<Env> {
     } else {
       status = "player";
       this.approvedUserIds.add(userId);
+      this.ctx.storage.put("approvedUserIds", Array.from(this.approvedUserIds));
     }
 
     const session: SessionData = {
@@ -682,22 +690,22 @@ export class GameRoom extends DurableObject<Env> {
     ws.serializeAttachment(session);
     this.sessions.set(ws, session);
 
-    this.completeJoin(ws, session, msg.roomCode, isReconnect, authUser);
+    await this.completeJoin(ws, session, msg.roomCode, isReconnect, authUser);
   }
 
-  private completeJoin(
+  private async completeJoin(
     ws: WebSocket,
     session: SessionData,
     roomCode: string,
     isReconnect: boolean,
     authUser?: AuthUser,
-  ): void {
+  ): Promise<void> {
     if (!this.allPlayerRecords.has(session.userId) && !session.isDM) {
       this.allPlayerRecords.set(session.userId, {
         name: session.playerName,
         isHost: session.status === "host",
       });
-      this.persistAllPlayerRecords();
+      await this.persistAllPlayerRecords();
     }
 
     this.sendTo(ws, {
@@ -797,7 +805,7 @@ export class GameRoom extends DurableObject<Env> {
           }
         }
       }
-      this.persistCharacters();
+      await this.persistCharacters();
     }
 
     this.broadcast({
@@ -880,6 +888,7 @@ export class GameRoom extends DurableObject<Env> {
     }
 
     this.approvedUserIds.delete(targetSession.userId);
+    this.ctx.storage.put("approvedUserIds", Array.from(this.approvedUserIds));
 
     this.sendTo(targetWs, {
       type: "server:kicked",
@@ -889,11 +898,11 @@ export class GameRoom extends DurableObject<Env> {
     this.sessions.delete(targetWs);
 
     this.allPlayerRecords.delete(targetSession.userId);
-    this.persistAllPlayerRecords();
+    await this.persistAllPlayerRecords();
 
     if (this.characters.has(targetSession.userId)) {
       this.characters.delete(targetSession.userId);
-      this.persistCharacters();
+      await this.persistCharacters();
     }
 
     try {
@@ -981,17 +990,12 @@ export class GameRoom extends DurableObject<Env> {
 
     // Cache character in worker for reconnect data
     this.characters.set(session.userId, msg.character);
-    this.persistCharacters();
+    await this.persistCharacters();
 
-    // Broadcast to all players
-    this.broadcast({
-      type: "server:character_updated",
-      playerName: session.playerName,
-      character: msg.character,
-      source: "player",
-    });
-
-    // Forward to bridge for campaign persistence + state tracking
+    // Forward to bridge — the bridge broadcasts server:character_updated via
+    // client:broadcast, which this worker then relays to all players. The worker
+    // must NOT send its own server:character_updated here; doing so would cause
+    // every player to receive two identical character_updated messages (ARCH-BUG-3).
     this.forwardToBridge(ws, msg);
   }
 
@@ -1092,11 +1096,22 @@ export class GameRoom extends DurableObject<Env> {
     return result;
   }
 
-  private persistCharacters(): void {
-    this.ctx.storage.put("characters", Object.fromEntries(this.characters.entries()));
+  private async persistCharacters(): Promise<void> {
+    try {
+      await this.ctx.storage.put("characters", Object.fromEntries(this.characters.entries()));
+    } catch (e) {
+      console.error("Failed to persist characters:", e);
+    }
   }
 
-  private persistAllPlayerRecords(): void {
-    this.ctx.storage.put("allPlayerRecords", Object.fromEntries(this.allPlayerRecords.entries()));
+  private async persistAllPlayerRecords(): Promise<void> {
+    try {
+      await this.ctx.storage.put(
+        "allPlayerRecords",
+        Object.fromEntries(this.allPlayerRecords.entries()),
+      );
+    } catch (e) {
+      console.error("Failed to persist allPlayerRecords:", e);
+    }
   }
 }

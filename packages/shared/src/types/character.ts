@@ -162,7 +162,7 @@ export interface CharacterStaticData {
   proficiencyBonus: number;
   speed: number;
   features: CharacterFeature[];
-  classResources: ClassResource[];
+  classResources?: ClassResource[];
   proficiencies: ProficiencyGroup;
   skills: SkillProficiency[];
   savingThrows: SavingThrowProficiency[];
@@ -189,13 +189,19 @@ export interface CharacterDynamicData {
   currentHP: number;
   tempHP: number;
   spellSlotsUsed: SpellSlotLevel[];
-  pactMagicSlots: SpellSlotLevel[]; // Warlock pact magic (tracked separately, recharges on short rest)
-  resourcesUsed: Record<string, number>; // class resource usage keyed by name
+  pactMagicSlots?: SpellSlotLevel[]; // Warlock pact magic (tracked separately, recharges on short rest)
+  resourcesUsed?: Record<string, number>; // class resource usage keyed by name
   conditions: ConditionEntry[]; // "poisoned", "stunned", etc.
+  /**
+   * Exhaustion level (0–10). Each level applies -2 to all d20 rolls and spell save DC.
+   * Speed reduced by 5ft × level. Long rest removes 1 level. Death at level 10.
+   * Omitted when 0 (no exhaustion).
+   */
+  exhaustionLevel?: number;
   deathSaves: DeathSaves;
   inventory: InventoryItem[];
   currency: Currency;
-  heroicInspiration: boolean;
+  heroicInspiration?: boolean;
   concentratingOn?: { spellName: string; since?: number };
 }
 

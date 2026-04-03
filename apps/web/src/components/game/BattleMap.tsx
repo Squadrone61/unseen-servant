@@ -91,8 +91,9 @@ function getReachableTiles(from: GridPosition, budgetFt: number, map: BattleMapS
   const startKey = `${from.x},${from.y}`;
   best.set(startKey, 0);
 
-  // 0-1 BFS with deque (5ft = 0-cost bucket, 10ft = 1-cost bucket)
-  const deque: { x: number; y: number; cost: number }[] = [{ x: from.x, y: from.y, cost: 0 }];
+  // 0-1 BFS using two buckets (current-cost and next-cost) to avoid O(n) shift/unshift.
+  // Cheap moves (5ft) stay in the current bucket; expensive moves (10ft) go to the next.
+  // Each node is processed at most once per bucket swap, giving O(n) total.
   const dirs = [
     { dx: 0, dy: -1 },
     { dx: 1, dy: 0 },
@@ -104,37 +105,49 @@ function getReachableTiles(from: GridPosition, budgetFt: number, map: BattleMapS
     { dx: -1, dy: -1 },
   ];
 
-  while (deque.length > 0) {
-    const cur = deque.shift()!;
-    // Skip if we've already found a cheaper path to this node
-    const curKey = `${cur.x},${cur.y}`;
-    if ((best.get(curKey) ?? Infinity) < cur.cost) continue;
+  type Node = { x: number; y: number; cost: number };
+  let current: Node[] = [{ x: from.x, y: from.y, cost: 0 }];
+  let next: Node[] = [];
 
-    for (const { dx, dy } of dirs) {
-      const nx = cur.x + dx;
-      const ny = cur.y + dy;
-      if (nx < 0 || nx >= map.width || ny < 0 || ny >= map.height) continue;
+  while (current.length > 0) {
+    // Process every node in the current bucket
+    for (let i = 0; i < current.length; i++) {
+      const cur = current[i];
+      const curKey = `${cur.x},${cur.y}`;
+      // Skip stale entries (a cheaper path was already recorded)
+      if ((best.get(curKey) ?? Infinity) < cur.cost) continue;
 
-      const tile = map.tiles[ny]?.[nx];
-      if (!tile) continue;
-      if (tile.type === "wall" || tile.type === "pit") continue;
+      for (const { dx, dy } of dirs) {
+        const nx = cur.x + dx;
+        const ny = cur.y + dy;
+        if (nx < 0 || nx >= map.width || ny < 0 || ny >= map.height) continue;
 
-      const moveCost = tile.type === "difficult_terrain" || tile.type === "water" ? 10 : 5;
-      const total = cur.cost + moveCost;
-      if (total > budgetFt) continue;
+        const tile = map.tiles[ny]?.[nx];
+        if (!tile) continue;
+        if (tile.type === "wall" || tile.type === "pit") continue;
 
-      const key = `${nx},${ny}`;
-      if ((best.get(key) ?? Infinity) <= total) continue;
-      best.set(key, total);
-      reachable.add(key);
+        const moveCost = tile.type === "difficult_terrain" || tile.type === "water" ? 10 : 5;
+        const total = cur.cost + moveCost;
+        if (total > budgetFt) continue;
 
-      // 0-1 BFS: push cheap moves to front, expensive to back
-      if (moveCost === 5) {
-        deque.unshift({ x: nx, y: ny, cost: total });
-      } else {
-        deque.push({ x: nx, y: ny, cost: total });
+        const key = `${nx},${ny}`;
+        if ((best.get(key) ?? Infinity) <= total) continue;
+        best.set(key, total);
+        reachable.add(key);
+
+        // Cheap move: process in the same round (push to current after the loop ends).
+        // Expensive move: defer to next round.
+        if (moveCost === 5) {
+          current.push({ x: nx, y: ny, cost: total });
+        } else {
+          next.push({ x: nx, y: ny, cost: total });
+        }
       }
     }
+
+    // Swap buckets: next round's nodes become current
+    current = next;
+    next = [];
   }
 
   reachable.delete(startKey);
@@ -199,15 +212,15 @@ export function BattleMap({
   const [panInitialized, setPanInitialized] = useState(false);
   const [showReachable, setShowReachable] = useState(false);
   const [hoveredTokenId, setHoveredTokenId] = useState<string | null>(null);
-  const [measureTarget, setMeasureTarget] = useState<GridPosition | null>(null);
   const [dragRender, setDragRender] = useState(0); // increment to force re-render during drag
   const [hoveredAoeId, setHoveredAoeId] = useState<string | null>(null);
   const [isPanning, setIsPanning] = useState(false);
   const [tooltipMouse, setTooltipMouse] = useState<{ x: number; y: number } | null>(null);
 
-  const gridRef = useRef<HTMLDivElement>(null);
   const gridContainerRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  // Ref to the DOM element of the token currently being dragged, for direct style updates
+  const dragTokenElRef = useRef<HTMLDivElement | null>(null);
   const dragStateRef = useRef<DragState>({
     active: false,
     combatantId: null,
@@ -314,6 +327,13 @@ export function BattleMap({
       ds.currentTile = { ...combatant.position };
       ds.currentPixel = null;
 
+      // Capture the token DOM element for direct style updates during drag
+      const tokenEl =
+        gridContainerRef.current?.querySelector<HTMLDivElement>(
+          `[data-combatant="${combatant.id}"]`,
+        ) ?? null;
+      dragTokenElRef.current = tokenEl;
+
       setShowReachable(true);
       setDragRender((prev) => prev + 1);
     },
@@ -321,14 +341,37 @@ export function BattleMap({
   );
 
   useEffect(() => {
+    const moveDragToken = (clientX: number, clientY: number) => {
+      const ds = dragStateRef.current;
+      const tokenEl = dragTokenElRef.current;
+      if (!tokenEl || !gridContainerRef.current) return;
+
+      const rect = gridContainerRef.current.getBoundingClientRect();
+      // Compute the token's visual size the same way the render path does
+      const span = parseInt(tokenEl.getAttribute("data-span") ?? "1", 10);
+      const tokenSize = span * TILE_SIZE + (span - 1) * TILE_GAP - 8;
+      const left = (clientX - rect.left) / zoomRef.current - tokenSize / 2;
+      const top = (clientY - rect.top) / zoomRef.current - tokenSize / 2;
+
+      tokenEl.style.left = `${left}px`;
+      tokenEl.style.top = `${top}px`;
+
+      // Update current tile highlight — only trigger a re-render when the tile changes
+      const newTile = pixelToTile(clientX, clientY);
+      const prevTile = ds.currentTile;
+      ds.currentPixel = { x: clientX, y: clientY };
+      ds.currentTile = newTile;
+
+      const tileChanged = newTile?.x !== prevTile?.x || newTile?.y !== prevTile?.y;
+      if (tileChanged) {
+        setDragRender((prev) => prev + 1);
+      }
+    };
+
     const handleMouseMove = (e: MouseEvent) => {
       const ds = dragStateRef.current;
       if (!ds.active) return;
-
-      ds.currentPixel = { x: e.clientX, y: e.clientY };
-      const tile = pixelToTile(e.clientX, e.clientY);
-      ds.currentTile = tile;
-      setDragRender((prev) => prev + 1);
+      moveDragToken(e.clientX, e.clientY);
     };
 
     const handleTouchMove = (e: TouchEvent) => {
@@ -336,10 +379,7 @@ export function BattleMap({
       if (!ds.active) return;
 
       const touch = e.touches[0];
-      ds.currentPixel = { x: touch.clientX, y: touch.clientY };
-      const tile = pixelToTile(touch.clientX, touch.clientY);
-      ds.currentTile = tile;
-      setDragRender((prev) => prev + 1);
+      moveDragToken(touch.clientX, touch.clientY);
     };
 
     const handleDragEnd = () => {
@@ -355,6 +395,7 @@ export function BattleMap({
       ds.startPos = null;
       ds.currentPixel = null;
       ds.currentTile = null;
+      dragTokenElRef.current = null;
 
       setDragRender((prev) => prev + 1);
 
@@ -661,9 +702,10 @@ export function BattleMap({
 
   // Measurement line data (always active)
   const measureLine = useMemo(() => {
-    if (!measureTarget || !myCombatant?.position) return null;
+    if (!hoveredTile || !myCombatant?.position) return null;
+    const [tx, ty] = hoveredTile.split(",").map(Number);
     const from = myCombatant.position;
-    const to = measureTarget;
+    const to = { x: tx, y: ty };
     const dist = gridDistance(from, to);
 
     const fromPx = {
@@ -680,7 +722,7 @@ export function BattleMap({
     };
 
     return { fromPx, toPx, midPx, dist };
-  }, [measureTarget, myCombatant?.position]);
+  }, [hoveredTile, myCombatant?.position]);
 
   // Suppress the dragRender lint warning -- it is intentionally used for side-effect re-render
   void dragRender;
@@ -803,7 +845,6 @@ export function BattleMap({
               >
                 {/* ─── Layer 1: Tile Grid ─── */}
                 <div
-                  ref={gridRef}
                   className="absolute inset-0 rounded-sm overflow-hidden"
                   style={{
                     display: "grid",
@@ -855,7 +896,6 @@ export function BattleMap({
                           }}
                           onMouseEnter={(e) => {
                             setHoveredTile(key);
-                            setMeasureTarget({ x, y });
                             if (getTileTooltipData(tile)) {
                               setTooltipMouse({ x: e.clientX, y: e.clientY });
                             }
@@ -867,7 +907,6 @@ export function BattleMap({
                           }}
                           onMouseLeave={() => {
                             setHoveredTile(null);
-                            setMeasureTarget(null);
                             if (!hoveredTokenId) setTooltipMouse(null);
                           }}
                         >
@@ -1141,6 +1180,7 @@ export function BattleMap({
                     <div
                       key={`tk-${c.id}`}
                       data-combatant={c.id}
+                      data-span={c.span}
                       className="absolute flex items-center justify-center"
                       style={{
                         left: tokenLeft,

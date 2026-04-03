@@ -870,6 +870,19 @@ export class GameStateManager {
       this.gameState.encounter.combat.combatants = event.stateBefore.combatants;
     }
 
+    // Restore encounter phase
+    if (event.stateBefore.encounterPhase !== undefined && this.gameState.encounter) {
+      this.gameState.encounter.phase = event.stateBefore.encounterPhase;
+    }
+
+    // Restore pending check
+    this.gameState.pendingCheck = event.stateBefore.pendingCheck;
+
+    // Restore battle map
+    if (this.gameState.encounter) {
+      this.gameState.encounter.map = event.stateBefore.map;
+    }
+
     // Truncate conversation history
     this.conversationHistory = this.conversationHistory.slice(0, event.conversationIndex);
     this.lastSentIndex = Math.min(this.lastSentIndex, this.conversationHistory.length);
@@ -896,13 +909,26 @@ export class GameStateManager {
     }
     const combat = this.gameState.encounter?.combat;
     const combatantSnapshots = combat ? structuredClone(combat.combatants) : undefined;
+    const encounterPhaseSnapshot = this.gameState.encounter?.phase;
+    const pendingCheckSnapshot = this.gameState.pendingCheck
+      ? structuredClone(this.gameState.pendingCheck)
+      : undefined;
+    const mapSnapshot = this.gameState.encounter?.map
+      ? structuredClone(this.gameState.encounter.map)
+      : undefined;
 
     const event: GameEvent = {
       id: crypto.randomUUID(),
       type,
       timestamp: Date.now(),
       description,
-      stateBefore: { characters: characterSnapshots, combatants: combatantSnapshots },
+      stateBefore: {
+        characters: characterSnapshots,
+        combatants: combatantSnapshots,
+        encounterPhase: encounterPhaseSnapshot,
+        pendingCheck: pendingCheckSnapshot,
+        map: mapSnapshot,
+      },
       conversationIndex: this.conversationHistory.length,
       changes,
     };
@@ -1054,6 +1080,16 @@ export class GameStateManager {
         // ignore
       }
     }
+
+    // Broadcast to all players — the bridge is the single authoritative sender of
+    // character_updated. The worker caches the character on receipt of this broadcast
+    // (via handleBroadcast) but must not send its own copy.
+    this.broadcast({
+      type: "server:character_updated",
+      playerName,
+      character,
+      source: "player",
+    });
   }
 
   // ─── Combat Helpers ───
@@ -1066,18 +1102,76 @@ export class GameStateManager {
     const activeId = combat.turnOrder[combat.turnIndex];
     const active = combat.combatants[activeId];
     if (active) {
+      // Reset per-turn resources at the start of this combatant's turn
       active.movementUsed = 0;
+      active.reactionUsed = false;
+      active.bonusActionUsed = false;
     }
 
-    // Process condition durations for the combatant whose turn just ended
+    // Process start-of-turn conditions on the combatant whose turn is starting
+    if (active) {
+      // NPC/enemy start-of-turn conditions
+      if (active.conditions && active.conditions.length > 0) {
+        const warnings: string[] = [];
+        active.conditions = active.conditions.filter((c) => {
+          if (c.expiresAt === "start-of-turn" && c.duration !== undefined && c.duration > 0) {
+            c.duration--;
+            if (c.duration <= 0) {
+              warnings.push(`${c.name} expired on ${active.name}`);
+              return false;
+            } else if (c.duration === 1) {
+              warnings.push(`⚠ ${c.name} on ${active.name} expires at start of next turn`);
+            }
+          }
+          return true;
+        });
+        if (warnings.length > 0) {
+          this.conversationHistory.push({
+            role: "user",
+            content: `[System: ${warnings.join(". ")}]`,
+          });
+        }
+      }
+
+      // Player character start-of-turn conditions
+      if (active.type === "player") {
+        for (const [, char] of Object.entries(this.characters)) {
+          if (char.static.name.toLowerCase() === active.name.toLowerCase()) {
+            const warnings: string[] = [];
+            char.dynamic.conditions = char.dynamic.conditions.filter((c) => {
+              if (c.expiresAt === "start-of-turn" && c.duration !== undefined && c.duration > 0) {
+                c.duration--;
+                if (c.duration <= 0) {
+                  warnings.push(`${c.name} expired on ${char.static.name}`);
+                  return false;
+                } else if (c.duration === 1) {
+                  warnings.push(`⚠ ${c.name} on ${char.static.name} expires at start of next turn`);
+                }
+              }
+              return true;
+            });
+            if (warnings.length > 0) {
+              this.conversationHistory.push({
+                role: "user",
+                content: `[System: ${warnings.join(". ")}]`,
+              });
+            }
+            break;
+          }
+        }
+      }
+    }
+
+    // Process end-of-turn conditions for the combatant whose turn just ended
     const prevId =
       combat.turnOrder[(combat.turnIndex - 1 + combat.turnOrder.length) % combat.turnOrder.length];
     const prevCombatant = combat.combatants[prevId];
     if (prevCombatant) {
-      // Check NPC/enemy conditions
+      // Check NPC/enemy end-of-turn conditions (expiresAt "end-of-turn" or undefined/default)
       if (prevCombatant.conditions && prevCombatant.conditions.length > 0) {
         const warnings: string[] = [];
         prevCombatant.conditions = prevCombatant.conditions.filter((c) => {
+          if (c.expiresAt === "start-of-turn") return true; // handled above
           if (c.duration !== undefined && c.duration > 0) {
             c.duration--;
             if (c.duration <= 0) {
@@ -1097,12 +1191,13 @@ export class GameStateManager {
         }
       }
 
-      // Also check player character conditions via their character data
+      // Also check player character end-of-turn conditions via their character data
       if (prevCombatant.type === "player") {
         for (const [, char] of Object.entries(this.characters)) {
           if (char.static.name.toLowerCase() === prevCombatant.name.toLowerCase()) {
             const warnings: string[] = [];
             char.dynamic.conditions = char.dynamic.conditions.filter((c) => {
+              if (c.expiresAt === "start-of-turn") return true; // handled above
               if (c.duration !== undefined && c.duration > 0) {
                 c.duration--;
                 if (c.duration <= 0) {
@@ -1195,7 +1290,7 @@ export class GameStateManager {
       if (char.dynamic.conditions.length > 0)
         c.conditions = char.dynamic.conditions.map((cd) => cd.name);
       if (char.dynamic.concentratingOn) c.concentrating = char.dynamic.concentratingOn.spellName;
-      if (char.dynamic.heroicInspiration) c.inspiration = true;
+      if (char.dynamic.heroicInspiration ?? false) c.inspiration = true;
       return c;
     });
 
@@ -1319,7 +1414,12 @@ export class GameStateManager {
   }
 
   /** Apply damage to a character or combatant */
-  applyDamage(targetName: string, amount: number, damageType?: string): ToolResponse {
+  applyDamage(
+    targetName: string,
+    amount: number,
+    damageType?: string,
+    isCriticalHit?: boolean,
+  ): ToolResponse {
     const dmg = Math.max(0, amount);
 
     // Check combatants first (NPCs/enemies)
@@ -1380,6 +1480,38 @@ export class GameStateManager {
         this.createEvent("damage", `${char.static.name} takes ${dmg} damage`, [
           { type: "damage", target: targetName, amount: dmg, damageType },
         ]);
+
+        // Fix 1 (RULES-CRIT-3): Damage at 0 HP auto-fails death saves
+        // PHB 2024 p.220: "If you take any damage while you have 0 HP, you suffer a Death
+        // Saving Throw failure. If the damage is from a Critical Hit, you suffer two failures."
+        if (char.dynamic.currentHP === 0) {
+          const failuresAdded = isCriticalHit ? 2 : 1;
+          char.dynamic.deathSaves.failures = Math.min(
+            3,
+            char.dynamic.deathSaves.failures + failuresAdded,
+          );
+          let deathText = `${char.static.name} takes damage while at 0 HP — ${failuresAdded} death save failure${failuresAdded > 1 ? "s" : ""} (${char.dynamic.deathSaves.successes}S/${char.dynamic.deathSaves.failures}F)`;
+          const deathData: Record<string, unknown> = {
+            target: char.static.name,
+            damageDealt: dmg,
+            damageType,
+            deathSaves: { ...char.dynamic.deathSaves },
+            failuresAdded,
+          };
+          if (char.dynamic.deathSaves.failures >= 3) {
+            if (!char.dynamic.conditions.some((c) => c.name === "Dead")) {
+              char.dynamic.conditions.push({ name: "Dead" });
+            }
+            deathText += ` — ${char.static.name} has DIED!`;
+            deathData.status = "dead";
+          } else {
+            deathData.status = "saving";
+          }
+          this.syncPlayerCombatantHP(char.static.name);
+          this.broadcast({ type: "server:character_updated", playerName: pName, character: char });
+          return toResponse(deathText, deathData);
+        }
+
         let remaining = dmg;
         let tempAbsorbed = 0;
         if (char.dynamic.tempHP > 0) {
@@ -1387,7 +1519,35 @@ export class GameStateManager {
           char.dynamic.tempHP -= tempAbsorbed;
           remaining -= tempAbsorbed;
         }
+
+        // Fix 2 (RULES-CRIT-4): Massive damage / instant death
+        // PHB 2024 p.219: "If damage reduces you to 0 HP and there is damage remaining, you
+        // die if the remaining damage equals or exceeds your Hit Point Maximum."
+        const overshoot = remaining - char.dynamic.currentHP;
+        if (overshoot > 0 && overshoot >= char.static.maxHP) {
+          char.dynamic.currentHP = 0;
+          if (!char.dynamic.conditions.some((c) => c.name === "Dead")) {
+            char.dynamic.conditions.push({ name: "Dead" });
+          }
+          this.syncPlayerCombatantHP(char.static.name);
+          this.broadcast({ type: "server:character_updated", playerName: pName, character: char });
+          return toResponse(
+            `${char.static.name} takes ${dmg} ${damageType ?? ""} damage — MASSIVE DAMAGE, instant death! (overshoot ${overshoot} >= max HP ${char.static.maxHP})`,
+            {
+              target: char.static.name,
+              damageDealt: dmg,
+              tempHpAbsorbed: tempAbsorbed,
+              currentHP: 0,
+              maxHP: char.static.maxHP,
+              damageType,
+              status: "dead",
+              massiveDamage: true,
+            },
+          );
+        }
+
         char.dynamic.currentHP = Math.max(0, char.dynamic.currentHP - remaining);
+        this.syncPlayerCombatantHP(char.static.name);
 
         this.broadcast({
           type: "server:character_updated",
@@ -1478,6 +1638,7 @@ export class GameStateManager {
         ) {
           char.dynamic.deathSaves = { successes: 0, failures: 0 };
         }
+        this.syncPlayerCombatantHP(char.static.name);
         this.broadcast({
           type: "server:character_updated",
           playerName: pName,
@@ -1543,6 +1704,7 @@ export class GameStateManager {
         ) {
           char.dynamic.deathSaves = { successes: 0, failures: 0 };
         }
+        this.syncPlayerCombatantHP(char.static.name);
         this.broadcast({
           type: "server:character_updated",
           playerName: pName,
@@ -1691,6 +1853,7 @@ export class GameStateManager {
       size?: CreatureSize;
       tokenColor?: string;
     }>,
+    surprisedCombatants?: string[],
   ): ToolResponse {
     // Require a battle map before starting combat
     if (!this.gameState.encounter?.map) {
@@ -1703,7 +1866,7 @@ export class GameStateManager {
     }
 
     const combatantMap: Record<string, Combatant> = {};
-    const initiativeOrder: Array<{ id: string; initiative: number }> = [];
+    const initiativeOrder: Array<{ id: string; initiative: number; dexScore: number }> = [];
 
     for (const c of combatants) {
       const id = crypto.randomUUID();
@@ -1711,6 +1874,7 @@ export class GameStateManager {
       // For players, auto-read initiative modifier from character sheet (Dex mod)
       let initMod = c.initiativeModifier ?? 0;
       let linkedPlayerId: string | undefined;
+      let dexScore = 10; // default for tiebreaking
 
       if (c.type === "player") {
         const charEntry = Object.entries(this.characters).find(
@@ -1718,8 +1882,8 @@ export class GameStateManager {
         );
         if (charEntry) {
           linkedPlayerId = charEntry[0];
-          const dex = charEntry[1].static.abilities.dexterity;
-          initMod = c.initiativeModifier ?? Math.floor((dex - 10) / 2);
+          dexScore = charEntry[1].static.abilities.dexterity;
+          initMod = c.initiativeModifier ?? Math.floor((dexScore - 10) / 2);
           // Apply initiative bonuses from feats (e.g. Alert)
           const initBonuses =
             charEntry[1].static.combatBonuses?.filter(
@@ -1733,6 +1897,10 @@ export class GameStateManager {
 
       const initiative = rollInitiative(initMod);
 
+      const isSurprised =
+        surprisedCombatants !== undefined &&
+        surprisedCombatants.some((n) => n.toLowerCase() === c.name.toLowerCase());
+
       combatantMap[id] = {
         id,
         name: c.name,
@@ -1744,6 +1912,7 @@ export class GameStateManager {
         position: c.position,
         size: c.size ?? "medium",
         tokenColor: c.tokenColor,
+        ...(isSurprised ? { surprised: true } : {}),
         maxHP: c.maxHP,
         currentHP: c.currentHP ?? c.maxHP,
         tempHP: 0,
@@ -1752,11 +1921,14 @@ export class GameStateManager {
         playerId: linkedPlayerId,
       };
 
-      initiativeOrder.push({ id, initiative });
+      initiativeOrder.push({ id, initiative, dexScore });
     }
 
-    // Sort by initiative (highest first)
-    initiativeOrder.sort((a, b) => b.initiative - a.initiative);
+    // Sort by initiative (highest first); tiebreak by Dex score (higher Dex goes first)
+    initiativeOrder.sort((a, b) => {
+      if (b.initiative !== a.initiative) return b.initiative - a.initiative;
+      return b.dexScore - a.dexScore;
+    });
 
     this.createEvent("combat_start", "Combat started", [{ type: "combat_phase", phase: "active" }]);
 
@@ -1790,12 +1962,27 @@ export class GameStateManager {
       name: combatantMap[i.id].name,
       initiative: i.initiative,
       type: combatantMap[i.id].type,
+      surprised: combatantMap[i.id].surprised ?? false,
     }));
-    const initSummary = turnOrder.map((t) => `${t.name}: ${t.initiative}`).join(", ");
+    const initSummary = turnOrder
+      .map((t) => `${t.name}: ${t.initiative}${t.surprised ? " (surprised)" : ""}`)
+      .join(", ");
+
+    const surprisedNames = turnOrder.filter((t) => t.surprised).map((t) => t.name);
+    const surpriseNote =
+      surprisedNames.length > 0
+        ? ` Surprised (cannot act on first turn): ${surprisedNames.join(", ")}.`
+        : "";
 
     return toResponse(
-      `Combat started! Initiative order: ${initSummary}. Round 1, ${turnOrder[0].name}'s turn.`,
-      { round: 1, currentTurn: turnOrder[0].name, turnOrder, combatantCount: combatants.length },
+      `Combat started! Initiative order: ${initSummary}. Round 1, ${turnOrder[0].name}'s turn.${surpriseNote}`,
+      {
+        round: 1,
+        currentTurn: turnOrder[0].name,
+        turnOrder,
+        combatantCount: combatants.length,
+        surprisedCombatants: surprisedNames,
+      },
     );
   }
 
@@ -1886,6 +2073,7 @@ export class GameStateManager {
     const id = crypto.randomUUID();
 
     // For players, auto-read initiative modifier from character sheet (Dex mod)
+    // Also apply initiative combat bonuses (e.g. Alert feat) — mirrors startCombat logic
     let initMod = c.initiativeModifier ?? 0;
     if (c.type === "player") {
       const charEntry = Object.entries(this.characters).find(
@@ -1894,6 +2082,14 @@ export class GameStateManager {
       if (charEntry) {
         const dex = charEntry[1].static.abilities.dexterity;
         initMod = c.initiativeModifier ?? Math.floor((dex - 10) / 2);
+        // Apply initiative bonuses from feats (e.g. Alert)
+        const initBonuses =
+          charEntry[1].static.combatBonuses?.filter(
+            (b) => b.type === "initiative" && !b.condition,
+          ) ?? [];
+        for (const b of initBonuses) {
+          initMod += b.value;
+        }
       }
     }
 
@@ -2081,17 +2277,48 @@ export class GameStateManager {
         const slot = char.dynamic.spellSlotsUsed.find((s) => s.level === level);
         if (slot) {
           if (slot.used >= slot.total) {
+            // Fix 4 (RULES-HIGH-3): Fall back to pact magic slots before reporting exhaustion
+            const pactSlot = (char.dynamic.pactMagicSlots ?? []).find((s) => s.level === level);
+            if (pactSlot && pactSlot.used < pactSlot.total) {
+              this.createEvent(
+                "spell_slot_used",
+                `${char.static.name} used level ${level} pact magic slot`,
+                [{ type: "spell_slot_use", target: characterName, level }],
+              );
+              pactSlot.used++;
+              this.broadcast({
+                type: "server:character_updated",
+                playerName: pName,
+                character: char,
+              });
+              const pactRemaining = pactSlot.total - pactSlot.used;
+              return toResponse(
+                `${char.static.name} used a level ${level} pact magic slot (Warlock — recovers on short rest)`,
+                {
+                  character: char.static.name,
+                  level,
+                  remaining: pactRemaining,
+                  total: pactSlot.total,
+                  slotType: "pactMagic",
+                },
+              );
+            }
             const otherSlots = char.dynamic.spellSlotsUsed
               .filter((s) => s.used < s.total)
               .map((s) => `Level ${s.level}: ${s.total - s.used}/${s.total}`)
               .join(", ");
+            const otherPactSlots = (char.dynamic.pactMagicSlots ?? [])
+              .filter((s) => s.used < s.total)
+              .map((s) => `Pact Level ${s.level}: ${s.total - s.used}/${s.total}`)
+              .join(", ");
+            const available = [otherSlots, otherPactSlots].filter(Boolean).join(", ");
             return toResponse(
               `${char.static.name} has no level ${level} spell slots remaining (${slot.used}/${slot.total} used)`,
               { character: char.static.name, level, remaining: 0, total: slot.total },
               true,
               [
-                otherSlots ? `Available slots: ${otherSlots}` : "No spell slots available",
-                "Slots recover on long rest",
+                available ? `Available slots: ${available}` : "No spell slots available",
+                "Regular slots recover on long rest; pact magic slots recover on short rest",
               ],
             );
           }
@@ -2100,12 +2327,50 @@ export class GameStateManager {
           ]);
           slot.used++;
         } else {
+          // No regular slot at this level — try pact magic (Fix 4)
+          const pactSlot = (char.dynamic.pactMagicSlots ?? []).find((s) => s.level === level);
+          if (pactSlot) {
+            if (pactSlot.used >= pactSlot.total) {
+              return toResponse(
+                `${char.static.name} has no level ${level} pact magic slots remaining (${pactSlot.used}/${pactSlot.total} used)`,
+                { character: char.static.name, level, remaining: 0, total: pactSlot.total },
+                true,
+                [
+                  `Pact magic slots recover on short rest`,
+                  `Available pact levels: ${(char.dynamic.pactMagicSlots ?? []).map((s) => s.level).join(", ") || "none"}`,
+                ],
+              );
+            }
+            this.createEvent(
+              "spell_slot_used",
+              `${char.static.name} used level ${level} pact magic slot`,
+              [{ type: "spell_slot_use", target: characterName, level }],
+            );
+            pactSlot.used++;
+            this.broadcast({
+              type: "server:character_updated",
+              playerName: pName,
+              character: char,
+            });
+            const pactRemaining = pactSlot.total - pactSlot.used;
+            return toResponse(
+              `${char.static.name} used a level ${level} pact magic slot (Warlock — recovers on short rest)`,
+              {
+                character: char.static.name,
+                level,
+                remaining: pactRemaining,
+                total: pactSlot.total,
+                slotType: "pactMagic",
+              },
+            );
+          }
           return toResponse(
             `${char.static.name} has no spell slots at level ${level}`,
             { character: char.static.name, level },
             true,
             [
-              `Available levels: ${char.dynamic.spellSlotsUsed.map((s) => s.level).join(", ") || "none"}`,
+              `Available regular levels: ${char.dynamic.spellSlotsUsed.map((s) => s.level).join(", ") || "none"}`,
+              `Available pact levels: ${(char.dynamic.pactMagicSlots ?? []).map((s) => s.level).join(", ") || "none"}`,
             ],
           );
         }
@@ -2137,35 +2402,78 @@ export class GameStateManager {
   restoreSpellSlot(characterName: string, level: number): ToolResponse {
     for (const [pName, char] of Object.entries(this.characters)) {
       if (char.static.name.toLowerCase() === characterName.toLowerCase()) {
+        // Check regular spell slots first
         const slot = char.dynamic.spellSlotsUsed.find((s) => s.level === level);
-        if (slot && slot.used <= 0) {
-          return toResponse(
-            `${char.static.name}'s level ${level} spell slots are already at maximum`,
-            { character: char.static.name, level, remaining: slot.total, total: slot.total },
+        if (slot) {
+          if (slot.used <= 0) {
+            return toResponse(
+              `${char.static.name}'s level ${level} spell slots are already at maximum`,
+              { character: char.static.name, level, remaining: slot.total, total: slot.total },
+            );
+          }
+          this.createEvent(
+            "spell_slot_restored",
+            `${char.static.name} restored level ${level} slot`,
+            [{ type: "spell_slot_restore", target: characterName, level }],
           );
-        }
-        this.createEvent(
-          "spell_slot_restored",
-          `${char.static.name} restored level ${level} slot`,
-          [{ type: "spell_slot_restore", target: characterName, level }],
-        );
-        if (slot && slot.used > 0) {
           slot.used--;
+          this.broadcast({
+            type: "server:character_updated",
+            playerName: pName,
+            character: char,
+          });
+          return toResponse(`${char.static.name} restored a level ${level} spell slot`, {
+            character: char.static.name,
+            level,
+            remaining: slot.total - slot.used,
+            total: slot.total,
+          });
         }
 
-        this.broadcast({
-          type: "server:character_updated",
-          playerName: pName,
-          character: char,
-        });
+        // Check pact magic slots
+        const pactSlot = (char.dynamic.pactMagicSlots ?? []).find((s) => s.level === level);
+        if (pactSlot) {
+          if (pactSlot.used <= 0) {
+            return toResponse(
+              `${char.static.name}'s level ${level} pact magic slots are already at maximum`,
+              {
+                character: char.static.name,
+                level,
+                remaining: pactSlot.total,
+                total: pactSlot.total,
+              },
+            );
+          }
+          this.createEvent(
+            "spell_slot_restored",
+            `${char.static.name} restored level ${level} pact magic slot`,
+            [{ type: "spell_slot_restore", target: characterName, level }],
+          );
+          pactSlot.used--;
+          this.broadcast({
+            type: "server:character_updated",
+            playerName: pName,
+            character: char,
+          });
+          return toResponse(`${char.static.name} restored a level ${level} pact magic slot`, {
+            character: char.static.name,
+            level,
+            remaining: pactSlot.total - pactSlot.used,
+            total: pactSlot.total,
+            pactMagic: true,
+          });
+        }
 
-        const remaining = slot ? slot.total - slot.used : 0;
-        return toResponse(`${char.static.name} restored a level ${level} spell slot`, {
-          character: char.static.name,
-          level,
-          remaining,
-          total: slot?.total ?? 0,
-        });
+        // No slot at this level in either pool
+        return toResponse(
+          `${char.static.name} has no spell slots or pact magic slots at level ${level}`,
+          { character: char.static.name, level },
+          true,
+          [
+            `Available spell slot levels: ${char.dynamic.spellSlotsUsed.map((s) => s.level).join(", ") || "none"}`,
+            `Available pact magic levels: ${(char.dynamic.pactMagicSlots ?? []).map((s) => s.level).join(", ") || "none"}`,
+          ],
+        );
       }
     }
     return toResponse(
@@ -2180,7 +2488,7 @@ export class GameStateManager {
   useClassResource(characterName: string, resourceName: string): ToolResponse {
     for (const [pName, char] of Object.entries(this.characters)) {
       if (char.static.name.toLowerCase() === characterName.toLowerCase()) {
-        const resource = char.static.classResources.find(
+        const resource = (char.static.classResources ?? []).find(
           (r) => r.name.toLowerCase() === resourceName.toLowerCase(),
         );
         if (!resource) {
@@ -2189,12 +2497,13 @@ export class GameStateManager {
             { character: char.static.name, resource: resourceName },
             true,
             [
-              `Available resources: ${char.static.classResources.map((r) => r.name).join(", ") || "none"}`,
+              `Available resources: ${(char.static.classResources ?? []).map((r) => r.name).join(", ") || "none"}`,
             ],
           );
         }
 
         const canonicalName = resource.name;
+        char.dynamic.resourcesUsed = char.dynamic.resourcesUsed ?? {};
         const used = char.dynamic.resourcesUsed[canonicalName] ?? 0;
         if (used >= resource.maxUses) {
           return toResponse(
@@ -2245,7 +2554,7 @@ export class GameStateManager {
   restoreClassResource(characterName: string, resourceName: string, amount = 1): ToolResponse {
     for (const [pName, char] of Object.entries(this.characters)) {
       if (char.static.name.toLowerCase() === characterName.toLowerCase()) {
-        const resource = char.static.classResources.find(
+        const resource = (char.static.classResources ?? []).find(
           (r) => r.name.toLowerCase() === resourceName.toLowerCase(),
         );
         if (!resource) {
@@ -2254,12 +2563,13 @@ export class GameStateManager {
             { character: char.static.name, resource: resourceName },
             true,
             [
-              `Available resources: ${char.static.classResources.map((r) => r.name).join(", ") || "none"}`,
+              `Available resources: ${(char.static.classResources ?? []).map((r) => r.name).join(", ") || "none"}`,
             ],
           );
         }
 
         const canonicalName = resource.name;
+        char.dynamic.resourcesUsed = char.dynamic.resourcesUsed ?? {};
         const used = char.dynamic.resourcesUsed[canonicalName] ?? 0;
 
         this.createEvent("resource_restored", `${char.static.name} restored ${canonicalName}`, [
@@ -2710,7 +3020,8 @@ export class GameStateManager {
         const restored: string[] = [];
 
         // Restore class resources with resetType "short"
-        for (const resource of char.static.classResources) {
+        char.dynamic.resourcesUsed = char.dynamic.resourcesUsed ?? {};
+        for (const resource of char.static.classResources ?? []) {
           if (resource.resetType === "short") {
             const used = char.dynamic.resourcesUsed[resource.name] ?? 0;
             if (used > 0) {
@@ -2721,7 +3032,7 @@ export class GameStateManager {
         }
 
         // Restore warlock pact magic slots
-        for (const slot of char.dynamic.pactMagicSlots) {
+        for (const slot of char.dynamic.pactMagicSlots ?? []) {
           if (slot.used > 0) {
             restored.push(`Pact Magic lv${slot.level} (${slot.total}/${slot.total})`);
             slot.used = 0;
@@ -2784,7 +3095,7 @@ export class GameStateManager {
         }
 
         // Reset pact magic slots
-        for (const slot of char.dynamic.pactMagicSlots) {
+        for (const slot of char.dynamic.pactMagicSlots ?? []) {
           if (slot.used > 0) {
             restored.push(`Pact Magic lv${slot.level} (${slot.total}/${slot.total})`);
             slot.used = 0;
@@ -2792,7 +3103,8 @@ export class GameStateManager {
         }
 
         // Reset ALL class resources
-        for (const resource of char.static.classResources) {
+        char.dynamic.resourcesUsed = char.dynamic.resourcesUsed ?? {};
+        for (const resource of char.static.classResources ?? []) {
           const used = char.dynamic.resourcesUsed[resource.name] ?? 0;
           if (used > 0) {
             char.dynamic.resourcesUsed[resource.name] = 0;
@@ -2806,13 +3118,18 @@ export class GameStateManager {
           restored.push("Death saves reset");
         }
 
-        // Clear non-permanent conditions
-        const cleared = char.dynamic.conditions.filter(
-          (c) => !PERMANENT_CONDITIONS.includes(c.name.toLowerCase()),
-        );
+        // Clear only conditions that explicitly end on long rest (endsOnLongRest: true).
+        // Permanent conditions (cursed, petrified, dead) are never cleared.
+        // All other conditions persist — they end when their source ends, not on rest.
+        const cleared = char.dynamic.conditions.filter((c) => {
+          const name = c.name.toLowerCase();
+          if (PERMANENT_CONDITIONS.includes(name)) return false; // never clear permanent
+          return c.endsOnLongRest === true; // only clear if explicitly flagged
+        });
         if (cleared.length > 0) {
-          char.dynamic.conditions = char.dynamic.conditions.filter((c) =>
-            PERMANENT_CONDITIONS.includes(c.name.toLowerCase()),
+          const clearedNames = new Set(cleared.map((c) => c.name));
+          char.dynamic.conditions = char.dynamic.conditions.filter(
+            (c) => !clearedNames.has(c.name),
           );
           restored.push(`Cleared: ${cleared.map((c) => c.name).join(", ")}`);
         }
@@ -2821,6 +3138,19 @@ export class GameStateManager {
         if (char.dynamic.concentratingOn) {
           restored.push(`Concentration on ${char.dynamic.concentratingOn.spellName} ended`);
           char.dynamic.concentratingOn = undefined;
+        }
+
+        // Decrement exhaustion by 1 on long rest (PHB 2024 p.367)
+        if (char.dynamic.exhaustionLevel && char.dynamic.exhaustionLevel > 0) {
+          char.dynamic.exhaustionLevel--;
+          if (char.dynamic.exhaustionLevel === 0) {
+            char.dynamic.conditions = char.dynamic.conditions.filter(
+              (c) => c.name.toLowerCase() !== "exhaustion",
+            );
+            restored.push("Exhaustion cleared");
+          } else {
+            restored.push(`Exhaustion reduced to level ${char.dynamic.exhaustionLevel}`);
+          }
         }
 
         this.createEvent("rest_long", `${char.static.name} completed a long rest`, []);
@@ -2853,7 +3183,11 @@ export class GameStateManager {
   }
 
   /** Record a death saving throw */
-  recordDeathSave(characterName: string, success: boolean): ToolResponse {
+  recordDeathSave(
+    characterName: string,
+    success: boolean,
+    options?: { criticalFail?: boolean; criticalSuccess?: boolean },
+  ): ToolResponse {
     for (const [pName, char] of Object.entries(this.characters)) {
       if (char.static.name.toLowerCase() !== characterName.toLowerCase()) continue;
 
@@ -2866,7 +3200,42 @@ export class GameStateManager {
         );
       }
 
-      if (success) {
+      // Fix 3 (RULES-CRIT-1+2): Nat 20 = regain 1 HP immediately; nat 1 = 2 failures
+      // PHB 2024: Nat 20 on a death save → the character regains 1 HP (not just stabilize).
+      // Nat 1 → 2 failures instead of 1.
+
+      if (options?.criticalSuccess) {
+        // Nat 20: regain 1 HP, reset death saves, wake up
+        char.dynamic.currentHP = 1;
+        char.dynamic.deathSaves = { successes: 0, failures: 0 };
+        char.dynamic.conditions = char.dynamic.conditions.filter(
+          (c) => c.name !== "Unconscious" && c.name !== "Stabilized",
+        );
+        this.syncPlayerCombatantHP(char.static.name);
+        this.createEvent(
+          "death_save",
+          `${char.static.name} rolled a NAT 20 on a death save — REVIVED with 1 HP!`,
+          [{ type: "death_save", target: characterName, success: true }],
+        );
+        this.broadcast({ type: "server:character_updated", playerName: pName, character: char });
+        return toResponse(
+          `Death save NAT 20! ${char.static.name} is REVIVED — regains 1 HP and wakes up!`,
+          {
+            character: char.static.name,
+            success: true,
+            criticalSuccess: true,
+            successes: 0,
+            failures: 0,
+            currentHP: 1,
+            status: "revived",
+          },
+        );
+      }
+
+      if (options?.criticalFail) {
+        // Nat 1: 2 failures
+        char.dynamic.deathSaves.failures = Math.min(3, char.dynamic.deathSaves.failures + 2);
+      } else if (success) {
         char.dynamic.deathSaves.successes++;
       } else {
         char.dynamic.deathSaves.failures++;
@@ -2879,13 +3248,17 @@ export class GameStateManager {
       );
 
       let statusMsg = "";
-      let status: "alive" | "stable" | "dead" | "saving" = "saving";
+      let status: "alive" | "stable" | "dead" | "saving" | "revived" = "saving";
       if (char.dynamic.deathSaves.successes >= 3) {
-        char.dynamic.conditions.push({ name: "Stabilized" });
+        if (!char.dynamic.conditions.some((c) => c.name === "Stabilized")) {
+          char.dynamic.conditions.push({ name: "Stabilized" });
+        }
         statusMsg = ` — ${char.static.name} is STABILIZED!`;
         status = "stable";
       } else if (char.dynamic.deathSaves.failures >= 3) {
-        char.dynamic.conditions.push({ name: "Dead" });
+        if (!char.dynamic.conditions.some((c) => c.name === "Dead")) {
+          char.dynamic.conditions.push({ name: "Dead" });
+        }
         statusMsg = ` — ${char.static.name} has DIED!`;
         status = "dead";
       }
@@ -2896,11 +3269,13 @@ export class GameStateManager {
         character: char,
       });
 
+      const critNote = options?.criticalFail ? " (NAT 1 — 2 failures!)" : "";
       return toResponse(
-        `Death save ${success ? "SUCCESS" : "FAILURE"}: ${char.dynamic.deathSaves.successes} successes, ${char.dynamic.deathSaves.failures} failures${statusMsg}`,
+        `Death save ${success ? "SUCCESS" : "FAILURE"}${critNote}: ${char.dynamic.deathSaves.successes} successes, ${char.dynamic.deathSaves.failures} failures${statusMsg}`,
         {
           character: char.static.name,
           success,
+          criticalFail: options?.criticalFail ?? false,
           successes: char.dynamic.deathSaves.successes,
           failures: char.dynamic.deathSaves.failures,
           status,
@@ -3064,6 +3439,7 @@ export class GameStateManager {
           { type: "temp_hp", target: targetName, amount: tempHP },
         ]);
         char.dynamic.tempHP = Math.max(prev, tempHP);
+        this.syncPlayerCombatantHP(char.static.name);
         this.broadcast({
           type: "server:character_updated",
           playerName: pName,
@@ -3080,6 +3456,80 @@ export class GameStateManager {
     return toResponse(`Target "${targetName}" not found`, { target: targetName }, true, [
       `Available targets: ${this.listTargetNames().join(", ")}`,
     ]);
+  }
+
+  /** Set a character's exhaustion level (0 = none, 1–9 = penalties, 10 = dead).
+   *  PHB 2024: each level applies -2 to all d20 rolls and spell save DC, speed -5ft × level.
+   *  Long rest removes 1 level. Level 10 = instant death. */
+  setExhaustion(characterName: string, level: number): ToolResponse {
+    const clampedLevel = Math.max(0, Math.min(10, Math.round(level)));
+
+    for (const [pName, char] of Object.entries(this.characters)) {
+      if (char.static.name.toLowerCase() !== characterName.toLowerCase()) continue;
+
+      const prevLevel = char.dynamic.exhaustionLevel ?? 0;
+      char.dynamic.exhaustionLevel = clampedLevel === 0 ? undefined : clampedLevel;
+
+      // Sync the "Exhaustion" condition to match the level
+      if (clampedLevel > 0) {
+        if (!char.dynamic.conditions.some((c) => c.name.toLowerCase() === "exhaustion")) {
+          char.dynamic.conditions.push({ name: "Exhaustion" });
+        }
+      } else {
+        char.dynamic.conditions = char.dynamic.conditions.filter(
+          (c) => c.name.toLowerCase() !== "exhaustion",
+        );
+      }
+
+      // Level 10 = death
+      if (clampedLevel >= 10) {
+        if (!char.dynamic.conditions.some((c) => c.name === "Dead")) {
+          char.dynamic.conditions.push({ name: "Dead" });
+        }
+      }
+
+      this.createEvent(
+        "condition_added",
+        `${char.static.name} exhaustion set to level ${clampedLevel}`,
+        [],
+      );
+      this.broadcast({
+        type: "server:character_updated",
+        playerName: pName,
+        character: char,
+      });
+
+      const penalty =
+        clampedLevel > 0
+          ? `-${clampedLevel * 2} to all d20 rolls and spell save DC; speed -${clampedLevel * 5}ft`
+          : "none";
+      return toResponse(
+        `${char.static.name} exhaustion level set to ${clampedLevel}${clampedLevel >= 10 ? " — DEAD" : ""}`,
+        {
+          target: char.static.name,
+          previousLevel: prevLevel,
+          exhaustionLevel: clampedLevel,
+          penalty,
+        },
+        false,
+        clampedLevel > 0
+          ? [
+              `Exhaustion level ${clampedLevel}: ${penalty}. Long rest reduces by 1. Level 10 = death.`,
+            ]
+          : undefined,
+      );
+    }
+
+    return toResponse(
+      `Character "${characterName}" not found`,
+      { character: characterName },
+      true,
+      [
+        `Available characters: ${Object.values(this.characters)
+          .map((c) => c.static.name)
+          .join(", ")}`,
+      ],
+    );
   }
 
   /** Compact conversation history — replace older messages with a summary */
@@ -3784,5 +4234,27 @@ export class GameStateManager {
   /** List all valid character names (players only, for error hints) */
   private listCharacterNames(): string[] {
     return Object.values(this.characters).map((c) => c.static.name);
+  }
+
+  /**
+   * Sync a player character's current HP and temp HP back to their combatant entry.
+   * Called after any HP mutation so that combat_update broadcasts carry consistent data.
+   */
+  private syncPlayerCombatantHP(characterName: string): void {
+    const combat = this.gameState.encounter?.combat;
+    if (!combat) return;
+
+    const combatant = Object.values(combat.combatants).find(
+      (c) => c.type === "player" && c.name.toLowerCase() === characterName.toLowerCase(),
+    );
+    if (!combatant) return;
+
+    const char = Object.values(this.characters).find(
+      (c) => c.static.name.toLowerCase() === characterName.toLowerCase(),
+    );
+    if (!char) return;
+
+    combatant.currentHP = char.dynamic.currentHP;
+    combatant.tempHP = char.dynamic.tempHP;
   }
 }
