@@ -181,12 +181,21 @@ export class CampaignManager {
         const raw = JSON.parse(fs.readFileSync(manifestPath, "utf-8"));
         const result = campaignManifestSchema.safeParse(raw);
         if (result.success) {
-          campaigns.push({
+          const summary: CampaignSummary = {
             slug: result.data.slug,
             name: result.data.name,
             lastPlayedAt: result.data.lastPlayedAt,
             sessionCount: result.data.sessionCount,
-          });
+          };
+          if (result.data.pacingProfile) summary.pacingProfile = result.data.pacingProfile;
+          if (result.data.encounterLength) summary.encounterLength = result.data.encounterLength;
+          // Read system-prompt.md if it exists and is non-empty
+          const promptPath = path.join(CAMPAIGNS_ROOT, entry.name, "system-prompt.md");
+          if (fs.existsSync(promptPath)) {
+            const promptContent = fs.readFileSync(promptPath, "utf-8").trim();
+            if (promptContent) summary.customPrompt = promptContent;
+          }
+          campaigns.push(summary);
         } else {
           log("campaign-mgr", `Corrupt manifest in ${entry.name}: ${result.error.message}`);
         }

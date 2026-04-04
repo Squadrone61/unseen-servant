@@ -87,7 +87,15 @@ function GameContent({ roomCode, playerName }: { roomCode: string; playerName: s
   const [eventLog, setEventLog] = useState<GameEvent[]>([]);
   const [highlightedCombatantId, setHighlightedCombatantId] = useState<string | null>(null);
   const [campaigns, setCampaigns] = useState<
-    { slug: string; name: string; lastPlayedAt: string; sessionCount: number }[]
+    {
+      slug: string;
+      name: string;
+      lastPlayedAt: string;
+      sessionCount: number;
+      pacingProfile?: string;
+      encounterLength?: string;
+      customPrompt?: string;
+    }[]
   >([]);
   const [activeCampaignSlug, setActiveCampaignSlug] = useState<string | undefined>(undefined);
   const [activeCampaignName, setActiveCampaignName] = useState<string | undefined>(undefined);
@@ -408,65 +416,29 @@ function GameContent({ roomCode, playerName }: { roomCode: string; playerName: s
           break;
 
         case "server:dice_roll":
-          if (msg.checkRequestId) {
-            // Find the matching check_request or merged_check_pending and replace in-place
-            setStoryMessages((prev) => {
-              const idx = prev.findLastIndex(
-                (m) =>
-                  (m.type === "server:check_request" && m.check.id === msg.checkRequestId) ||
-                  (m.type === "merged_check_pending" && m.request.id === msg.checkRequestId),
-              );
-              if (idx === -1) {
-                // No matching request found — append as standalone
-                return [...prev, msg];
-              }
-              const existing = prev[idx];
-              const request =
-                existing.type === "server:check_request"
-                  ? existing.check
-                  : (existing as Extract<DisplayMessage, { type: "merged_check_pending" }>).request;
-              const updated: DisplayMessage[] = [...prev];
-              updated[idx] = {
-                type: "merged_check_pending",
-                request,
-                roll: msg.roll,
-                playerName: msg.playerName,
-                timestamp: msg.timestamp,
-              };
-              return updated;
-            });
-          } else {
-            // Standalone DM/player roll — append directly
-            setStoryMessages((prev) => [...prev, msg]);
-          }
+          // Legacy: check-linked dice_rolls from old stored chat logs — skip
+          if (msg.checkRequestId) break;
+          // Standalone roll (DM or player without check) — append directly
+          setStoryMessages((prev) => [...prev, msg]);
           break;
 
         case "server:check_result":
-          // Find matching check_request or merged_check_pending and replace with merged_check
+          // Find matching check_request and merge into a single resolved card
           setStoryMessages((prev) => {
             const idx = prev.findLastIndex(
-              (m) =>
-                (m.type === "server:check_request" && m.check.id === msg.result.requestId) ||
-                (m.type === "merged_check_pending" && m.request.id === msg.result.requestId),
+              (m) => m.type === "server:check_request" && m.check.id === msg.result.requestId,
             );
             if (idx === -1) {
               // No matching request — append as standalone fallback
               return [...prev, msg];
             }
-            const existing = prev[idx];
-            const request =
-              existing.type === "server:check_request"
-                ? existing.check
-                : (existing as Extract<DisplayMessage, { type: "merged_check_pending" }>).request;
-            const roll =
-              existing.type === "merged_check_pending"
-                ? (existing as Extract<DisplayMessage, { type: "merged_check_pending" }>).roll
-                : msg.result.roll;
+            const request = (prev[idx] as Extract<DisplayMessage, { type: "server:check_request" }>)
+              .check;
             const updated: DisplayMessage[] = [...prev];
             updated[idx] = {
               type: "merged_check",
               request,
-              roll,
+              roll: msg.result.roll,
               result: msg.result,
               playerName: msg.result.characterName,
               timestamp: msg.timestamp,

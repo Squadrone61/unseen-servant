@@ -258,6 +258,9 @@ export const clientDMConfigSchema = z.object({
         name: z.string(),
         lastPlayedAt: z.string(),
         sessionCount: z.number(),
+        pacingProfile: z.string().optional(),
+        encounterLength: z.string().optional(),
+        customPrompt: z.string().optional(),
       }),
     )
     .optional(),
@@ -591,6 +594,9 @@ export const serverDMConfigUpdateSchema = z.object({
         name: z.string(),
         lastPlayedAt: z.string(),
         sessionCount: z.number(),
+        pacingProfile: z.string().optional(),
+        encounterLength: z.string().optional(),
+        customPrompt: z.string().optional(),
       }),
     )
     .optional(),

@@ -511,16 +511,6 @@ export class GameStateManager {
 
     const success = pendingCheck.dc !== undefined ? roll.total >= pendingCheck.dc : undefined;
 
-    // Broadcast dice roll
-    this.broadcast({
-      type: "server:dice_roll",
-      roll,
-      playerName,
-      timestamp: Date.now(),
-      id: crypto.randomUUID(),
-      checkRequestId: pendingCheck.id,
-    });
-
     // Broadcast check result
     this.broadcast({
       type: "server:check_result",

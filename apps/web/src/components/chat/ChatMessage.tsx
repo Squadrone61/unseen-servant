@@ -183,21 +183,11 @@ function ResultBadge({
   success,
   isCrit,
   isFail,
-  pending,
 }: {
   success?: boolean;
   isCrit?: boolean;
   isFail?: boolean;
-  pending?: boolean;
 }) {
-  if (pending) {
-    return (
-      <span className="text-xs font-semibold uppercase px-2 py-0.5 rounded-full bg-gray-600/50 text-gray-400 animate-pulse">
-        Resolving...
-      </span>
-    );
-  }
-
   if (isCrit) {
     return (
       <span className="text-xs font-bold uppercase px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">
@@ -225,7 +215,7 @@ function ResultBadge({
   );
 }
 
-/** Consolidated check card — used for merged_check, merged_check_pending, and bare check_request */
+/** Consolidated check card — used for merged_check and bare check_request */
 function CheckCard({
   message,
   onRollDice,
@@ -237,20 +227,13 @@ function CheckCard({
 }) {
   // Extract fields depending on message type
   const isMerged = message.type === "merged_check";
-  const isPending = message.type === "merged_check_pending";
   const isBare = message.type === "server:check_request";
 
-  const request = isMerged
-    ? message.request
-    : isPending
-      ? message.request
-      : isBare
-        ? message.check
-        : null;
+  const request = isMerged ? message.request : isBare ? message.check : null;
 
   if (!request) return null;
 
-  const roll = isMerged ? message.roll : isPending ? message.roll : null;
+  const roll = isMerged ? message.roll : null;
   const result = isMerged ? message.result : null;
   // A check is a "damage roll" when checkType is explicitly "damage",
   // or when there is no checkType and no dc (pure notation roll).
@@ -290,7 +273,7 @@ function CheckCard({
       borderColor = "border-blue-500";
       bgColor = "bg-blue-900/20";
     } else {
-      // Pending — neutral
+      // Roll present but no result — neutral
       borderColor = "border-blue-500";
       bgColor = "bg-blue-900/20";
     }
@@ -314,11 +297,9 @@ function CheckCard({
             </span>
           )}
         </div>
-        {(isMerged || isPending) &&
-          !isDamage &&
-          (success !== undefined || isCrit || isFail || isPending) && (
-            <ResultBadge success={success} isCrit={isCrit} isFail={isFail} pending={isPending} />
-          )}
+        {isMerged && !isDamage && (success !== undefined || isCrit || isFail) && (
+          <ResultBadge success={success} isCrit={isCrit} isFail={isFail} />
+        )}
       </div>
 
       {/* Subtext: character name + reason */}
@@ -406,7 +387,6 @@ export function ChatMessage({ message, onRollDice, myCharacterName }: ChatMessag
     // All check-related messages use the consolidated CheckCard
     case "server:check_request":
     case "merged_check":
-    case "merged_check_pending":
       return (
         <CheckCard message={message} onRollDice={onRollDice} myCharacterName={myCharacterName} />
       );
@@ -469,7 +449,7 @@ export function ChatMessage({ message, onRollDice, myCharacterName }: ChatMessag
       );
     }
 
-    // Standalone check_result (shouldn't appear if merge works, but keep as fallback)
+    // Standalone check_result fallback (shouldn't appear if merge works)
     case "server:check_result": {
       const res = message.result;
       const success = res.success;
@@ -480,15 +460,14 @@ export function ChatMessage({ message, onRollDice, myCharacterName }: ChatMessag
             success ? "bg-green-900/20 border-green-500" : "bg-red-900/20 border-red-500"
           }`}
         >
-          <div className="flex items-center gap-2">
-            <span className={`text-lg font-bold ${success ? "text-green-400" : "text-red-400"}`}>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-lg">&#127922;</span>
+            <span className={`font-bold ${success ? "text-green-400" : "text-red-400"}`}>
               {success ? "Success!" : "Failure!"}
             </span>
-            <span className="text-sm text-gray-400">
-              {res.characterName} rolled {res.roll.total}
-              {res.dc !== undefined && ` vs DC ${res.dc}`}
-            </span>
+            <span className="text-sm text-gray-400">{res.characterName}</span>
           </div>
+          <CheckRollDisplay roll={res.roll} dc={res.dc} />
         </div>
       );
     }

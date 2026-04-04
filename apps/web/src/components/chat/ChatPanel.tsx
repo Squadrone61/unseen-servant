@@ -11,7 +11,7 @@ import type {
 } from "@unseen-servant/shared/types";
 import type { ConnectionState } from "@/hooks/useWebSocket";
 
-// Merged check: all 3 messages resolved (check_request + dice_roll + check_result)
+// Merged check: check_request + check_result resolved into a single display card
 export interface MergedCheckMessage {
   type: "merged_check";
   request: CheckRequest;
@@ -21,24 +21,13 @@ export interface MergedCheckMessage {
   timestamp: number;
 }
 
-// Merged check pending: check_request + dice_roll arrived, but no check_result yet
-export interface MergedCheckPendingMessage {
-  type: "merged_check_pending";
-  request: CheckRequest;
-  roll: RollResult;
-  playerName: string;
-  timestamp: number;
-}
-
-export type DisplayMessage = ServerMessage | MergedCheckMessage | MergedCheckPendingMessage;
+export type DisplayMessage = ServerMessage | MergedCheckMessage;
 
 /** Stable key for check-related messages so React updates in-place */
 function getMessageKey(msg: DisplayMessage, index: number): string {
   switch (msg.type) {
     case "server:check_request":
       return `check-${msg.check.id}`;
-    case "merged_check_pending":
-      return `check-${msg.request.id}`;
     case "merged_check":
       return `check-${msg.request.id}`;
     case "server:dice_roll":

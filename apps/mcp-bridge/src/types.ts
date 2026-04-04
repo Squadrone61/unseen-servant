@@ -44,4 +44,7 @@ export interface CampaignSummary {
   name: string;
   lastPlayedAt: string;
   sessionCount: number;
+  pacingProfile?: string;
+  encounterLength?: string;
+  customPrompt?: string;
 }

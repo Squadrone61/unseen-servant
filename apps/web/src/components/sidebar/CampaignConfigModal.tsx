@@ -9,6 +9,9 @@ interface CampaignInfo {
   name: string;
   lastPlayedAt: string;
   sessionCount: number;
+  pacingProfile?: string;
+  encounterLength?: string;
+  customPrompt?: string;
 }
 
 interface CampaignConfigModalProps {
@@ -24,15 +27,42 @@ interface CampaignConfigModalProps {
 }
 
 export function CampaignConfigModal({ campaigns, onSubmit, onClose }: CampaignConfigModalProps) {
-  const [mode, setMode] = useState<"new" | "existing">(campaigns.length > 0 ? "existing" : "new");
+  const initialMode = campaigns.length > 0 ? "existing" : "new";
+  const [mode, setMode] = useState<"new" | "existing">(initialMode);
   const [campaignName, setCampaignName] = useState("");
   const [selectedSlug, setSelectedSlug] = useState(campaigns[0]?.slug || "");
-  const [systemPrompt, setSystemPrompt] = useState("");
-  const [pacingProfile, setPacingProfile] = useState<PacingProfile>("balanced");
-  const [encounterLength, setEncounterLength] = useState<EncounterLength>("standard");
+  const [systemPrompt, setSystemPrompt] = useState(() => {
+    if (campaigns.length > 0) return campaigns[0]?.customPrompt ?? "";
+    return "";
+  });
+  const [pacingProfile, setPacingProfile] = useState<PacingProfile>(() => {
+    if (campaigns.length > 0) return (campaigns[0]?.pacingProfile as PacingProfile) ?? "balanced";
+    return "balanced";
+  });
+  const [encounterLength, setEncounterLength] = useState<EncounterLength>(() => {
+    if (campaigns.length > 0)
+      return (campaigns[0]?.encounterLength as EncounterLength) ?? "standard";
+    return "standard";
+  });
   const [showPrompt, setShowPrompt] = useState(false);
 
   const hasCustomPrompt = systemPrompt.trim().length > 0;
+
+  const populateFromCampaign = (slug: string) => {
+    const campaign = campaigns.find((c) => c.slug === slug);
+    if (!campaign) return;
+    setPacingProfile((campaign.pacingProfile as PacingProfile) ?? "balanced");
+    setEncounterLength((campaign.encounterLength as EncounterLength) ?? "standard");
+    setSystemPrompt(campaign.customPrompt ?? "");
+  };
+
+  // Re-populate fields when the selected campaign changes
+  useEffect(() => {
+    if (mode === "existing" && selectedSlug) {
+      populateFromCampaign(selectedSlug);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedSlug, mode]);
 
   // Close on Escape
   useEffect(() => {
@@ -105,7 +135,12 @@ export function CampaignConfigModal({ campaigns, onSubmit, onClose }: CampaignCo
                   Load Existing
                 </button>
                 <button
-                  onClick={() => setMode("new")}
+                  onClick={() => {
+                    setMode("new");
+                    setPacingProfile("balanced");
+                    setEncounterLength("standard");
+                    setSystemPrompt("");
+                  }}
                   className={`flex-1 py-1.5 text-sm rounded-lg border transition-colors ${
                     mode === "new"
                       ? "border-amber-500 bg-amber-600/20 text-amber-300"

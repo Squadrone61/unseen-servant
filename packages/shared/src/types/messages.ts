@@ -62,7 +62,15 @@ export interface ClientDMConfigMessage {
   type: "client:dm_config";
   provider: string;
   supportsTools: boolean;
-  campaigns?: { slug: string; name: string; lastPlayedAt: string; sessionCount: number }[];
+  campaigns?: {
+    slug: string;
+    name: string;
+    lastPlayedAt: string;
+    sessionCount: number;
+    pacingProfile?: string;
+    encounterLength?: string;
+    customPrompt?: string;
+  }[];
 }
 
 /** Host-only: select or create a campaign */
@@ -411,7 +419,15 @@ export interface ServerDMConfigUpdateMessage {
   type: "server:dm_config_update";
   provider: string;
   supportsTools: boolean;
-  campaigns?: { slug: string; name: string; lastPlayedAt: string; sessionCount: number }[];
+  campaigns?: {
+    slug: string;
+    name: string;
+    lastPlayedAt: string;
+    sessionCount: number;
+    pacingProfile?: string;
+    encounterLength?: string;
+    customPrompt?: string;
+  }[];
 }
 
 /** Campaign loaded confirmation — Bridge → Worker → all clients */

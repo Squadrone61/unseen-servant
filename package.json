@@ -7,16 +7,14 @@
     "lint": "turbo lint",
     "type-check": "turbo type-check",
     "dev:all": "turbo dev --filter=@unseen-servant/web --filter=@unseen-servant/worker",
+    "dev:dm": "cd apps/dm-launcher && node build.mjs --dev",
     "build:web": "cd apps/web && npx @opennextjs/cloudflare build",
+    "build:dm": "cd apps/dm-launcher && node build.mjs",
     "deploy": "turbo deploy",
     "deploy:web": "cd apps/web && npx @opennextjs/cloudflare deploy",
     "deploy:worker": "cd apps/worker && wrangler deploy --env production",
     "test": "node scripts/test.mjs",
-    "build:dm": "cd apps/dm-launcher && node build.mjs",
-    "dev:dm": "cd apps/dm-launcher && node build.mjs --dev",
     "dead-code": "knip",
-    "format": "prettier --write .",
-    "format:check": "prettier --check .",
     "prepare": "husky"
   },
   "lint-staged": {
