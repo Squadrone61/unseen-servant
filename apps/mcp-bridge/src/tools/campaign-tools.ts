@@ -162,34 +162,15 @@ export function registerCampaignTools(
       inputSchema: {
         path: z
           .string()
-          .optional()
           .describe(
             "Relative file path within the campaign folder (without extension for markdown), e.g. 'world/npcs', 'world/locations', 'sessions/session-001', 'active-context'",
-          ),
-        filename: z
-          .string()
-          .optional()
-          .describe(
-            "Alias for 'path'. Use 'path' instead (preferred). .md extension added automatically if not provided.",
           ),
         content: z.string().describe("The file content (markdown or JSON)"),
       },
     },
-    async ({ path: pathParam, filename, content }) => {
-      const filePath = pathParam || filename;
-      if (!filePath) {
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: `ERROR: save_campaign_file requires a "path" parameter.`,
-            },
-          ],
-          isError: true,
-        };
-      }
+    async ({ path, content }) => {
       try {
-        const savedAs = campaignManager.writeFile(filePath, content);
+        const savedAs = campaignManager.writeFile(path, content);
         return {
           content: [
             {
@@ -219,34 +200,20 @@ export function registerCampaignTools(
       inputSchema: {
         path: z
           .string()
-          .optional()
           .describe(
             "Relative file path within the campaign folder (without extension for markdown)",
           ),
-        filename: z.string().optional().describe("Alias for path"),
       },
     },
-    async ({ path: pathParam, filename }) => {
-      const filePath = pathParam || filename;
-      if (!filePath) {
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: `ERROR: read_campaign_file requires a "path" parameter.`,
-            },
-          ],
-          isError: true,
-        };
-      }
+    async ({ path }) => {
       try {
-        const content = campaignManager.readFile(filePath);
+        const content = campaignManager.readFile(path);
         if (content === null) {
           return {
             content: [
               {
                 type: "text" as const,
-                text: `File "${filePath}" not found. Use list_campaign_files to see available files.`,
+                text: `File "${path}" not found. Use list_campaign_files to see available files.`,
               },
             ],
           };

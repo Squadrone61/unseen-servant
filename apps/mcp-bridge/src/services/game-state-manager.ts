@@ -3534,12 +3534,12 @@ export class GameStateManager {
   /** Apply multiple effects in a single call (damage, heal, conditions, movement) */
   applyBatchEffects(
     effects: Array<
-      | { type: "damage"; target: string; amount: number; damage_type?: string }
-      | { type: "heal"; target: string; amount: number }
-      | { type: "set_hp"; target: string; value: number }
-      | { type: "condition_add"; target: string; condition: string; duration?: number }
-      | { type: "condition_remove"; target: string; condition: string }
-      | { type: "move"; target: string; position: string }
+      | { type: "damage"; name: string; amount: number; damage_type?: string }
+      | { type: "heal"; name: string; amount: number }
+      | { type: "set_hp"; name: string; value: number }
+      | { type: "condition_add"; name: string; condition: string; duration?: number }
+      | { type: "condition_remove"; name: string; condition: string }
+      | { type: "move"; name: string; position: string }
     >,
   ): ToolResponse {
     if (effects.length > 10) {
@@ -3561,30 +3561,26 @@ export class GameStateManager {
       let r: ToolResponse;
       switch (effect.type) {
         case "damage":
-          r = this.applyDamage(effect.target, effect.amount, effect.damage_type);
+          r = this.applyDamage(effect.name, effect.amount, effect.damage_type);
           break;
         case "heal":
-          r = this.heal(effect.target, effect.amount);
+          r = this.heal(effect.name, effect.amount);
           break;
         case "set_hp":
-          r = this.setHP(effect.target, effect.value);
+          r = this.setHP(effect.name, effect.value);
           break;
         case "condition_add":
-          r = this.addCondition(effect.target, effect.condition, effect.duration);
+          r = this.addCondition(effect.name, effect.condition, effect.duration);
           break;
         case "condition_remove":
-          r = this.removeCondition(effect.target, effect.condition);
+          r = this.removeCondition(effect.name, effect.condition);
           break;
         case "move": {
           const pos = parseGridPosition(effect.position);
           if (!pos) {
-            r = toResponse(
-              `Invalid position "${effect.position}"`,
-              { target: effect.target },
-              true,
-            );
+            r = toResponse(`Invalid position "${effect.position}"`, { name: effect.name }, true);
           } else {
-            r = this.moveCombatant(effect.target, pos);
+            r = this.moveCombatant(effect.name, pos);
           }
           break;
         }
@@ -3594,13 +3590,13 @@ export class GameStateManager {
         results.push({
           index: i,
           type: effect.type,
-          target: effect.target,
+          target: effect.name,
           result: r!.text,
           error: true,
         });
       } else {
         applied++;
-        results.push({ index: i, type: effect.type, target: effect.target, result: r!.text });
+        results.push({ index: i, type: effect.type, target: effect.name, result: r!.text });
       }
     }
 

@@ -49,6 +49,7 @@ packages/shared/   → Shared types (Zod 4 schemas), constants, utils, dice, che
 - **Dual-format tool results:** MCP tools return `"Human summary\n---\n{json}"` — human-readable text line + structured JSON after separator. GSM methods return `ToolResponse { text, data, error?, hints? }`
 - **Campaign configuration** flow: host configures campaign (name, pacing, encounter length) before starting story via CampaignConfigModal
 - **A1 coordinate notation** throughout: all tool inputs/outputs use A1 grid coordinates (formatGridPosition/parseGridPosition in shared/utils/grid.ts)
+- **Unified MCP tool arg naming:** `name` for character/combatant identity (singular), `names` for arrays, `item` for item identity, `player` only in roll_dice (interactive roll semantics)
 - **WebSocket Hibernation API** for Durable Objects (persistent connections survive hibernation)
 
 ## Dev Commands
