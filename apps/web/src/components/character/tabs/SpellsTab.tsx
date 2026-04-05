@@ -9,28 +9,11 @@ interface SpellsTabProps {
   onSpellClick: (spell: CharacterSpell, e: React.MouseEvent) => void;
 }
 
-// Known/spontaneous casters — all learned spells are always available
-const KNOWN_CASTER_CLASSES = new Set(["bard", "sorcerer", "ranger", "warlock"]);
-
 const AVAILABILITY_STYLES: Record<SpellAvailability, { dot: string; text: string }> = {
   active: { dot: "bg-green-500", text: "text-gray-200" },
   "ritual-only": { dot: "bg-blue-500", text: "text-blue-300/80" },
   known: { dot: "bg-gray-600 ring-1 ring-gray-500", text: "text-gray-500" },
 };
-
-function getClassBadge(spell: CharacterSpell): string | null {
-  if (spell.spellSource !== "class") return null;
-  if (!spell.alwaysPrepared) return null;
-
-  // Per-spell sourceClass: show "Prepared" for always-prepared spells from prepared casters
-  if (spell.sourceClass) {
-    const isKnown = KNOWN_CASTER_CLASSES.has(spell.sourceClass.toLowerCase());
-    return isKnown ? null : "Prepared";
-  }
-
-  // Fallback for old data without sourceClass
-  return "Always";
-}
 
 function SpellRow({
   spell,
@@ -41,7 +24,6 @@ function SpellRow({
 }) {
   const availability = getSpellAvailability(spell);
   const styles = AVAILABILITY_STYLES[availability];
-  const classBadge = getClassBadge(spell);
 
   return (
     <div
@@ -52,15 +34,20 @@ function SpellRow({
       <span className="truncate flex-1">{spell.name}</span>
 
       {/* Source badges */}
-      {classBadge && <span className="text-xs text-amber-400/70 shrink-0">{classBadge}</span>}
       {spell.spellSource === "race" && (
-        <span className="text-xs text-emerald-400/70 shrink-0">Species</span>
+        <span className="text-xs text-emerald-400/60 font-semibold shrink-0" title="Species spell">
+          S
+        </span>
       )}
       {spell.spellSource === "feat" && (
-        <span className="text-xs text-amber-400/70 shrink-0">Feat</span>
+        <span className="text-xs text-amber-400/60 font-semibold shrink-0" title="Feat spell">
+          F
+        </span>
       )}
       {spell.spellSource === "item" && (
-        <span className="text-xs text-cyan-400/70 shrink-0">Item</span>
+        <span className="text-xs text-cyan-400/60 font-semibold shrink-0" title="Item spell">
+          I
+        </span>
       )}
 
       {/* Concentration & Ritual badges */}
