@@ -293,7 +293,10 @@ export class GameRoom extends DurableObject<Env> {
   async webSocketClose(ws: WebSocket, code: number, _reason: string): Promise<void> {
     const session = this.sessions.get(ws);
     this.sessions.delete(ws);
-    ws.close(code, "Connection closed");
+    // Codes 1005 and 1006 are internal browser sentinels — not valid to pass
+    // to ws.close(). Normalize to 1000 (normal closure) to avoid a runtime error.
+    const safeCode = code === 1005 || code === 1006 ? 1000 : code;
+    ws.close(safeCode, "Connection closed");
 
     if (session?.playerName) {
       // Clear DM bridge config when DM disconnects
