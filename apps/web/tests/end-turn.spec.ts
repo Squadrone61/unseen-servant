@@ -1,16 +1,20 @@
 import { test, expect } from "@playwright/test";
+import { TestBridge } from "./test-bridge";
 
 /**
  * End Turn button + turn advancement tests.
  *
  * These tests verify:
  * 1. End Turn button appears only on player's turn
- * 2. Clicking End Turn advances to the next combatant
- * 3. Turn wraps around and increments round
- * 4. End Turn is disabled / hidden when not player's turn
+ * 2. Clicking End Turn sends client:end_turn via the real WebSocket
+ * 3. Turn advances when the server broadcasts a new combat_update
+ * 4. End Turn is hidden when not the player's turn
+ *
+ * All server messages now travel through the real WebSocket relay path via
+ * TestBridge, exercising Zod validation and the Cloudflare Worker relay.
  */
 
-// ─── Helpers (same pattern as battle-map.spec.ts) ───
+// ─── Helpers ───
 
 async function createRoomAndSetup(
   page: import("@playwright/test").Page,
@@ -30,20 +34,6 @@ async function waitForRoom(page: import("@playwright/test").Page, roomCode: stri
   await expect(page.getByText(roomCode).first()).toBeVisible({
     timeout: 15_000,
   });
-  await page.waitForFunction(
-    () => typeof (window as any).__testInjectMessage === "function",
-    null,
-    { timeout: 15_000 },
-  );
-}
-
-async function injectServerMessage(
-  page: import("@playwright/test").Page,
-  message: Record<string, unknown>,
-) {
-  await page.evaluate((msg) => {
-    (window as any).__testInjectMessage(msg);
-  }, message);
 }
 
 // ─── Mock data ───
@@ -163,64 +153,63 @@ function buildCharacterUpdate(playerName: string, charName: string) {
   };
 }
 
+function buildCombatUpdate(combat: ReturnType<typeof buildCombat>) {
+  return {
+    type: "server:combat_update",
+    combat,
+    map: buildMockMap(),
+    timestamp: Date.now(),
+  };
+}
+
 // ─── Tests ───
 
 test.describe("End Turn", () => {
   test("End Turn button visible on player turn, hidden otherwise", async ({ page }) => {
+    const bridge = new TestBridge();
     const roomCode = await createRoomAndSetup(page, "TurnHost");
     await page.goto(`/rooms/${roomCode}`);
     await waitForRoom(page, roomCode);
+    await bridge.connect(roomCode);
 
-    // Inject character so BattleMap knows our character name
-    await injectServerMessage(page, buildCharacterUpdate("TurnHost", "Thorin"));
+    // Broadcast character so BattleMap knows our character name
+    bridge.broadcast(buildCharacterUpdate("TurnHost", "Thorin") as Record<string, unknown>);
 
-    // Inject combat with player first (turnIndex=0 → player's turn)
-    await injectServerMessage(page, {
-      type: "server:combat_update",
-      combat: buildCombat(0),
-      map: buildMockMap(),
-      timestamp: Date.now(),
-    });
+    // Broadcast combat with player first (turnIndex=0 → player's turn)
+    bridge.broadcast(buildCombatUpdate(buildCombat(0)) as Record<string, unknown>);
 
     // End Turn button should be visible
     const endTurnBtn = page.getByRole("button", { name: "End Turn" });
-    await expect(endTurnBtn).toBeVisible({ timeout: 5_000 });
+    await expect(endTurnBtn).toBeVisible({ timeout: 8_000 });
 
     // "Your turn" banner should be visible
     await expect(page.getByText("Your turn")).toBeVisible();
 
-    // Now inject combat with enemy first (turnIndex=1 → enemy's turn)
-    await injectServerMessage(page, {
-      type: "server:combat_update",
-      combat: buildCombat(1),
-      map: buildMockMap(),
-      timestamp: Date.now(),
-    });
+    // Broadcast combat with enemy first (turnIndex=1 → enemy's turn)
+    bridge.broadcast(buildCombatUpdate(buildCombat(1)) as Record<string, unknown>);
 
     // End Turn button should be gone (not player's turn)
-    await expect(endTurnBtn).not.toBeVisible();
+    await expect(endTurnBtn).not.toBeVisible({ timeout: 8_000 });
     await expect(page.getByText("Your turn")).not.toBeVisible();
+
+    bridge.disconnect();
   });
 
   test("clicking End Turn sends client:end_turn message", async ({ page }) => {
+    const bridge = new TestBridge();
     const roomCode = await createRoomAndSetup(page, "TurnSend");
     await page.goto(`/rooms/${roomCode}`);
     await waitForRoom(page, roomCode);
+    await bridge.connect(roomCode);
 
-    await injectServerMessage(page, buildCharacterUpdate("TurnSend", "Thorin"));
-    await injectServerMessage(page, {
-      type: "server:combat_update",
-      combat: buildCombat(0),
-      map: buildMockMap(),
-      timestamp: Date.now(),
-    });
+    bridge.broadcast(buildCharacterUpdate("TurnSend", "Thorin") as Record<string, unknown>);
+    bridge.broadcast(buildCombatUpdate(buildCombat(0)) as Record<string, unknown>);
 
-    // Set up a spy to capture outgoing WebSocket messages
+    // Set up a spy to capture outgoing WebSocket messages from the browser
     await page.evaluate(() => {
       const messages: string[] = [];
       (window as any).__sentMessages = messages;
 
-      // Find the active WebSocket and intercept send
       const origSend = WebSocket.prototype.send;
       WebSocket.prototype.send = function (
         data: string | ArrayBufferLike | Blob | ArrayBufferView,
@@ -233,10 +222,10 @@ test.describe("End Turn", () => {
     });
 
     const endTurnBtn = page.getByRole("button", { name: "End Turn" });
-    await expect(endTurnBtn).toBeVisible({ timeout: 5_000 });
+    await expect(endTurnBtn).toBeVisible({ timeout: 8_000 });
     await endTurnBtn.click();
 
-    // Check that client:end_turn was sent
+    // Check that client:end_turn was sent via the real WebSocket
     const sent = await page.evaluate(() => {
       return (window as any).__sentMessages as string[];
     });
@@ -251,74 +240,63 @@ test.describe("End Turn", () => {
     });
 
     expect(endTurnMsg).toBeDefined();
+
+    bridge.disconnect();
   });
 
   test("turn advances when combat_update with new turnIndex is received", async ({ page }) => {
+    const bridge = new TestBridge();
     const roomCode = await createRoomAndSetup(page, "TurnAdv");
     await page.goto(`/rooms/${roomCode}`);
     await waitForRoom(page, roomCode);
+    await bridge.connect(roomCode);
 
-    await injectServerMessage(page, buildCharacterUpdate("TurnAdv", "Thorin"));
+    bridge.broadcast(buildCharacterUpdate("TurnAdv", "Thorin") as Record<string, unknown>);
 
     // Start with player's turn
-    await injectServerMessage(page, {
-      type: "server:combat_update",
-      combat: buildCombat(0),
-      map: buildMockMap(),
-      timestamp: Date.now(),
-    });
+    bridge.broadcast(buildCombatUpdate(buildCombat(0)) as Record<string, unknown>);
 
-    await expect(page.getByText("Your turn")).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText("Your turn")).toBeVisible({ timeout: 8_000 });
 
     // Simulate server advancing to enemy's turn (turnIndex=1)
-    await injectServerMessage(page, {
-      type: "server:combat_update",
-      combat: buildCombat(1),
-      map: buildMockMap(),
-      timestamp: Date.now(),
-    });
+    bridge.broadcast(buildCombatUpdate(buildCombat(1)) as Record<string, unknown>);
 
     // "Your turn" banner and End Turn button should disappear
-    await expect(page.getByText("Your turn")).not.toBeVisible();
+    await expect(page.getByText("Your turn")).not.toBeVisible({ timeout: 8_000 });
     await expect(page.getByRole("button", { name: "End Turn" })).not.toBeVisible();
 
     // Simulate server advancing past NPC back to player (turnIndex=0, round 2)
     const round2Combat = buildCombat(0);
     round2Combat.round = 2;
-    await injectServerMessage(page, {
-      type: "server:combat_update",
-      combat: round2Combat,
-      map: buildMockMap(),
-      timestamp: Date.now(),
-    });
+    bridge.broadcast(buildCombatUpdate(round2Combat) as Record<string, unknown>);
 
     // Player's turn again
-    await expect(page.getByText("Your turn")).toBeVisible();
+    await expect(page.getByText("Your turn")).toBeVisible({ timeout: 8_000 });
     await expect(page.getByRole("button", { name: "End Turn" })).toBeVisible();
+
+    bridge.disconnect();
   });
 
   test("End Turn button shows alongside movement info", async ({ page }) => {
+    const bridge = new TestBridge();
     const roomCode = await createRoomAndSetup(page, "TurnInfo");
     await page.goto(`/rooms/${roomCode}`);
     await waitForRoom(page, roomCode);
+    await bridge.connect(roomCode);
 
-    await injectServerMessage(page, buildCharacterUpdate("TurnInfo", "Thorin"));
+    bridge.broadcast(buildCharacterUpdate("TurnInfo", "Thorin") as Record<string, unknown>);
 
     // Player has 10ft of movement used (20ft remaining out of 30)
     const combat = buildCombat(0);
-    // Speed is 25 for our dwarf, let's set movementUsed
     (combat.combatants["player-1"] as any).movementUsed = 10;
     (combat.combatants["player-1"] as any).speed = 30;
 
-    await injectServerMessage(page, {
-      type: "server:combat_update",
-      combat,
-      map: buildMockMap(),
-      timestamp: Date.now(),
-    });
+    bridge.broadcast(buildCombatUpdate(combat) as Record<string, unknown>);
 
     // Both the movement remaining text and End Turn button should be visible
-    await expect(page.getByText("20ft remaining")).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText("20ft remaining")).toBeVisible({ timeout: 8_000 });
     await expect(page.getByRole("button", { name: "End Turn" })).toBeVisible();
+
+    bridge.disconnect();
   });
 });

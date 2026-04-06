@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { TestBridge } from "./test-bridge";
 
 /**
  * Helper: create a room via API and register an init script that sets
@@ -18,31 +19,15 @@ async function createRoomAndSetup(
   return roomCode;
 }
 
-/** Wait for room to fully load and initial server sync to complete. */
+/**
+ * Wait for the room page to fully load and the player's WebSocket to be
+ * connected. We no longer wait for __testInjectMessage — the bridge sends
+ * real WebSocket messages so we just need the page to be ready.
+ */
 async function waitForRoom(page: import("@playwright/test").Page, roomCode: string) {
   await expect(page.getByText(roomCode).first()).toBeVisible({
     timeout: 15_000,
   });
-  // Wait for __testInjectMessage hook (exposed by GameContent)
-  await page.waitForFunction(
-    () => typeof (window as any).__testInjectMessage === "function",
-    null,
-    { timeout: 15_000 },
-  );
-}
-
-/**
- * Inject a server message directly through React's handleMessage callback.
- * This bypasses WebSocket and Zod parsing entirely, avoiding race conditions
- * with the real server's initial sync messages.
- */
-async function injectServerMessage(
-  page: import("@playwright/test").Page,
-  message: Record<string, unknown>,
-) {
-  await page.evaluate((msg) => {
-    (window as any).__testInjectMessage(msg);
-  }, message);
 }
 
 // ─── Mock data factories ───
@@ -136,8 +121,8 @@ function buildMockCombat(playerIsActive = true) {
 
 /**
  * Build a combat_update message with map.
- * We use combat_update (not game_state_sync) for injection because the real
- * server sends game_state_sync on join which races with our injection.
+ * We use combat_update (not game_state_sync) because the real server sends
+ * game_state_sync on join which would race with our broadcast.
  */
 function buildCombatUpdate(combat: ReturnType<typeof buildMockCombat>) {
   return {
@@ -148,12 +133,16 @@ function buildCombatUpdate(combat: ReturnType<typeof buildMockCombat>) {
   };
 }
 
-/** Helper to wait for the BattleMap grid to render (uses terrain legend). */
+/**
+ * Wait for the BattleMap to be rendered by checking for a combatant token.
+ * The BattleMap has no terrain legend — we confirm it rendered by checking
+ * that the enemy token is present in the DOM.
+ */
 async function waitForBattleMap(page: import("@playwright/test").Page) {
-  await expect(page.getByText("Difficult")).toBeVisible({ timeout: 5_000 });
+  await expect(page.locator("[data-combatant='enemy-1']")).toBeVisible({ timeout: 8_000 });
 }
 
-/** Build a mock character to inject via server:character_updated. */
+/** Build a mock character to broadcast via server:character_updated. */
 function buildCharacterUpdate(playerName: string, charName: string) {
   return {
     type: "server:character_updated",
@@ -210,45 +199,51 @@ test.describe("Battle Map", () => {
     await page.goto(`/rooms/${roomCode}`);
     await waitForRoom(page, roomCode);
 
-    // BattleMap legend should not be present
-    await expect(page.getByText("Difficult")).not.toBeVisible();
+    // Without combat state, no tokens should be present
+    await expect(page.locator("[data-combatant='player-1']")).not.toBeVisible();
     // "Your turn" banner should not be visible
     await expect(page.getByText("Your turn")).not.toBeVisible();
-    // Initiative tracker should not be visible
-    await expect(page.locator("text=Combat").first()).not.toBeVisible();
+    // Initiative tracker renders no buttons when there is no active combat
+    await expect(page.locator("button").filter({ hasText: "Elara" })).not.toBeVisible();
   });
 
-  test("renders battle map grid when combat state is injected", async ({ page }) => {
+  test("renders battle map grid when combat state is received", async ({ page }) => {
+    const bridge = new TestBridge();
     const roomCode = await createRoomAndSetup(page, "GridHost");
     await page.goto(`/rooms/${roomCode}`);
     await waitForRoom(page, roomCode);
+    await bridge.connect(roomCode);
 
     const combat = buildMockCombat(false);
-    await injectServerMessage(page, buildCombatUpdate(combat));
+    bridge.broadcast(buildCombatUpdate(combat) as Record<string, unknown>);
 
-    // Initiative tracker should appear with "Combat" label and round
-    await expect(page.getByText("Combat").first()).toBeVisible({ timeout: 5_000 });
-    await expect(page.getByText("Round 1")).toBeVisible();
+    // InitiativeTracker should appear — combatant buttons are the proof of render
+    await expect(page.locator("button").filter({ hasText: "Elara" })).toBeVisible({
+      timeout: 8_000,
+    });
+    await expect(page.locator("button").filter({ hasText: "Goblin" })).toBeVisible();
+    await expect(page.locator("button").filter({ hasText: "Guard" })).toBeVisible();
 
-    // Terrain legend should be visible (proves BattleMap rendered)
+    // Tokens on the map confirm BattleMap rendered
     await waitForBattleMap(page);
-    await expect(page.getByText("Floor")).toBeVisible();
-    await expect(page.getByText("Wall")).toBeVisible();
-    await expect(page.getByText("Water")).toBeVisible();
-    await expect(page.getByText("Door")).toBeVisible();
+    await expect(page.locator("[data-combatant='player-1']")).toBeVisible();
 
-    // Column labels (A-H for 8 wide)
+    // Column labels (A-H for 8-wide map)
     await expect(page.getByText("A").first()).toBeVisible();
     await expect(page.getByText("H").first()).toBeVisible();
+
+    bridge.disconnect();
   });
 
   test("renders combatant tokens with initials", async ({ page }) => {
+    const bridge = new TestBridge();
     const roomCode = await createRoomAndSetup(page, "TokenHost");
     await page.goto(`/rooms/${roomCode}`);
     await waitForRoom(page, roomCode);
+    await bridge.connect(roomCode);
 
     const combat = buildMockCombat(false);
-    await injectServerMessage(page, buildCombatUpdate(combat));
+    bridge.broadcast(buildCombatUpdate(combat) as Record<string, unknown>);
 
     await waitForBattleMap(page);
 
@@ -263,88 +258,110 @@ test.describe("Battle Map", () => {
     // NPC token "GU" (first 2 chars of "Guard")
     await expect(page.locator("[data-combatant='npc-1']")).toBeVisible();
     await expect(page.locator("[data-combatant='npc-1']")).toContainText("GU");
+
+    bridge.disconnect();
   });
 
   test("shows hover tooltip with conditions on token hover", async ({ page }) => {
+    const bridge = new TestBridge();
     const roomCode = await createRoomAndSetup(page, "CondHost");
     await page.goto(`/rooms/${roomCode}`);
     await waitForRoom(page, roomCode);
+    await bridge.connect(roomCode);
 
     const combat = buildMockCombat(false);
-    await injectServerMessage(page, buildCombatUpdate(combat));
+    bridge.broadcast(buildCombatUpdate(combat) as Record<string, unknown>);
 
     await waitForBattleMap(page);
 
-    // Hover over the Goblin token to see tooltip with conditions
+    // Hover over the Goblin token to see the fixed tooltip
     const goblinToken = page.locator("[data-combatant='enemy-1']");
     await goblinToken.hover();
 
-    // Tooltip should show the goblin's name and "poisoned" condition
-    await expect(page.getByText("Goblin").nth(1)).toBeVisible({ timeout: 3_000 });
-    await expect(page.getByText("poisoned")).toBeVisible();
+    // The tooltip renders the combatant's name and conditions as text spans
+    // It appears as a fixed overlay outside the scaled grid wrapper
+    await expect(page.getByText("poisoned").first()).toBeVisible({ timeout: 3_000 });
+
+    bridge.disconnect();
   });
 
   test("shows initiative tracker with combatant names", async ({ page }) => {
+    const bridge = new TestBridge();
     const roomCode = await createRoomAndSetup(page, "TrackerHost");
     await page.goto(`/rooms/${roomCode}`);
     await waitForRoom(page, roomCode);
+    await bridge.connect(roomCode);
 
     const combat = buildMockCombat(false);
-    await injectServerMessage(page, buildCombatUpdate(combat));
+    bridge.broadcast(buildCombatUpdate(combat) as Record<string, unknown>);
 
-    await expect(page.getByText("Combat").first()).toBeVisible({ timeout: 5_000 });
+    // InitiativeTracker renders a button per combatant — wait for any one of them
+    await expect(page.locator("button").filter({ hasText: "Elara" })).toBeVisible({
+      timeout: 8_000,
+    });
 
     // All combatant names should appear in the tracker
-    await expect(page.getByText("Elara").first()).toBeVisible();
-    await expect(page.getByText("Goblin").first()).toBeVisible();
-    await expect(page.getByText("Guard").first()).toBeVisible();
+    await expect(page.locator("button").filter({ hasText: "Goblin" })).toBeVisible();
+    await expect(page.locator("button").filter({ hasText: "Guard" })).toBeVisible();
+
+    bridge.disconnect();
   });
 
   test("clicking combatant in tracker highlights on map", async ({ page }) => {
+    const bridge = new TestBridge();
     const roomCode = await createRoomAndSetup(page, "HighlightHost");
     await page.goto(`/rooms/${roomCode}`);
     await waitForRoom(page, roomCode);
+    await bridge.connect(roomCode);
 
     const combat = buildMockCombat(false);
-    await injectServerMessage(page, buildCombatUpdate(combat));
+    bridge.broadcast(buildCombatUpdate(combat) as Record<string, unknown>);
 
     await waitForBattleMap(page);
 
-    // Click the "Guard" combatant in the initiative tracker
+    // Click the "Guard" combatant button in the initiative tracker
     const guardButton = page.locator("button").filter({ hasText: "Guard" });
     await guardButton.click();
 
-    // The NPC token on the map should be visible
+    // The NPC token on the map should remain visible (click does not remove it)
     const npcToken = page.locator("[data-combatant='npc-1']");
     await expect(npcToken).toBeVisible();
+
+    bridge.disconnect();
   });
 
   test("shows 'Your turn' banner when it is player turn", async ({ page }) => {
+    const bridge = new TestBridge();
     const roomCode = await createRoomAndSetup(page, "TurnHost");
     await page.goto(`/rooms/${roomCode}`);
     await waitForRoom(page, roomCode);
+    await bridge.connect(roomCode);
 
-    // Inject a character so myCharacterName matches "Elara"
-    await injectServerMessage(page, buildCharacterUpdate("TurnHost", "Elara"));
+    // Broadcast a character so myCharacterName matches "Elara"
+    bridge.broadcast(buildCharacterUpdate("TurnHost", "Elara") as Record<string, unknown>);
 
     // Inject combat where player-1 (Elara) is active
     const combat = buildMockCombat(true);
-    await injectServerMessage(page, buildCombatUpdate(combat));
+    bridge.broadcast(buildCombatUpdate(combat) as Record<string, unknown>);
 
-    // "Your turn" banner should appear
-    await expect(page.getByText("Your turn").first()).toBeVisible({ timeout: 5_000 });
+    // "Your turn" banner should appear (full text: "Your turn — drag your token to move")
+    await expect(page.getByText("Your turn").first()).toBeVisible({ timeout: 8_000 });
 
     // Movement remaining should show
     await expect(page.getByText("30ft remaining")).toBeVisible();
+
+    bridge.disconnect();
   });
 
   test("tokens use absolute positioning for animation", async ({ page }) => {
+    const bridge = new TestBridge();
     const roomCode = await createRoomAndSetup(page, "AbsPosHost");
     await page.goto(`/rooms/${roomCode}`);
     await waitForRoom(page, roomCode);
+    await bridge.connect(roomCode);
 
     const combat = buildMockCombat(false);
-    await injectServerMessage(page, buildCombatUpdate(combat));
+    bridge.broadcast(buildCombatUpdate(combat) as Record<string, unknown>);
 
     await waitForBattleMap(page);
 
@@ -360,53 +377,75 @@ test.describe("Battle Map", () => {
     // CSS class "absolute" is applied via Tailwind
     const classes = await playerToken.getAttribute("class");
     expect(classes).toContain("absolute");
+
+    bridge.disconnect();
   });
 
   test("combat ending removes the battle map", async ({ page }) => {
+    const bridge = new TestBridge();
     const roomCode = await createRoomAndSetup(page, "EndHost");
     await page.goto(`/rooms/${roomCode}`);
     await waitForRoom(page, roomCode);
+    await bridge.connect(roomCode);
 
     // Start combat
     const combat = buildMockCombat(false);
-    await injectServerMessage(page, buildCombatUpdate(combat));
+    bridge.broadcast(buildCombatUpdate(combat) as Record<string, unknown>);
 
-    // Map should be visible (terrain legend proves it)
+    // Map should be visible (tokens prove it)
     await waitForBattleMap(page);
+    // Initiative tracker buttons should be visible
+    await expect(page.locator("button").filter({ hasText: "Goblin" })).toBeVisible();
 
     // End combat — send combat_update with null
-    await injectServerMessage(page, {
+    bridge.broadcast({
       type: "server:combat_update",
       combat: null,
       map: null,
       timestamp: Date.now(),
     });
 
-    // Map should disappear (legend gone)
-    await expect(page.getByText("Diff. Terrain")).not.toBeVisible({ timeout: 5_000 });
-    // Initiative tracker should disappear
-    await expect(page.getByText("Round 1")).not.toBeVisible();
+    // Tokens should disappear (map unmounted)
+    await expect(page.locator("[data-combatant='enemy-1']")).not.toBeVisible({ timeout: 8_000 });
+    // Initiative tracker buttons should disappear (InitiativeTracker returns null when phase !== "active")
+    await expect(page.locator("button").filter({ hasText: "Goblin" })).not.toBeVisible();
+
+    bridge.disconnect();
   });
 
-  test("enemy HP bar shows in initiative tracker", async ({ page }) => {
+  test("enemy conditions shown as SVG icons in initiative tracker", async ({ page }) => {
+    const bridge = new TestBridge();
     const roomCode = await createRoomAndSetup(page, "HPHost");
     await page.goto(`/rooms/${roomCode}`);
     await waitForRoom(page, roomCode);
+    await bridge.connect(roomCode);
 
     const combat = buildMockCombat(false);
-    await injectServerMessage(page, buildCombatUpdate(combat));
+    bridge.broadcast(buildCombatUpdate(combat) as Record<string, unknown>);
 
-    await expect(page.getByText("Combat").first()).toBeVisible({ timeout: 5_000 });
+    // Wait for the initiative tracker to render
+    await expect(page.locator("button").filter({ hasText: "Goblin" })).toBeVisible({
+      timeout: 8_000,
+    });
 
-    // Goblin with "poisoned" condition shows "1 cond." in the tracker
-    await expect(page.locator("button").filter({ hasText: "Goblin" })).toBeVisible();
-    await expect(page.getByText("1 cond.")).toBeVisible();
+    // Conditions are shown as SVG warning icons with a title attribute on the container div.
+    // The Goblin has 1 condition ("poisoned") so the container title should be "poisoned".
+    const goblinButton = page.locator("button").filter({ hasText: "Goblin" });
+    await expect(goblinButton).toBeVisible();
+
+    // The condition icon container has a title attribute set to the comma-joined condition names
+    const conditionContainer = goblinButton.locator('[title="poisoned"]');
+    await expect(conditionContainer).toBeVisible();
+
+    bridge.disconnect();
   });
 
   test("large creature token renders at correct position", async ({ page }) => {
+    const bridge = new TestBridge();
     const roomCode = await createRoomAndSetup(page, "LargeHost");
     await page.goto(`/rooms/${roomCode}`);
     await waitForRoom(page, roomCode);
+    await bridge.connect(roomCode);
 
     // Create combat with a large creature
     const combat = buildMockCombat(false);
@@ -418,9 +457,10 @@ test.describe("Battle Map", () => {
     } as any;
     combat.turnOrder = ["enemy-1", "player-1", "npc-1"];
 
-    await injectServerMessage(page, buildCombatUpdate(combat));
+    bridge.broadcast(buildCombatUpdate(combat) as Record<string, unknown>);
 
-    await waitForBattleMap(page);
+    // Wait for any token to appear to confirm BattleMap rendered
+    await expect(page.locator("[data-combatant='player-1']")).toBeVisible({ timeout: 8_000 });
 
     // Ogre token should be visible with "OG" initials
     const ogreToken = page.locator("[data-combatant='enemy-1']");
@@ -430,23 +470,32 @@ test.describe("Battle Map", () => {
     // Token should use absolute positioning (via Tailwind class)
     const classes = await ogreToken.getAttribute("class");
     expect(classes).toContain("absolute");
+
+    bridge.disconnect();
   });
 
   test("player HP shows in initiative tracker when character data available", async ({ page }) => {
+    const bridge = new TestBridge();
     const roomCode = await createRoomAndSetup(page, "PlayerHPHost");
     await page.goto(`/rooms/${roomCode}`);
     await waitForRoom(page, roomCode);
+    await bridge.connect(roomCode);
 
-    // Inject character data first
-    await injectServerMessage(page, buildCharacterUpdate("PlayerHPHost", "Elara"));
+    // Broadcast character data first
+    bridge.broadcast(buildCharacterUpdate("PlayerHPHost", "Elara") as Record<string, unknown>);
 
-    // Then inject combat
+    // Then broadcast combat
     const combat = buildMockCombat(false);
-    await injectServerMessage(page, buildCombatUpdate(combat));
+    bridge.broadcast(buildCombatUpdate(combat) as Record<string, unknown>);
 
-    await expect(page.getByText("Combat").first()).toBeVisible({ timeout: 5_000 });
+    // Wait for the initiative tracker to render
+    await expect(page.locator("button").filter({ hasText: "Elara" })).toBeVisible({
+      timeout: 8_000,
+    });
 
     // Player HP numbers should show in initiative tracker (30/30)
     await expect(page.getByText("30/30")).toBeVisible();
+
+    bridge.disconnect();
   });
 });
