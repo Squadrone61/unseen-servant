@@ -31,8 +31,6 @@ export class WSClient {
 
   /** Latest player list from room_joined / player_joined / player_left */
   players: PlayerSummary[] = [];
-  /** Latest character data keyed by player name */
-  characters: Record<string, CharacterData> = {};
   /** Mapping of playerName → userId for stable identity across sessions */
   playerUserIds: Record<string, string> = {};
   /** Whether the DM config has been sent */
@@ -183,10 +181,9 @@ export class WSClient {
           `Joined room ${msg.roomCode} as DM (host: ${msg.hostName}, players: ${msg.players.join(", ")})`,
         );
 
-        // Store initial character data
+        // Store initial character data (bridge is source of truth)
         if (msg.characters) {
-          this.characters = msg.characters;
-          this.gameStateManager.characters = { ...msg.characters };
+          Object.assign(this.gameStateManager.characters, msg.characters);
         }
 
         // Build initial player list
@@ -249,7 +246,6 @@ export class WSClient {
       }
 
       case "server:character_updated": {
-        this.characters[msg.playerName] = msg.character;
         this.gameStateManager.characters[msg.playerName] = msg.character;
         break;
       }
@@ -372,8 +368,7 @@ export class WSClient {
       for (const [playerName, charData] of Object.entries(snapshots)) {
         const character = charData as CharacterData;
         // Only restore if we don't already have this character (live data takes priority)
-        if (!this.characters[playerName]) {
-          this.characters[playerName] = character;
+        if (!this.gameStateManager.characters[playerName]) {
           this.gameStateManager.characters[playerName] = character;
 
           // Broadcast to worker so the frontend gets the character sheet
@@ -490,7 +485,6 @@ export class WSClient {
     const cm = this.options.campaignManager;
     if (!cm.activeSlug) return;
 
-    this.characters[msg.playerName] = msg.character;
     this.gameStateManager.characters[msg.playerName] = msg.character;
 
     // Track userId for stable identity
@@ -566,11 +560,6 @@ export class WSClient {
 
       // Restore characters from campaign snapshots
       this.restoreCharactersFromCampaign(cm);
-
-      // Merge live characters from room_joined over restored ones (live data wins)
-      for (const [playerName, char] of Object.entries(this.characters)) {
-        this.gameStateManager.characters[playerName] = char;
-      }
 
       // Restore system prompt from campaign
       const savedPrompt = cm.getSystemPrompt();

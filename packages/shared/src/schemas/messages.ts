@@ -556,6 +556,7 @@ export const serverCombatUpdateSchema = z.object({
 export const serverGameStateSyncSchema = z.object({
   type: z.literal("server:game_state_sync"),
   gameState: gameStateSchema,
+  characters: z.record(z.string(), characterDataSchema).optional(),
 });
 
 export const serverRollbackSchema = z.object({

@@ -17,4 +17,3 @@ playwright-report
 .playwright-mcp
 *.zip
 scripts/5etools-raw
-scripts/database-diff-report.md

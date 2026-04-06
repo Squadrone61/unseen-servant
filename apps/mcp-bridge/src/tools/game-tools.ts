@@ -416,6 +416,35 @@ export function registerGameTools(
   );
 
   server.registerTool(
+    "set_initiative",
+    {
+      description:
+        "Override a combatant's initiative value and re-sort the turn order. Use for readied actions, initiative swaps, or DM adjustments.",
+      inputSchema: {
+        name: z.string().describe("Name of the combatant"),
+        initiative: z.number().describe("New initiative value"),
+      },
+    },
+    async ({ name, initiative }) => {
+      return fromToolResponse(wsClient.gameStateManager.setInitiative(name, initiative));
+    },
+  );
+
+  server.registerTool(
+    "set_active_turn",
+    {
+      description:
+        "Jump to a specific combatant's turn without advancing through the order. DM override — does not trigger condition expiration for skipped turns.",
+      inputSchema: {
+        name: z.string().describe("Name of the combatant whose turn it should become"),
+      },
+    },
+    async ({ name }) => {
+      return fromToolResponse(wsClient.gameStateManager.setActiveTurn(name));
+    },
+  );
+
+  server.registerTool(
     "add_combatant",
     {
       description:

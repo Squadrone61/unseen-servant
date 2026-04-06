@@ -75,10 +75,11 @@ export default tseslint.config(
 
   // Test files: relaxed rules
   {
-    files: ["tests/**/*.ts"],
+    files: ["tests/**/*.ts", "apps/web/tests/**/*.ts", "apps/mcp-bridge/src/__tests__/**/*.ts"],
     rules: {
       "no-console": "off",
       "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/no-non-null-assertion": "off",
     },
   },
 

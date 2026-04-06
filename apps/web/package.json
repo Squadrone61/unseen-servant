@@ -1,6 +1,6 @@
 {
   "name": "@unseen-servant/web",
-  "version": "0.28.0",
+  "version": "0.29.0",
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
@@ -10,7 +10,9 @@
     "preview": "npx @opennextjs/cloudflare dev",
     "start": "next start",
     "type-check": "tsc --noEmit",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test": "node scripts/test.mjs",
+    "test:ui": "npx playwright test --ui"
   },
   "dependencies": {
     "@unseen-servant/shared": "workspace:*",
@@ -24,6 +26,7 @@
   },
   "devDependencies": {
     "@opennextjs/cloudflare": "^1.16",
+    "@playwright/test": "^1.58.2",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",

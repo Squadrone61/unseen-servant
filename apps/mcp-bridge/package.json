@@ -1,23 +1,26 @@
 {
   "name": "@unseen-servant/mcp-bridge",
-  "version": "0.28.0",
+  "version": "0.29.0",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "tsx src/index.ts",
     "type-check": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "lint": "eslint ."
   },
   "dependencies": {
-    "@unseen-servant/shared": "workspace:*",
     "@dice-roller/rpg-dice-roller": "^5.x",
     "@modelcontextprotocol/sdk": "^1.12.1",
+    "@unseen-servant/shared": "workspace:*",
     "ws": "^8.18.0",
     "zod": "^4"
   },
   "devDependencies": {
     "@types/ws": "^8.18.1",
     "tsx": "^4.19.4",
-    "typescript": "^5.9"
+    "typescript": "^5.9",
+    "vitest": "^4.1.2"
   }
 }

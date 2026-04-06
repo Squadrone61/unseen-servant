@@ -3,6 +3,11 @@
 
 import { spawn } from "child_process";
 import { get } from "http";
+import { resolve, dirname } from "path";
+import { fileURLToPath } from "url";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const rootDir = resolve(__dirname, "..", "..");
 
 const args = process.argv.slice(2);
 const procs = [];
@@ -24,8 +29,8 @@ process.on("SIGTERM", () => {
   process.exit(1);
 });
 
-function startProc(cmd, cmdArgs) {
-  const p = spawn(cmd, cmdArgs, { stdio: "inherit", shell: true });
+function startProc(cmd, cmdArgs, opts = {}) {
+  const p = spawn(cmd, cmdArgs, { stdio: "inherit", shell: true, ...opts });
   procs.push(p);
   return p;
 }
@@ -44,10 +49,10 @@ function waitForServer(url, timeoutSec = 60) {
   });
 }
 
-// Start dev servers
+// Start dev servers from the repo root
 console.log("Starting dev servers...");
-startProc("pnpm", ["dev:worker"]);
-startProc("pnpm", ["dev:web"]);
+startProc("pnpm", ["dev:worker"], { cwd: rootDir });
+startProc("pnpm", ["dev:web"], { cwd: rootDir });
 
 try {
   console.log("Waiting for worker (localhost:8787)...");

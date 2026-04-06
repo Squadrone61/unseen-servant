@@ -57,7 +57,8 @@ log("mcp-bridge", `MCP server started, connected to room ${roomCode}`);
 // Graceful shutdown: close WebSocket cleanly so the worker detects DM disconnect
 for (const sig of ["SIGINT", "SIGTERM"] as const) {
   process.on(sig, () => {
-    log("mcp-bridge", `Received ${sig}, closing WebSocket...`);
+    log("mcp-bridge", `Received ${sig}, flushing state and closing...`);
+    wsClient.gameStateManager.forceFlush();
     wsClient.close();
     process.exit(0);
   });

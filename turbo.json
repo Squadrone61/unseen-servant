@@ -15,6 +15,7 @@
     "type-check": {
       "dependsOn": ["^build"]
     },
+    "test": { "dependsOn": ["^build"], "cache": false },
     "deploy": {
       "dependsOn": ["build"],
       "cache": false

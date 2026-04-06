@@ -43,9 +43,18 @@ import {
   DM_ENCOUNTER_LENGTHS,
   DM_SKILL_SOCIAL,
 } from "@unseen-servant/shared";
+import { getClass } from "@unseen-servant/shared/data";
 import { log } from "../logger.js";
 import type { MessageQueue } from "../message-queue.js";
 import type { CampaignManager } from "./campaign-manager.js";
+
+/** 2024 PHB feats relevant to short rest Hit Dice spending (keyed by lowercase feat name) */
+const REST_FEAT_HINTS: Record<string, string> = {
+  chef: "Chef (Replenishing Meal): creatures who spend Hit Dice regain extra 1d8 HP",
+  durable: "Durable (Speedy Recovery): spend 1 Hit Die as Bonus Action, roll only (no CON mod)",
+  healer:
+    "Healer (Battle Medic): Utilize action + Healer's Kit — target spends their Hit Die, you add your PB",
+};
 
 interface ConversationMessage {
   role: "user" | "assistant";
@@ -114,6 +123,16 @@ export class GameStateManager {
   /** Debounce timer for batching chat messages */
   private pushDebounceTimer: ReturnType<typeof setTimeout> | null = null;
   private readonly BATCH_DELAY_MS = 2000;
+  /** Dirty flag — true when in-memory state differs from last persisted snapshot */
+  private _dirty = false;
+  /** True when conversationHistory differs from last persisted chat-history.json */
+  private _chatDirty = false;
+  /** Set of player names whose character snapshots need re-persisting */
+  private _dirtyCharacters = new Set<string>();
+  /** Debounce timer for coalescing rapid mutations into a single write */
+  private _flushTimer: ReturnType<typeof setTimeout> | null = null;
+  /** Debounce delay in ms — coalesces rapid mutations (e.g., applyBatchEffects) */
+  private readonly FLUSH_DELAY_MS = 200;
   /** Last completed check result — consumed by sendCheckRequest resolver */
   lastCheckResult: {
     characterName: string;
@@ -160,6 +179,8 @@ export class GameStateManager {
     this.playerNames = snapshot.playerNames;
     // Set lastSentIndex to end so pushDMRequest only sends new messages
     this.lastSentIndex = this.conversationHistory.length;
+    // Mark chat dirty so it gets persisted on next flush
+    this._chatDirty = true;
   }
 
   saveSessionStateToCampaign(): void {
@@ -171,12 +192,95 @@ export class GameStateManager {
         "chat-history.json",
         JSON.stringify(this.conversationHistory, null, 2),
       );
+      // Clear dirty flags since we just wrote everything
+      this._dirty = false;
+      this._chatDirty = false;
+      this._dirtyCharacters.clear();
+      if (this._flushTimer) {
+        clearTimeout(this._flushTimer);
+        this._flushTimer = null;
+      }
     } catch (e) {
       log(
         "game-state",
         `Failed to save session state: ${e instanceof Error ? e.message : String(e)}`,
       );
     }
+  }
+
+  /** Mark game state as dirty — schedules a debounced flush to campaign files */
+  markDirty(): void {
+    this._dirty = true;
+    this.scheduleFlush();
+  }
+
+  /** Mark a character as needing snapshot update */
+  markCharacterDirty(playerName: string): void {
+    this._dirtyCharacters.add(playerName);
+    this.markDirty();
+  }
+
+  /** Schedule a debounced flush (resets timer on each call) */
+  private scheduleFlush(): void {
+    if (!this.campaignManager.activeSlug) return;
+    if (this._flushTimer) clearTimeout(this._flushTimer);
+    this._flushTimer = setTimeout(() => {
+      this.flushDirtyState();
+    }, this.FLUSH_DELAY_MS);
+  }
+
+  /** Write dirty state to campaign files. Called by timer or explicitly on shutdown. */
+  flushDirtyState(): void {
+    if (this._flushTimer) {
+      clearTimeout(this._flushTimer);
+      this._flushTimer = null;
+    }
+    if (!this._dirty || !this.campaignManager.activeSlug) {
+      this._dirty = false;
+      this._dirtyCharacters.clear();
+      return;
+    }
+
+    try {
+      // Write session state (game state, story flag, player list, etc.)
+      const snapshot = this.serializeSessionState();
+      this.campaignManager.writeFile("session-state.json", JSON.stringify(snapshot, null, 2));
+
+      // Write chat history if dirty
+      if (this._chatDirty) {
+        this.campaignManager.writeFile(
+          "chat-history.json",
+          JSON.stringify(this.conversationHistory, null, 2),
+        );
+        this._chatDirty = false;
+      }
+
+      // Write dirty character snapshots
+      const charCount = this._dirtyCharacters.size;
+      for (const playerName of this._dirtyCharacters) {
+        const char = this.characters[playerName];
+        if (char) {
+          this.campaignManager.writeFile(
+            `characters/${playerName}.json`,
+            JSON.stringify(char, null, 2),
+          );
+        }
+      }
+
+      this._dirty = false;
+      this._dirtyCharacters.clear();
+      log("game-state", `Flushed dirty state (${charCount} character snapshots)`);
+    } catch (e) {
+      log(
+        "game-state",
+        `Failed to flush dirty state: ${e instanceof Error ? e.message : String(e)}`,
+      );
+    }
+  }
+
+  /** Force synchronous flush — call before process exit */
+  forceFlush(): void {
+    this.flushDirtyState();
   }
 
   /** Compose the system prompt dynamically based on current game state */
@@ -442,6 +546,7 @@ export class GameStateManager {
       });
       this.pushDMRequest();
     }
+    this.markDirty();
   }
 
   // ─── Send Response (called by MCP tool) ───
@@ -450,6 +555,7 @@ export class GameStateManager {
     // Store in conversation history
     this.conversationHistory.push({ role: "assistant", content: text });
     this.lastSentIndex = this.conversationHistory.length;
+    this._chatDirty = true;
 
     // Broadcast AI narrative to all players
     this.broadcast({
@@ -619,6 +725,7 @@ export class GameStateManager {
     this.conversationHistory.push({ role: "user", content: userMessage });
 
     this.pushDMRequest();
+    this.markDirty();
   }
 
   // ─── End Turn ───
@@ -681,6 +788,7 @@ export class GameStateManager {
 
     // Auto-resolve NPC turns
     this.triggerNPCTurns(combat);
+    this.markDirty();
   }
 
   // ─── Move Token ───
@@ -763,6 +871,7 @@ export class GameStateManager {
       const systemMsg = `[System: ${char.static.name} moved from ${formatGridPosition(from)} to ${formatGridPosition(to)}, ${distance}ft used (${combatant.speed - combatant.movementUsed}ft remaining)]`;
       this.conversationHistory.push({ role: "user", content: systemMsg });
     }
+    this.markDirty();
   }
 
   // ─── Rollback ───
@@ -836,6 +945,7 @@ export class GameStateManager {
       characterUpdates: { ...this.characters },
       timestamp: Date.now(),
     });
+    this.markDirty();
   }
 
   // ─── Event Creation ───
@@ -1008,6 +1118,7 @@ export class GameStateManager {
 
   handleSetCharacter(playerName: string, character: CharacterData): void {
     this.characters[playerName] = character;
+    this.markCharacterDirty(playerName);
 
     // Snapshot to campaign
     const cm = this.campaignManager;
@@ -1408,6 +1519,7 @@ export class GameStateManager {
         if (combatantCover) {
           text += `\n(Note: ${combatantCover.toLowerCase()})`;
         }
+        this.markDirty();
         return toResponse(text, data);
       }
     }
@@ -1447,6 +1559,7 @@ export class GameStateManager {
           }
           this.syncPlayerCombatantHP(char.static.name);
           this.broadcast({ type: "server:character_updated", playerName: pName, character: char });
+          this.markCharacterDirty(pName);
           return toResponse(deathText, deathData);
         }
 
@@ -1469,6 +1582,7 @@ export class GameStateManager {
           }
           this.syncPlayerCombatantHP(char.static.name);
           this.broadcast({ type: "server:character_updated", playerName: pName, character: char });
+          this.markCharacterDirty(pName);
           return toResponse(
             `${char.static.name} takes ${dmg} ${damageType ?? ""} damage — MASSIVE DAMAGE, instant death! (overshoot ${overshoot} >= max HP ${char.static.maxHP})`,
             {
@@ -1515,6 +1629,7 @@ export class GameStateManager {
         if (charCover) {
           text += `\n(Note: ${charCover.toLowerCase()})`;
         }
+        this.markCharacterDirty(pName);
         return toResponse(text, data);
       }
     }
@@ -1547,6 +1662,7 @@ export class GameStateManager {
           map: this.gameState.encounter?.map ?? null,
           timestamp: Date.now(),
         });
+        this.markDirty();
         return toResponse(
           `${combatant.name} healed ${healing} → ${combatant.currentHP}/${combatant.maxHP} HP`,
           {
@@ -1582,6 +1698,7 @@ export class GameStateManager {
           playerName: pName,
           character: char,
         });
+        this.markCharacterDirty(pName);
         return toResponse(
           `${char.static.name} healed ${healing} → ${char.dynamic.currentHP}/${char.static.maxHP} HP`,
           {
@@ -1620,6 +1737,7 @@ export class GameStateManager {
           map: this.gameState.encounter?.map ?? null,
           timestamp: Date.now(),
         });
+        this.markDirty();
         return toResponse(`${combatant.name} HP set to ${combatant.currentHP}/${combatant.maxHP}`, {
           target: combatant.name,
           previousHP: prevHP,
@@ -1648,6 +1766,7 @@ export class GameStateManager {
           playerName: pName,
           character: char,
         });
+        this.markCharacterDirty(pName);
         return toResponse(
           `${char.static.name} HP set to ${char.dynamic.currentHP}/${char.static.maxHP}`,
           {
@@ -1687,6 +1806,7 @@ export class GameStateManager {
           map: this.gameState.encounter?.map ?? null,
           timestamp: Date.now(),
         });
+        this.markDirty();
         return toResponse(`${combatant.name} is now ${condition}`, {
           target: combatant.name,
           condition,
@@ -1713,6 +1833,7 @@ export class GameStateManager {
           playerName: pName,
           character: char,
         });
+        this.markCharacterDirty(pName);
         return toResponse(`${char.static.name} is now ${condition}`, {
           target: char.static.name,
           condition,
@@ -1745,6 +1866,7 @@ export class GameStateManager {
           map: this.gameState.encounter?.map ?? null,
           timestamp: Date.now(),
         });
+        this.markDirty();
         return toResponse(`${condition} removed from ${combatant.name}`, {
           target: combatant.name,
           removed: condition,
@@ -1764,6 +1886,7 @@ export class GameStateManager {
           playerName: pName,
           character: char,
         });
+        this.markCharacterDirty(pName);
         return toResponse(`${condition} removed from ${char.static.name}`, {
           target: char.static.name,
           removed: condition,
@@ -1912,6 +2035,7 @@ export class GameStateManager {
         ? ` Surprised (cannot act on first turn): ${surprisedNames.join(", ")}.`
         : "";
 
+    this.markDirty();
     return toResponse(
       `Combat started! Initiative order: ${initSummary}. Round 1, ${turnOrder[0].name}'s turn.${surpriseNote}`,
       {
@@ -1949,6 +2073,7 @@ export class GameStateManager {
       timestamp: Date.now(),
     });
 
+    this.markDirty();
     return toResponse("Combat ended.", { ended: true, totalRounds, survivors });
   }
 
@@ -1983,8 +2108,118 @@ export class GameStateManager {
     const active = combat.combatants[newActiveId];
     const nextIdx = (combat.turnIndex + 1) % combat.turnOrder.length;
     const nextUp = combat.combatants[combat.turnOrder[nextIdx]];
+    this.markDirty();
     return toResponse(`Advanced to ${active?.name ?? "unknown"}'s turn (Round ${combat.round})`, {
       currentTurn: active?.name,
+      round: combat.round,
+      nextUp: nextUp?.name,
+    });
+  }
+
+  /** Override a combatant's initiative and re-sort the turn order */
+  setInitiative(name: string, initiative: number): ToolResponse {
+    const combat = this.gameState.encounter?.combat;
+    if (!combat || combat.phase !== "active") {
+      return toResponse("No active combat", {}, true, ["Use start_combat to begin combat"]);
+    }
+
+    const combatant = Object.values(combat.combatants).find(
+      (c) => c.name.toLowerCase() === name.toLowerCase(),
+    );
+    if (!combatant) {
+      const available = Object.values(combat.combatants)
+        .map((c) => c.name)
+        .join(", ");
+      return toResponse(`Combatant "${name}" not found`, { name }, true, [
+        `Available combatants: ${available}`,
+      ]);
+    }
+
+    // Preserve the current active combatant's ID before reordering
+    const currentActiveId = combat.turnOrder[combat.turnIndex];
+
+    combatant.initiative = initiative;
+
+    // Re-sort turn order: descending initiative, tiebreak by initiativeModifier
+    combat.turnOrder.sort((aId, bId) => {
+      const a = combat.combatants[aId];
+      const b = combat.combatants[bId];
+      if (b.initiative !== a.initiative) return b.initiative - a.initiative;
+      return b.initiativeModifier - a.initiativeModifier;
+    });
+
+    // Restore turnIndex to track the same combatant that was active before
+    const newIndex = combat.turnOrder.indexOf(currentActiveId);
+    if (newIndex !== -1) {
+      combat.turnIndex = newIndex;
+    }
+
+    this.createEvent("custom", `Initiative for ${combatant.name} set to ${initiative}`, []);
+
+    this.broadcast({
+      type: "server:combat_update",
+      combat,
+      map: this.gameState.encounter?.map ?? null,
+      timestamp: Date.now(),
+    });
+
+    const turnOrder = combat.turnOrder.map((id) => ({
+      name: combat.combatants[id].name,
+      initiative: combat.combatants[id].initiative,
+    }));
+
+    this.markDirty();
+    return toResponse(
+      `Initiative for ${combatant.name} set to ${initiative}. Turn order updated.`,
+      { name: combatant.name, initiative, turnOrder },
+    );
+  }
+
+  /** Jump to a specific combatant's turn (DM override — does not trigger condition expiration) */
+  setActiveTurn(name: string): ToolResponse {
+    const combat = this.gameState.encounter?.combat;
+    if (!combat || combat.phase !== "active") {
+      return toResponse("No active combat", {}, true, ["Use start_combat to begin combat"]);
+    }
+
+    const combatant = Object.values(combat.combatants).find(
+      (c) => c.name.toLowerCase() === name.toLowerCase(),
+    );
+    if (!combatant) {
+      const available = Object.values(combat.combatants)
+        .map((c) => c.name)
+        .join(", ");
+      return toResponse(`Combatant "${name}" not found`, { name }, true, [
+        `Available combatants: ${available}`,
+      ]);
+    }
+
+    const targetIndex = combat.turnOrder.indexOf(combatant.id);
+    if (targetIndex === -1) {
+      return toResponse(
+        `Combatant "${combatant.name}" is not in the turn order`,
+        { name: combatant.name },
+        true,
+      );
+    }
+
+    combat.turnIndex = targetIndex;
+
+    this.createEvent("custom", `Turn set to ${combatant.name}`, []);
+
+    this.broadcast({
+      type: "server:combat_update",
+      combat,
+      map: this.gameState.encounter?.map ?? null,
+      timestamp: Date.now(),
+    });
+
+    const nextIdx = (combat.turnIndex + 1) % combat.turnOrder.length;
+    const nextUp = combat.combatants[combat.turnOrder[nextIdx]];
+
+    this.markDirty();
+    return toResponse(`Turn set to ${combatant.name} (Round ${combat.round})`, {
+      currentTurn: combatant.name,
       round: combat.round,
       nextUp: nextUp?.name,
     });
@@ -2079,6 +2314,7 @@ export class GameStateManager {
       : null;
 
     const text = `${c.name} joined combat (initiative ${initiative})`;
+    this.markDirty();
     return toResponse(overlapWarning ? `${text}. ${overlapWarning}` : text, {
       name: c.name,
       initiative,
@@ -2130,6 +2366,7 @@ export class GameStateManager {
       timestamp: Date.now(),
     });
 
+    this.markDirty();
     return toResponse(`${combatantName} removed from combat`, {
       name: combatantName,
       removed: true,
@@ -2201,6 +2438,7 @@ export class GameStateManager {
     });
 
     const text = `${combatant.name} moved to ${formatGridPosition(to)}`;
+    this.markDirty();
     return toResponse(overlapWarning ? `${text}. ${overlapWarning}` : text, {
       name: combatant.name,
       from,
@@ -2230,6 +2468,7 @@ export class GameStateManager {
                 character: char,
               });
               const pactRemaining = pactSlot.total - pactSlot.used;
+              this.markCharacterDirty(pName);
               return toResponse(
                 `${char.static.name} used a level ${level} pact magic slot (Warlock — recovers on short rest)`,
                 {
@@ -2291,6 +2530,7 @@ export class GameStateManager {
               character: char,
             });
             const pactRemaining = pactSlot.total - pactSlot.used;
+            this.markCharacterDirty(pName);
             return toResponse(
               `${char.static.name} used a level ${level} pact magic slot (Warlock — recovers on short rest)`,
               {
@@ -2320,6 +2560,7 @@ export class GameStateManager {
         });
 
         const remaining = slot.total - slot.used;
+        this.markCharacterDirty(pName);
         return toResponse(`${char.static.name} used a level ${level} spell slot`, {
           character: char.static.name,
           level,
@@ -2360,6 +2601,7 @@ export class GameStateManager {
             playerName: pName,
             character: char,
           });
+          this.markCharacterDirty(pName);
           return toResponse(`${char.static.name} restored a level ${level} spell slot`, {
             character: char.static.name,
             level,
@@ -2393,6 +2635,7 @@ export class GameStateManager {
             playerName: pName,
             character: char,
           });
+          this.markCharacterDirty(pName);
           return toResponse(`${char.static.name} restored a level ${level} pact magic slot`, {
             character: char.static.name,
             level,
@@ -2469,6 +2712,7 @@ export class GameStateManager {
           character: char,
         });
 
+        this.markCharacterDirty(pName);
         return toResponse(
           `${char.static.name} used ${canonicalName} (${remaining}/${resource.maxUses} remaining)`,
           {
@@ -2529,6 +2773,7 @@ export class GameStateManager {
           character: char,
         });
 
+        this.markCharacterDirty(pName);
         return toResponse(
           `${char.static.name} restored ${canonicalName} (${remaining}/${resource.maxUses} remaining)`,
           {
@@ -2602,6 +2847,7 @@ export class GameStateManager {
         });
 
         const qty = existing ? existing.quantity : (item.quantity ?? 1);
+        this.markCharacterDirty(characterName);
         return toResponse(
           `Added ${item.name}${qty > 1 ? ` (x${qty})` : ""} to ${char.static.name}'s inventory`,
           {
@@ -2658,6 +2904,7 @@ export class GameStateManager {
           character: char,
         });
 
+        this.markCharacterDirty(characterName);
         return toResponse(
           `Removed ${removeQty}x ${itemName} from ${char.static.name}'s inventory`,
           {
@@ -2739,6 +2986,7 @@ export class GameStateManager {
         });
 
         const summary = changesList.length > 0 ? changesList.join(", ") : "no changes";
+        this.markCharacterDirty(characterName);
         return toResponse(`Updated ${item.name} for ${char.static.name}: ${summary}`, {
           character: char.static.name,
           item: item.name,
@@ -2898,6 +3146,7 @@ export class GameStateManager {
           character: char,
         });
 
+        this.markCharacterDirty(pName);
         return toResponse(`Granted Heroic Inspiration to ${char.static.name}`, {
           character: char.static.name,
           hasInspiration: true,
@@ -2933,6 +3182,7 @@ export class GameStateManager {
           character: char,
         });
 
+        this.markCharacterDirty(pName);
         return toResponse(`${char.static.name} spent Heroic Inspiration`, {
           character: char.static.name,
           hasInspiration: false,
@@ -2950,7 +3200,15 @@ export class GameStateManager {
   /** Short rest — restore short-rest class resources and warlock pact slots */
   shortRest(characterNames: string[]): ToolResponse {
     const results: string[] = [];
-    const charactersData: Array<{ character: string; restored: string[] }> = [];
+    const charactersData: Array<{
+      character: string;
+      restored: string[];
+      hitDice?: string;
+      healingPerDie?: string;
+      currentHP?: number;
+      maxHP?: number;
+      restFeatures?: string[];
+    }> = [];
     for (const name of characterNames) {
       for (const [pName, char] of Object.entries(this.characters)) {
         if (char.static.name.toLowerCase() !== name.toLowerCase()) continue;
@@ -2990,7 +3248,47 @@ export class GameStateManager {
         } else {
           results.push(`**${char.static.name}**: nothing to restore`);
         }
-        charactersData.push({ character: char.static.name, restored });
+
+        // Build per-character hit dice hint
+        const hitDiceParts: string[] = [];
+        for (const cls of char.static.classes) {
+          const classData = getClass(cls.name);
+          const faces = classData?.hd?.faces ?? 8;
+          hitDiceParts.push(`${cls.level}d${faces}`);
+        }
+        const hitDice = hitDiceParts.join(" + ");
+        const conMod = Math.floor((char.static.abilities.constitution - 10) / 2);
+        const conSign = conMod >= 0 ? `+${conMod}` : `${conMod}`;
+        // Use first class's die for the per-die label (multiclass players choose which to spend)
+        const firstClassData = getClass(char.static.classes[0]?.name ?? "");
+        const firstFaces = firstClassData?.hd?.faces ?? 8;
+        const healingPerDie = `1d${firstFaces}${conSign}`;
+        const { currentHP } = char.dynamic;
+        const { maxHP } = char.static;
+        const hpLabel =
+          currentHP >= maxHP ? `${currentHP}/${maxHP} HP, full` : `${currentHP}/${maxHP} HP`;
+
+        results.push(`  → Hit Dice: ${hitDice}, ${healingPerDie} per die (currently ${hpLabel})`);
+
+        // Scan for rest-relevant feats (2024 PHB only)
+        const restFeatures: string[] = [];
+        for (const feat of char.static.features) {
+          const hint = REST_FEAT_HINTS[feat.name.toLowerCase()];
+          if (hint) restFeatures.push(hint);
+        }
+        for (const hint of restFeatures) {
+          results.push(`  → ${hint}`);
+        }
+
+        charactersData.push({
+          character: char.static.name,
+          restored,
+          hitDice,
+          healingPerDie,
+          currentHP,
+          maxHP,
+          restFeatures,
+        });
         break;
       }
     }
@@ -3000,10 +3298,10 @@ export class GameStateManager {
         `Available characters: ${this.listTargetNames().join(", ")}`,
       ]);
     }
-    return toResponse(
-      `Short rest complete.\n${results.join("\n")}\n\nNote: Hit Dice healing requires player choice — ask each player if they want to spend Hit Dice, then roll and heal interactively.`,
-      { characters: charactersData },
-    );
+    for (const n of characterNames) this.markCharacterDirty(n);
+    return toResponse(`Short rest complete.\n${results.join("\n")}`, {
+      characters: charactersData,
+    });
   }
 
   /** Long rest — full HP, all spell slots, all resources, clear conditions, reset death saves */
@@ -3114,6 +3412,7 @@ export class GameStateManager {
         `Available characters: ${this.listTargetNames().join(", ")}`,
       ]);
     }
+    for (const n of characterNames) this.markCharacterDirty(n);
     return toResponse(
       `Long rest complete.\n${results.join("\n")}\n\nReminder: Characters regain half their total Hit Dice (minimum 1) on a long rest. Track this narratively as needed.`,
       { characters: charactersData },
@@ -3156,6 +3455,7 @@ export class GameStateManager {
           [{ type: "death_save", target: characterName, success: true }],
         );
         this.broadcast({ type: "server:character_updated", playerName: pName, character: char });
+        this.markCharacterDirty(pName);
         return toResponse(
           `Death save NAT 20! ${char.static.name} is REVIVED — regains 1 HP and wakes up!`,
           {
@@ -3208,6 +3508,7 @@ export class GameStateManager {
       });
 
       const critNote = options?.criticalFail ? " (NAT 1 — 2 failures!)" : "";
+      this.markCharacterDirty(pName);
       return toResponse(
         `Death save ${success ? "SUCCESS" : "FAILURE"}${critNote}: ${char.dynamic.deathSaves.successes} successes, ${char.dynamic.deathSaves.failures} failures${statusMsg}`,
         {
@@ -3248,6 +3549,7 @@ export class GameStateManager {
         const text = prev
           ? `${combatant.name} breaks concentration on ${prev}, now concentrating on ${spellName}`
           : `${combatant.name} is now concentrating on ${spellName}`;
+        this.markDirty();
         return toResponse(text, {
           target: combatant.name,
           spell: spellName,
@@ -3269,6 +3571,7 @@ export class GameStateManager {
         const text = prev
           ? `${char.static.name} breaks concentration on ${prev}, now concentrating on ${spellName}`
           : `${char.static.name} is now concentrating on ${spellName}`;
+        this.markCharacterDirty(pName);
         return toResponse(text, {
           target: char.static.name,
           spell: spellName,
@@ -3305,6 +3608,7 @@ export class GameStateManager {
           map: this.gameState.encounter?.map ?? null,
           timestamp: Date.now(),
         });
+        this.markDirty();
         return toResponse(`${combatant.name} lost concentration on ${spell}`, {
           target: combatant.name,
           spell,
@@ -3327,6 +3631,7 @@ export class GameStateManager {
           playerName: pName,
           character: char,
         });
+        this.markCharacterDirty(pName);
         return toResponse(`${char.static.name} lost concentration on ${spell}`, {
           target: char.static.name,
           spell,
@@ -3361,6 +3666,7 @@ export class GameStateManager {
           map: this.gameState.encounter?.map ?? null,
           timestamp: Date.now(),
         });
+        this.markDirty();
         return toResponse(`${combatant.name} now has ${combatant.tempHP} temporary HP`, {
           target: combatant.name,
           tempHP: combatant.tempHP,
@@ -3383,6 +3689,7 @@ export class GameStateManager {
           playerName: pName,
           character: char,
         });
+        this.markCharacterDirty(pName);
         return toResponse(`${char.static.name} now has ${char.dynamic.tempHP} temporary HP`, {
           target: char.static.name,
           tempHP: char.dynamic.tempHP,
@@ -3441,6 +3748,7 @@ export class GameStateManager {
         clampedLevel > 0
           ? `-${clampedLevel * 2} to all d20 rolls and spell save DC; speed -${clampedLevel * 5}ft`
           : "none";
+      this.markCharacterDirty(pName);
       return toResponse(
         `${char.static.name} exhaustion level set to ${clampedLevel}${clampedLevel >= 10 ? " — DEAD" : ""}`,
         {
@@ -3524,6 +3832,7 @@ export class GameStateManager {
       timestamp: Date.now(),
     });
 
+    this.markDirty();
     return toResponse(`Battle map "${map.name ?? "unnamed"}" set (${map.width}x${map.height})`, {
       width: map.width,
       height: map.height,
@@ -3603,6 +3912,7 @@ export class GameStateManager {
     const summary = results
       .map((r) => `${r.error ? "✗" : "✓"} [${r.type}] ${r.target}: ${r.result}`)
       .join("\n");
+    this.markDirty();
     return toResponse(`Batch: ${applied} applied, ${failed} failed\n${summary}`, {
       applied,
       failed,
@@ -3863,6 +4173,7 @@ export class GameStateManager {
         : "none";
     const affectedStr =
       affected.length > 0 ? `Affected: ${affectedDisplay}` : "No combatants in area";
+    this.markDirty();
     return toResponse(`AoE '${params.label}' placed at ${params.center}. ${affectedStr}`, {
       aoeId: aoe.id,
       label: params.label,
@@ -4007,6 +4318,7 @@ export class GameStateManager {
       });
     }
 
+    this.markDirty();
     return toResponse(textResults.join("\n"), { results: dataResults });
   }
 
@@ -4038,6 +4350,7 @@ export class GameStateManager {
       timestamp: Date.now(),
     });
 
+    this.markDirty();
     return toResponse(`AoE '${removed.label}' dismissed`, {
       aoeId: removed.id,
       label: removed.label,
@@ -4122,6 +4435,7 @@ export class GameStateManager {
       {
         type: "server:game_state_sync",
         gameState: this.gameState,
+        characters: this.characters,
       },
       [playerName],
     );
@@ -4132,6 +4446,7 @@ export class GameStateManager {
     this.broadcast({
       type: "server:game_state_sync",
       gameState: this.gameState,
+      characters: this.characters,
     });
   }
 

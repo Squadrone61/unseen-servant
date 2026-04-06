@@ -13,7 +13,9 @@
     "deploy": "turbo deploy",
     "deploy:web": "cd apps/web && npx @opennextjs/cloudflare deploy",
     "deploy:worker": "cd apps/worker && wrangler deploy --env production",
-    "test": "node scripts/test.mjs",
+    "test": "turbo test",
+    "test:bridge": "cd apps/mcp-bridge && pnpm test",
+    "test:web": "cd apps/web && pnpm test",
     "dead-code": "knip",
     "prepare": "husky"
   },
@@ -32,7 +34,6 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@next/eslint-plugin-next": "^16.1.6",
-    "@playwright/test": "^1.58.2",
     "eslint": "^9",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-react-hooks": "^7.0.1",

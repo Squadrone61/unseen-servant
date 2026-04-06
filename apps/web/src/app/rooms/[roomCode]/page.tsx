@@ -334,6 +334,15 @@ function GameContent({ roomCode, playerName }: { roomCode: string; playerName: s
           setCombatState(msg.gameState.encounter?.combat ?? null);
           setBattleMap(msg.gameState.encounter?.map ?? null);
           setEventLog(msg.gameState.eventLog);
+          // Characters included on join/reconnect — bridge is the source of truth
+          if (msg.characters) {
+            setPartyCharacters(msg.characters);
+            if (msg.characters[playerName]) {
+              const restoredChar = msg.characters[playerName];
+              setMyCharacter(restoredChar);
+              reconcileWithLibrary(restoredChar);
+            }
+          }
           setGameStateSynced(true);
           break;
 

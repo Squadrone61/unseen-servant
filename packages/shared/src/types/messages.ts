@@ -389,6 +389,8 @@ export interface ServerCombatUpdateMessage {
 export interface ServerGameStateSyncMessage {
   type: "server:game_state_sync";
   gameState: GameState;
+  /** All party characters — sent on join/reconnect so frontend can populate without worker cache */
+  characters?: Record<string, CharacterData>;
 }
 
 /** Rollback completed */

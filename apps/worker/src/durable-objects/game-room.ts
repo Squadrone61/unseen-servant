@@ -2,7 +2,6 @@ import { DurableObject } from "cloudflare:workers";
 import { clientMessageSchema } from "@unseen-servant/shared/schemas";
 import type {
   AuthUser,
-  CharacterData,
   ClientChatMessage,
   ClientMessage,
   DMBridgeConfig,
@@ -37,7 +36,6 @@ export class GameRoom extends DurableObject<Env> {
   private approvedUserIds: Set<string> = new Set();
   private chatLog: ServerMessage[] = [];
   private roomCode: string = "";
-  private characters: Map<string, CharacterData> = new Map(); // keyed by userId
   private allPlayerRecords: Map<string, PlayerRecord> = new Map(); // keyed by userId
   private storyStarted: boolean = false;
   private password: string | null = null;
@@ -67,49 +65,28 @@ export class GameRoom extends DurableObject<Env> {
 
     this.ctx.blockConcurrencyWhile(async () => {
       const [
-        chatLog,
         roomCode,
         hostPlayerName,
-        characters,
         allPlayerRecords,
-        storyStarted,
         created,
         password,
         createdAt,
-        dmBridgeConfig,
-        campaignConfigured,
-        activeCampaignSlug,
-        activeCampaignName,
         approvedUserIds,
       ] = await Promise.all([
-        this.ctx.storage.get<ServerMessage[]>("chatLog"),
         this.ctx.storage.get<string>("roomCode"),
         this.ctx.storage.get<string>("hostPlayerName"),
-        this.ctx.storage.get<Record<string, CharacterData>>("characters"),
         this.ctx.storage.get<Record<string, PlayerRecord>>("allPlayerRecords"),
-        this.ctx.storage.get<boolean>("storyStarted"),
         this.ctx.storage.get<boolean>("created"),
         this.ctx.storage.get<string>("password"),
         this.ctx.storage.get<number>("createdAt"),
-        this.ctx.storage.get<DMBridgeConfig>("dmBridgeConfig"),
-        this.ctx.storage.get<boolean>("campaignConfigured"),
-        this.ctx.storage.get<string>("activeCampaignSlug"),
-        this.ctx.storage.get<string>("activeCampaignName"),
         this.ctx.storage.get<string[]>("approvedUserIds"),
       ]);
-      if (chatLog) this.chatLog = chatLog;
       if (roomCode) this.roomCode = roomCode;
       if (hostPlayerName) this.hostPlayerName = hostPlayerName;
-      if (characters) this.characters = new Map(Object.entries(characters));
       if (allPlayerRecords) this.allPlayerRecords = new Map(Object.entries(allPlayerRecords));
-      if (storyStarted) this.storyStarted = storyStarted;
       if (created) this.created = created;
       if (password) this.password = password;
       if (createdAt) this.createdAt = createdAt;
-      if (dmBridgeConfig) this.dmBridgeConfig = dmBridgeConfig;
-      if (campaignConfigured) this.campaignConfigured = campaignConfigured;
-      if (activeCampaignSlug) this.activeCampaignSlug = activeCampaignSlug;
-      if (activeCampaignName) this.activeCampaignName = activeCampaignName;
       // Merge persisted approvedUserIds with any active session userIds already added above
       if (approvedUserIds) {
         for (const id of approvedUserIds) {
@@ -141,9 +118,8 @@ export class GameRoom extends DurableObject<Env> {
     }
   }
 
-  private async appendToChatLog(message: ServerMessage): Promise<void> {
+  private appendToChatLog(message: ServerMessage): void {
     this.chatLog.push(message);
-    await this.ctx.storage.put("chatLog", this.chatLog);
   }
 
   // --- HTTP & WebSocket Entry ---
@@ -216,7 +192,6 @@ export class GameRoom extends DurableObject<Env> {
         break;
       case "client:dm_config": {
         this.dmBridgeConfig = { provider: msg.provider, supportsTools: msg.supportsTools };
-        this.ctx.storage.put("dmBridgeConfig", this.dmBridgeConfig);
         const campaignInfo = this.activeCampaignName
           ? ` Campaign: ${this.activeCampaignName}.`
           : "";
@@ -236,8 +211,6 @@ export class GameRoom extends DurableObject<Env> {
       case "client:campaign_loaded": {
         this.activeCampaignSlug = msg.campaignSlug;
         this.activeCampaignName = msg.campaignName;
-        this.ctx.storage.put("activeCampaignSlug", msg.campaignSlug);
-        this.ctx.storage.put("activeCampaignName", msg.campaignName);
         this.broadcast({
           type: "server:campaign_loaded",
           campaignSlug: msg.campaignSlug,
@@ -251,7 +224,6 @@ export class GameRoom extends DurableObject<Env> {
         break;
       case "client:story_started":
         this.storyStarted = true;
-        this.ctx.storage.put("storyStarted", true);
         break;
       case "client:set_password":
         await this.handleSetPassword(ws, msg);
@@ -327,7 +299,6 @@ export class GameRoom extends DurableObject<Env> {
       // Clear DM bridge config when DM disconnects
       if (session.isDM) {
         this.dmBridgeConfig = null;
-        this.ctx.storage.delete("dmBridgeConfig");
       }
 
       this.broadcast({
@@ -368,7 +339,6 @@ export class GameRoom extends DurableObject<Env> {
       // Mirror cleanup from webSocketClose — clear DM state, notify players
       if (session.isDM) {
         this.dmBridgeConfig = null;
-        this.ctx.storage.delete("dmBridgeConfig");
       }
 
       this.broadcast({
@@ -461,7 +431,6 @@ export class GameRoom extends DurableObject<Env> {
       id: crypto.randomUUID(),
     };
     this.broadcast(chatMsg);
-    await this.appendToChatLog(chatMsg);
   }
 
   /**
@@ -521,17 +490,6 @@ export class GameRoom extends DurableObject<Env> {
     }
 
     const payload = msg.payload as ServerMessage;
-
-    // Handle character_updated: sync worker's character cache
-    if (payload.type === "server:character_updated") {
-      for (const [userId, record] of this.allPlayerRecords.entries()) {
-        if (record.name === payload.playerName) {
-          this.characters.set(userId, payload.character);
-          await this.persistCharacters();
-          break;
-        }
-      }
-    }
 
     if (msg.targets && msg.targets.length > 0) {
       // Send only to named players
@@ -716,7 +674,6 @@ export class GameRoom extends DurableObject<Env> {
       isHost: session.status === "host",
       isReconnect,
       user: authUser,
-      characters: this.getCharactersByPlayerName(),
       allPlayers: this.getAllPlayersWithStatus(),
       storyStarted: this.storyStarted,
       dmConnected: this.dmBridgeConfig !== null,
@@ -781,32 +738,6 @@ export class GameRoom extends DurableObject<Env> {
     this.campaignConfigured = true;
     this.activeCampaignSlug = msg.campaignSlug;
     this.activeCampaignName = msg.campaignName;
-    await this.ctx.storage.put("campaignConfigured", true);
-    await this.ctx.storage.put("activeCampaignSlug", msg.campaignSlug);
-    await this.ctx.storage.put("activeCampaignName", msg.campaignName);
-
-    if (msg.restoredCharacters) {
-      const userIdMap = msg.characterUserIds ?? {};
-      for (const [playerName, charData] of Object.entries(msg.restoredCharacters)) {
-        // Try matching by stable userId first (survives name changes)
-        const savedUserId = userIdMap[playerName];
-        if (
-          savedUserId &&
-          (this.allPlayerRecords.has(savedUserId) || this.approvedUserIds.has(savedUserId))
-        ) {
-          this.characters.set(savedUserId, charData);
-          continue;
-        }
-        // Fall back to matching by playerName
-        for (const [userId, record] of this.allPlayerRecords.entries()) {
-          if (record.name === playerName) {
-            this.characters.set(userId, charData);
-            break;
-          }
-        }
-      }
-      await this.persistCharacters();
-    }
 
     this.broadcast({
       type: "server:campaign_configured",
@@ -900,11 +831,6 @@ export class GameRoom extends DurableObject<Env> {
     this.allPlayerRecords.delete(targetSession.userId);
     await this.persistAllPlayerRecords();
 
-    if (this.characters.has(targetSession.userId)) {
-      this.characters.delete(targetSession.userId);
-      await this.persistCharacters();
-    }
-
     try {
       targetWs.close(4002, "Kicked by host");
     } catch {
@@ -964,7 +890,6 @@ export class GameRoom extends DurableObject<Env> {
     this.approvedUserIds.clear();
     this.chatLog = [];
     this.roomCode = "";
-    this.characters.clear();
     this.allPlayerRecords.clear();
     this.storyStarted = false;
     this.created = false;
@@ -972,7 +897,7 @@ export class GameRoom extends DurableObject<Env> {
     this.createdAt = 0;
   }
 
-  // --- Character Handler (relay + cache) ---
+  // --- Character Handler (pure relay) ---
 
   private async handleSetCharacter(
     ws: WebSocket,
@@ -988,14 +913,8 @@ export class GameRoom extends DurableObject<Env> {
       return;
     }
 
-    // Cache character in worker for reconnect data
-    this.characters.set(session.userId, msg.character);
-    await this.persistCharacters();
-
-    // Forward to bridge — the bridge broadcasts server:character_updated via
-    // client:broadcast, which this worker then relays to all players. The worker
-    // must NOT send its own server:character_updated here; doing so would cause
-    // every player to receive two identical character_updated messages (ARCH-BUG-3).
+    // Pure relay — forward to bridge. The bridge broadcasts server:character_updated
+    // via client:broadcast, which this worker then relays to all players.
     this.forwardToBridge(ws, msg);
   }
 
@@ -1083,25 +1002,6 @@ export class GameRoom extends DurableObject<Env> {
       online: onlineUserIds.has(userId),
       isHost: record.isHost,
     }));
-  }
-
-  private getCharactersByPlayerName(): Record<string, CharacterData> {
-    const result: Record<string, CharacterData> = {};
-    for (const [userId, record] of this.allPlayerRecords.entries()) {
-      const char = this.characters.get(userId);
-      if (char) {
-        result[record.name] = char;
-      }
-    }
-    return result;
-  }
-
-  private async persistCharacters(): Promise<void> {
-    try {
-      await this.ctx.storage.put("characters", Object.fromEntries(this.characters.entries()));
-    } catch (e) {
-      console.error("Failed to persist characters:", e);
-    }
   }
 
   private async persistAllPlayerRecords(): Promise<void> {
