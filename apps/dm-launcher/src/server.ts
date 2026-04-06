@@ -9,6 +9,7 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { MessageQueue } from "../../mcp-bridge/src/message-queue.js";
 import { WSClient } from "../../mcp-bridge/src/ws-client.js";
 import { CampaignManager } from "../../mcp-bridge/src/services/campaign-manager.js";
+import { GameLogger } from "../../mcp-bridge/src/services/game-logger.js";
 import { createMcpServer } from "../../mcp-bridge/src/mcp-server.js";
 
 declare const PRODUCTION_WORKER_URL: string;
@@ -42,15 +43,17 @@ export async function startServer(): Promise<void> {
 
   const messageQueue = new MessageQueue();
   const campaignManager = new CampaignManager();
+  const gameLogger = new GameLogger(campaignManager);
 
   const wsClient = new WSClient({
     workerUrl,
     roomCode,
     messageQueue,
     campaignManager,
+    gameLogger,
   });
 
-  const mcpServer = await createMcpServer(messageQueue, wsClient, campaignManager);
+  const mcpServer = await createMcpServer(messageQueue, wsClient, campaignManager, gameLogger);
 
   wsClient.connect();
 

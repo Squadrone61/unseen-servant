@@ -2,6 +2,7 @@ import WebSocket from "ws";
 import { log } from "./logger.js";
 import type { MessageQueue } from "./message-queue.js";
 import type { CampaignManager } from "./services/campaign-manager.js";
+import type { GameLogger } from "./services/game-logger.js";
 import { GameStateManager, type SessionStateSnapshot } from "./services/game-state-manager.js";
 import type { PlayerSummary } from "./types.js";
 import type {
@@ -18,6 +19,7 @@ interface WSClientOptions {
   roomCode: string;
   messageQueue: MessageQueue;
   campaignManager: CampaignManager;
+  gameLogger: GameLogger;
 }
 
 export class WSClient {
@@ -41,14 +43,17 @@ export class WSClient {
 
   /** Game state manager — owns all game state */
   gameStateManager: GameStateManager;
+  gameLogger: GameLogger;
 
   constructor(options: WSClientOptions) {
     this.options = options;
+    this.gameLogger = options.gameLogger;
 
     this.gameStateManager = new GameStateManager({
       broadcast: (msg, targets) => this.broadcastViaWorker(msg, targets),
       messageQueue: options.messageQueue,
       campaignManager: options.campaignManager,
+      gameLogger: options.gameLogger,
     });
   }
 
@@ -141,6 +146,7 @@ export class WSClient {
 
     this.ws.on("close", (code, reason) => {
       log("ws-client", `Disconnected: ${code} ${reason.toString()}`);
+      this.gameLogger.error("ws-client", `WebSocket disconnected: ${code}`);
       this.connected = false;
       this.configSent = false;
       this.wasDisconnected = true;
@@ -167,6 +173,7 @@ export class WSClient {
         const isWsReconnect = this.wasDisconnected;
         if (isWsReconnect) {
           log("ws-client", `Reconnected successfully after ${this.reconnectAttempts} attempts`);
+          this.gameLogger.system("Reconnected to room");
           this.broadcastViaWorker({
             type: "server:system",
             content: "DM has reconnected. Resuming session.",
@@ -223,6 +230,7 @@ export class WSClient {
             .map((p) => p.name);
         }
         log("ws-client", `+ ${msg.playerName} (${msg.players.length} players)`);
+        this.gameLogger.system(`Player joined: ${msg.playerName}`);
 
         // Send game state sync to newly joined player
         if (!msg.isDM) {
@@ -242,6 +250,7 @@ export class WSClient {
             .map((p) => p.name);
         }
         log("ws-client", `- ${msg.playerName} (${msg.players.length} players)`);
+        this.gameLogger.system(`Player left: ${msg.playerName}`);
         break;
       }
 
@@ -454,6 +463,8 @@ export class WSClient {
         characterUserIds:
           Object.keys(this.playerUserIds).length > 0 ? this.playerUserIds : undefined,
       });
+
+      this.gameLogger.sessionStart(manifest.slug, manifest.sessionCount);
 
       const campaigns = cm.listCampaigns();
       this.send({

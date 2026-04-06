@@ -47,6 +47,7 @@ import { getClass } from "@unseen-servant/shared/data";
 import { log } from "../logger.js";
 import type { MessageQueue } from "../message-queue.js";
 import type { CampaignManager } from "./campaign-manager.js";
+import type { GameLogger } from "./game-logger.js";
 
 /** 2024 PHB feats relevant to short rest Hit Dice spending (keyed by lowercase feat name) */
 const REST_FEAT_HINTS: Record<string, string> = {
@@ -114,6 +115,7 @@ export class GameStateManager {
   private turnsSinceFullPrompt = 0;
   private readonly FULL_PROMPT_INTERVAL = 10;
   private campaignManager: CampaignManager;
+  private gameLogger?: GameLogger;
   /** Host player name (for permission checks) */
   hostName = "";
   /** All known player names (for validation) */
@@ -151,10 +153,12 @@ export class GameStateManager {
     broadcast: BroadcastFn;
     messageQueue: MessageQueue;
     campaignManager: CampaignManager;
+    gameLogger?: GameLogger;
   }) {
     this.broadcast = opts.broadcast;
     this.messageQueue = opts.messageQueue;
     this.campaignManager = opts.campaignManager;
+    this.gameLogger = opts.gameLogger;
   }
 
   // ─── Session State Persistence ───
@@ -465,6 +469,7 @@ export class GameStateManager {
     const sanitizedContent = content.replace(/\[([^\]]+)\]\s*:/g, "($1):");
     const userMessage = `[${speakerName}]: ${sanitizedContent}`;
     this.conversationHistory.push({ role: "user", content: userMessage });
+    this.gameLogger?.playerMessage(playerName, speakerName, content);
 
     // Batch chat messages — waits BATCH_DELAY_MS for more messages before pushing
     this.schedulePushDMRequest();
@@ -556,6 +561,7 @@ export class GameStateManager {
     this.conversationHistory.push({ role: "assistant", content: text });
     this.lastSentIndex = this.conversationHistory.length;
     this._chatDirty = true;
+    this.gameLogger?.dmResponse(text);
 
     // Broadcast AI narrative to all players
     this.broadcast({
@@ -987,6 +993,7 @@ export class GameStateManager {
       this.gameState.eventLog = this.gameState.eventLog.slice(-eventCap);
     }
     this.broadcast({ type: "server:event_log", event });
+    this.gameLogger?.gameEvent(event.type, event.description);
   }
 
   // ─── Settings ───

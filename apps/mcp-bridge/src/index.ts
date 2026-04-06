@@ -4,6 +4,7 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { MessageQueue } from "./message-queue.js";
 import { WSClient } from "./ws-client.js";
 import { CampaignManager } from "./services/campaign-manager.js";
+import { GameLogger } from "./services/game-logger.js";
 import { createMcpServer } from "./mcp-server.js";
 import { log } from "./logger.js";
 
@@ -33,6 +34,7 @@ if (!roomCode) {
 // Create shared state
 const messageQueue = new MessageQueue();
 const campaignManager = new CampaignManager();
+const gameLogger = new GameLogger(campaignManager);
 
 // Create WebSocket client to worker
 const wsClient = new WSClient({
@@ -40,10 +42,11 @@ const wsClient = new WSClient({
   roomCode,
   messageQueue,
   campaignManager,
+  gameLogger,
 });
 
 // Create MCP server with all tools (async — loads extended D&D database)
-const mcpServer = await createMcpServer(messageQueue, wsClient, campaignManager);
+const mcpServer = await createMcpServer(messageQueue, wsClient, campaignManager, gameLogger);
 
 // Connect WebSocket to worker room
 wsClient.connect();
@@ -59,6 +62,7 @@ for (const sig of ["SIGINT", "SIGTERM"] as const) {
   process.on(sig, () => {
     log("mcp-bridge", `Received ${sig}, flushing state and closing...`);
     wsClient.gameStateManager.forceFlush();
+    gameLogger.close();
     wsClient.close();
     process.exit(0);
   });

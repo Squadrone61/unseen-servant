@@ -2,6 +2,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { log } from "../logger.js";
 import type { WSClient } from "../ws-client.js";
+import type { GameLogger } from "../services/game-logger.js";
 import {
   searchSpells,
   searchMonsters,
@@ -594,7 +595,22 @@ function fuzzyLookupOrSuggest<T extends { name: string }>(
 
 // ─── Tool Registration ──────────────────────────────────────
 
-export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
+export function registerSrdTools(
+  server: McpServer,
+  wsClient: WSClient,
+  gameLogger: GameLogger,
+): void {
+  /** Wrap an SRD lookup handler to log the tool call. */
+  function loggedLookup(
+    toolName: string,
+    args: Record<string, unknown>,
+    result: ToolResult,
+  ): ToolResult {
+    const text = result.content?.[0]?.type === "text" ? (result.content[0] as any).text : "";
+    gameLogger.toolCall(toolName, args, text);
+    return result;
+  }
+
   server.registerTool(
     "lookup_spell",
     {
@@ -615,15 +631,19 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
       },
     },
     async ({ name, detail }) => {
-      return fuzzyLookupOrSuggest(
-        name,
-        spells,
-        spellsArray,
-        "Spell",
-        formatSpellSummary,
-        formatSpell,
-        detail,
-        wsClient,
+      return loggedLookup(
+        "lookup_spell",
+        { name, detail },
+        fuzzyLookupOrSuggest(
+          name,
+          spells,
+          spellsArray,
+          "Spell",
+          formatSpellSummary,
+          formatSpell,
+          detail,
+          wsClient,
+        ),
       );
     },
   );
@@ -648,15 +668,19 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
       },
     },
     async ({ name, detail }) => {
-      return fuzzyLookupOrSuggest(
-        name,
-        monsters,
-        monstersArray,
-        "Monster",
-        formatMonsterSummary,
-        formatMonster,
-        detail,
-        wsClient,
+      return loggedLookup(
+        "lookup_monster",
+        { name, detail },
+        fuzzyLookupOrSuggest(
+          name,
+          monsters,
+          monstersArray,
+          "Monster",
+          formatMonsterSummary,
+          formatMonster,
+          detail,
+          wsClient,
+        ),
       );
     },
   );
@@ -681,15 +705,19 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
       },
     },
     async ({ name, detail }) => {
-      return fuzzyLookupOrSuggest(
-        name,
-        conditions,
-        conditionsArray,
-        "Condition",
-        formatConditionSummary,
-        formatCondition,
-        detail,
-        wsClient,
+      return loggedLookup(
+        "lookup_condition",
+        { name, detail },
+        fuzzyLookupOrSuggest(
+          name,
+          conditions,
+          conditionsArray,
+          "Condition",
+          formatConditionSummary,
+          formatCondition,
+          detail,
+          wsClient,
+        ),
       );
     },
   );
@@ -714,15 +742,19 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
       },
     },
     async ({ name, detail }) => {
-      return fuzzyLookupOrSuggest(
-        name,
-        magicItems,
-        magicItemsArray,
-        "Magic Item",
-        formatMagicItemSummary,
-        formatMagicItemFn,
-        detail,
-        wsClient,
+      return loggedLookup(
+        "lookup_magic_item",
+        { name, detail },
+        fuzzyLookupOrSuggest(
+          name,
+          magicItems,
+          magicItemsArray,
+          "Magic Item",
+          formatMagicItemSummary,
+          formatMagicItemFn,
+          detail,
+          wsClient,
+        ),
       );
     },
   );
@@ -747,15 +779,19 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
       },
     },
     async ({ name, detail }) => {
-      return fuzzyLookupOrSuggest(
-        name,
-        feats,
-        featsArray,
-        "Feat",
-        formatFeatSummary,
-        formatFeatFn,
-        detail,
-        wsClient,
+      return loggedLookup(
+        "lookup_feat",
+        { name, detail },
+        fuzzyLookupOrSuggest(
+          name,
+          feats,
+          featsArray,
+          "Feat",
+          formatFeatSummary,
+          formatFeatFn,
+          detail,
+          wsClient,
+        ),
       );
     },
   );
@@ -780,15 +816,19 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
       },
     },
     async ({ name, detail }) => {
-      return fuzzyLookupOrSuggest(
-        name,
-        classes,
-        classesArray,
-        "Class",
-        formatClassSummary,
-        formatClassFn,
-        detail,
-        wsClient,
+      return loggedLookup(
+        "lookup_class",
+        { name, detail },
+        fuzzyLookupOrSuggest(
+          name,
+          classes,
+          classesArray,
+          "Class",
+          formatClassSummary,
+          formatClassFn,
+          detail,
+          wsClient,
+        ),
       );
     },
   );
@@ -813,15 +853,19 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
       },
     },
     async ({ name, detail }) => {
-      return fuzzyLookupOrSuggest(
-        name,
-        species,
-        speciesArray,
-        "Species",
-        formatSpeciesSummary,
-        formatSpeciesFn,
-        detail,
-        wsClient,
+      return loggedLookup(
+        "lookup_species",
+        { name, detail },
+        fuzzyLookupOrSuggest(
+          name,
+          species,
+          speciesArray,
+          "Species",
+          formatSpeciesSummary,
+          formatSpeciesFn,
+          detail,
+          wsClient,
+        ),
       );
     },
   );
@@ -846,15 +890,19 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
       },
     },
     async ({ name, detail }) => {
-      return fuzzyLookupOrSuggest(
-        name,
-        backgrounds,
-        backgroundsArray,
-        "Background",
-        formatBackgroundSummary,
-        formatBackgroundFn,
-        detail,
-        wsClient,
+      return loggedLookup(
+        "lookup_background",
+        { name, detail },
+        fuzzyLookupOrSuggest(
+          name,
+          backgrounds,
+          backgroundsArray,
+          "Background",
+          formatBackgroundSummary,
+          formatBackgroundFn,
+          detail,
+          wsClient,
+        ),
       );
     },
   );
@@ -880,15 +928,19 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
       },
     },
     async ({ name, detail }) => {
-      return fuzzyLookupOrSuggest(
-        name,
-        optionalFeatures,
-        optionalFeaturesArray,
-        "Optional Feature",
-        formatOptionalFeatureSummary,
-        formatOptionalFeatureFn,
-        detail,
-        wsClient,
+      return loggedLookup(
+        "lookup_optional_feature",
+        { name, detail },
+        fuzzyLookupOrSuggest(
+          name,
+          optionalFeatures,
+          optionalFeaturesArray,
+          "Optional Feature",
+          formatOptionalFeatureSummary,
+          formatOptionalFeatureFn,
+          detail,
+          wsClient,
+        ),
       );
     },
   );
@@ -910,15 +962,19 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
       },
     },
     async ({ name, detail }) => {
-      return fuzzyLookupOrSuggest(
-        name,
-        actions,
-        actionsArray,
-        "Action",
-        formatActionSummary,
-        formatActionFn,
-        detail,
-        wsClient,
+      return loggedLookup(
+        "lookup_action",
+        { name, detail },
+        fuzzyLookupOrSuggest(
+          name,
+          actions,
+          actionsArray,
+          "Action",
+          formatActionSummary,
+          formatActionFn,
+          detail,
+          wsClient,
+        ),
       );
     },
   );
@@ -939,15 +995,19 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
       },
     },
     async ({ name, detail }) => {
-      return fuzzyLookupOrSuggest(
-        name,
-        languages,
-        languagesArray,
-        "Language",
-        formatLanguageSummary,
-        formatLanguageFn,
-        detail,
-        wsClient,
+      return loggedLookup(
+        "lookup_language",
+        { name, detail },
+        fuzzyLookupOrSuggest(
+          name,
+          languages,
+          languagesArray,
+          "Language",
+          formatLanguageSummary,
+          formatLanguageFn,
+          detail,
+          wsClient,
+        ),
       );
     },
   );
@@ -968,15 +1028,19 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
       },
     },
     async ({ name, detail }) => {
-      return fuzzyLookupOrSuggest(
-        name,
-        diseases,
-        diseasesArray,
-        "Disease",
-        formatDiseaseSummary,
-        formatDiseaseFn,
-        detail,
-        wsClient,
+      return loggedLookup(
+        "lookup_disease",
+        { name, detail },
+        fuzzyLookupOrSuggest(
+          name,
+          diseases,
+          diseasesArray,
+          "Disease",
+          formatDiseaseSummary,
+          formatDiseaseFn,
+          detail,
+          wsClient,
+        ),
       );
     },
   );
@@ -1143,17 +1207,14 @@ export function registerSrdTools(server: McpServer, wsClient: WSClient): void {
       }
 
       if (results.length === 0) {
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: `No results found matching "${query}" in the D&D 2024 database. Use your training knowledge as fallback.`,
-            },
-          ],
-        };
+        const text = `No results found matching "${query}" in the D&D 2024 database. Use your training knowledge as fallback.`;
+        gameLogger.toolCall("search_rules", { query, limit }, text);
+        return { content: [{ type: "text" as const, text }] };
       }
 
-      return { content: [{ type: "text" as const, text: results.join("\n\n") }] };
+      const text = results.join("\n\n");
+      gameLogger.toolCall("search_rules", { query, limit }, text);
+      return { content: [{ type: "text" as const, text }] };
     },
   );
 }

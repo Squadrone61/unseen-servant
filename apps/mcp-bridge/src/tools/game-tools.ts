@@ -6,12 +6,7 @@ import type { MessageQueue } from "../message-queue.js";
 import type { WSClient } from "../ws-client.js";
 import { buildResult, buildError } from "./tool-result.js";
 import type { ToolResponse } from "../services/game-state-manager.js";
-
-/** Convert a ToolResponse from GSM into an MCP CallToolResult */
-function fromToolResponse(r: ToolResponse) {
-  if (r.error) return buildError(r.text, r.hints);
-  return buildResult({ text: r.text, data: r.data });
-}
+import type { GameLogger } from "../services/game-logger.js";
 
 // Format positions in combat state for AI readability
 function formatPositionsForOutput(state: any): any {
@@ -31,7 +26,17 @@ export function registerGameTools(
   server: McpServer,
   messageQueue: MessageQueue,
   wsClient: WSClient,
+  gameLogger: GameLogger,
 ): void {
+  /** Convert a ToolResponse from GSM into an MCP CallToolResult, logging the call. */
+  function fromToolResponse(r: ToolResponse, toolName?: string, args?: Record<string, unknown>) {
+    if (toolName) {
+      gameLogger.toolCall(toolName, args ?? {}, r.text);
+    }
+    if (r.error) return buildError(r.text, r.hints);
+    return buildResult({ text: r.text, data: r.data });
+  }
+
   // ─── Response Guard ───
   // Tracks whether send_response/acknowledge was called for the current request.
   // wait_for_message refuses to return the next message until the previous one is handled.
@@ -215,7 +220,11 @@ export function registerGameTools(
           ],
         };
       }
-      return fromToolResponse(wsClient.gameStateManager.getGameStateStratified(detail));
+      return fromToolResponse(
+        wsClient.gameStateManager.getGameStateStratified(detail),
+        "get_game_state",
+        { detail },
+      );
     },
   );
 
@@ -231,6 +240,7 @@ export function registerGameTools(
     async ({ name }) => {
       const result = wsClient.gameStateManager.getCharacter(name);
       if (!result) {
+        gameLogger.toolCall("get_character", { name }, `Character "${name}" not found`);
         return {
           content: [{ type: "text" as const, text: `Character "${name}" not found` }],
         };
@@ -244,11 +254,13 @@ export function registerGameTools(
       ) {
         output.combatant.position = formatGridPosition(output.combatant.position);
       }
+      const text = JSON.stringify(output, null, 2);
+      gameLogger.toolCall("get_character", { name }, text);
       return {
         content: [
           {
             type: "text" as const,
-            text: JSON.stringify(output, null, 2),
+            text,
           },
         ],
       };
@@ -280,6 +292,8 @@ export function registerGameTools(
     async ({ name, amount, damage_type, is_critical_hit }) => {
       return fromToolResponse(
         wsClient.gameStateManager.applyDamage(name, amount, damage_type, is_critical_hit),
+        "apply_damage",
+        { name, amount, damage_type, is_critical_hit },
       );
     },
   );
@@ -294,7 +308,10 @@ export function registerGameTools(
       },
     },
     async ({ name, amount }) => {
-      return fromToolResponse(wsClient.gameStateManager.heal(name, amount));
+      return fromToolResponse(wsClient.gameStateManager.heal(name, amount), "heal", {
+        name,
+        amount,
+      });
     },
   );
 
@@ -308,7 +325,10 @@ export function registerGameTools(
       },
     },
     async ({ name, value }) => {
-      return fromToolResponse(wsClient.gameStateManager.setHP(name, value));
+      return fromToolResponse(wsClient.gameStateManager.setHP(name, value), "set_hp", {
+        name,
+        value,
+      });
     },
   );
 
@@ -324,7 +344,11 @@ export function registerGameTools(
       },
     },
     async ({ name, condition, duration }) => {
-      return fromToolResponse(wsClient.gameStateManager.addCondition(name, condition, duration));
+      return fromToolResponse(
+        wsClient.gameStateManager.addCondition(name, condition, duration),
+        "add_condition",
+        { name, condition, duration },
+      );
     },
   );
 
@@ -338,7 +362,11 @@ export function registerGameTools(
       },
     },
     async ({ name, condition }) => {
-      return fromToolResponse(wsClient.gameStateManager.removeCondition(name, condition));
+      return fromToolResponse(
+        wsClient.gameStateManager.removeCondition(name, condition),
+        "remove_condition",
+        { name, condition },
+      );
     },
   );
 
@@ -389,7 +417,7 @@ export function registerGameTools(
         return { ...c, position: pos ?? undefined };
       });
       const result = wsClient.gameStateManager.startCombat(parsed);
-      return fromToolResponse(result);
+      return fromToolResponse(result, "start_combat", { combatants });
     },
   );
 
@@ -400,7 +428,7 @@ export function registerGameTools(
         "End the current combat encounter. Clears combat state and returns to exploration.",
     },
     async () => {
-      return fromToolResponse(wsClient.gameStateManager.endCombat());
+      return fromToolResponse(wsClient.gameStateManager.endCombat(), "end_combat", {});
     },
   );
 
@@ -411,7 +439,7 @@ export function registerGameTools(
         "Move to the next combatant's turn in initiative order. Increments round counter on wrap-around.",
     },
     async () => {
-      return fromToolResponse(wsClient.gameStateManager.advanceTurnMCP());
+      return fromToolResponse(wsClient.gameStateManager.advanceTurnMCP(), "advance_turn", {});
     },
   );
 
@@ -426,7 +454,11 @@ export function registerGameTools(
       },
     },
     async ({ name, initiative }) => {
-      return fromToolResponse(wsClient.gameStateManager.setInitiative(name, initiative));
+      return fromToolResponse(
+        wsClient.gameStateManager.setInitiative(name, initiative),
+        "set_initiative",
+        { name, initiative },
+      );
     },
   );
 
@@ -440,7 +472,9 @@ export function registerGameTools(
       },
     },
     async ({ name }) => {
-      return fromToolResponse(wsClient.gameStateManager.setActiveTurn(name));
+      return fromToolResponse(wsClient.gameStateManager.setActiveTurn(name), "set_active_turn", {
+        name,
+      });
     },
   );
 
@@ -476,7 +510,7 @@ export function registerGameTools(
         ...params,
         position,
       });
-      return fromToolResponse(result);
+      return fromToolResponse(result, "add_combatant", params);
     },
   );
 
@@ -489,7 +523,9 @@ export function registerGameTools(
       },
     },
     async ({ name }) => {
-      return fromToolResponse(wsClient.gameStateManager.removeCombatant(name));
+      return fromToolResponse(wsClient.gameStateManager.removeCombatant(name), "remove_combatant", {
+        name,
+      });
     },
   );
 
@@ -516,7 +552,7 @@ export function registerGameTools(
         };
       }
       const result = wsClient.gameStateManager.moveCombatant(name, parsed);
-      return fromToolResponse(result);
+      return fromToolResponse(result, "move_combatant", { name, position });
     },
   );
 
@@ -533,7 +569,7 @@ export function registerGameTools(
     },
     async ({ name, level }) => {
       const result = wsClient.gameStateManager.useSpellSlot(name, level);
-      return fromToolResponse(result);
+      return fromToolResponse(result, "use_spell_slot", { name, level });
     },
   );
 
@@ -549,7 +585,7 @@ export function registerGameTools(
     },
     async ({ name, level }) => {
       const result = wsClient.gameStateManager.restoreSpellSlot(name, level);
-      return fromToolResponse(result);
+      return fromToolResponse(result, "restore_spell_slot", { name, level });
     },
   );
 
@@ -569,7 +605,7 @@ export function registerGameTools(
     },
     async ({ name, resource_name }) => {
       const result = wsClient.gameStateManager.useClassResource(name, resource_name);
-      return fromToolResponse(result);
+      return fromToolResponse(result, "use_class_resource", { name, resource_name });
     },
   );
 
@@ -589,7 +625,7 @@ export function registerGameTools(
     },
     async ({ name, resource_name, amount }) => {
       const result = wsClient.gameStateManager.restoreClassResource(name, resource_name, amount);
-      return fromToolResponse(result);
+      return fromToolResponse(result, "restore_class_resource", { name, resource_name, amount });
     },
   );
 
@@ -659,7 +695,7 @@ export function registerGameTools(
         tiles: mapTiles,
         name,
       });
-      return fromToolResponse(result);
+      return fromToolResponse(result, "update_battle_map", { width, height, name });
     },
   );
 
@@ -732,7 +768,18 @@ export function registerGameTools(
         persistent: persistent ?? false,
         casterName: name,
       });
-      return fromToolResponse(result);
+      return fromToolResponse(result, "show_aoe", {
+        shape,
+        center,
+        radius,
+        length,
+        width,
+        direction,
+        color,
+        label,
+        persistent,
+        name,
+      });
     },
   );
 
@@ -784,7 +831,19 @@ export function registerGameTools(
         saveDC: save_dc,
         halfOnSave: half_on_save ?? true,
       });
-      return fromToolResponse(result);
+      return fromToolResponse(result, "apply_area_effect", {
+        shape,
+        center,
+        radius,
+        length,
+        width,
+        direction,
+        damage,
+        damage_type,
+        save_ability,
+        save_dc,
+        half_on_save,
+      });
     },
   );
 
@@ -799,7 +858,7 @@ export function registerGameTools(
     },
     async ({ aoe_id }) => {
       const result = wsClient.gameStateManager.dismissAoE(aoe_id);
-      return fromToolResponse(result);
+      return fromToolResponse(result, "dismiss_aoe", { aoe_id });
     },
   );
 
@@ -853,7 +912,11 @@ export function registerGameTools(
       },
     },
     async ({ effects }) => {
-      return fromToolResponse(wsClient.gameStateManager.applyBatchEffects(effects));
+      return fromToolResponse(
+        wsClient.gameStateManager.applyBatchEffects(effects),
+        "apply_batch_effects",
+        { effects },
+      );
     },
   );
 
@@ -912,7 +975,19 @@ export function registerGameTools(
         properties,
         weight,
       });
-      return fromToolResponse(result);
+      return fromToolResponse(result, "add_item", {
+        name,
+        item,
+        quantity,
+        type,
+        description,
+        rarity,
+        is_magic_item,
+        damage,
+        damage_type,
+        properties,
+        weight,
+      });
     },
   );
 
@@ -929,7 +1004,7 @@ export function registerGameTools(
     },
     async ({ name, item, quantity }) => {
       const result = wsClient.gameStateManager.removeItem(name, item, quantity);
-      return fromToolResponse(result);
+      return fromToolResponse(result, "remove_item", { name, item, quantity });
     },
   );
 
@@ -985,7 +1060,20 @@ export function registerGameTools(
       if (attack_bonus !== undefined) updates.attackBonus = attack_bonus;
       if (range !== undefined) updates.range = range;
       const result = wsClient.gameStateManager.updateItem(name, item, updates);
-      return fromToolResponse(result);
+      return fromToolResponse(result, "update_item", {
+        name,
+        item,
+        equipped,
+        quantity,
+        is_attuned,
+        description,
+        damage,
+        damage_type,
+        properties,
+        armor_class,
+        attack_bonus,
+        range,
+      });
     },
   );
 
@@ -1024,7 +1112,14 @@ export function registerGameTools(
       if (gold) changes.gp = gold;
       if (platinum) changes.pp = platinum;
       const result = wsClient.gameStateManager.updateCurrency(name, changes, auto_convert ?? true);
-      return fromToolResponse(result);
+      return fromToolResponse(result, "update_currency", {
+        name,
+        copper,
+        silver,
+        gold,
+        platinum,
+        auto_convert,
+      });
     },
   );
 

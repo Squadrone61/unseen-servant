@@ -1,10 +1,15 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { WSClient } from "../ws-client.js";
+import type { GameLogger } from "../services/game-logger.js";
 import { rollNotation, buildOutputFromResult, formatRollOutput } from "../services/dice-engine.js";
 import { parseCheckType } from "@unseen-servant/shared/utils";
 
-export function registerDndTools(server: McpServer, wsClient: WSClient): void {
+export function registerDndTools(
+  server: McpServer,
+  wsClient: WSClient,
+  gameLogger: GameLogger,
+): void {
   server.registerTool(
     "roll_dice",
     {
@@ -104,13 +109,16 @@ Examples:
             checkLabel: result.roll.label,
           });
 
+          gameLogger.toolCall("roll_dice", { notation, checkType, player, dc, reason }, formatted);
           return { content: [{ type: "text" as const, text: formatted }] };
         } catch (error) {
+          const errMsg = `Check request failed: ${error instanceof Error ? error.message : String(error)}`;
+          gameLogger.toolCall("roll_dice", { notation, checkType, player, dc, reason }, errMsg);
           return {
             content: [
               {
                 type: "text" as const,
-                text: `Check request failed: ${error instanceof Error ? error.message : String(error)}`,
+                text: errMsg,
               },
             ],
           };
@@ -133,6 +141,7 @@ Examples:
         criticalFail: roll.criticalFail,
       });
 
+      gameLogger.toolCall("roll_dice", { notation, dc, reason }, formatted);
       return { content: [{ type: "text" as const, text: formatted }] };
     },
   );

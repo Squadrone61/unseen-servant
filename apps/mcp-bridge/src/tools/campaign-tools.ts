@@ -2,11 +2,13 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import type { CampaignManager } from "../services/campaign-manager.js";
 import type { WSClient } from "../ws-client.js";
+import type { GameLogger } from "../services/game-logger.js";
 
 export function registerCampaignTools(
   server: McpServer,
   campaignManager: CampaignManager,
   wsClient: WSClient,
+  gameLogger: GameLogger,
 ): void {
   // --- Campaign lifecycle ---
 
@@ -22,14 +24,9 @@ export function registerCampaignTools(
     async ({ name }) => {
       try {
         const manifest = campaignManager.createCampaign(name);
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: `Campaign "${manifest.name}" created (slug: ${manifest.slug}).\n\nFolder structure initialized at .unseen/campaigns/${manifest.slug}/`,
-            },
-          ],
-        };
+        const text = `Campaign "${manifest.name}" created (slug: ${manifest.slug}).\n\nFolder structure initialized at .unseen/campaigns/${manifest.slug}/`;
+        gameLogger.toolCall("create_campaign", { name }, text);
+        return { content: [{ type: "text" as const, text }] };
       } catch (e) {
         return {
           content: [
@@ -67,14 +64,9 @@ export function registerCampaignTools(
         (c) =>
           `- **${c.name}** (${c.slug}) — ${c.sessionCount} sessions, last played ${c.lastPlayedAt}`,
       );
-      return {
-        content: [
-          {
-            type: "text" as const,
-            text: `Campaigns:\n${lines.join("\n")}`,
-          },
-        ],
-      };
+      const text = `Campaigns:\n${lines.join("\n")}`;
+      gameLogger.toolCall("list_campaigns", {}, text);
+      return { content: [{ type: "text" as const, text }] };
     },
   );
 
@@ -86,6 +78,7 @@ export function registerCampaignTools(
     async () => {
       try {
         const context = campaignManager.getStartupContext();
+        gameLogger.toolCall("load_campaign_context", {}, context);
         return {
           content: [{ type: "text" as const, text: context }],
         };
@@ -131,14 +124,9 @@ export function registerCampaignTools(
           activeContext,
           hasCharacters ? characters : undefined,
         );
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: `Session ${result.sessionNumber} ended. Summary saved, active context updated.${hasCharacters ? " Characters snapshotted." : ""}`,
-            },
-          ],
-        };
+        const text = `Session ${result.sessionNumber} ended. Summary saved, active context updated.${hasCharacters ? " Characters snapshotted." : ""}`;
+        gameLogger.toolCall("end_session", { summary: summary.slice(0, 100) + "..." }, text);
+        return { content: [{ type: "text" as const, text }] };
       } catch (e) {
         return {
           content: [
@@ -171,14 +159,9 @@ export function registerCampaignTools(
     async ({ path, content }) => {
       try {
         const savedAs = campaignManager.writeFile(path, content);
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: `Saved: ${savedAs} (${content.length} chars)`,
-            },
-          ],
-        };
+        const text = `Saved: ${savedAs} (${content.length} chars)`;
+        gameLogger.toolCall("save_campaign_file", { path }, text);
+        return { content: [{ type: "text" as const, text }] };
       } catch (e) {
         return {
           content: [
@@ -209,15 +192,11 @@ export function registerCampaignTools(
       try {
         const content = campaignManager.readFile(path);
         if (content === null) {
-          return {
-            content: [
-              {
-                type: "text" as const,
-                text: `File "${path}" not found. Use list_campaign_files to see available files.`,
-              },
-            ],
-          };
+          const text = `File "${path}" not found. Use list_campaign_files to see available files.`;
+          gameLogger.toolCall("read_campaign_file", { path }, text);
+          return { content: [{ type: "text" as const, text }] };
         }
+        gameLogger.toolCall("read_campaign_file", { path }, `[${content.length} chars]`);
         return {
           content: [{ type: "text" as const, text: content }],
         };
@@ -256,14 +235,9 @@ export function registerCampaignTools(
 
         const tree = files.map((f) => `  ${f}`).join("\n");
         const slug = campaignManager.activeSlug || "unknown";
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: `Campaign files (${slug}):\n${tree}`,
-            },
-          ],
-        };
+        const text = `Campaign files (${slug}):\n${tree}`;
+        gameLogger.toolCall("list_campaign_files", {}, text);
+        return { content: [{ type: "text" as const, text }] };
       } catch (e) {
         return {
           content: [
