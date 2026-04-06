@@ -735,17 +735,25 @@ export function registerGameTools(
     "show_aoe",
     {
       description:
-        "Display an AoE overlay on the battle map. Returns affected combatants. Shape params: sphere needs radius, cone/line need length + direction, cube needs length.",
+        "Display an AoE overlay on the battle map. Returns affected combatants. Sphere: center + size (radius). Cone: center (caster) + size (length) + direction. Rectangle: from + to (two corners in A1).",
       inputSchema: {
-        shape: z.enum(["sphere", "cone", "line", "cube"]).describe("AoE shape"),
-        center: z.string().describe("Center position in A1 notation (e.g., 'E8')"),
-        radius: z.coerce.number().optional().describe("Radius in feet (for sphere)"),
-        length: z.coerce.number().optional().describe("Length in feet (for line/cone)"),
-        width: z.coerce.number().optional().describe("Width in feet (for line/cube)"),
-        direction: z
+        shape: z.enum(["sphere", "cone", "rectangle"]).describe("AoE shape"),
+        center: z
+          .string()
+          .optional()
+          .describe(
+            "Center/origin in A1 notation. Required for sphere (center of circle) and cone (caster position)",
+          ),
+        size: z.coerce
           .number()
           .optional()
-          .describe("Direction in degrees (0=north, 90=east) for cone/line"),
+          .describe("Size in feet: radius for sphere, length for cone"),
+        direction: z.coerce
+          .number()
+          .optional()
+          .describe("Direction in degrees (0=north, 90=east). Required for cone"),
+        from: z.string().optional().describe("Starting corner in A1 notation (for rectangle)"),
+        to: z.string().optional().describe("Opposite corner in A1 notation (for rectangle)"),
         color: z.string().describe("RGB hex color (e.g., '#FF6B35' for fire, '#4FC3F7' for ice)"),
         label: z.string().describe("Spell/effect name (e.g., 'Fireball')"),
         persistent: z
@@ -755,14 +763,14 @@ export function registerGameTools(
         name: z.string().optional().describe("Caster name"),
       },
     },
-    async ({ shape, center, radius, length, width, direction, color, label, persistent, name }) => {
+    async ({ shape, center, size, direction, from, to, color, label, persistent, name }) => {
       const result = wsClient.gameStateManager.showAoE({
         shape,
         center,
-        radius,
-        length,
-        width,
+        size,
         direction,
+        from,
+        to,
         color,
         label,
         persistent: persistent ?? false,
@@ -771,10 +779,10 @@ export function registerGameTools(
       return fromToolResponse(result, "show_aoe", {
         shape,
         center,
-        radius,
-        length,
-        width,
+        size,
         direction,
+        from,
+        to,
         color,
         label,
         persistent,
@@ -787,14 +795,23 @@ export function registerGameTools(
     "apply_area_effect",
     {
       description:
-        "Apply damage to all combatants in an area with saving throws. Shape params: sphere needs radius, cone/line need length + direction, cube needs length.",
+        "Apply damage to all combatants in an area with saving throws. Sphere: center + size (radius). Cone: center (caster) + size (length) + direction. Rectangle: from + to (two corners in A1).",
       inputSchema: {
-        shape: z.enum(["sphere", "cone", "line", "cube"]).describe("AoE shape"),
-        center: z.string().describe("Center position in A1 notation"),
-        radius: z.coerce.number().optional().describe("Radius in feet"),
-        length: z.coerce.number().optional().describe("Length in feet"),
-        width: z.coerce.number().optional().describe("Width in feet"),
-        direction: z.coerce.number().optional().describe("Direction in degrees"),
+        shape: z.enum(["sphere", "cone", "rectangle"]).describe("AoE shape"),
+        center: z
+          .string()
+          .optional()
+          .describe("Center/origin in A1 notation. Required for sphere and cone"),
+        size: z.coerce
+          .number()
+          .optional()
+          .describe("Size in feet: radius for sphere, length for cone"),
+        direction: z.coerce
+          .number()
+          .optional()
+          .describe("Direction in degrees (0=north, 90=east). Required for cone"),
+        from: z.string().optional().describe("Starting corner in A1 notation (for rectangle)"),
+        to: z.string().optional().describe("Opposite corner in A1 notation (for rectangle)"),
         damage: z.string().describe("Damage dice notation (e.g., '8d6')"),
         damage_type: z.string().describe("Damage type (e.g., 'fire', 'cold')"),
         save_ability: z.string().describe("Saving throw ability (e.g., 'dexterity')"),
@@ -808,10 +825,10 @@ export function registerGameTools(
     async ({
       shape,
       center,
-      radius,
-      length,
-      width,
+      size,
       direction,
+      from,
+      to,
       damage,
       damage_type,
       save_ability,
@@ -821,10 +838,10 @@ export function registerGameTools(
       const result = wsClient.gameStateManager.applyAreaEffect({
         shape,
         center,
-        radius,
-        length,
-        width,
+        size,
         direction,
+        from,
+        to,
         damage,
         damageType: damage_type,
         saveAbility: save_ability,
@@ -834,10 +851,10 @@ export function registerGameTools(
       return fromToolResponse(result, "apply_area_effect", {
         shape,
         center,
-        radius,
-        length,
-        width,
+        size,
         direction,
+        from,
+        to,
         damage,
         damage_type,
         save_ability,

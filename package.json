@@ -15,6 +15,7 @@
     "deploy:worker": "cd apps/worker && wrangler deploy --env production",
     "test": "turbo test",
     "test:bridge": "cd apps/mcp-bridge && pnpm test",
+    "test:shared": "cd packages/shared && pnpm test",
     "test:web": "cd apps/web && pnpm test",
     "dead-code": "knip",
     "prepare": "husky"

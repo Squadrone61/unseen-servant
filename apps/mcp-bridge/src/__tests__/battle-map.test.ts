@@ -13,12 +13,10 @@ import { describe, it, expect } from "vitest";
  *
  * ## showAoE(params)
  * - Guard: returns error if no active combat (phase !== "active").
- * - Guard: returns error if params.center is not valid A1 notation.
- * - Parses center via parseGridPosition.
- * - Computes affected tiles via computeAoETiles(shape, center, { radius, length, width,
- *   direction }, mapWidth, mapHeight). Map dimensions default to 20x20 if no map exists.
- * - Creates an AoEOverlay object: { id: uuid, shape, center, radius, length, width,
- *   direction, color, label, persistent (default false), casterName }.
+ * - Guard: returns error if sphere/cone center is not valid A1, or rectangle from/to invalid.
+ * - Shapes: sphere (center+size), cone (center+size+direction), rectangle (from+to).
+ * - Computes affected tiles via computeAoETiles. Map dimensions default to 20x20.
+ * - Creates an AoEOverlay object with shape-specific fields.
  * - Appends overlay to combat.activeAoE (initializes array if undefined).
  * - Computes affected combatants: combatants whose position falls on an affected tile,
  *   excluding dead NPCs (currentHP <= 0).
@@ -28,7 +26,7 @@ import { describe, it, expect } from "vitest";
  *
  * ## applyAreaEffect(params)
  * - Guard: returns error if no active combat.
- * - Guard: returns error if center is not valid A1 notation.
+ * - Guard: returns error if positions invalid for shape type.
  * - Computes affected tiles and finds combatants (same logic as showAoE — excludes
  *   dead NPCs).
  * - Returns non-error ToolResponse with empty results when no combatants are in area.
@@ -155,9 +153,8 @@ describe("updateBattleMap", () => {
   describe("stores tiles correctly", () => {
     it("tiles array is preserved on the stored map", () => {
       const { gsm } = createTestGSM();
-      const tiles = [
-        { x: 0, y: 0, terrain: "wall" as const },
-        { x: 1, y: 0, terrain: "difficult" as const },
+      const tiles: import("@unseen-servant/shared/types").MapTile[][] = [
+        [{ type: "wall" }, { type: "difficult_terrain" }],
       ];
       gsm.updateBattleMap({ id: "map1", width: 10, height: 10, tiles, name: "Tiles Test" });
 
@@ -198,7 +195,7 @@ describe("showAoE", () => {
       const result = gsm.showAoE({
         shape: "sphere",
         center: "E5",
-        radius: 10,
+        size: 10,
         color: "red",
         label: "Fireball",
       });
@@ -216,7 +213,7 @@ describe("showAoE", () => {
       const result = gsm.showAoE({
         shape: "sphere",
         center: "not-valid",
-        radius: 10,
+        size: 10,
         color: "red",
         label: "Fireball",
       });
@@ -235,7 +232,7 @@ describe("showAoE", () => {
       const result = gsm.showAoE({
         shape: "sphere",
         center: "F6",
-        radius: 10,
+        size: 10,
         color: "orange",
         label: "Fireball",
       });
@@ -255,7 +252,7 @@ describe("showAoE", () => {
       gsm.showAoE({
         shape: "sphere",
         center: "F6",
-        radius: 10,
+        size: 10,
         color: "orange",
         label: "Fireball",
       });
@@ -276,7 +273,7 @@ describe("showAoE", () => {
       const result = gsm.showAoE({
         shape: "sphere",
         center: "F6",
-        radius: 20,
+        size: 20,
         color: "red",
         label: "Huge Blast",
       });
@@ -302,7 +299,7 @@ describe("showAoE", () => {
       const result = gsm.showAoE({
         shape: "sphere",
         center: "F6",
-        radius: 20,
+        size: 20,
         color: "red",
         label: "Huge Blast",
       });
@@ -321,7 +318,7 @@ describe("showAoE", () => {
       const result = gsm.showAoE({
         shape: "sphere",
         center: "A1",
-        radius: 5,
+        size: 5,
         color: "blue",
         label: "Fog Cloud",
         persistent: true,
@@ -370,7 +367,7 @@ describe("dismissAoE", () => {
       gsm.showAoE({
         shape: "sphere",
         center: "A1",
-        radius: 5,
+        size: 5,
         color: "blue",
         label: "Fog Cloud",
         persistent: true,
@@ -392,7 +389,7 @@ describe("dismissAoE", () => {
       const showResult = gsm.showAoE({
         shape: "sphere",
         center: "A1",
-        radius: 5,
+        size: 5,
         color: "purple",
         label: "Wall of Fire",
         persistent: true,
@@ -417,7 +414,7 @@ describe("dismissAoE", () => {
       const showResult = gsm.showAoE({
         shape: "sphere",
         center: "A1",
-        radius: 5,
+        size: 5,
         color: "purple",
         label: "Darkness",
       });
@@ -449,7 +446,7 @@ describe("applyAreaEffect", () => {
       const result = gsm.applyAreaEffect({
         shape: "sphere",
         center: "E5",
-        radius: 10,
+        size: 10,
         damage: "2d6",
         damageType: "fire",
         saveAbility: "dexterity",
@@ -470,7 +467,7 @@ describe("applyAreaEffect", () => {
       const result = gsm.applyAreaEffect({
         shape: "sphere",
         center: "ZZ99",
-        radius: 10,
+        size: 10,
         damage: "2d6",
         damageType: "fire",
         saveAbility: "dexterity",
@@ -498,7 +495,7 @@ describe("applyAreaEffect", () => {
       const result = gsm.applyAreaEffect({
         shape: "sphere",
         center: "F6",
-        radius: 20,
+        size: 20,
         damage: "2d6",
         damageType: "fire",
         saveAbility: "dexterity",
@@ -519,7 +516,7 @@ describe("applyAreaEffect", () => {
       const result = gsm.applyAreaEffect({
         shape: "sphere",
         center: "F6",
-        radius: 20,
+        size: 20,
         damage: "2d6",
         damageType: "fire",
         saveAbility: "dexterity",
@@ -548,7 +545,7 @@ describe("applyAreaEffect", () => {
       const result = gsm.applyAreaEffect({
         shape: "sphere",
         center: "F6",
-        radius: 20,
+        size: 20,
         damage: "2d6",
         damageType: "fire",
         saveAbility: "dexterity",
@@ -578,7 +575,7 @@ describe("applyAreaEffect", () => {
       const result = gsm.applyAreaEffect({
         shape: "sphere",
         center: "A1",
-        radius: 1,
+        size: 1,
         damage: "2d6",
         damageType: "fire",
         saveAbility: "dexterity",
@@ -608,7 +605,7 @@ describe("applyAreaEffect", () => {
       const result = gsm.applyAreaEffect({
         shape: "sphere",
         center: "F6",
-        radius: 20,
+        size: 20,
         damage: "4d6",
         damageType: "fire",
         saveAbility: "dexterity",
@@ -636,7 +633,7 @@ describe("applyAreaEffect", () => {
       const result = gsm.applyAreaEffect({
         shape: "sphere",
         center: "F6",
-        radius: 20,
+        size: 20,
         damage: "4d6",
         damageType: "thunder",
         saveAbility: "dexterity",
@@ -662,7 +659,7 @@ describe("applyAreaEffect", () => {
       const result = gsm.applyAreaEffect({
         shape: "sphere",
         center: "F6",
-        radius: 20,
+        size: 20,
         damage: "4d6",
         damageType: "cold",
         saveAbility: "dexterity",
@@ -695,7 +692,7 @@ describe("applyAreaEffect", () => {
       const result = gsm.applyAreaEffect({
         shape: "sphere",
         center: "F6",
-        radius: 20,
+        size: 20,
         damage: "2d6",
         damageType: "fire",
         saveAbility: "dexterity",
@@ -741,7 +738,7 @@ describe("applyAreaEffect", () => {
       const result = gsm.applyAreaEffect({
         shape: "sphere",
         center: "A1",
-        radius: 1,
+        size: 1,
         damage: "2d6",
         damageType: "fire",
         saveAbility: "dexterity",
@@ -785,7 +782,7 @@ describe("applyAreaEffect", () => {
       gsm.applyAreaEffect({
         shape: "sphere",
         center: "F6",
-        radius: 20,
+        size: 20,
         damage: "2d6",
         damageType: "fire",
         saveAbility: "dexterity",

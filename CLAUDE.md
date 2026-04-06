@@ -216,12 +216,12 @@ pnpm deploy:web     # Deploy web only
 
 ### Area of Effect
 
-| Tool                  | Description                                                                                 |
-| --------------------- | ------------------------------------------------------------------------------------------- |
-| `show_aoe`            | Place AoE overlay on map (shape, center in A1, radius, color). Returns affected combatants. |
-| `apply_area_effect`   | Apply damage to all combatants in area with saving throws. Use after show_aoe confirmation. |
-| `dismiss_aoe`         | Remove a persistent AoE overlay (Wall of Fire, Fog Cloud, etc.).                            |
-| `apply_batch_effects` | Apply multiple effects (damage, heal, conditions, move) in one call. Max 10 effects.        |
+| Tool                  | Description                                                                                                                                                           |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `show_aoe`            | Place AoE overlay on map. Sphere: center+size (radius ft). Cone: center+size (length ft)+direction. Rectangle: from+to (two A1 corners). Returns affected combatants. |
+| `apply_area_effect`   | Apply damage to all combatants in area with saving throws. Same shape args as show_aoe. Use after show_aoe confirmation.                                              |
+| `dismiss_aoe`         | Remove a persistent AoE overlay (Wall of Fire, Fog Cloud, etc.).                                                                                                      |
+| `apply_batch_effects` | Apply multiple effects (damage, heal, conditions, move) in one call. Max 10 effects.                                                                                  |
 
 ### Spell Slots
 

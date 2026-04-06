@@ -189,12 +189,17 @@ export interface BattleMapState {
 
 export interface AoEOverlay {
   id: string;
-  shape: "sphere" | "cone" | "line" | "cube";
+  shape: "sphere" | "cone" | "rectangle";
+  /** Origin point — used by sphere (center) and cone (caster position). For rectangle, the midpoint of from/to can be derived when needed. */
   center: GridPosition;
-  radius?: number; // for sphere/cone (in feet)
-  length?: number; // for line/cone (in feet)
-  width?: number; // for line/cube (in feet)
-  direction?: number; // angle in degrees for cone/line (0=north, 90=east)
+  /** Radius in feet (sphere) or length in feet (cone). */
+  size?: number;
+  /** Direction in degrees, 0=north, 90=east — cone only. */
+  direction?: number;
+  /** Starting corner of the rectangle — rectangle only. */
+  from?: GridPosition;
+  /** Opposite corner of the rectangle — rectangle only. */
+  to?: GridPosition;
   color: string; // direct RGB hex
   label: string; // "Fireball", "Wall of Fire"
   persistent: boolean; // stays on map until dismissed?

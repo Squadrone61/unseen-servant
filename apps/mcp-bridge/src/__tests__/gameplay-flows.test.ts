@@ -220,7 +220,7 @@ describe("condition with duration expires after advancing turns", () => {
 
   /** Helper: create NPC-only combat with deterministic turn order */
   function setupNPCCombat(gsm: TestGSM["gsm"]) {
-    gsm.updateBattleMap({ width: 10, height: 10, name: "Test Arena", tiles: [] });
+    gsm.updateBattleMap({ id: "map1", width: 10, height: 10, name: "Test Arena", tiles: [] });
     gsm.startCombat([
       { name: "Goblin A", type: "enemy" as const, maxHP: 15, armorClass: 13, speed: 30 },
       { name: "Goblin B", type: "enemy" as const, maxHP: 15, armorClass: 13, speed: 30 },
@@ -276,7 +276,7 @@ describe("condition with duration expires after advancing turns", () => {
     const { gsm } = env;
     registerCharacter(env.gsm, "Player1", createFighterCharacter());
 
-    gsm.updateBattleMap({ width: 10, height: 10, name: "Arena", tiles: [] });
+    gsm.updateBattleMap({ id: "map2", width: 10, height: 10, name: "Arena", tiles: [] });
     gsm.startCombat([
       { name: "Goblin A", type: "enemy" as const, maxHP: 15, armorClass: 13, speed: 30 },
       { name: "Theron", type: "player" as const, speed: 30 },
@@ -368,7 +368,7 @@ describe("short rest with mixed party — each archetype handled correctly", () 
 
     const data = result.data as {
       characters: Array<{
-        name: string;
+        character: string;
         hitDice: string;
         healingPerDie: string;
       }>;

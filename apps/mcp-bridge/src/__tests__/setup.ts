@@ -21,6 +21,7 @@
 import { expect } from "vitest";
 import type { CharacterData } from "@unseen-servant/shared/types";
 import type { ServerMessage } from "@unseen-servant/shared/types";
+import { serverMessageSchema } from "@unseen-servant/shared/schemas";
 import { GameStateManager } from "../services/game-state-manager.js";
 import type { ToolResponse } from "../services/game-state-manager.js";
 import { MessageQueue } from "../message-queue.js";
@@ -58,6 +59,7 @@ export function createTestGSM(): TestGSM {
 
   const gsm = new GameStateManager({
     broadcast: (msg: ServerMessage) => {
+      serverMessageSchema.parse(msg);
       broadcasts.push(msg);
     },
     messageQueue,

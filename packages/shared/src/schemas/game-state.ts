@@ -141,12 +141,12 @@ export const mapTileSchema = z.object({
 
 export const aoeOverlaySchema = z.object({
   id: z.string(),
-  shape: z.enum(["sphere", "cone", "line", "cube"]),
+  shape: z.enum(["sphere", "cone", "rectangle"]),
   center: gridPositionSchema,
-  radius: z.number().optional(),
-  length: z.number().optional(),
-  width: z.number().optional(),
+  size: z.number().optional(),
   direction: z.number().optional(),
+  from: gridPositionSchema.optional(),
+  to: gridPositionSchema.optional(),
   color: z.string(),
   label: z.string(),
   persistent: z.boolean(),

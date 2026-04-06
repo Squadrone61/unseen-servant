@@ -583,10 +583,10 @@ export function BattleMap({
         aoe.shape,
         aoe.center,
         {
-          radius: aoe.radius,
-          length: aoe.length,
-          width: aoe.width,
+          size: aoe.size,
           direction: aoe.direction,
+          from: aoe.from,
+          to: aoe.to,
         },
         map.width,
         map.height,
@@ -1027,11 +1027,7 @@ export function BattleMap({
                 {aoeCenters.map(({ aoe }) => {
                   const left = aoe.center.x * (TILE_SIZE + TILE_GAP) + TILE_SIZE / 2;
                   const top = aoe.center.y * (TILE_SIZE + TILE_GAP) + TILE_SIZE / 2;
-                  const sizeLabel = aoe.radius
-                    ? `${aoe.radius}ft ${aoe.shape}`
-                    : aoe.length
-                      ? `${aoe.length}ft ${aoe.shape}`
-                      : aoe.shape;
+                  const sizeLabel = aoe.size ? `${aoe.size}ft ${aoe.shape}` : aoe.shape;
                   const isHovered = hoveredAoeId === aoe.id;
                   return (
                     <div

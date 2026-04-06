@@ -4089,12 +4089,12 @@ export class GameStateManager {
 
   /** Place an AoE overlay and return affected combatants */
   showAoE(params: {
-    shape: "sphere" | "cone" | "line" | "cube";
-    center: string;
-    radius?: number;
-    length?: number;
-    width?: number;
+    shape: "sphere" | "cone" | "rectangle";
+    center?: string;
+    size?: number;
     direction?: number;
+    from?: string;
+    to?: string;
     color: string;
     label: string;
     persistent?: boolean;
@@ -4107,8 +4107,25 @@ export class GameStateManager {
       ]);
     }
 
-    const centerPos = parseGridPosition(params.center);
-    if (!centerPos) {
+    // Validate shape-specific args
+    if (params.shape === "rectangle") {
+      if (!params.from || !params.to) {
+        return toResponse("Rectangle requires 'from' and 'to' corners in A1 notation", {}, true, [
+          "Example: from='A3', to='A14'",
+        ]);
+      }
+    } else if (!params.center) {
+      return toResponse(`${params.shape} requires 'center' in A1 notation`, {}, true, [
+        "Example: center='E8'",
+      ]);
+    }
+
+    // Parse positions
+    const centerPos = params.shape === "rectangle" ? null : parseGridPosition(params.center!);
+    const fromPos = params.from ? parseGridPosition(params.from) : null;
+    const toPos = params.to ? parseGridPosition(params.to) : null;
+
+    if (params.shape !== "rectangle" && !centerPos) {
       return toResponse(
         `Invalid grid position: ${params.center}`,
         { center: params.center },
@@ -4116,6 +4133,18 @@ export class GameStateManager {
         ["Use A1 notation (e.g., 'A1', 'E5', 'J10')."],
       );
     }
+    if (params.shape === "rectangle" && (!fromPos || !toPos)) {
+      return toResponse(`Invalid grid position: from=${params.from}, to=${params.to}`, {}, true, [
+        "Use A1 notation (e.g., 'A1', 'E5', 'J10').",
+      ]);
+    }
+
+    // For rectangle, compute center as midpoint for label placement
+    const effectiveCenter =
+      centerPos ??
+      (fromPos && toPos
+        ? { x: Math.floor((fromPos.x + toPos.x) / 2), y: Math.floor((fromPos.y + toPos.y) / 2) }
+        : { x: 0, y: 0 });
 
     const map = this.gameState.encounter?.map;
     const mapWidth = map?.width ?? 20;
@@ -4124,11 +4153,11 @@ export class GameStateManager {
     const aoe: AoEOverlay = {
       id: crypto.randomUUID(),
       shape: params.shape,
-      center: centerPos,
-      radius: params.radius,
-      length: params.length,
-      width: params.width,
+      center: effectiveCenter,
+      size: params.size,
       direction: params.direction,
+      from: fromPos ?? undefined,
+      to: toPos ?? undefined,
       color: params.color,
       label: params.label,
       persistent: params.persistent ?? false,
@@ -4141,12 +4170,12 @@ export class GameStateManager {
     // Compute affected tiles
     const affectedTiles = computeAoETiles(
       params.shape,
-      centerPos,
+      effectiveCenter,
       {
-        radius: params.radius,
-        length: params.length,
-        width: params.width,
+        size: params.size,
         direction: params.direction,
+        from: fromPos ?? undefined,
+        to: toPos ?? undefined,
       },
       mapWidth,
       mapHeight,
@@ -4169,6 +4198,8 @@ export class GameStateManager {
       timestamp: Date.now(),
     });
 
+    const posLabel =
+      params.shape === "rectangle" ? `${params.from}→${params.to}` : (params.center ?? "?");
     const affectedDisplay =
       affected.length > 0
         ? affected
@@ -4181,7 +4212,7 @@ export class GameStateManager {
     const affectedStr =
       affected.length > 0 ? `Affected: ${affectedDisplay}` : "No combatants in area";
     this.markDirty();
-    return toResponse(`AoE '${params.label}' placed at ${params.center}. ${affectedStr}`, {
+    return toResponse(`AoE '${params.label}' placed at ${posLabel}. ${affectedStr}`, {
       aoeId: aoe.id,
       label: params.label,
       affected,
@@ -4190,12 +4221,12 @@ export class GameStateManager {
 
   /** Apply area effect damage with saving throws */
   applyAreaEffect(params: {
-    shape: "sphere" | "cone" | "line" | "cube";
-    center: string;
-    radius?: number;
-    length?: number;
-    width?: number;
+    shape: "sphere" | "cone" | "rectangle";
+    center?: string;
+    size?: number;
     direction?: number;
+    from?: string;
+    to?: string;
     damage: string;
     damageType: string;
     saveAbility: string;
@@ -4209,8 +4240,17 @@ export class GameStateManager {
       ]);
     }
 
-    const centerPos = parseGridPosition(params.center);
-    if (!centerPos) {
+    // Parse positions based on shape
+    const centerPos = params.center ? parseGridPosition(params.center) : null;
+    const fromPos = params.from ? parseGridPosition(params.from) : null;
+    const toPos = params.to ? parseGridPosition(params.to) : null;
+
+    if (params.shape === "rectangle" && (!fromPos || !toPos)) {
+      return toResponse(`Rectangle requires valid 'from' and 'to' in A1 notation`, {}, true, [
+        "Example: from='A3', to='A14'",
+      ]);
+    }
+    if (params.shape !== "rectangle" && !centerPos) {
       return toResponse(
         `Invalid grid position: ${params.center}`,
         { center: params.center },
@@ -4219,18 +4259,24 @@ export class GameStateManager {
       );
     }
 
+    const effectiveCenter =
+      centerPos ??
+      (fromPos && toPos
+        ? { x: Math.floor((fromPos.x + toPos.x) / 2), y: Math.floor((fromPos.y + toPos.y) / 2) }
+        : { x: 0, y: 0 });
+
     const map = this.gameState.encounter?.map;
     const mapWidth = map?.width ?? 20;
     const mapHeight = map?.height ?? 20;
 
     const affectedTiles = computeAoETiles(
       params.shape,
-      centerPos,
+      effectiveCenter,
       {
-        radius: params.radius,
-        length: params.length,
-        width: params.width,
+        size: params.size,
         direction: params.direction,
+        from: fromPos ?? undefined,
+        to: toPos ?? undefined,
       },
       mapWidth,
       mapHeight,

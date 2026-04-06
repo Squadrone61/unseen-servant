@@ -12,11 +12,14 @@
     "./builders": "./src/builders/index.ts"
   },
   "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
     "type-check": "tsc --noEmit",
     "lint": "eslint ."
   },
   "devDependencies": {
-    "typescript": "^5.9"
+    "typescript": "^5.9",
+    "vitest": "^3"
   },
   "dependencies": {
     "zod": "^4"

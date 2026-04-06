@@ -224,13 +224,13 @@ describe("applyBatchEffects", () => {
     it("moves combatant to valid A1 position during active combat", () => {
       // Set up map and combat — moveCombatant requires active combat
       gsm.updateBattleMap({
+        id: "map1",
         width: 10,
         height: 10,
         name: "Test Arena",
         tiles: [],
-        aoeOverlays: [],
       });
-      gsm.startCombat([{ name: "Theron", type: "player", position: { col: 0, row: 0 } }]);
+      gsm.startCombat([{ name: "Theron", type: "player", position: { x: 0, y: 0 } }]);
 
       const result = gsm.applyBatchEffects([{ type: "move", name: "Theron", position: "C3" }]);
 
