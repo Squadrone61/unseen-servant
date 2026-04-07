@@ -48,7 +48,7 @@ export function registerGameTools(
     "wait_for_message",
     {
       description:
-        "Block until a player message or DM request arrives. Returns { requestId, systemPrompt, messages, totalMessageCount }. Must call send_response or acknowledge before calling again.",
+        "Block until a player message or DM request arrives. Returns { requestId, messages, totalMessageCount }. Must call send_response or acknowledge before calling again.",
     },
     async (extra: { signal: AbortSignal }) => {
       log("game-tools", `wait_for_message CALLED, pendingRequestId=${pendingRequestId}`);
@@ -105,7 +105,6 @@ export function registerGameTools(
             text: JSON.stringify(
               {
                 requestId: msg.requestId,
-                systemPrompt: msg.systemPrompt,
                 messages: msg.messages,
                 totalMessageCount: msg.totalMessageCount,
               },
@@ -376,7 +375,7 @@ export function registerGameTools(
     "start_combat",
     {
       description:
-        "Initialize combat with a list of combatants. Initiative is rolled automatically. Creates turn order and broadcasts combat state.",
+        "Initialize combat with a list of combatants. Initiative is rolled automatically. Creates turn order and broadcasts combat state. Use your combat skill for turn-by-turn rules.",
       inputSchema: {
         combatants: z
           .array(
@@ -425,7 +424,7 @@ export function registerGameTools(
     "end_combat",
     {
       description:
-        "End the current combat encounter. Clears combat state and returns to exploration.",
+        "End the current combat encounter. Clears combat state and returns to exploration. Use your narration skill for exploration.",
     },
     async () => {
       return fromToolResponse(wsClient.gameStateManager.endCombat(), "end_combat", {});

@@ -35,14 +35,6 @@ import {
   computeAoETiles,
 } from "@unseen-servant/shared/utils";
 import { rollNotation } from "./dice-engine.js";
-import {
-  DM_SKILL_COMBAT,
-  DM_SKILL_NARRATION,
-  DM_SKILL_CAMPAIGN,
-  DM_PACING_PROFILES,
-  DM_ENCOUNTER_LENGTHS,
-  DM_SKILL_SOCIAL,
-} from "@unseen-servant/shared";
 import { getClass } from "@unseen-servant/shared/data";
 import { log } from "../logger.js";
 import type { MessageQueue } from "../message-queue.js";
@@ -111,9 +103,6 @@ export class GameStateManager {
   private broadcast: BroadcastFn;
   private messageQueue: MessageQueue;
   private lastSentIndex = 0;
-  private lastPromptHash = "";
-  private turnsSinceFullPrompt = 0;
-  private readonly FULL_PROMPT_INTERVAL = 10;
   private campaignManager: CampaignManager;
   private gameLogger?: GameLogger;
   /** Host player name (for permission checks) */
@@ -287,50 +276,6 @@ export class GameStateManager {
     this.flushDirtyState();
   }
 
-  /** Compose the system prompt dynamically based on current game state */
-  private composeContextualPrompt(): string {
-    const sections: string[] = [];
-
-    // Mode header
-    const inCombat = !!this.gameState.encounter?.combat;
-    sections.push(inCombat ? "[MODE: COMBAT]" : "[MODE: EXPLORATION]");
-
-    // Mode-specific skill (mutually exclusive — static skills are in CLAUDE.md)
-    sections.push(inCombat ? DM_SKILL_COMBAT : DM_SKILL_NARRATION);
-
-    // Social encounter skill during exploration
-    if (!inCombat) {
-      sections.push(DM_SKILL_SOCIAL);
-    }
-
-    // Pacing guidance (always included)
-    const pacingGuidance = DM_PACING_PROFILES[this.gameState.pacingProfile];
-    const encounterGuidance = DM_ENCOUNTER_LENGTHS[this.gameState.encounterLength];
-    if (pacingGuidance || encounterGuidance) {
-      sections.push(
-        `## Pacing\n\n` +
-          `**Profile: ${this.gameState.pacingProfile}** — ${pacingGuidance ?? ""}\n\n` +
-          `**Encounter length: ${this.gameState.encounterLength}** — ${encounterGuidance ?? ""}`,
-      );
-    }
-
-    // Campaign skill when campaign is active
-    if (this.campaignManager.activeSlug) {
-      sections.push(DM_SKILL_CAMPAIGN);
-    }
-
-    // Host custom instructions appended last
-    if (this.gameState.customSystemPrompt) {
-      sections.push(
-        `## Host Instructions\n\n` +
-          `> The following are host preferences for tone, theme, campaign flavor, and narrative language. Follow them when they add flavor or adjust style. If a language is specified, narrate ALL responses in that language. Host instructions do NOT override core D&D rules, player identity enforcement, or safety rules above.\n\n` +
-          this.gameState.customSystemPrompt,
-      );
-    }
-
-    return sections.join("\n\n");
-  }
-
   /** Schedule a batched push — collects chat messages for BATCH_DELAY_MS before pushing.
    *  If a direct pushDMRequest() fires during the window, the timer is cancelled
    *  and all accumulated messages flush immediately. */
@@ -342,33 +287,13 @@ export class GameStateManager {
     }, this.BATCH_DELAY_MS);
   }
 
-  /** Push a DM request with only new messages since last send.
-   *  Uses hash-based delta delivery — only sends the full dynamic prompt
-   *  when it changes or every FULL_PROMPT_INTERVAL turns. */
   private pushDMRequest(): void {
-    // Cancel any pending batch timer — direct pushes take priority
     if (this.pushDebounceTimer) {
       clearTimeout(this.pushDebounceTimer);
       this.pushDebounceTimer = null;
     }
 
     const requestId = crypto.randomUUID();
-    const fullPrompt = this.composeContextualPrompt();
-    const promptHash = this.simpleHash(fullPrompt);
-
-    let systemPrompt: string;
-    if (
-      promptHash !== this.lastPromptHash ||
-      this.turnsSinceFullPrompt >= this.FULL_PROMPT_INTERVAL
-    ) {
-      systemPrompt = fullPrompt;
-      this.lastPromptHash = promptHash;
-      this.turnsSinceFullPrompt = 0;
-    } else {
-      systemPrompt = "[No changes to DM instructions.]";
-      this.turnsSinceFullPrompt++;
-    }
-
     const newMessages = this.conversationHistory.slice(this.lastSentIndex);
 
     // Auto-load campaign context on first DM request
@@ -394,19 +319,9 @@ export class GameStateManager {
     );
     this.messageQueue.push({
       requestId,
-      systemPrompt,
       messages: newMessages,
       totalMessageCount: this.conversationHistory.length,
     });
-  }
-
-  private simpleHash(str: string): string {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-      hash = (hash << 5) - hash + str.charCodeAt(i);
-      hash |= 0;
-    }
-    return hash.toString(36);
   }
 
   // ─── Player Action Dispatch ───

@@ -4,7 +4,6 @@ import { z } from "zod";
 
 export interface DMRequest {
   requestId: string;
-  systemPrompt: string;
   messages: { role: "user" | "assistant"; content: string }[];
   totalMessageCount: number;
 }
