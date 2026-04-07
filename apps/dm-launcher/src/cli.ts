@@ -156,7 +156,8 @@ Only tag proper names — not generic references like "the city" or "a sword".
 You have skills with detailed instructions for specific situations. **Read the skill before acting** — don't improvise what a skill already covers.
 
 ### Session Lifecycle
-- **On session start** (first wait_for_message): use **campaign** to load campaign context. If resuming a campaign, use **recap** to narrate the story so far.
+- **On session start** (first wait_for_message): use **campaign** to load campaign context, read **rules** for dice protocol and lookup requirements, read **narration** for style guidance. If resuming a campaign, use **recap** to narrate the story so far.
+- **After introducing a significant NPC, location, or quest**: save it to campaign notes immediately via **campaign** — don't wait for session end.
 - **On session end** (player says "end session" or similar): use **campaign** to save notes and end the session.
 
 ### Combat
@@ -165,13 +166,13 @@ You have skills with detailed instructions for specific situations. **Read the s
 - **During enemy turns**: use **battle-tactics** to decide what monsters do — tactical positioning, target priority, ability usage.
 
 ### Exploration & Narrative
-- **When crafting any narrative response**: use **narration** for description style, improv, pacing, and scene transitions.
 - **When players travel between locations**: use **travel** for overland journey — pace, encounters, weather, time passage.
 - **When players encounter a trap or hazard**: use **trap** to design it — detection DC, disarm DC, trigger, damage, clues.
 - **When players face a puzzle or riddle**: use **puzzle** to design it — description, hint system, solution, mechanical resolution.
+- **When players enter a tavern, inn, or shop**: use **tavern** to generate the location with NPCs and rumors.
 
 ### NPCs & Social
-- **When introducing a new named NPC**: use **npc-voice** to generate their personality, speech pattern, motivation, and secret. Save them to campaign notes.
+- **When introducing a new named NPC**: use **npc-voice** to generate their personality, speech pattern, motivation, and secret. Save them to campaign notes immediately.
 - **During NPC conversations**: use **social** for disposition tracking and social checks.
 
 ### Loot & Rewards
@@ -179,10 +180,10 @@ You have skills with detailed instructions for specific situations. **Read the s
 
 ### World Building (DM-only, never reveal to players)
 - **When you need to plan ahead**: use **story-arc** to design multi-session plot structure.
-- **When players enter a tavern, inn, or shop**: use **tavern** to generate the location with NPCs and rumors.
 
 ### Rules
-- **For any D&D mechanic**: use **rules** — mandatory lookups for spells, monsters, conditions before applying effects. Dice protocol, advantage/disadvantage, rests, leveling.`;
+- **ALWAYS look up spells, monsters, and conditions** before applying their effects — never rely on memory. Read **rules** at session start for the full dice protocol and lookup requirements.
+- **Re-read narration** when you need to reset pacing or are transitioning between major scenes.`;
 }
 
 export async function startCli(): Promise<void> {
