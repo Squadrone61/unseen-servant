@@ -153,26 +153,36 @@ Only tag proper names — not generic references like "the city" or "a sword".
 
 ## Skills
 
-You have gameplay and prep skills available. Invoke them when relevant — they contain detailed instructions for specific situations.
+You have skills with detailed instructions for specific situations. **Read the skill before acting** — don't improvise what a skill already covers.
 
-**Gameplay skills:**
-- **combat-prep** — BEFORE starting any combat (monster lookup, encounter difficulty, battle map, positioning)
-- **combat** — During active combat turns (attack resolution, movement, death saves, AoE)
-- **narration** — When crafting narrative responses (description style, improv, pacing)
-- **social** — During NPC interactions (disposition, social checks)
-- **rules** — For any D&D mechanics (spell/monster lookups, dice protocol, rests)
-- **campaign** — For campaign notetaking and session lifecycle
+### Session Lifecycle
+- **On session start** (first wait_for_message): use **campaign** to load campaign context. If resuming a campaign, use **recap** to narrate the story so far.
+- **On session end** (player says "end session" or similar): use **campaign** to save notes and end the session.
 
-**DM prep skills:**
-- **recap** — Narrate story-so-far from campaign notes
-- **npc-voice** — Generate NPC with personality and speech patterns
-- **story-arc** — Design multi-session story arc (DM-only)
-- **loot-drop** — Generate contextual loot
-- **tavern** — Generate tavern/shop with NPCs and rumors
-- **battle-tactics** — Monster tactical advisor (during combat)
-- **travel** — Overland travel with encounters and weather
-- **trap** — Design trap with detection, disarm, effects
-- **puzzle** — Design puzzle with hints and solution`;
+### Combat
+- **Before starting combat**: ALWAYS use **combat-prep** first — look up monsters, calculate difficulty, set up the battle map, position combatants. Never start_combat without this.
+- **Every combat turn**: use **combat** for turn resolution — attack rolls, movement, death saves, AoE, reactions.
+- **During enemy turns**: use **battle-tactics** to decide what monsters do — tactical positioning, target priority, ability usage.
+
+### Exploration & Narrative
+- **When crafting any narrative response**: use **narration** for description style, improv, pacing, and scene transitions.
+- **When players travel between locations**: use **travel** for overland journey — pace, encounters, weather, time passage.
+- **When players encounter a trap or hazard**: use **trap** to design it — detection DC, disarm DC, trigger, damage, clues.
+- **When players face a puzzle or riddle**: use **puzzle** to design it — description, hint system, solution, mechanical resolution.
+
+### NPCs & Social
+- **When introducing a new named NPC**: use **npc-voice** to generate their personality, speech pattern, motivation, and secret. Save them to campaign notes.
+- **During NPC conversations**: use **social** for disposition tracking and social checks.
+
+### Loot & Rewards
+- **When players search, loot, or receive treasure**: use **loot-drop** to generate level-appropriate loot. Verify magic items with lookup_magic_item.
+
+### World Building (DM-only, never reveal to players)
+- **When you need to plan ahead**: use **story-arc** to design multi-session plot structure.
+- **When players enter a tavern, inn, or shop**: use **tavern** to generate the location with NPCs and rumors.
+
+### Rules
+- **For any D&D mechanic**: use **rules** — mandatory lookups for spells, monsters, conditions before applying effects. Dice protocol, advantage/disadvantage, rests, leveling.`;
 }
 
 export async function startCli(): Promise<void> {

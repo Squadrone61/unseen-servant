@@ -29,11 +29,12 @@ export function registerGameTools(
   gameLogger: GameLogger,
 ): void {
   /** Convert a ToolResponse from GSM into an MCP CallToolResult, logging the call. */
-  function fromToolResponse(r: ToolResponse, toolName?: string, args?: Record<string, unknown>) {
-    if (toolName) {
-      gameLogger.toolCall(toolName, args ?? {}, r.text);
+  function fromToolResponse(r: ToolResponse, toolName: string, args?: Record<string, unknown>) {
+    gameLogger.toolCall(toolName, args ?? {}, r.text);
+    if (r.error) {
+      gameLogger.error(toolName, r.text);
+      return buildError(r.text, r.hints);
     }
-    if (r.error) return buildError(r.text, r.hints);
     return buildResult({ text: r.text, data: r.data });
   }
 
@@ -1152,7 +1153,7 @@ export function registerGameTools(
     },
     async ({ name }) => {
       const result = wsClient.gameStateManager.grantInspiration(name);
-      return fromToolResponse(result);
+      return fromToolResponse(result, "grant_inspiration", { name });
     },
   );
 
@@ -1166,7 +1167,7 @@ export function registerGameTools(
     },
     async ({ name }) => {
       const result = wsClient.gameStateManager.useInspiration(name);
-      return fromToolResponse(result);
+      return fromToolResponse(result, "use_inspiration", { name });
     },
   );
 
@@ -1191,7 +1192,7 @@ export function registerGameTools(
     },
     async ({ keep_recent, summary }) => {
       const result = wsClient.gameStateManager.compactHistory(keep_recent, summary);
-      return fromToolResponse(result);
+      return fromToolResponse(result, "compact_history", { keep_recent, summary });
     },
   );
 
@@ -1208,7 +1209,7 @@ export function registerGameTools(
     },
     async ({ names }) => {
       const result = wsClient.gameStateManager.shortRest(names);
-      return fromToolResponse(result);
+      return fromToolResponse(result, "short_rest", { names });
     },
   );
 
@@ -1223,7 +1224,7 @@ export function registerGameTools(
     },
     async ({ names }) => {
       const result = wsClient.gameStateManager.longRest(names);
-      return fromToolResponse(result);
+      return fromToolResponse(result, "long_rest", { names });
     },
   );
 
@@ -1254,7 +1255,12 @@ export function registerGameTools(
         criticalFail: critical_fail,
         criticalSuccess: critical_success,
       });
-      return fromToolResponse(result);
+      return fromToolResponse(result, "death_save", {
+        name,
+        success,
+        critical_fail,
+        critical_success,
+      });
     },
   );
 
@@ -1272,7 +1278,7 @@ export function registerGameTools(
     },
     async ({ name, spell_name }) => {
       const result = wsClient.gameStateManager.setConcentration(name, spell_name);
-      return fromToolResponse(result);
+      return fromToolResponse(result, "set_concentration", { name, spell_name });
     },
   );
 
@@ -1287,7 +1293,7 @@ export function registerGameTools(
     },
     async ({ name }) => {
       const result = wsClient.gameStateManager.breakConcentration(name);
-      return fromToolResponse(result);
+      return fromToolResponse(result, "break_concentration", { name });
     },
   );
 
@@ -1309,7 +1315,11 @@ export function registerGameTools(
       },
     },
     async ({ name, level }) => {
-      return fromToolResponse(wsClient.gameStateManager.setExhaustion(name, level));
+      return fromToolResponse(
+        wsClient.gameStateManager.setExhaustion(name, level),
+        "set_exhaustion",
+        { name, level },
+      );
     },
   );
 
@@ -1326,7 +1336,10 @@ export function registerGameTools(
       },
     },
     async ({ name, amount }) => {
-      return fromToolResponse(wsClient.gameStateManager.setTempHP(name, amount));
+      return fromToolResponse(wsClient.gameStateManager.setTempHP(name, amount), "set_temp_hp", {
+        name,
+        amount,
+      });
     },
   );
 

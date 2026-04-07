@@ -776,7 +776,7 @@ describe("applyAreaEffect", () => {
         (c) => c.name === "Goblin1",
       );
       expect(goblin1Before).toBeDefined();
-      const hpBefore = goblin1Before!.currentHP ?? goblin1Before!.maxHP;
+      const hpBefore = goblin1Before!.currentHP ?? goblin1Before!.maxHP ?? 0;
 
       // DC 30 guarantees NPC failures (max roll = 20 + 0 = 20 < 30).
       gsm.applyAreaEffect({
@@ -793,7 +793,7 @@ describe("applyAreaEffect", () => {
       const combatAfter = gsm.gameState.encounter!.combat!;
       const goblin1After = Object.values(combatAfter.combatants).find((c) => c.name === "Goblin1");
       expect(goblin1After).toBeDefined();
-      const hpAfter = goblin1After!.currentHP ?? goblin1After!.maxHP;
+      const hpAfter = goblin1After!.currentHP ?? goblin1After!.maxHP ?? 0;
 
       expect(hpAfter).toBeLessThan(hpBefore);
     });

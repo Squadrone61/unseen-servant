@@ -99,7 +99,9 @@ export function registerCharacter(
  * - text is a non-empty string
  * - data exists
  */
-export function assertToolSuccess(result: ToolResponse): void {
+export function assertToolSuccess(
+  result: ToolResponse,
+): asserts result is ToolResponse & { data: Record<string, any> } {
   expect(result.error, `Expected success but got error: ${result.text}`).toBeFalsy();
   expect(result.text, "Expected non-empty text in success response").toBeTruthy();
   expect(typeof result.text).toBe("string");

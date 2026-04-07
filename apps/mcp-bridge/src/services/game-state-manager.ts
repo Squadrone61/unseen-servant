@@ -59,7 +59,8 @@ export interface ToolResponse {
   /** Human-readable summary (backwards-compatible with old string returns) */
   text: string;
   /** Machine-parseable structured data */
-  data: Record<string, unknown>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  data: Record<string, any>;
   /** Whether this represents an error */
   error?: boolean;
   /** Recovery hints shown to the AI on error */
@@ -68,7 +69,8 @@ export interface ToolResponse {
 
 function toResponse(
   text: string,
-  data: Record<string, unknown>,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  data: Record<string, any>,
   error?: boolean,
   hints?: string[],
 ): ToolResponse {
@@ -248,15 +250,16 @@ export class GameStateManager {
         this._chatDirty = false;
       }
 
-      // Write dirty character snapshots
+      // Write dirty character snapshots (delegate to canonical snapshotCharacters)
       const charCount = this._dirtyCharacters.size;
-      for (const playerName of this._dirtyCharacters) {
-        const char = this.characters[playerName];
-        if (char) {
-          this.campaignManager.writeFile(
-            `characters/${playerName}.json`,
-            JSON.stringify(char, null, 2),
-          );
+      if (charCount > 0) {
+        const dirtyChars: Record<string, { static: unknown; dynamic: unknown }> = {};
+        for (const playerName of this._dirtyCharacters) {
+          const char = this.characters[playerName];
+          if (char) dirtyChars[playerName] = char;
+        }
+        if (Object.keys(dirtyChars).length > 0) {
+          this.campaignManager.snapshotCharacters(dirtyChars);
         }
       }
 
