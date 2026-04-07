@@ -109,6 +109,16 @@ function buildTwoPlayerCombat(turnIndex: 0 | 1) {
   };
 }
 
+/** Send a server:ai message to set storyStarted=true on the client */
+function startStory(bridge: TestBridge) {
+  bridge.broadcast({
+    type: "server:ai",
+    content: "The adventure begins...",
+    timestamp: Date.now(),
+    id: `test-story-${Date.now()}`,
+  } as Record<string, unknown>);
+}
+
 // ─── Tests ───
 
 test.describe("Gameplay Flow (real WebSocket)", () => {
@@ -127,15 +137,17 @@ test.describe("Gameplay Flow (real WebSocket)", () => {
     await player1.addInitScript(() => localStorage.setItem("playerName", "Alice"));
     await player2.addInitScript(() => localStorage.setItem("playerName", "Bob"));
 
-    // Both players join
+    // Both players join — wait for "Waiting for DM..." which only appears after
+    // the WebSocket join handshake completes (joined=true)
     await player1.goto(`http://localhost:3000/rooms/${roomCode}`);
-    await expect(player1.getByText(roomCode).first()).toBeVisible({ timeout: 15_000 });
+    await expect(player1.getByText("Waiting for DM...")).toBeVisible({ timeout: 15_000 });
 
     await player2.goto(`http://localhost:3000/rooms/${roomCode}`);
-    await expect(player2.getByText(roomCode).first()).toBeVisible({ timeout: 15_000 });
+    await expect(player2.getByText("Waiting for DM...")).toBeVisible({ timeout: 15_000 });
 
     // Connect the test bridge as DM
     await bridge.connect(roomCode);
+    startStory(bridge);
 
     // Bridge broadcasts character data for each player
     bridge.broadcast({
@@ -158,17 +170,18 @@ test.describe("Gameplay Flow (real WebSocket)", () => {
     });
 
     // Both players should see the initiative tracker — combatant buttons are
-    // the proof of render (InitiativeTracker renders no "Combat" header text)
-    await expect(player1.locator("button").filter({ hasText: "Elara" })).toBeVisible({
+    // the proof of render. Use .first() because character_updated also creates
+    // character tag buttons in the chat area.
+    await expect(player1.locator("button").filter({ hasText: "Elara" }).first()).toBeVisible({
       timeout: 8_000,
     });
-    await expect(player2.locator("button").filter({ hasText: "Elara" })).toBeVisible({
+    await expect(player2.locator("button").filter({ hasText: "Elara" }).first()).toBeVisible({
       timeout: 8_000,
     });
 
     // Both players should see both combatant names in the tracker
-    await expect(player1.locator("button").filter({ hasText: "Thorin" })).toBeVisible();
-    await expect(player2.locator("button").filter({ hasText: "Thorin" })).toBeVisible();
+    await expect(player1.locator("button").filter({ hasText: "Thorin" }).first()).toBeVisible();
+    await expect(player2.locator("button").filter({ hasText: "Thorin" }).first()).toBeVisible();
 
     bridge.disconnect();
     await context1.close();
@@ -192,12 +205,13 @@ test.describe("Gameplay Flow (real WebSocket)", () => {
     await player2.addInitScript(() => localStorage.setItem("playerName", "Bob"));
 
     await player1.goto(`http://localhost:3000/rooms/${roomCode}`);
-    await expect(player1.getByText(roomCode).first()).toBeVisible({ timeout: 15_000 });
+    await expect(player1.getByText("Waiting for DM...")).toBeVisible({ timeout: 15_000 });
 
     await player2.goto(`http://localhost:3000/rooms/${roomCode}`);
-    await expect(player2.getByText(roomCode).first()).toBeVisible({ timeout: 15_000 });
+    await expect(player2.getByText("Waiting for DM...")).toBeVisible({ timeout: 15_000 });
 
     await bridge.connect(roomCode);
+    startStory(bridge);
 
     // Broadcast character data so each player's character name is known to
     // the UI and the "Your turn" banner can match character → player
@@ -263,12 +277,13 @@ test.describe("Gameplay Flow (real WebSocket)", () => {
     await player2.addInitScript(() => localStorage.setItem("playerName", "Bob"));
 
     await player1.goto(`http://localhost:3000/rooms/${roomCode}`);
-    await expect(player1.getByText(roomCode).first()).toBeVisible({ timeout: 15_000 });
+    await expect(player1.getByText("Waiting for DM...")).toBeVisible({ timeout: 15_000 });
 
     await player2.goto(`http://localhost:3000/rooms/${roomCode}`);
-    await expect(player2.getByText(roomCode).first()).toBeVisible({ timeout: 15_000 });
+    await expect(player2.getByText("Waiting for DM...")).toBeVisible({ timeout: 15_000 });
 
     await bridge.connect(roomCode);
+    startStory(bridge);
 
     // Start combat
     bridge.broadcast({

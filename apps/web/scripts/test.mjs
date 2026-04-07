@@ -51,8 +51,7 @@ function waitForServer(url, timeoutSec = 60) {
 
 // Start dev servers from the repo root
 console.log("Starting dev servers...");
-startProc("pnpm", ["dev:worker"], { cwd: rootDir });
-startProc("pnpm", ["dev:web"], { cwd: rootDir });
+startProc("pnpm", ["dev:all"], { cwd: rootDir });
 
 try {
   console.log("Waiting for worker (localhost:8787)...");

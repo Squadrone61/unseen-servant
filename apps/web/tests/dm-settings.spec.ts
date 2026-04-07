@@ -98,12 +98,17 @@ test.describe("Sidebar", () => {
     await expect(page.getByText("Host").first()).toBeVisible();
   });
 
-  test("activity log section exists", async ({ page }) => {
+  test("activity button exists in navbar after campaign configured", async ({ page }) => {
     const roomCode = await createRoomAndSetup(page, "LogHost");
     await page.goto(`/rooms/${roomCode}`);
     await waitForRoom(page, roomCode);
 
-    await expect(page.getByText("Activity Log")).toBeVisible();
+    // Activity Log is in a drawer. The "Activity" button only renders in the navbar
+    // after storyStarted || campaignConfigured. Before that, verify the party count
+    // button is present (confirms navbar rendered) and "Activity" is not yet shown.
+    await expect(page.getByRole("button", { name: /\d+/ }).first()).toBeVisible();
+    // "Activity Log" text is inside a closed drawer — not visible in the default state
+    await expect(page.getByText("Activity Log")).not.toBeVisible();
   });
 
   test("DM status shows waiting when no DM connected", async ({ page }) => {

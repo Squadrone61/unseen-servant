@@ -16,10 +16,10 @@ test.describe("Home Page", () => {
     await expect(page.locator("h1")).toHaveText("Unseen Servant");
 
     // Subtitle
-    await expect(page.getByText("D&D 5e with an AI Game Master")).toBeVisible();
+    await expect(page.getByText("D&D 5E WITH AN AI GAME MASTER")).toBeVisible();
 
     // Character Name input
-    await expect(page.getByPlaceholder("Enter your name...")).toBeVisible();
+    await expect(page.getByPlaceholder("What should we call you?")).toBeVisible();
 
     // Create Room section + button
     await expect(page.getByText("Create Room", { exact: false }).first()).toBeVisible();
@@ -29,11 +29,8 @@ test.describe("Home Page", () => {
     await expect(page.getByText("Join Room", { exact: false }).first()).toBeVisible();
     await expect(page.getByRole("button", { name: "Join Room" })).toBeVisible();
 
-    // MCP bridge info text
-    await expect(page.getByText("MCP bridge")).toBeVisible();
-
-    // Browse Rooms link
-    await expect(page.getByRole("link", { name: "Browse Rooms" })).toBeVisible();
+    // Browse all rooms link
+    await expect(page.getByRole("link", { name: "Browse all →" })).toBeVisible();
 
     // Guest auth state
     await expect(page.getByText("Playing as guest")).toBeVisible();
@@ -43,7 +40,7 @@ test.describe("Home Page", () => {
   });
 
   test("character name input works and persists to localStorage", async ({ page }) => {
-    const nameInput = page.getByPlaceholder("Enter your name...");
+    const nameInput = page.getByPlaceholder("What should we call you?");
 
     // Type a character name
     await nameInput.fill("Gandalf");
@@ -58,17 +55,17 @@ test.describe("Home Page", () => {
 
     // Reload and verify it persists
     await page.reload();
-    await expect(page.getByPlaceholder("Enter your name...")).toHaveValue("Gandalf");
+    await expect(page.getByPlaceholder("What should we call you?")).toHaveValue("Gandalf");
   });
 
   test("create room shows error without character name", async ({ page }) => {
     await page.getByRole("button", { name: "Create Room" }).click();
-    await expect(page.getByText("Enter your character name")).toBeVisible();
+    await expect(page.getByText("Enter your player name")).toBeVisible();
   });
 
   test("create room navigates to room page", async ({ page }) => {
     // Enter a character name first
-    await page.getByPlaceholder("Enter your name...").fill("TestHero");
+    await page.getByPlaceholder("What should we call you?").fill("TestHero");
     await page.waitForTimeout(600); // debounce
 
     // Click Create Room
@@ -80,7 +77,7 @@ test.describe("Home Page", () => {
   });
 
   test("join room validates empty room code", async ({ page }) => {
-    await page.getByPlaceholder("Enter your name...").fill("TestHero");
+    await page.getByPlaceholder("What should we call you?").fill("TestHero");
     await page.waitForTimeout(600);
 
     // Click Join with empty code
@@ -89,7 +86,7 @@ test.describe("Home Page", () => {
   });
 
   test("join room validates short room code", async ({ page }) => {
-    await page.getByPlaceholder("Enter your name...").fill("TestHero");
+    await page.getByPlaceholder("What should we call you?").fill("TestHero");
     await page.getByPlaceholder("ABCDEF").fill("ABC");
 
     await page.getByRole("button", { name: "Join Room" }).click();
@@ -100,7 +97,7 @@ test.describe("Home Page", () => {
     await page.getByPlaceholder("ABCDEF").fill("ABCDEF");
 
     await page.getByRole("button", { name: "Join Room" }).click();
-    await expect(page.getByText("Enter your character name")).toBeVisible();
+    await expect(page.getByText("Enter your player name")).toBeVisible();
   });
 
   test("room code input uppercases and limits to 6 chars", async ({ page }) => {
@@ -110,7 +107,8 @@ test.describe("Home Page", () => {
     await expect(codeInput).toHaveValue("ABCDEF");
   });
 
-  test("shows MCP bridge info for AI setup", async ({ page }) => {
-    await expect(page.getByText("MCP bridge")).toBeVisible();
-  });
+  // TODO: "MCP bridge" info text was removed from the homepage in a UI cleanup pass.
+  // test("shows MCP bridge info for AI setup", async ({ page }) => {
+  //   await expect(page.getByText("MCP bridge")).toBeVisible();
+  // });
 });

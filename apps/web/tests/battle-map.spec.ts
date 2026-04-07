@@ -20,14 +20,12 @@ async function createRoomAndSetup(
 }
 
 /**
- * Wait for the room page to fully load and the player's WebSocket to be
- * connected. We no longer wait for __testInjectMessage — the bridge sends
- * real WebSocket messages so we just need the page to be ready.
+ * Wait for the room page to fully load and the player's WebSocket join
+ * handshake to complete. "Waiting for DM..." only appears in GameNavBar
+ * after joined=true, so it is a reliable post-join signal.
  */
-async function waitForRoom(page: import("@playwright/test").Page, roomCode: string) {
-  await expect(page.getByText(roomCode).first()).toBeVisible({
-    timeout: 15_000,
-  });
+async function waitForRoom(page: import("@playwright/test").Page, _roomCode: string) {
+  await expect(page.getByText("Waiting for DM...")).toBeVisible({ timeout: 15_000 });
 }
 
 // ─── Mock data factories ───
@@ -191,6 +189,16 @@ function buildCharacterUpdate(playerName: string, charName: string) {
   };
 }
 
+/** Send a server:ai message to set storyStarted=true on the client */
+function startStory(bridge: TestBridge) {
+  bridge.broadcast({
+    type: "server:ai",
+    content: "The adventure begins...",
+    timestamp: Date.now(),
+    id: `test-story-${Date.now()}`,
+  } as Record<string, unknown>);
+}
+
 // ─── Tests ───
 
 test.describe("Battle Map", () => {
@@ -213,6 +221,7 @@ test.describe("Battle Map", () => {
     await page.goto(`/rooms/${roomCode}`);
     await waitForRoom(page, roomCode);
     await bridge.connect(roomCode);
+    startStory(bridge);
 
     const combat = buildMockCombat(false);
     bridge.broadcast(buildCombatUpdate(combat) as Record<string, unknown>);
@@ -241,6 +250,7 @@ test.describe("Battle Map", () => {
     await page.goto(`/rooms/${roomCode}`);
     await waitForRoom(page, roomCode);
     await bridge.connect(roomCode);
+    startStory(bridge);
 
     const combat = buildMockCombat(false);
     bridge.broadcast(buildCombatUpdate(combat) as Record<string, unknown>);
@@ -268,6 +278,7 @@ test.describe("Battle Map", () => {
     await page.goto(`/rooms/${roomCode}`);
     await waitForRoom(page, roomCode);
     await bridge.connect(roomCode);
+    startStory(bridge);
 
     const combat = buildMockCombat(false);
     bridge.broadcast(buildCombatUpdate(combat) as Record<string, unknown>);
@@ -291,6 +302,7 @@ test.describe("Battle Map", () => {
     await page.goto(`/rooms/${roomCode}`);
     await waitForRoom(page, roomCode);
     await bridge.connect(roomCode);
+    startStory(bridge);
 
     const combat = buildMockCombat(false);
     bridge.broadcast(buildCombatUpdate(combat) as Record<string, unknown>);
@@ -313,6 +325,7 @@ test.describe("Battle Map", () => {
     await page.goto(`/rooms/${roomCode}`);
     await waitForRoom(page, roomCode);
     await bridge.connect(roomCode);
+    startStory(bridge);
 
     const combat = buildMockCombat(false);
     bridge.broadcast(buildCombatUpdate(combat) as Record<string, unknown>);
@@ -336,6 +349,7 @@ test.describe("Battle Map", () => {
     await page.goto(`/rooms/${roomCode}`);
     await waitForRoom(page, roomCode);
     await bridge.connect(roomCode);
+    startStory(bridge);
 
     // Broadcast a character so myCharacterName matches "Elara"
     bridge.broadcast(buildCharacterUpdate("TurnHost", "Elara") as Record<string, unknown>);
@@ -359,6 +373,7 @@ test.describe("Battle Map", () => {
     await page.goto(`/rooms/${roomCode}`);
     await waitForRoom(page, roomCode);
     await bridge.connect(roomCode);
+    startStory(bridge);
 
     const combat = buildMockCombat(false);
     bridge.broadcast(buildCombatUpdate(combat) as Record<string, unknown>);
@@ -387,6 +402,7 @@ test.describe("Battle Map", () => {
     await page.goto(`/rooms/${roomCode}`);
     await waitForRoom(page, roomCode);
     await bridge.connect(roomCode);
+    startStory(bridge);
 
     // Start combat
     const combat = buildMockCombat(false);
@@ -419,6 +435,7 @@ test.describe("Battle Map", () => {
     await page.goto(`/rooms/${roomCode}`);
     await waitForRoom(page, roomCode);
     await bridge.connect(roomCode);
+    startStory(bridge);
 
     const combat = buildMockCombat(false);
     bridge.broadcast(buildCombatUpdate(combat) as Record<string, unknown>);
@@ -446,6 +463,7 @@ test.describe("Battle Map", () => {
     await page.goto(`/rooms/${roomCode}`);
     await waitForRoom(page, roomCode);
     await bridge.connect(roomCode);
+    startStory(bridge);
 
     // Create combat with a large creature
     const combat = buildMockCombat(false);
@@ -480,6 +498,7 @@ test.describe("Battle Map", () => {
     await page.goto(`/rooms/${roomCode}`);
     await waitForRoom(page, roomCode);
     await bridge.connect(roomCode);
+    startStory(bridge);
 
     // Broadcast character data first
     bridge.broadcast(buildCharacterUpdate("PlayerHPHost", "Elara") as Record<string, unknown>);
@@ -488,13 +507,15 @@ test.describe("Battle Map", () => {
     const combat = buildMockCombat(false);
     bridge.broadcast(buildCombatUpdate(combat) as Record<string, unknown>);
 
-    // Wait for the initiative tracker to render
-    await expect(page.locator("button").filter({ hasText: "Elara" })).toBeVisible({
+    // Wait for the initiative tracker to render — use .first() because character_updated
+    // also creates a character tag button in the chat area
+    await expect(page.locator("button").filter({ hasText: "Elara" }).first()).toBeVisible({
       timeout: 8_000,
     });
 
     // Player HP numbers should show in initiative tracker (30/30)
-    await expect(page.getByText("30/30")).toBeVisible();
+    // Use .first() — HP also appears in the character tag button in the chat area
+    await expect(page.getByText("30/30").first()).toBeVisible();
 
     bridge.disconnect();
   });

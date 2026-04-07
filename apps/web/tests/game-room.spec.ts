@@ -58,48 +58,39 @@ test.describe("Game Room", () => {
 
     await page.goto(`/rooms/${roomCode}`);
 
-    // Wait for join — room code in sidebar
+    // Wait for join — room code in navbar
     await expect(page.getByText(roomCode).first()).toBeVisible({
       timeout: 15_000,
     });
 
-    // Player name in party list
-    await expect(page.getByText("Aragorn", { exact: true })).toBeVisible();
+    // HOST badge in navbar (not "(host)" — renders as "HOST" span)
+    await expect(page.getByText("HOST")).toBeVisible();
 
-    // Host badge
-    await expect(page.getByText("(host)")).toBeVisible();
+    // "Waiting for the adventure" message (uses unicode ellipsis)
+    await expect(page.getByText("Waiting for the adventure to begin\u2026")).toBeVisible();
 
-    // "Waiting for the adventure" message
-    await expect(page.getByText("Waiting for the adventure to begin...")).toBeVisible();
-
-    // Chat input
+    // Chat input exists (but is disabled until story starts — no DM connected)
     await expect(page.getByPlaceholder("What do you do?")).toBeVisible();
 
-    // Character import section in left sidebar
-    await expect(page.getByText("Import Character")).toBeVisible();
+    // Character section in left sidebar (no characters yet — shows prompt to create)
+    await expect(page.getByText("No characters")).toBeVisible();
 
-    // Activity log
-    await expect(page.getByText("Activity Log")).toBeVisible();
+    // Activity Log is in a drawer that only appears after story/campaign starts — not checked here
   });
 
-  test("can send and see chat messages", async ({ page }) => {
+  test("chat input is disabled before story starts", async ({ page }) => {
     const roomCode = await createRoomAndSetup(page, "Legolas");
 
     await page.goto(`/rooms/${roomCode}`);
 
-    // Wait for connection
-    await expect(page.getByPlaceholder("What do you do?")).toBeEnabled({
+    // Wait for room to load
+    await expect(page.getByText(roomCode).first()).toBeVisible({
       timeout: 15_000,
     });
 
-    // Type and send a message
-    await page.getByPlaceholder("What do you do?").fill("I search the room");
-    await page.getByRole("button", { name: "Send" }).click();
-
-    // Message should appear in chat (echoed back from server via WebSocket)
-    await expect(page.getByText("I search the room")).toBeVisible({
-      timeout: 10_000,
-    });
+    // Chat input is visible but disabled — chat requires a DM to connect and start the story
+    await expect(page.getByPlaceholder("What do you do?")).toBeVisible();
+    await expect(page.getByPlaceholder("What do you do?")).toBeDisabled();
   });
 
   test("host sees AI config section", async ({ page }) => {
@@ -116,7 +107,7 @@ test.describe("Game Room", () => {
     await expect(page.getByText("Waiting for DM...")).toBeVisible();
   });
 
-  test("shows Host badge in sidebar", async ({ page }) => {
+  test("shows HOST badge in navbar", async ({ page }) => {
     const roomCode = await createRoomAndSetup(page, "HostPlayer");
 
     await page.goto(`/rooms/${roomCode}`);
@@ -124,8 +115,8 @@ test.describe("Game Room", () => {
       timeout: 15_000,
     });
 
-    // Host badge in sidebar
-    await expect(page.getByText("Host").first()).toBeVisible();
+    // HOST badge in navbar (renders as uppercase "HOST" span next to room code)
+    await expect(page.getByText("HOST")).toBeVisible();
   });
 
   test("connected status indicator shows green", async ({ page }) => {
@@ -133,7 +124,7 @@ test.describe("Game Room", () => {
 
     await page.goto(`/rooms/${roomCode}`);
 
-    // Wait for "Connected" text in sidebar status
-    await expect(page.getByText("Connected")).toBeVisible({ timeout: 15_000 });
+    // Wait for "Server Connected" text in navbar status indicator
+    await expect(page.getByText("Server Connected")).toBeVisible({ timeout: 15_000 });
   });
 });

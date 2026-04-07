@@ -11,9 +11,11 @@ import { TestBridge } from "./test-bridge";
  * Wire path under test:
  *   browser → Worker (real WS) → TestBridge broadcast → browser
  *
- * Force-close strategy: ws.close(1001) — "Going Away" code.
- * Code 1001 is NOT in the hook's no-reconnect list (1000, 4001, 4002),
+ * Force-close strategy: ws.close(3001) — custom application close code.
+ * Code 3001 is NOT in the hook's no-reconnect list (1000, 4001, 4002),
  * so it triggers exponential backoff reconnection starting at 1 second.
+ * Note: browsers reject close codes outside 1000 or 3000-4999 with
+ * InvalidAccessError, so we use 3001 rather than 1001 ("Going Away").
  */
 
 async function createRoomAndSetup(
@@ -47,23 +49,26 @@ async function createRoomAndSetup(
 }
 
 /**
- * Wait for the room page to be fully joined (room code visible in nav bar).
+ * Wait for the room page to be fully joined. "Waiting for DM..." only appears
+ * in GameNavBar after the WebSocket join handshake completes (joined=true).
  */
-async function waitForRoom(page: import("@playwright/test").Page, roomCode: string) {
-  await expect(page.getByText(roomCode).first()).toBeVisible({ timeout: 15_000 });
+async function waitForRoom(page: import("@playwright/test").Page, _roomCode: string) {
+  await expect(page.getByText("Waiting for DM...")).toBeVisible({ timeout: 15_000 });
 }
 
 /**
- * Force-close all tracked WebSockets with code 1001 (Going Away).
- * Code 1001 triggers reconnection in useWebSocket (it is not in the
- * no-reconnect list of 1000, 4001, 4002).
+ * Force-close all tracked WebSockets with code 3001 (custom application code).
+ * Code 3001 triggers reconnection in useWebSocket (it is not in the
+ * no-reconnect list of 1000, 4001, 4002). We use 3001 instead of 1001
+ * because browsers reject close codes outside 1000 or 3000-4999 with
+ * an InvalidAccessError.
  */
 async function forceCloseWebSockets(page: import("@playwright/test").Page) {
   await page.evaluate(() => {
     const sockets = (window as unknown as Record<string, unknown>).__wsSockets as WebSocket[];
     sockets.forEach((s) => {
       if (s.readyState === WebSocket.OPEN || s.readyState === WebSocket.CONNECTING) {
-        s.close(1001, "Test force-disconnect");
+        s.close(3001, "Test force-disconnect");
       }
     });
   });
@@ -83,10 +88,15 @@ test.describe("WebSocket Reconnection", () => {
     await bridge.connect(roomCode);
 
     // --- Step 1: send a message before disconnect, verify it arrives ---
+    // Use server:chat so the message appears in the main ChatPanel (always
+    // visible). server:system goes to the Activity Log drawer which is
+    // closed by default and would never be seen.
     bridge.broadcast({
-      type: "server:system",
+      type: "server:chat",
       content: "Message before disconnect",
+      playerName: "TestBridge",
       timestamp: Date.now(),
+      id: `test-${Date.now()}`,
     });
 
     await expect(page.getByText("Message before disconnect")).toBeVisible({ timeout: 8_000 });
@@ -107,9 +117,11 @@ test.describe("WebSocket Reconnection", () => {
 
     // --- Step 4: bridge sends a message after reconnection ---
     bridge.broadcast({
-      type: "server:system",
+      type: "server:chat",
       content: "Message after reconnect",
+      playerName: "TestBridge",
       timestamp: Date.now(),
+      id: `test-${Date.now() + 1}`,
     });
 
     // Player must see the post-reconnect message — this proves the new WS
@@ -145,9 +157,11 @@ test.describe("WebSocket Reconnection", () => {
 
     // Confirm message flow is intact after two disconnects
     bridge.broadcast({
-      type: "server:system",
+      type: "server:chat",
       content: "Still alive after two reconnects",
+      playerName: "TestBridge",
       timestamp: Date.now(),
+      id: `test-${Date.now()}`,
     });
 
     await expect(page.getByText("Still alive after two reconnects")).toBeVisible({
@@ -187,24 +201,35 @@ test.describe("WebSocket Reconnection", () => {
       localStorage.setItem("playerName", "Observer");
     });
 
-    // Both players join
+    // Both players join — wait for "Waiting for DM..." which only appears after
+    // the WebSocket join handshake completes (joined=true)
     await player1.goto(`http://localhost:3000/rooms/${roomCode}`);
-    await expect(player1.getByText(roomCode).first()).toBeVisible({ timeout: 15_000 });
+    await expect(player1.getByText("Waiting for DM...")).toBeVisible({ timeout: 15_000 });
 
     await player2.goto(`http://localhost:3000/rooms/${roomCode}`);
-    await expect(player2.getByText(roomCode).first()).toBeVisible({ timeout: 15_000 });
+    await expect(player2.getByText("Waiting for DM...")).toBeVisible({ timeout: 15_000 });
 
-    // Both players should be visible
+    // Both players should be visible in the party panel.
+    // Player names are in a popup opened by clicking the party count button in
+    // the navbar. Click the button (shows the player count number) to open it,
+    // then check that "Disconnecto" appears in the party list.
+    // Wait for player count to reach 2 before opening the panel.
+    await expect(player2.getByRole("button", { name: "2" })).toBeVisible({ timeout: 5_000 });
+    await player2.getByRole("button", { name: "2" }).click();
     await expect(player2.getByText("Disconnecto", { exact: true })).toBeVisible({ timeout: 5_000 });
+    // Close the party panel by clicking the overlay behind it
+    await player2.evaluate(() => document.body.click());
 
     await bridge.connect(roomCode);
 
-    // Force-close player1's WebSocket
+    // Force-close player1's WebSocket using code 3001 (custom app code).
+    // Browsers reject codes outside 1000 or 3000-4999 with InvalidAccessError.
+    // Code 3001 is not in the hook's no-reconnect list so reconnection fires.
     await player1.evaluate(() => {
       const sockets = (window as unknown as Record<string, unknown>).__wsSockets as WebSocket[];
       sockets.forEach((s) => {
         if (s.readyState === WebSocket.OPEN || s.readyState === WebSocket.CONNECTING) {
-          s.close(1001, "Test force-disconnect");
+          s.close(3001, "Test force-disconnect");
         }
       });
     });
@@ -216,12 +241,17 @@ test.describe("WebSocket Reconnection", () => {
     // After reconnect, player1 should still be on the room page
     await expect(player1.getByText(roomCode).first()).toBeVisible({ timeout: 5_000 });
 
-    // player2 (observer) receives a broadcast — the relay still works
+    // player2 (observer) receives a broadcast — the relay still works.
+    // Use server:chat so the message appears in the main ChatPanel (always
+    // visible). server:system goes to the Activity Log drawer, which starts
+    // closed and would never be visible during this assertion.
     await player1.waitForTimeout(300);
     bridge.broadcast({
-      type: "server:system",
+      type: "server:chat",
       content: "Post-reconnect broadcast",
+      playerName: "TestBridge",
       timestamp: Date.now(),
+      id: `test-${Date.now()}`,
     });
 
     await expect(player2.getByText("Post-reconnect broadcast")).toBeVisible({ timeout: 8_000 });

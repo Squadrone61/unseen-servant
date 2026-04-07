@@ -30,10 +30,10 @@ async function createRoomAndSetup(
   return roomCode;
 }
 
-async function waitForRoom(page: import("@playwright/test").Page, roomCode: string) {
-  await expect(page.getByText(roomCode).first()).toBeVisible({
-    timeout: 15_000,
-  });
+async function waitForRoom(page: import("@playwright/test").Page, _roomCode: string) {
+  // "Waiting for DM..." only appears in GameNavBar after the WebSocket join
+  // handshake completes (joined=true), making it a reliable post-join signal.
+  await expect(page.getByText("Waiting for DM...")).toBeVisible({ timeout: 15_000 });
 }
 
 // ─── Mock data ───
@@ -162,6 +162,16 @@ function buildCombatUpdate(combat: ReturnType<typeof buildCombat>) {
   };
 }
 
+/** Send a server:ai message to set storyStarted=true on the client */
+function startStory(bridge: TestBridge) {
+  bridge.broadcast({
+    type: "server:ai",
+    content: "The adventure begins...",
+    timestamp: Date.now(),
+    id: `test-story-${Date.now()}`,
+  } as Record<string, unknown>);
+}
+
 // ─── Tests ───
 
 test.describe("End Turn", () => {
@@ -171,6 +181,7 @@ test.describe("End Turn", () => {
     await page.goto(`/rooms/${roomCode}`);
     await waitForRoom(page, roomCode);
     await bridge.connect(roomCode);
+    startStory(bridge);
 
     // Broadcast character so BattleMap knows our character name
     bridge.broadcast(buildCharacterUpdate("TurnHost", "Thorin") as Record<string, unknown>);
@@ -201,6 +212,7 @@ test.describe("End Turn", () => {
     await page.goto(`/rooms/${roomCode}`);
     await waitForRoom(page, roomCode);
     await bridge.connect(roomCode);
+    startStory(bridge);
 
     bridge.broadcast(buildCharacterUpdate("TurnSend", "Thorin") as Record<string, unknown>);
     bridge.broadcast(buildCombatUpdate(buildCombat(0)) as Record<string, unknown>);
@@ -250,6 +262,7 @@ test.describe("End Turn", () => {
     await page.goto(`/rooms/${roomCode}`);
     await waitForRoom(page, roomCode);
     await bridge.connect(roomCode);
+    startStory(bridge);
 
     bridge.broadcast(buildCharacterUpdate("TurnAdv", "Thorin") as Record<string, unknown>);
 
@@ -283,6 +296,7 @@ test.describe("End Turn", () => {
     await page.goto(`/rooms/${roomCode}`);
     await waitForRoom(page, roomCode);
     await bridge.connect(roomCode);
+    startStory(bridge);
 
     bridge.broadcast(buildCharacterUpdate("TurnInfo", "Thorin") as Record<string, unknown>);
 

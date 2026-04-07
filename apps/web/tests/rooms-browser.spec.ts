@@ -4,14 +4,14 @@ test.describe("Room Browser", () => {
   test("renders browse rooms page", async ({ page }) => {
     await page.goto("/rooms");
 
-    // Heading
-    await expect(page.getByRole("heading", { name: "Browse Rooms" })).toBeVisible();
+    // "Browse Rooms" appears in the TopBar breadcrumb (a <li> element, not a heading)
+    await expect(page.getByText("Browse Rooms")).toBeVisible();
 
-    // Subtitle
-    await expect(page.getByText("Join an active game session")).toBeVisible();
+    // Refresh button is present in the TopBar
+    await expect(page.getByRole("button", { name: /Refresh/ })).toBeVisible();
 
-    // Back link
-    await expect(page.getByRole("link", { name: /Back to Home/ })).toBeVisible();
+    // Home icon link is present (icon-only, no "Back to Home" text)
+    await expect(page.getByRole("link", { name: "Home" })).toBeVisible();
   });
 
   test("shows empty state or room list", async ({ page }) => {
@@ -22,9 +22,9 @@ test.describe("Room Browser", () => {
       timeout: 10_000,
     });
 
-    // Should show either "No active rooms" or room cards
+    // Should show either "No active rooms" empty state or room cards (div with Join button)
     const noRooms = page.getByText("No active rooms");
-    const roomCards = page.locator("button.bg-gray-800");
+    const roomCards = page.getByRole("button", { name: "Join" });
 
     const hasNoRooms = await noRooms.isVisible().catch(() => false);
     const hasRooms = (await roomCards.count()) > 0;
@@ -63,10 +63,11 @@ test.describe("Room Browser", () => {
     await playerCtx.close();
   });
 
-  test("back to home link works", async ({ page }) => {
+  test("home icon link navigates to home", async ({ page }) => {
     await page.goto("/rooms");
 
-    await page.getByRole("link", { name: /Back to Home/ }).click();
+    // The TopBar has an icon-only Home link (no "Back to Home" text)
+    await page.getByRole("link", { name: "Home" }).click();
 
     await page.waitForURL("/", { timeout: 5_000 });
     await expect(page.locator("h1")).toHaveText("Unseen Servant");
