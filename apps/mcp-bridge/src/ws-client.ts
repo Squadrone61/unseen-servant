@@ -464,7 +464,7 @@ export class WSClient {
           Object.keys(this.playerUserIds).length > 0 ? this.playerUserIds : undefined,
       });
 
-      this.gameLogger.sessionStart(manifest.slug, manifest.sessionCount);
+      this.gameLogger.sessionStart(manifest.slug, manifest.sessionCount + 1);
 
       const campaigns = cm.listCampaigns();
       this.send({

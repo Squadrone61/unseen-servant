@@ -243,6 +243,9 @@ NEVER guess spell effects, monster stats, or condition rules. ALWAYS look them u
 ### Mechanical Tracking (STRICT)
 - ALWAYS use tools to modify HP, spell slots, conditions, inventory, and currency — don't just narrate changes.
 - Use \`use_spell_slot\` every time a player casts a leveled spell.
+- Use \`add_item\` immediately when a character receives, finds, or buys an item — don't wait for the player to ask.
+- Use \`update_item\` when an item's properties change (awakened, attuned, damaged, etc.).
+- Use \`remove_item\` when an item is given away, consumed, or destroyed.
 - Call for ability checks when outcomes are uncertain (describe the DC reasoning).
 
 ### Milestone Leveling
@@ -285,14 +288,14 @@ export const DM_SKILL_CAMPAIGN = `## Campaign Notes — Active Notetaking
 **Take notes as you play, not just at session end.** Use \`save_campaign_file\` to jot down important details the moment they happen. Keep notes brief — a line or two per entry is enough.
 
 ### What to note (and when)
-- **world/npcs.md** — When the party meets a named NPC: name, role, attitude, location. One line each.
-- **world/locations.md** — When a new place is visited or described: name, what's notable. One line each.
-- **world/quests.md** — When a quest is given, updated, or completed: name, status, key details.
-- **world/factions.md** — When an organization becomes relevant: name, relationship to party.
-- **world/items.md** — When a notable item is found or given: name, who has it, what it does.
+- **world/npcs/{slug}.md** — One file per NPC. When the party meets a named NPC, create their file: name, role, attitude, location, relationship to party.
+- **world/locations/{slug}.md** — One file per location. When a new place is visited or described, create its file: name, what's notable, connections to story.
+- **world/items/{slug}.md** — One file per notable item. When a notable item is found or given, create its file: name, who has it, what it does, history.
+- **world/quests.md** — Single file for all quests. When a quest is given, updated, or completed: name, status, key details.
+- **world/factions.md** — Single file for all factions. When an organization becomes relevant: name, relationship to party.
 
 ### How to note
-Call \`save_campaign_file\` immediately after introducing an NPC, revealing a location, or starting a quest thread. Don't wait. Keep each file as a running list — read the file first with \`read_campaign_file\`, then save the updated version.
+Call \`save_campaign_file\` immediately after introducing an NPC, revealing a location, or giving out a notable item — don't wait. Use \`list_campaign_files\` to check if the entity's file already exists before creating it. Since each NPC/location/item has its own file, there's no need to read-then-append — just write the new file. Keep each file brief: name, role/description, status, relationship to party.
 
 ### DM Planning Notes
 - **dm/story-arc.md** — Your private story arc. Reference it for pacing and foreshadowing. NEVER reveal upcoming plot beats, twists, or encounter plans to players. Adapt the arc when players go off-script.
