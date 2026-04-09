@@ -1,9 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { TopBar } from "@/components/ui/TopBar";
 import { Button } from "@/components/ui/Button";
 import { BuilderProvider, useBuilder } from "./BuilderContext";
+import { useComputedCharacter } from "./useComputedCharacter";
+import { LivePreview } from "@/components/builder/LivePreview";
+import { useCharacterLibrary } from "@/hooks/useCharacterLibrary";
 
 // ─── Step definitions ───────────────────────────────────────────────────────
 
@@ -208,40 +212,29 @@ function StepSidebar({
   );
 }
 
-// ─── Character preview panel ─────────────────────────────────────────────────
-
-function PreviewPanel() {
-  return (
-    <aside className="w-[320px] shrink-0 flex flex-col bg-gray-900/50 border-l border-gray-700/40">
-      <div className="px-4 py-3 border-b border-gray-700/40">
-        <h2
-          className="text-xs font-medium text-amber-400/80 uppercase tracking-widest"
-          style={{ fontFamily: "var(--font-cinzel)" }}
-        >
-          Character Preview
-        </h2>
-      </div>
-
-      <div className="flex-1 flex items-center justify-center p-6">
-        <p className="text-gray-700 text-sm text-center">
-          Your character summary will appear here as you make choices.
-        </p>
-      </div>
-    </aside>
-  );
-}
-
 // ─── Inner layout (needs access to builder context) ──────────────────────────
 
 function BuilderLayout() {
   const { state } = useBuilder();
   const [activeStep, setActiveStep] = useState<StepId>("species");
+  const [finishError, setFinishError] = useState<string | null>(null);
+  const router = useRouter();
+  const { saveCharacter } = useCharacterLibrary();
+  const { character, warnings } = useComputedCharacter(state);
 
   const unlockedSteps = getUnlockedSteps(state);
   const completedSteps = getCompletedSteps(state);
 
   function handleFinish() {
-    // Placeholder — will be implemented when builder-state and save logic land
+    if (!character) {
+      setFinishError(
+        "Your character is incomplete. Complete at least Species, Class, and Abilities before finishing.",
+      );
+      return;
+    }
+    setFinishError(null);
+    saveCharacter(character);
+    router.push("/characters");
   }
 
   return (
@@ -260,10 +253,15 @@ function BuilderLayout() {
 
         {/* Main content */}
         <main className="flex-1 overflow-y-auto p-6 min-w-0">
+          {finishError && (
+            <div className="mb-4 px-4 py-3 rounded-md bg-red-500/10 border border-red-500/30 text-sm text-red-400">
+              {finishError}
+            </div>
+          )}
           <StepContent stepId={activeStep} />
         </main>
 
-        <PreviewPanel />
+        <LivePreview character={character} warnings={warnings} />
       </div>
     </div>
   );
