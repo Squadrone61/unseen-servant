@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import type { FeatureChoice, ChoiceOption } from "@unseen-servant/shared/types";
+import { featsArray, spellsArray } from "@unseen-servant/shared";
 import { RichText } from "@/components/ui/RichText";
 import { EffectSummary } from "./EffectSummary";
 
@@ -85,11 +86,18 @@ function resolvePool(choice: Extract<FeatureChoice, { pool: string }>): string[]
       // No universal list — caller must supply `from`
       return null;
 
-    case "fighting_style":
-      return null; // Rare — handled by fallback label
+    case "fighting_style": {
+      const fightingStyleFeats = featsArray.filter((f) => f.category === "Fighting Style");
+      return fightingStyleFeats.map((f) => f.name);
+    }
 
-    case "spell_cantrip":
-      return null; // Constrained by class — caller must supply `from`
+    case "spell_cantrip": {
+      const cantrips = spellsArray.filter((s) => s.level === 0);
+      if (from && from.length > 0) {
+        return cantrips.filter((s) => s.classes.some((c) => from.includes(c))).map((s) => s.name);
+      }
+      return cantrips.map((s) => s.name);
+    }
 
     default:
       return null;

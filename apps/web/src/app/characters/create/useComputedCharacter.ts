@@ -187,6 +187,17 @@ function assembleSkillProficiencies(state: BuilderState): string[] {
       values.forEach((v) => skills.add(v.toLowerCase()));
     }
   }
+  // Feat-granted skill proficiencies (e.g. the Skilled feat)
+  for (const [_featName, choices] of Object.entries(state.featChoices)) {
+    for (const [choiceId, values] of Object.entries(choices)) {
+      if (
+        choiceId.toLowerCase().includes("skill") ||
+        choiceId.toLowerCase().includes("proficiency")
+      ) {
+        values.forEach((v) => skills.add(v.toLowerCase()));
+      }
+    }
+  }
   return [...skills];
 }
 

@@ -17,6 +17,7 @@ export type BuilderStep =
   | "abilities"
   | "feats"
   | "spells"
+  | "equipment"
   | "details";
 
 export const BUILDER_STEPS: BuilderStep[] = [
@@ -26,6 +27,7 @@ export const BUILDER_STEPS: BuilderStep[] = [
   "abilities",
   "feats",
   "spells",
+  "equipment",
   "details",
 ];
 
@@ -95,7 +97,11 @@ export interface BuilderState {
   cantrips: string[];
   preparedSpells: string[];
 
-  // --- Step 7: Details ---
+  // --- Step 7: Equipment ---
+  equipmentMode: "starting" | "gold";
+  startingGold: number;
+
+  // --- Step 8: Details ---
   name: string;
   appearance: Partial<CharacterAppearance>;
   backstory: string;
@@ -150,6 +156,10 @@ export function createInitialState(): BuilderState {
     preparedSpells: [],
 
     // Step 7
+    equipmentMode: "starting",
+    startingGold: 75,
+
+    // Step 8
     name: "",
     appearance: {},
     backstory: "",
@@ -205,6 +215,13 @@ export type BuilderAction =
   | { type: "SET_CANTRIPS"; cantrips: string[] }
   | { type: "SET_PREPARED_SPELLS"; spells: string[] }
 
+  // Equipment
+  | { type: "SET_EQUIPMENT_MODE"; mode: "starting" | "gold" }
+  | { type: "SET_STARTING_GOLD"; gold: number }
+  | { type: "ADD_EQUIPMENT"; item: InventoryItem }
+  | { type: "REMOVE_EQUIPMENT"; index: number }
+  | { type: "TOGGLE_EQUIPPED"; index: number }
+
   // Details
   | { type: "SET_NAME"; name: string }
   | { type: "SET_APPEARANCE"; appearance: Partial<CharacterAppearance> }
@@ -248,6 +265,9 @@ function isStepComplete(step: BuilderStep, state: BuilderState): boolean {
       );
     case "spells":
       // No hard requirement — a non-caster class will have no selections
+      return true;
+    case "equipment":
+      // Always considered complete — equipment is optional
       return true;
     case "details":
       return state.name.trim().length > 0;
@@ -452,6 +472,33 @@ export function builderReducer(state: BuilderState, action: BuilderAction): Buil
     case "SET_PREPARED_SPELLS":
       next = { ...state, preparedSpells: action.spells };
       break;
+
+    // ---- Equipment ---------------------------------------------------------
+    case "SET_EQUIPMENT_MODE":
+      next = { ...state, equipmentMode: action.mode };
+      break;
+
+    case "SET_STARTING_GOLD":
+      next = { ...state, startingGold: action.gold };
+      break;
+
+    case "ADD_EQUIPMENT":
+      next = { ...state, equipment: [...state.equipment, action.item] };
+      break;
+
+    case "REMOVE_EQUIPMENT": {
+      const updated = state.equipment.filter((_, i) => i !== action.index);
+      next = { ...state, equipment: updated };
+      break;
+    }
+
+    case "TOGGLE_EQUIPPED": {
+      const updated = state.equipment.map((item, i) =>
+        i === action.index ? { ...item, equipped: !item.equipped } : item,
+      );
+      next = { ...state, equipment: updated };
+      break;
+    }
 
     // ---- Details -----------------------------------------------------------
     case "SET_NAME":

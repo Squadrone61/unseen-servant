@@ -14,12 +14,21 @@ import { ClassStep } from "./steps/ClassStep";
 import { AbilitiesStep } from "./steps/AbilitiesStep";
 import { FeatsStep } from "./steps/FeatsStep";
 import { SpellsStep } from "./steps/SpellsStep";
+import { EquipmentStep } from "./steps/EquipmentStep";
 import { DetailsStep } from "./steps/DetailsStep";
 import type { BuilderState } from "./builder-state";
 
 // ─── Step definitions ────────────────────────────────────────────────────────
 
-type StepId = "species" | "background" | "class" | "abilities" | "feats" | "spells" | "details";
+type StepId =
+  | "species"
+  | "background"
+  | "class"
+  | "abilities"
+  | "feats"
+  | "spells"
+  | "equipment"
+  | "details";
 
 interface StepDef {
   id: StepId;
@@ -34,7 +43,8 @@ const STEPS: StepDef[] = [
   { id: "abilities", label: "Abilities", number: 4 },
   { id: "feats", label: "Feats", number: 5 },
   { id: "spells", label: "Spells", number: 6 },
-  { id: "details", label: "Details", number: 7 },
+  { id: "equipment", label: "Equipment", number: 7 },
+  { id: "details", label: "Details", number: 8 },
 ];
 
 // ─── Unlock logic ─────────────────────────────────────────────────────────────
@@ -67,6 +77,7 @@ function getUnlockedSteps(
   if (abilitiesDone) {
     unlocked.add("feats");
     unlocked.add("spells");
+    unlocked.add("equipment");
   }
 
   return unlocked;
@@ -94,6 +105,8 @@ function StepContent({ stepId }: { stepId: StepId }) {
       return <FeatsStep />;
     case "spells":
       return <SpellsStep />;
+    case "equipment":
+      return <EquipmentStep />;
     case "details":
       return <DetailsStep />;
   }
@@ -107,6 +120,8 @@ interface StepSidebarProps {
   completedSteps: Set<StepId>;
   onSelectStep: (id: StepId) => void;
   onFinish: () => void;
+  canFinish: boolean;
+  finishError: string | null;
   finishLabel?: string;
 }
 
@@ -116,6 +131,8 @@ function StepSidebar({
   completedSteps,
   onSelectStep,
   onFinish,
+  canFinish,
+  finishError,
   finishLabel = "Finish",
 }: StepSidebarProps) {
   return (
@@ -188,13 +205,29 @@ function StepSidebar({
               </li>
             );
           })}
-        </ul>
-      </div>
 
-      <div className="p-3 border-t border-gray-700/40">
-        <Button variant="primary" size="sm" fullWidth onClick={onFinish}>
-          {finishLabel}
-        </Button>
+          {/* Finish action — last item in the stepper list */}
+          <li className="mt-2 px-0">
+            <button
+              onClick={onFinish}
+              disabled={!canFinish}
+              title={!canFinish ? "Complete Species, Class, and Abilities first" : undefined}
+              className={[
+                "w-full px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 disabled:cursor-not-allowed",
+                canFinish
+                  ? "bg-amber-600/80 hover:bg-amber-500/80 text-amber-50 shadow-[0_0_12px_rgba(245,158,11,0.15)] hover:shadow-[0_0_20px_rgba(245,158,11,0.25)]"
+                  : "bg-gray-700 text-gray-500",
+              ]
+                .filter(Boolean)
+                .join(" ")}
+            >
+              {finishLabel} ✓
+            </button>
+            {finishError && (
+              <p className="mt-1.5 px-1 text-xs text-red-400 leading-snug">{finishError}</p>
+            )}
+          </li>
+        </ul>
       </div>
     </aside>
   );
@@ -225,7 +258,29 @@ export function BuilderShell({ mode, editId, editName }: BuilderShellProps) {
   const isEditMode = mode === "edit";
   const unlockedSteps = getUnlockedSteps(state, isEditMode);
   const completedSteps = getCompletedSteps(state);
+  const canFinish = character !== null;
 
+  // ── Step navigation helpers ─────────────────────────────────────────────────
+  const currentIndex = STEPS.findIndex((s) => s.id === activeStep);
+  const isFirstStep = currentIndex === 0;
+  const isLastStep = currentIndex === STEPS.length - 1;
+  const nextStep = !isLastStep ? STEPS[currentIndex + 1] : null;
+  const prevStep = !isFirstStep ? STEPS[currentIndex - 1] : null;
+  const nextStepLabel = nextStep?.label ?? "";
+
+  function goToNextStep() {
+    if (nextStep && unlockedSteps.has(nextStep.id)) {
+      setActiveStep(nextStep.id);
+    }
+  }
+
+  function goToPreviousStep() {
+    if (prevStep) {
+      setActiveStep(prevStep.id);
+    }
+  }
+
+  // ── Finish ──────────────────────────────────────────────────────────────────
   function handleFinish() {
     if (!character) {
       setFinishError(
@@ -257,16 +312,34 @@ export function BuilderShell({ mode, editId, editName }: BuilderShellProps) {
           completedSteps={completedSteps}
           onSelectStep={setActiveStep}
           onFinish={handleFinish}
+          canFinish={canFinish}
+          finishError={finishError}
           finishLabel={isEditMode ? "Save Changes" : "Finish"}
         />
 
         <main className="flex-1 overflow-y-auto p-6 min-w-0">
-          {finishError && (
-            <div className="mb-4 px-4 py-3 rounded-md bg-red-500/10 border border-red-500/30 text-sm text-red-400">
-              {finishError}
-            </div>
-          )}
           <StepContent stepId={activeStep} />
+
+          {/* Step navigation footer */}
+          <div className="mt-8 flex items-center gap-3">
+            {prevStep && (
+              <Button variant="ghost" onClick={goToPreviousStep}>
+                &larr; Back
+              </Button>
+            )}
+            <div className="flex-1" />
+            {nextStep && (
+              <Button
+                variant="primary"
+                onClick={goToNextStep}
+                disabled={!completedSteps.has(activeStep) && !isEditMode}
+              >
+                <span style={{ fontFamily: "var(--font-cinzel)" }}>
+                  Continue to {nextStepLabel}
+                </span>
+              </Button>
+            )}
+          </div>
         </main>
 
         <LivePreview character={character} warnings={warnings} />

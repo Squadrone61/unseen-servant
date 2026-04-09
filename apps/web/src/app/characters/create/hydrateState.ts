@@ -97,7 +97,11 @@ export function hydrateBuilderState(character: CharacterData): BuilderState {
     cantrips,
     preparedSpells,
 
-    // Step 7: Details
+    // Step 7: Equipment
+    equipmentMode: "starting",
+    startingGold: 75,
+
+    // Step 8: Details
     name: s.name,
     appearance: s.appearance ?? {},
     backstory: s.backstory ?? "",
