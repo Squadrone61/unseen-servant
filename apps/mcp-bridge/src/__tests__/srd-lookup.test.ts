@@ -402,7 +402,8 @@ describe("data integrity", () => {
     });
 
     it("summoned/conjured creatures with no fixed CR exist in the database", () => {
-      // These monsters scale with caster level and have no CR in the 5e.tools data.
+      // These monsters scale with caster level and have no fixed numeric CR.
+      // The 5e.tools data uses an em-dash ("—") as a sentinel for variable-CR creatures.
       const summonedNames = [
         "Aberrant Spirit",
         "Beast of the Land",
@@ -413,7 +414,8 @@ describe("data integrity", () => {
       for (const name of summonedNames) {
         const monster = monstersArray.find((m) => m.name === name);
         expect(monster, `Expected summoned creature "${name}" to exist`).toBeDefined();
-        expect(monster!.cr).toBeUndefined();
+        // cr is "—" (em-dash) for variable-CR summoned creatures in the 5e.tools source data
+        expect(monster!.cr).toBe("—");
       }
     });
   });
