@@ -81,6 +81,8 @@ function getCompletedSteps(state: ReturnType<typeof useBuilder>["state"]): Set<S
 import { SpeciesStep } from "./steps/SpeciesStep";
 import { BackgroundStep } from "./steps/BackgroundStep";
 import { ClassStep } from "./steps/ClassStep";
+import { AbilitiesStep } from "./steps/AbilitiesStep";
+import { FeatsStep } from "./steps/FeatsStep";
 
 function StepContent({ stepId }: { stepId: StepId }) {
   switch (stepId) {
@@ -90,6 +92,10 @@ function StepContent({ stepId }: { stepId: StepId }) {
       return <BackgroundStep />;
     case "class":
       return <ClassStep />;
+    case "abilities":
+      return <AbilitiesStep />;
+    case "feats":
+      return <FeatsStep />;
     default: {
       const label = STEPS.find((s) => s.id === stepId)?.label ?? stepId;
       return (
