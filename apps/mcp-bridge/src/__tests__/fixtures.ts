@@ -29,7 +29,7 @@ import type { CharacterIdentifiers } from "@unseen-servant/shared/builders";
  *
  * Stats: STR 16, DEX 14, CON 14, INT 10, WIS 12, CHA 8
  * Expected: maxHP=44 (10+4×6+5×2 CON), AC=18 (chain mail 16 + shield 2),
- *           proficiency +3, Second Wind ×2 + Action Surge ×1 (short rest resources)
+ *           proficiency +3, Second Wind ×3 + Action Surge ×1 (short rest resources)
  */
 export function createFighterCharacter(): CharacterData {
   const ids: CharacterIdentifiers = {
@@ -94,7 +94,7 @@ export function createFighterCharacter(): CharacterData {
  *
  * Stats: STR 14, DEX 10, CON 16, INT 12, WIS 18, CHA 8
  * Expected: maxHP=53 (8+4×5+5×3 CON=48, +5 Dwarven Toughness), AC=18 (chain mail + shield),
- *           proficiency +3, Channel Divinity ×1 (short rest),
+ *           proficiency +3, Channel Divinity ×2 (short rest),
  *           spell slots 4/3/2, spellcasting WIS (DC 15, +7)
  */
 export function createClericCharacter(): CharacterData {
@@ -385,7 +385,7 @@ export function createBarbarianCharacter(): CharacterData {
  * Expected: maxHP=38 (8+4×5+5×2 CON), proficiency +3,
  *           regular slots from Cleric 3: 4 L1 + 2 L2,
  *           pact slots from Warlock 2: 2 L1,
- *           Channel Divinity ×1 (short rest),
+ *           Channel Divinity ×2 (short rest),
  *           hit dice: "5d8" (both classes use d8)
  */
 export function createMulticlassCharacter(): CharacterData {

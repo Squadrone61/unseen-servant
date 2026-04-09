@@ -1,8 +1,11 @@
 /**
- * Shared character builder — single source of truth for D&D mechanics.
+ * Character Builder — Effect-System Powered
  *
- * Parsers extract CharacterIdentifiers (player choices), then delegate to
- * buildCharacter() which computes everything else from the D&D 2024 database.
+ * Collects EffectBundles from species, class features, subclass features,
+ * and feats, then resolves stats through the Universal Effect System.
+ * No hardcoded class-specific logic — everything comes from the database.
+ *
+ * Flow: CharacterIdentifiers → collectBuildEffects() → resolveStat/collectProperties → CharacterData
  */
 
 import type {
@@ -10,210 +13,59 @@ import type {
   CharacterStaticData,
   CharacterDynamicData,
   CharacterFeature,
-  CombatBonus,
   ClassResource,
   ProficiencyGroup,
   SkillProficiency,
   SavingThrowProficiency,
   SpellSlotLevel,
   AbilityScores,
+  CombatBonus,
+  AdvantageEntry,
 } from "../types/character";
 import type { CharacterIdentifiers } from "./types";
+import type { EffectBundle, EffectSource, ResolveContext } from "../types/effects";
+import {
+  resolveStat,
+  collectProperties,
+  getProficiencies,
+  getSenses,
+  getResources,
+} from "../utils/effect-resolver";
+import { evaluateExpression } from "../utils/expression-evaluator";
 import {
   getClass,
   getSpecies,
   getSpell,
   getFeat,
   getBaseItem,
-  getClassFeatures,
   getCasterMultiplier,
   THIRD_CASTER_SLOTS,
 } from "../data/index";
 import { SKILL_ABILITY_MAP } from "../utils/5etools";
 
-// ─── Class Resource Template (local, builder-only) ────────
-
-interface ClassResourceTemplate {
-  name: string;
-  levelAvailable: number;
-  resetType: "long" | "short";
-  uses: number | { abilityMod: string; minimum?: number };
-  usesTable?: Record<number, number>;
-}
-
-const CLASS_RESOURCES: Record<string, ClassResourceTemplate[]> = {
-  barbarian: [
-    {
-      name: "Rage",
-      levelAvailable: 1,
-      resetType: "long",
-      uses: 2,
-      usesTable: { 1: 2, 3: 3, 6: 4, 17: 5, 20: 6 },
-    },
-  ],
-  bard: [
-    {
-      name: "Bardic Inspiration",
-      levelAvailable: 1,
-      resetType: "short",
-      uses: { abilityMod: "cha", minimum: 1 },
-    },
-  ],
-  cleric: [
-    {
-      name: "Channel Divinity",
-      levelAvailable: 1,
-      resetType: "short",
-      uses: 1,
-      usesTable: { 1: 1, 6: 2, 18: 3 },
-    },
-  ],
-  druid: [
-    { name: "Wild Shape", levelAvailable: 2, resetType: "short", uses: 2 },
-    {
-      name: "Channel Nature",
-      levelAvailable: 1,
-      resetType: "long",
-      uses: 1,
-      usesTable: { 1: 1, 6: 2, 18: 3 },
-    },
-  ],
-  fighter: [
-    {
-      name: "Second Wind",
-      levelAvailable: 1,
-      resetType: "short",
-      uses: 1,
-      usesTable: { 1: 1, 2: 2, 9: 3, 13: 4, 17: 5 },
-    },
-    {
-      name: "Action Surge",
-      levelAvailable: 2,
-      resetType: "short",
-      uses: 1,
-      usesTable: { 2: 1, 17: 2 },
-    },
-    {
-      name: "Indomitable",
-      levelAvailable: 9,
-      resetType: "long",
-      uses: 1,
-      usesTable: { 9: 1, 13: 2, 17: 3 },
-    },
-  ],
-  monk: [
-    {
-      name: "Focus Points",
-      levelAvailable: 2,
-      resetType: "short",
-      uses: 2,
-      usesTable: {
-        2: 2,
-        3: 3,
-        4: 4,
-        5: 5,
-        6: 6,
-        7: 7,
-        8: 8,
-        9: 9,
-        10: 10,
-        11: 11,
-        12: 12,
-        13: 13,
-        14: 14,
-        15: 15,
-        16: 16,
-        17: 17,
-        18: 18,
-        19: 19,
-        20: 20,
-      },
-    },
-  ],
-  paladin: [
-    {
-      name: "Lay on Hands",
-      levelAvailable: 1,
-      resetType: "long",
-      uses: 5,
-      usesTable: {
-        1: 5,
-        2: 10,
-        3: 15,
-        4: 20,
-        5: 25,
-        6: 30,
-        7: 35,
-        8: 40,
-        9: 45,
-        10: 50,
-        11: 55,
-        12: 60,
-        13: 65,
-        14: 70,
-        15: 75,
-        16: 80,
-        17: 85,
-        18: 90,
-        19: 95,
-        20: 100,
-      },
-    },
-    {
-      name: "Channel Divinity",
-      levelAvailable: 3,
-      resetType: "long",
-      uses: 1,
-      usesTable: { 3: 1, 11: 2, 15: 3 },
-    },
-  ],
-  ranger: [],
-  rogue: [],
-  sorcerer: [
-    {
-      name: "Sorcery Points",
-      levelAvailable: 2,
-      resetType: "long",
-      uses: 2,
-      usesTable: {
-        2: 2,
-        3: 3,
-        4: 4,
-        5: 5,
-        6: 6,
-        7: 7,
-        8: 8,
-        9: 9,
-        10: 10,
-        11: 11,
-        12: 12,
-        13: 13,
-        14: 14,
-        15: 15,
-        16: 16,
-        17: 17,
-        18: 18,
-        19: 19,
-        20: 20,
-      },
-    },
-  ],
-  warlock: [],
-  wizard: [{ name: "Arcane Recovery", levelAvailable: 1, resetType: "long", uses: 1 }],
-};
-
-function getClassResources(className: string): ClassResourceTemplate[] {
-  return CLASS_RESOURCES[className.toLowerCase()] ?? [];
-}
-
 // ─── Helpers ─────────────────────────────────────────────
 
-function getAbilityMod(score: number): number {
+function abilityMod(score: number): number {
   return Math.floor((score - 10) / 2);
 }
 
-// Multiclass spell slot table (caster levels 1-20) — from PHB
-const MULTICLASS_SPELL_SLOTS: number[][] = [
+/** Third-caster subclasses that grant spellcasting */
+const THIRD_CASTER_SUBCLASSES = new Set(["eldritch knight", "arcane trickster"]);
+
+/** Spellcasting ability by class name */
+const SPELLCASTING_ABILITY: Record<string, keyof AbilityScores> = {
+  bard: "charisma",
+  cleric: "wisdom",
+  druid: "wisdom",
+  paladin: "charisma",
+  ranger: "wisdom",
+  sorcerer: "charisma",
+  warlock: "charisma",
+  wizard: "intelligence",
+};
+
+/** Multiclass spell slot table (caster levels 1-20) */
+const MULTICLASS_SLOTS: number[][] = [
   [2, 0, 0, 0, 0, 0, 0, 0, 0],
   [3, 0, 0, 0, 0, 0, 0, 0, 0],
   [4, 2, 0, 0, 0, 0, 0, 0, 0],
@@ -236,20 +88,87 @@ const MULTICLASS_SPELL_SLOTS: number[][] = [
   [4, 3, 3, 3, 3, 2, 2, 1, 1],
 ];
 
-/** Third-caster subclasses that grant spellcasting */
-const THIRD_CASTER_SUBCLASSES = new Set(["eldritch knight", "arcane trickster"]);
+// ─── Effect Collection ───────────────────────────────────
 
-// Spellcasting ability by class name (derived from 5e.tools additionalSpells/casterProgression)
-const CLASS_SPELLCASTING_ABILITY: Record<string, keyof AbilityScores> = {
-  bard: "charisma",
-  cleric: "wisdom",
-  druid: "wisdom",
-  paladin: "charisma",
-  ranger: "wisdom",
-  sorcerer: "charisma",
-  warlock: "charisma",
-  wizard: "intelligence",
-};
+/**
+ * Collect all build-time EffectBundles from the character's sources:
+ * species, class features, subclass features, and feats.
+ */
+export function collectBuildEffects(ids: CharacterIdentifiers): EffectBundle[] {
+  const bundles: EffectBundle[] = [];
+
+  // Species effects
+  const species = getSpecies(ids.race);
+  if (species?.effects) {
+    bundles.push({
+      id: `species:${ids.race}`,
+      source: { type: "species", name: ids.race },
+      lifetime: { type: "permanent" },
+      effects: species.effects,
+    });
+  }
+
+  // Class and subclass feature effects
+  for (const cls of ids.classes) {
+    const classDb = getClass(cls.name);
+    if (!classDb) continue;
+
+    for (const feature of classDb.features) {
+      if (feature.level <= cls.level && feature.effects) {
+        bundles.push({
+          id: `class:${cls.name}:${feature.name}`,
+          source: {
+            type: "class",
+            name: cls.name,
+            featureName: feature.name,
+            level: feature.level,
+          },
+          lifetime: { type: "permanent" },
+          effects: feature.effects,
+        });
+      }
+    }
+
+    if (cls.subclass) {
+      const sub = classDb.subclasses.find(
+        (s) =>
+          s.name.toLowerCase() === cls.subclass!.toLowerCase() ||
+          s.shortName.toLowerCase() === cls.subclass!.toLowerCase(),
+      );
+      if (sub) {
+        for (const sf of sub.features) {
+          if (sf.level <= cls.level && sf.effects) {
+            bundles.push({
+              id: `subclass:${sub.name}:${sf.name}`,
+              source: { type: "subclass", name: sub.name, featureName: sf.name, level: sf.level },
+              lifetime: { type: "permanent" },
+              effects: sf.effects,
+            });
+          }
+        }
+      }
+    }
+  }
+
+  // Feat effects (from additional features)
+  if (ids.additionalFeatures) {
+    for (const feat of ids.additionalFeatures) {
+      if (feat.source === "feat") {
+        const dbFeat = getFeat(feat.name);
+        if (dbFeat?.effects) {
+          bundles.push({
+            id: `feat:${feat.name}`,
+            source: { type: "feat", name: feat.name },
+            lifetime: { type: "permanent" },
+            effects: dbFeat.effects,
+          });
+        }
+      }
+    }
+  }
+
+  return bundles;
+}
 
 // ─── Main Builder ────────────────────────────────────────
 
@@ -258,81 +177,101 @@ export function buildCharacter(ids: CharacterIdentifiers): {
   warnings: string[];
 } {
   const warnings: string[] = [];
-
   const totalLevel = ids.classes.reduce((sum, c) => sum + c.level, 0);
-  const proficiencyBonus = Math.ceil(totalLevel / 4) + 1;
+  const proficiencyBonus = Math.floor((totalLevel - 1) / 4) + 2;
+  const species = getSpecies(ids.race);
 
-  // === HP adjustments from feats/species ===
-  let maxHP = ids.maxHP;
-  const featureNames = new Set((ids.additionalFeatures ?? []).map((f) => f.name.toLowerCase()));
-  if (featureNames.has("tough")) {
-    maxHP += 2 * totalLevel;
-  }
-  // Dwarven Toughness
-  const speciesLowerForHP = ids.race.toLowerCase().replace(/\s*\(.*\)/, "");
-  if (speciesLowerForHP === "dwarf") {
-    maxHP += totalLevel;
-  }
+  // Collect all effects from species, class features, subclass features, feats
+  const bundles = collectBuildEffects(ids);
 
-  // === AC ===
-  const armorClass = ids.armorClass ?? computeArmorClass(ids);
+  // Build resolve context for expression evaluation
+  const ctx: ResolveContext = {
+    abilities: ids.abilities,
+    totalLevel,
+    classLevel: ids.classes[0]?.level ?? 1,
+    proficiencyBonus,
+  };
 
-  // === Speed ===
-  const speed = ids.speed ?? computeSpeed(ids, featureNames);
+  // ── HP ──────────────────────────────────────────────────
+  // Base HP from identifiers + bonus from effects (Tough = "2 * lvl", Dwarf Toughness = "lvl")
+  const hpBonus = resolveStat(bundles, "hp", 0, ctx);
+  const maxHP = Math.max(1, ids.maxHP + hpBonus);
 
-  // === Skills ===
-  const skills = computeSkills(ids);
+  // ── AC ──────────────────────────────────────────────────
+  // Start with equipment AC, then apply effects
+  const equipmentAC = computeEquipmentAC(ids);
+  const ac =
+    ids.armorClass ?? resolveStat(bundles, "ac", equipmentAC.base, ctx) + equipmentAC.shieldBonus;
 
-  // === Saving Throws ===
+  // ── Speed ───────────────────────────────────────────────
+  const baseSpeed = species?.speed ?? 30;
+  const speed = ids.speed ?? resolveStat(bundles, "speed", baseSpeed, ctx);
+
+  // ── Skills ──────────────────────────────────────────────
+  const effectSkillProfs = getProficiencies(bundles, "skill");
+  const allSkillProfs = [...new Set([...ids.skillProficiencies, ...effectSkillProfs])];
+  const skills = computeSkills(
+    allSkillProfs,
+    ids.skillExpertise,
+    ids.abilities,
+    proficiencyBonus,
+    ids.skillBonuses,
+  );
+
+  // ── Saving Throws ───────────────────────────────────────
   const savingThrows = computeSavingThrows(ids);
 
-  // === Spellcasting ===
+  // ── Spellcasting ────────────────────────────────────────
   const spellcasting = computeSpellcasting(ids, proficiencyBonus);
 
-  // === Spell Slots ===
+  // ── Spell Slots ─────────────────────────────────────────
   const { regularSlots, pactSlots } = computeSpellSlots(ids);
 
-  // === Enrich Spells ===
+  // ── Spells (enriched from DB) ───────────────────────────
   const spells = ids.spells.map((spell) => {
-    const dbSpell = getSpell(spell.name);
-    if (dbSpell) {
-      return {
-        ...spell,
-        description: spell.description || dbSpell.description,
-        school: spell.school || dbSpell.school,
-        castingTime: spell.castingTime || dbSpell.castingTime,
-        range: spell.range || dbSpell.range,
-        components: spell.components || dbSpell.components,
-        duration: spell.duration || dbSpell.duration,
-        concentration: spell.concentration ?? dbSpell.concentration,
-        ritual: spell.ritual ?? dbSpell.ritual,
-      };
-    }
-    return spell;
+    const db = getSpell(spell.name);
+    if (!db) return spell;
+    return {
+      ...spell,
+      description: spell.description || db.description,
+      school: spell.school || db.school,
+      castingTime: spell.castingTime || db.castingTime,
+      range: spell.range || db.range,
+      components: spell.components || db.components,
+      duration: spell.duration || db.duration,
+      concentration: spell.concentration ?? db.concentration,
+      ritual: spell.ritual ?? db.ritual,
+    };
   });
 
-  // === Features ===
-  const features = computeFeatures(ids, warnings);
+  // ── Features (from DB) ──────────────────────────────────
+  const features = computeFeatures(ids);
 
-  // === Class Resources ===
-  const classResources = computeClassResources(ids);
+  // ── Class Resources (from effects) ──────────────────────
+  const classResources = computeResources(bundles, ctx);
 
-  // === Proficiencies ===
-  const proficiencies = computeProficiencies(ids);
+  // ── Proficiencies (class flat arrays + effects) ─────────
+  const proficiencies = computeProficiencies(ids, bundles);
 
-  // === Senses ===
-  const senses = computeSenses(ids, proficiencyBonus, skills);
+  // ── Senses (from effects + species.darkvision) ──────────
+  const senses = computeSenses(bundles, species, ids, proficiencyBonus, skills);
 
-  const speciesName = ids.race;
+  // ── Combat Bonuses (from effects) ───────────────────────
+  const combatBonuses = computeCombatBonuses(bundles, ctx);
+
+  // ── Advantages (from effects) ───────────────────────────
+  const advantages = computeAdvantages(bundles, ids);
+
+  // ── Assemble ────────────────────────────────────────────
 
   const staticData: CharacterStaticData = {
     name: ids.name,
-    species: speciesName,
-    race: speciesName, // legacy alias
+    species: ids.race,
+    race: ids.race,
     classes: ids.classes,
     abilities: ids.abilities,
-    maxHP: Math.max(1, maxHP),
-    armorClass,
+    maxHP,
+    armorClass: ac,
     proficiencyBonus,
     speed,
     features,
@@ -343,11 +282,11 @@ export function buildCharacter(ids: CharacterIdentifiers): {
     senses,
     languages: ids.languages,
     spells,
-    spellcastingAbility: spellcasting.spellcastingAbility,
-    spellSaveDC: spellcasting.spellSaveDC,
-    spellAttackBonus: spellcasting.spellAttackBonus,
-    combatBonuses: computeCombatBonuses(ids, proficiencyBonus),
-    advantages: ids.advantages ?? [],
+    spellcastingAbility: spellcasting.ability,
+    spellSaveDC: spellcasting.dc,
+    spellAttackBonus: spellcasting.attackBonus,
+    combatBonuses,
+    advantages,
     traits: ids.traits ?? {},
     appearance: ids.appearance,
     backstory: ids.backstory || undefined,
@@ -356,10 +295,10 @@ export function buildCharacter(ids: CharacterIdentifiers): {
   };
 
   const dynamicData: CharacterDynamicData = {
-    currentHP: staticData.maxHP,
+    currentHP: maxHP,
     tempHP: 0,
     spellSlotsUsed: regularSlots,
-    pactMagicSlots: pactSlots,
+    pactMagicSlots: pactSlots.length > 0 ? pactSlots : undefined,
     resourcesUsed: {},
     conditions: [],
     deathSaves: { successes: 0, failures: 0 },
@@ -368,133 +307,62 @@ export function buildCharacter(ids: CharacterIdentifiers): {
     heroicInspiration: false,
   };
 
-  return {
-    character: { static: staticData, dynamic: dynamicData },
-    warnings,
-  };
+  return { character: { static: staticData, dynamic: dynamicData }, warnings };
 }
 
-// ─── AC Computation ──────────────────────────────────────
+// ─── Equipment AC ────────────────────────────────────────
+// Equipment AC is separate from effects — it reads actual inventory items.
+// Effects provide unarmored defense formulas and other AC modifiers.
+// The resolver picks the highest "set" value (equipment base vs unarmored defense)
+// and then stacks all "add" modifiers on top.
 
-function computeArmorClass(ids: CharacterIdentifiers): number {
-  const dexMod = getAbilityMod(ids.abilities.dexterity);
-  const conMod = getAbilityMod(ids.abilities.constitution);
-  const wisMod = getAbilityMod(ids.abilities.wisdom);
-
-  // Find equipped armor and shields from equipment
-  let baseAC = 10 + dexMod;
-  let hasBodyArmor = false;
-  let hasShield = false;
+function computeEquipmentAC(ids: CharacterIdentifiers): { base: number; shieldBonus: number } {
+  const dexMod = abilityMod(ids.abilities.dexterity);
+  let base = 10 + dexMod; // unarmored default
+  let shieldBonus = 0;
 
   for (const item of ids.equipment) {
     if (!item.equipped) continue;
+
     if (item.type === "Shield") {
-      hasShield = true;
+      shieldBonus = 2;
       continue;
     }
+
     if (item.type === "Armor" && item.name) {
       const baseItem = getBaseItem(item.name);
       if (baseItem?.armor && baseItem.ac != null) {
-        hasBodyArmor = true;
-        const typeCode = baseItem.type?.split("|")[0];
-        switch (typeCode) {
-          case "LA": // Light armor
-            baseAC = baseItem.ac + dexMod;
-            break;
-          case "MA": // Medium armor
-            baseAC = baseItem.ac + Math.min(dexMod, 2);
-            break;
-          case "HA": // Heavy armor
-            baseAC = baseItem.ac;
-            break;
-        }
-      } else if (!baseItem && item.armorClass) {
-        // Fallback to item's AC if not found in DB
-        hasBodyArmor = true;
-        baseAC = item.armorClass + dexMod; // assume light
+        const typeCode = baseItem.type;
+        if (typeCode === "LA") base = baseItem.ac + dexMod;
+        else if (typeCode === "MA") base = baseItem.ac + Math.min(dexMod, 2);
+        else if (typeCode === "HA") base = baseItem.ac;
+      } else if (item.armorClass) {
+        base = item.armorClass + dexMod;
       }
     }
   }
 
-  // Unarmored Defense
-  if (!hasBodyArmor) {
-    const classNames = ids.classes.map((c) => c.name.toLowerCase());
-    if (classNames.includes("barbarian")) {
-      baseAC = Math.max(baseAC, 10 + dexMod + conMod);
-    }
-    if (classNames.includes("monk") && !hasShield) {
-      baseAC = Math.max(baseAC, 10 + dexMod + wisMod);
-    }
-    // Draconic Resilience (Sorcerer with Draconic subclass)
-    if (
-      ids.classes.some(
-        (c) =>
-          c.name.toLowerCase() === "sorcerer" && c.subclass?.toLowerCase()?.includes("draconic"),
-      )
-    ) {
-      baseAC = Math.max(baseAC, 13 + dexMod);
-    }
-  }
-
-  if (hasShield) {
-    baseAC += 2;
-  }
-
-  // Defense fighting style: +1 AC when wearing armor
-  if (hasBodyArmor) {
-    const featNames = (ids.additionalFeatures ?? []).map((f) => f.name.toLowerCase());
-    if (featNames.includes("defense") || featNames.includes("fighting style: defense")) {
-      baseAC += 1;
-    }
-  }
-
-  return baseAC;
+  return { base, shieldBonus };
 }
 
-// ─── Speed Computation ───────────────────────────────────
+// ─── Skills ──────────────────────────────────────────────
 
-function computeSpeed(ids: CharacterIdentifiers, featureNames: Set<string>): number {
-  // Look up species base speed
-  const speciesLower = ids.race.toLowerCase().replace(/\s*\(.*\)/, "");
-  const speciesData = getSpecies(speciesLower);
-  let speed = speciesData ? speciesData.speed : 30;
+function computeSkills(
+  proficiencies: string[],
+  expertise: string[],
+  abilities: AbilityScores,
+  profBonus: number,
+  bonuses?: Map<string, number>,
+): SkillProficiency[] {
+  const profSet = new Set(proficiencies);
+  const expertiseSet = new Set(expertise);
 
-  const totalLevel = ids.classes.reduce((sum, c) => sum + c.level, 0);
-  const classNames = ids.classes.map((c) => c.name.toLowerCase());
-
-  // Barbarian Fast Movement (+10 at level 5+)
-  if (classNames.includes("barbarian") && totalLevel >= 5) {
-    speed += 10;
-  }
-
-  // Monk Unarmored Movement
-  const monkClass = ids.classes.find((c) => c.name.toLowerCase() === "monk");
-  if (monkClass && monkClass.level >= 2) {
-    const lvl = monkClass.level;
-    const monkBonus = lvl >= 18 ? 30 : lvl >= 14 ? 25 : lvl >= 10 ? 20 : lvl >= 6 ? 15 : 10;
-    speed += monkBonus;
-  }
-
-  // Feat-based speed bonuses
-  if (featureNames.has("mobile")) speed += 10;
-  if (featureNames.has("speedy")) speed += 10;
-  if (featureNames.has("squat nimbleness")) speed += 5;
-
-  return speed;
-}
-
-// ─── Skills Computation ──────────────────────────────────
-
-function computeSkills(ids: CharacterIdentifiers): SkillProficiency[] {
-  const profSet = new Set(ids.skillProficiencies);
-  const expertiseSet = new Set(ids.skillExpertise);
-
-  return Object.entries(SKILL_ABILITY_MAP).map(([skillSlug, ability]) => ({
-    name: skillSlug,
+  return Object.entries(SKILL_ABILITY_MAP).map(([slug, ability]) => ({
+    name: slug,
     ability,
-    proficient: profSet.has(skillSlug),
-    expertise: expertiseSet.has(skillSlug),
-    bonus: ids.skillBonuses?.get(skillSlug) || undefined,
+    proficient: profSet.has(slug),
+    expertise: expertiseSet.has(slug),
+    bonus: bonuses?.get(slug) || undefined,
   }));
 }
 
@@ -502,8 +370,7 @@ function computeSkills(ids: CharacterIdentifiers): SkillProficiency[] {
 
 function computeSavingThrows(ids: CharacterIdentifiers): SavingThrowProficiency[] {
   const profSet = new Set(ids.saveProficiencies);
-
-  const abilityList: (keyof AbilityScores)[] = [
+  const allAbilities: (keyof AbilityScores)[] = [
     "strength",
     "dexterity",
     "constitution",
@@ -511,8 +378,7 @@ function computeSavingThrows(ids: CharacterIdentifiers): SavingThrowProficiency[
     "wisdom",
     "charisma",
   ];
-
-  return abilityList.map((ability) => ({
+  return allAbilities.map((ability) => ({
     ability,
     proficient: profSet.has(ability),
     bonus: ids.saveBonuses?.get(ability) || undefined,
@@ -523,23 +389,18 @@ function computeSavingThrows(ids: CharacterIdentifiers): SavingThrowProficiency[
 
 function computeSpellcasting(
   ids: CharacterIdentifiers,
-  proficiencyBonus: number,
-): {
-  spellcastingAbility?: keyof AbilityScores;
-  spellSaveDC?: number;
-  spellAttackBonus?: number;
-} {
-  // Find the highest-level class that can cast spells
+  profBonus: number,
+): { ability?: keyof AbilityScores; dc?: number; attackBonus?: number } {
   let bestAbility: keyof AbilityScores | undefined;
   let bestLevel = 0;
 
   for (const cls of ids.classes) {
-    const classData = getClass(cls.name);
     const clsLower = cls.name.toLowerCase();
+    const subLower = (cls.subclass ?? "").toLowerCase();
 
-    // Check for spellcasting ability from our map
-    const scAbility = CLASS_SPELLCASTING_ABILITY[clsLower];
-    if (scAbility && classData?.casterProgression) {
+    // Standard caster
+    const scAbility = SPELLCASTING_ABILITY[clsLower];
+    if (scAbility) {
       if (cls.level > bestLevel) {
         bestAbility = scAbility;
         bestLevel = cls.level;
@@ -547,39 +408,24 @@ function computeSpellcasting(
       continue;
     }
 
-    // Check for third-caster subclasses
-    const subLc = (cls.subclass ?? "").toLowerCase();
-    if (THIRD_CASTER_SUBCLASSES.has(subLc)) {
-      if (cls.level > bestLevel) {
-        bestAbility = "intelligence";
-        bestLevel = cls.level;
-      }
+    // Third-caster subclasses
+    if (THIRD_CASTER_SUBCLASSES.has(subLower) && cls.level > bestLevel) {
+      bestAbility = "intelligence";
+      bestLevel = cls.level;
     }
   }
 
   if (!bestAbility) return {};
 
-  const mod = getAbilityMod(ids.abilities[bestAbility]);
+  const mod = abilityMod(ids.abilities[bestAbility]);
   return {
-    spellcastingAbility: bestAbility,
-    spellSaveDC: 8 + proficiencyBonus + mod,
-    spellAttackBonus: proficiencyBonus + mod,
+    ability: bestAbility,
+    dc: 8 + profBonus + mod,
+    attackBonus: profBonus + mod,
   };
 }
 
 // ─── Spell Slots ─────────────────────────────────────────
-
-function getClassSpellSlotsFromData(className: string, level: number): number[] {
-  const cls = getClass(className);
-  if (!cls) return [];
-
-  const slotTable = cls.spellSlotTable;
-  if (slotTable && level >= 1 && level <= slotTable.length) {
-    return slotTable[level - 1];
-  }
-
-  return [];
-}
 
 function computeSpellSlots(ids: CharacterIdentifiers): {
   regularSlots: SpellSlotLevel[];
@@ -588,64 +434,63 @@ function computeSpellSlots(ids: CharacterIdentifiers): {
   const regularSlots: SpellSlotLevel[] = [];
   const pactSlots: SpellSlotLevel[] = [];
 
-  // Separate warlock from non-warlock caster classes
   const casterClasses: { name: string; level: number; subclass?: string }[] = [];
   let warlockLevel = 0;
 
   for (const cls of ids.classes) {
-    const lc = cls.name.toLowerCase();
-    if (lc === "warlock") {
+    if (cls.name.toLowerCase() === "warlock") {
       warlockLevel = cls.level;
       continue;
     }
-    const classData = getClass(cls.name);
-    const subLc = (cls.subclass ?? "").toLowerCase();
-    if (classData?.casterProgression || THIRD_CASTER_SUBCLASSES.has(subLc)) {
+    const classDb = getClass(cls.name);
+    const subLower = (cls.subclass ?? "").toLowerCase();
+    if (classDb?.casterProgression || THIRD_CASTER_SUBCLASSES.has(subLower)) {
       casterClasses.push(cls);
     }
   }
 
-  // Warlock pact magic
+  // Warlock pact slots
   if (warlockLevel > 0) {
-    const slots = getClassSpellSlotsFromData("Warlock", warlockLevel);
-    if (slots && slots.length > 0) {
-      for (let i = slots.length - 1; i >= 0; i--) {
-        if (slots[i] > 0) {
-          pactSlots.push({ level: i + 1, total: slots[i], used: 0 });
+    const classDb = getClass("Warlock");
+    const table = classDb?.spellSlotTable;
+    if (table && warlockLevel <= table.length) {
+      const row = table[warlockLevel - 1];
+      // Warlock table: find highest non-zero slot level
+      for (let i = row.length - 1; i >= 0; i--) {
+        if (row[i] > 0) {
+          pactSlots.push({ level: i + 1, total: row[i], used: 0 });
           break;
         }
       }
     }
   }
 
-  if (casterClasses.length === 0) {
-    return { regularSlots, pactSlots };
-  }
+  if (casterClasses.length === 0) return { regularSlots, pactSlots };
 
   let slotRow: number[] | undefined;
 
   if (casterClasses.length === 1) {
-    // Single caster class
     const cls = casterClasses[0];
-    const subLc = (cls.subclass ?? "").toLowerCase();
+    const subLower = (cls.subclass ?? "").toLowerCase();
 
-    if (THIRD_CASTER_SUBCLASSES.has(subLc)) {
+    if (THIRD_CASTER_SUBCLASSES.has(subLower)) {
       slotRow = THIRD_CASTER_SLOTS[cls.level] ?? [];
     } else {
-      slotRow = getClassSpellSlotsFromData(cls.name, cls.level);
+      const classDb = getClass(cls.name);
+      const table = classDb?.spellSlotTable;
+      slotRow = table && cls.level <= table.length ? table[cls.level - 1] : [];
     }
   } else {
     // Multiclass: compute weighted caster level
     let combinedCasterLevel = 0;
     for (const cls of casterClasses) {
-      const lc = cls.name.toLowerCase();
-      const multiplier = getCasterMultiplier(lc);
-      const subLc = (cls.subclass ?? "").toLowerCase();
-      const thirdCasterMult = THIRD_CASTER_SUBCLASSES.has(subLc) ? 1 / 3 : 0;
-      combinedCasterLevel += cls.level * (multiplier || thirdCasterMult);
+      const multiplier = getCasterMultiplier(cls.name.toLowerCase());
+      const subLower = (cls.subclass ?? "").toLowerCase();
+      const thirdMult = THIRD_CASTER_SUBCLASSES.has(subLower) ? 1 / 3 : 0;
+      combinedCasterLevel += cls.level * (multiplier || thirdMult);
     }
     const effectiveLevel = Math.min(Math.max(Math.floor(combinedCasterLevel), 1), 20);
-    slotRow = MULTICLASS_SPELL_SLOTS[effectiveLevel - 1];
+    slotRow = MULTICLASS_SLOTS[effectiveLevel - 1];
   }
 
   if (slotRow) {
@@ -659,214 +504,137 @@ function computeSpellSlots(ids: CharacterIdentifiers): {
   return { regularSlots, pactSlots };
 }
 
-// ─── Combat Bonuses ─────────────────────────────────────
-
-function computeCombatBonuses(ids: CharacterIdentifiers, proficiencyBonus: number): CombatBonus[] {
-  const bonuses: CombatBonus[] = [];
-  const featNames = (ids.additionalFeatures ?? []).map((f) => f.name.toLowerCase());
-
-  // Archery: +2 to ranged attack rolls
-  if (featNames.includes("archery")) {
-    bonuses.push({ type: "attack", value: 2, attackType: "ranged", source: "Archery" });
-  }
-
-  // Alert: add proficiency bonus to initiative rolls
-  if (featNames.includes("alert")) {
-    bonuses.push({ type: "initiative", value: proficiencyBonus, source: "Alert" });
-  }
-
-  // Dueling: +2 melee damage (conditional — stored for DM visibility)
-  if (featNames.includes("dueling")) {
-    bonuses.push({
-      type: "damage",
-      value: 2,
-      attackType: "melee",
-      source: "Dueling",
-      condition: "holding a melee weapon in one hand and no other weapons",
-    });
-  }
-
-  // Thrown Weapon Fighting: +2 ranged damage with thrown weapons (conditional)
-  if (featNames.includes("thrown weapon fighting")) {
-    bonuses.push({
-      type: "damage",
-      value: 2,
-      attackType: "ranged",
-      source: "Thrown Weapon Fighting",
-      condition: "thrown weapon ranged attacks only",
-    });
-  }
-
-  return bonuses;
-}
-
 // ─── Features ────────────────────────────────────────────
 
-function computeFeatures(ids: CharacterIdentifiers, _warnings: string[]): CharacterFeature[] {
+function computeFeatures(ids: CharacterIdentifiers): CharacterFeature[] {
   const features: CharacterFeature[] = [];
   const seen = new Set<string>();
 
-  const addFeature = (f: CharacterFeature) => {
+  const add = (f: CharacterFeature) => {
     if (!seen.has(f.name)) {
       seen.add(f.name);
       features.push(f);
     }
   };
 
-  // Parser-provided features first (they may have richer data)
-  if (ids.additionalFeatures) {
-    for (const f of ids.additionalFeatures) {
-      addFeature(f);
-    }
-  }
+  // Caller-provided features first (may have richer data)
+  for (const f of ids.additionalFeatures ?? []) add(f);
 
-  // Class features from DB (now using Entry[] → text)
+  // Class features from DB
   for (const cls of ids.classes) {
-    const dbFeatures = getClassFeatures(cls.name, cls.level);
-    for (const dbf of dbFeatures) {
-      addFeature({
-        name: dbf.name,
-        description: dbf.description,
-        source: "class",
-        sourceLabel: cls.name,
-        requiredLevel: dbf.level,
-      });
+    const classDb = getClass(cls.name);
+    if (!classDb) continue;
+
+    for (const feature of classDb.features) {
+      if (feature.level <= cls.level) {
+        add({
+          name: feature.name,
+          description: feature.description,
+          source: "class",
+          sourceLabel: cls.name,
+          requiredLevel: feature.level,
+        });
+      }
     }
 
-    // Subclass features from assembled data
-    if (cls.subclass && !seen.has(cls.subclass)) {
-      const classData = getClass(cls.name);
-      const subclassData = classData?.subclasses.find(
-        (s: { name: string; shortName: string }) =>
+    // Subclass features
+    if (cls.subclass) {
+      const sub = classDb.subclasses.find(
+        (s) =>
           s.name.toLowerCase() === cls.subclass!.toLowerCase() ||
           s.shortName.toLowerCase() === cls.subclass!.toLowerCase(),
       );
-      if (subclassData) {
-        for (const sf of subclassData.features) {
+      if (sub) {
+        if (!seen.has(sub.name)) {
+          add({
+            name: sub.name,
+            description: sub.description,
+            source: "class",
+            sourceLabel: cls.name,
+            requiredLevel: 3,
+          });
+        }
+        for (const sf of sub.features) {
           if (sf.level <= cls.level) {
-            addFeature({
+            add({
               name: sf.name,
               description: sf.description,
               source: "class",
-              sourceLabel: `${cls.name} (${cls.subclass})`,
+              sourceLabel: `${cls.name} (${sub.name})`,
               requiredLevel: sf.level,
             });
           }
         }
       }
-      if (!seen.has(cls.subclass)) {
-        addFeature({
-          name: cls.subclass,
-          description: `${cls.name} subclass`,
-          source: "class",
-          sourceLabel: cls.name,
-          requiredLevel: 3,
-        });
-      }
     }
   }
 
-  // Feat features from DB
-  for (const feat of ids.additionalFeatures?.filter((f) => f.source === "feat") ?? []) {
-    const dbFeat = getFeat(feat.name);
-    if (dbFeat && (!feat.description || feat.description === feat.name)) {
-      // Enrich with DB description
-      const idx = features.findIndex((f) => f.name === feat.name);
-      if (idx >= 0) {
-        features[idx] = { ...features[idx], description: dbFeat.description };
-      }
-    }
-  }
-
-  // Species traits from DB
-  const speciesLower = ids.race.toLowerCase().replace(/\s*\(.*\)/, "");
-  const speciesData = getSpecies(speciesLower);
-  if (speciesData?.description) {
-    addFeature({
+  // Species description as a feature
+  const species = getSpecies(ids.race);
+  if (species) {
+    add({
       name: ids.race,
-      description: speciesData.description,
+      description: species.description,
       source: "race",
       sourceLabel: ids.race,
     });
   }
 
-  return features;
-}
-
-// ─── Class Resources ─────────────────────────────────────
-
-function computeClassResources(ids: CharacterIdentifiers): ClassResource[] {
-  const resources: ClassResource[] = [];
-  const seen = new Set<string>();
-  const totalLevel = ids.classes.reduce((sum, c) => sum + c.level, 0);
-  const proficiencyBonus = Math.ceil(totalLevel / 4) + 1;
-
-  for (const cls of ids.classes) {
-    const templates = getClassResources(cls.name);
-
-    for (const template of templates) {
-      if (cls.level < template.levelAvailable) continue;
-      if (seen.has(template.name)) continue;
-      seen.add(template.name);
-
-      const maxUses = resolveResourceUses(template, cls.level, ids.abilities);
-      if (maxUses <= 0) continue;
-
-      resources.push({
-        name: template.name,
-        maxUses,
-        resetType: template.resetType,
-        source: cls.name,
-      });
+  // Enrich feat descriptions
+  for (const feat of ids.additionalFeatures?.filter((f) => f.source === "feat") ?? []) {
+    const dbFeat = getFeat(feat.name);
+    if (dbFeat) {
+      const idx = features.findIndex((f) => f.name === feat.name);
+      if (idx >= 0 && (!features[idx].description || features[idx].description === feat.name)) {
+        features[idx] = { ...features[idx], description: dbFeat.description };
+      }
     }
   }
 
-  // Lucky feat: PB luck points, long rest
-  const featureNames = (ids.additionalFeatures ?? []).map((f) => f.name.toLowerCase());
-  if (featureNames.includes("lucky") && !seen.has("Luck Points")) {
+  return features;
+}
+
+// ─── Class Resources (from effects) ──────────────────────
+
+function computeResources(bundles: EffectBundle[], ctx: ResolveContext): ClassResource[] {
+  const resources: ClassResource[] = [];
+  const seen = new Set<string>();
+
+  for (const res of getResources(bundles)) {
+    if (seen.has(res.name)) continue;
+    seen.add(res.name);
+
+    // Evaluate maxUses expression
+    const maxUses =
+      typeof res.maxUses === "number" ? res.maxUses : evaluateExpression(res.maxUses, ctx);
+
+    if (maxUses <= 0) continue;
+
+    // Find the bundle source
+    const bundleSource = bundles.find((b) =>
+      b.effects.properties?.some((p) => p.type === "resource" && p.name === res.name),
+    )?.source;
+
+    const className = bundleSource?.name ?? "Unknown";
+
     resources.push({
-      name: "Luck Points",
-      maxUses: proficiencyBonus,
-      resetType: "long",
-      source: "Lucky",
+      name: res.name,
+      maxUses: Math.floor(maxUses),
+      resetType: res.resetOn === "short" ? "short" : "long",
+      source: className,
     });
   }
 
   return resources;
 }
 
-function resolveResourceUses(
-  template: ClassResourceTemplate,
-  level: number,
-  abilities: AbilityScores,
-): number {
-  // Check usesTable: find the highest level entry at or below current level
-  if (template.usesTable) {
-    const applicableLevels = Object.keys(template.usesTable)
-      .map(Number)
-      .filter((l) => l <= level)
-      .sort((a, b) => b - a);
-    if (applicableLevels.length > 0) {
-      return template.usesTable[applicableLevels[0]];
-    }
-  }
-
-  // Resolve uses value
-  if (typeof template.uses === "number") {
-    return template.uses;
-  }
-
-  // Ability modifier-based uses
-  const abilityKey = template.uses.abilityMod.toLowerCase() as keyof AbilityScores;
-  const mod = getAbilityMod(abilities[abilityKey] ?? 10);
-  const minimum = template.uses.minimum ?? 1;
-  return Math.max(minimum, mod);
-}
-
 // ─── Proficiencies ───────────────────────────────────────
 
-function computeProficiencies(ids: CharacterIdentifiers): ProficiencyGroup {
-  // If parser provided explicit proficiencies, use those
+function computeProficiencies(
+  ids: CharacterIdentifiers,
+  bundles: EffectBundle[],
+): ProficiencyGroup {
+  // Start with explicit overrides from identifiers
   if (ids.armorProficiencies || ids.weaponProficiencies) {
     return {
       armor: ids.armorProficiencies ?? [],
@@ -876,21 +644,28 @@ function computeProficiencies(ids: CharacterIdentifiers): ProficiencyGroup {
     };
   }
 
-  // Compute from DB using 5e.tools utility functions
+  // Combine class DB fields + effect properties
   const armorSet = new Set<string>();
   const weaponSet = new Set<string>();
+  const toolSet = new Set<string>(ids.toolProficiencies ?? []);
 
   for (const cls of ids.classes) {
-    const classData = getClass(cls.name);
-    if (!classData) continue;
-    for (const a of classData.armorProficiencies) armorSet.add(a);
-    for (const w of classData.weaponProficiencies) weaponSet.add(w);
+    const classDb = getClass(cls.name);
+    if (!classDb) continue;
+    for (const a of classDb.armorProficiencies) armorSet.add(a);
+    for (const w of classDb.weaponProficiencies) weaponSet.add(w);
+    for (const t of classDb.toolProficiencies) toolSet.add(t);
   }
+
+  // Effect-granted proficiencies
+  for (const p of getProficiencies(bundles, "armor")) armorSet.add(p);
+  for (const p of getProficiencies(bundles, "weapon")) weaponSet.add(p);
+  for (const p of getProficiencies(bundles, "tool")) toolSet.add(p);
 
   return {
     armor: [...armorSet],
     weapons: [...weaponSet],
-    tools: ids.toolProficiencies ?? [],
+    tools: [...toolSet],
     other: ids.otherProficiencies ?? [],
   };
 }
@@ -898,36 +673,130 @@ function computeProficiencies(ids: CharacterIdentifiers): ProficiencyGroup {
 // ─── Senses ──────────────────────────────────────────────
 
 function computeSenses(
+  bundles: EffectBundle[],
+  species: { darkvision?: number } | undefined,
   ids: CharacterIdentifiers,
-  proficiencyBonus: number,
+  profBonus: number,
   skills: SkillProficiency[],
 ): string[] {
-  // If parser provided custom senses, use those directly
   if (ids.senses) return ids.senses;
 
   const senses: string[] = [];
-  const wisMod = getAbilityMod(ids.abilities.wisdom);
 
-  // Darkvision from species
-  const speciesLower = ids.race.toLowerCase().replace(/\s*\(.*\)/, "");
-  const speciesData = getSpecies(speciesLower);
-  if (speciesData?.darkvision) {
-    senses.push(`Darkvision ${speciesData.darkvision} ft.`);
+  // Senses from effects (darkvision, blindsight, etc.)
+  for (const s of getSenses(bundles)) {
+    senses.push(`${s.sense.charAt(0).toUpperCase() + s.sense.slice(1)} ${s.range} ft.`);
+  }
+
+  // Species darkvision (if not already from effects)
+  if (species?.darkvision && !senses.some((s) => s.toLowerCase().includes("darkvision"))) {
+    senses.push(`Darkvision ${species.darkvision} ft.`);
   }
 
   // Passive Perception
-  const perceptionSkill = skills.find((s) => s.name === "perception");
-  let passivePerception = 10 + wisMod;
-  if (perceptionSkill?.proficient) {
-    passivePerception += proficiencyBonus;
-    if (perceptionSkill.expertise) {
-      passivePerception += proficiencyBonus;
-    }
-  }
-  if (perceptionSkill?.bonus) {
-    passivePerception += perceptionSkill.bonus;
-  }
-  senses.push(`Passive Perception ${passivePerception}`);
+  const wisMod = abilityMod(ids.abilities.wisdom);
+  const perception = skills.find((s) => s.name === "perception");
+  let passive = 10 + wisMod;
+  if (perception?.proficient) passive += profBonus;
+  if (perception?.expertise) passive += profBonus;
+  if (perception?.bonus) passive += perception.bonus;
+  senses.push(`Passive Perception ${passive}`);
 
   return senses;
+}
+
+// ─── Source Display Helper ───────────────────────────
+
+function sourceLabel(src: EffectSource | undefined): string {
+  if (!src) return "Unknown";
+  return src.featureName ?? src.name;
+}
+
+// ─── Combat Bonuses (from effects) ───────────────────────
+
+function computeCombatBonuses(bundles: EffectBundle[], ctx: ResolveContext): CombatBonus[] {
+  const bonuses: CombatBonus[] = [];
+
+  // Check each combat modifier target
+  const targets: {
+    target: "attack_melee" | "attack_ranged" | "attack_spell";
+    attackType: "melee" | "ranged" | "spell";
+  }[] = [
+    { target: "attack_melee", attackType: "melee" },
+    { target: "attack_ranged", attackType: "ranged" },
+    { target: "attack_spell", attackType: "spell" },
+  ];
+
+  for (const { target, attackType } of targets) {
+    const value = resolveStat(bundles, target, 0, ctx);
+    if (value !== 0) {
+      const source = bundles.find((b) =>
+        b.effects.modifiers?.some((m) => m.target === target || m.target === "attack"),
+      )?.source;
+      bonuses.push({ type: "attack", value, attackType, source: sourceLabel(source) });
+    }
+  }
+
+  // Initiative bonus
+  const initBonus = resolveStat(bundles, "initiative", 0, ctx);
+  if (initBonus !== 0) {
+    const initSrc = bundles.find((b) =>
+      b.effects.modifiers?.some((m) => m.target === "initiative"),
+    )?.source;
+    bonuses.push({ type: "initiative", value: initBonus, source: sourceLabel(initSrc) });
+  }
+
+  // Damage bonuses
+  const dmgTargets: {
+    target: "damage_melee" | "damage_ranged" | "damage_spell";
+    attackType: "melee" | "ranged" | "spell";
+  }[] = [
+    { target: "damage_melee", attackType: "melee" },
+    { target: "damage_ranged", attackType: "ranged" },
+    { target: "damage_spell", attackType: "spell" },
+  ];
+
+  for (const { target, attackType } of dmgTargets) {
+    const value = resolveStat(bundles, target, 0, ctx);
+    if (value !== 0) {
+      const dmgSrc = bundles.find((b) =>
+        b.effects.modifiers?.some((m) => m.target === target || m.target === "damage"),
+      )?.source;
+      bonuses.push({ type: "damage", value, attackType, source: sourceLabel(dmgSrc) });
+    }
+  }
+
+  return bonuses;
+}
+
+// ─── Advantages (from effects) ───────────────────────────
+
+function computeAdvantages(bundles: EffectBundle[], ids: CharacterIdentifiers): AdvantageEntry[] {
+  const advantages: AdvantageEntry[] = [...(ids.advantages ?? [])];
+
+  for (const adv of collectProperties(bundles, "advantage")) {
+    const advSrc = bundles.find((b) =>
+      b.effects.properties?.some((p) => p.type === "advantage" && p === adv),
+    )?.source;
+    advantages.push({
+      type: "advantage",
+      subType: adv.on,
+      restriction: (adv as { condition?: string }).condition,
+      source: sourceLabel(advSrc),
+    });
+  }
+
+  for (const disadv of collectProperties(bundles, "disadvantage")) {
+    const disadvSrc = bundles.find((b) =>
+      b.effects.properties?.some((p) => p.type === "disadvantage" && p === disadv),
+    )?.source;
+    advantages.push({
+      type: "disadvantage",
+      subType: disadv.on,
+      restriction: (disadv as { condition?: string }).condition,
+      source: sourceLabel(disadvSrc),
+    });
+  }
+
+  return advantages;
 }

@@ -592,12 +592,12 @@ describe("Barbarian class resources", () => {
 });
 
 describe("Fighter class resources", () => {
-  it("Fighter level 1 has Second Wind (1 use, short rest)", () => {
+  it("Fighter level 1 has Second Wind (2 uses, short rest) per 2024 rules", () => {
     const ids = makeIdentifiers({ classes: [{ name: "Fighter", level: 1 }] });
     const { character } = buildCharacter(ids);
     const sw = character.static.classResources?.find((r) => r.name === "Second Wind");
     expect(sw).toBeDefined();
-    expect(sw?.maxUses).toBe(1);
+    expect(sw?.maxUses).toBe(2);
     expect(sw?.resetType).toBe("short");
   });
 
@@ -689,7 +689,7 @@ describe("Bard Bardic Inspiration — ability-mod-based uses", () => {
     const { character } = buildCharacter(ids);
     const bi = character.static.classResources?.find((r) => r.name === "Bardic Inspiration");
     expect(bi).toBeDefined();
-    expect(bi?.resetType).toBe("short");
+    expect(bi?.resetType).toBe("long");
   });
 
   it("Bard with CHA 8 (-1) still gets minimum 1 Bardic Inspiration use", () => {
@@ -1122,13 +1122,7 @@ describe("Warlock pact magic", () => {
     expect(character.dynamic.spellSlotsUsed).toHaveLength(0);
   });
 
-  // BUG: computeSpellcasting skips Warlock because warlock.casterProgression is undefined
-  // in the DB (Warlock uses pact magic, not a casterProgression value that evaluates to truthy).
-  // The guard `if (scAbility && classData?.casterProgression)` requires casterProgression to be
-  // truthy, but it is undefined for Warlock. As a result, spellcastingAbility is not set.
-  // Correct D&D behaviour: Warlock's spellcasting ability should be Charisma.
-  // Tracking: source bug in character-builder.ts computeSpellcasting.
-  it("Warlock spellcasting ability is currently undefined due to pact-magic DB gap (known bug)", () => {
+  it("Warlock spellcasting ability is Charisma", () => {
     const ids = makeIdentifiers({
       classes: [{ name: "Warlock", level: 1 }],
       abilities: {
@@ -1143,9 +1137,7 @@ describe("Warlock pact magic", () => {
       saveProficiencies: ["wisdom", "charisma"],
     });
     const { character } = buildCharacter(ids);
-    // Currently undefined — this is the regression anchor for the bug.
-    // When fixed, this assertion should change to toBe("charisma").
-    expect(character.static.spellcastingAbility).toBeUndefined();
+    expect(character.static.spellcastingAbility).toBe("charisma");
   });
 });
 
@@ -1161,7 +1153,7 @@ describe("Combat bonuses", () => {
         {
           name: "Archery",
           description: "Archery fighting style",
-          source: "class",
+          source: "feat",
           sourceLabel: "Fighter",
         },
       ],

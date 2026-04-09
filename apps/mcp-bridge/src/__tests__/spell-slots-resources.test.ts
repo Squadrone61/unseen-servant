@@ -189,8 +189,9 @@ describe("useClassResource", () => {
   });
 
   describe("resource exhausted — error with remaining=0", () => {
-    it("returns an error when Second Wind (maxUses=2) has already been spent", () => {
+    it("returns an error when Second Wind (maxUses=3) has already been spent", () => {
       const { gsm } = env;
+      gsm.useClassResource("Theron", "Second Wind");
       gsm.useClassResource("Theron", "Second Wind");
       gsm.useClassResource("Theron", "Second Wind");
 
