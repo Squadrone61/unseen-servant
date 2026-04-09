@@ -1,7 +1,6 @@
 import { useState, useMemo } from "react";
 import type { CharacterData, CharacterFeature, InventoryItem } from "@unseen-servant/shared/types";
 import { actionsArray } from "@unseen-servant/shared/data";
-import { entriesToText } from "@unseen-servant/shared";
 import { FilterChipBar } from "../FilterChipBar";
 
 interface ActionEntry {
@@ -23,8 +22,13 @@ const STANDARD_ACTION_GROUPS = (() => {
   const reactions: { name: string; unit: string; description: string }[] = [];
 
   for (const a of actionsArray) {
-    const unit = a.time?.[0]?.unit ?? "";
-    const desc = entriesToText(a.entries);
+    const timeStr = a.time ?? "";
+    const unit = timeStr.includes("bonus")
+      ? "bonus"
+      : timeStr.includes("reaction")
+        ? "reaction"
+        : "action";
+    const desc = a.description;
     const entry = { name: a.name, unit, description: desc };
     if (unit === "bonus") bonusActions.push(entry);
     else if (unit === "reaction") reactions.push(entry);

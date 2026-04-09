@@ -2,24 +2,7 @@
 // Runtime "translation layer" for coded 5e.tools fields
 
 import type { Entry } from "../types/entry-types";
-import type {
-  SpellData,
-  SpellRange,
-  MonsterData,
-  MonsterAc,
-  MonsterHp,
-  MonsterSpeed,
-  MonsterType,
-  MonsterDamageEntry,
-  MonsterConditionEntry,
-  MonsterCr,
-  ClassRaw,
-  ClassAssembled,
-  FeatPrerequisite,
-  SpeciesData,
-  BackgroundData,
-  BaseItemData,
-} from "../types/data";
+import type { MonsterDb } from "../types/data";
 
 // ═══════════════════════════════════════════════════════
 // DECODE MAPS
@@ -204,101 +187,33 @@ export function formatSchool(code: string): string {
   return SCHOOL_MAP[code] ?? code;
 }
 
-export function formatCastingTime(spell: SpellData): string {
-  if (!spell.time?.length) return "Unknown";
-  const t = spell.time[0];
-  const base = `${t.number} ${t.unit}`;
-  return t.condition ? `${base}, ${t.condition}` : base;
-}
-
-export function formatRange(range: SpellRange): string {
-  if (!range) return "Unknown";
-  if (range.type === "special") return "Special";
-  if (!range.distance) return capitalize(range.type);
-  if (range.distance.type === "touch") return "Touch";
-  if (range.distance.type === "self") return "Self";
-  if (range.distance.type === "sight") return "Sight";
-  if (range.distance.type === "unlimited") return "Unlimited";
-  if (range.distance.amount != null) {
-    return `${range.distance.amount} ${range.distance.type}`;
-  }
-  return capitalize(range.distance.type);
-}
-
-export function formatComponents(spell: SpellData): string {
-  const parts: string[] = [];
-  if (spell.components.v) parts.push("V");
-  if (spell.components.s) parts.push("S");
-  if (spell.components.m) {
-    const m = spell.components.m;
-    if (typeof m === "string") {
-      parts.push(`M (${m})`);
-    } else {
-      parts.push(`M (${m.text})`);
-    }
-  }
-  return parts.join(", ");
-}
-
-export function formatDuration(spell: SpellData): string {
-  if (!spell.duration?.length) return "Unknown";
-  const d = spell.duration[0];
-  if (d.type === "instant") return "Instantaneous";
-  if (d.type === "special") return "Special";
-  if (d.type === "permanent") {
-    const ends = d.ends?.join(" or ") ?? "";
-    return ends ? `Until ${ends}` : "Permanent";
-  }
-  if (d.duration) {
-    const dur = `${d.duration.amount} ${d.duration.type}${d.duration.amount > 1 ? "s" : ""}`;
-    return d.concentration ? `Concentration, up to ${dur}` : dur;
-  }
-  return d.type;
-}
-
-export function isConcentration(spell: SpellData): boolean {
-  return spell.duration?.some((d) => d.concentration === true) ?? false;
-}
-
-export function isRitual(spell: SpellData): boolean {
-  return spell.meta?.ritual === true;
-}
-
-export function formatSpellLevel(spell: SpellData): string {
-  if (spell.level === 0) return "Cantrip";
-  const suffix =
-    spell.level === 1 ? "st" : spell.level === 2 ? "nd" : spell.level === 3 ? "rd" : "th";
-  return `${spell.level}${suffix}-level`;
-}
-
 // ═══════════════════════════════════════════════════════
 // MONSTER FORMAT FUNCTIONS
 // ═══════════════════════════════════════════════════════
 
 export function formatMonsterSize(sizes: string[]): string {
-  return sizes.map((s) => SIZE_MAP[s] ?? s).join(" or ");
+  return sizes.map((s: string) => SIZE_MAP[s] ?? s).join(" or ");
 }
 
-export function formatMonsterType(type: string | MonsterType): string {
+export function formatMonsterType(type: MonsterDb["type"]): string {
   if (typeof type === "string") return capitalize(type);
   let result = capitalize(type.type);
   if (type.tags?.length) {
-    const tags = type.tags.map((t) => (typeof t === "string" ? t : t.tag));
+    const tags = type.tags.map((t: string | { tag: string; prefix?: string }) =>
+      typeof t === "string" ? t : t.tag,
+    );
     result += ` (${tags.join(", ")})`;
-  }
-  if (type.swarmSize) {
-    result = `Swarm of ${SIZE_MAP[type.swarmSize] ?? type.swarmSize} ${result}s`;
   }
   return result;
 }
 
-export function formatMonsterAc(acs: (number | MonsterAc)[]): string {
+export function formatMonsterAc(acs: MonsterDb["ac"]): string {
   return acs
-    .map((ac) => {
+    .map((ac: number | { ac: number; from?: string[]; condition?: string }) => {
       if (typeof ac === "number") return String(ac);
       let result = String(ac.ac);
       const notes: string[] = [];
-      if (ac.from?.length) notes.push(ac.from.map(stripTags).join(", "));
+      if (ac.from?.length) notes.push(ac.from.map((f: string) => stripTags(f)).join(", "));
       if (ac.condition) notes.push(stripTags(ac.condition));
       if (notes.length) result += ` (${notes.join("; ")})`;
       return result;
@@ -306,7 +221,7 @@ export function formatMonsterAc(acs: (number | MonsterAc)[]): string {
     .join(", ");
 }
 
-export function formatMonsterHp(hp: MonsterHp): string {
+export function formatMonsterHp(hp: MonsterDb["hp"]): string {
   if (hp.special) return hp.special;
   const parts: string[] = [];
   if (hp.average != null) parts.push(String(hp.average));
@@ -314,7 +229,7 @@ export function formatMonsterHp(hp: MonsterHp): string {
   return parts.join(" ") || "—";
 }
 
-export function formatMonsterSpeed(speed: MonsterSpeed): string {
+export function formatMonsterSpeed(speed: MonsterDb["speed"]): string {
   const parts: string[] = [];
   const fmt = (
     val: number | { number: number; condition?: string } | undefined,
@@ -327,16 +242,16 @@ export function formatMonsterSpeed(speed: MonsterSpeed): string {
     if (cond) s += ` (${stripTags(cond)})`;
     parts.push(s);
   };
-  fmt(speed.walk);
-  fmt(speed.fly, "fly");
-  fmt(speed.swim, "swim");
-  fmt(speed.climb, "climb");
-  fmt(speed.burrow, "burrow");
-  if (speed.hover || speed.canHover) parts.push("(hover)");
+  fmt(speed["walk"] as number | { number: number; condition?: string } | undefined);
+  fmt(speed["fly"] as number | { number: number; condition?: string } | undefined, "fly");
+  fmt(speed["swim"] as number | { number: number; condition?: string } | undefined, "swim");
+  fmt(speed["climb"] as number | { number: number; condition?: string } | undefined, "climb");
+  fmt(speed["burrow"] as number | { number: number; condition?: string } | undefined, "burrow");
+  if (speed.hover) parts.push("(hover)");
   return parts.join(", ") || "0 ft.";
 }
 
-export function formatMonsterCr(cr: string | MonsterCr): string {
+export function formatMonsterCr(cr: MonsterDb["cr"]): string {
   if (typeof cr === "string") return cr;
   let result = cr.cr;
   if (cr.lair) result += ` (${cr.lair} in lair)`;
@@ -344,7 +259,7 @@ export function formatMonsterCr(cr: string | MonsterCr): string {
   return result;
 }
 
-export function crToNumber(cr: string | MonsterCr): number {
+export function crToNumber(cr: MonsterDb["cr"]): number {
   const crStr = typeof cr === "string" ? cr : cr.cr;
   if (crStr.includes("/")) {
     const [num, den] = crStr.split("/");
@@ -353,12 +268,12 @@ export function crToNumber(cr: string | MonsterCr): number {
   return Number(crStr);
 }
 
-export function crToXp(cr: string | MonsterCr): number {
+export function crToXp(cr: MonsterDb["cr"]): number {
   const crStr = typeof cr === "string" ? cr : cr.cr;
   return CR_XP_MAP[crStr] ?? 0;
 }
 
-export function getAbilityScores(monster: MonsterData): Record<string, number> {
+export function getAbilityScores(monster: MonsterDb): Record<string, number> {
   return {
     str: monster.str,
     dex: monster.dex,
@@ -376,199 +291,51 @@ export function formatAbilityMod(score: number): string {
 
 export function formatSaves(saves: Record<string, string>): string {
   return Object.entries(saves)
-    .map(([ab, val]) => `${ABILITY_ABBR[ab] ?? ab.toUpperCase()} ${val}`)
+    .map(([ab, val]: [string, string]) => `${ABILITY_ABBR[ab] ?? ab.toUpperCase()} ${val}`)
     .join(", ");
 }
 
 export function formatSkills(skills: Record<string, string>): string {
   return Object.entries(skills)
-    .map(([skill, val]) => `${capitalize(skill)} ${val}`)
+    .map(([skill, val]: [string, string]) => `${capitalize(skill)} ${val}`)
     .join(", ");
 }
 
-export function flattenResistances(entries: (string | MonsterDamageEntry)[]): string {
+export function flattenResistances(entries: NonNullable<MonsterDb["resist"]>): string {
   return entries
-    .map((e) => {
+    .map((e: string | { resist?: string[]; note?: string; cond?: boolean }) => {
       if (typeof e === "string") return e;
-      const types = e.resist ?? e.immune ?? e.vulnerable ?? [];
+      const types = e.resist ?? [];
       let result = types.join(", ");
-      if (e.preNote) result = `${e.preNote} ${result}`;
       if (e.note) result += ` ${e.note}`;
-      if (e.special) return e.special;
       return result;
     })
     .join("; ");
 }
 
-export function flattenConditionImmunities(entries: (string | MonsterConditionEntry)[]): string {
+export function flattenImmunities(entries: NonNullable<MonsterDb["immune"]>): string {
   return entries
-    .map((e) => {
+    .map((e: string | { immune?: string[]; note?: string; cond?: boolean }) => {
+      if (typeof e === "string") return e;
+      const types = e.immune ?? [];
+      let result = types.join(", ");
+      if (e.note) result += ` ${e.note}`;
+      return result;
+    })
+    .join("; ");
+}
+
+export function flattenConditionImmunities(
+  entries: NonNullable<MonsterDb["conditionImmune"]>,
+): string {
+  return entries
+    .map((e: string | { conditionImmune: string[]; note?: string }) => {
       if (typeof e === "string") return e;
       let result = e.conditionImmune.join(", ");
-      if (e.preNote) result = `${e.preNote} ${result}`;
       if (e.note) result += ` ${e.note}`;
       return result;
     })
     .join("; ");
-}
-
-// ═══════════════════════════════════════════════════════
-// CLASS FORMAT FUNCTIONS
-// ═══════════════════════════════════════════════════════
-
-export function getHitDice(cls: ClassRaw): string {
-  return `d${cls.hd.faces}`;
-}
-
-export function getHitDiceFaces(cls: ClassRaw): number {
-  return cls.hd.faces;
-}
-
-export function getSavingThrows(cls: ClassRaw): string[] {
-  return cls.proficiency.map((p) => ABILITY_MAP[p] ?? p);
-}
-
-export function getArmorProfs(cls: ClassRaw): string[] {
-  return (
-    cls.startingProficiencies.armor?.map((a) => (typeof a === "string" ? a : a.proficiency)) ?? []
-  );
-}
-
-export function getWeaponProfs(cls: ClassRaw): string[] {
-  return (
-    cls.startingProficiencies.weapons?.map((w) => (typeof w === "string" ? w : w.proficiency)) ?? []
-  );
-}
-
-export function getToolProfs(cls: ClassRaw): string[] {
-  return (
-    cls.startingProficiencies.tools?.map((t) => {
-      if (typeof t === "string") return t;
-      if (t.anyOf) return `Any ${t.anyOf} tools`;
-      return String(t);
-    }) ?? []
-  );
-}
-
-type AbilityName =
-  | "strength"
-  | "dexterity"
-  | "constitution"
-  | "intelligence"
-  | "wisdom"
-  | "charisma";
-
-/** All 18 D&D 5e skills → governing ability */
-export const SKILL_ABILITY_MAP: Record<string, AbilityName> = {
-  athletics: "strength",
-  acrobatics: "dexterity",
-  "sleight-of-hand": "dexterity",
-  stealth: "dexterity",
-  arcana: "intelligence",
-  history: "intelligence",
-  investigation: "intelligence",
-  nature: "intelligence",
-  religion: "intelligence",
-  "animal-handling": "wisdom",
-  insight: "wisdom",
-  medicine: "wisdom",
-  perception: "wisdom",
-  survival: "wisdom",
-  deception: "charisma",
-  intimidation: "charisma",
-  performance: "charisma",
-  persuasion: "charisma",
-};
-
-const ALL_SKILLS = Object.keys(SKILL_ABILITY_MAP);
-
-/** Normalize skill names from 5e.tools format (spaces) to builder format (hyphens) */
-function normalizeSkill(s: string): string {
-  return s.replace(/ /g, "-");
-}
-
-export function getSkillChoices(cls: ClassRaw): { from: string[]; count: number } | undefined {
-  const skills = cls.startingProficiencies.skills?.[0];
-  if (skills?.choose) {
-    return { from: skills.choose.from.map(normalizeSkill), count: skills.choose.count };
-  }
-  // Handle "any: N" format (e.g., Bard gets any 3 skills)
-  if (skills && "any" in skills) {
-    return { from: ALL_SKILLS, count: (skills as { any: number }).any };
-  }
-  return undefined;
-}
-
-export function getCasterType(cls: ClassRaw): string | undefined {
-  return cls.casterProgression ?? undefined;
-}
-
-export function getSpellSlotTable(cls: ClassAssembled): number[][] | undefined {
-  // Look for spell slot table in classTableGroups
-  // Some classes use rowsSpellProgression (separate spell slot table group)
-  const spellProgGroup = cls.classTableGroups?.find((g) => g.rowsSpellProgression);
-  if (spellProgGroup?.rowsSpellProgression) {
-    return spellProgGroup.rowsSpellProgression;
-  }
-
-  // Fallback: look for inline spell slot columns in a regular rows table
-  const group = cls.classTableGroups?.find((g) =>
-    g.colLabels?.some(
-      (l) =>
-        /spell\s*slot/i.test(stripTags(typeof l === "string" ? l : "")) ||
-        /^1st$/i.test(stripTags(typeof l === "string" ? l : "")),
-    ),
-  );
-  if (!group?.rows) return undefined;
-
-  // Find the columns that represent spell slots (1st through 9th)
-  const slotStartIdx = group.colLabels.findIndex((l) =>
-    /^1st$/i.test(stripTags(typeof l === "string" ? l : "")),
-  );
-  if (slotStartIdx === -1) return undefined;
-
-  return group.rows.map((row) => {
-    const slots: number[] = [];
-    for (let i = slotStartIdx; i < row.length; i++) {
-      const cell = row[i];
-      const num =
-        typeof cell === "number" ? cell : typeof cell === "string" ? parseInt(cell, 10) : 0;
-      slots.push(isNaN(num) ? 0 : num);
-    }
-    return slots;
-  });
-}
-
-export function getPactSlotTable(
-  cls: ClassAssembled,
-): { level: number; slots: number; slotLevel: number }[] | undefined {
-  // Warlock pact slots from classTableGroups
-  const group = cls.classTableGroups?.find((g) =>
-    g.colLabels?.some(
-      (l) =>
-        /spell\s*slot/i.test(stripTags(typeof l === "string" ? l : "")) ||
-        /slot\s*level/i.test(stripTags(typeof l === "string" ? l : "")),
-    ),
-  );
-  if (!group || cls.casterProgression !== "pact") return undefined;
-
-  const slotsIdx = group.colLabels.findIndex((l) =>
-    /spell\s*slot/i.test(stripTags(typeof l === "string" ? l : "")),
-  );
-  const levelIdx = group.colLabels.findIndex((l) =>
-    /slot\s*level/i.test(stripTags(typeof l === "string" ? l : "")),
-  );
-  if (slotsIdx === -1 || levelIdx === -1 || !group.rows) return undefined;
-
-  return group.rows.map((row, i) => {
-    const slots =
-      typeof row[slotsIdx] === "number"
-        ? (row[slotsIdx] as number)
-        : parseInt(String(row[slotsIdx]), 10) || 0;
-    const slotLevelStr = stripTags(String(row[levelIdx]));
-    const slotLevel = parseInt(slotLevelStr, 10) || 1;
-    return { level: i + 1, slots, slotLevel };
-  });
 }
 
 // ═══════════════════════════════════════════════════════
@@ -579,94 +346,12 @@ export function formatFeatCategory(code: string): string {
   return FEAT_CAT_MAP[code] ?? code;
 }
 
-export function formatPrerequisite(prereqs: FeatPrerequisite[]): string {
-  return prereqs
-    .map((p) => {
-      const parts: string[] = [];
-      if (p.level != null) {
-        if (typeof p.level === "number") {
-          parts.push(`Level ${p.level}`);
-        } else {
-          let s = `Level ${p.level.level}`;
-          if (p.level.class) s += ` ${p.level.class.name}`;
-          parts.push(s);
-        }
-      }
-      if (p.ability?.length) {
-        const abs = p.ability.map((a) =>
-          Object.entries(a)
-            .map(([k, v]) => `${ABILITY_MAP[k] ?? k} ${v}+`)
-            .join(" or "),
-        );
-        parts.push(abs.join("; "));
-      }
-      if (p.spellcasting) parts.push("Spellcasting feature");
-      if (p.feature?.length) parts.push(p.feature.join(", "));
-      if (p.other) parts.push(p.other);
-      if (p.otherSummary)
-        parts.push(stripTags(p.otherSummary.entrySummary ?? p.otherSummary.entry));
-      return parts.join(", ");
-    })
-    .filter(Boolean)
-    .join("; ");
-}
-
 // ═══════════════════════════════════════════════════════
 // SPECIES FORMAT FUNCTIONS
 // ═══════════════════════════════════════════════════════
 
 export function formatSpeciesSize(sizes: string[]): string {
-  return sizes.map((s) => SIZE_MAP[s] ?? s).join(" or ");
-}
-
-export function getSpeciesSpeed(species: SpeciesData): number {
-  if (typeof species.speed === "number") return species.speed;
-  return species.speed.walk ?? 30;
-}
-
-// ═══════════════════════════════════════════════════════
-// BACKGROUND FORMAT FUNCTIONS
-// ═══════════════════════════════════════════════════════
-
-export function getBackgroundSkills(bg: BackgroundData): string[] {
-  if (!bg.skillProficiencies?.length) return [];
-  return bg.skillProficiencies.flatMap((sp) =>
-    Object.keys(sp)
-      .filter((k) => sp[k] === true)
-      .map(normalizeSkill),
-  );
-}
-
-export function getBackgroundTools(bg: BackgroundData): string[] {
-  if (!bg.toolProficiencies?.length) return [];
-  return bg.toolProficiencies.flatMap((tp) => Object.keys(tp).filter((k) => tp[k] === true));
-}
-
-export function getBackgroundFeat(bg: BackgroundData): string | undefined {
-  if (!bg.feats?.length) return undefined;
-  const featObj = bg.feats[0];
-  const key = Object.keys(featObj)[0];
-  if (!key) return undefined;
-  // Parse "magic initiate; cleric|xphb" → "Magic Initiate; Cleric"
-  return key
-    .split("|")[0]
-    .split(";")
-    .map((s) => capitalize(s.trim()))
-    .join("; ");
-}
-
-export function getBackgroundAbilityScores(
-  bg: BackgroundData,
-): { from: string[]; weights: number[] } | undefined {
-  if (!bg.ability?.length) return undefined;
-  const first = bg.ability[0];
-  if (first.choose?.weighted) {
-    return {
-      from: first.choose.weighted.from,
-      weights: first.choose.weighted.weights,
-    };
-  }
-  return undefined;
+  return sizes.map((s: string) => SIZE_MAP[s] ?? s).join(" or ");
 }
 
 // ═══════════════════════════════════════════════════════
@@ -699,33 +384,43 @@ export function decodeItemType(code: string): string {
   return ITEM_TYPE_MAP[clean] ?? clean;
 }
 
-export function categorizeBaseItem(
-  item: BaseItemData,
-): "weapon" | "armor" | "gear" | "tool" | "other" {
-  if (item.weapon) return "weapon";
-  if (item.armor) return "armor";
-  const typeCode = item.type?.split("|")[0];
-  if (typeCode === "S") return "armor"; // Shield
-  if (typeCode === "AT" || typeCode === "GS" || typeCode === "INS" || typeCode === "T")
-    return "tool";
-  if (
-    typeCode === "G" ||
-    typeCode === "SC" ||
-    typeCode === "A" ||
-    typeCode === "SCF" ||
-    typeCode === "AF"
-  )
-    return "gear";
-  return "other";
-}
-
 // ═══════════════════════════════════════════════════════
 // OPTIONAL FEATURE FORMAT FUNCTIONS
 // ═══════════════════════════════════════════════════════
 
 export function formatOptionalFeatureType(types: string[]): string {
-  return types.map((t) => OPT_FEAT_TYPE_MAP[t] ?? t).join(", ");
+  return types.map((t: string) => OPT_FEAT_TYPE_MAP[t] ?? t).join(", ");
 }
+
+/** All 18 D&D 5e skills → governing ability */
+type AbilityName =
+  | "strength"
+  | "dexterity"
+  | "constitution"
+  | "intelligence"
+  | "wisdom"
+  | "charisma";
+
+export const SKILL_ABILITY_MAP: Record<string, AbilityName> = {
+  athletics: "strength",
+  acrobatics: "dexterity",
+  "sleight-of-hand": "dexterity",
+  stealth: "dexterity",
+  arcana: "intelligence",
+  history: "intelligence",
+  investigation: "intelligence",
+  nature: "intelligence",
+  religion: "intelligence",
+  "animal-handling": "wisdom",
+  insight: "wisdom",
+  medicine: "wisdom",
+  perception: "wisdom",
+  survival: "wisdom",
+  deception: "charisma",
+  intimidation: "charisma",
+  performance: "charisma",
+  persuasion: "charisma",
+};
 
 // ═══════════════════════════════════════════════════════
 // RICH TEXT TAG PARSING
@@ -784,7 +479,7 @@ export function parseTags(text: string): (string | ParsedTag)[] {
  * Strip all 5e.tools tags from text, keeping display text.
  */
 export function stripTags(text: string): string {
-  return text.replace(TAG_REGEX, (_match, type: string, content: string) => {
+  return text.replace(TAG_REGEX, (_match: string, type: string, content: string) => {
     const parts = content.split("|");
 
     // For some tag types, use display text (3rd part) or name (1st part)
@@ -816,7 +511,7 @@ export function stripTags(text: string): string {
 }
 
 function formatAtkTag(code: string): string {
-  const types = code.split(",").map((c) => {
+  const types = code.split(",").map((c: string) => {
     switch (c.trim()) {
       case "mw":
         return "Melee Weapon";
@@ -890,13 +585,13 @@ export function entriesToText(entries: Entry[] | undefined | null, depth: number
         };
         if (table.caption) lines.push(indent + table.caption);
         if (table.colLabels) {
-          lines.push(indent + table.colLabels.map((l) => stripTags(String(l))).join(" | "));
+          lines.push(indent + table.colLabels.map((l: string) => stripTags(String(l))).join(" | "));
         }
         for (const row of table.rows) {
           lines.push(
             indent +
               row
-                .map((cell) =>
+                .map((cell: string | Entry) =>
                   typeof cell === "string" ? stripTags(cell) : entriesToText([cell], 0),
                 )
                 .join(" | "),
@@ -920,7 +615,11 @@ export function entriesToText(entries: Entry[] | undefined | null, depth: number
       case "dice": {
         const dice = entry as { toRoll?: { number: number; faces: number }[] };
         if (dice.toRoll?.length) {
-          lines.push(dice.toRoll.map((r) => `${r.number}d${r.faces}`).join(" + "));
+          lines.push(
+            dice.toRoll
+              .map((r: { number: number; faces: number }) => `${r.number}d${r.faces}`)
+              .join(" + "),
+          );
         }
         break;
       }
@@ -940,17 +639,24 @@ export function entriesToText(entries: Entry[] | undefined | null, depth: number
         };
         lines.push(indent + sc.name + ".");
         if (sc.headerEntries) lines.push(entriesToText(sc.headerEntries, depth));
-        if (sc.will?.length) lines.push(indent + "At will: " + sc.will.map(stripTags).join(", "));
+        if (sc.will?.length)
+          lines.push(indent + "At will: " + sc.will.map((s: string) => stripTags(s)).join(", "));
         if (sc.daily) {
           for (const [k, v] of Object.entries(sc.daily)) {
             const perDay = k.replace("e", "");
-            lines.push(indent + `${perDay}/day each: ${v.map(stripTags).join(", ")}`);
+            lines.push(
+              indent +
+                `${perDay}/day each: ${(v as string[]).map((s: string) => stripTags(s)).join(", ")}`,
+            );
           }
         }
         if (sc.spells) {
           for (const [level, data] of Object.entries(sc.spells)) {
             const prefix = level === "0" ? "Cantrips" : `${level}${ordSuffix(Number(level))} level`;
-            lines.push(indent + `${prefix}: ${data.spells.map(stripTags).join(", ")}`);
+            lines.push(
+              indent +
+                `${prefix}: ${(data as { spells: string[] }).spells.map((s: string) => stripTags(s)).join(", ")}`,
+            );
           }
         }
         break;
@@ -959,7 +665,7 @@ export function entriesToText(entries: Entry[] | undefined | null, depth: number
         const dc = entry as { name: string; attributes: string[] };
         lines.push(
           indent +
-            `${dc.name} save DC = 8 + proficiency bonus + ${dc.attributes.map((a) => ABILITY_ABBR[a] ?? a).join("/")}`,
+            `${dc.name} save DC = 8 + proficiency bonus + ${dc.attributes.map((a: string) => ABILITY_ABBR[a] ?? a).join("/")}`,
         );
         break;
       }
@@ -967,7 +673,7 @@ export function entriesToText(entries: Entry[] | undefined | null, depth: number
         const atk = entry as { name: string; attributes: string[] };
         lines.push(
           indent +
-            `${atk.name} attack modifier = proficiency bonus + ${atk.attributes.map((a) => ABILITY_ABBR[a] ?? a).join("/")}`,
+            `${atk.name} attack modifier = proficiency bonus + ${atk.attributes.map((a: string) => ABILITY_ABBR[a] ?? a).join("/")}`,
         );
         break;
       }

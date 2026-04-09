@@ -34,29 +34,21 @@ import {
   languagesArray,
   diseases,
   diseasesArray,
-  getClassResources,
-  type SpellData,
-  type MonsterData,
-  type ConditionData,
-  type MagicItemData,
-  type FeatData,
-  type ClassAssembled,
-  type SpeciesData,
-  type BackgroundData,
-  type OptionalFeatureData,
-  type ActionData,
-  type LanguageData,
-  type DiseaseData,
+  type SpellDb,
+  type MonsterDb,
+  type ConditionDb,
+  type MagicItemDb,
+  type FeatDb,
+  type ClassDb,
+  type SpeciesDb,
+  type BackgroundDb,
+  type OptionalFeatureDb,
+  type ActionDb,
+  type LanguageDb,
+  type DiseaseDb,
 } from "@unseen-servant/shared/data";
 import {
   formatSchool,
-  formatCastingTime,
-  formatRange,
-  formatComponents,
-  formatDuration,
-  isConcentration,
-  isRitual,
-  formatSpellLevel,
   formatMonsterSize,
   formatMonsterType,
   formatMonsterAc,
@@ -69,21 +61,8 @@ import {
   formatSkills,
   flattenResistances,
   flattenConditionImmunities,
-  getHitDice,
-  getSavingThrows,
-  getArmorProfs,
-  getWeaponProfs,
-  getToolProfs,
-  getSkillChoices,
-  getCasterType,
   formatFeatCategory,
-  formatPrerequisite,
   formatSpeciesSize,
-  getSpeciesSpeed,
-  getBackgroundSkills,
-  getBackgroundTools,
-  getBackgroundFeat,
-  getBackgroundAbilityScores,
   formatOptionalFeatureType,
   entriesToText,
   stripTags,
@@ -92,60 +71,38 @@ import {
 
 // ─── Formatting Helpers ─────────────────────────────────────
 
-function formatSpellSummary(s: SpellData): string {
+function formatSpellSummary(s: SpellDb): string {
+  const levelStr = s.level === 0 ? "Cantrip" : `Level ${s.level}`;
   const parts: string[] = [
-    `${s.name}: ${formatSpellLevel(s)} ${formatSchool(s.school).toLowerCase()}`,
+    `${s.name} (${s.school}, ${levelStr}) — ${s.castingTime}, ${s.range}, ${s.duration}`,
   ];
-  parts.push(`Range: ${formatRange(s.range)}`);
-  // Extract area from entries text (look for common patterns like "Xft sphere/cone/cube/line/cylinder")
-  const entriesText = entriesToText(s.entries);
-  const areaMatch = entriesText.match(
-    /(\d+-foot(?:-radius)?)\s+(sphere|cone|cube|line|cylinder|emanation)/i,
-  );
-  if (areaMatch) parts.push(`${areaMatch[1]} ${areaMatch[2]}`);
-  // Damage/effect + save
-  if (s.damageInflict?.length) {
-    const dmgMatch = entriesText.match(/(\d+d\d+)\s/);
-    const dmgStr = dmgMatch
-      ? `${dmgMatch[1]} ${s.damageInflict.join("/")}`
-      : s.damageInflict.join("/");
-    if (s.savingThrow?.length) {
-      parts.push(`${dmgStr}, ${s.savingThrow.map((st) => st.toUpperCase()).join("/")} save half`);
-    } else {
-      parts.push(dmgStr);
-    }
-  } else if (s.savingThrow?.length) {
+  if (s.concentration) parts.push("Concentration");
+  if (s.ritual) parts.push("Ritual");
+  if (s.damageType?.length) parts.push(s.damageType.join("/"));
+  if (s.savingThrow?.length)
     parts.push(`${s.savingThrow.map((st) => st.toUpperCase()).join("/")} save`);
-  } else if (s.spellAttack?.length) {
-    parts.push(`spell attack (${s.spellAttack.join("/")})`);
-  }
-  parts.push(formatComponents(s));
-  parts.push(`Conc: ${isConcentration(s) ? "Yes" : "No"}`);
-  if (isRitual(s)) parts.push("Ritual");
+  parts.push(`Components: ${s.components}`);
   return parts.join(" | ");
 }
 
-function formatSpell(s: SpellData): string {
-  let text = `# ${s.name}\n*${formatSpellLevel(s)} ${formatSchool(s.school)}*`;
-  if (isRitual(s)) text += " (ritual)";
-  if (isConcentration(s)) text += " (concentration)";
+function formatSpell(s: SpellDb): string {
+  const levelStr = s.level === 0 ? "Cantrip" : `Level ${s.level}`;
+  let text = `# ${s.name}\n*${levelStr} ${s.school}*`;
+  if (s.ritual) text += " (ritual)";
+  if (s.concentration) text += " (concentration)";
   text += "\n\n";
-  text += `**Casting Time:** ${formatCastingTime(s)}\n`;
-  text += `**Range:** ${formatRange(s.range)}\n`;
-  text += `**Components:** ${formatComponents(s)}\n`;
-  text += `**Duration:** ${formatDuration(s)}\n`;
-  if (s.classes?.fromClassList?.length) {
-    text += `**Classes:** ${s.classes.fromClassList.map((c) => c.name).join(", ")}\n`;
-  }
-  if (s.damageInflict?.length) text += `**Damage Type:** ${s.damageInflict.join(", ")}\n`;
-  text += `\n${entriesToText(s.entries)}`;
-  if (s.entriesHigherLevel?.length)
-    text += `\n\n**At Higher Levels.** ${entriesToText(s.entriesHigherLevel)}`;
-  text += `\n\n*Source: ${s.source}*`;
+  text += `**Casting Time:** ${s.castingTime}\n`;
+  text += `**Range:** ${s.range}\n`;
+  text += `**Components:** ${s.components}\n`;
+  text += `**Duration:** ${s.duration}\n`;
+  if (s.classes?.length) text += `**Classes:** ${s.classes.join(", ")}\n`;
+  if (s.damageType?.length) text += `**Damage Type:** ${s.damageType.join(", ")}\n`;
+  text += `\n${s.description}`;
+  if (s.higherLevels) text += `\n\n**At Higher Levels:** ${s.higherLevels}`;
   return text;
 }
 
-function formatMonsterSummary(m: MonsterData): string {
+function formatMonsterSummary(m: MonsterDb): string {
   const crStr = formatMonsterCr(m.cr);
   const xp = crToXp(m.cr).toLocaleString();
   const parts: string[] = [
@@ -173,7 +130,7 @@ function formatMonsterSummary(m: MonsterData): string {
   return parts.join(" | ");
 }
 
-function formatMonster(m: MonsterData): string {
+function formatMonster(m: MonsterDb): string {
   let text = `# ${m.name}\n*${formatMonsterSize(m.size)} ${formatMonsterType(m.type)}`;
   if (m.alignment?.length) text += `, ${m.alignment.join(" ")}`;
   text += "*\n\n";
@@ -234,16 +191,11 @@ function formatMonster(m: MonsterData): string {
     if (m.legendaryHeader) text += entriesToText(m.legendaryHeader) + "\n";
     for (const l of m.legendary) text += `- **${l.name}.** ${entriesToText(l.entries)}\n`;
   }
-  if (m.lair?.length) {
-    text += "\n**Lair Actions:**\n";
-    for (const l of m.lair) text += `- **${l.name}.** ${entriesToText(l.entries)}\n`;
-  }
-  text += `\n*Source: ${m.source}*`;
   return text;
 }
 
-function formatConditionSummary(c: ConditionData): string {
-  const fullText = entriesToText(c.entries);
+function formatConditionSummary(c: ConditionDb): string {
+  const fullText = c.description;
   // Take the first ~120 chars, cut at sentence boundary if possible
   let summary = fullText.slice(0, 150);
   const sentenceEnd = summary.lastIndexOf(". ");
@@ -252,285 +204,198 @@ function formatConditionSummary(c: ConditionData): string {
   return `${c.name}: ${summary}`;
 }
 
-function formatCondition(c: ConditionData): string {
-  let text = `# ${c.name}\n\n${entriesToText(c.entries)}`;
-  text += `\n\n*Source: ${c.source}*`;
-  return text;
+function formatCondition(c: ConditionDb): string {
+  return `# ${c.name}\n\n${c.description}`;
 }
 
-function formatMagicItemSummary(item: MagicItemData): string {
+function formatMagicItemSummary(item: MagicItemDb): string {
   const parts: string[] = [`${item.name}: ${item.type ?? "Wondrous item"}, ${item.rarity}`];
-  if (item.reqAttune) {
-    parts.push(typeof item.reqAttune === "string" ? `attunement ${item.reqAttune}` : "attunement");
+  if (item.attunement) {
+    parts.push(
+      typeof item.attunement === "string" ? `attunement ${item.attunement}` : "attunement",
+    );
   }
-  if (item.bonusAc) parts.push(`AC +${item.bonusAc}`);
-  if (item.bonusWeapon) parts.push(`Weapon +${item.bonusWeapon}`);
-  if (item.bonusSpellAttack) parts.push(`Spell Attack +${item.bonusSpellAttack}`);
   if (item.charges) parts.push(`${item.charges} charges`);
-  // Brief description from entries
-  const desc = entriesToText(item.entries);
-  const brief = desc.slice(0, 100);
+  // Brief description
+  const brief = item.description.slice(0, 100);
   const sentenceEnd = brief.lastIndexOf(". ");
   if (sentenceEnd > 20) parts.push(brief.slice(0, sentenceEnd + 1));
-  else parts.push(brief + (desc.length > 100 ? "..." : ""));
+  else parts.push(brief + (item.description.length > 100 ? "..." : ""));
   return parts.join(" | ");
 }
 
-function formatMagicItemFn(item: MagicItemData): string {
+function formatMagicItemFn(item: MagicItemDb): string {
   let text = `# ${item.name}\n*${item.type ?? "Wondrous Item"}, ${item.rarity}`;
-  if (item.reqAttune) {
-    if (typeof item.reqAttune === "string") {
-      text += ` (requires attunement ${item.reqAttune})`;
+  if (item.attunement) {
+    if (typeof item.attunement === "string") {
+      text += ` (requires attunement ${item.attunement})`;
     } else {
       text += " (requires attunement)";
     }
   }
   text += "*\n\n";
-  if (item.bonusAc) text += `**AC Bonus:** ${item.bonusAc}\n`;
-  if (item.bonusWeapon) text += `**Weapon Bonus:** ${item.bonusWeapon}\n`;
-  if (item.bonusSpellAttack) text += `**Spell Attack Bonus:** ${item.bonusSpellAttack}\n`;
-  if (item.bonusSpellSaveDc) text += `**Spell Save DC Bonus:** ${item.bonusSpellSaveDc}\n`;
-  text += entriesToText(item.entries);
-  text += `\n\n*Source: ${item.source}*`;
+  if (item.charges) text += `**Charges:** ${item.charges}\n`;
+  if (item.recharge) text += `**Recharge:** ${item.recharge}\n`;
+  text += item.description;
   return text;
 }
 
-function formatFeatSummary(f: FeatData): string {
+function formatFeatSummary(f: FeatDb): string {
   const parts: string[] = [`${f.name}: ${formatFeatCategory(f.category)} feat`];
-  if (f.prerequisite?.length) parts.push(`Prereq: ${formatPrerequisite(f.prerequisite)}`);
+  if (f.prerequisite) parts.push(`Prereq: ${f.prerequisite}`);
   // Brief mechanical description
-  const desc = entriesToText(f.entries);
-  const brief = desc.slice(0, 120);
+  const brief = f.description.slice(0, 120);
   const sentenceEnd = brief.lastIndexOf(". ");
   if (sentenceEnd > 20) parts.push(brief.slice(0, sentenceEnd + 1));
-  else parts.push(brief + (desc.length > 120 ? "..." : ""));
+  else parts.push(brief + (f.description.length > 120 ? "..." : ""));
   return parts.join(" | ");
 }
 
-function formatFeatFn(f: FeatData): string {
+function formatFeatFn(f: FeatDb): string {
   let text = `# ${f.name}\n*${formatFeatCategory(f.category)} feat*`;
-  if (f.prerequisite?.length) text += ` *(Prerequisite: ${formatPrerequisite(f.prerequisite)})*`;
+  if (f.prerequisite) text += ` *(Prerequisite: ${f.prerequisite})*`;
   if (f.repeatable) text += " *(Repeatable)*";
   text += "\n\n";
-  text += entriesToText(f.entries);
-  if (f.ability?.length) {
-    const abilityDesc = f.ability
-      .map((a) => {
-        if (a.choose) {
-          return `Choose ${a.choose.count ?? 1} from ${a.choose.from.map((k) => ABILITY_MAP[k] ?? k).join(", ")} (+${a.choose.amount ?? 1})`;
-        }
-        return Object.entries(a)
-          .filter(([k]) => k !== "choose")
-          .map(([k, v]) => `${ABILITY_MAP[k] ?? k} +${v}`)
-          .join(", ");
-      })
-      .join("; ");
-    text += `\n\n**Ability Score Increase:** ${abilityDesc}`;
-  }
-  if (f.resist?.length) text += `\n\n**Resistances:** ${f.resist.join(", ")}`;
-  if (f.senses && Object.keys(f.senses).length > 0) {
-    text += `\n\n**Senses:** ${Object.entries(f.senses)
-      .map(([k, v]) => `${k} ${v} ft.`)
-      .join(", ")}`;
-  }
-  text += `\n\n*Source: ${f.source}*`;
+  text += f.description;
   return text;
 }
 
-function formatClassSummary(c: ClassAssembled): string {
-  const primaryAbs = c.primaryAbility.flatMap((a) =>
-    Object.keys(a)
-      .filter((k) => a[k])
-      .map((k) => ABILITY_MAP[k] ?? k),
-  );
-  const parts: string[] = [`${c.name}: ${getHitDice(c)} HD`, `${primaryAbs.join("/")} primary`];
-  const armorProfs = getArmorProfs(c);
-  if (armorProfs.length) parts.push(armorProfs.join(", "));
-  const casterType = getCasterType(c);
-  if (casterType) parts.push(casterType);
+function formatClassSummary(c: ClassDb): string {
+  const parts: string[] = [
+    `${c.name}: d${c.hitDiceFaces} HD`,
+    `Saves: ${c.savingThrows.join("/")}`,
+  ];
+  if (c.armorProficiencies.length) parts.push(c.armorProficiencies.join(", "));
+  if (c.casterProgression) parts.push(`${c.casterProgression} caster`);
   else parts.push("non-caster");
-  parts.push(`${c.resolvedSubclasses.length} subclasses`);
+  parts.push(`${c.subclasses.length} subclasses`);
   return parts.join(" | ");
 }
 
-function formatClassFn(c: ClassAssembled): string {
+function formatClassFn(c: ClassDb): string {
   let text = `# ${c.name}\n\n`;
-  text += `**Hit Die:** ${getHitDice(c)}\n`;
-  const primaryAbs = c.primaryAbility.flatMap((a) =>
-    Object.keys(a)
-      .filter((k) => a[k])
-      .map((k) => ABILITY_MAP[k] ?? k),
-  );
-  text += `**Primary Ability:** ${primaryAbs.join(", ")}\n`;
-  text += `**Saving Throws:** ${getSavingThrows(c).join(", ")}\n`;
-  const armorProfs = getArmorProfs(c);
-  if (armorProfs.length) text += `**Armor Proficiencies:** ${armorProfs.join(", ")}\n`;
-  const weaponProfs = getWeaponProfs(c);
-  if (weaponProfs.length) text += `**Weapon Proficiencies:** ${weaponProfs.join(", ")}\n`;
-  const toolProfs = getToolProfs(c);
-  if (toolProfs.length) text += `**Tool Proficiencies:** ${toolProfs.join(", ")}\n`;
-  const skills = getSkillChoices(c);
-  if (skills) text += `**Skill Choices:** Choose ${skills.count} from ${skills.from.join(", ")}\n`;
-  const casterType = getCasterType(c);
-  if (casterType) text += `**Caster Type:** ${casterType}\n`;
+  text += `**Hit Die:** d${c.hitDiceFaces}\n`;
+  text += `**Saving Throws:** ${c.savingThrows.join(", ")}\n`;
+  if (c.armorProficiencies.length)
+    text += `**Armor Proficiencies:** ${c.armorProficiencies.join(", ")}\n`;
+  if (c.weaponProficiencies.length)
+    text += `**Weapon Proficiencies:** ${c.weaponProficiencies.join(", ")}\n`;
+  if (c.toolProficiencies.length)
+    text += `**Tool Proficiencies:** ${c.toolProficiencies.join(", ")}\n`;
+  if (c.skillChoices.from.length)
+    text += `**Skill Choices:** Choose ${c.skillChoices.count} from ${c.skillChoices.from.join(", ")}\n`;
+  if (c.casterProgression) text += `**Caster Type:** ${c.casterProgression}\n`;
 
-  const resources = getClassResources(c.name);
-  if (resources.length > 0) {
-    text += "\n**Class Resources:**\n";
-    for (const r of resources) {
-      const uses =
-        typeof r.uses === "number"
-          ? `${r.uses}`
-          : `${r.uses.abilityMod} modifier (min ${r.uses.minimum ?? 1})`;
-      text += `- **${r.name}** (level ${r.levelAvailable}+): ${uses} uses, resets on ${r.resetType} rest\n`;
-    }
-  }
-
-  if (c.resolvedFeatures.length > 0) {
+  if (c.features.length > 0) {
     text += "\n**Features:**\n";
-    for (const f of c.resolvedFeatures) {
-      const desc = entriesToText(f.entries);
-      text += `- **${f.name}** (level ${f.level}): ${desc.slice(0, 200)}${desc.length > 200 ? "..." : ""}\n`;
+    for (const f of c.features) {
+      text += `- **${f.name}** (level ${f.level}): ${f.description.slice(0, 200)}${f.description.length > 200 ? "..." : ""}\n`;
     }
   }
 
-  if (c.resolvedSubclasses.length > 0) {
-    text += `\n**Subclasses:** ${c.resolvedSubclasses.map((s) => s.name).join(", ")}\n`;
+  if (c.subclasses.length > 0) {
+    text += `\n**Subclasses:** ${c.subclasses.map((s) => s.name).join(", ")}\n`;
   }
 
-  text += `\n*Source: ${c.source}*`;
   return text;
 }
 
-function formatSpeciesSummary(s: SpeciesData): string {
-  const parts: string[] = [`${s.name}: ${formatSpeciesSize(s.size)}, ${getSpeciesSpeed(s)} ft.`];
+function formatSpeciesSummary(s: SpeciesDb): string {
+  const parts: string[] = [`${s.name}: ${formatSpeciesSize(s.size)}, ${s.speed} ft.`];
   if (s.darkvision) parts.push(`Darkvision ${s.darkvision} ft.`);
-  if (s.resist?.length) {
-    const resistances = s.resist
-      .map((r) => (typeof r === "string" ? r : `choose ${r.choose.from.join("/")}`))
-      .join(", ");
-    parts.push(`${resistances} resistance`);
-  }
   return parts.join(" | ");
 }
 
-function formatSpeciesFn(s: SpeciesData): string {
+function formatSpeciesFn(s: SpeciesDb): string {
   let text = `# ${s.name}\n\n`;
   text += `**Size:** ${formatSpeciesSize(s.size)}\n`;
-  text += `**Speed:** ${getSpeciesSpeed(s)} ft.\n`;
+  text += `**Speed:** ${s.speed} ft.\n`;
   if (s.darkvision) text += `**Darkvision:** ${s.darkvision} ft.\n`;
-  if (s.resist?.length) text += `**Resistances:** ${s.resist.join(", ")}\n`;
-
-  if (s.entries.length > 0) {
-    text += "\n**Traits:**\n";
-    text += entriesToText(s.entries);
-  }
-
-  text += `\n\n*Source: ${s.source}*`;
+  text += `\n**Description:**\n${s.description}`;
   return text;
 }
 
-function formatBackgroundSummary(b: BackgroundData): string {
+function formatBackgroundSummary(b: BackgroundDb): string {
   const parts: string[] = [b.name + ":"];
-  const skills = getBackgroundSkills(b);
-  if (skills.length) parts.push(skills.join(" + "));
-  const tools = getBackgroundTools(b);
-  if (tools.length) parts.push(tools.join(", "));
-  const feat = getBackgroundFeat(b);
-  if (feat) parts.push(`Feat: ${feat}`);
+  if (b.skills.length) parts.push(b.skills.join(" + "));
+  if (b.tools.length) parts.push(b.tools.join(", "));
+  if (b.feat) parts.push(`Feat: ${b.feat}`);
   return parts.join(" | ");
 }
 
-function formatBackgroundFn(b: BackgroundData): string {
+function formatBackgroundFn(b: BackgroundDb): string {
   let text = `# ${b.name}\n\n`;
-  if (b.entries) text += entriesToText(b.entries) + "\n\n";
-  const skills = getBackgroundSkills(b);
-  if (skills.length) text += `**Skill Proficiencies:** ${skills.join(", ")}\n`;
-  const tools = getBackgroundTools(b);
-  if (tools.length) text += `**Tool Proficiencies:** ${tools.join(", ")}\n`;
-  const feat = getBackgroundFeat(b);
-  if (feat) text += `**Feat:** ${feat}\n`;
-  const asi = getBackgroundAbilityScores(b);
-  if (asi)
-    text += `**Ability Scores:** Choose from ${asi.from.map((k) => ABILITY_MAP[k] ?? k).join(", ")} (weights: ${asi.weights.join(", ")})\n`;
-  text += `\n*Source: ${b.source}*`;
+  text += b.description + "\n\n";
+  if (b.skills.length) text += `**Skill Proficiencies:** ${b.skills.join(", ")}\n`;
+  if (b.tools.length) text += `**Tool Proficiencies:** ${b.tools.join(", ")}\n`;
+  if (b.feat) text += `**Feat:** ${b.feat}\n`;
+  if (b.abilityScores.from.length) {
+    text += `**Ability Scores:** Choose from ${b.abilityScores.from.map((k) => ABILITY_MAP[k] ?? k).join(", ")} (weights: ${b.abilityScores.weights.join(", ")})\n`;
+  }
   return text;
 }
 
-function formatOptionalFeatureSummary(f: OptionalFeatureData): string {
+function formatOptionalFeatureSummary(f: OptionalFeatureDb): string {
   const parts: string[] = [`${f.name}: ${formatOptionalFeatureType(f.featureType)}`];
-  if (f.prerequisite?.length) parts.push(`Prereq: ${formatPrerequisite(f.prerequisite)}`);
-  const desc = entriesToText(f.entries);
-  const brief = desc.slice(0, 120);
+  if (f.prerequisite) parts.push(`Prereq: ${f.prerequisite}`);
+  const brief = f.description.slice(0, 120);
   const sentenceEnd = brief.lastIndexOf(". ");
   if (sentenceEnd > 20) parts.push(brief.slice(0, sentenceEnd + 1));
-  else parts.push(brief + (desc.length > 120 ? "..." : ""));
+  else parts.push(brief + (f.description.length > 120 ? "..." : ""));
   return parts.join(" | ");
 }
 
-function formatOptionalFeatureFn(f: OptionalFeatureData): string {
+function formatOptionalFeatureFn(f: OptionalFeatureDb): string {
   let text = `# ${f.name}\n*${formatOptionalFeatureType(f.featureType)}*`;
-  if (f.prerequisite?.length) text += ` *(Prerequisite: ${formatPrerequisite(f.prerequisite)})*`;
+  if (f.prerequisite) text += ` *(Prerequisite: ${f.prerequisite})*`;
   text += "\n\n";
-  text += entriesToText(f.entries);
-  text += `\n\n*Source: ${f.source}*`;
+  text += f.description;
   return text;
 }
 
-function formatActionSummary(a: ActionData): string {
+function formatActionSummary(a: ActionDb): string {
   const parts: string[] = [a.name + ":"];
-  if (a.time?.length) {
-    parts.push(a.time.map((t) => `${t.number} ${t.unit}`).join(", "));
-  }
-  const desc = entriesToText(a.entries);
-  const brief = desc.slice(0, 120);
+  if (a.time) parts.push(a.time);
+  const brief = a.description.slice(0, 120);
   const sentenceEnd = brief.lastIndexOf(". ");
   if (sentenceEnd > 20) parts.push(brief.slice(0, sentenceEnd + 1));
-  else parts.push(brief + (desc.length > 120 ? "..." : ""));
+  else parts.push(brief + (a.description.length > 120 ? "..." : ""));
   return parts.join(" | ");
 }
 
-function formatActionFn(a: ActionData): string {
+function formatActionFn(a: ActionDb): string {
   let text = `# ${a.name}\n`;
-  if (a.time?.length) {
-    text += `*${a.time.map((t) => `${t.number} ${t.unit}`).join(", ")}*\n`;
-  }
-  text += "\n" + entriesToText(a.entries);
-  text += `\n\n*Source: ${a.source}*`;
+  if (a.time) text += `*${a.time}*\n`;
+  text += "\n" + a.description;
   return text;
 }
 
-function formatLanguageSummary(l: LanguageData): string {
+function formatLanguageSummary(l: LanguageDb): string {
   const parts: string[] = [`${l.name}: ${l.type} language`];
   if (l.typicalSpeakers?.length) parts.push(`Spoken by ${l.typicalSpeakers.join(", ")}`);
   if (l.script) parts.push(`${l.script} script`);
   return parts.join(" | ");
 }
 
-function formatLanguageFn(l: LanguageData): string {
+function formatLanguageFn(l: LanguageDb): string {
   let text = `# ${l.name}\n*${l.type} language*\n\n`;
   if (l.typicalSpeakers?.length) text += `**Typical Speakers:** ${l.typicalSpeakers.join(", ")}\n`;
   if (l.script) text += `**Script:** ${l.script}\n`;
-  if (l.entries) text += "\n" + entriesToText(l.entries);
-  text += `\n\n*Source: ${l.source}*`;
+  if (l.description) text += "\n" + l.description;
   return text;
 }
 
-function formatDiseaseSummary(d: DiseaseData): string {
-  const desc = entriesToText(d.entries);
-  const brief = desc.slice(0, 150);
+function formatDiseaseSummary(d: DiseaseDb): string {
+  const brief = d.description.slice(0, 150);
   const sentenceEnd = brief.lastIndexOf(". ");
   let summary: string;
   if (sentenceEnd > 20) summary = brief.slice(0, sentenceEnd + 1);
-  else summary = brief + (desc.length > 150 ? "..." : "");
+  else summary = brief + (d.description.length > 150 ? "..." : "");
   return `${d.name}: ${summary}`;
 }
 
-function formatDiseaseFn(d: DiseaseData): string {
-  let text = `# ${d.name}\n\n`;
-  text += entriesToText(d.entries);
-  text += `\n\n*Source: ${d.source}*`;
-  return text;
+function formatDiseaseFn(d: DiseaseDb): string {
+  return `# ${d.name}\n\n${d.description}`;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────
@@ -606,7 +471,10 @@ export function registerSrdTools(
     args: Record<string, unknown>,
     result: ToolResult,
   ): ToolResult {
-    const text = result.content?.[0]?.type === "text" ? (result.content[0] as any).text : "";
+    const text =
+      result.content?.[0]?.type === "text"
+        ? (result.content[0] as { type: "text"; text: string }).text
+        : "";
     gameLogger.toolCall(toolName, args, text);
     return result;
   }
@@ -1079,55 +947,60 @@ export function registerSrdTools(
 
       const matchedConditions = conditionsArray
         .filter(
-          (c) =>
+          (c: ConditionDb) =>
             c.name.toLowerCase().includes(lowerQuery) ||
-            entriesToText(c.entries).toLowerCase().includes(lowerQuery),
+            c.description.toLowerCase().includes(lowerQuery),
         )
         .slice(0, limit);
 
       const matchedClasses = classesArray
-        .filter((c) => c.name.toLowerCase().includes(lowerQuery))
+        .filter((c: ClassDb) => c.name.toLowerCase().includes(lowerQuery))
         .slice(0, limit);
 
       const matchedSpecies = speciesArray
         .filter(
-          (s) =>
+          (s: SpeciesDb) =>
             s.name.toLowerCase().includes(lowerQuery) ||
-            entriesToText(s.entries).toLowerCase().includes(lowerQuery),
+            s.description.toLowerCase().includes(lowerQuery),
         )
         .slice(0, limit);
 
       const matchedBackgrounds = backgroundsArray
         .filter(
-          (b) =>
+          (b: BackgroundDb) =>
             b.name.toLowerCase().includes(lowerQuery) ||
-            (b.entries && entriesToText(b.entries).toLowerCase().includes(lowerQuery)),
+            b.description.toLowerCase().includes(lowerQuery),
         )
         .slice(0, limit);
 
       const matchedActions = actionsArray
         .filter(
-          (a) =>
+          (a: ActionDb) =>
             a.name.toLowerCase().includes(lowerQuery) ||
-            entriesToText(a.entries).toLowerCase().includes(lowerQuery),
+            a.description.toLowerCase().includes(lowerQuery),
         )
         .slice(0, limit);
 
       if (matchedConditions.length > 0) {
         results.push(
-          "## Conditions\n" + matchedConditions.map((c) => formatCondition(c)).join("\n\n---\n\n"),
+          "## Conditions\n" +
+            matchedConditions.map((c: ConditionDb) => formatCondition(c)).join("\n\n---\n\n"),
         );
       }
       if (matchedActions.length > 0) {
         results.push(
-          "## Actions\n" + matchedActions.map((a) => formatActionFn(a)).join("\n\n---\n\n"),
+          "## Actions\n" +
+            matchedActions.map((a: ActionDb) => formatActionFn(a)).join("\n\n---\n\n"),
         );
       }
       if (matchedClasses.length > 0) {
         results.push(
           "## Classes\n" +
             matchedClasses
-              .map((c) => `- **${c.name}** (${getHitDice(c)}, ${getCasterType(c) ?? "non-caster"})`)
+              .map(
+                (c: ClassDb) =>
+                  `- **${c.name}** (d${c.hitDiceFaces}, ${c.casterProgression ?? "non-caster"})`,
+              )
               .join("\n"),
         );
       }
@@ -1136,8 +1009,8 @@ export function registerSrdTools(
           "## Spells\n" +
             matchedSpells
               .map(
-                (s) =>
-                  `- **${s.name}** (${formatSpellLevel(s)} ${formatSchool(s.school)}): ${entriesToText(s.entries).slice(0, 150)}...`,
+                (s: SpellDb) =>
+                  `- **${s.name}** (${s.level === 0 ? "Cantrip" : `Level ${s.level}`} ${formatSchool(s.school)}): ${s.description.slice(0, 150)}...`,
               )
               .join("\n"),
         );
@@ -1147,7 +1020,7 @@ export function registerSrdTools(
           "## Monsters\n" +
             matchedMonsters
               .map(
-                (m) =>
+                (m: MonsterDb) =>
                   `- **${m.name}** (CR ${formatMonsterCr(m.cr)}, ${formatMonsterSize(m.size)} ${formatMonsterType(m.type)})`,
               )
               .join("\n"),
@@ -1157,7 +1030,7 @@ export function registerSrdTools(
         results.push(
           "## Magic Items\n" +
             matchedItems
-              .map((i) => `- **${i.name}** (${i.rarity}, ${i.type ?? "wondrous"})`)
+              .map((i: MagicItemDb) => `- **${i.name}** (${i.rarity}, ${i.type ?? "wondrous"})`)
               .join("\n"),
         );
       }
@@ -1166,8 +1039,8 @@ export function registerSrdTools(
           "## Feats\n" +
             matchedFeats
               .map(
-                (f) =>
-                  `- **${f.name}** (${formatFeatCategory(f.category)}): ${entriesToText(f.entries).slice(0, 150)}...`,
+                (f: FeatDb) =>
+                  `- **${f.name}** (${formatFeatCategory(f.category)}): ${f.description.slice(0, 150)}...`,
               )
               .join("\n"),
         );
@@ -1177,8 +1050,8 @@ export function registerSrdTools(
           "## Optional Features\n" +
             matchedOptFeats
               .map(
-                (f) =>
-                  `- **${f.name}** (${formatOptionalFeatureType(f.featureType)}): ${entriesToText(f.entries).slice(0, 150)}...`,
+                (f: OptionalFeatureDb) =>
+                  `- **${f.name}** (${formatOptionalFeatureType(f.featureType)}): ${f.description.slice(0, 150)}...`,
               )
               .join("\n"),
         );
@@ -1188,8 +1061,8 @@ export function registerSrdTools(
           "## Species\n" +
             matchedSpecies
               .map(
-                (s) =>
-                  `- **${s.name}** (${formatSpeciesSize(s.size)}, speed ${getSpeciesSpeed(s)} ft.)`,
+                (s: SpeciesDb) =>
+                  `- **${s.name}** (${formatSpeciesSize(s.size)}, speed ${s.speed} ft.)`,
               )
               .join("\n"),
         );
@@ -1198,10 +1071,7 @@ export function registerSrdTools(
         results.push(
           "## Backgrounds\n" +
             matchedBackgrounds
-              .map(
-                (b) =>
-                  `- **${b.name}**: ${b.entries ? entriesToText(b.entries).slice(0, 150) + "..." : ""}`,
-              )
+              .map((b: BackgroundDb) => `- **${b.name}**: ${b.description.slice(0, 150)}...`)
               .join("\n"),
         );
       }

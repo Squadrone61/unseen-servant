@@ -1,41 +1,28 @@
-// D&D 2024 Database — Native 5e.tools Format
-// Type-safe exports + lookup helpers + class assembly
+// D&D 2024 Database — Simplified Application Format
+// Type-safe exports + lookup helpers
 
 import type {
-  SpellData,
-  MonsterData,
-  ClassRaw,
-  ClassFeatureRaw,
-  SubclassRaw,
-  SubclassFeatureRaw,
-  ClassAssembled,
-  SubclassAssembled,
-  FeatData,
-  SpeciesData,
-  SubraceData,
-  BackgroundData,
-  ConditionData,
-  DiseaseData,
-  StatusData,
-  BaseItemData,
-  ItemPropertyData,
-  ItemTypeData,
-  ItemMasteryData,
-  ItemEntryData,
-  MagicItemData,
-  ItemGroupData,
-  OptionalFeatureData,
-  LanguageData,
-  LanguageScriptData,
-  ActionData,
-  ClassResourceTemplate,
+  SpellDb,
+  MonsterDb,
+  ClassDb,
+  ClassFeatureDb,
+  FeatDb,
+  SpeciesDb,
+  BackgroundDb,
+  ConditionDb,
+  DiseaseDb,
+  StatusDb,
+  BaseItemDb,
+  MagicItemDb,
+  OptionalFeatureDb,
+  LanguageDb,
+  ActionDb,
 } from "../types/data";
 
 // ─── Raw JSON imports ──────────────────────────────────
 
 import spellsData from "./spells.json";
 import bestiaryData from "./bestiary.json";
-import classesData from "./classes.json";
 import featsData from "./feats.json";
 import backgroundsData from "./backgrounds.json";
 import speciesData from "./species.json";
@@ -49,69 +36,42 @@ import conditionsDiseasesData from "./conditions-diseases.json";
 import languagesData from "./languages.json";
 import actionsData from "./actions.json";
 
+// Individual class files (pre-assembled ClassDb format)
+import barbarianData from "./classes/barbarian.json";
+import bardData from "./classes/bard.json";
+import clericData from "./classes/cleric.json";
+import druidData from "./classes/druid.json";
+import fighterData from "./classes/fighter.json";
+import monkData from "./classes/monk.json";
+import paladinData from "./classes/paladin.json";
+import rangerData from "./classes/ranger.json";
+import rogueData from "./classes/rogue.json";
+import sorcererData from "./classes/sorcerer.json";
+import warlockData from "./classes/warlock.json";
+import wizardData from "./classes/wizard.json";
+
 // ─── Type assertions for JSON imports ──────────────────
 
-const rawClasses = classesData as unknown as {
-  class: ClassRaw[];
-  subclass: SubclassRaw[];
-  classFeature: ClassFeatureRaw[];
-  subclassFeature: SubclassFeatureRaw[];
-};
-
-const rawSpecies = speciesData as unknown as {
-  race: SpeciesData[];
-  subrace?: SubraceData[];
-};
-
-const rawWeapons = weaponsData as unknown as BaseItemData[];
-const rawArmor = armorData as unknown as BaseItemData[];
-const rawTools = toolsData as unknown as BaseItemData[];
-const rawGear = gearData as unknown as BaseItemData[];
-const rawMagicItems = magicItemsData as unknown as MagicItemData[];
+const classesArray: ClassDb[] = [
+  barbarianData as unknown as ClassDb,
+  bardData as unknown as ClassDb,
+  clericData as unknown as ClassDb,
+  druidData as unknown as ClassDb,
+  fighterData as unknown as ClassDb,
+  monkData as unknown as ClassDb,
+  paladinData as unknown as ClassDb,
+  rangerData as unknown as ClassDb,
+  rogueData as unknown as ClassDb,
+  sorcererData as unknown as ClassDb,
+  warlockData as unknown as ClassDb,
+  wizardData as unknown as ClassDb,
+];
 
 const rawCondsDiseases = conditionsDiseasesData as unknown as {
-  condition: ConditionData[];
-  disease?: DiseaseData[];
-  status?: StatusData[];
+  condition: ConditionDb[];
+  disease?: DiseaseDb[];
+  status?: StatusDb[];
 };
-
-const rawLanguages = languagesData as unknown as {
-  language: LanguageData[];
-  languageScript?: LanguageScriptData[];
-};
-
-// ─── Class Assembly ────────────────────────────────────
-// Resolve the 4 raw arrays into ClassAssembled[]
-
-function assembleClasses(): ClassAssembled[] {
-  return rawClasses.class.map((cls) => {
-    const resolvedFeatures = rawClasses.classFeature.filter(
-      (f) => f.className.toLowerCase() === cls.name.toLowerCase() && f.classSource === cls.source,
-    );
-
-    const resolvedSubclasses: SubclassAssembled[] = rawClasses.subclass
-      .filter(
-        (sc) =>
-          sc.className.toLowerCase() === cls.name.toLowerCase() && sc.classSource === cls.source,
-      )
-      .map((sc) => ({
-        ...sc,
-        resolvedFeatures: rawClasses.subclassFeature.filter(
-          (f) =>
-            f.className.toLowerCase() === sc.className.toLowerCase() &&
-            f.classSource === sc.classSource &&
-            f.subclassShortName === sc.shortName &&
-            f.subclassSource === sc.source,
-        ),
-      }));
-
-    return {
-      ...cls,
-      resolvedFeatures,
-      resolvedSubclasses,
-    };
-  });
-}
 
 // ─── Case-insensitive lookup maps ───────────────────────
 
@@ -123,24 +83,24 @@ function buildMap<T extends { name: string }>(data: T[]): Map<string, T> {
   return map;
 }
 
-// Assembled classes (resolved features + subclasses)
-export const classesArray: ClassAssembled[] = assembleClasses();
+// ─── Exported arrays + maps ────────────────────────────
+
+export { classesArray };
 export const classes = buildMap(classesArray);
 
-export const spellsArray = spellsData as unknown as SpellData[];
+export const spellsArray = spellsData as unknown as SpellDb[];
 export const spells = buildMap(spellsArray);
 
-export const monstersArray = bestiaryData as unknown as MonsterData[];
+export const monstersArray = bestiaryData as unknown as MonsterDb[];
 export const monsters = buildMap(monstersArray);
 
-export const featsArray = featsData as unknown as FeatData[];
+export const featsArray = featsData as unknown as FeatDb[];
 export const feats = buildMap(featsArray);
 
-export const speciesArray = rawSpecies.race;
+export const speciesArray = speciesData as unknown as SpeciesDb[];
 export const species = buildMap(speciesArray);
-export const subracesArray = rawSpecies.subrace ?? [];
 
-export const backgroundsArray = backgroundsData as unknown as BackgroundData[];
+export const backgroundsArray = backgroundsData as unknown as BackgroundDb[];
 export const backgrounds = buildMap(backgroundsArray);
 
 // Conditions, Diseases, Statuses
@@ -152,123 +112,116 @@ export const statusesArray = rawCondsDiseases.status ?? [];
 export const statuses = buildMap(statusesArray);
 
 // Base items (equipment) — split by category
-export const weaponsArray = rawWeapons;
-export const armorArray = rawArmor;
-export const toolsArray = rawTools;
-export const gearArray = rawGear;
-export const baseItemsArray = [...rawWeapons, ...rawArmor, ...rawTools, ...rawGear];
+export const weaponsArray = weaponsData as unknown as BaseItemDb[];
+export const armorArray = armorData as unknown as BaseItemDb[];
+export const toolsArray = toolsData as unknown as BaseItemDb[];
+export const gearArray = gearData as unknown as BaseItemDb[];
+export const baseItemsArray: BaseItemDb[] = [
+  ...weaponsArray,
+  ...armorArray,
+  ...toolsArray,
+  ...gearArray,
+];
 export const baseItems = buildMap(baseItemsArray);
-// Legacy property/type/mastery/entry metadata not stored in split files
-export const itemProperties: ItemPropertyData[] = [];
-export const itemTypes: ItemTypeData[] = [];
-export const itemMasteries: ItemMasteryData[] = [];
-export const itemEntries: ItemEntryData[] = [];
 
 // Magic items
-export const magicItemsArray = rawMagicItems;
+export const magicItemsArray = magicItemsData as unknown as MagicItemDb[];
 export const magicItems = buildMap(magicItemsArray);
 
-// All items (base + magic combined, for backward compat)
-export const allItemsArray = [...baseItemsArray, ...rawMagicItems] as (BaseItemData &
-  MagicItemData)[];
+// All items (base + magic combined)
+export const allItemsArray: (BaseItemDb & MagicItemDb)[] = [
+  ...baseItemsArray,
+  ...magicItemsArray,
+] as (BaseItemDb & MagicItemDb)[];
 export const allItems = buildMap(allItemsArray);
-export const itemGroupsArray: ItemGroupData[] = [];
 
 // Optional features
-export const optionalFeaturesArray = optionalFeaturesData as unknown as OptionalFeatureData[];
+export const optionalFeaturesArray = optionalFeaturesData as unknown as OptionalFeatureDb[];
 export const optionalFeatures = buildMap(optionalFeaturesArray);
 
-// Languages
-export const languagesArray = rawLanguages.language;
+// Languages — flat array in new format
+export const languagesArray = languagesData as unknown as LanguageDb[];
 export const languages = buildMap(languagesArray);
-export const languageScripts = rawLanguages.languageScript ?? [];
 
 // Actions
-export const actionsArray = actionsData as unknown as ActionData[];
+export const actionsArray = actionsData as unknown as ActionDb[];
 export const actions = buildMap(actionsArray);
 
 // ─── Convenience lookup functions ──────────────────────
 
-export function getClass(name: string): ClassAssembled | undefined {
+export function getClass(name: string): ClassDb | undefined {
   return classes.get(name.toLowerCase());
 }
 
-export function getSpell(name: string): SpellData | undefined {
+export function getSpell(name: string): SpellDb | undefined {
   return spells.get(name.toLowerCase());
 }
 
-export function getMonster(name: string): MonsterData | undefined {
+export function getMonster(name: string): MonsterDb | undefined {
   return monsters.get(name.toLowerCase());
 }
 
-export function getFeat(name: string): FeatData | undefined {
+export function getFeat(name: string): FeatDb | undefined {
   return feats.get(name.toLowerCase());
 }
 
-export function getSpecies(name: string): SpeciesData | undefined {
+export function getSpecies(name: string): SpeciesDb | undefined {
   return species.get(name.toLowerCase());
 }
 
-export function getBackground(name: string): BackgroundData | undefined {
+export function getBackground(name: string): BackgroundDb | undefined {
   return backgrounds.get(name.toLowerCase());
 }
 
-export function getCondition(name: string): ConditionData | undefined {
+export function getCondition(name: string): ConditionDb | undefined {
   return conditions.get(name.toLowerCase());
 }
 
-export function getDisease(name: string): DiseaseData | undefined {
+export function getDisease(name: string): DiseaseDb | undefined {
   return diseases.get(name.toLowerCase());
 }
 
-export function getStatus(name: string): StatusData | undefined {
+export function getStatus(name: string): StatusDb | undefined {
   return statuses.get(name.toLowerCase());
 }
 
-export function getBaseItem(name: string): BaseItemData | undefined {
+export function getBaseItem(name: string): BaseItemDb | undefined {
   return baseItems.get(name.toLowerCase());
 }
 
-export function getMagicItem(name: string): MagicItemData | undefined {
+export function getMagicItem(name: string): MagicItemDb | undefined {
   return magicItems.get(name.toLowerCase());
 }
 
-export function getItem(name: string): MagicItemData | undefined {
-  return allItems.get(name.toLowerCase());
+export function getItem(name: string): MagicItemDb | undefined {
+  return allItems.get(name.toLowerCase()) as MagicItemDb | undefined;
 }
 
-export function getOptionalFeature(name: string): OptionalFeatureData | undefined {
+export function getOptionalFeature(name: string): OptionalFeatureDb | undefined {
   return optionalFeatures.get(name.toLowerCase());
 }
 
-export function getLanguage(name: string): LanguageData | undefined {
+export function getLanguage(name: string): LanguageDb | undefined {
   return languages.get(name.toLowerCase());
 }
 
-export function getAction(name: string): ActionData | undefined {
+export function getAction(name: string): ActionDb | undefined {
   return actions.get(name.toLowerCase());
 }
 
 // ─── Filtered queries ──────────────────────────────────
 
-export function getSpellsByLevel(level: number): SpellData[] {
+export function getSpellsByLevel(level: number): SpellDb[] {
   return spellsArray.filter((s) => s.level === level);
 }
 
-export function getSpellsByClass(className: string): SpellData[] {
-  const lower = className.toLowerCase();
-  return spellsArray.filter((s) =>
-    s.classes?.fromClassList?.some((c) => c.name.toLowerCase() === lower),
-  );
-}
-
-export function getClassFeatures(className: string, upToLevel: number): ClassFeatureRaw[] {
+export function getClassFeatures(className: string, upToLevel: number): ClassFeatureDb[] {
   const cls = getClass(className);
   if (!cls) return [];
-  return cls.resolvedFeatures.filter((f) => f.level <= upToLevel);
+  return cls.features.filter((f) => f.level <= upToLevel);
 }
 
-export function getOptionalFeaturesByType(type: string): OptionalFeatureData[] {
+export function getOptionalFeaturesByType(type: string): OptionalFeatureDb[] {
   return optionalFeaturesArray.filter((f) => f.featureType.includes(type));
 }
 
@@ -281,9 +234,9 @@ export function getCasterMultiplier(className: string): number {
   switch (cls.casterProgression) {
     case "full":
       return 1;
-    case "1/2":
+    case "half":
       return 0.5;
-    case "1/3":
+    case "third":
       return 1 / 3;
     case "pact":
       return 0; // Warlock uses pact magic, handled separately
@@ -316,303 +269,70 @@ export const THIRD_CASTER_SLOTS: Record<number, number[]> = {
   20: [4, 3, 3, 1],
 };
 
-// ─── Property / Mastery Lookup Maps ────────────────────
-
-const propertyMap = new Map<string, ItemPropertyData>();
-for (const p of itemProperties) {
-  propertyMap.set(p.abbreviation.toLowerCase(), p);
-}
-
-const masteryMap = new Map<string, ItemMasteryData>();
-for (const m of itemMasteries) {
-  masteryMap.set(m.name.toLowerCase(), m as unknown as ItemMasteryData);
-}
-
-export function getItemProperty(abbreviation: string): ItemPropertyData | undefined {
-  const code = abbreviation.split("|")[0].toLowerCase();
-  return propertyMap.get(code);
-}
-
-export function getItemMastery(name: string): ItemMasteryData | undefined {
-  const clean = name.split("|")[0].toLowerCase();
-  return masteryMap.get(clean) as ItemMasteryData | undefined;
-}
-
-// ─── Search helpers ────────────────────────────────────
-
-export function searchSpells(query: string): SpellData[] {
-  const lower = query.toLowerCase();
-  return spellsArray.filter((s) => s.name.toLowerCase().includes(lower));
-}
-
-export function searchMonsters(query: string): MonsterData[] {
-  const lower = query.toLowerCase();
-  return monstersArray.filter((s) => s.name.toLowerCase().includes(lower));
-}
-
-export function searchMagicItems(query: string): MagicItemData[] {
-  const lower = query.toLowerCase();
-  return magicItemsArray.filter((s) => s.name.toLowerCase().includes(lower));
-}
-
-export function searchFeats(query: string): FeatData[] {
-  const lower = query.toLowerCase();
-  return featsArray.filter((s) => s.name.toLowerCase().includes(lower));
-}
-
-export function searchOptionalFeatures(query: string): OptionalFeatureData[] {
-  const lower = query.toLowerCase();
-  return optionalFeaturesArray.filter((s) => s.name.toLowerCase().includes(lower));
-}
-
-// ─── Weapon Property Decoder (kept for backward compat) ──
-
-const PROPERTY_CODES: Record<string, string> = {
-  "2H": "Two-Handed",
-  A: "Ammunition",
-  AF: "Automatic Fire",
-  BF: "Burst Fire",
-  F: "Finesse",
-  H: "Heavy",
-  L: "Light",
-  LD: "Loading",
-  R: "Reach",
-  RLD: "Reload",
-  T: "Thrown",
-  V: "Versatile",
-};
-
-/** Decode a weapon property code like "F|XPHB" → "Finesse" */
-export function formatWeaponProperty(raw: string | { uid: string; note?: string }): string {
-  const str = typeof raw === "string" ? raw : raw.uid;
-  const code = str.split("|")[0];
-  const label = PROPERTY_CODES[code] ?? code;
-  if (typeof raw !== "string" && raw.note) return `${label} (${raw.note})`;
-  return label;
-}
-
-// ─── Class Resource Templates ──────────────────────────
-// Hard-coded per-class resource data (not available in 5e.tools structured format)
-
-export const CLASS_RESOURCES: Record<string, ClassResourceTemplate[]> = {
-  barbarian: [
-    {
-      name: "Rage",
-      levelAvailable: 1,
-      resetType: "long",
-      uses: 2,
-      usesTable: { 1: 2, 3: 3, 6: 4, 17: 5, 20: 6 },
-    },
-  ],
-  bard: [
-    {
-      name: "Bardic Inspiration",
-      levelAvailable: 1,
-      resetType: "short",
-      uses: { abilityMod: "cha", minimum: 1 },
-    },
-  ],
-  cleric: [
-    {
-      name: "Channel Divinity",
-      levelAvailable: 1,
-      resetType: "short",
-      uses: 1,
-      usesTable: { 1: 1, 6: 2, 18: 3 },
-    },
-  ],
-  druid: [
-    { name: "Wild Shape", levelAvailable: 2, resetType: "short", uses: 2 },
-    {
-      name: "Channel Nature",
-      levelAvailable: 1,
-      resetType: "long",
-      uses: 1,
-      usesTable: { 1: 1, 6: 2, 18: 3 },
-    },
-  ],
-  fighter: [
-    {
-      name: "Second Wind",
-      levelAvailable: 1,
-      resetType: "short",
-      uses: 1,
-      usesTable: { 1: 1, 2: 2, 9: 3, 13: 4, 17: 5 },
-    },
-    {
-      name: "Action Surge",
-      levelAvailable: 2,
-      resetType: "short",
-      uses: 1,
-      usesTable: { 2: 1, 17: 2 },
-    },
-    {
-      name: "Indomitable",
-      levelAvailable: 9,
-      resetType: "long",
-      uses: 1,
-      usesTable: { 9: 1, 13: 2, 17: 3 },
-    },
-  ],
-  monk: [
-    {
-      name: "Focus Points",
-      levelAvailable: 2,
-      resetType: "short",
-      uses: 2,
-      usesTable: {
-        2: 2,
-        3: 3,
-        4: 4,
-        5: 5,
-        6: 6,
-        7: 7,
-        8: 8,
-        9: 9,
-        10: 10,
-        11: 11,
-        12: 12,
-        13: 13,
-        14: 14,
-        15: 15,
-        16: 16,
-        17: 17,
-        18: 18,
-        19: 19,
-        20: 20,
-      },
-    },
-  ],
-  paladin: [
-    {
-      name: "Lay on Hands",
-      levelAvailable: 1,
-      resetType: "long",
-      uses: 5,
-      usesTable: {
-        1: 5,
-        2: 10,
-        3: 15,
-        4: 20,
-        5: 25,
-        6: 30,
-        7: 35,
-        8: 40,
-        9: 45,
-        10: 50,
-        11: 55,
-        12: 60,
-        13: 65,
-        14: 70,
-        15: 75,
-        16: 80,
-        17: 85,
-        18: 90,
-        19: 95,
-        20: 100,
-      },
-    },
-    {
-      name: "Channel Divinity",
-      levelAvailable: 3,
-      resetType: "long",
-      uses: 1,
-      usesTable: { 3: 1, 11: 2, 15: 3 },
-    },
-  ],
-  ranger: [],
-  rogue: [],
-  sorcerer: [
-    {
-      name: "Sorcery Points",
-      levelAvailable: 2,
-      resetType: "long",
-      uses: 2,
-      usesTable: {
-        2: 2,
-        3: 3,
-        4: 4,
-        5: 5,
-        6: 6,
-        7: 7,
-        8: 8,
-        9: 9,
-        10: 10,
-        11: 11,
-        12: 12,
-        13: 13,
-        14: 14,
-        15: 15,
-        16: 16,
-        17: 17,
-        18: 18,
-        19: 19,
-        20: 20,
-      },
-    },
-  ],
-  warlock: [],
-  wizard: [{ name: "Arcane Recovery", levelAvailable: 1, resetType: "long", uses: 1 }],
-};
-
-export function getClassResources(className: string): ClassResourceTemplate[] {
-  return CLASS_RESOURCES[className.toLowerCase()] ?? [];
-}
-
 // ─── Fuzzy lookup ────────────────────────────────────────
 
 export { fuzzyLookup, type FuzzyResult } from "../utils/fuzzy-lookup";
 
-// ─── Re-export types ───────────────────────────────────
+// ─── Search helpers ────────────────────────────────────
+
+export function searchSpells(query: string): SpellDb[] {
+  const lower = query.toLowerCase();
+  return spellsArray.filter((s) => s.name.toLowerCase().includes(lower));
+}
+
+export function searchMonsters(query: string): MonsterDb[] {
+  const lower = query.toLowerCase();
+  return monstersArray.filter((s) => s.name.toLowerCase().includes(lower));
+}
+
+export function searchMagicItems(query: string): MagicItemDb[] {
+  const lower = query.toLowerCase();
+  return magicItemsArray.filter((s) => s.name.toLowerCase().includes(lower));
+}
+
+export function searchFeats(query: string): FeatDb[] {
+  const lower = query.toLowerCase();
+  return featsArray.filter((s) => s.name.toLowerCase().includes(lower));
+}
+
+export function searchOptionalFeatures(query: string): OptionalFeatureDb[] {
+  const lower = query.toLowerCase();
+  return optionalFeaturesArray.filter((s) => s.name.toLowerCase().includes(lower));
+}
+
+// ─── Re-export Db types ────────────────────────────────
 
 export type {
-  SpellData,
-  SpellRange,
-  SpellDuration,
-  ScalingLevelDice,
-  MonsterData,
-  MonsterType,
-  MonsterAc,
-  MonsterHp,
-  MonsterSpeed,
-  MonsterSpeedEntry,
+  SpellDb,
+  MonsterDb,
   MonsterActionEntry,
-  MonsterDamageEntry,
-  MonsterConditionEntry,
-  MonsterCr,
   MonsterSpellcasting,
-  ClassRaw,
-  ClassFeatureRaw,
-  SubclassRaw,
-  SubclassFeatureRaw,
-  ClassAssembled,
-  SubclassAssembled,
-  ClassTableGroup,
-  OptionalFeatureProgression,
-  AdditionalSpellEntry,
-  FeatData,
-  FeatPrerequisite,
-  FeatAbility,
-  SpeciesData,
-  SubraceData,
-  SpeciesVersion,
-  BackgroundData,
-  BackgroundAbility,
-  ConditionData,
-  DiseaseData,
-  StatusData,
-  BaseItemData,
-  ItemPropertyData,
-  ItemTypeData,
-  ItemMasteryData,
-  ItemEntryData,
-  MagicItemData,
-  ItemGroupData,
-  OptionalFeatureData,
-  LanguageData,
-  LanguageScriptData,
-  ActionData,
-  ClassResourceTemplate,
+  ClassDb,
+  ClassFeatureDb,
+  FeatDb,
+  FeatCategory,
+  SpeciesDb,
+  BackgroundDb,
+  ConditionDb,
+  DiseaseDb,
+  StatusDb,
+  BaseItemDb,
+  BaseItemType,
+  WeaponCategory,
+  MagicItemDb,
+  ItemRarity,
+  OptionalFeatureDb,
+  LanguageDb,
+  LanguageType,
+  ActionDb,
+  CasterProgression,
+  SpellSchool,
+  SpellLevel,
+  ClassName,
+  // Note: CreatureSize is intentionally NOT re-exported here — game-state.ts
+  // exports a different CreatureSize (lowercase) via types/index, and re-exporting
+  // the titlecase data.ts version would cause a conflict in shared/src/index.ts.
+  // Import CreatureSize from "@unseen-servant/shared/types/data" directly if needed.
 } from "../types/data";
 
 export type { Entry } from "../types/entry-types";

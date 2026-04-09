@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from "react";
 import type { CharacterData } from "@unseen-servant/shared/types";
 import type { SavedCharacter } from "@/types/saved-character";
-import type { BuilderChoices } from "@/components/builder/types";
 
 const STORAGE_KEY = "character_library";
 
@@ -49,10 +48,7 @@ export function useCharacterLibrary() {
   );
 
   const saveCharacter = useCallback(
-    (
-      char: CharacterData,
-      opts?: { campaignSlug?: string; roomCode?: string; builderChoices?: BuilderChoices },
-    ): SavedCharacter => {
+    (char: CharacterData, opts?: { campaignSlug?: string; roomCode?: string }): SavedCharacter => {
       const now = Date.now();
       const saved: SavedCharacter = {
         id: crypto.randomUUID(),
@@ -62,7 +58,6 @@ export function useCharacterLibrary() {
         campaignSlug: opts?.campaignSlug,
         roomCode: opts?.roomCode,
         character: char,
-        builderChoices: opts?.builderChoices,
       };
       const updated = [...readLibrary(), saved];
       writeLibrary(updated);
@@ -72,22 +67,18 @@ export function useCharacterLibrary() {
     [],
   );
 
-  const updateCharacter = useCallback(
-    (id: string, char: CharacterData, builderChoices?: BuilderChoices) => {
-      const lib = readLibrary();
-      const idx = lib.findIndex((c) => c.id === id);
-      if (idx === -1) return;
-      lib[idx] = {
-        ...lib[idx],
-        character: char,
-        updatedAt: Date.now(),
-        ...(builderChoices !== undefined ? { builderChoices } : {}),
-      };
-      writeLibrary(lib);
-      setCharacters(lib);
-    },
-    [],
-  );
+  const updateCharacter = useCallback((id: string, char: CharacterData) => {
+    const lib = readLibrary();
+    const idx = lib.findIndex((c) => c.id === id);
+    if (idx === -1) return;
+    lib[idx] = {
+      ...lib[idx],
+      character: char,
+      updatedAt: Date.now(),
+    };
+    writeLibrary(lib);
+    setCharacters(lib);
+  }, []);
 
   const deleteCharacter = useCallback((id: string) => {
     const lib = readLibrary().filter((c) => c.id !== id);

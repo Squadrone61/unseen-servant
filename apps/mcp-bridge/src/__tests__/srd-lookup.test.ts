@@ -76,11 +76,11 @@ describe("spell lookup", () => {
       expect(formatSchool(spell!.school)).toBe("Evocation");
     });
 
-    it("Fireball has a non-empty entries array (rules text present)", () => {
+    it("Fireball has a non-empty description string (rules text present)", () => {
       const spell = getSpell("Fireball");
       expect(spell).toBeDefined();
-      expect(Array.isArray(spell!.entries)).toBe(true);
-      expect(spell!.entries.length).toBeGreaterThan(0);
+      expect(typeof spell!.description).toBe("string");
+      expect(spell!.description.length).toBeGreaterThan(0);
     });
   });
 
@@ -192,20 +192,19 @@ describe("condition lookup", () => {
       expect(condition).toBeDefined();
     });
 
-    it("Poisoned has a non-empty entries array that acts as description", () => {
+    it("Poisoned has a non-empty description string (rules text present)", () => {
       const condition = getCondition("Poisoned");
       expect(condition).toBeDefined();
-      // ConditionData uses entries: Entry[] as the rules text, not a plain description string.
-      expect(Array.isArray(condition!.entries)).toBe(true);
-      expect(condition!.entries.length).toBeGreaterThan(0);
+      // ConditionDb uses description: string as the pre-formatted rules text.
+      expect(typeof condition!.description).toBe("string");
+      expect(condition!.description.length).toBeGreaterThan(0);
     });
 
-    it("Poisoned entries contain at least one string or object entry", () => {
+    it("Poisoned description contains rules text", () => {
       const condition = getCondition("Poisoned");
       expect(condition).toBeDefined();
-      const firstEntry = condition!.entries[0];
-      // Entries may be strings or structured objects — either is valid rules text.
-      expect(firstEntry !== null && firstEntry !== undefined).toBe(true);
+      // Description should contain meaningful text about the condition.
+      expect(condition!.description.length).toBeGreaterThan(10);
     });
   });
 
@@ -321,8 +320,8 @@ describe("lookup tool detail levels", () => {
       // Fireball has upcast description in entriesHigherLevel.
       const spell = getSpell("Fireball");
       expect(spell).toBeDefined();
-      // Not all spells have entriesHigherLevel, but all have entries with full rules text.
-      expect(spell!.entries.length).toBeGreaterThan(0);
+      // All spells have a description string with full rules text.
+      expect(spell!.description.length).toBeGreaterThan(0);
     });
 
     it("getMonster returns trait and action arrays for full stat block rendering", () => {
@@ -339,7 +338,7 @@ describe("lookup tool detail levels", () => {
       // A complex spell (Wish) should have substantial rules text in entries.
       const spell = getSpell("Wish");
       expect(spell).toBeDefined();
-      expect(spell!.entries.length).toBeGreaterThan(0);
+      expect(spell!.description.length).toBeGreaterThan(0);
     });
   });
 });
@@ -431,10 +430,10 @@ describe("data integrity", () => {
       }
     });
 
-    it("every condition has a non-empty entries array (rules text)", () => {
+    it("every condition has a non-empty description (rules text)", () => {
       for (const condition of conditionsArray) {
-        expect(Array.isArray(condition.entries)).toBe(true);
-        expect(condition.entries.length).toBeGreaterThan(0);
+        expect(typeof condition.description).toBe("string");
+        expect(condition.description.length).toBeGreaterThan(0);
       }
     });
 

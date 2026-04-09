@@ -22,7 +22,6 @@ export default function CharacterDetailPage() {
       version: 1,
       exportedAt: new Date().toISOString(),
       character: character,
-      builderChoices: saved?.builderChoices ?? undefined,
     };
     const blob = new Blob([JSON.stringify(data, null, 2)], {
       type: "application/json",
@@ -63,11 +62,6 @@ export default function CharacterDetailPage() {
   return (
     <div className="min-h-screen flex flex-col">
       <TopBar items={[{ label: "Characters", href: "/characters" }]} current={char.static.name}>
-        {saved.builderChoices && (
-          <Button size="sm" href={`/characters/${saved.id}/edit`}>
-            Edit
-          </Button>
-        )}
         <Button variant="secondary" size="sm" onClick={() => exportNative(char)}>
           Export
         </Button>

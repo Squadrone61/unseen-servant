@@ -3178,7 +3178,7 @@ export class GameStateManager {
         const hitDiceParts: string[] = [];
         for (const cls of char.static.classes) {
           const classData = getClass(cls.name);
-          const faces = classData?.hd?.faces ?? 8;
+          const faces = classData?.hitDiceFaces ?? 8;
           hitDiceParts.push(`${cls.level}d${faces}`);
         }
         const hitDice = hitDiceParts.join(" + ");
@@ -3186,7 +3186,7 @@ export class GameStateManager {
         const conSign = conMod >= 0 ? `+${conMod}` : `${conMod}`;
         // Use first class's die for the per-die label (multiclass players choose which to spend)
         const firstClassData = getClass(char.static.classes[0]?.name ?? "");
-        const firstFaces = firstClassData?.hd?.faces ?? 8;
+        const firstFaces = firstClassData?.hitDiceFaces ?? 8;
         const healingPerDie = `1d${firstFaces}${conSign}`;
         const { currentHP } = char.dynamic;
         const { maxHP } = char.static;

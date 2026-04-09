@@ -1,9 +1,10 @@
 "use client";
 
-import { use } from "react";
-import { CharacterBuilder } from "@/components/builder/CharacterBuilder";
-
-export default function EditCharacterPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
-  return <CharacterBuilder editId={id} />;
+// Character builder has been removed.
+export default function EditCharacterPage() {
+  return (
+    <div className="flex items-center justify-center min-h-screen text-gray-400">
+      Character builder is not available.
+    </div>
+  );
 }

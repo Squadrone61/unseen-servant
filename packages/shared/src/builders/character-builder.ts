@@ -27,26 +27,184 @@ import {
   getBaseItem,
   getClassFeatures,
   getCasterMultiplier,
-  getClassResources,
   THIRD_CASTER_SLOTS,
 } from "../data/index";
-import type { ClassResourceTemplate } from "../types/data";
-import {
-  formatSchool,
-  formatCastingTime,
-  formatRange,
-  formatComponents,
-  formatDuration,
-  isConcentration,
-  isRitual,
-  getArmorProfs,
-  getWeaponProfs,
-  getSpeciesSpeed,
-  getSpellSlotTable,
-  getPactSlotTable,
-  entriesToText,
-  SKILL_ABILITY_MAP,
-} from "../utils/5etools";
+import { SKILL_ABILITY_MAP } from "../utils/5etools";
+
+// ─── Class Resource Template (local, builder-only) ────────
+
+interface ClassResourceTemplate {
+  name: string;
+  levelAvailable: number;
+  resetType: "long" | "short";
+  uses: number | { abilityMod: string; minimum?: number };
+  usesTable?: Record<number, number>;
+}
+
+const CLASS_RESOURCES: Record<string, ClassResourceTemplate[]> = {
+  barbarian: [
+    {
+      name: "Rage",
+      levelAvailable: 1,
+      resetType: "long",
+      uses: 2,
+      usesTable: { 1: 2, 3: 3, 6: 4, 17: 5, 20: 6 },
+    },
+  ],
+  bard: [
+    {
+      name: "Bardic Inspiration",
+      levelAvailable: 1,
+      resetType: "short",
+      uses: { abilityMod: "cha", minimum: 1 },
+    },
+  ],
+  cleric: [
+    {
+      name: "Channel Divinity",
+      levelAvailable: 1,
+      resetType: "short",
+      uses: 1,
+      usesTable: { 1: 1, 6: 2, 18: 3 },
+    },
+  ],
+  druid: [
+    { name: "Wild Shape", levelAvailable: 2, resetType: "short", uses: 2 },
+    {
+      name: "Channel Nature",
+      levelAvailable: 1,
+      resetType: "long",
+      uses: 1,
+      usesTable: { 1: 1, 6: 2, 18: 3 },
+    },
+  ],
+  fighter: [
+    {
+      name: "Second Wind",
+      levelAvailable: 1,
+      resetType: "short",
+      uses: 1,
+      usesTable: { 1: 1, 2: 2, 9: 3, 13: 4, 17: 5 },
+    },
+    {
+      name: "Action Surge",
+      levelAvailable: 2,
+      resetType: "short",
+      uses: 1,
+      usesTable: { 2: 1, 17: 2 },
+    },
+    {
+      name: "Indomitable",
+      levelAvailable: 9,
+      resetType: "long",
+      uses: 1,
+      usesTable: { 9: 1, 13: 2, 17: 3 },
+    },
+  ],
+  monk: [
+    {
+      name: "Focus Points",
+      levelAvailable: 2,
+      resetType: "short",
+      uses: 2,
+      usesTable: {
+        2: 2,
+        3: 3,
+        4: 4,
+        5: 5,
+        6: 6,
+        7: 7,
+        8: 8,
+        9: 9,
+        10: 10,
+        11: 11,
+        12: 12,
+        13: 13,
+        14: 14,
+        15: 15,
+        16: 16,
+        17: 17,
+        18: 18,
+        19: 19,
+        20: 20,
+      },
+    },
+  ],
+  paladin: [
+    {
+      name: "Lay on Hands",
+      levelAvailable: 1,
+      resetType: "long",
+      uses: 5,
+      usesTable: {
+        1: 5,
+        2: 10,
+        3: 15,
+        4: 20,
+        5: 25,
+        6: 30,
+        7: 35,
+        8: 40,
+        9: 45,
+        10: 50,
+        11: 55,
+        12: 60,
+        13: 65,
+        14: 70,
+        15: 75,
+        16: 80,
+        17: 85,
+        18: 90,
+        19: 95,
+        20: 100,
+      },
+    },
+    {
+      name: "Channel Divinity",
+      levelAvailable: 3,
+      resetType: "long",
+      uses: 1,
+      usesTable: { 3: 1, 11: 2, 15: 3 },
+    },
+  ],
+  ranger: [],
+  rogue: [],
+  sorcerer: [
+    {
+      name: "Sorcery Points",
+      levelAvailable: 2,
+      resetType: "long",
+      uses: 2,
+      usesTable: {
+        2: 2,
+        3: 3,
+        4: 4,
+        5: 5,
+        6: 6,
+        7: 7,
+        8: 8,
+        9: 9,
+        10: 10,
+        11: 11,
+        12: 12,
+        13: 13,
+        14: 14,
+        15: 15,
+        16: 16,
+        17: 17,
+        18: 18,
+        19: 19,
+        20: 20,
+      },
+    },
+  ],
+  warlock: [],
+  wizard: [{ name: "Arcane Recovery", levelAvailable: 1, resetType: "long", uses: 1 }],
+};
+
+function getClassResources(className: string): ClassResourceTemplate[] {
+  return CLASS_RESOURCES[className.toLowerCase()] ?? [];
+}
 
 // ─── Helpers ─────────────────────────────────────────────
 
@@ -140,14 +298,14 @@ export function buildCharacter(ids: CharacterIdentifiers): {
     if (dbSpell) {
       return {
         ...spell,
-        description: spell.description || entriesToText(dbSpell.entries),
-        school: spell.school || formatSchool(dbSpell.school),
-        castingTime: spell.castingTime || formatCastingTime(dbSpell),
-        range: spell.range || formatRange(dbSpell.range),
-        components: spell.components || formatComponents(dbSpell),
-        duration: spell.duration || formatDuration(dbSpell),
-        concentration: spell.concentration ?? isConcentration(dbSpell),
-        ritual: spell.ritual ?? isRitual(dbSpell),
+        description: spell.description || dbSpell.description,
+        school: spell.school || dbSpell.school,
+        castingTime: spell.castingTime || dbSpell.castingTime,
+        range: spell.range || dbSpell.range,
+        components: spell.components || dbSpell.components,
+        duration: spell.duration || dbSpell.duration,
+        concentration: spell.concentration ?? dbSpell.concentration,
+        ritual: spell.ritual ?? dbSpell.ritual,
       };
     }
     return spell;
@@ -299,7 +457,7 @@ function computeSpeed(ids: CharacterIdentifiers, featureNames: Set<string>): num
   // Look up species base speed
   const speciesLower = ids.race.toLowerCase().replace(/\s*\(.*\)/, "");
   const speciesData = getSpecies(speciesLower);
-  let speed = speciesData ? getSpeciesSpeed(speciesData) : 30;
+  let speed = speciesData ? speciesData.speed : 30;
 
   const totalLevel = ids.classes.reduce((sum, c) => sum + c.level, 0);
   const classNames = ids.classes.map((c) => c.name.toLowerCase());
@@ -415,20 +573,7 @@ function getClassSpellSlotsFromData(className: string, level: number): number[] 
   const cls = getClass(className);
   if (!cls) return [];
 
-  if (cls.casterProgression === "pact") {
-    const pactTable = getPactSlotTable(cls);
-    if (pactTable && level >= 1 && level <= pactTable.length) {
-      const entry = pactTable[level - 1];
-      const slots = new Array(9).fill(0);
-      if (entry.slotLevel >= 1) {
-        slots[entry.slotLevel - 1] = entry.slots;
-      }
-      return slots;
-    }
-    return [];
-  }
-
-  const slotTable = getSpellSlotTable(cls);
+  const slotTable = cls.spellSlotTable;
   if (slotTable && level >= 1 && level <= slotTable.length) {
     return slotTable[level - 1];
   }
@@ -581,7 +726,7 @@ function computeFeatures(ids: CharacterIdentifiers, _warnings: string[]): Charac
     for (const dbf of dbFeatures) {
       addFeature({
         name: dbf.name,
-        description: entriesToText(dbf.entries),
+        description: dbf.description,
         source: "class",
         sourceLabel: cls.name,
         requiredLevel: dbf.level,
@@ -591,17 +736,17 @@ function computeFeatures(ids: CharacterIdentifiers, _warnings: string[]): Charac
     // Subclass features from assembled data
     if (cls.subclass && !seen.has(cls.subclass)) {
       const classData = getClass(cls.name);
-      const subclassData = classData?.resolvedSubclasses.find(
-        (s) =>
+      const subclassData = classData?.subclasses.find(
+        (s: { name: string; shortName: string }) =>
           s.name.toLowerCase() === cls.subclass!.toLowerCase() ||
           s.shortName.toLowerCase() === cls.subclass!.toLowerCase(),
       );
       if (subclassData) {
-        for (const sf of subclassData.resolvedFeatures) {
+        for (const sf of subclassData.features) {
           if (sf.level <= cls.level) {
             addFeature({
               name: sf.name,
-              description: entriesToText(sf.entries),
+              description: sf.description,
               source: "class",
               sourceLabel: `${cls.name} (${cls.subclass})`,
               requiredLevel: sf.level,
@@ -628,28 +773,21 @@ function computeFeatures(ids: CharacterIdentifiers, _warnings: string[]): Charac
       // Enrich with DB description
       const idx = features.findIndex((f) => f.name === feat.name);
       if (idx >= 0) {
-        features[idx] = { ...features[idx], description: entriesToText(dbFeat.entries) };
+        features[idx] = { ...features[idx], description: dbFeat.description };
       }
     }
   }
 
-  // Species traits from DB (now uses entries instead of traits array)
+  // Species traits from DB
   const speciesLower = ids.race.toLowerCase().replace(/\s*\(.*\)/, "");
   const speciesData = getSpecies(speciesLower);
-  if (speciesData?.entries) {
-    for (const entry of speciesData.entries) {
-      if (typeof entry !== "string" && entry && typeof entry === "object" && "type" in entry) {
-        const e = entry as { type: string; name?: string; entries?: unknown[] };
-        if (e.type === "entries" && e.name && e.entries) {
-          addFeature({
-            name: e.name,
-            description: entriesToText(e.entries as import("../types/entry-types").Entry[]),
-            source: "race",
-            sourceLabel: ids.race,
-          });
-        }
-      }
-    }
+  if (speciesData?.description) {
+    addFeature({
+      name: ids.race,
+      description: speciesData.description,
+      source: "race",
+      sourceLabel: ids.race,
+    });
   }
 
   return features;
@@ -745,8 +883,8 @@ function computeProficiencies(ids: CharacterIdentifiers): ProficiencyGroup {
   for (const cls of ids.classes) {
     const classData = getClass(cls.name);
     if (!classData) continue;
-    for (const a of getArmorProfs(classData)) armorSet.add(a);
-    for (const w of getWeaponProfs(classData)) weaponSet.add(w);
+    for (const a of classData.armorProficiencies) armorSet.add(a);
+    for (const w of classData.weaponProficiencies) weaponSet.add(w);
   }
 
   return {
