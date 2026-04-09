@@ -83,6 +83,8 @@ import { BackgroundStep } from "./steps/BackgroundStep";
 import { ClassStep } from "./steps/ClassStep";
 import { AbilitiesStep } from "./steps/AbilitiesStep";
 import { FeatsStep } from "./steps/FeatsStep";
+import { SpellsStep } from "./steps/SpellsStep";
+import { DetailsStep } from "./steps/DetailsStep";
 
 function StepContent({ stepId }: { stepId: StepId }) {
   switch (stepId) {
@@ -96,16 +98,10 @@ function StepContent({ stepId }: { stepId: StepId }) {
       return <AbilitiesStep />;
     case "feats":
       return <FeatsStep />;
-    default: {
-      const label = STEPS.find((s) => s.id === stepId)?.label ?? stepId;
-      return (
-        <div className="bg-gray-800/60 border border-gray-700/40 rounded-lg p-8 text-center">
-          <p className="text-gray-500 text-sm" style={{ fontFamily: "var(--font-cinzel)" }}>
-            {label} — Coming Soon
-          </p>
-        </div>
-      );
-    }
+    case "spells":
+      return <SpellsStep />;
+    case "details":
+      return <DetailsStep />;
   }
 }
 
