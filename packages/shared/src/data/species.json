@@ -19,8 +19,7 @@
         {
           "type": "spell_grant",
           "spell": "Gust of Wind",
-          "usage": "per_day",
-          "uses": 1,
+          "usage": "1/long_rest",
           "castingAbility": "intelligence"
         }
       ]
@@ -39,8 +38,7 @@
                 {
                   "type": "spell_grant",
                   "spell": "Gust of Wind",
-                  "usage": "per_day",
-                  "uses": 1,
+                  "usage": "1/long_rest",
                   "castingAbility": "intelligence"
                 }
               ]
@@ -53,8 +51,7 @@
                 {
                   "type": "spell_grant",
                   "spell": "Gust of Wind",
-                  "usage": "per_day",
-                  "uses": 1,
+                  "usage": "1/long_rest",
                   "castingAbility": "wisdom"
                 }
               ]
@@ -67,8 +64,7 @@
                 {
                   "type": "spell_grant",
                   "spell": "Gust of Wind",
-                  "usage": "per_day",
-                  "uses": 1,
+                  "usage": "1/long_rest",
                   "castingAbility": "charisma"
                 }
               ]
@@ -290,15 +286,13 @@
         {
           "type": "spell_grant",
           "spell": "Disguise Self",
-          "usage": "per_day",
-          "uses": 1,
+          "usage": "1/long_rest",
           "castingAbility": "intelligence"
         },
         {
           "type": "spell_grant",
           "spell": "Nondetection",
-          "usage": "per_day",
-          "uses": 1,
+          "usage": "1/long_rest",
           "castingAbility": "intelligence"
         },
         {
@@ -484,15 +478,13 @@
         {
           "type": "spell_grant",
           "spell": "Enlarge/Reduce",
-          "usage": "per_day",
-          "uses": 1,
+          "usage": "1/long_rest",
           "castingAbility": "intelligence"
         },
         {
           "type": "spell_grant",
           "spell": "Invisibility",
-          "usage": "per_day",
-          "uses": 1,
+          "usage": "1/long_rest",
           "castingAbility": "intelligence"
         }
       ]
@@ -649,15 +641,13 @@
                 {
                   "type": "spell_grant",
                   "spell": "Faerie Fire",
-                  "usage": "per_day",
-                  "uses": 1,
+                  "usage": "1/long_rest",
                   "castingAbility": "charisma"
                 },
                 {
                   "type": "spell_grant",
                   "spell": "Darkness",
-                  "usage": "per_day",
-                  "uses": 1,
+                  "usage": "1/long_rest",
                   "castingAbility": "charisma"
                 }
               ]
@@ -677,15 +667,13 @@
                 {
                   "type": "spell_grant",
                   "spell": "Detect Magic",
-                  "usage": "per_day",
-                  "uses": 1,
+                  "usage": "1/long_rest",
                   "castingAbility": "intelligence"
                 },
                 {
                   "type": "spell_grant",
                   "spell": "Misty Step",
-                  "usage": "per_day",
-                  "uses": 1,
+                  "usage": "1/long_rest",
                   "castingAbility": "intelligence"
                 }
               ]
@@ -711,15 +699,13 @@
                 {
                   "type": "spell_grant",
                   "spell": "Longstrider",
-                  "usage": "per_day",
-                  "uses": 1,
+                  "usage": "1/long_rest",
                   "castingAbility": "wisdom"
                 },
                 {
                   "type": "spell_grant",
                   "spell": "Pass without Trace",
-                  "usage": "per_day",
-                  "uses": 1,
+                  "usage": "1/long_rest",
                   "castingAbility": "wisdom"
                 }
               ]
@@ -759,15 +745,13 @@
         {
           "type": "spell_grant",
           "spell": "Faerie Fire",
-          "usage": "per_day",
-          "uses": 1,
+          "usage": "1/long_rest",
           "castingAbility": "intelligence"
         },
         {
           "type": "spell_grant",
           "spell": "Enlarge/Reduce",
-          "usage": "per_day",
-          "uses": 1,
+          "usage": "1/long_rest",
           "castingAbility": "intelligence"
         },
         {
@@ -789,15 +773,13 @@
         {
           "type": "spell_grant",
           "spell": "Detect Magic",
-          "usage": "per_day",
-          "uses": 1,
+          "usage": "1/long_rest",
           "castingAbility": "wisdom"
         },
         {
           "type": "spell_grant",
           "spell": "Disguise Self",
-          "usage": "per_day",
-          "uses": 1,
+          "usage": "1/long_rest",
           "castingAbility": "wisdom"
         },
         {
@@ -864,15 +846,13 @@
                 {
                   "type": "spell_grant",
                   "spell": "Feather Fall",
-                  "usage": "per_day",
-                  "uses": 1,
+                  "usage": "1/long_rest",
                   "castingAbility": "intelligence"
                 },
                 {
                   "type": "spell_grant",
                   "spell": "Levitate",
-                  "usage": "per_day",
-                  "uses": 1,
+                  "usage": "1/long_rest",
                   "castingAbility": "intelligence"
                 },
                 {
@@ -896,8 +876,7 @@
                 {
                   "type": "spell_grant",
                   "spell": "Pass without Trace",
-                  "usage": "per_day",
-                  "uses": 1,
+                  "usage": "1/long_rest",
                   "castingAbility": "intelligence"
                 },
                 {
@@ -929,15 +908,13 @@
                 {
                   "type": "spell_grant",
                   "spell": "Burning Hands",
-                  "usage": "per_day",
-                  "uses": 1,
+                  "usage": "1/long_rest",
                   "castingAbility": "intelligence"
                 },
                 {
                   "type": "spell_grant",
                   "spell": "Flame Blade",
-                  "usage": "per_day",
-                  "uses": 1,
+                  "usage": "1/long_rest",
                   "castingAbility": "intelligence"
                 }
               ]
@@ -961,15 +938,13 @@
                 {
                   "type": "spell_grant",
                   "spell": "Create or Destroy Water",
-                  "usage": "per_day",
-                  "uses": 1,
+                  "usage": "1/long_rest",
                   "castingAbility": "intelligence"
                 },
                 {
                   "type": "spell_grant",
                   "spell": "Water Walk",
-                  "usage": "per_day",
-                  "uses": 1,
+                  "usage": "1/long_rest",
                   "castingAbility": "intelligence"
                 },
                 {
@@ -1009,15 +984,13 @@
         {
           "type": "spell_grant",
           "spell": "Jump",
-          "usage": "per_day",
-          "uses": 1,
+          "usage": "1/long_rest",
           "castingAbility": "intelligence"
         },
         {
           "type": "spell_grant",
           "spell": "Misty Step",
-          "usage": "per_day",
-          "uses": 1,
+          "usage": "1/long_rest",
           "castingAbility": "intelligence"
         },
         {
@@ -1057,15 +1030,13 @@
         {
           "type": "spell_grant",
           "spell": "Shield",
-          "usage": "per_day",
-          "uses": 1,
+          "usage": "1/long_rest",
           "castingAbility": "intelligence"
         },
         {
           "type": "spell_grant",
           "spell": "Detect Thoughts",
-          "usage": "per_day",
-          "uses": 1,
+          "usage": "1/long_rest",
           "castingAbility": "intelligence"
         },
         {
@@ -1869,15 +1840,13 @@
                 {
                   "type": "spell_grant",
                   "spell": "Ray of Sickness",
-                  "usage": "per_day",
-                  "uses": 1,
+                  "usage": "1/long_rest",
                   "castingAbility": "charisma"
                 },
                 {
                   "type": "spell_grant",
                   "spell": "Hold Person",
-                  "usage": "per_day",
-                  "uses": 1,
+                  "usage": "1/long_rest",
                   "castingAbility": "charisma"
                 }
               ]
@@ -1907,15 +1876,13 @@
                 {
                   "type": "spell_grant",
                   "spell": "False Life",
-                  "usage": "per_day",
-                  "uses": 1,
+                  "usage": "1/long_rest",
                   "castingAbility": "charisma"
                 },
                 {
                   "type": "spell_grant",
                   "spell": "Ray of Enfeeblement",
-                  "usage": "per_day",
-                  "uses": 1,
+                  "usage": "1/long_rest",
                   "castingAbility": "charisma"
                 }
               ]
@@ -1945,15 +1912,13 @@
                 {
                   "type": "spell_grant",
                   "spell": "Hellish Rebuke",
-                  "usage": "per_day",
-                  "uses": 1,
+                  "usage": "1/long_rest",
                   "castingAbility": "charisma"
                 },
                 {
                   "type": "spell_grant",
                   "spell": "Darkness",
-                  "usage": "per_day",
-                  "uses": 1,
+                  "usage": "1/long_rest",
                   "castingAbility": "charisma"
                 }
               ]

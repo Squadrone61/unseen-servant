@@ -800,8 +800,7 @@
         {
           "type": "spell_grant",
           "spell": "Water Breathing",
-          "usage": "per_day",
-          "uses": 1,
+          "usage": "1/long_rest",
           "castingAbility": "charisma"
         }
       ]
@@ -1954,8 +1953,7 @@
         {
           "type": "spell_grant",
           "spell": "Freedom of Movement",
-          "usage": "per_day",
-          "uses": 1,
+          "usage": "1/long_rest",
           "castingAbility": "charisma"
         }
       ]
@@ -2018,8 +2016,7 @@
         {
           "type": "spell_grant",
           "spell": "Animate Dead",
-          "usage": "per_day",
-          "uses": 1,
+          "usage": "1/long_rest",
           "castingAbility": "charisma"
         }
       ]

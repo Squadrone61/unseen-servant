@@ -1,0 +1,38 @@
+[
+  {
+    "name": "Cackle Fever",
+    "description": "Cheaply made potions and elixirs are sometimes tainted by Cackle Fever, which affects Humanoids only (gnomes are strangely immune). A creature suffers the following effects 1d4 days after infection.\n\n**Fever.** The creature gains 1 {condition:Exhaustion} level, which lasts until the contagion ends on the creature.\n\n**Uncontrollable Laughter.** While the creature has the {condition:Exhaustion} condition, the creature makes a DC 13 Constitution saving throw each time it takes damage other than Psychic damage. On a failed save, the creature takes 5 (1d10) Psychic damage and has the {condition:Incapacitated} condition as it laughs uncontrollably. At the end of each of its turns, the creature repeats the save, ending the effect on itself on a success. After 1 minute, it succeeds automatically.\n\n**Fighting the Contagion.** At the end of each {rule:Long Rest}, an infected creature makes a DC 13 Constitution saving throw. After the creature succeeds on three of these saves, the contagion ends on it, and the creature is immune to Cackle Fever for 1 year.\n\n**Spreading the Contagion.** Any Humanoid (other than a gnome) that starts its turn within a 10-foot Emanation originating from a creature infected with Cackle Fever must succeed on a DC 10 Constitution saving throw or also become infected with the contagion. On a successful save, the Humanoid can't catch the contagion from that particular infected creature for the next 24 hours.",
+    "effects": {
+      "properties": [
+        {
+          "type": "note",
+          "text": "Gains 1 Exhaustion level on infection (lasts until contagion ends). While Exhausted: on taking non-Psychic damage, DC 13 Constitution save or take 5 (1d10) Psychic damage and become Incapacitated with mad laughter (repeating save each turn to end, auto-success after 1 minute). Spreads via 10-foot Emanation (DC 10 Constitution save). Cured after three successful DC 13 Constitution saves at end of Long Rest; then immune for 1 year."
+        }
+      ]
+    }
+  },
+  {
+    "name": "Sewer Plague",
+    "description": "Fouled potions and alchemical waste can give rise to Sewer Plague, which incubates in sewers and refuse heaps and is sometimes transmitted by creatures that dwell in such areas, including otyughs and rats. Any Humanoid that is wounded by a creature that carries the contagion or that comes into contact with contaminated filth or offal must succeed on a DC 11 Constitution saving throw or become infected with Sewer Plague. A creature suffers the following effects 1d4 days after infection.\n\n**Fatigue.** The creature gains 1 {condition:Exhaustion} level.\n\n**Weakness.** While the creature has any Exhaustion levels, it regains only half the normal number of Hit Points from spending Hit Point Dice.\n\n**Restlessness.** While the creature has any Exhaustion levels, finishing a {rule:Long Rest} neither restores lost Hit Points nor reduces the creature's Exhaustion level.\n\n**Fighting the Contagion.** Daily at dawn, an infected creature makes a DC 11 Constitution saving throw. On a failed save, the creature gains 1 {condition:Exhaustion} level as its fatigue worsens. On a successful save, the creature's Exhaustion level decreases by 1. If the creature's Exhaustion level is reduced to 0, the contagion ends on the creature.",
+    "effects": {
+      "properties": [
+        {
+          "type": "note",
+          "text": "Gains 1 Exhaustion level on infection. While Exhausted: regains only half HP from spending Hit Dice, and Long Rest neither restores lost HP nor reduces Exhaustion level. Daily at dawn: DC 11 Constitution save — failed save gains 1 Exhaustion, successful save reduces Exhaustion by 1. Exhaustion reaching 0 ends the contagion."
+        }
+      ]
+    }
+  },
+  {
+    "name": "Sight Rot",
+    "description": "Any Beast or Humanoid that drinks water tainted by Sight Rot must succeed on a DC 15 Constitution saving throw or have the {condition:Blinded} condition until the contagion ends.\n\n**Fighting the Contagion.** Magic such as a {spell:Heal} or {spell:Lesser Restoration} spell ends the contagion immediately. A character who is proficient with an Herbalism Kit can use it to create one dose of nonmagical ointment, which takes 1 hour. When applied to the eyes of a creature suffering from Sight Rot, the ointment suppresses the contagion on that creature for 24 hours. If the contagion is suppressed in this way for a total of 72 hours (requiring three doses and applications of the ointment), the contagion ends on the creature.\n\n**Spreading the Contagion.** Any Humanoid that makes skin contact with a creature infected with Sight Rot must succeed on a DC 15 Constitution saving throw or also become infected with the contagion. On a successful save, the Humanoid can't catch the contagion from that particular infected creature for the next 24 hours.",
+    "effects": {
+      "properties": [
+        {
+          "type": "note",
+          "text": "Infected creature has the Blinded condition until the contagion ends. Cured by Heal or Lesser Restoration, or by three applications of Herbalism Kit ointment (1 hour each, 24 hours suppression per dose, 72 hours total). Spreads via skin contact (DC 15 Constitution save)."
+        }
+      ]
+    }
+  }
+]

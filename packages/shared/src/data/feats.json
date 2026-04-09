@@ -1507,15 +1507,13 @@
         {
           "type": "spell_grant",
           "spell": "Levitate",
-          "usage": "per_day",
-          "uses": 1,
+          "usage": "1/long_rest",
           "castingAbility": "charisma"
         },
         {
           "type": "spell_grant",
           "spell": "Dispel Magic",
-          "usage": "per_day",
-          "uses": 1,
+          "usage": "1/long_rest",
           "castingAbility": "charisma"
         }
       ]
@@ -1953,7 +1951,6 @@
           "type": "spell_grant",
           "spell": "Misty Step",
           "usage": "1/short_rest",
-          "uses": 1,
           "castingAbility": "intelligence"
         },
         {
@@ -4187,8 +4184,7 @@
         {
           "type": "spell_grant",
           "spell": "Detect Thoughts",
-          "usage": "per_day",
-          "uses": 1
+          "usage": "1/long_rest"
         },
         {
           "type": "note",
@@ -4394,15 +4390,13 @@
         {
           "type": "spell_grant",
           "spell": "Longstrider",
-          "usage": "per_day",
-          "uses": 1,
+          "usage": "1/long_rest",
           "castingAbility": "wisdom"
         },
         {
           "type": "spell_grant",
           "spell": "Pass without Trace",
-          "usage": "per_day",
-          "uses": 1,
+          "usage": "1/long_rest",
           "castingAbility": "wisdom"
         },
         {

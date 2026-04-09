@@ -32,7 +32,9 @@ import toolsData from "./items/tools.json";
 import gearData from "./items/gear.json";
 import magicItemsData from "./items/magic.json";
 import optionalFeaturesData from "./optional-features.json";
-import conditionsDiseasesData from "./conditions-diseases.json";
+import conditionsData from "./conditions.json";
+import diseasesData from "./diseases.json";
+import statusesData from "./statuses.json";
 import languagesData from "./languages.json";
 import actionsData from "./actions.json";
 
@@ -67,12 +69,6 @@ const classesArray: ClassDb[] = [
   wizardData as unknown as ClassDb,
 ];
 
-const rawCondsDiseases = conditionsDiseasesData as unknown as {
-  condition: ConditionDb[];
-  disease?: DiseaseDb[];
-  status?: StatusDb[];
-};
-
 // ─── Case-insensitive lookup maps ───────────────────────
 
 function buildMap<T extends { name: string }>(data: T[]): Map<string, T> {
@@ -104,11 +100,11 @@ export const backgroundsArray = backgroundsData as unknown as BackgroundDb[];
 export const backgrounds = buildMap(backgroundsArray);
 
 // Conditions, Diseases, Statuses
-export const conditionsArray = rawCondsDiseases.condition;
+export const conditionsArray = conditionsData as unknown as ConditionDb[];
 export const conditions = buildMap(conditionsArray);
-export const diseasesArray = rawCondsDiseases.disease ?? [];
+export const diseasesArray = diseasesData as unknown as DiseaseDb[];
 export const diseases = buildMap(diseasesArray);
-export const statusesArray = rawCondsDiseases.status ?? [];
+export const statusesArray = statusesData as unknown as StatusDb[];
 export const statuses = buildMap(statusesArray);
 
 // Base items (equipment) — split by category

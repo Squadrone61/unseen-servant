@@ -3,56 +3,268 @@
   "description": "A warrior who uses martial prowess and nature magic to combat threats on the edges of civilization, tracking foes and protecting the wild places of the world.",
   "effects": {
     "properties": [
-      { "type": "proficiency", "category": "armor", "value": "Light Armor" },
-      { "type": "proficiency", "category": "armor", "value": "Medium Armor" },
-      { "type": "proficiency", "category": "armor", "value": "Shield" },
-      { "type": "proficiency", "category": "weapon", "value": "Simple Weapons" },
-      { "type": "proficiency", "category": "weapon", "value": "Martial Weapons" },
-      { "type": "proficiency", "category": "save", "value": "Strength" },
-      { "type": "proficiency", "category": "save", "value": "Dexterity" }
+      {
+        "type": "proficiency",
+        "category": "armor",
+        "value": "Light Armor"
+      },
+      {
+        "type": "proficiency",
+        "category": "armor",
+        "value": "Medium Armor"
+      },
+      {
+        "type": "proficiency",
+        "category": "armor",
+        "value": "Shield"
+      },
+      {
+        "type": "proficiency",
+        "category": "weapon",
+        "value": "Simple Weapons"
+      },
+      {
+        "type": "proficiency",
+        "category": "weapon",
+        "value": "Martial Weapons"
+      },
+      {
+        "type": "proficiency",
+        "category": "save",
+        "value": "Strength"
+      },
+      {
+        "type": "proficiency",
+        "category": "save",
+        "value": "Dexterity"
+      }
     ]
   },
   "hitDiceFaces": 10,
-  "primaryAbility": ["Dexterity", "Wisdom"],
-  "savingThrows": ["strength", "dexterity"],
-  "armorProficiencies": ["Light Armor", "Medium Armor", "Shield"],
-  "weaponProficiencies": ["Simple Weapons", "Martial Weapons"],
+  "primaryAbility": [
+    "Dexterity",
+    "Wisdom"
+  ],
+  "savingThrows": [
+    "strength",
+    "dexterity"
+  ],
+  "armorProficiencies": [
+    "Light Armor",
+    "Medium Armor",
+    "Shield"
+  ],
+  "weaponProficiencies": [
+    "Simple Weapons",
+    "Martial Weapons"
+  ],
   "toolProficiencies": [],
   "skillChoices": {
-    "from": ["Animal Handling", "Athletics", "Insight", "Investigation", "Nature", "Perception", "Stealth", "Survival"],
+    "from": [
+      "Animal Handling",
+      "Athletics",
+      "Insight",
+      "Investigation",
+      "Nature",
+      "Perception",
+      "Stealth",
+      "Survival"
+    ],
     "count": 3
   },
   "spellcastingAbility": "wisdom",
   "casterProgression": "half",
-  "preparedSpellsProgression": [2, 3, 4, 5, 6, 6, 7, 7, 9, 9, 10, 10, 11, 11, 12, 12, 14, 14, 15, 15],
+  "preparedSpellsProgression": [
+    2,
+    3,
+    4,
+    5,
+    6,
+    6,
+    7,
+    7,
+    9,
+    9,
+    10,
+    10,
+    11,
+    11,
+    12,
+    12,
+    14,
+    14,
+    15,
+    15
+  ],
   "spellSlotTable": [
-    [2, 0, 0, 0, 0],
-    [2, 0, 0, 0, 0],
-    [3, 0, 0, 0, 0],
-    [3, 0, 0, 0, 0],
-    [4, 2, 0, 0, 0],
-    [4, 2, 0, 0, 0],
-    [4, 3, 0, 0, 0],
-    [4, 3, 0, 0, 0],
-    [4, 3, 2, 0, 0],
-    [4, 3, 2, 0, 0],
-    [4, 3, 3, 0, 0],
-    [4, 3, 3, 0, 0],
-    [4, 3, 3, 1, 0],
-    [4, 3, 3, 1, 0],
-    [4, 3, 3, 2, 0],
-    [4, 3, 3, 2, 0],
-    [4, 3, 3, 3, 1],
-    [4, 3, 3, 3, 1],
-    [4, 3, 3, 3, 2],
-    [4, 3, 3, 3, 2]
+    [
+      2,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      2,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      3,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      3,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      4,
+      2,
+      0,
+      0,
+      0
+    ],
+    [
+      4,
+      2,
+      0,
+      0,
+      0
+    ],
+    [
+      4,
+      3,
+      0,
+      0,
+      0
+    ],
+    [
+      4,
+      3,
+      0,
+      0,
+      0
+    ],
+    [
+      4,
+      3,
+      2,
+      0,
+      0
+    ],
+    [
+      4,
+      3,
+      2,
+      0,
+      0
+    ],
+    [
+      4,
+      3,
+      3,
+      0,
+      0
+    ],
+    [
+      4,
+      3,
+      3,
+      0,
+      0
+    ],
+    [
+      4,
+      3,
+      3,
+      1,
+      0
+    ],
+    [
+      4,
+      3,
+      3,
+      1,
+      0
+    ],
+    [
+      4,
+      3,
+      3,
+      2,
+      0
+    ],
+    [
+      4,
+      3,
+      3,
+      2,
+      0
+    ],
+    [
+      4,
+      3,
+      3,
+      3,
+      1
+    ],
+    [
+      4,
+      3,
+      3,
+      3,
+      1
+    ],
+    [
+      4,
+      3,
+      3,
+      3,
+      2
+    ],
+    [
+      4,
+      3,
+      3,
+      3,
+      2
+    ]
   ],
   "multiclassing": {
-    "requirements": { "dex": 13, "wis": 13 },
+    "requirements": {
+      "dex": 13,
+      "wis": 13
+    },
     "proficienciesGained": {
-      "armor": ["Light Armor", "Medium Armor", "Shield"],
-      "weapons": ["Martial Weapons"],
-      "skills": { "from": ["Animal Handling", "Athletics", "Insight", "Investigation", "Nature", "Perception", "Stealth", "Survival"], "count": 1 }
+      "armor": [
+        "Light Armor",
+        "Medium Armor",
+        "Shield"
+      ],
+      "weapons": [
+        "Martial Weapons"
+      ],
+      "skills": {
+        "from": [
+          "Animal Handling",
+          "Athletics",
+          "Insight",
+          "Investigation",
+          "Nature",
+          "Perception",
+          "Stealth",
+          "Survival"
+        ],
+        "count": 1
+      }
     }
   },
   "features": [
@@ -63,8 +275,16 @@
       "description": "You have learned to channel the magical essence of nature to cast spells.\n\n**Spell Slots.** The Ranger Features table shows how many spell slots you have to cast your level 1+ spells. You regain all expended slots when you finish a {rule:Long Rest}.\n\n**Prepared Spells of Level 1+.** You prepare the list of level 1+ spells that are available for you to cast with this feature. To start, choose two level 1 Ranger spells. {spell:Cure Wounds} and {spell:Ensnaring Strike} are recommended. The number of spells on your list increases as you gain Ranger levels, as shown in the Prepared Spells column of the Ranger Features table. Whenever that number increases, choose additional Ranger spells until the number of spells on your list matches the number in the table. The chosen spells must be of a level for which you have spell slots. If another Ranger feature gives you spells that you always have prepared, those spells don't count against the number of spells you can prepare with this feature, but those spells otherwise count as Ranger spells for you.\n\n**Changing Your Prepared Spells.** Whenever you finish a {rule:Long Rest}, you can replace one spell on your list with another Ranger spell for which you have spell slots.\n\n**Spellcasting Ability.** Wisdom is your spellcasting ability for your Ranger spells.\n\n**Spellcasting Focus.** You can use a Druidic Focus as a {rule:Spellcasting Focus} for your Ranger spells.",
       "effects": {
         "modifiers": [
-          { "target": "spell_save_dc", "value": "8 + prof + wis", "operation": "set" },
-          { "target": "spell_attack", "value": "prof + wis", "operation": "set" }
+          {
+            "target": "spell_save_dc",
+            "value": "8 + prof + wis",
+            "operation": "set"
+          },
+          {
+            "target": "spell_attack",
+            "value": "prof + wis",
+            "operation": "set"
+          }
         ]
       }
     },
@@ -75,8 +295,16 @@
       "description": "You always have the {spell:Hunter's Mark} spell prepared. You can cast it twice without expending a spell slot, and you regain all expended uses of this ability when you finish a {rule:Long Rest}.\n\nThe number of times you can cast the spell without a spell slot increases when you reach certain Ranger levels, as shown in the Favored Enemy column of the Ranger Features table.",
       "effects": {
         "properties": [
-          { "type": "spell_grant", "spell": "Hunter's Mark", "usage": "per_day", "uses": 2, "castingAbility": "wisdom" },
-          { "type": "note", "text": "Free uses of Hunter's Mark (no slot) increase by Ranger level: 2 uses at level 1, 3 at level 5, 4 at level 9, 5 at level 13, 6 at level 17. All uses replenish on Long Rest." }
+          {
+            "type": "spell_grant",
+            "spell": "Hunter's Mark",
+            "usage": "2/long_rest",
+            "castingAbility": "wisdom"
+          },
+          {
+            "type": "note",
+            "text": "Free uses of Hunter's Mark (no slot) increase by Ranger level: 2 uses at level 1, 3 at level 5, 4 at level 9, 5 at level 13, 6 at level 17. All uses replenish on Long Rest."
+          }
         ]
       }
     },
@@ -87,7 +315,10 @@
       "description": "Your training with weapons allows you to use the mastery properties of two kinds of weapons of your choice with which you have proficiency, such as Longbows and Shortswords.\n\nWhenever you finish a {rule:Long Rest}, you can change the kinds of weapons you chose. For example, you could switch to using the mastery properties of Scimitars and Longswords.",
       "effects": {
         "properties": [
-          { "type": "note", "text": "You can use the mastery properties of 2 weapons of your choice (with which you're proficient). You can change your choices on each Long Rest." }
+          {
+            "type": "note",
+            "text": "You can use the mastery properties of 2 weapons of your choice (with which you're proficient). You can change your choices on each Long Rest."
+          }
         ]
       }
     },
@@ -97,8 +328,20 @@
       "className": "Ranger",
       "description": "Thanks to your travels, you gain the following benefits.\n\n**Expertise.** Choose one of your skill proficiencies with which you lack {rule:Expertise}. You gain Expertise in that skill.\n\n**Languages.** You know two languages of your choice.",
       "choices": [
-        { "id": "deft-explorer-expertise", "label": "Expertise", "count": 1, "timing": "permanent", "pool": "skill_expertise" },
-        { "id": "deft-explorer-language", "label": "Languages", "count": 2, "timing": "permanent", "pool": "language" }
+        {
+          "id": "deft-explorer-expertise",
+          "label": "Expertise",
+          "count": 1,
+          "timing": "permanent",
+          "pool": "skill_expertise"
+        },
+        {
+          "id": "deft-explorer-language",
+          "label": "Languages",
+          "count": 2,
+          "timing": "permanent",
+          "pool": "language"
+        }
       ]
     },
     {
@@ -107,7 +350,13 @@
       "className": "Ranger",
       "description": "You gain a Fighting Style feat of your choice. Instead of choosing one of those feats, you can choose the Druidic Warrior option, which lets you learn two Druid cantrips.",
       "choices": [
-        { "id": "fighting-style", "label": "Fighting Style", "count": 1, "timing": "permanent", "pool": "fighting_style" }
+        {
+          "id": "fighting-style",
+          "label": "Fighting Style",
+          "count": 1,
+          "timing": "permanent",
+          "pool": "fighting_style"
+        }
       ]
     },
     {
@@ -129,7 +378,10 @@
       "description": "You can attack twice instead of once whenever you take the {action:Attack} action on your turn.",
       "effects": {
         "properties": [
-          { "type": "extra_attack", "count": 1 }
+          {
+            "type": "extra_attack",
+            "count": 1
+          }
         ]
       }
     },
@@ -140,10 +392,17 @@
       "description": "Your {rule:Speed} increases by 10 feet while you aren't wearing Heavy armor. You also have a Climb Speed and a Swim Speed equal to your Speed.",
       "effects": {
         "modifiers": [
-          { "target": "speed", "value": 10, "condition": "while not wearing Heavy armor" }
+          {
+            "target": "speed",
+            "value": 10,
+            "condition": "while not wearing Heavy armor"
+          }
         ],
         "properties": [
-          { "type": "note", "text": "Gain a Climb Speed and Swim Speed equal to your Speed." }
+          {
+            "type": "note",
+            "text": "Gain a Climb Speed and Swim Speed equal to your Speed."
+          }
         ]
       }
     },
@@ -165,7 +424,13 @@
       "className": "Ranger",
       "description": "Choose two of your skill proficiencies with which you lack {rule:Expertise}. You gain Expertise in those skills.",
       "choices": [
-        { "id": "expertise", "label": "Expertise", "count": 2, "timing": "permanent", "pool": "skill_expertise" }
+        {
+          "id": "expertise",
+          "label": "Expertise",
+          "count": 2,
+          "timing": "permanent",
+          "pool": "skill_expertise"
+        }
       ]
     },
     {
@@ -175,8 +440,16 @@
       "description": "Primal forces now help fuel you on your journeys, granting you the following benefits.\n\n**Temporary Hit Points.** As a Magic action, you can give yourself a number of {rule:Temporary Hit Points} equal to 1d8 plus your Wisdom modifier (minimum of 1). You can use this action a number of times equal to your Wisdom modifier (minimum of once), and you regain all expended uses when you finish a {rule:Long Rest}.\n\n**Decrease Exhaustion.** Whenever you finish a {rule:Short Rest}, your {condition:Exhaustion} level, if any, decreases by 1.",
       "effects": {
         "properties": [
-          { "type": "resource", "name": "Tireless (Temp HP)", "maxUses": "max(wis, 1)", "resetOn": "long" },
-          { "type": "note", "text": "Magic action: gain 1d8 + WIS modifier (min 1) Temporary Hit Points. On Short Rest, Exhaustion level decreases by 1." }
+          {
+            "type": "resource",
+            "name": "Tireless (Temp HP)",
+            "maxUses": "max(wis, 1)",
+            "resetOn": "long"
+          },
+          {
+            "type": "note",
+            "text": "Magic action: gain 1d8 + WIS modifier (min 1) Temporary Hit Points. On Short Rest, Exhaustion level decreases by 1."
+          }
         ]
       }
     },
@@ -199,7 +472,10 @@
       "description": "Taking damage can't break your {status:Concentration} on {spell:Hunter's Mark}.",
       "effects": {
         "properties": [
-          { "type": "note", "text": "Damage no longer forces a Concentration check to maintain Hunter's Mark." }
+          {
+            "type": "note",
+            "text": "Damage no longer forces a Concentration check to maintain Hunter's Mark."
+          }
         ]
       }
     },
@@ -210,8 +486,16 @@
       "description": "You invoke spirits of nature to magically hide yourself. As a {rule:Bonus Action}, you can give yourself the {condition:Invisible} condition until the end of your next turn.\n\nYou can use this feature a number of times equal to your Wisdom modifier (minimum of once), and you regain all expended uses when you finish a {rule:Long Rest}.",
       "effects": {
         "properties": [
-          { "type": "resource", "name": "Nature's Veil", "maxUses": "max(wis, 1)", "resetOn": "long" },
-          { "type": "note", "text": "Bonus Action: gain the Invisible condition until the end of your next turn." }
+          {
+            "type": "resource",
+            "name": "Nature's Veil",
+            "maxUses": "max(wis, 1)",
+            "resetOn": "long"
+          },
+          {
+            "type": "note",
+            "text": "Bonus Action: gain the Invisible condition until the end of your next turn."
+          }
         ]
       }
     },
@@ -234,7 +518,11 @@
       "description": "You have {rule:Advantage} on attack rolls against the creature currently marked by your {spell:Hunter's Mark}.",
       "effects": {
         "properties": [
-          { "type": "advantage", "on": "attack", "condition": "against the creature marked by Hunter's Mark" }
+          {
+            "type": "advantage",
+            "on": "attack",
+            "condition": "against the creature marked by Hunter's Mark"
+          }
         ]
       }
     },
@@ -245,7 +533,11 @@
       "description": "Your connection to the forces of nature grants you {rule:Blindsight} with a range of 30 feet.",
       "effects": {
         "properties": [
-          { "type": "sense", "sense": "blindsight", "range": 30 }
+          {
+            "type": "sense",
+            "sense": "blindsight",
+            "range": 30
+          }
         ]
       }
     },
@@ -262,7 +554,10 @@
       "description": "The damage die of your {spell:Hunter's Mark} is a d10 rather than a d6.",
       "effects": {
         "properties": [
-          { "type": "note", "text": "Hunter's Mark deals extra d10 damage per hit instead of d6." }
+          {
+            "type": "note",
+            "text": "Hunter's Mark deals extra d10 damage per hit instead of d6."
+          }
         ]
       }
     }
@@ -282,7 +577,10 @@
           "description": "You magically summon a primal beast, which draws strength from your bond with nature. Choose its stat block: Beast of the Land, Beast of the Sea, or Beast of the Sky. You also determine the kind of animal it is, choosing a kind appropriate for the stat block. Whatever beast you choose, it bears primal markings indicating its supernatural origin.\n\nThe beast is Friendly to you and your allies and obeys your commands. It vanishes if you die.\n\n**The Beast in Combat.** In combat, the beast acts during your turn. It can move and use its {rule:Reaction} on its own, but the only action it takes is the {action:Dodge} action unless you take a {rule:Bonus Action} to command it to take an action in its stat block or some other action. You can also sacrifice one of your attacks when you take the {action:Attack} action to command the beast to take the Beast's Strike action. If you have the {condition:Incapacitated} condition, the beast acts on its own and isn't limited to the Dodge action.\n\n**Restoring or Replacing the Beast.** If the beast has died within the last hour, you can take a Magic action to touch it and expend a spell slot. The beast returns to life after 1 minute with all its Hit Points restored. Whenever you finish a {rule:Long Rest}, you can summon a different primal beast, which appears in an unoccupied space within 5 feet of you. If you already have a beast from this feature, the old one vanishes when the new one appears.",
           "effects": {
             "properties": [
-              { "type": "note", "text": "Summon a Beast of the Land, Sea, or Sky (primal beast companion). In combat it acts on your turn, takes Dodge unless you use Bonus Action to command it or sacrifice an attack. Revive by spending a spell slot (Magic action, touch, within 1 hour of death). Replace on Long Rest." }
+              {
+                "type": "note",
+                "text": "Summon a Beast of the Land, Sea, or Sky (primal beast companion). In combat it acts on your turn, takes Dodge unless you use Bonus Action to command it or sacrifice an attack. Revive by spending a spell slot (Magic action, touch, within 1 hour of death). Replace on Long Rest."
+              }
             ]
           }
         },
@@ -294,7 +592,10 @@
           "description": "When you take a {rule:Bonus Action} to command your Primal Companion beast to take an action, you can also command it to take the {action:Dash}, {action:Disengage}, {action:Dodge}, or {action:Help} action using its Bonus Action.\n\nIn addition, whenever it hits with an attack roll and deals damage, it can deal your choice of Force damage or its normal damage type.",
           "effects": {
             "properties": [
-              { "type": "note", "text": "When you command the beast with your Bonus Action, it can also take Dash, Disengage, Dodge, or Help as its own Bonus Action. Its attacks can deal Force damage instead of their normal type." }
+              {
+                "type": "note",
+                "text": "When you command the beast with your Bonus Action, it can also take Dash, Disengage, Dodge, or Help as its own Bonus Action. Its attacks can deal Force damage instead of their normal type."
+              }
             ]
           }
         },
@@ -306,7 +607,10 @@
           "description": "When you command your Primal Companion beast to take the Beast's Strike action, the beast can use it twice.\n\nIn addition, the first time each turn it hits a creature under the effect of your {spell:Hunter's Mark} spell, the beast deals extra Force damage equal to the bonus damage of that spell.",
           "effects": {
             "properties": [
-              { "type": "note", "text": "Beast can use Beast's Strike twice when commanded. First hit per turn against a Hunter's Mark target deals bonus Force damage equal to Hunter's Mark's extra damage die." }
+              {
+                "type": "note",
+                "text": "Beast can use Beast's Strike twice when commanded. First hit per turn against a Hunter's Mark target deals bonus Force damage equal to Hunter's Mark's extra damage die."
+              }
             ]
           }
         },
@@ -318,7 +622,10 @@
           "description": "When you cast a spell targeting yourself, you can also affect your Primal Companion beast with the spell if the beast is within 30 feet of you.",
           "effects": {
             "properties": [
-              { "type": "note", "text": "Spells you cast targeting yourself also affect your primal beast if it's within 30 feet of you." }
+              {
+                "type": "note",
+                "text": "Spells you cast targeting yourself also affect your primal beast if it's within 30 feet of you."
+              }
             ]
           }
         }
@@ -330,11 +637,26 @@
       "className": "Ranger",
       "description": "A fey mystique surrounds you, thanks to the boon of an archfey or a location in the Feywild that transformed you. Your joyful laughter brightens the hearts of the downtrodden, and your martial prowess strikes terror in your foes, for great is the mirth of the fey and dreadful is their fury.",
       "additionalSpells": [
-        { "level": 3, "spell": "Charm Person" },
-        { "level": 5, "spell": "Misty Step" },
-        { "level": 9, "spell": "Summon Fey" },
-        { "level": 13, "spell": "Dimension Door" },
-        { "level": 17, "spell": "Mislead" }
+        {
+          "level": 3,
+          "spell": "Charm Person"
+        },
+        {
+          "level": 5,
+          "spell": "Misty Step"
+        },
+        {
+          "level": 9,
+          "spell": "Summon Fey"
+        },
+        {
+          "level": 13,
+          "spell": "Dimension Door"
+        },
+        {
+          "level": 17,
+          "spell": "Mislead"
+        }
       ],
       "features": [
         {
@@ -345,7 +667,10 @@
           "description": "You can augment your weapon strikes with mind-scarring magic drawn from the murky hollows of the Feywild. When you hit a creature with a weapon, you can deal an extra 1d4 Psychic damage to the target, which can take this extra damage only once per turn. The extra damage increases to 1d6 when you reach Ranger level 11.",
           "effects": {
             "properties": [
-              { "type": "note", "text": "Once per turn, one weapon hit deals extra Psychic damage: 1d4 (levels 3-10) or 1d6 (level 11+). A single target can take this extra damage only once per turn." }
+              {
+                "type": "note",
+                "text": "Once per turn, one weapon hit deals extra Psychic damage: 1d4 (levels 3-10) or 1d6 (level 11+). A single target can take this extra damage only once per turn."
+              }
             ]
           }
         },
@@ -364,11 +689,25 @@
           "description": "Whenever you make a Charisma check, you gain a bonus to the check equal to your Wisdom modifier (minimum of +1).\n\nYou also gain proficiency in one of these skills of your choice: Deception, Performance, or Persuasion.",
           "effects": {
             "modifiers": [
-              { "target": "charisma_check", "value": "max(wis, 1)" }
+              {
+                "target": "charisma_check",
+                "value": "max(wis, 1)"
+              }
             ]
           },
           "choices": [
-            { "id": "otherworldly-glamour", "label": "Skill Proficiency", "count": 1, "timing": "permanent", "pool": "skill_proficiency", "from": ["Deception", "Performance", "Persuasion"] }
+            {
+              "id": "otherworldly-glamour",
+              "label": "Skill Proficiency",
+              "count": 1,
+              "timing": "permanent",
+              "pool": "skill_proficiency",
+              "from": [
+                "Deception",
+                "Performance",
+                "Persuasion"
+              ]
+            }
           ]
         },
         {
@@ -379,8 +718,15 @@
           "description": "The magic of the Feywild guards your mind. You have {rule:Advantage} on saving throws to avoid or end the {condition:Charmed} or {condition:Frightened} condition.\n\nIn addition, whenever you or a creature you can see within 120 feet of you succeeds on a saving throw to avoid or end the {condition:Charmed} or {condition:Frightened} condition, you can take a {rule:Reaction} to force a different creature you can see within 120 feet of yourself to make a Wisdom save against your spell save DC. On a failed save, the target is {condition:Charmed} or {condition:Frightened} (your choice) for 1 minute. The target repeats the save at the end of each of its turns, ending the effect on itself on a success.",
           "effects": {
             "properties": [
-              { "type": "advantage", "on": "save_wisdom", "condition": "to avoid or end the Charmed or Frightened condition" },
-              { "type": "note", "text": "Reaction: when you or a visible creature within 120 ft succeeds a save vs. Charmed/Frightened, force a different visible creature within 120 ft to make a WIS save (DC = spell save DC) or be Charmed or Frightened (your choice) for 1 minute (repeating save each turn)." }
+              {
+                "type": "advantage",
+                "on": "save_wisdom",
+                "condition": "to avoid or end the Charmed or Frightened condition"
+              },
+              {
+                "type": "note",
+                "text": "Reaction: when you or a visible creature within 120 ft succeeds a save vs. Charmed/Frightened, force a different visible creature within 120 ft to make a WIS save (DC = spell save DC) or be Charmed or Frightened (your choice) for 1 minute (repeating save each turn)."
+              }
             ]
           }
         },
@@ -392,8 +738,16 @@
           "description": "You can cast {spell:Summon Fey} without a Material component. You can also cast it once without a spell slot, and you regain the ability to cast it in this way when you finish a {rule:Long Rest}.\n\nWhenever you start casting the spell, you can modify it so that it doesn't require {status:Concentration}. If you do so, the spell's duration becomes 1 minute for that casting.",
           "effects": {
             "properties": [
-              { "type": "spell_grant", "spell": "Summon Fey", "usage": "per_day", "uses": 1, "castingAbility": "wisdom" },
-              { "type": "note", "text": "Can cast Summon Fey without Material components. Once per Long Rest, cast it without a spell slot. When casting it, you can optionally remove the Concentration requirement, reducing the duration to 1 minute." }
+              {
+                "type": "spell_grant",
+                "spell": "Summon Fey",
+                "usage": "1/long_rest",
+                "castingAbility": "wisdom"
+              },
+              {
+                "type": "note",
+                "text": "Can cast Summon Fey without Material components. Once per Long Rest, cast it without a spell slot. When casting it, you can optionally remove the Concentration requirement, reducing the duration to 1 minute."
+              }
             ]
           }
         },
@@ -405,8 +759,16 @@
           "description": "You can cast {spell:Misty Step} without expending a spell slot. You can do so a number of times equal to your Wisdom modifier (minimum of once), and you regain all expended uses when you finish a {rule:Long Rest}.\n\nIn addition, whenever you cast {spell:Misty Step}, you can bring along one willing creature you can see within 5 feet of yourself. That creature teleports to an unoccupied space of your choice within 5 feet of your destination space.",
           "effects": {
             "properties": [
-              { "type": "resource", "name": "Misty Wanderer (Misty Step)", "maxUses": "max(wis, 1)", "resetOn": "long" },
-              { "type": "note", "text": "Cast Misty Step a number of times equal to WIS mod (min 1) without a spell slot (Long Rest recovery). When you cast Misty Step, you can bring one willing creature you can see within 5 ft; it teleports within 5 ft of your destination." }
+              {
+                "type": "resource",
+                "name": "Misty Wanderer (Misty Step)",
+                "maxUses": "max(wis, 1)",
+                "resetOn": "long"
+              },
+              {
+                "type": "note",
+                "text": "Cast Misty Step a number of times equal to WIS mod (min 1) without a spell slot (Long Rest recovery). When you cast Misty Step, you can bring one willing creature you can see within 5 ft; it teleports within 5 ft of your destination."
+              }
             ]
           }
         }
@@ -418,11 +780,26 @@
       "className": "Ranger",
       "description": "Gloom Stalkers are at home in the darkest places, wielding magic drawn from the Shadowfell to combat enemies that lurk in darkness.",
       "additionalSpells": [
-        { "level": 3, "spell": "Disguise Self" },
-        { "level": 5, "spell": "Rope Trick" },
-        { "level": 9, "spell": "Fear" },
-        { "level": 13, "spell": "Greater Invisibility" },
-        { "level": 17, "spell": "Seeming" }
+        {
+          "level": 3,
+          "spell": "Disguise Self"
+        },
+        {
+          "level": 5,
+          "spell": "Rope Trick"
+        },
+        {
+          "level": 9,
+          "spell": "Fear"
+        },
+        {
+          "level": 13,
+          "spell": "Greater Invisibility"
+        },
+        {
+          "level": 17,
+          "spell": "Seeming"
+        }
       ],
       "features": [
         {
@@ -433,11 +810,22 @@
           "description": "You have mastered the art of creating fearsome ambushes, granting you the following benefits.\n\n**Ambusher's Leap.** At the start of your first turn of each combat, your {rule:Speed} increases by 10 feet until the end of that turn.\n\n**Dreadful Strike.** When you attack a creature and hit it with a weapon, you can deal an extra 2d6 Psychic damage. You can use this benefit only once per turn, you can use it a number of times equal to your Wisdom modifier (minimum of once), and you regain all expended uses when you finish a {rule:Long Rest}.\n\n**Initiative Bonus.** When you roll {rule:Initiative}, you can add your Wisdom modifier to the roll.",
           "effects": {
             "modifiers": [
-              { "target": "initiative", "value": "wis" }
+              {
+                "target": "initiative",
+                "value": "wis"
+              }
             ],
             "properties": [
-              { "type": "resource", "name": "Dreadful Strike", "maxUses": "max(wis, 1)", "resetOn": "long" },
-              { "type": "note", "text": "First turn of each combat: Speed +10 ft until end of that turn. Dreadful Strike: once per turn, one weapon hit deals extra 2d6 Psychic damage (uses = WIS mod, min 1, regain on Long Rest)." }
+              {
+                "type": "resource",
+                "name": "Dreadful Strike",
+                "maxUses": "max(wis, 1)",
+                "resetOn": "long"
+              },
+              {
+                "type": "note",
+                "text": "First turn of each combat: Speed +10 ft until end of that turn. Dreadful Strike: once per turn, one weapon hit deals extra 2d6 Psychic damage (uses = WIS mod, min 1, regain on Long Rest)."
+              }
             ]
           }
         },
@@ -449,11 +837,35 @@
           "description": "When you reach a Ranger level specified below, you thereafter always have the listed spells prepared: level 3 — {spell:Disguise Self}; level 5 — {spell:Rope Trick}; level 9 — {spell:Fear}; level 13 — {spell:Greater Invisibility}; level 17 — {spell:Seeming}.",
           "effects": {
             "properties": [
-              { "type": "spell_grant", "spell": "Disguise Self", "usage": "always_prepared" },
-              { "type": "spell_grant", "spell": "Rope Trick", "usage": "always_prepared", "minLevel": 5 },
-              { "type": "spell_grant", "spell": "Fear", "usage": "always_prepared", "minLevel": 9 },
-              { "type": "spell_grant", "spell": "Greater Invisibility", "usage": "always_prepared", "minLevel": 13 },
-              { "type": "spell_grant", "spell": "Seeming", "usage": "always_prepared", "minLevel": 17 }
+              {
+                "type": "spell_grant",
+                "spell": "Disguise Self",
+                "usage": "always_prepared"
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Rope Trick",
+                "usage": "always_prepared",
+                "minLevel": 5
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Fear",
+                "usage": "always_prepared",
+                "minLevel": 9
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Greater Invisibility",
+                "usage": "always_prepared",
+                "minLevel": 13
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Seeming",
+                "usage": "always_prepared",
+                "minLevel": 17
+              }
             ]
           }
         },
@@ -465,8 +877,15 @@
           "description": "You gain {rule:Darkvision} with a range of 60 feet. If you already have Darkvision when you gain this feature, its range increases by 60 feet.\n\nYou are also adept at evading creatures that rely on Darkvision. While entirely in darkness, you have the {condition:Invisible} condition to any creature that relies on Darkvision to see you in that darkness.",
           "effects": {
             "properties": [
-              { "type": "sense", "sense": "darkvision", "range": 60 },
-              { "type": "note", "text": "If you already have Darkvision, its range increases by 60 feet instead of being set to 60 feet. While entirely in darkness, you are Invisible to creatures that rely on Darkvision to see you." }
+              {
+                "type": "sense",
+                "sense": "darkvision",
+                "range": 60
+              },
+              {
+                "type": "note",
+                "text": "If you already have Darkvision, its range increases by 60 feet instead of being set to 60 feet. While entirely in darkness, you are Invisible to creatures that rely on Darkvision to see you."
+              }
             ]
           }
         },
@@ -478,8 +897,15 @@
           "description": "You have honed your ability to resist mind-altering powers. You gain proficiency in Wisdom saving throws. If you already have this proficiency, you instead gain proficiency in Intelligence or Charisma saving throws (your choice).",
           "effects": {
             "properties": [
-              { "type": "proficiency", "category": "save", "value": "Wisdom" },
-              { "type": "note", "text": "If you already have Wisdom saving throw proficiency (from your class), you instead gain proficiency in Intelligence or Charisma saving throws (your choice)." }
+              {
+                "type": "proficiency",
+                "category": "save",
+                "value": "Wisdom"
+              },
+              {
+                "type": "note",
+                "text": "If you already have Wisdom saving throw proficiency (from your class), you instead gain proficiency in Intelligence or Charisma saving throws (your choice)."
+              }
             ]
           }
         },
@@ -491,7 +917,10 @@
           "description": "The Psychic damage of your Dreadful Strike becomes 2d8. In addition, when you use the Dreadful Strike effect of your Dread Ambusher feature, you can cause one of the following additional effects.\n\n**Sudden Strike.** You can make another attack with the same weapon against a different creature that is within 5 feet of the original target and that is within the weapon's range.\n\n**Mass Fear.** The target and each creature within 10 feet of it must make a Wisdom saving throw against your spell save DC. On a failed save, a creature has the {condition:Frightened} condition until the start of your next turn.",
           "effects": {
             "properties": [
-              { "type": "note", "text": "Dreadful Strike damage increases to 2d8 Psychic. When using Dreadful Strike, choose one bonus effect: Sudden Strike (extra attack vs. different creature within 5 ft) or Mass Fear (target + creatures within 10 ft make WIS save DC = spell save DC or be Frightened until start of your next turn)." }
+              {
+                "type": "note",
+                "text": "Dreadful Strike damage increases to 2d8 Psychic. When using Dreadful Strike, choose one bonus effect: Sudden Strike (extra attack vs. different creature within 5 ft) or Mass Fear (target + creatures within 10 ft make WIS save DC = spell save DC or be Frightened until start of your next turn)."
+              }
             ]
           }
         },
@@ -503,7 +932,10 @@
           "description": "When a creature makes an attack roll against you, you can take a {rule:Reaction} to impose {rule:Disadvantage} on that roll. Whether the attack hits or misses, you can then teleport up to 30 feet to an unoccupied space you can see.",
           "effects": {
             "properties": [
-              { "type": "note", "text": "Reaction: when a creature makes an attack roll against you, impose Disadvantage on that roll. Whether it hits or misses, teleport up to 30 ft to an unoccupied space you can see." }
+              {
+                "type": "note",
+                "text": "Reaction: when a creature makes an attack roll against you, impose Disadvantage on that roll. Whether it hits or misses, teleport up to 30 ft to an unoccupied space you can see."
+              }
             ]
           }
         }
@@ -523,7 +955,10 @@
           "description": "You can call on the forces of nature to reveal certain strengths and weaknesses of your prey. While a creature is marked by your {spell:Hunter's Mark}, you know whether that creature has any Immunities, Resistances, or Vulnerabilities, and if the creature has any, you know what they are.",
           "effects": {
             "properties": [
-              { "type": "note", "text": "While Hunter's Mark is active on a creature, you automatically know all of that creature's damage Immunities, Resistances, and Vulnerabilities." }
+              {
+                "type": "note",
+                "text": "While Hunter's Mark is active on a creature, you automatically know all of that creature's damage Immunities, Resistances, and Vulnerabilities."
+              }
             ]
           }
         },
@@ -545,7 +980,10 @@
                   "description": "Your tenacity can wear down even the most resilient foes. When you hit a creature with a weapon, the weapon deals an extra 1d8 damage to the target if it's missing any of its Hit Points. You can deal this extra damage only once per turn.",
                   "effects": {
                     "properties": [
-                      { "type": "note", "text": "Once per turn, one weapon hit against an injured creature deals an extra 1d8 damage (same type as weapon)." }
+                      {
+                        "type": "note",
+                        "text": "Once per turn, one weapon hit against an injured creature deals an extra 1d8 damage (same type as weapon)."
+                      }
                     ]
                   }
                 },
@@ -554,7 +992,10 @@
                   "description": "Once on each of your turns when you make an attack with a weapon, you can make another attack with the same weapon against a different creature that is within 5 feet of the original target, that is within the weapon's range, and that you haven't attacked this turn.",
                   "effects": {
                     "properties": [
-                      { "type": "note", "text": "Once per turn, after making a weapon attack you can make one additional attack with the same weapon against a different creature within 5 ft of the first target (must be within weapon range, and not yet attacked this turn)." }
+                      {
+                        "type": "note",
+                        "text": "Once per turn, after making a weapon attack you can make one additional attack with the same weapon against a different creature within 5 ft of the first target (must be within weapon range, and not yet attacked this turn)."
+                      }
                     ]
                   }
                 }
@@ -580,7 +1021,10 @@
                   "description": "Opportunity Attacks have Disadvantage against you.",
                   "effects": {
                     "properties": [
-                      { "type": "note", "text": "Opportunity Attacks against you have Disadvantage." }
+                      {
+                        "type": "note",
+                        "text": "Opportunity Attacks against you have Disadvantage."
+                      }
                     ]
                   }
                 },
@@ -589,7 +1033,10 @@
                   "description": "When a creature hits you with an attack roll, that creature has Disadvantage on all other attack rolls against you this turn.",
                   "effects": {
                     "properties": [
-                      { "type": "note", "text": "After a creature hits you with an attack roll, that creature has Disadvantage on all further attack rolls against you this turn." }
+                      {
+                        "type": "note",
+                        "text": "After a creature hits you with an attack roll, that creature has Disadvantage on all further attack rolls against you this turn."
+                      }
                     ]
                   }
                 }
@@ -605,7 +1052,10 @@
           "description": "Once per turn when you deal damage to a creature marked by your {spell:Hunter's Mark}, you can also deal that spell's extra damage to a different creature that you can see within 30 feet of the first creature.",
           "effects": {
             "properties": [
-              { "type": "note", "text": "Once per turn when you deal Hunter's Mark bonus damage, you can apply that same bonus damage to a second creature you can see within 30 feet of the first." }
+              {
+                "type": "note",
+                "text": "Once per turn when you deal Hunter's Mark bonus damage, you can apply that same bonus damage to a second creature you can see within 30 feet of the first."
+              }
             ]
           }
         },
@@ -617,7 +1067,10 @@
           "description": "When you take damage, you can take a {rule:Reaction} to give yourself {rule:Resistance} to that damage and any other damage of the same type until the end of the current turn.",
           "effects": {
             "properties": [
-              { "type": "note", "text": "Reaction: when you take damage, gain Resistance to that damage type until end of the current turn (applies to the triggering damage and any further damage of the same type on that turn)." }
+              {
+                "type": "note",
+                "text": "Reaction: when you take damage, gain Resistance to that damage type until end of the current turn (applies to the triggering damage and any further damage of the same type on that turn)."
+              }
             ]
           }
         }

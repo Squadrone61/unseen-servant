@@ -274,9 +274,14 @@ export type Property = {
   | {
       type: "spell_grant";
       spell: string;
-      usage: "at_will" | "per_day" | "always_prepared";
-      /** Number of uses per day. Omitted for at_will. */
-      uses?: number;
+      /** How the spell can be used:
+       *  "at_will"          — cantrip-style, unlimited
+       *  "always_prepared"  — uses spell slots but always prepared (domain/oath spells)
+       *  "${N}/${rest}_rest" — N uses, recharges on short or long rest (e.g. "1/long_rest", "2/short_rest")
+       */
+      usage: "at_will" | "always_prepared" | `${number}/${"short" | "long"}_rest`;
+      /** Minimum character/class level to gain this spell. */
+      minLevel?: number;
       /** Ability score key used for the spell's DC/attack. */
       castingAbility?: Ability;
     }
