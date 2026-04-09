@@ -197,7 +197,7 @@ export function DetailsStep() {
           {state.className && (
             <p className="mt-2 text-xs text-amber-400/70">
               Class: {state.className}
-              {state.background ? ` &middot; Background: ${state.background}` : ""}
+              {state.background ? ` · Background: ${state.background}` : ""}
             </p>
           )}
         </div>
