@@ -319,6 +319,8 @@ export interface ChoiceOption {
   effects?: EntityEffects;
   /** Short description for UI tooltip. */
   description?: string;
+  /** Nested choices within this option (e.g., ASI sub-choices on a feat option). */
+  choices?: FeatureChoice[];
 }
 
 // ---------------------------------------------------------------------------
