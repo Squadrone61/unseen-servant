@@ -1,0 +1,593 @@
+{
+  "name": "Fighter",
+  "description": "A master of martial combat, skilled with a variety of weapons and armor. Fighters learn the basics of all combat styles. Every Fighter can swing an axe, fence with a rapier, wield a longsword or a greatsword, use a bow, and so on—all with some degree of skill.",
+  "effects": {
+    "properties": [
+      { "type": "proficiency", "category": "armor", "value": "Light Armor" },
+      { "type": "proficiency", "category": "armor", "value": "Medium Armor" },
+      { "type": "proficiency", "category": "armor", "value": "Heavy Armor" },
+      { "type": "proficiency", "category": "armor", "value": "Shield" },
+      { "type": "proficiency", "category": "weapon", "value": "Simple Weapons" },
+      { "type": "proficiency", "category": "weapon", "value": "Martial Weapons" },
+      { "type": "proficiency", "category": "save", "value": "Strength" },
+      { "type": "proficiency", "category": "save", "value": "Constitution" }
+    ]
+  },
+  "hitDiceFaces": 10,
+  "savingThrows": ["strength", "constitution"],
+  "armorProficiencies": ["Light Armor", "Medium Armor", "Heavy Armor", "Shield"],
+  "weaponProficiencies": ["Simple Weapons", "Martial Weapons"],
+  "toolProficiencies": [],
+  "skillChoices": {
+    "from": ["Acrobatics", "Animal Handling", "Athletics", "History", "Insight", "Intimidation", "Persuasion", "Perception", "Survival"],
+    "count": 2
+  },
+  "features": [
+    {
+      "name": "Fighting Style",
+      "level": 1,
+      "className": "Fighter",
+      "description": "You have honed your martial prowess and gain a {feat:Fighting Style|Fighting Style feat} of your choice. {feat:Defense} is recommended.\n\nWhenever you gain a Fighter level, you can replace the feat you chose with a different Fighting Style feat.",
+      "effects": {
+        "properties": [
+          { "type": "note", "text": "Choose one Fighting Style feat. You can replace it with a different Fighting Style feat whenever you gain a Fighter level." }
+        ]
+      }
+    },
+    {
+      "name": "Second Wind",
+      "level": 1,
+      "className": "Fighter",
+      "description": "You have a limited well of physical and mental stamina that you can draw on. As a {rule:Bonus Action}, you can use it to regain Hit Points equal to 1d10 plus your Fighter level.\n\nYou can use this feature twice. You regain one expended use when you finish a {rule:Short Rest}, and you regain all expended uses when you finish a {rule:Long Rest}.\n\nWhen you reach certain Fighter levels, you gain more uses of this feature, as shown in the Second Wind column of the Fighter Features table.",
+      "effects": {
+        "properties": [
+          { "type": "resource", "name": "Second Wind", "maxUses": "table(1:2, 4:3, 10:4)", "resetOn": "short" },
+          { "type": "note", "text": "As a Bonus Action, expend one use to regain 1d10 + Fighter level Hit Points." }
+        ]
+      }
+    },
+    {
+      "name": "Weapon Mastery",
+      "level": 1,
+      "className": "Fighter",
+      "description": "Your training with weapons allows you to use the mastery properties of three kinds of Simple or Martial weapons of your choice. Whenever you finish a {rule:Long Rest}, you can practice weapon drills and change one of those weapon choices.\n\nWhen you reach certain Fighter levels, you gain the ability to use the mastery properties of more kinds of weapons, as shown in the Weapon Mastery column of the Fighter Features table.",
+      "effects": {
+        "properties": [
+          { "type": "note", "text": "You can use the mastery properties of a number of Simple or Martial weapons equal to table(1:3, 4:4, 10:5, 16:6) for your Fighter level. You can change one weapon choice on each Long Rest." }
+        ]
+      }
+    },
+    {
+      "name": "Action Surge",
+      "level": 2,
+      "className": "Fighter",
+      "description": "You can push yourself beyond your normal limits for a moment. On your turn, you can take one additional action, except the {action:Magic} action.\n\nOnce you use this feature, you can't do so again until you finish a {rule:Short Rest} or {rule:Long Rest}. Starting at level 17, you can use it twice before a rest but only once on a turn.",
+      "effects": {
+        "properties": [
+          { "type": "resource", "name": "Action Surge", "maxUses": "table(2:1, 17:2)", "resetOn": "short" },
+          { "type": "note", "text": "On your turn, take one additional action (not the Magic action). Only once per turn even at level 17." }
+        ]
+      }
+    },
+    {
+      "name": "Tactical Mind",
+      "level": 2,
+      "className": "Fighter",
+      "description": "You have a mind for tactics on and off the battlefield. When you fail an ability check, you can expend a use of your Second Wind to push yourself toward success. Rather than regaining Hit Points, you roll 1d10 and add the number rolled to the ability check, potentially turning it into a success. If the check still fails, this use of Second Wind isn't expended.",
+      "effects": {
+        "properties": [
+          { "type": "note", "text": "When you fail an ability check, you can expend one Second Wind use (no HP gained) to roll 1d10 and add it to the check. If the check still fails, the use is not expended." }
+        ]
+      }
+    },
+    {
+      "name": "Fighter Subclass",
+      "level": 3,
+      "className": "Fighter",
+      "description": "You gain a Fighter subclass of your choice. A subclass is a specialization that grants you features at certain Fighter levels. For the rest of your career, you gain each of your subclass's features that are of your Fighter level or lower."
+    },
+    {
+      "name": "Ability Score Improvement",
+      "level": 4,
+      "className": "Fighter",
+      "description": "You gain the {feat:Ability Score Improvement} feat or another feat of your choice for which you qualify. You gain this feature again at Fighter levels 6, 8, 12, 14, and 16."
+    },
+    {
+      "name": "Extra Attack",
+      "level": 5,
+      "className": "Fighter",
+      "description": "You can attack twice instead of once whenever you take the {action:Attack} action on your turn.",
+      "effects": {
+        "properties": [
+          { "type": "extra_attack", "count": 1 }
+        ]
+      }
+    },
+    {
+      "name": "Tactical Shift",
+      "level": 5,
+      "className": "Fighter",
+      "description": "Whenever you activate your Second Wind with a {rule:Bonus Action}, you can move up to half your {rule:Speed} without provoking {action:Opportunity Attack|Opportunity Attacks}.",
+      "effects": {
+        "properties": [
+          { "type": "note", "text": "When you use Second Wind as a Bonus Action, you can move up to half your Speed without provoking Opportunity Attacks." }
+        ]
+      }
+    },
+    {
+      "name": "Ability Score Improvement",
+      "level": 6,
+      "className": "Fighter",
+      "description": "You gain the {feat:Ability Score Improvement} feat or another feat of your choice for which you qualify."
+    },
+    {
+      "name": "Subclass Feature",
+      "level": 7,
+      "className": "Fighter",
+      "description": "You gain a feature from your Fighter Subclass."
+    },
+    {
+      "name": "Ability Score Improvement",
+      "level": 8,
+      "className": "Fighter",
+      "description": "You gain the {feat:Ability Score Improvement} feat or another feat of your choice for which you qualify."
+    },
+    {
+      "name": "Indomitable",
+      "level": 9,
+      "className": "Fighter",
+      "description": "If you fail a {rule:Saving Throw}, you can reroll it with a bonus equal to your Fighter level. You must use the new roll, and you can't use this feature again until you finish a {rule:Long Rest}.\n\nYou can use this feature twice before a {rule:Long Rest} starting at level 13 and three times before a {rule:Long Rest} starting at level 17.",
+      "effects": {
+        "properties": [
+          { "type": "resource", "name": "Indomitable", "maxUses": "table(9:1, 13:2, 17:3)", "resetOn": "long" },
+          { "type": "note", "text": "When you fail a saving throw, you can expend one use to reroll it with a bonus equal to your Fighter level. You must use the new roll." }
+        ]
+      }
+    },
+    {
+      "name": "Tactical Master",
+      "level": 9,
+      "className": "Fighter",
+      "description": "When you attack with a weapon whose mastery property you can use, you can replace that property with the Push, Sap, or Slow property for that attack.",
+      "effects": {
+        "properties": [
+          { "type": "note", "text": "When attacking with a weapon whose mastery property you can use, you may substitute the Push, Sap, or Slow mastery property for that attack instead." }
+        ]
+      }
+    },
+    {
+      "name": "Subclass Feature",
+      "level": 10,
+      "className": "Fighter",
+      "description": "You gain a feature from your Fighter Subclass."
+    },
+    {
+      "name": "Two Extra Attacks",
+      "level": 11,
+      "className": "Fighter",
+      "description": "You can attack three times instead of once whenever you take the {action:Attack} action on your turn.",
+      "effects": {
+        "properties": [
+          { "type": "extra_attack", "count": 2 }
+        ]
+      }
+    },
+    {
+      "name": "Ability Score Improvement",
+      "level": 12,
+      "className": "Fighter",
+      "description": "You gain the {feat:Ability Score Improvement} feat or another feat of your choice for which you qualify."
+    },
+    {
+      "name": "Indomitable",
+      "level": 13,
+      "className": "Fighter",
+      "description": "You can now use Indomitable twice before finishing a {rule:Long Rest}. (See level 9 for full feature description.)"
+    },
+    {
+      "name": "Studied Attacks",
+      "level": 13,
+      "className": "Fighter",
+      "description": "You study your opponents and learn from each attack you make. If you make an attack roll against a creature and miss, you have {rule:Advantage} on your next attack roll against that creature before the end of your next turn.",
+      "effects": {
+        "properties": [
+          { "type": "note", "text": "If you miss an attack roll against a creature, you have advantage on your next attack roll against that same creature before the end of your next turn." }
+        ]
+      }
+    },
+    {
+      "name": "Ability Score Improvement",
+      "level": 14,
+      "className": "Fighter",
+      "description": "You gain the {feat:Ability Score Improvement} feat or another feat of your choice for which you qualify."
+    },
+    {
+      "name": "Subclass Feature",
+      "level": 15,
+      "className": "Fighter",
+      "description": "You gain a feature from your Fighter Subclass."
+    },
+    {
+      "name": "Ability Score Improvement",
+      "level": 16,
+      "className": "Fighter",
+      "description": "You gain the {feat:Ability Score Improvement} feat or another feat of your choice for which you qualify."
+    },
+    {
+      "name": "Action Surge",
+      "level": 17,
+      "className": "Fighter",
+      "description": "You can now use Action Surge twice before a rest but only once on a turn. (See level 2 for full feature description.)"
+    },
+    {
+      "name": "Indomitable",
+      "level": 17,
+      "className": "Fighter",
+      "description": "You can now use Indomitable three times before finishing a {rule:Long Rest}. (See level 9 for full feature description.)"
+    },
+    {
+      "name": "Subclass Feature",
+      "level": 18,
+      "className": "Fighter",
+      "description": "You gain a feature from your Fighter Subclass."
+    },
+    {
+      "name": "Epic Boon",
+      "level": 19,
+      "className": "Fighter",
+      "description": "You gain an Epic Boon feat or another feat of your choice for which you qualify. {feat:Boon of Combat Prowess} is recommended."
+    },
+    {
+      "name": "Three Extra Attacks",
+      "level": 20,
+      "className": "Fighter",
+      "description": "You can attack four times instead of once whenever you take the {action:Attack} action on your turn.",
+      "effects": {
+        "properties": [
+          { "type": "extra_attack", "count": 3 }
+        ]
+      }
+    }
+  ],
+  "subclasses": [
+    {
+      "name": "Battle Master",
+      "shortName": "Battle Master",
+      "className": "Fighter",
+      "description": "Battle Masters are students of the art of battle, learning martial techniques passed down through generations. The most accomplished Battle Masters are well-rounded figures who combine their carefully honed combat skills with academic study in the fields of history, theory, and the arts.",
+      "features": [
+        {
+          "name": "Combat Superiority",
+          "level": 3,
+          "className": "Fighter",
+          "subclassName": "Battle Master",
+          "description": "Your experience on the battlefield has refined your fighting techniques. You learn maneuvers that are fueled by special dice called Superiority Dice.\n\n**Maneuvers.** You learn three maneuvers of your choice from the Maneuver Options available to Battle Masters. Many maneuvers enhance an attack in some way. You can use only one maneuver per attack. You learn two additional maneuvers of your choice when you reach Fighter levels 7, 10, and 15. Each time you learn new maneuvers, you can also replace one maneuver you know with a different one.\n\n**Superiority Dice.** You have four Superiority Dice, which are d8s. A Superiority Die is expended when you use it. You regain all expended Superiority Dice when you finish a {rule:Short Rest} or {rule:Long Rest}. You gain an additional Superiority Die when you reach Fighter levels 7 (five dice total) and 15 (six dice total).\n\n**Saving Throws.** If a maneuver requires a saving throw, the DC equals 8 plus your Strength or Dexterity modifier (your choice) and your Proficiency Bonus.",
+          "effects": {
+            "properties": [
+              { "type": "resource", "name": "Superiority Dice", "maxUses": "table(3:4, 7:5, 15:6)", "resetOn": "short" },
+              { "type": "note", "text": "Superiority Dice are d8s (d10 at level 10, d12 at level 18). Maneuver save DC = 8 + STR or DEX modifier (your choice) + Proficiency Bonus. You learn 3 maneuvers at level 3, +2 at levels 7, 10, and 15 (maximum 9 known). One maneuver per attack." }
+            ]
+          }
+        },
+        {
+          "name": "Student of War",
+          "level": 3,
+          "className": "Fighter",
+          "subclassName": "Battle Master",
+          "description": "You gain proficiency with one type of Artisan's Tools of your choice, and you gain proficiency in one skill of your choice from the skills available to Fighters at level 1.",
+          "choices": [
+            { "id": "student-of-war-tool", "label": "Artisan's Tool Proficiency", "count": 1, "timing": "permanent", "pool": "tool" },
+            { "id": "student-of-war-skill", "label": "Skill Proficiency", "count": 1, "timing": "permanent", "pool": "skill_proficiency", "from": ["Acrobatics", "Animal Handling", "Athletics", "History", "Insight", "Intimidation", "Persuasion", "Perception", "Survival"] }
+          ]
+        },
+        {
+          "name": "Know Your Enemy",
+          "level": 7,
+          "className": "Fighter",
+          "subclassName": "Battle Master",
+          "description": "As a {rule:Bonus Action}, you can discern certain strengths and weaknesses of a creature you can see within 30 feet of yourself; you know whether that creature has any Immunities, Resistances, or Vulnerabilities, and if the creature has any, you know what they are.\n\nOnce you use this feature, you can't do so again until you finish a {rule:Long Rest}. You can also restore a use of the feature by expending one Superiority Die (no action required).",
+          "effects": {
+            "properties": [
+              { "type": "resource", "name": "Know Your Enemy", "maxUses": 1, "resetOn": "long" },
+              { "type": "note", "text": "As a Bonus Action, learn the Immunities, Resistances, and Vulnerabilities of a creature within 30 feet. Restore a use by expending one Superiority Die (no action required)." }
+            ]
+          }
+        },
+        {
+          "name": "Improved Combat Superiority",
+          "level": 10,
+          "className": "Fighter",
+          "subclassName": "Battle Master",
+          "description": "Your Superiority Die becomes a d10.",
+          "effects": {
+            "properties": [
+              { "type": "note", "text": "Superiority Dice are now d10s." }
+            ]
+          }
+        },
+        {
+          "name": "Relentless",
+          "level": 15,
+          "className": "Fighter",
+          "subclassName": "Battle Master",
+          "description": "Once per turn, when you use a maneuver, you can roll 1d8 and use the number rolled instead of expending a Superiority Die.",
+          "effects": {
+            "properties": [
+              { "type": "note", "text": "Once per turn when using a maneuver, you may roll 1d8 and use the result in place of expending a Superiority Die." }
+            ]
+          }
+        },
+        {
+          "name": "Ultimate Combat Superiority",
+          "level": 18,
+          "className": "Fighter",
+          "subclassName": "Battle Master",
+          "description": "Your Superiority Die becomes a d12.",
+          "effects": {
+            "properties": [
+              { "type": "note", "text": "Superiority Dice are now d12s." }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Champion",
+      "shortName": "Champion",
+      "className": "Fighter",
+      "description": "A Champion focuses on the development of martial prowess in a relentless pursuit of victory. Champions combine rigorous training with physical excellence to deal devastating blows, withstand peril, and garner glory. Whether in athletic contests or bloody battle, Champions strive for the crown of the victor.",
+      "features": [
+        {
+          "name": "Improved Critical",
+          "level": 3,
+          "className": "Fighter",
+          "subclassName": "Champion",
+          "description": "Your attack rolls with weapons and Unarmed Strikes can score a {rule:Critical Hit} on a roll of 19 or 20 on the d20.",
+          "effects": {
+            "properties": [
+              { "type": "note", "text": "Critical Hit threshold reduced to 19–20 on the d20 for weapon attacks and Unarmed Strikes." }
+            ]
+          }
+        },
+        {
+          "name": "Remarkable Athlete",
+          "level": 3,
+          "className": "Fighter",
+          "subclassName": "Champion",
+          "description": "Thanks to your athleticism, you have {rule:Advantage} on {rule:Initiative} rolls and Strength (Athletics) checks.\n\nIn addition, immediately after you score a {rule:Critical Hit}, you can move up to half your {rule:Speed} without provoking {action:Opportunity Attack|Opportunity Attacks}.",
+          "effects": {
+            "properties": [
+              { "type": "advantage", "on": "initiative" },
+              { "type": "advantage", "on": "athletics" },
+              { "type": "note", "text": "Immediately after scoring a Critical Hit, you can move up to half your Speed without provoking Opportunity Attacks." }
+            ]
+          }
+        },
+        {
+          "name": "Additional Fighting Style",
+          "level": 7,
+          "className": "Fighter",
+          "subclassName": "Champion",
+          "description": "You gain another {feat:Fighting Style|Fighting Style feat} of your choice.",
+          "effects": {
+            "properties": [
+              { "type": "note", "text": "Gain one additional Fighting Style feat of your choice." }
+            ]
+          }
+        },
+        {
+          "name": "Heroic Warrior",
+          "level": 10,
+          "className": "Fighter",
+          "subclassName": "Champion",
+          "description": "The thrill of battle drives you toward victory. During combat, you can give yourself {rule:Heroic Inspiration} whenever you start your turn without it.",
+          "effects": {
+            "properties": [
+              { "type": "note", "text": "During combat, if you start your turn without Heroic Inspiration, you can grant it to yourself." }
+            ]
+          }
+        },
+        {
+          "name": "Superior Critical",
+          "level": 15,
+          "className": "Fighter",
+          "subclassName": "Champion",
+          "description": "Your attack rolls with weapons and Unarmed Strikes can now score a {rule:Critical Hit} on a roll of 18–20 on the d20.",
+          "effects": {
+            "properties": [
+              { "type": "note", "text": "Critical Hit threshold further reduced to 18–20 on the d20 for weapon attacks and Unarmed Strikes." }
+            ]
+          }
+        },
+        {
+          "name": "Survivor",
+          "level": 18,
+          "className": "Fighter",
+          "subclassName": "Champion",
+          "description": "You attain the pinnacle of resilience in battle, giving you these benefits.\n\n**Defy Death.** You have {rule:Advantage} on {rule:Death Saving Throw|Death Saving Throws}. Moreover, when you roll 18–20 on a Death Saving Throw, you gain the benefit of rolling a 20 on it.\n\n**Heroic Rally.** At the start of each of your turns, you regain Hit Points equal to 5 plus your Constitution modifier if you are Bloodied and have at least 1 Hit Point.",
+          "effects": {
+            "properties": [
+              { "type": "advantage", "on": "death_save" },
+              { "type": "note", "text": "Rolling 18–20 on a Death Saving Throw grants the benefit of a natural 20 (regain 1 HP)." },
+              { "type": "note", "text": "Heroic Rally: At the start of your turn, if you are Bloodied (at or below half your Hit Point maximum) and have at least 1 HP, regain 5 + CON modifier Hit Points." }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Eldritch Knight",
+      "shortName": "Eldritch Knight",
+      "className": "Fighter",
+      "description": "Eldritch Knights combine the martial mastery common to all Fighters with a careful study of magic. Their spells both complement and extend their combat skills, providing additional protection to shore up their armor and also allowing them to engage many foes at once with explosive magic.",
+      "spellcastingAbility": "intelligence",
+      "casterProgression": "one-third",
+      "spellSlotTable": {
+        "3":  [2, 0, 0, 0],
+        "4":  [3, 0, 0, 0],
+        "5":  [3, 0, 0, 0],
+        "6":  [3, 0, 0, 0],
+        "7":  [4, 2, 0, 0],
+        "8":  [4, 2, 0, 0],
+        "9":  [4, 2, 0, 0],
+        "10": [4, 3, 0, 0],
+        "11": [4, 3, 0, 0],
+        "12": [4, 3, 0, 0],
+        "13": [4, 3, 2, 0],
+        "14": [4, 3, 2, 0],
+        "15": [4, 3, 2, 0],
+        "16": [4, 3, 3, 0],
+        "17": [4, 3, 3, 0],
+        "18": [4, 3, 3, 0],
+        "19": [4, 3, 3, 1],
+        "20": [4, 3, 3, 1]
+      },
+      "features": [
+        {
+          "name": "Spellcasting",
+          "level": 3,
+          "className": "Fighter",
+          "subclassName": "Eldritch Knight",
+          "description": "You have learned to cast spells. Intelligence is your spellcasting ability for your Wizard spells.\n\n**Cantrips.** You know two cantrips of your choice from the {class:Wizard} spell list. {spell:Ray of Frost} and {spell:Shocking Grasp} are recommended. Whenever you gain a Fighter level, you can replace one of these cantrips with another cantrip of your choice from the Wizard spell list. When you reach Fighter level 10, you learn another Wizard cantrip of your choice.\n\n**Spell Slots.** The Eldritch Knight Spellcasting table shows how many spell slots you have to cast your level 1+ spells. You regain all expended slots when you finish a {rule:Long Rest}.\n\n**Prepared Spells of Level 1+.** You prepare the list of level 1+ spells that are available for you to cast with this feature. To start, choose three level 1 spells from the Wizard spell list. The number of spells on your list increases as you gain Fighter levels, as shown in the Prepared Spells column of the Eldritch Knight Spellcasting table. Whenever that number increases, choose additional spells from the Wizard spell list until the number of spells on your list matches the number on the table. The chosen spells must be of a level for which you have spell slots. Whenever you gain a Fighter level, you can replace one spell on your list with another Wizard spell for which you have spell slots.\n\n**Spellcasting Focus.** You can use an Arcane Focus as a Spellcasting Focus for your Wizard spells.",
+          "effects": {
+            "properties": [
+              { "type": "note", "text": "Spellcasting ability: Intelligence. Cantrips known: 2 at level 3, 3 at level 10. Prepared spells scale per Eldritch Knight Spellcasting table (starts at 3, up to 13). Spells drawn from the Wizard spell list. Slots reset on Long Rest." }
+            ]
+          }
+        },
+        {
+          "name": "War Bond",
+          "level": 3,
+          "className": "Fighter",
+          "subclassName": "Eldritch Knight",
+          "description": "You learn a ritual that creates a magical bond between yourself and one weapon. You perform the ritual over the course of 1 hour, which can be done during a {rule:Short Rest}. The weapon must be within your reach throughout the ritual, at the conclusion of which you touch the weapon and forge the bond. The bond fails if another Fighter is bonded to the weapon or if the weapon is a magic item to which someone else is attuned.\n\nOnce you have bonded a weapon to yourself, you can't be disarmed of that weapon unless you have the {condition:Incapacitated} condition. If it is on the same plane of existence, you can summon that weapon as a {rule:Bonus Action}, causing it to teleport instantly to your hand.\n\nYou can have up to two bonded weapons, but you can summon only one at a time with a {rule:Bonus Action}. If you attempt to bond with a third weapon, you must break the bond with one of the other two.",
+          "effects": {
+            "properties": [
+              { "type": "note", "text": "Bond up to two weapons via a 1-hour ritual (possible during a Short Rest). Bonded weapons can't be disarmed (unless Incapacitated). Summon a bonded weapon to your hand as a Bonus Action (same plane only). Bonding a third weapon requires breaking an existing bond." }
+            ]
+          }
+        },
+        {
+          "name": "War Magic",
+          "level": 7,
+          "className": "Fighter",
+          "subclassName": "Eldritch Knight",
+          "description": "When you take the {action:Attack} action on your turn, you can replace one of the attacks with a casting of one of your Wizard cantrips that has a casting time of an action.",
+          "effects": {
+            "properties": [
+              { "type": "note", "text": "When you take the Attack action, you may replace one attack with a casting of a Wizard cantrip that has a casting time of an action." }
+            ]
+          }
+        },
+        {
+          "name": "Eldritch Strike",
+          "level": 10,
+          "className": "Fighter",
+          "subclassName": "Eldritch Knight",
+          "description": "You learn how to make your weapon strikes undercut a creature's ability to withstand your spells. When you hit a creature with an attack using a weapon, that creature has {rule:Disadvantage} on the next saving throw it makes against a spell you cast before the end of your next turn.",
+          "effects": {
+            "properties": [
+              { "type": "note", "text": "When you hit a creature with a weapon attack, that creature has disadvantage on the next saving throw it makes against a spell you cast before the end of your next turn." }
+            ]
+          }
+        },
+        {
+          "name": "Arcane Charge",
+          "level": 15,
+          "className": "Fighter",
+          "subclassName": "Eldritch Knight",
+          "description": "When you use your Action Surge, you can teleport up to 30 feet to an unoccupied space you can see. You can teleport before or after the additional action.",
+          "effects": {
+            "properties": [
+              { "type": "note", "text": "When using Action Surge, you may teleport up to 30 feet to an unoccupied space you can see, either before or after the additional action." }
+            ]
+          }
+        },
+        {
+          "name": "Improved War Magic",
+          "level": 18,
+          "className": "Fighter",
+          "subclassName": "Eldritch Knight",
+          "description": "When you take the {action:Attack} action on your turn, you can replace two of the attacks with a casting of one of your level 1 or level 2 Wizard spells that has a casting time of an action.",
+          "effects": {
+            "properties": [
+              { "type": "note", "text": "When you take the Attack action, you may replace two attacks with a single casting of a level 1 or level 2 Wizard spell that has a casting time of an action." }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Psi Warrior",
+      "shortName": "Psi Warrior",
+      "className": "Fighter",
+      "description": "Psi Warriors awaken the power of their minds to augment their physical might. They harness this psionic power to infuse their weapon strikes, lash out with telekinetic energy, and create barriers of mental force.",
+      "features": [
+        {
+          "name": "Psionic Power",
+          "level": 3,
+          "className": "Fighter",
+          "subclassName": "Psi Warrior",
+          "description": "You harbor a wellspring of psionic energy within yourself. It is represented by your Psionic Energy Dice, which fuel powers you have from this subclass. The die size and number of these dice increases as you gain Fighter levels:\n\n- Level 3: d6, 4 dice\n- Level 5: d8, 6 dice\n- Level 9: d8, 8 dice\n- Level 11: d10, 8 dice\n- Level 13: d10, 10 dice\n- Level 17: d12, 12 dice\n\nYou regain one expended Psionic Energy Die when you finish a {rule:Short Rest}, and you regain all of them when you finish a {rule:Long Rest}.\n\n**Protective Field.** When you or another creature you can see within 30 feet of you takes damage, you can take a {rule:Reaction} to expend one Psionic Energy Die, roll the die, and reduce the damage taken by the number rolled plus your Intelligence modifier (minimum reduction of 1), as you create a momentary shield of telekinetic force.\n\n**Psionic Strike.** You can propel your weapons with psionic force. Once on each of your turns, immediately after you hit a target within 30 feet of yourself with an attack and deal damage to it with a weapon, you can expend one Psionic Energy Die, rolling it and dealing Force damage to the target equal to the number rolled plus your Intelligence modifier.\n\n**Telekinetic Movement.** As a {action:Magic} action, choose one target you can see within 30 feet of yourself; the target must be a loose object that is Large or smaller or one willing creature other than you. You transport the target up to 30 feet to an unoccupied space you can see. Alternatively, if the target is a Tiny object, you can transport it to or from your hand. Once you take this action, you can't do so again until you finish a {rule:Short Rest} or {rule:Long Rest} unless you expend a Psionic Energy Die (no action required) to restore your use of it.",
+          "effects": {
+            "properties": [
+              { "type": "resource", "name": "Psionic Energy Dice", "maxUses": "table(3:4, 5:6, 9:8, 11:8, 13:10, 17:12)", "resetOn": "short" },
+              { "type": "note", "text": "Psionic Energy Die size: d6 at levels 3–4, d8 at levels 5–12, d10 at levels 13–16, d12 at levels 17+. Short Rest restores 1 die; Long Rest restores all. Protective Field (Reaction): expend 1 die, reduce damage by die roll + INT mod (min 1). Psionic Strike (once per turn after hitting within 30 ft): expend 1 die, deal Force damage = die roll + INT mod. Telekinetic Movement (Magic action, 1/short rest or spend a die): move a Large-or-smaller object or willing creature up to 30 ft, or move a Tiny object to/from hand." }
+            ]
+          }
+        },
+        {
+          "name": "Telekinetic Adept",
+          "level": 7,
+          "className": "Fighter",
+          "subclassName": "Psi Warrior",
+          "description": "You have mastered new ways to use your telekinetic abilities.\n\n**Psi-Powered Leap.** As a {rule:Bonus Action}, you gain a Fly Speed equal to twice your {rule:Speed} until the end of the current turn. Once you take this Bonus Action, you can't do so again until you finish a {rule:Short Rest} or {rule:Long Rest} unless you expend a Psionic Energy Die (no action required) to restore your use of it.\n\n**Telekinetic Thrust.** When you deal damage to a target with your Psionic Strike, you can force the target to make a Strength saving throw (DC 8 plus your Intelligence modifier and Proficiency Bonus). On a failed save, you can give the target the {condition:Prone} condition or transport it up to 10 feet horizontally.",
+          "effects": {
+            "properties": [
+              { "type": "note", "text": "Psi-Powered Leap (Bonus Action, 1/short rest or spend a die): gain Fly Speed equal to twice your Speed until end of your current turn. Telekinetic Thrust: on a successful Psionic Strike, force target STR save (DC 8 + INT mod + prof); on failure, choose Prone or push 10 ft horizontally." }
+            ]
+          }
+        },
+        {
+          "name": "Guarded Mind",
+          "level": 10,
+          "className": "Fighter",
+          "subclassName": "Psi Warrior",
+          "description": "You have {rule:Resistance} to Psychic damage. Moreover, if you start your turn with the {condition:Charmed} or {condition:Frightened} condition, you can expend a Psionic Energy Die (no action required) and end every effect on yourself giving you those conditions.",
+          "effects": {
+            "properties": [
+              { "type": "resistance", "damageType": "psychic" },
+              { "type": "note", "text": "At the start of your turn, if you have the Charmed or Frightened condition, you may expend one Psionic Energy Die (no action) to end all effects on yourself that granted those conditions." }
+            ]
+          }
+        },
+        {
+          "name": "Bulwark of Force",
+          "level": 15,
+          "className": "Fighter",
+          "subclassName": "Psi Warrior",
+          "description": "You can shield yourself and others with telekinetic force. As a {rule:Bonus Action}, you can choose creatures, including yourself, within 30 feet of yourself, up to a number of creatures equal to your Intelligence modifier (minimum of one creature). Each of the chosen creatures has Half Cover for 1 minute or until you have the {condition:Incapacitated} condition.\n\nOnce you use this feature, you can't do so again until you finish a {rule:Long Rest} unless you expend a Psionic Energy Die (no action required) to restore your use of it.",
+          "effects": {
+            "properties": [
+              { "type": "resource", "name": "Bulwark of Force", "maxUses": 1, "resetOn": "long" },
+              { "type": "note", "text": "As a Bonus Action, grant Half Cover to up to INT modifier creatures (minimum 1) within 30 ft for 1 minute (ends early if you become Incapacitated). Restore a use by expending one Psionic Energy Die (no action)." }
+            ]
+          }
+        },
+        {
+          "name": "Telekinetic Master",
+          "level": 18,
+          "className": "Fighter",
+          "subclassName": "Psi Warrior",
+          "description": "You always have the {spell:Telekinesis} spell prepared. With this feature, you can cast it without a spell slot or components, and your spellcasting ability for it is Intelligence. On each of your turns while you maintain {status:Concentration} on it, including the turn when you cast it, you can make one attack with a weapon as a {rule:Bonus Action}.\n\nOnce you cast the spell with this feature, you can't do so in this way again until you finish a {rule:Long Rest} unless you expend a Psionic Energy Die (no action required) to restore your use of it.",
+          "effects": {
+            "properties": [
+              { "type": "spell_grant", "spell": "Telekinesis", "usage": "per_day", "uses": 1, "castingAbility": "intelligence" },
+              { "type": "note", "text": "Cast Telekinesis (INT-based, no slot or components, 1/long rest or spend a Psionic Energy Die). While concentrating on it, you can make one weapon attack as a Bonus Action on each of your turns (including the casting turn)." }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

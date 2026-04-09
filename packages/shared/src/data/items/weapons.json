@@ -1,0 +1,762 @@
+[
+  {
+    "name": "Antimatter Rifle",
+    "type": "R|XPHB",
+    "weapon": true,
+    "weaponCategory": "martial",
+    "damage": "6d8",
+    "damageType": "necrotic",
+    "properties": [
+      "AF",
+      "RLD",
+      "2H"
+    ],
+    "mastery": [
+      "Sap"
+    ],
+    "range": "120/360",
+    "weight": 10
+  },
+  {
+    "name": "Automatic Rifle",
+    "type": "R|XPHB",
+    "weapon": true,
+    "weaponCategory": "martial",
+    "damage": "2d8",
+    "damageType": "piercing",
+    "properties": [
+      "AF",
+      "BF",
+      "RLD",
+      "2H"
+    ],
+    "mastery": [
+      "Slow"
+    ],
+    "range": "80/240",
+    "weight": 8
+  },
+  {
+    "name": "Battleaxe",
+    "type": "M|XPHB",
+    "weapon": true,
+    "weaponCategory": "martial",
+    "damage": "1d8",
+    "damageType": "slashing",
+    "versatileDamage": "1d10",
+    "properties": [
+      "V"
+    ],
+    "mastery": [
+      "Topple"
+    ],
+    "weight": 4
+  },
+  {
+    "name": "Blowgun",
+    "type": "R|XPHB",
+    "weapon": true,
+    "weaponCategory": "martial",
+    "damage": "1",
+    "damageType": "piercing",
+    "properties": [
+      "A",
+      "LD"
+    ],
+    "mastery": [
+      "Vex"
+    ],
+    "range": "25/100",
+    "weight": 1
+  },
+  {
+    "name": "Club",
+    "type": "M|XPHB",
+    "weapon": true,
+    "weaponCategory": "simple",
+    "damage": "1d4",
+    "damageType": "bludgeoning",
+    "properties": [
+      "L"
+    ],
+    "mastery": [
+      "Slow"
+    ],
+    "weight": 2
+  },
+  {
+    "name": "Dagger",
+    "type": "M|XPHB",
+    "weapon": true,
+    "weaponCategory": "simple",
+    "damage": "1d4",
+    "damageType": "piercing",
+    "properties": [
+      "F",
+      "L",
+      "T"
+    ],
+    "mastery": [
+      "Nick"
+    ],
+    "range": "20/60",
+    "weight": 1
+  },
+  {
+    "name": "Dart",
+    "type": "R|XPHB",
+    "weapon": true,
+    "weaponCategory": "simple",
+    "damage": "1d4",
+    "damageType": "piercing",
+    "properties": [
+      "F",
+      "T"
+    ],
+    "mastery": [
+      "Vex"
+    ],
+    "range": "20/60",
+    "weight": 0.25
+  },
+  {
+    "name": "Flail",
+    "type": "M|XPHB",
+    "weapon": true,
+    "weaponCategory": "martial",
+    "damage": "1d8",
+    "damageType": "bludgeoning",
+    "mastery": [
+      "Sap"
+    ],
+    "weight": 2
+  },
+  {
+    "name": "Glaive",
+    "type": "M|XPHB",
+    "weapon": true,
+    "weaponCategory": "martial",
+    "damage": "1d10",
+    "damageType": "slashing",
+    "properties": [
+      "H",
+      "R",
+      "2H"
+    ],
+    "mastery": [
+      "Graze"
+    ],
+    "weight": 6
+  },
+  {
+    "name": "Greataxe",
+    "type": "M|XPHB",
+    "weapon": true,
+    "weaponCategory": "martial",
+    "damage": "1d12",
+    "damageType": "slashing",
+    "properties": [
+      "H",
+      "2H"
+    ],
+    "mastery": [
+      "Cleave"
+    ],
+    "weight": 7
+  },
+  {
+    "name": "Greatclub",
+    "type": "M|XPHB",
+    "weapon": true,
+    "weaponCategory": "simple",
+    "damage": "1d8",
+    "damageType": "bludgeoning",
+    "properties": [
+      "2H"
+    ],
+    "mastery": [
+      "Push"
+    ],
+    "weight": 10
+  },
+  {
+    "name": "Greatsword",
+    "type": "M|XPHB",
+    "weapon": true,
+    "weaponCategory": "martial",
+    "damage": "2d6",
+    "damageType": "slashing",
+    "properties": [
+      "H",
+      "2H"
+    ],
+    "mastery": [
+      "Graze"
+    ],
+    "weight": 6
+  },
+  {
+    "name": "Halberd",
+    "type": "M|XPHB",
+    "weapon": true,
+    "weaponCategory": "martial",
+    "damage": "1d10",
+    "damageType": "slashing",
+    "properties": [
+      "H",
+      "R",
+      "2H"
+    ],
+    "mastery": [
+      "Cleave"
+    ],
+    "weight": 6
+  },
+  {
+    "name": "Hand Crossbow",
+    "type": "R|XPHB",
+    "weapon": true,
+    "weaponCategory": "martial",
+    "damage": "1d6",
+    "damageType": "piercing",
+    "properties": [
+      "A",
+      "L",
+      "LD"
+    ],
+    "mastery": [
+      "Vex"
+    ],
+    "range": "30/120",
+    "weight": 3
+  },
+  {
+    "name": "Handaxe",
+    "type": "M|XPHB",
+    "weapon": true,
+    "weaponCategory": "simple",
+    "damage": "1d6",
+    "damageType": "slashing",
+    "properties": [
+      "L",
+      "T"
+    ],
+    "mastery": [
+      "Vex"
+    ],
+    "range": "20/60",
+    "weight": 2
+  },
+  {
+    "name": "Heavy Crossbow",
+    "type": "R|XPHB",
+    "weapon": true,
+    "weaponCategory": "martial",
+    "damage": "1d10",
+    "damageType": "piercing",
+    "properties": [
+      "A",
+      "H",
+      "LD",
+      "2H"
+    ],
+    "mastery": [
+      "Push"
+    ],
+    "range": "100/400",
+    "weight": 18
+  },
+  {
+    "name": "Hunting Rifle",
+    "type": "R|XPHB",
+    "weapon": true,
+    "weaponCategory": "martial",
+    "damage": "2d10",
+    "damageType": "piercing",
+    "properties": [
+      "AF",
+      "RLD",
+      "2H"
+    ],
+    "mastery": [
+      "Slow"
+    ],
+    "range": "80/240",
+    "weight": 8
+  },
+  {
+    "name": "Javelin",
+    "type": "M|XPHB",
+    "weapon": true,
+    "weaponCategory": "simple",
+    "damage": "1d6",
+    "damageType": "piercing",
+    "properties": [
+      "T"
+    ],
+    "mastery": [
+      "Slow"
+    ],
+    "range": "30/120",
+    "weight": 2
+  },
+  {
+    "name": "Lance",
+    "type": "M|XPHB",
+    "weapon": true,
+    "weaponCategory": "martial",
+    "damage": "1d10",
+    "damageType": "piercing",
+    "properties": [
+      "H",
+      "R",
+      "2H"
+    ],
+    "mastery": [
+      "Topple"
+    ],
+    "weight": 6
+  },
+  {
+    "name": "Laser Pistol",
+    "type": "R|XPHB",
+    "weapon": true,
+    "weaponCategory": "martial",
+    "damage": "3d6",
+    "damageType": "radiant",
+    "properties": [
+      "AF",
+      "RLD"
+    ],
+    "mastery": [
+      "Vex"
+    ],
+    "range": "40/120",
+    "weight": 2
+  },
+  {
+    "name": "Laser Rifle",
+    "type": "R|XPHB",
+    "weapon": true,
+    "weaponCategory": "martial",
+    "damage": "3d8",
+    "damageType": "radiant",
+    "properties": [
+      "AF",
+      "RLD",
+      "2H"
+    ],
+    "mastery": [
+      "Slow"
+    ],
+    "range": "100/300",
+    "weight": 7
+  },
+  {
+    "name": "Light Crossbow",
+    "type": "R|XPHB",
+    "weapon": true,
+    "weaponCategory": "simple",
+    "damage": "1d8",
+    "damageType": "piercing",
+    "properties": [
+      "A",
+      "LD",
+      "2H"
+    ],
+    "mastery": [
+      "Slow"
+    ],
+    "range": "80/320",
+    "weight": 5
+  },
+  {
+    "name": "Light Hammer",
+    "type": "M|XPHB",
+    "weapon": true,
+    "weaponCategory": "simple",
+    "damage": "1d4",
+    "damageType": "bludgeoning",
+    "properties": [
+      "L",
+      "T"
+    ],
+    "mastery": [
+      "Nick"
+    ],
+    "range": "20/60",
+    "weight": 2
+  },
+  {
+    "name": "Longbow",
+    "type": "R|XPHB",
+    "weapon": true,
+    "weaponCategory": "martial",
+    "damage": "1d8",
+    "damageType": "piercing",
+    "properties": [
+      "A",
+      "H",
+      "2H"
+    ],
+    "mastery": [
+      "Slow"
+    ],
+    "range": "150/600",
+    "weight": 2
+  },
+  {
+    "name": "Longsword",
+    "type": "M|XPHB",
+    "weapon": true,
+    "weaponCategory": "martial",
+    "damage": "1d8",
+    "damageType": "slashing",
+    "versatileDamage": "1d10",
+    "properties": [
+      "V"
+    ],
+    "mastery": [
+      "Sap"
+    ],
+    "weight": 3
+  },
+  {
+    "name": "Mace",
+    "type": "M|XPHB",
+    "weapon": true,
+    "weaponCategory": "simple",
+    "damage": "1d6",
+    "damageType": "bludgeoning",
+    "mastery": [
+      "Sap"
+    ],
+    "weight": 4
+  },
+  {
+    "name": "Maul",
+    "type": "M|XPHB",
+    "weapon": true,
+    "weaponCategory": "martial",
+    "damage": "2d6",
+    "damageType": "bludgeoning",
+    "properties": [
+      "H",
+      "2H"
+    ],
+    "mastery": [
+      "Topple"
+    ],
+    "weight": 10
+  },
+  {
+    "name": "Morningstar",
+    "type": "M|XPHB",
+    "weapon": true,
+    "weaponCategory": "martial",
+    "damage": "1d8",
+    "damageType": "piercing",
+    "mastery": [
+      "Sap"
+    ],
+    "weight": 4
+  },
+  {
+    "name": "Musket",
+    "type": "R|XPHB",
+    "weapon": true,
+    "weaponCategory": "martial",
+    "damage": "1d12",
+    "damageType": "piercing",
+    "properties": [
+      "A",
+      "LD",
+      "2H"
+    ],
+    "mastery": [
+      "Slow"
+    ],
+    "range": "40/120",
+    "weight": 10
+  },
+  {
+    "name": "Pike",
+    "type": "M|XPHB",
+    "weapon": true,
+    "weaponCategory": "martial",
+    "damage": "1d10",
+    "damageType": "piercing",
+    "properties": [
+      "H",
+      "R",
+      "2H"
+    ],
+    "mastery": [
+      "Push"
+    ],
+    "weight": 18
+  },
+  {
+    "name": "Pistol",
+    "type": "R|XPHB",
+    "weapon": true,
+    "weaponCategory": "martial",
+    "damage": "1d10",
+    "damageType": "piercing",
+    "properties": [
+      "A",
+      "LD"
+    ],
+    "mastery": [
+      "Vex"
+    ],
+    "range": "30/90",
+    "weight": 3
+  },
+  {
+    "name": "Quarterstaff",
+    "type": "M|XPHB",
+    "weapon": true,
+    "weaponCategory": "simple",
+    "damage": "1d6",
+    "damageType": "bludgeoning",
+    "versatileDamage": "1d8",
+    "properties": [
+      "V"
+    ],
+    "mastery": [
+      "Topple"
+    ],
+    "weight": 4
+  },
+  {
+    "name": "Rapier",
+    "type": "M|XPHB",
+    "weapon": true,
+    "weaponCategory": "martial",
+    "damage": "1d8",
+    "damageType": "piercing",
+    "properties": [
+      "F"
+    ],
+    "mastery": [
+      "Vex"
+    ],
+    "weight": 2
+  },
+  {
+    "name": "Revolver",
+    "type": "R|XPHB",
+    "weapon": true,
+    "weaponCategory": "martial",
+    "damage": "2d8",
+    "damageType": "piercing",
+    "properties": [
+      "AF",
+      "RLD"
+    ],
+    "mastery": [
+      "Sap"
+    ],
+    "range": "40/120",
+    "weight": 3
+  },
+  {
+    "name": "Scimitar",
+    "type": "M|XPHB",
+    "weapon": true,
+    "weaponCategory": "martial",
+    "damage": "1d6",
+    "damageType": "slashing",
+    "properties": [
+      "F",
+      "L"
+    ],
+    "mastery": [
+      "Nick"
+    ],
+    "weight": 3
+  },
+  {
+    "name": "Semiautomatic Pistol",
+    "type": "R|XPHB",
+    "weapon": true,
+    "weaponCategory": "martial",
+    "damage": "2d6",
+    "damageType": "piercing",
+    "properties": [
+      "AF",
+      "RLD"
+    ],
+    "mastery": [
+      "Vex"
+    ],
+    "range": "50/150",
+    "weight": 3
+  },
+  {
+    "name": "Shortbow",
+    "type": "R|XPHB",
+    "weapon": true,
+    "weaponCategory": "simple",
+    "damage": "1d6",
+    "damageType": "piercing",
+    "properties": [
+      "A",
+      "2H"
+    ],
+    "mastery": [
+      "Vex"
+    ],
+    "range": "80/320",
+    "weight": 2
+  },
+  {
+    "name": "Shortsword",
+    "type": "M|XPHB",
+    "weapon": true,
+    "weaponCategory": "martial",
+    "damage": "1d6",
+    "damageType": "piercing",
+    "properties": [
+      "F",
+      "L"
+    ],
+    "mastery": [
+      "Vex"
+    ],
+    "weight": 2
+  },
+  {
+    "name": "Shotgun",
+    "type": "R|XPHB",
+    "weapon": true,
+    "weaponCategory": "martial",
+    "damage": "2d8",
+    "damageType": "piercing",
+    "properties": [
+      "AF",
+      "RLD",
+      "2H"
+    ],
+    "mastery": [
+      "Push"
+    ],
+    "range": "30/90",
+    "weight": 7
+  },
+  {
+    "name": "Sickle",
+    "type": "M|XPHB",
+    "weapon": true,
+    "weaponCategory": "simple",
+    "damage": "1d4",
+    "damageType": "slashing",
+    "properties": [
+      "L"
+    ],
+    "mastery": [
+      "Nick"
+    ],
+    "weight": 2
+  },
+  {
+    "name": "Sling",
+    "type": "R|XPHB",
+    "weapon": true,
+    "weaponCategory": "simple",
+    "damage": "1d4",
+    "damageType": "bludgeoning",
+    "properties": [
+      "A"
+    ],
+    "mastery": [
+      "Slow"
+    ],
+    "range": "30/120"
+  },
+  {
+    "name": "Spear",
+    "type": "M|XPHB",
+    "weapon": true,
+    "weaponCategory": "simple",
+    "damage": "1d6",
+    "damageType": "piercing",
+    "versatileDamage": "1d8",
+    "properties": [
+      "T",
+      "V"
+    ],
+    "mastery": [
+      "Sap"
+    ],
+    "range": "20/60",
+    "weight": 3
+  },
+  {
+    "name": "Trident",
+    "type": "M|XPHB",
+    "weapon": true,
+    "weaponCategory": "martial",
+    "damage": "1d8",
+    "damageType": "piercing",
+    "versatileDamage": "1d10",
+    "properties": [
+      "T",
+      "V"
+    ],
+    "mastery": [
+      "Topple"
+    ],
+    "range": "20/60",
+    "weight": 4
+  },
+  {
+    "name": "War Pick",
+    "type": "M|XPHB",
+    "weapon": true,
+    "weaponCategory": "martial",
+    "damage": "1d8",
+    "damageType": "piercing",
+    "versatileDamage": "1d10",
+    "properties": [
+      "V"
+    ],
+    "mastery": [
+      "Sap"
+    ],
+    "weight": 2
+  },
+  {
+    "name": "Warhammer",
+    "type": "M|XPHB",
+    "weapon": true,
+    "weaponCategory": "martial",
+    "damage": "1d8",
+    "damageType": "bludgeoning",
+    "versatileDamage": "1d10",
+    "properties": [
+      "V"
+    ],
+    "mastery": [
+      "Push"
+    ],
+    "weight": 5
+  },
+  {
+    "name": "Whip",
+    "type": "M|XPHB",
+    "weapon": true,
+    "weaponCategory": "martial",
+    "damage": "1d4",
+    "damageType": "slashing",
+    "properties": [
+      "F",
+      "R"
+    ],
+    "mastery": [
+      "Slow"
+    ],
+    "weight": 3
+  }
+]

@@ -30,7 +30,7 @@ import {
   getClassResources,
   THIRD_CASTER_SLOTS,
 } from "../data/index";
-import type { ClassResourceTemplate } from "../data/types";
+import type { ClassResourceTemplate } from "../types/data";
 import {
   formatSchool,
   formatCastingTime,
@@ -643,7 +643,7 @@ function computeFeatures(ids: CharacterIdentifiers, _warnings: string[]): Charac
         if (e.type === "entries" && e.name && e.entries) {
           addFeature({
             name: e.name,
-            description: entriesToText(e.entries as import("../data/entry-types").Entry[]),
+            description: entriesToText(e.entries as import("../types/entry-types").Entry[]),
             source: "race",
             sourceLabel: ids.race,
           });

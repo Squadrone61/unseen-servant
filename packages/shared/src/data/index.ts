@@ -29,7 +29,7 @@ import type {
   LanguageScriptData,
   ActionData,
   ClassResourceTemplate,
-} from "./types";
+} from "../types/data";
 
 // ─── Raw JSON imports ──────────────────────────────────
 
@@ -39,8 +39,11 @@ import classesData from "./classes.json";
 import featsData from "./feats.json";
 import backgroundsData from "./backgrounds.json";
 import speciesData from "./species.json";
-import itemsData from "./items.json";
-import itemsBaseData from "./items-base.json";
+import weaponsData from "./items/weapons.json";
+import armorData from "./items/armor.json";
+import toolsData from "./items/tools.json";
+import gearData from "./items/gear.json";
+import magicItemsData from "./items/magic.json";
 import optionalFeaturesData from "./optional-features.json";
 import conditionsDiseasesData from "./conditions-diseases.json";
 import languagesData from "./languages.json";
@@ -60,19 +63,11 @@ const rawSpecies = speciesData as unknown as {
   subrace?: SubraceData[];
 };
 
-const rawItems = itemsData as unknown as {
-  item: MagicItemData[];
-  itemGroup?: ItemGroupData[];
-};
-
-const rawItemsBase = itemsBaseData as unknown as {
-  baseitem: BaseItemData[];
-  itemProperty?: ItemPropertyData[];
-  itemType?: ItemTypeData[];
-  itemMastery?: ItemMasteryData[];
-  itemTypeAdditionalEntries?: unknown[];
-  itemEntry?: ItemEntryData[];
-};
+const rawWeapons = weaponsData as unknown as BaseItemData[];
+const rawArmor = armorData as unknown as BaseItemData[];
+const rawTools = toolsData as unknown as BaseItemData[];
+const rawGear = gearData as unknown as BaseItemData[];
+const rawMagicItems = magicItemsData as unknown as MagicItemData[];
 
 const rawCondsDiseases = conditionsDiseasesData as unknown as {
   condition: ConditionData[];
@@ -156,24 +151,28 @@ export const diseases = buildMap(diseasesArray);
 export const statusesArray = rawCondsDiseases.status ?? [];
 export const statuses = buildMap(statusesArray);
 
-// Base items (equipment)
-export const baseItemsArray = rawItemsBase.baseitem;
+// Base items (equipment) — split by category
+export const weaponsArray = rawWeapons;
+export const armorArray = rawArmor;
+export const toolsArray = rawTools;
+export const gearArray = rawGear;
+export const baseItemsArray = [...rawWeapons, ...rawArmor, ...rawTools, ...rawGear];
 export const baseItems = buildMap(baseItemsArray);
-export const itemProperties = rawItemsBase.itemProperty ?? [];
-export const itemTypes = rawItemsBase.itemType ?? [];
-export const itemMasteries = rawItemsBase.itemMastery ?? [];
-export const itemEntries = rawItemsBase.itemEntry ?? [];
+// Legacy property/type/mastery/entry metadata not stored in split files
+export const itemProperties: ItemPropertyData[] = [];
+export const itemTypes: ItemTypeData[] = [];
+export const itemMasteries: ItemMasteryData[] = [];
+export const itemEntries: ItemEntryData[] = [];
 
-// All items (from items.json — includes mundane gear, magic items, etc.)
-export const allItemsArray = rawItems.item;
-export const allItems = buildMap(allItemsArray);
-export const itemGroupsArray = rawItems.itemGroup ?? [];
-
-// Magic items (for backward compat — filters to rarity !== "none")
-export const magicItemsArray = allItemsArray.filter(
-  (i: { rarity?: string }) => i.rarity && i.rarity !== "none",
-);
+// Magic items
+export const magicItemsArray = rawMagicItems;
 export const magicItems = buildMap(magicItemsArray);
+
+// All items (base + magic combined, for backward compat)
+export const allItemsArray = [...baseItemsArray, ...rawMagicItems] as (BaseItemData &
+  MagicItemData)[];
+export const allItems = buildMap(allItemsArray);
+export const itemGroupsArray: ItemGroupData[] = [];
 
 // Optional features
 export const optionalFeaturesArray = optionalFeaturesData as unknown as OptionalFeatureData[];
@@ -562,7 +561,7 @@ export function getClassResources(className: string): ClassResourceTemplate[] {
 
 // ─── Fuzzy lookup ────────────────────────────────────────
 
-export { fuzzyLookup, type FuzzyResult } from "./fuzzy-lookup";
+export { fuzzyLookup, type FuzzyResult } from "../utils/fuzzy-lookup";
 
 // ─── Re-export types ───────────────────────────────────
 
@@ -614,9 +613,9 @@ export type {
   LanguageScriptData,
   ActionData,
   ClassResourceTemplate,
-} from "./types";
+} from "../types/data";
 
-export type { Entry } from "./entry-types";
+export type { Entry } from "../types/entry-types";
 export type {
   EntryEntries,
   EntryList,
@@ -647,4 +646,4 @@ export type {
   EntryOptionalFeature,
   EntryClassFeature,
   EntrySubclassFeature,
-} from "./entry-types";
+} from "../types/entry-types";

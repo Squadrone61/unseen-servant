@@ -4,6 +4,24 @@ export * from "./constants";
 export * from "./skills";
 export * from "./data/index";
 export * from "./builders/index";
+export { evaluateExpression } from "./utils/expression-evaluator";
+export {
+  resolveStat,
+  collectProperties,
+  hasResistance,
+  hasImmunity,
+  hasVulnerability,
+  hasConditionImmunity,
+  hasAdvantage,
+  hasDisadvantage,
+  getProficiencies,
+  getSenses,
+  getGrantedSpells,
+  getExtraAttacks,
+  getResources,
+  getNotes,
+  applyDamageWithEffects,
+} from "./utils/effect-resolver";
 // Re-export 5etools utils (avoid conflicts with data/index getCasterMultiplier)
 export {
   SCHOOL_MAP,

@@ -16,4 +16,4 @@ test-results
 playwright-report
 .playwright-mcp
 *.zip
-scripts/5etools-raw
+scripts/5etools-filtered

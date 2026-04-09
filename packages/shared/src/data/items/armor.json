@@ -1,0 +1,102 @@
+[
+  {
+    "name": "Breastplate",
+    "type": "MA|XPHB",
+    "ac": 14,
+    "armor": true,
+    "weight": 20
+  },
+  {
+    "name": "Chain Mail",
+    "type": "HA|XPHB",
+    "ac": 16,
+    "armor": true,
+    "weight": 55,
+    "stealth": true,
+    "strength": "13"
+  },
+  {
+    "name": "Chain Shirt",
+    "type": "MA|XPHB",
+    "ac": 13,
+    "armor": true,
+    "weight": 20
+  },
+  {
+    "name": "Half Plate Armor",
+    "type": "MA|XPHB",
+    "ac": 15,
+    "armor": true,
+    "weight": 40,
+    "stealth": true
+  },
+  {
+    "name": "Hide Armor",
+    "type": "MA|XPHB",
+    "ac": 12,
+    "armor": true,
+    "weight": 12
+  },
+  {
+    "name": "Leather Armor",
+    "type": "LA|XPHB",
+    "ac": 11,
+    "armor": true,
+    "weight": 10
+  },
+  {
+    "name": "Padded Armor",
+    "type": "LA|XPHB",
+    "ac": 11,
+    "armor": true,
+    "weight": 8,
+    "stealth": true
+  },
+  {
+    "name": "Plate Armor",
+    "type": "HA|XPHB",
+    "ac": 18,
+    "armor": true,
+    "weight": 65,
+    "stealth": true,
+    "strength": "15"
+  },
+  {
+    "name": "Ring Mail",
+    "type": "HA|XPHB",
+    "ac": 14,
+    "armor": true,
+    "weight": 40,
+    "stealth": true
+  },
+  {
+    "name": "Scale Mail",
+    "type": "MA|XPHB",
+    "ac": 14,
+    "armor": true,
+    "weight": 45,
+    "stealth": true
+  },
+  {
+    "name": "Shield",
+    "type": "S|XPHB",
+    "ac": 2,
+    "weight": 6
+  },
+  {
+    "name": "Splint Armor",
+    "type": "HA|XPHB",
+    "ac": 17,
+    "armor": true,
+    "weight": 60,
+    "stealth": true,
+    "strength": "15"
+  },
+  {
+    "name": "Studded Leather Armor",
+    "type": "LA|XPHB",
+    "ac": 12,
+    "armor": true,
+    "weight": 13
+  }
+]

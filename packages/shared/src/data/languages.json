@@ -1,258 +1,99 @@
-{
-  "language": [
-    {
-      "name": "Abyssal",
-      "source": "XPHB",
-      "page": 37,
-      "srd52": true,
-      "basicRules2024": true,
-      "type": "rare",
-      "origin": "Demons of the Abyss"
-    },
-    {
-      "name": "Celestial",
-      "source": "XPHB",
-      "page": 37,
-      "srd52": true,
-      "basicRules2024": true,
-      "type": "rare",
-      "origin": "Celestials"
-    },
-    {
-      "name": "Common",
-      "source": "XPHB",
-      "page": 37,
-      "srd52": true,
-      "basicRules2024": true,
-      "type": "standard",
-      "origin": "Sigil"
-    },
-    {
-      "name": "Common Sign Language",
-      "source": "XPHB",
-      "page": 37,
-      "srd52": true,
-      "basicRules2024": true,
-      "type": "standard",
-      "origin": "Sigil"
-    },
-    {
-      "name": "Deep Speech",
-      "source": "XPHB",
-      "page": 37,
-      "srd52": true,
-      "basicRules2024": true,
-      "type": "rare",
-      "origin": "Aberrations"
-    },
-    {
-      "name": "Draconic",
-      "source": "XPHB",
-      "page": 37,
-      "srd52": true,
-      "basicRules2024": true,
-      "type": "standard",
-      "origin": "Dragons",
-      "script": "Draconic"
-    },
-    {
-      "name": "Druidic",
-      "source": "XPHB",
-      "page": 37,
-      "srd52": true,
-      "basicRules2024": true,
-      "type": "rare",
-      "origin": "Druidic circles"
-    },
-    {
-      "name": "Dwarvish",
-      "source": "XPHB",
-      "page": 37,
-      "srd52": true,
-      "basicRules2024": true,
-      "type": "standard",
-      "origin": "Dwarves"
-    },
-    {
-      "name": "Elvish",
-      "source": "XPHB",
-      "page": 37,
-      "srd52": true,
-      "basicRules2024": true,
-      "type": "standard",
-      "origin": "Elves"
-    },
-    {
-      "name": "Giant",
-      "source": "XPHB",
-      "page": 37,
-      "srd52": true,
-      "basicRules2024": true,
-      "type": "standard",
-      "origin": "Giants"
-    },
-    {
-      "name": "Gnomish",
-      "source": "XPHB",
-      "page": 37,
-      "srd52": true,
-      "basicRules2024": true,
-      "type": "standard",
-      "origin": "Gnomes"
-    },
-    {
-      "name": "Goblin",
-      "source": "XPHB",
-      "page": 37,
-      "srd52": true,
-      "basicRules2024": true,
-      "type": "standard",
-      "origin": "Goblinoids"
-    },
-    {
-      "name": "Halfling",
-      "source": "XPHB",
-      "page": 37,
-      "srd52": true,
-      "basicRules2024": true,
-      "type": "standard",
-      "origin": "Halflings"
-    },
-    {
-      "name": "Infernal",
-      "source": "XPHB",
-      "page": 37,
-      "srd52": true,
-      "basicRules2024": true,
-      "type": "rare",
-      "origin": "Devils of the Nine Hells"
-    },
-    {
-      "name": "Orc",
-      "source": "XPHB",
-      "page": 37,
-      "srd52": true,
-      "basicRules2024": true,
-      "type": "standard",
-      "origin": "Orcs"
-    },
-    {
-      "name": "Primordial",
-      "dialects": [
-        "Auran",
-        "Aquan",
-        "Ignan",
-        "Terran"
-      ],
-      "source": "XPHB",
-      "page": 37,
-      "srd52": true,
-      "basicRules2024": true,
-      "type": "rare",
-      "origin": "Elementals"
-    },
-    {
-      "name": "Sylvan",
-      "source": "XPHB",
-      "page": 37,
-      "srd52": true,
-      "basicRules2024": true,
-      "type": "rare",
-      "origin": "The Feywild"
-    },
-    {
-      "name": "Thieves' Cant",
-      "source": "XPHB",
-      "page": 37,
-      "srd52": true,
-      "basicRules2024": true,
-      "type": "rare",
-      "origin": "Various criminal guilds"
-    },
-    {
-      "name": "Undercommon",
-      "source": "XPHB",
-      "page": 37,
-      "srd52": true,
-      "basicRules2024": true,
-      "type": "rare",
-      "origin": "The Underdark"
-    }
-  ],
-  "languageScript": [
-    {
-      "name": "Draconic",
-      "source": "PHB",
-      "fonts": [
-        "fonts/languages/PHB/Draconic/Iokharic.otf",
-        "fonts/languages/PHB/Draconic/Iokharic Bold.otf",
-        "fonts/languages/PHB/Draconic/Iokharic Italic.otf",
-        "fonts/languages/PHB/Draconic/Iokharic Bold Italic.otf"
-      ]
-    },
-    {
-      "name": "Draconic",
-      "source": "XPHB",
-      "fonts": [
-        "fonts/languages/XPHB/Draconic/Iokharik-v2.woff2"
-      ]
-    },
-    {
-      "name": "Dwarvish",
-      "source": "PHB",
-      "fonts": [
-        "fonts/languages/PHB/Dwarvish/Dethek.otf",
-        "fonts/languages/PHB/Dwarvish/Dethek Bold.otf",
-        "fonts/languages/PHB/Dwarvish/Dethek Italic.otf",
-        "fonts/languages/PHB/Dwarvish/Dethek Bold Italic.otf",
-        "fonts/languages/PHB/Dwarvish/Dethek Stone.ttf",
-        "fonts/languages/PHB/Dwarvish/Dethek Alt.ttf",
-        "fonts/languages/PHB/Dwarvish/Olde Dethek.otf",
-        "fonts/languages/PHB/Dwarvish/Olde Dethek Italic.otf",
-        "fonts/languages/PHB/Dwarvish/Davek 4e.otf",
-        "fonts/languages/PHB/Dwarvish/Davek 4e Bold.otf",
-        "fonts/languages/PHB/Dwarvish/Davek 4e Italic.otf",
-        "fonts/languages/PHB/Dwarvish/Davek 4e Bold Italic.otf"
-      ]
-    },
-    {
-      "name": "Elvish",
-      "source": "PHB",
-      "fonts": [
-        "fonts/languages/PHB/Elvish/Espruar 5e.ttf",
-        "fonts/languages/PHB/Elvish/Espruar 3e.otf",
-        "fonts/languages/PHB/Elvish/Espruar 3e Bold.otf",
-        "fonts/languages/PHB/Elvish/Espruar 3e Italic.otf",
-        "fonts/languages/PHB/Elvish/Espruar 3e Bold Italic.otf",
-        "fonts/languages/PHB/Elvish/Espruar 2e.ttf",
-        "fonts/languages/PHB/Elvish/Olde Espruar.otf",
-        "fonts/languages/PHB/Elvish/Rellanic 4e.otf",
-        "fonts/languages/PHB/Elvish/Rellanic 4e Bold.otf",
-        "fonts/languages/PHB/Elvish/Rellanic 4e Italic.otf",
-        "fonts/languages/PHB/Elvish/Rellanic 4e Bold Italic.otf"
-      ]
-    },
-    {
-      "name": "Infernal",
-      "source": "PHB",
-      "fonts": [
-        "fonts/languages/PHB/Infernal/Infernal.ttf",
-        "fonts/languages/PHB/Infernal/Barazhad.otf",
-        "fonts/languages/PHB/Infernal/Barazhad Bold.otf",
-        "fonts/languages/PHB/Infernal/Barazhad Italic.otf",
-        "fonts/languages/PHB/Infernal/Barazhad Bold Italic.otf"
-      ]
-    },
-    {
-      "name": "Thorass",
-      "source": "PHB",
-      "fonts": [
-        "fonts/languages/PHB/Human/Thorass.otf",
-        "fonts/languages/PHB/Human/Thorass Bold.otf",
-        "fonts/languages/PHB/Human/Thorass Italic.otf",
-        "fonts/languages/PHB/Human/Thorass Bold Italic.otf",
-        "fonts/languages/PHB/Human/Olde Thorass.otf"
-      ]
-    }
-  ]
-}
+[
+  {
+    "name": "Abyssal",
+    "type": "rare",
+    "typicalSpeakers": ["Demons of the Abyss"]
+  },
+  {
+    "name": "Celestial",
+    "type": "rare",
+    "typicalSpeakers": ["Celestials"]
+  },
+  {
+    "name": "Common",
+    "type": "standard",
+    "typicalSpeakers": ["Sigil"]
+  },
+  {
+    "name": "Common Sign Language",
+    "type": "standard",
+    "typicalSpeakers": ["Sigil"]
+  },
+  {
+    "name": "Deep Speech",
+    "type": "rare",
+    "typicalSpeakers": ["Aberrations"]
+  },
+  {
+    "name": "Draconic",
+    "type": "standard",
+    "typicalSpeakers": ["Dragons"],
+    "script": "Draconic"
+  },
+  {
+    "name": "Druidic",
+    "type": "rare",
+    "typicalSpeakers": ["Druidic circles"]
+  },
+  {
+    "name": "Dwarvish",
+    "type": "standard",
+    "typicalSpeakers": ["Dwarves"]
+  },
+  {
+    "name": "Elvish",
+    "type": "standard",
+    "typicalSpeakers": ["Elves"]
+  },
+  {
+    "name": "Giant",
+    "type": "standard",
+    "typicalSpeakers": ["Giants"]
+  },
+  {
+    "name": "Gnomish",
+    "type": "standard",
+    "typicalSpeakers": ["Gnomes"]
+  },
+  {
+    "name": "Goblin",
+    "type": "standard",
+    "typicalSpeakers": ["Goblinoids"]
+  },
+  {
+    "name": "Halfling",
+    "type": "standard",
+    "typicalSpeakers": ["Halflings"]
+  },
+  {
+    "name": "Infernal",
+    "type": "rare",
+    "typicalSpeakers": ["Devils of the Nine Hells"]
+  },
+  {
+    "name": "Orc",
+    "type": "standard",
+    "typicalSpeakers": ["Orcs"]
+  },
+  {
+    "name": "Primordial",
+    "type": "rare",
+    "typicalSpeakers": ["Elementals"],
+    "description": "Primordial has four dialects: Auran, Aquan, Ignan, and Terran, each associated with one of the four classical elements."
+  },
+  {
+    "name": "Sylvan",
+    "type": "rare",
+    "typicalSpeakers": ["The Feywild"]
+  },
+  {
+    "name": "Thieves' Cant",
+    "type": "rare",
+    "typicalSpeakers": ["Various criminal guilds"]
+  },
+  {
+    "name": "Undercommon",
+    "type": "rare",
+    "typicalSpeakers": ["The Underdark"]
+  }
+]

@@ -1,7 +1,7 @@
 // 5e.tools Decode Maps + Format Helpers + Tag Parser
 // Runtime "translation layer" for coded 5e.tools fields
 
-import type { Entry } from "../data/entry-types";
+import type { Entry } from "../types/entry-types";
 import type {
   SpellData,
   SpellRange,
@@ -19,7 +19,7 @@ import type {
   SpeciesData,
   BackgroundData,
   BaseItemData,
-} from "../data/types";
+} from "../types/data";
 
 // ═══════════════════════════════════════════════════════
 // DECODE MAPS

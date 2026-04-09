@@ -1,0 +1,137 @@
+[
+  {
+    "name": "Alchemist's Supplies",
+    "type": "AT|XPHB",
+    "weight": 8
+  },
+  {
+    "name": "Bagpipes",
+    "type": "INS|XPHB",
+    "weight": 6
+  },
+  {
+    "name": "Brewer's Supplies",
+    "type": "AT|XPHB",
+    "weight": 9
+  },
+  {
+    "name": "Calligrapher's Supplies",
+    "type": "AT|XPHB",
+    "weight": 5
+  },
+  {
+    "name": "Carpenter's Tools",
+    "type": "AT|XPHB",
+    "weight": 6
+  },
+  {
+    "name": "Cartographer's Tools",
+    "type": "AT|XPHB",
+    "weight": 6
+  },
+  {
+    "name": "Cobbler's Tools",
+    "type": "AT|XPHB",
+    "weight": 5
+  },
+  {
+    "name": "Cook's Utensils",
+    "type": "AT|XPHB",
+    "weight": 8
+  },
+  {
+    "name": "Drum",
+    "type": "INS|XPHB",
+    "weight": 3
+  },
+  {
+    "name": "Dulcimer",
+    "type": "INS|XPHB",
+    "weight": 10
+  },
+  {
+    "name": "Flute",
+    "type": "INS|XPHB",
+    "weight": 1
+  },
+  {
+    "name": "Glassblower's Tools",
+    "type": "AT|XPHB",
+    "weight": 5
+  },
+  {
+    "name": "Horn",
+    "type": "INS|XPHB",
+    "weight": 2
+  },
+  {
+    "name": "Jeweler's Tools",
+    "type": "AT|XPHB",
+    "weight": 2
+  },
+  {
+    "name": "Leatherworker's Tools",
+    "type": "AT|XPHB",
+    "weight": 5
+  },
+  {
+    "name": "Lute",
+    "type": "INS|XPHB",
+    "weight": 2
+  },
+  {
+    "name": "Lyre",
+    "type": "INS|XPHB",
+    "weight": 2
+  },
+  {
+    "name": "Mason's Tools",
+    "type": "AT|XPHB",
+    "weight": 8
+  },
+  {
+    "name": "Painter's Supplies",
+    "type": "AT|XPHB",
+    "weight": 5
+  },
+  {
+    "name": "Pan Flute",
+    "type": "INS|XPHB",
+    "weight": 2
+  },
+  {
+    "name": "Potter's Tools",
+    "type": "AT|XPHB",
+    "weight": 3
+  },
+  {
+    "name": "Shawm",
+    "type": "INS|XPHB",
+    "weight": 1
+  },
+  {
+    "name": "Smith's Tools",
+    "type": "AT|XPHB",
+    "weight": 8
+  },
+  {
+    "name": "Tinker's Tools",
+    "type": "AT|XPHB",
+    "weight": 10
+  },
+  {
+    "name": "Viol",
+    "type": "INS|XPHB",
+    "weight": 1
+  },
+  {
+    "name": "Weaver's Tools",
+    "type": "AT|XPHB",
+    "weight": 5
+  },
+  {
+    "name": "Woodcarver's Tools",
+    "type": "AT|XPHB",
+    "weight": 5
+  }
+]

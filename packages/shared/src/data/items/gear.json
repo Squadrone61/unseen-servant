@@ -1,0 +1,107 @@
+[
+  {
+    "name": "Arrow",
+    "type": "A|XPHB",
+    "weight": 0.05
+  },
+  {
+    "name": "Arrows (20)",
+    "type": "A|XPHB",
+    "weight": 1
+  },
+  {
+    "name": "Bolt",
+    "type": "A|XPHB",
+    "weight": 0.075
+  },
+  {
+    "name": "Bolts (20)",
+    "type": "A|XPHB",
+    "weight": 1.5
+  },
+  {
+    "name": "Crystal",
+    "type": "SCF|XPHB",
+    "weight": 1
+  },
+  {
+    "name": "Energy Cell",
+    "type": "AF|XDMG",
+    "weight": 0.5
+  },
+  {
+    "name": "Firearm Bullet",
+    "type": "A|XPHB",
+    "weight": 0.2
+  },
+  {
+    "name": "Firearm Bullets (10)",
+    "type": "A|XPHB",
+    "weight": 2
+  },
+  {
+    "name": "Needle",
+    "type": "A|XPHB",
+    "weight": 0.02
+  },
+  {
+    "name": "Needles (50)",
+    "type": "A|XPHB",
+    "weight": 1
+  },
+  {
+    "name": "Orb",
+    "type": "SCF|XPHB",
+    "weight": 3
+  },
+  {
+    "name": "Rod",
+    "type": "SCF|XPHB",
+    "weight": 2
+  },
+  {
+    "name": "Sling Bullet",
+    "type": "A|XPHB",
+    "weight": 0.075
+  },
+  {
+    "name": "Sling Bullets (20)",
+    "type": "A|XPHB",
+    "weight": 1.5
+  },
+  {
+    "name": "Staff",
+    "type": "SCF|XPHB",
+    "weaponCategory": "simple",
+    "damage": "1d6",
+    "damageType": "bludgeoning",
+    "versatileDamage": "1d8",
+    "properties": [
+      "V"
+    ],
+    "mastery": [
+      "Topple"
+    ],
+    "weight": 4
+  },
+  {
+    "name": "Wand",
+    "type": "SCF|XPHB",
+    "weight": 1
+  },
+  {
+    "name": "Wooden Staff",
+    "type": "SCF|XPHB",
+    "weaponCategory": "simple",
+    "damage": "1d6",
+    "damageType": "bludgeoning",
+    "versatileDamage": "1d8",
+    "properties": [
+      "V"
+    ],
+    "mastery": [
+      "Topple"
+    ],
+    "weight": 4
+  }
+]
