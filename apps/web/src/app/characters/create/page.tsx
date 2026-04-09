@@ -76,17 +76,31 @@ function getCompletedSteps(state: ReturnType<typeof useBuilder>["state"]): Set<S
   return completed;
 }
 
-// ─── Step placeholder content ────────────────────────────────────────────────
+// ─── Step content router ─────────────────────────────────────────────────────
+
+import { SpeciesStep } from "./steps/SpeciesStep";
+import { BackgroundStep } from "./steps/BackgroundStep";
+import { ClassStep } from "./steps/ClassStep";
 
 function StepContent({ stepId }: { stepId: StepId }) {
-  const label = STEPS.find((s) => s.id === stepId)?.label ?? stepId;
-  return (
-    <div className="bg-gray-800/60 border border-gray-700/40 rounded-lg p-8 text-center">
-      <p className="text-gray-500 text-sm" style={{ fontFamily: "var(--font-cinzel)" }}>
-        {label} — Coming Soon
-      </p>
-    </div>
-  );
+  switch (stepId) {
+    case "species":
+      return <SpeciesStep />;
+    case "background":
+      return <BackgroundStep />;
+    case "class":
+      return <ClassStep />;
+    default: {
+      const label = STEPS.find((s) => s.id === stepId)?.label ?? stepId;
+      return (
+        <div className="bg-gray-800/60 border border-gray-700/40 rounded-lg p-8 text-center">
+          <p className="text-gray-500 text-sm" style={{ fontFamily: "var(--font-cinzel)" }}>
+            {label} — Coming Soon
+          </p>
+        </div>
+      );
+    }
+  }
 }
 
 // ─── Step sidebar ────────────────────────────────────────────────────────────
