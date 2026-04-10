@@ -15,19 +15,28 @@ interface EditInnerProps {
 
 function EditInner({ id }: EditInnerProps) {
   const { dispatch } = useBuilder();
-  const { getCharacter } = useCharacterLibrary();
+  const { characters, getCharacter } = useCharacterLibrary();
   const router = useRouter();
+  const loaded = characters.length > 0 || typeof window === "undefined";
 
   useEffect(() => {
+    if (!loaded) return; // wait for localStorage to load
     const saved = getCharacter(id);
     if (!saved) {
-      // Character not found — redirect back to library
       router.replace("/characters");
       return;
     }
     const hydratedState = hydrateBuilderState(saved.character);
     dispatch({ type: "LOAD_STATE", state: hydratedState });
-  }, [id, getCharacter, dispatch, router]);
+  }, [id, loaded, getCharacter, dispatch, router]);
+
+  if (!loaded) {
+    return (
+      <div className="flex items-center justify-center min-h-screen text-gray-500">
+        Loading character...
+      </div>
+    );
+  }
 
   const saved = getCharacter(id);
   const editName = saved?.character.static.name ?? "Character";
