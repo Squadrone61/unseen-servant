@@ -1,60 +1,146 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { speciesArray } from "@unseen-servant/shared/data";
 import type { SpeciesDb } from "@unseen-servant/shared/data";
-import { EntityCard } from "@/components/builder/EntityCard";
-import { EntityGrid } from "@/components/builder/EntityGrid";
+import { DetailPopover } from "@/components/character/DetailPopover";
+import { EffectSummary } from "@/components/builder/EffectSummary";
 import { ChoicePicker } from "@/components/builder/ChoicePicker";
+import { RichText } from "@/components/ui/RichText";
 import { useBuilder } from "../BuilderContext";
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
+// ─── Species Detail Popover ──────────────────────────────────────────────────
 
-/** Build the quick-stat strings shown below the species name on each card. */
-function buildStats(s: SpeciesDb): string[] {
-  const stats: string[] = [];
+function SpeciesPopover({
+  species,
+  isSelected,
+  onToggleSelect,
+  onClose,
+  position,
+}: {
+  species: SpeciesDb;
+  isSelected: boolean;
+  onToggleSelect: () => void;
+  onClose: () => void;
+  position: { x: number; y: number };
+}) {
+  return (
+    <DetailPopover title={species.name} onClose={onClose} position={position}>
+      <div className="space-y-3">
+        {/* Quick stats */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-xs px-2 py-0.5 rounded-full bg-gray-700/50 text-gray-300 border border-gray-600/30">
+            {species.size.join("/")}
+          </span>
+          <span className="text-xs px-2 py-0.5 rounded-full bg-gray-700/50 text-gray-300 border border-gray-600/30">
+            {species.speed} ft
+          </span>
+          {species.darkvision && (
+            <span className="text-xs px-2 py-0.5 rounded-full bg-blue-900/40 text-blue-300 border border-blue-700/30">
+              Darkvision {species.darkvision} ft
+            </span>
+          )}
+        </div>
 
-  // Size — collapse identical single entries, join multiples
-  if (s.size.length === 1) {
-    stats.push(s.size[0]);
-  } else {
-    stats.push(s.size.join("/"));
-  }
+        {/* Effect badges */}
+        {species.effects && <EffectSummary effects={species.effects} />}
 
-  // Speed
-  stats.push(`${s.speed} ft`);
+        {/* Description */}
+        <div className="text-sm text-gray-300 leading-relaxed">
+          <RichText text={species.description} />
+        </div>
 
-  // Darkvision
-  if (s.darkvision) {
-    stats.push(`DV ${s.darkvision}`);
-  }
-
-  return stats;
+        {/* Select / Deselect button */}
+        <button
+          onClick={() => {
+            onToggleSelect();
+            onClose();
+          }}
+          className={`w-full mt-1 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+            isSelected
+              ? "bg-gray-700/60 hover:bg-gray-600/60 border border-gray-600/40 text-gray-300"
+              : "bg-amber-600/80 hover:bg-amber-500/80 text-amber-50 shadow-[0_0_12px_rgba(245,158,11,0.15)]"
+          }`}
+        >
+          {isSelected ? `Deselect ${species.name}` : `Select ${species.name}`}
+        </button>
+      </div>
+    </DetailPopover>
+  );
 }
 
-// ---------------------------------------------------------------------------
-// Component
-// ---------------------------------------------------------------------------
+// ─── Compact Species Card ────────────────────────────────────────────────────
+
+function SpeciesCard({
+  species,
+  isSelected,
+  onClick,
+}: {
+  species: SpeciesDb;
+  isSelected: boolean;
+  onClick: (e: React.MouseEvent) => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`
+        w-full text-left px-4 py-3 rounded-lg border transition-all duration-200
+        ${
+          isSelected
+            ? "border-amber-500/50 bg-amber-950/20 ring-1 ring-amber-500/20"
+            : "border-gray-700/30 bg-gray-800/40 hover:border-gray-600/50 hover:bg-gray-800/60"
+        }
+      `}
+    >
+      <div className="flex items-center justify-between gap-2">
+        <span
+          className={`font-[family-name:var(--font-cinzel)] text-sm truncate ${
+            isSelected ? "text-amber-200" : "text-gray-200"
+          }`}
+        >
+          {species.name}
+        </span>
+        <span className="text-xs text-gray-500 shrink-0 whitespace-nowrap">
+          {species.size.join("/")} · {species.speed} ft
+          {species.darkvision ? ` · DV ${species.darkvision}` : ""}
+        </span>
+      </div>
+    </button>
+  );
+}
+
+// ─── Main Step ───────────────────────────────────────────────────────────────
 
 export function SpeciesStep() {
   const { state, dispatch } = useBuilder();
+  const [popover, setPopover] = useState<{
+    species: SpeciesDb;
+    position: { x: number; y: number };
+  } | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
-  // Sort species alphabetically — the shared array order is insertion order
   const sortedSpecies = useMemo(
     () => [...speciesArray].sort((a, b) => a.name.localeCompare(b.name)),
     [],
   );
+
+  const filteredSpecies = useMemo(() => {
+    if (!searchQuery.trim()) return sortedSpecies;
+    const q = searchQuery.toLowerCase();
+    return sortedSpecies.filter((s) => s.name.toLowerCase().includes(q));
+  }, [sortedSpecies, searchQuery]);
 
   const selectedSpecies = useMemo(
     () => (state.species ? (sortedSpecies.find((s) => s.name === state.species) ?? null) : null),
     [state.species, sortedSpecies],
   );
 
-  function handleSelect(name: string) {
+  function handleCardClick(species: SpeciesDb, e: React.MouseEvent) {
+    setPopover({ species, position: { x: e.clientX, y: e.clientY } });
+  }
+
+  function handleToggleSelect(name: string) {
     if (state.species === name) {
-      // Deselect — allow user to go back to the grid
       dispatch({ type: "CLEAR_SPECIES" });
     } else {
       dispatch({ type: "SET_SPECIES", species: name });
@@ -65,11 +151,9 @@ export function SpeciesStep() {
     dispatch({ type: "SET_SPECIES_CHOICE", choiceId, values });
   }
 
-  const hasChoices = (selectedSpecies?.choices?.length ?? 0) > 0;
-
   return (
-    <section aria-labelledby="species-step-heading" className="flex flex-col gap-6">
-      {/* ── Section header ── */}
+    <section aria-labelledby="species-step-heading" className="flex flex-col gap-5">
+      {/* Header */}
       <div>
         <h1
           id="species-step-heading"
@@ -78,53 +162,88 @@ export function SpeciesStep() {
           Choose Your Species
         </h1>
         <p className="text-sm text-gray-400">
-          Your species shapes your physiology, innate abilities, and place in the world. You can
-          search by name below.
+          Your species shapes your physiology, innate abilities, and place in the world. Click any
+          species to see full details.
         </p>
       </div>
 
-      {/* ── Species grid ── */}
-      <EntityGrid<SpeciesDb>
-        items={sortedSpecies}
-        selected={state.species}
-        onSelect={handleSelect}
-        searchable
-        searchPlaceholder="Search species..."
-        renderCard={(item, isSelected) => (
-          <EntityCard
-            name={item.name}
-            description={item.description}
-            effects={item.effects}
-            stats={buildStats(item)}
-            selected={isSelected}
-            expandable
-            // onClick is handled by the EntityGrid wrapper
-          />
+      {/* Selected banner */}
+      {selectedSpecies && (
+        <div className="flex items-center gap-3 px-4 py-3 rounded-lg border border-amber-500/30 bg-amber-950/15">
+          <span className="text-sm text-amber-200 font-medium">✓ {selectedSpecies.name}</span>
+          <span className="text-xs text-gray-500">
+            {selectedSpecies.size.join("/")} · {selectedSpecies.speed} ft
+            {selectedSpecies.darkvision ? ` · Darkvision ${selectedSpecies.darkvision} ft` : ""}
+          </span>
+          <div className="flex-1" />
+          <button
+            onClick={(e) => handleCardClick(selectedSpecies, e)}
+            className="text-xs text-amber-400/70 hover:text-amber-300 transition-colors"
+          >
+            View Details
+          </button>
+          <button
+            onClick={() => dispatch({ type: "CLEAR_SPECIES" })}
+            className="text-xs text-gray-500 hover:text-red-400 transition-colors"
+          >
+            Change
+          </button>
+        </div>
+      )}
+
+      {/* Search */}
+      <div className="relative">
+        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">🔍</span>
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search species..."
+          className="w-full pl-9 pr-4 py-2.5 bg-gray-800/60 border border-gray-700/40 rounded-lg text-sm text-gray-200 placeholder-gray-500 focus:border-amber-500/50 focus:outline-none transition-colors"
+        />
+        {searchQuery && (
+          <button
+            onClick={() => setSearchQuery("")}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300"
+          >
+            ✕
+          </button>
         )}
-      />
+      </div>
 
-      {/* ── Choices section (only when a species is selected and it has choices) ── */}
-      {selectedSpecies && hasChoices && (
-        <>
-          {/* Divider */}
-          <div
-            className="h-px bg-gradient-to-r from-transparent via-amber-500/20 to-transparent my-6"
-            aria-hidden="true"
+      {/* Compact grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+        {filteredSpecies.map((species) => (
+          <SpeciesCard
+            key={species.name}
+            species={species}
+            isSelected={state.species === species.name}
+            onClick={(e) => handleCardClick(species, e)}
           />
+        ))}
+        {filteredSpecies.length === 0 && (
+          <p className="col-span-full text-center text-gray-500 text-sm py-6">
+            No species match your search.
+          </p>
+        )}
+      </div>
 
-          {/* Choices header */}
+      <p className="text-xs text-gray-600 text-center">{sortedSpecies.length} species available</p>
+
+      {/* Choices section (inline, below grid) */}
+      {selectedSpecies && selectedSpecies.choices && selectedSpecies.choices.length > 0 && (
+        <>
+          <div className="h-px bg-gradient-to-r from-transparent via-amber-500/20 to-transparent" />
           <div>
-            <h2 className="text-xl font-[family-name:var(--font-cinzel)] text-amber-200/90 mb-1">
+            <h2 className="text-lg font-[family-name:var(--font-cinzel)] text-amber-200/90 mb-1">
               {selectedSpecies.name} Traits
             </h2>
             <p className="text-sm text-gray-400">
               Make the following choices for your {selectedSpecies.name}.
             </p>
           </div>
-
-          {/* One ChoicePicker per choice */}
           <div className="flex flex-col gap-4">
-            {selectedSpecies.choices!.map((choice) => (
+            {selectedSpecies.choices.map((choice) => (
               <ChoicePicker
                 key={choice.id}
                 choice={choice}
@@ -136,6 +255,17 @@ export function SpeciesStep() {
             ))}
           </div>
         </>
+      )}
+
+      {/* Popover */}
+      {popover && (
+        <SpeciesPopover
+          species={popover.species}
+          isSelected={state.species === popover.species.name}
+          onToggleSelect={() => handleToggleSelect(popover.species.name)}
+          onClose={() => setPopover(null)}
+          position={popover.position}
+        />
       )}
     </section>
   );
