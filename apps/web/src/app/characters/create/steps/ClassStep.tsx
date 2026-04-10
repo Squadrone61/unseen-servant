@@ -206,7 +206,7 @@ function ClassCard({
         <div className="min-w-0 flex flex-col gap-0.5">
           <div className="flex items-center gap-2">
             <span
-              className={`font-[family-name:var(--font-cinzel)] text-sm truncate ${
+              className={`font-[family-name:var(--font-cinzel)] text-sm ${
                 isSelected ? "text-amber-200" : "text-gray-200"
               }`}
             >
@@ -220,7 +220,7 @@ function ClassCard({
               </span>
             )}
           </div>
-          <span className="text-xs text-gray-500 truncate">{profLine}</span>
+          <span className="text-xs text-gray-500">{profLine}</span>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <span className="text-xs text-gray-400 whitespace-nowrap tabular-nums">{statLine}</span>
@@ -349,7 +349,7 @@ function SubclassCard({
     >
       <div className="flex items-center justify-between gap-2">
         <span
-          className={`font-[family-name:var(--font-cinzel)] text-sm truncate ${
+          className={`font-[family-name:var(--font-cinzel)] text-sm ${
             isSelected ? "text-amber-200" : "text-gray-200"
           }`}
         >

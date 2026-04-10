@@ -146,12 +146,8 @@ function BackgroundCard({
           <InfoButton onClick={onDetailsClick} />
         </div>
         <div className="flex flex-col items-end gap-0.5 min-w-0">
-          {skillsText && (
-            <span className="text-xs text-gray-400 truncate text-right">{skillsText}</span>
-          )}
-          {toolsText && (
-            <span className="text-xs text-gray-500 truncate text-right">{toolsText}</span>
-          )}
+          {skillsText && <span className="text-xs text-gray-400 text-right">{skillsText}</span>}
+          {toolsText && <span className="text-xs text-gray-500 text-right">{toolsText}</span>}
         </div>
       </div>
     </button>
