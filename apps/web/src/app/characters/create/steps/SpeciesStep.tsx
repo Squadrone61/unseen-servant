@@ -79,7 +79,7 @@ function SpeciesCard({
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-1.5 min-w-0">
           <span
-            className={`font-[family-name:var(--font-cinzel)] text-sm truncate ${
+            className={`font-[family-name:var(--font-cinzel)] text-sm ${
               isSelected ? "text-amber-200" : "text-gray-200"
             }`}
           >

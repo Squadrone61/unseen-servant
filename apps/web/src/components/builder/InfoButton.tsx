@@ -12,8 +12,9 @@ export function InfoButton({
   className?: string;
 }) {
   return (
-    <button
-      type="button"
+    <span
+      role="button"
+      tabIndex={0}
       onClick={(e) => {
         e.stopPropagation();
         onClick(e);
@@ -31,6 +32,6 @@ export function InfoButton({
       <svg viewBox="0 0 16 16" fill="currentColor" className="w-3 h-3" aria-hidden="true">
         <path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1Zm0 2.5a1 1 0 1 1 0 2 1 1 0 0 1 0-2ZM6.75 7h1.5v4.5h-1.5V7Z" />
       </svg>
-    </button>
+    </span>
   );
 }

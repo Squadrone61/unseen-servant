@@ -148,11 +148,11 @@ export function createInitialState(): BuilderState {
     // Step 4
     abilityMethod: "standard-array",
     baseAbilities: {
-      strength: 8,
-      dexterity: 8,
-      constitution: 8,
-      intelligence: 8,
-      wisdom: 8,
+      strength: 15,
+      dexterity: 14,
+      constitution: 13,
+      intelligence: 12,
+      wisdom: 10,
       charisma: 8,
     },
 
@@ -265,24 +265,26 @@ function isStepComplete(step: BuilderStep, state: BuilderState): boolean {
     case "class":
       return state.classes.length > 0;
     case "abilities":
-      // All six base ability scores must be non-zero
-      return (Object.values(state.baseAbilities) as number[]).every((v) => v > 0);
-    case "feats":
-      // Complete when every unlocked slot has been assigned
-      return (
-        state.featSelections.length === 0 ||
-        state.featSelections.every((s) =>
-          s.type === "feat"
-            ? Boolean(s.featName)
-            : s.asiAbilities !== undefined && Object.keys(s.asiAbilities).length > 0,
-        )
+      // Complete when at least one score differs from default 8 (user has actively assigned)
+      return (Object.values(state.baseAbilities) as number[]).some((v) => v !== 8);
+    case "feats": {
+      // Need a class first; then complete when no ASI slots exist or all are filled
+      if (state.classes.length === 0) return false;
+      const totalLevel = state.classes.reduce((s, c) => s + c.level, 0);
+      const asiCount = [4, 8, 12, 16, 19].filter((l) => l <= totalLevel).length;
+      if (asiCount === 0) return true;
+      return state.featSelections.every((s) =>
+        s.type === "feat"
+          ? Boolean(s.featName)
+          : s.asiAbilities !== undefined && Object.keys(s.asiAbilities).length > 0,
       );
+    }
     case "spells":
-      // No hard requirement — a non-caster class will have no selections
-      return true;
+      // Complete once a class is selected (non-casters have nothing to pick)
+      return state.classes.length > 0;
     case "equipment":
-      // Always considered complete — equipment is optional
-      return true;
+      // Complete once a class is selected
+      return state.classes.length > 0;
     case "details":
       return state.name.trim().length > 0;
     default:
