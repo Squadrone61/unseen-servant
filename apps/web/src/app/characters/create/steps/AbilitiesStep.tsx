@@ -178,6 +178,7 @@ function StandardArrayAllocator({ bases, bgBonuses, onChange }: StandardArrayAll
               onChange={(e) => handleChange(ability, Number(e.target.value))}
               aria-label={`${ABILITY_LABELS[ability]} base score`}
               className="bg-gray-900/60 border border-gray-700/40 rounded px-2 py-1 w-16 text-center text-sm text-gray-200 focus:outline-none focus:border-amber-500/50 transition-colors"
+              style={{ colorScheme: "dark" }}
             >
               {availableOptions.map((opt) => (
                 <option key={opt.value} value={opt.value} disabled={opt.disabled}>

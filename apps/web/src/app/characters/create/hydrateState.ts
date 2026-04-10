@@ -106,6 +106,7 @@ export function hydrateBuilderState(character: CharacterData): BuilderState {
     appearance: s.appearance ?? {},
     backstory: s.backstory ?? "",
     alignment: "",
+    traits: s.traits ?? {},
     equipment: character.dynamic.inventory,
     currency: character.dynamic.currency,
   };

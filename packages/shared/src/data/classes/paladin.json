@@ -3,51 +3,245 @@
   "description": "A holy warrior bound by a sacred oath, the Paladin channels divine power to protect the innocent, smite evil, and inspire allies with righteous might.",
   "effects": {
     "properties": [
-      { "type": "proficiency", "category": "armor", "value": "Light Armor" },
-      { "type": "proficiency", "category": "armor", "value": "Medium Armor" },
-      { "type": "proficiency", "category": "armor", "value": "Heavy Armor" },
-      { "type": "proficiency", "category": "armor", "value": "Shield" },
-      { "type": "proficiency", "category": "weapon", "value": "Simple Weapons" },
-      { "type": "proficiency", "category": "weapon", "value": "Martial Weapons" },
-      { "type": "proficiency", "category": "save", "value": "Wisdom" },
-      { "type": "proficiency", "category": "save", "value": "Charisma" }
+      {
+        "type": "proficiency",
+        "category": "armor",
+        "value": "Light Armor"
+      },
+      {
+        "type": "proficiency",
+        "category": "armor",
+        "value": "Medium Armor"
+      },
+      {
+        "type": "proficiency",
+        "category": "armor",
+        "value": "Heavy Armor"
+      },
+      {
+        "type": "proficiency",
+        "category": "armor",
+        "value": "Shield"
+      },
+      {
+        "type": "proficiency",
+        "category": "weapon",
+        "value": "Simple Weapons"
+      },
+      {
+        "type": "proficiency",
+        "category": "weapon",
+        "value": "Martial Weapons"
+      },
+      {
+        "type": "proficiency",
+        "category": "save",
+        "value": "Wisdom"
+      },
+      {
+        "type": "proficiency",
+        "category": "save",
+        "value": "Charisma"
+      }
     ]
   },
   "hitDiceFaces": 10,
-  "primaryAbility": ["Strength", "Charisma"],
-  "savingThrows": ["wisdom", "charisma"],
-  "armorProficiencies": ["Light Armor", "Medium Armor", "Heavy Armor", "Shield"],
-  "weaponProficiencies": ["Simple Weapons", "Martial Weapons"],
+  "primaryAbility": [
+    "Strength",
+    "Charisma"
+  ],
+  "savingThrows": [
+    "wisdom",
+    "charisma"
+  ],
+  "armorProficiencies": [
+    "Light Armor",
+    "Medium Armor",
+    "Heavy Armor",
+    "Shield"
+  ],
+  "weaponProficiencies": [
+    "Simple Weapons",
+    "Martial Weapons"
+  ],
   "toolProficiencies": [],
   "skillChoices": {
-    "from": ["Athletics", "Insight", "Intimidation", "Medicine", "Persuasion", "Religion"],
+    "from": [
+      "Athletics",
+      "Insight",
+      "Intimidation",
+      "Medicine",
+      "Persuasion",
+      "Religion"
+    ],
     "count": 2
   },
   "spellcastingAbility": "charisma",
   "casterType": "half",
   "spellSlotTable": [
-    [2, 0, 0, 0, 0],
-    [2, 0, 0, 0, 0],
-    [3, 0, 0, 0, 0],
-    [3, 0, 0, 0, 0],
-    [4, 2, 0, 0, 0],
-    [4, 2, 0, 0, 0],
-    [4, 3, 0, 0, 0],
-    [4, 3, 0, 0, 0],
-    [4, 3, 2, 0, 0],
-    [4, 3, 2, 0, 0],
-    [4, 3, 3, 0, 0],
-    [4, 3, 3, 0, 0],
-    [4, 3, 3, 1, 0],
-    [4, 3, 3, 1, 0],
-    [4, 3, 3, 2, 0],
-    [4, 3, 3, 2, 0],
-    [4, 3, 3, 3, 1],
-    [4, 3, 3, 3, 1],
-    [4, 3, 3, 3, 2],
-    [4, 3, 3, 3, 2]
+    [
+      2,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      2,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      3,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      3,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      4,
+      2,
+      0,
+      0,
+      0
+    ],
+    [
+      4,
+      2,
+      0,
+      0,
+      0
+    ],
+    [
+      4,
+      3,
+      0,
+      0,
+      0
+    ],
+    [
+      4,
+      3,
+      0,
+      0,
+      0
+    ],
+    [
+      4,
+      3,
+      2,
+      0,
+      0
+    ],
+    [
+      4,
+      3,
+      2,
+      0,
+      0
+    ],
+    [
+      4,
+      3,
+      3,
+      0,
+      0
+    ],
+    [
+      4,
+      3,
+      3,
+      0,
+      0
+    ],
+    [
+      4,
+      3,
+      3,
+      1,
+      0
+    ],
+    [
+      4,
+      3,
+      3,
+      1,
+      0
+    ],
+    [
+      4,
+      3,
+      3,
+      2,
+      0
+    ],
+    [
+      4,
+      3,
+      3,
+      2,
+      0
+    ],
+    [
+      4,
+      3,
+      3,
+      3,
+      1
+    ],
+    [
+      4,
+      3,
+      3,
+      3,
+      1
+    ],
+    [
+      4,
+      3,
+      3,
+      3,
+      2
+    ],
+    [
+      4,
+      3,
+      3,
+      3,
+      2
+    ]
   ],
-  "preparedSpellsProgression": [2, 3, 4, 5, 6, 6, 7, 7, 9, 9, 10, 10, 11, 11, 12, 12, 14, 14, 15, 15],
+  "preparedSpellsProgression": [
+    2,
+    3,
+    4,
+    5,
+    6,
+    6,
+    7,
+    7,
+    9,
+    9,
+    10,
+    10,
+    11,
+    11,
+    12,
+    12,
+    14,
+    14,
+    15,
+    15
+  ],
   "features": [
     {
       "name": "Lay on Hands",
@@ -56,7 +250,12 @@
       "description": "Your blessed touch can heal wounds. You have a pool of healing power that replenishes when you finish a {rule:Long Rest}. With that pool, you can restore a total number of {rule:Hit Points} equal to five times your Paladin level.\n\nAs a {rule:Bonus Action}, you can touch a creature (which could be yourself) and draw power from the pool of healing to restore a number of {rule:Hit Points} to that creature, up to the maximum amount remaining in the pool.\n\nYou can also expend 5 {rule:Hit Points} from the pool of healing power to remove the {condition:Poisoned} condition from the creature; those points don't also restore {rule:Hit Points} to the creature.",
       "effects": {
         "properties": [
-          { "type": "resource", "name": "Lay on Hands", "maxUses": "5 * clvl", "resetOn": "long" }
+          {
+            "type": "resource",
+            "name": "Lay on Hands",
+            "maxUses": "5 * clvl",
+            "resetOn": "long"
+          }
         ]
       }
     },
@@ -73,7 +272,10 @@
       "description": "Your training with weapons allows you to use the mastery properties of two kinds of weapons of your choice with which you have proficiency, such as Longswords and Javelins.\n\nWhenever you finish a {rule:Long Rest}, you can change the kinds of weapons you chose. For example, you could switch to using the mastery properties of Halberds and Flails.",
       "effects": {
         "properties": [
-          { "type": "note", "text": "You can use the mastery properties of 2 weapons of your choice (weapons you have proficiency with). You can change your choices on each Long Rest." }
+          {
+            "type": "note",
+            "text": "You can use the mastery properties of 2 weapons of your choice (weapons you have proficiency with). You can change your choices on each Long Rest."
+          }
         ]
       }
     },
@@ -83,7 +285,13 @@
       "className": "Paladin",
       "description": "You gain a {rule:Fighting Style} feat of your choice. Instead of choosing one of those feats, you can choose the Blessed Warrior option: you learn two Cleric cantrips of your choice, which count as Paladin spells for you, and Wisdom is your spellcasting ability for them. Whenever you gain a Paladin level, you can replace one of these cantrips with another Cleric cantrip.",
       "choices": [
-        { "id": "fighting-style", "label": "Fighting Style", "count": 1, "timing": "permanent", "pool": "fighting_style" }
+        {
+          "id": "fighting-style",
+          "label": "Fighting Style",
+          "count": 1,
+          "timing": "permanent",
+          "pool": "fighting_style"
+        }
       ]
     },
     {
@@ -93,8 +301,17 @@
       "description": "You always have the {spell:Divine Smite} spell prepared. In addition, you can cast it without expending a spell slot, but you must finish a {rule:Long Rest} before you can cast it in this way again.",
       "effects": {
         "properties": [
-          { "type": "spell_grant", "spell": "Divine Smite", "usage": "always_prepared" },
-          { "type": "resource", "name": "Paladin's Smite (free cast)", "maxUses": 1, "resetOn": "long" }
+          {
+            "type": "spell_grant",
+            "spell": "Divine Smite",
+            "usage": "always_prepared"
+          },
+          {
+            "type": "resource",
+            "name": "Paladin's Smite (free cast)",
+            "maxUses": 1,
+            "resetOn": "long"
+          }
         ]
       }
     },
@@ -105,7 +322,12 @@
       "description": "You can channel divine energy directly from the Outer Planes, using it to fuel magical effects. You start with one such effect: Divine Sense, which is described below. Other Paladin features give additional Channel Divinity effect options. Each time you use this class's Channel Divinity, you choose which effect from this class to create.\n\nYou can use this class's Channel Divinity twice. You regain one of its expended uses when you finish a {rule:Short Rest}, and you regain all expended uses when you finish a {rule:Long Rest}. You gain an additional use when you reach Paladin level 11.\n\nIf a Channel Divinity effect requires a saving throw, the DC equals the spell save DC from this class's Spellcasting feature.",
       "effects": {
         "properties": [
-          { "type": "resource", "name": "Channel Divinity", "maxUses": "table(3:2, 11:3)", "resetOn": "short" }
+          {
+            "type": "resource",
+            "name": "Channel Divinity",
+            "maxUses": "table(3:2, 11:3)",
+            "resetOn": "short"
+          }
         ]
       }
     },
@@ -116,7 +338,10 @@
       "description": "As a {rule:Bonus Action}, you can open your awareness to detect Celestials, Fiends, and Undead. For the next 10 minutes or until you have the {condition:Incapacitated} condition, you know the location of any creature of those types within 60 feet of yourself, and you know its creature type. Within the same radius, you also detect the presence of any place or object that has been consecrated or desecrated, as with the {spell:Hallow} spell.\n\n(Consumes one use of Channel Divinity.)",
       "effects": {
         "properties": [
-          { "type": "note", "text": "Channel Divinity — Bonus Action: detect Celestials, Fiends, and Undead within 60 ft for 10 minutes (or until Incapacitated). Learn creature type and location, and sense consecrated/desecrated places and objects." }
+          {
+            "type": "note",
+            "text": "Channel Divinity — Bonus Action: detect Celestials, Fiends, and Undead within 60 ft for 10 minutes (or until Incapacitated). Learn creature type and location, and sense consecrated/desecrated places and objects."
+          }
         ]
       }
     },
@@ -139,7 +364,10 @@
       "description": "You can attack twice instead of once whenever you take the {action:Attack} action on your turn.",
       "effects": {
         "properties": [
-          { "type": "extra_attack", "count": 1 }
+          {
+            "type": "extra_attack",
+            "count": 1
+          }
         ]
       }
     },
@@ -150,8 +378,17 @@
       "description": "You can call on the aid of an otherworldly steed. You always have the {spell:Find Steed} spell prepared.\n\nYou can also cast the spell once without expending a spell slot, and you regain the ability to do so when you finish a {rule:Long Rest}.",
       "effects": {
         "properties": [
-          { "type": "spell_grant", "spell": "Find Steed", "usage": "always_prepared" },
-          { "type": "resource", "name": "Faithful Steed (free cast)", "maxUses": 1, "resetOn": "long" }
+          {
+            "type": "spell_grant",
+            "spell": "Find Steed",
+            "usage": "always_prepared"
+          },
+          {
+            "type": "resource",
+            "name": "Faithful Steed (free cast)",
+            "maxUses": 1,
+            "resetOn": "long"
+          }
         ]
       }
     },
@@ -162,10 +399,17 @@
       "description": "You radiate a protective, unseeable aura in a 10-foot Emanation that originates from you. The aura is inactive while you have the {condition:Incapacitated} condition.\n\nYou and your allies in the aura gain a bonus to saving throws equal to your Charisma modifier (minimum bonus of +1).\n\nIf another Paladin is present, a creature can benefit from only one Aura of Protection at a time; the creature chooses which aura while in them.",
       "effects": {
         "modifiers": [
-          { "target": "save", "value": "max(cha, 1)", "condition": "while not Incapacitated" }
+          {
+            "target": "save",
+            "value": "max(cha, 1)",
+            "condition": "while not Incapacitated"
+          }
         ],
         "properties": [
-          { "type": "note", "text": "Allies within 10 ft also gain the same bonus to saving throws. Aura is inactive while you have the Incapacitated condition. Expanded to 30 ft at level 18." }
+          {
+            "type": "note",
+            "text": "Allies within 10 ft also gain the same bonus to saving throws. Aura is inactive while you have the Incapacitated condition. Expanded to 30 ft at level 18."
+          }
         ]
       }
     },
@@ -188,7 +432,10 @@
       "description": "As a Magic action, you can expend one use of this class's Channel Divinity to overwhelm foes with awe. As you present your {item:Holy Symbol} or weapon, you can target a number of creatures equal to your Charisma modifier (minimum of one creature) that you can see within 60 feet of yourself. Each target must succeed on a Wisdom saving throw or have the {condition:Frightened} condition for 1 minute or until it takes any damage. While {condition:Frightened} in this way, a target can do only one of the following on its turns: move, take an action, or take a {rule:Bonus Action}.",
       "effects": {
         "properties": [
-          { "type": "note", "text": "Channel Divinity — Magic action: targets up to CHA modifier (min 1) creatures within 60 ft. WIS save or Frightened 1 minute (ends on damage). While Frightened this way, target can only do one of: move, action, or Bonus Action on its turn." }
+          {
+            "type": "note",
+            "text": "Channel Divinity — Magic action: targets up to CHA modifier (min 1) creatures within 60 ft. WIS save or Frightened 1 minute (ends on damage). While Frightened this way, target can only do one of: move, action, or Bonus Action on its turn."
+          }
         ]
       }
     },
@@ -199,8 +446,14 @@
       "description": "You and your allies have {rule:Immunity|immunity} to the {condition:Frightened} condition while in your Aura of Protection. If a {condition:Frightened} ally enters the aura, that condition has no effect on that ally while there.",
       "effects": {
         "properties": [
-          { "type": "condition_immunity", "conditionName": "Frightened" },
-          { "type": "note", "text": "Allies within your Aura of Protection also have immunity to the Frightened condition. A Frightened ally who enters the aura has that condition suppressed while inside." }
+          {
+            "type": "condition_immunity",
+            "conditionName": "Frightened"
+          },
+          {
+            "type": "note",
+            "text": "Allies within your Aura of Protection also have immunity to the Frightened condition. A Frightened ally who enters the aura has that condition suppressed while inside."
+          }
         ]
       }
     },
@@ -211,7 +464,10 @@
       "description": "Your strikes now carry supernatural power. When you hit a target with an attack roll using a Melee weapon or an Unarmed Strike, the target takes an extra 1d8 Radiant damage.",
       "effects": {
         "properties": [
-          { "type": "note", "text": "Melee weapon attacks and Unarmed Strikes deal an extra 1d8 Radiant damage on a hit." }
+          {
+            "type": "note",
+            "text": "Melee weapon attacks and Unarmed Strikes deal an extra 1d8 Radiant damage on a hit."
+          }
         ]
       }
     },
@@ -228,7 +484,10 @@
       "description": "When you use Lay on Hands on a creature, you can also remove one or more of the following conditions from the creature: {condition:Blinded}, {condition:Charmed}, {condition:Deafened}, {condition:Frightened}, {condition:Paralyzed}, or {condition:Stunned}. You must expend 5 {rule:Hit Points} from the healing pool of Lay on Hands for each of these conditions you remove; those points don't also restore {rule:Hit Points} to the creature.",
       "effects": {
         "properties": [
-          { "type": "note", "text": "When using Lay on Hands, you can also expend 5 HP from the healing pool per condition to remove Blinded, Charmed, Deafened, Frightened, Paralyzed, or Stunned from the target (those points don't restore HP)." }
+          {
+            "type": "note",
+            "text": "When using Lay on Hands, you can also expend 5 HP from the healing pool per condition to remove Blinded, Charmed, Deafened, Frightened, Paralyzed, or Stunned from the target (those points don't restore HP)."
+          }
         ]
       }
     },
@@ -251,7 +510,10 @@
       "description": "Your Aura of Protection is now a 30-foot Emanation.",
       "effects": {
         "properties": [
-          { "type": "note", "text": "Aura of Protection radius increases to 30 feet." }
+          {
+            "type": "note",
+            "text": "Aura of Protection radius increases to 30 feet."
+          }
         ]
       }
     },
@@ -275,11 +537,26 @@
       "className": "Paladin",
       "description": "The Oath of Devotion binds Paladins to the ideals of justice and order. These Paladins meet the archetype of the knight in shining armor. They hold themselves to the highest standards of conduct and use their gods' tenets as the measure of personal devotion. These paladins share the following tenets: Let your word be your promise. Protect the weak and never fear to act. Let your honorable deeds be an example.",
       "oathSpells": {
-        "3": ["Protection from Evil and Good", "Shield of Faith"],
-        "5": ["Aid", "Zone of Truth"],
-        "9": ["Beacon of Hope", "Dispel Magic"],
-        "13": ["Freedom of Movement", "Guardian of Faith"],
-        "17": ["Commune", "Flame Strike"]
+        "3": [
+          "Protection from Evil and Good",
+          "Shield of Faith"
+        ],
+        "5": [
+          "Aid",
+          "Zone of Truth"
+        ],
+        "9": [
+          "Beacon of Hope",
+          "Dispel Magic"
+        ],
+        "13": [
+          "Freedom of Movement",
+          "Guardian of Faith"
+        ],
+        "17": [
+          "Commune",
+          "Flame Strike"
+        ]
       },
       "features": [
         {
@@ -290,16 +567,56 @@
           "description": "You swear the Oath of Devotion, upholding the ideals of justice and order. You gain Oath Spells and a Channel Divinity option.\n\n**Oath Spells.** You always have certain spells prepared. At Paladin level 3: {spell:Protection from Evil and Good}, {spell:Shield of Faith}. Level 5: {spell:Aid}, {spell:Zone of Truth}. Level 9: {spell:Beacon of Hope}, {spell:Dispel Magic}. Level 13: {spell:Freedom of Movement}, {spell:Guardian of Faith}. Level 17: {spell:Commune}, {spell:Flame Strike}.",
           "effects": {
             "properties": [
-              { "type": "spell_grant", "spell": "Protection from Evil and Good", "usage": "always_prepared" },
-              { "type": "spell_grant", "spell": "Shield of Faith", "usage": "always_prepared" },
-              { "type": "spell_grant", "spell": "Aid", "usage": "always_prepared" },
-              { "type": "spell_grant", "spell": "Zone of Truth", "usage": "always_prepared" },
-              { "type": "spell_grant", "spell": "Beacon of Hope", "usage": "always_prepared" },
-              { "type": "spell_grant", "spell": "Dispel Magic", "usage": "always_prepared" },
-              { "type": "spell_grant", "spell": "Freedom of Movement", "usage": "always_prepared" },
-              { "type": "spell_grant", "spell": "Guardian of Faith", "usage": "always_prepared" },
-              { "type": "spell_grant", "spell": "Commune", "usage": "always_prepared" },
-              { "type": "spell_grant", "spell": "Flame Strike", "usage": "always_prepared" }
+              {
+                "type": "spell_grant",
+                "spell": "Protection from Evil and Good",
+                "usage": "always_prepared"
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Shield of Faith",
+                "usage": "always_prepared"
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Aid",
+                "usage": "always_prepared"
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Zone of Truth",
+                "usage": "always_prepared"
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Beacon of Hope",
+                "usage": "always_prepared"
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Dispel Magic",
+                "usage": "always_prepared"
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Freedom of Movement",
+                "usage": "always_prepared"
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Guardian of Faith",
+                "usage": "always_prepared"
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Commune",
+                "usage": "always_prepared"
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Flame Strike",
+                "usage": "always_prepared"
+              }
             ]
           }
         },
@@ -311,7 +628,10 @@
           "description": "When you take the {action:Attack} action, you can expend one use of your Channel Divinity to imbue one Melee weapon that you are holding with positive energy. For 10 minutes or until you use this feature again, you add your Charisma modifier to attack rolls you make with that weapon (minimum bonus of +1), and each time you hit with it, you cause it to deal its normal damage type or Radiant damage.\n\nThe weapon also emits Bright Light in a 20-foot radius and Dim Light 20 feet beyond that.\n\nYou can end this effect early (no action required). This effect also ends if you aren't carrying the weapon.",
           "effects": {
             "properties": [
-              { "type": "note", "text": "Channel Divinity — when you take the Attack action: imbue one held Melee weapon for 10 minutes. Add CHA modifier (min +1) to attack rolls with that weapon; hits deal its normal damage type or Radiant (your choice). Weapon emits Bright Light 20 ft, Dim Light 20 ft beyond. Ends early if you stop carrying the weapon or use this feature again." }
+              {
+                "type": "note",
+                "text": "Channel Divinity — when you take the Attack action: imbue one held Melee weapon for 10 minutes. Add CHA modifier (min +1) to attack rolls with that weapon; hits deal its normal damage type or Radiant (your choice). Weapon emits Bright Light 20 ft, Dim Light 20 ft beyond. Ends early if you stop carrying the weapon or use this feature again."
+              }
             ]
           }
         },
@@ -323,8 +643,14 @@
           "description": "You and your allies have {rule:Immunity|immunity} to the {condition:Charmed} condition while in your Aura of Protection. If a {condition:Charmed} ally enters the aura, that condition has no effect on that ally while there.",
           "effects": {
             "properties": [
-              { "type": "condition_immunity", "conditionName": "Charmed" },
-              { "type": "note", "text": "Allies within your Aura of Protection also have immunity to the Charmed condition. A Charmed ally who enters the aura has that condition suppressed while inside." }
+              {
+                "type": "condition_immunity",
+                "conditionName": "Charmed"
+              },
+              {
+                "type": "note",
+                "text": "Allies within your Aura of Protection also have immunity to the Charmed condition. A Charmed ally who enters the aura has that condition suppressed while inside."
+              }
             ]
           }
         },
@@ -336,7 +662,10 @@
           "description": "Your magical smite now radiates protective energy. Whenever you cast {spell:Divine Smite}, you and your allies have {rule:Cover|Half Cover} while in your Aura of Protection. The aura has this benefit until the start of your next turn.",
           "effects": {
             "properties": [
-              { "type": "note", "text": "Whenever you cast Divine Smite, you and allies in your Aura of Protection gain Half Cover until the start of your next turn." }
+              {
+                "type": "note",
+                "text": "Whenever you cast Divine Smite, you and allies in your Aura of Protection gain Half Cover until the start of your next turn."
+              }
             ]
           }
         },
@@ -348,13 +677,25 @@
           "description": "As a {rule:Bonus Action}, you can imbue your Aura of Protection with holy power, granting the benefits below for 10 minutes or until you end them (no action required). Once you use this feature, you can't use it again until you finish a {rule:Long Rest}. You can also restore your use of it by expending a level 5 spell slot (no action required).\n\n**Holy Ward.** You have {rule:Advantage} on any saving throw you are forced to make by a Fiend or an Undead.\n\n**Radiant Damage.** Whenever an enemy starts its turn in the aura, that creature takes Radiant damage equal to your Charisma modifier plus your Proficiency Bonus.\n\n**Sunlight.** The aura is filled with Bright Light that is sunlight.",
           "effects": {
             "properties": [
-              { "type": "resource", "name": "Holy Nimbus", "maxUses": 1, "resetOn": "long" }
+              {
+                "type": "resource",
+                "name": "Holy Nimbus",
+                "maxUses": 1,
+                "resetOn": "long"
+              }
             ]
           },
           "activation": {
             "properties": [
-              { "type": "advantage", "on": "save", "condition": "against Fiends and Undead" },
-              { "type": "note", "text": "Holy Ward: advantage on saves forced by Fiends or Undead. Radiant Damage: enemies starting their turn in the aura take Radiant damage equal to CHA modifier + Proficiency Bonus. Sunlight: aura filled with Bright Light that counts as sunlight." }
+              {
+                "type": "advantage",
+                "on": "save",
+                "condition": "against Fiends and Undead"
+              },
+              {
+                "type": "note",
+                "text": "Holy Ward: advantage on saves forced by Fiends or Undead. Radiant Damage: enemies starting their turn in the aura take Radiant damage equal to CHA modifier + Proficiency Bonus. Sunlight: aura filled with Bright Light that counts as sunlight."
+              }
             ]
           }
         }
@@ -366,11 +707,26 @@
       "className": "Paladin",
       "description": "Paladins who take the Oath of Glory believe they and their companions are destined to achieve glory through deeds of heroism. They train diligently and encourage their companions, so they're all ready when destiny calls. These paladins share the following tenets: Endeavor to be known by your deeds. Face hardships with courage. Inspire others to strive for glory.",
       "oathSpells": {
-        "3": ["Guiding Bolt", "Heroism"],
-        "5": ["Enhance Ability", "Magic Weapon"],
-        "9": ["Haste", "Protection from Energy"],
-        "13": ["Compulsion", "Freedom of Movement"],
-        "17": ["Legend Lore", "Yolande's Regal Presence"]
+        "3": [
+          "Guiding Bolt",
+          "Heroism"
+        ],
+        "5": [
+          "Enhance Ability",
+          "Magic Weapon"
+        ],
+        "9": [
+          "Haste",
+          "Protection from Energy"
+        ],
+        "13": [
+          "Compulsion",
+          "Freedom of Movement"
+        ],
+        "17": [
+          "Legend Lore",
+          "Yolande's Regal Presence"
+        ]
       },
       "features": [
         {
@@ -381,16 +737,56 @@
           "description": "You swear the Oath of Glory, striving for the heights of heroism. You gain Oath Spells and two Channel Divinity options.\n\n**Oath Spells.** You always have certain spells prepared. At Paladin level 3: {spell:Guiding Bolt}, {spell:Heroism}. Level 5: {spell:Enhance Ability}, {spell:Magic Weapon}. Level 9: {spell:Haste}, {spell:Protection from Energy}. Level 13: {spell:Compulsion}, {spell:Freedom of Movement}. Level 17: {spell:Legend Lore}, {spell:Yolande's Regal Presence}.",
           "effects": {
             "properties": [
-              { "type": "spell_grant", "spell": "Guiding Bolt", "usage": "always_prepared" },
-              { "type": "spell_grant", "spell": "Heroism", "usage": "always_prepared" },
-              { "type": "spell_grant", "spell": "Enhance Ability", "usage": "always_prepared" },
-              { "type": "spell_grant", "spell": "Magic Weapon", "usage": "always_prepared" },
-              { "type": "spell_grant", "spell": "Haste", "usage": "always_prepared" },
-              { "type": "spell_grant", "spell": "Protection from Energy", "usage": "always_prepared" },
-              { "type": "spell_grant", "spell": "Compulsion", "usage": "always_prepared" },
-              { "type": "spell_grant", "spell": "Freedom of Movement", "usage": "always_prepared" },
-              { "type": "spell_grant", "spell": "Legend Lore", "usage": "always_prepared" },
-              { "type": "spell_grant", "spell": "Yolande's Regal Presence", "usage": "always_prepared" }
+              {
+                "type": "spell_grant",
+                "spell": "Guiding Bolt",
+                "usage": "always_prepared"
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Heroism",
+                "usage": "always_prepared"
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Enhance Ability",
+                "usage": "always_prepared"
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Magic Weapon",
+                "usage": "always_prepared"
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Haste",
+                "usage": "always_prepared"
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Protection from Energy",
+                "usage": "always_prepared"
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Compulsion",
+                "usage": "always_prepared"
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Freedom of Movement",
+                "usage": "always_prepared"
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Legend Lore",
+                "usage": "always_prepared"
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Yolande's Regal Presence",
+                "usage": "always_prepared"
+              }
             ]
           }
         },
@@ -402,7 +798,10 @@
           "description": "Immediately after you cast {spell:Divine Smite}, you can expend one use of your Channel Divinity and distribute Temporary Hit Points to creatures of your choice within 30 feet of yourself, which can include you. The total number of Temporary Hit Points equals 2d8 plus your Paladin level, divided among the chosen creatures however you like.",
           "effects": {
             "properties": [
-              { "type": "note", "text": "Channel Divinity — immediately after casting Divine Smite: distribute Temporary Hit Points equal to 2d8 + Paladin level among creatures of your choice within 30 ft (including yourself), divided however you like." }
+              {
+                "type": "note",
+                "text": "Channel Divinity — immediately after casting Divine Smite: distribute Temporary Hit Points equal to 2d8 + Paladin level among creatures of your choice within 30 ft (including yourself), divided however you like."
+              }
             ]
           }
         },
@@ -414,7 +813,10 @@
           "description": "As a {rule:Bonus Action}, you can expend one use of your Channel Divinity to augment your athleticism. For 1 hour, you have {rule:Advantage} on Strength (Athletics) and Dexterity (Acrobatics) checks, and the distance of your Long and High Jumps increases by 10 feet (this extra distance costs movement as normal).",
           "effects": {
             "properties": [
-              { "type": "note", "text": "Channel Divinity — Bonus Action: for 1 hour, gain advantage on Athletics and Acrobatics checks, and Long/High Jump distances increase by 10 feet." }
+              {
+                "type": "note",
+                "text": "Channel Divinity — Bonus Action: for 1 hour, gain advantage on Athletics and Acrobatics checks, and Long/High Jump distances increase by 10 feet."
+              }
             ]
           }
         },
@@ -426,10 +828,16 @@
           "description": "Your Speed increases by 10 feet.\n\nIn addition, whenever an ally enters your Aura of Protection for the first time on a turn or starts their turn there, the ally's Speed increases by 10 feet until the end of their next turn.",
           "effects": {
             "modifiers": [
-              { "target": "speed", "value": 10 }
+              {
+                "target": "speed",
+                "value": 10
+              }
             ],
             "properties": [
-              { "type": "note", "text": "Allies entering your Aura of Protection for the first time on a turn, or starting their turn there, gain +10 ft Speed until the end of their next turn." }
+              {
+                "type": "note",
+                "text": "Allies entering your Aura of Protection for the first time on a turn, or starting their turn there, gain +10 ft Speed until the end of their next turn."
+              }
             ]
           }
         },
@@ -441,8 +849,16 @@
           "description": "You can turn defense into a sudden strike. When you or another creature you can see within 10 feet of you is hit by an attack roll, you can take a {rule:Reaction} to grant a bonus to the target's AC against that attack, potentially causing it to miss. The bonus equals your Charisma modifier (minimum of +1). If the attack misses, you can make one attack with a weapon against the attacker as part of this Reaction if the attacker is within your weapon's range.\n\nYou can use this feature a number of times equal to your Charisma modifier (minimum of once), and you regain all expended uses when you finish a {rule:Long Rest}.",
           "effects": {
             "properties": [
-              { "type": "resource", "name": "Glorious Defense", "maxUses": "max(cha, 1)", "resetOn": "long" },
-              { "type": "note", "text": "Reaction: when you or a creature within 10 ft is hit by an attack, grant bonus equal to CHA modifier (min +1) to that creature's AC against the triggering attack. If the attack then misses, you can make one weapon attack against the attacker as part of this Reaction (if in range)." }
+              {
+                "type": "resource",
+                "name": "Glorious Defense",
+                "maxUses": "max(cha, 1)",
+                "resetOn": "long"
+              },
+              {
+                "type": "note",
+                "text": "Reaction: when you or a creature within 10 ft is hit by an attack, grant bonus equal to CHA modifier (min +1) to that creature's AC against the triggering attack. If the attack then misses, you can make one weapon attack against the attacker as part of this Reaction (if in range)."
+              }
             ]
           }
         },
@@ -454,13 +870,24 @@
           "description": "You can empower yourself with the legends of your great deeds. As a {rule:Bonus Action}, you gain the benefits below for 10 minutes. Once you use this feature, you can't use it again until you finish a {rule:Long Rest}. You can also restore your use of it by expending a level 5 spell slot (no action required).\n\n**Charismatic.** You are blessed with an otherworldly presence and have {rule:Advantage} on all Charisma checks.\n\n**Saving Throw Reroll.** If you fail a saving throw, you can take a {rule:Reaction} to reroll it. You must use this new roll.\n\n**Unerring Strike.** Once on each of your turns when you make an attack roll with a weapon and miss, you can cause that attack to hit instead.",
           "effects": {
             "properties": [
-              { "type": "resource", "name": "Living Legend", "maxUses": 1, "resetOn": "long" }
+              {
+                "type": "resource",
+                "name": "Living Legend",
+                "maxUses": 1,
+                "resetOn": "long"
+              }
             ]
           },
           "activation": {
             "properties": [
-              { "type": "advantage", "on": "charisma_check" },
-              { "type": "note", "text": "Charismatic: advantage on all Charisma checks. Saving Throw Reroll: once per activation, use Reaction to reroll a failed save (must use new roll). Unerring Strike: once per turn, when you miss with a weapon attack, you can cause it to hit instead." }
+              {
+                "type": "advantage",
+                "on": "charisma_check"
+              },
+              {
+                "type": "note",
+                "text": "Charismatic: advantage on all Charisma checks. Saving Throw Reroll: once per activation, use Reaction to reroll a failed save (must use new roll). Unerring Strike: once per turn, when you miss with a weapon attack, you can cause it to hit instead."
+              }
             ]
           }
         }
@@ -472,11 +899,26 @@
       "className": "Paladin",
       "description": "The Oath of the Ancients is as old as the first elves. Paladins who swear this oath cherish the light; they love the beautiful and life-giving things of the world more than any principles of honor, courage, and justice. These paladins share the following tenets: Kindle the light of hope. Shelter life. Delight in art and laughter.",
       "oathSpells": {
-        "3": ["Ensnaring Strike", "Speak with Animals"],
-        "5": ["Misty Step", "Moonbeam"],
-        "9": ["Plant Growth", "Protection from Energy"],
-        "13": ["Ice Storm", "Stoneskin"],
-        "17": ["Commune with Nature", "Tree Stride"]
+        "3": [
+          "Ensnaring Strike",
+          "Speak with Animals"
+        ],
+        "5": [
+          "Misty Step",
+          "Moonbeam"
+        ],
+        "9": [
+          "Plant Growth",
+          "Protection from Energy"
+        ],
+        "13": [
+          "Ice Storm",
+          "Stoneskin"
+        ],
+        "17": [
+          "Commune with Nature",
+          "Tree Stride"
+        ]
       },
       "features": [
         {
@@ -487,16 +929,56 @@
           "description": "You swear the Oath of the Ancients, preserving life and light in the world. You gain Oath Spells and a Channel Divinity option.\n\n**Oath Spells.** You always have certain spells prepared. At Paladin level 3: {spell:Ensnaring Strike}, {spell:Speak with Animals}. Level 5: {spell:Misty Step}, {spell:Moonbeam}. Level 9: {spell:Plant Growth}, {spell:Protection from Energy}. Level 13: {spell:Ice Storm}, {spell:Stoneskin}. Level 17: {spell:Commune with Nature}, {spell:Tree Stride}.",
           "effects": {
             "properties": [
-              { "type": "spell_grant", "spell": "Ensnaring Strike", "usage": "always_prepared" },
-              { "type": "spell_grant", "spell": "Speak with Animals", "usage": "always_prepared" },
-              { "type": "spell_grant", "spell": "Misty Step", "usage": "always_prepared" },
-              { "type": "spell_grant", "spell": "Moonbeam", "usage": "always_prepared" },
-              { "type": "spell_grant", "spell": "Plant Growth", "usage": "always_prepared" },
-              { "type": "spell_grant", "spell": "Protection from Energy", "usage": "always_prepared" },
-              { "type": "spell_grant", "spell": "Ice Storm", "usage": "always_prepared" },
-              { "type": "spell_grant", "spell": "Stoneskin", "usage": "always_prepared" },
-              { "type": "spell_grant", "spell": "Commune with Nature", "usage": "always_prepared" },
-              { "type": "spell_grant", "spell": "Tree Stride", "usage": "always_prepared" }
+              {
+                "type": "spell_grant",
+                "spell": "Ensnaring Strike",
+                "usage": "always_prepared"
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Speak with Animals",
+                "usage": "always_prepared"
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Misty Step",
+                "usage": "always_prepared"
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Moonbeam",
+                "usage": "always_prepared"
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Plant Growth",
+                "usage": "always_prepared"
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Protection from Energy",
+                "usage": "always_prepared"
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Ice Storm",
+                "usage": "always_prepared"
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Stoneskin",
+                "usage": "always_prepared"
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Commune with Nature",
+                "usage": "always_prepared"
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Tree Stride",
+                "usage": "always_prepared"
+              }
             ]
           }
         },
@@ -508,7 +990,10 @@
           "description": "As a Magic action, you can expend one use of your Channel Divinity to conjure spectral vines around nearby creatures. Each creature of your choice that you can see within 15 feet of yourself must succeed on a Strength saving throw or have the {condition:Restrained} condition for 1 minute. A {condition:Restrained} creature repeats the save at the end of each of its turns, ending the effect on itself on a success.",
           "effects": {
             "properties": [
-              { "type": "note", "text": "Channel Divinity — Magic action: creatures of your choice within 15 ft make STR save or gain Restrained 1 minute. Restrained creature repeats save at end of each of its turns, ending on success." }
+              {
+                "type": "note",
+                "text": "Channel Divinity — Magic action: creatures of your choice within 15 ft make STR save or gain Restrained 1 minute. Restrained creature repeats save at end of each of its turns, ending on success."
+              }
             ]
           }
         },
@@ -520,10 +1005,22 @@
           "description": "Ancient magic lies so heavily upon you that it forms an eldritch ward, blunting energy from beyond the Material Plane; you and your allies have {rule:Resistance|resistance} to Necrotic, Psychic, and Radiant damage while in your Aura of Protection.",
           "effects": {
             "properties": [
-              { "type": "resistance", "damageType": "necrotic" },
-              { "type": "resistance", "damageType": "psychic" },
-              { "type": "resistance", "damageType": "radiant" },
-              { "type": "note", "text": "Allies within your Aura of Protection also have resistance to Necrotic, Psychic, and Radiant damage." }
+              {
+                "type": "resistance",
+                "damageType": "necrotic"
+              },
+              {
+                "type": "resistance",
+                "damageType": "psychic"
+              },
+              {
+                "type": "resistance",
+                "damageType": "radiant"
+              },
+              {
+                "type": "note",
+                "text": "Allies within your Aura of Protection also have resistance to Necrotic, Psychic, and Radiant damage."
+              }
             ]
           }
         },
@@ -535,8 +1032,16 @@
           "description": "When you are reduced to 0 {rule:Hit Points} and not killed outright, you can drop to 1 {rule:Hit Points|Hit Point} instead, and you regain a number of {rule:Hit Points} equal to three times your Paladin level. Once you use this feature, you can't do so again until you finish a {rule:Long Rest}.\n\nAdditionally, you can't be aged magically, and you cease visibly aging.",
           "effects": {
             "properties": [
-              { "type": "resource", "name": "Undying Sentinel", "maxUses": 1, "resetOn": "long" },
-              { "type": "note", "text": "When reduced to 0 HP and not killed outright, drop to 1 HP and regain HP equal to 3 × Paladin level (1/Long Rest). You can't be aged magically and cease visibly aging." }
+              {
+                "type": "resource",
+                "name": "Undying Sentinel",
+                "maxUses": 1,
+                "resetOn": "long"
+              },
+              {
+                "type": "note",
+                "text": "When reduced to 0 HP and not killed outright, drop to 1 HP and regain HP equal to 3 × Paladin level (1/Long Rest). You can't be aged magically and cease visibly aging."
+              }
             ]
           }
         },
@@ -548,8 +1053,16 @@
           "description": "As a {rule:Bonus Action}, you can imbue your Aura of Protection with primal power, granting the benefits below for 1 minute or until you end them (no action required). Once you use this feature, you can't use it again until you finish a {rule:Long Rest}. You can also restore your use of it by expending a level 5 spell slot (no action required).\n\n**Diminish Defiance.** Enemies in the aura have {rule:Disadvantage} on saving throws against your spells and Channel Divinity options.\n\n**Regeneration.** At the start of each of your turns, you regain 10 {rule:Hit Points}.\n\n**Swift Spells.** Whenever you cast a spell that has a casting time of an action, you can cast it using a {rule:Bonus Action} instead.",
           "effects": {
             "properties": [
-              { "type": "resource", "name": "Elder Champion", "maxUses": 1, "resetOn": "long" },
-              { "type": "note", "text": "Bonus Action: activate for 1 minute (1/Long Rest, or expend level 5 spell slot to restore). Diminish Defiance: enemies in aura have disadvantage on saves against your spells and Channel Divinity. Regeneration: regain 10 HP at the start of each of your turns. Swift Spells: spells with a casting time of an action can instead be cast as a Bonus Action." }
+              {
+                "type": "resource",
+                "name": "Elder Champion",
+                "maxUses": 1,
+                "resetOn": "long"
+              },
+              {
+                "type": "note",
+                "text": "Bonus Action: activate for 1 minute (1/Long Rest, or expend level 5 spell slot to restore). Diminish Defiance: enemies in aura have disadvantage on saves against your spells and Channel Divinity. Regeneration: regain 10 HP at the start of each of your turns. Swift Spells: spells with a casting time of an action can instead be cast as a Bonus Action."
+              }
             ]
           }
         }
@@ -561,11 +1074,26 @@
       "className": "Paladin",
       "description": "The Oath of Vengeance is a solemn commitment to punish those who have committed grievously evil acts. When evil armies slaughter helpless villagers, when a tyrant defies the will of the gods, when a thieves' guild grows too violent—paladins arise and swear this oath to set right what has gone wrong. These paladins share the following tenets: Show the wicked no mercy. Fight injustice and its causes. Aid those harmed by injustice.",
       "oathSpells": {
-        "3": ["Bane", "Hunter's Mark"],
-        "5": ["Hold Person", "Misty Step"],
-        "9": ["Haste", "Protection from Energy"],
-        "13": ["Banishment", "Dimension Door"],
-        "17": ["Hold Monster", "Scrying"]
+        "3": [
+          "Bane",
+          "Hunter's Mark"
+        ],
+        "5": [
+          "Hold Person",
+          "Misty Step"
+        ],
+        "9": [
+          "Haste",
+          "Protection from Energy"
+        ],
+        "13": [
+          "Banishment",
+          "Dimension Door"
+        ],
+        "17": [
+          "Hold Monster",
+          "Scrying"
+        ]
       },
       "features": [
         {
@@ -576,16 +1104,56 @@
           "description": "You swear the Oath of Vengeance, punishing evildoers at any cost. You gain Oath Spells and a Channel Divinity option.\n\n**Oath Spells.** You always have certain spells prepared. At Paladin level 3: {spell:Bane}, {spell:Hunter's Mark}. Level 5: {spell:Hold Person}, {spell:Misty Step}. Level 9: {spell:Haste}, {spell:Protection from Energy}. Level 13: {spell:Banishment}, {spell:Dimension Door}. Level 17: {spell:Hold Monster}, {spell:Scrying}.",
           "effects": {
             "properties": [
-              { "type": "spell_grant", "spell": "Bane", "usage": "always_prepared" },
-              { "type": "spell_grant", "spell": "Hunter's Mark", "usage": "always_prepared" },
-              { "type": "spell_grant", "spell": "Hold Person", "usage": "always_prepared" },
-              { "type": "spell_grant", "spell": "Misty Step", "usage": "always_prepared" },
-              { "type": "spell_grant", "spell": "Haste", "usage": "always_prepared" },
-              { "type": "spell_grant", "spell": "Protection from Energy", "usage": "always_prepared" },
-              { "type": "spell_grant", "spell": "Banishment", "usage": "always_prepared" },
-              { "type": "spell_grant", "spell": "Dimension Door", "usage": "always_prepared" },
-              { "type": "spell_grant", "spell": "Hold Monster", "usage": "always_prepared" },
-              { "type": "spell_grant", "spell": "Scrying", "usage": "always_prepared" }
+              {
+                "type": "spell_grant",
+                "spell": "Bane",
+                "usage": "always_prepared"
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Hunter's Mark",
+                "usage": "always_prepared"
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Hold Person",
+                "usage": "always_prepared"
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Misty Step",
+                "usage": "always_prepared"
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Haste",
+                "usage": "always_prepared"
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Protection from Energy",
+                "usage": "always_prepared"
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Banishment",
+                "usage": "always_prepared"
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Dimension Door",
+                "usage": "always_prepared"
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Hold Monster",
+                "usage": "always_prepared"
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Scrying",
+                "usage": "always_prepared"
+              }
             ]
           }
         },
@@ -597,8 +1165,14 @@
           "description": "When you take the {action:Attack} action, you can expend one use of your Channel Divinity to utter a vow of enmity against a creature you can see within 30 feet of yourself. You have {rule:Advantage} on attack rolls against the creature for 1 minute or until you use this feature again.\n\nIf the creature drops to 0 {rule:Hit Points} before the vow ends, you can transfer the vow to a different creature within 30 feet of yourself (no action required).",
           "activation": {
             "properties": [
-              { "type": "advantage", "on": "attack" },
-              { "type": "note", "text": "Lasts 1 minute or until you use this feature again. If the target drops to 0 HP before the vow ends, you can transfer the vow to another creature within 30 ft (no action required)." }
+              {
+                "type": "advantage",
+                "on": "attack"
+              },
+              {
+                "type": "note",
+                "text": "Lasts 1 minute or until you use this feature again. If the target drops to 0 HP before the vow ends, you can transfer the vow to another creature within 30 ft (no action required)."
+              }
             ]
           }
         },
@@ -610,7 +1184,10 @@
           "description": "Your supernatural focus helps you close off a foe's retreat. When you hit a creature with an {action:Opportunity Attack}, you can reduce the creature's Speed to 0 until the end of the current turn. You can then move up to half your Speed as part of the same Reaction. This movement doesn't provoke {action:Opportunity Attack|Opportunity Attacks}.",
           "effects": {
             "properties": [
-              { "type": "note", "text": "When you hit a creature with an Opportunity Attack, you can reduce its Speed to 0 until the end of the current turn, and you can move up to half your Speed as part of that same Reaction (this movement doesn't provoke Opportunity Attacks)." }
+              {
+                "type": "note",
+                "text": "When you hit a creature with an Opportunity Attack, you can reduce its Speed to 0 until the end of the current turn, and you can move up to half your Speed as part of that same Reaction (this movement doesn't provoke Opportunity Attacks)."
+              }
             ]
           }
         },
@@ -622,7 +1199,10 @@
           "description": "Immediately after a creature under the effect of your Vow of Enmity hits or misses with an attack roll, you can take a {rule:Reaction} to make a melee attack against that creature if it's within range.",
           "effects": {
             "properties": [
-              { "type": "note", "text": "Reaction: immediately after a creature under your Vow of Enmity hits or misses with an attack roll, make one melee attack against that creature if it's within range." }
+              {
+                "type": "note",
+                "text": "Reaction: immediately after a creature under your Vow of Enmity hits or misses with an attack roll, make one melee attack against that creature if it's within range."
+              }
             ]
           }
         },
@@ -634,12 +1214,36 @@
           "description": "As a {rule:Bonus Action}, you gain the benefits below for 10 minutes or until you end them (no action required). Once you use this feature, you can't use it again until you finish a {rule:Long Rest}. You can also restore your use of it by expending a level 5 spell slot (no action required).\n\n**Flight.** You sprout spectral wings on your back, have a Fly Speed of 60 feet, and can hover.\n\n**Frightful Aura.** Whenever an enemy starts its turn in your Aura of Protection, that creature must succeed on a Wisdom saving throw or have the {condition:Frightened} condition for 1 minute or until it takes any damage. {action:Attack} rolls against the {condition:Frightened} creature have {rule:Advantage}.",
           "effects": {
             "properties": [
-              { "type": "resource", "name": "Avenging Angel", "maxUses": 1, "resetOn": "long" },
-              { "type": "note", "text": "Bonus Action: activate for 10 minutes (1/Long Rest, or expend level 5 spell slot to restore). Flight: Fly Speed 60 ft with hover. Frightful Aura: enemies starting their turn in your Aura of Protection make WIS save or gain Frightened 1 minute (ends on damage); attack rolls against Frightened creatures have advantage." }
+              {
+                "type": "resource",
+                "name": "Avenging Angel",
+                "maxUses": 1,
+                "resetOn": "long"
+              },
+              {
+                "type": "note",
+                "text": "Bonus Action: activate for 10 minutes (1/Long Rest, or expend level 5 spell slot to restore). Flight: Fly Speed 60 ft with hover. Frightful Aura: enemies starting their turn in your Aura of Protection make WIS save or gain Frightened 1 minute (ends on damage); attack rolls against Frightened creatures have advantage."
+              }
             ]
           }
         }
       ]
     }
-  ]
+  ],
+  "multiclassing": {
+    "requirements": {
+      "strength": 13,
+      "charisma": 13
+    },
+    "proficienciesGained": {
+      "armor": [
+        "Light Armor",
+        "Medium Armor",
+        "Shield"
+      ],
+      "weapons": [
+        "Martial Weapons"
+      ]
+    }
+  }
 }

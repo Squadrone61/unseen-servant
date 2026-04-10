@@ -1,6 +1,7 @@
 import type {
   AbilityScores,
   CharacterAppearance,
+  CharacterTraits,
   InventoryItem,
   Currency,
   Ability,
@@ -106,6 +107,7 @@ export interface BuilderState {
   appearance: Partial<CharacterAppearance>;
   backstory: string;
   alignment: string;
+  traits: CharacterTraits;
   equipment: InventoryItem[];
   currency: Currency;
 }
@@ -164,6 +166,7 @@ export function createInitialState(): BuilderState {
     appearance: {},
     backstory: "",
     alignment: "",
+    traits: {},
     equipment: [],
     currency: { cp: 0, sp: 0, gp: 0, pp: 0 },
   };
@@ -228,6 +231,7 @@ export type BuilderAction =
   | { type: "SET_APPEARANCE"; appearance: Partial<CharacterAppearance> }
   | { type: "SET_BACKSTORY"; backstory: string }
   | { type: "SET_ALIGNMENT"; alignment: string }
+  | { type: "SET_TRAITS"; traits: Partial<CharacterTraits> }
   | { type: "SET_EQUIPMENT"; equipment: InventoryItem[] }
   | { type: "SET_CURRENCY"; currency: Currency }
 
@@ -528,6 +532,13 @@ export function builderReducer(state: BuilderState, action: BuilderAction): Buil
 
     case "SET_ALIGNMENT":
       next = { ...state, alignment: action.alignment };
+      break;
+
+    case "SET_TRAITS":
+      next = {
+        ...state,
+        traits: { ...state.traits, ...action.traits },
+      };
       break;
 
     case "SET_EQUIPMENT":

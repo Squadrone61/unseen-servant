@@ -202,6 +202,28 @@ function assembleSkillProficiencies(state: BuilderState): string[] {
 }
 
 /**
+ * Collect skill expertise from class choices (Bard/Rogue Expertise) and feat choices.
+ * Choice IDs containing "expertise" carry the selected skill names as values.
+ */
+function assembleSkillExpertise(state: BuilderState): string[] {
+  const expertise = new Set<string>();
+  for (const [choiceId, values] of Object.entries(state.classChoices)) {
+    if (choiceId.toLowerCase().includes("expertise")) {
+      values.forEach((v) => expertise.add(v));
+    }
+  }
+  // Also check feat choices for expertise (e.g. Skill Expert feat)
+  for (const [_featName, choices] of Object.entries(state.featChoices)) {
+    for (const [choiceId, values] of Object.entries(choices)) {
+      if (choiceId.toLowerCase().includes("expertise")) {
+        values.forEach((v) => expertise.add(v));
+      }
+    }
+  }
+  return [...expertise];
+}
+
+/**
  * Collect saving throw proficiencies from the class DB.
  */
 function assembleSaveProficiencies(state: BuilderState): (keyof AbilityScores)[] {
@@ -233,17 +255,17 @@ function assembleIdentifiers(state: BuilderState): CharacterIdentifiers {
     abilities: finalAbilities,
     maxHP,
     skillProficiencies: assembleSkillProficiencies(state),
-    skillExpertise: [],
+    skillExpertise: assembleSkillExpertise(state),
     saveProficiencies: assembleSaveProficiencies(state),
     spells: assembleSpells(state),
     equipment: state.equipment,
     languages: collectLanguages(state),
     toolProficiencies: collectToolProficiencies(state),
     traits: {
-      personalityTraits: undefined,
-      ideals: undefined,
-      bonds: undefined,
-      flaws: undefined,
+      personalityTraits: state.traits.personalityTraits || undefined,
+      ideals: state.traits.ideals || undefined,
+      bonds: state.traits.bonds || undefined,
+      flaws: state.traits.flaws || undefined,
     },
     appearance:
       Object.keys(state.appearance).length > 0

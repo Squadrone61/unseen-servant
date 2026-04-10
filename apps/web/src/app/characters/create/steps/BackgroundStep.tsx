@@ -249,6 +249,7 @@ function AbilityDropdown({ id, label, value, options, excluded, onChange }: Abil
         ]
           .filter(Boolean)
           .join(" ")}
+        style={{ colorScheme: "dark" }}
         aria-label={label}
       >
         <option value="" disabled>

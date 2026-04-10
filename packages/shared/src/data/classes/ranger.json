@@ -240,8 +240,8 @@
   ],
   "multiclassing": {
     "requirements": {
-      "dex": 13,
-      "wis": 13
+      "dexterity": 13,
+      "wisdom": 13
     },
     "proficienciesGained": {
       "armor": [

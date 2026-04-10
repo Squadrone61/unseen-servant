@@ -912,5 +912,20 @@
         }
       ]
     }
-  ]
+  ],
+  "multiclassing": {
+    "requirements": {
+      "strength": 13
+    },
+    "proficienciesGained": {
+      "armor": [
+        "Light Armor",
+        "Medium Armor",
+        "Shield"
+      ],
+      "weapons": [
+        "Martial Weapons"
+      ]
+    }
+  }
 }

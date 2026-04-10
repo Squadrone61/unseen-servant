@@ -118,6 +118,18 @@ export interface SpellDb extends DbEntity {
 
 // ─── Classes ───────────────────────────────────────────────
 
+export interface ClassMulticlassing {
+  /** Minimum ability score requirements to multiclass into this class */
+  requirements: Record<string, number>;
+  /** Proficiencies gained when multiclassing into this class (not the full set) */
+  proficienciesGained?: {
+    armor?: string[];
+    weapons?: string[];
+    tools?: string[];
+    skills?: { from: string[]; count: number };
+  };
+}
+
 export interface ClassDb extends DbEntity {
   hitDiceFaces: number;
   casterProgression?: CasterProgression;
@@ -132,6 +144,8 @@ export interface ClassDb extends DbEntity {
   preparedSpellsProgression?: number[];
   features: ClassFeatureDb[];
   subclasses: SubclassDb[];
+  /** Multiclassing requirements and proficiencies gained (D&D 2024 rules) */
+  multiclassing?: ClassMulticlassing;
 }
 
 export interface ClassFeatureDb extends DbEntity {

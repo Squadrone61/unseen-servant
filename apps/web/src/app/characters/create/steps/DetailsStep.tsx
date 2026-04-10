@@ -1,7 +1,7 @@
 "use client";
 
 import { useBuilder } from "../BuilderContext";
-import type { CharacterAppearance } from "@unseen-servant/shared/types";
+import type { CharacterAppearance, CharacterTraits } from "@unseen-servant/shared/types";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -69,6 +69,22 @@ export function DetailsStep() {
     });
   }
 
+  function handleTraitsChange(key: keyof CharacterTraits, value: string) {
+    dispatch({
+      type: "SET_TRAITS",
+      traits: { [key]: value },
+    });
+  }
+
+  function handleCurrencyChange(key: keyof typeof state.currency, raw: string) {
+    const parsed = parseInt(raw, 10);
+    const value = isNaN(parsed) || parsed < 0 ? 0 : parsed;
+    dispatch({
+      type: "SET_CURRENCY",
+      currency: { ...state.currency, [key]: value },
+    });
+  }
+
   return (
     <section aria-labelledby="details-step-heading" className="flex flex-col gap-6">
       {/* ── Header ── */}
@@ -122,6 +138,7 @@ export function DetailsStep() {
               "appearance-none cursor-pointer",
               !state.alignment ? "text-gray-600" : "",
             ].join(" ")}
+            style={{ colorScheme: "dark" }}
           >
             <option value="" disabled>
               Choose alignment...
@@ -157,6 +174,72 @@ export function DetailsStep() {
 
       <SectionDivider />
 
+      {/* ── Personality ── */}
+      <div className="flex flex-col gap-4">
+        <h2 className={SECTION_HEADING_CLASS}>Personality</h2>
+        <p className="text-xs text-gray-500 -mt-2">
+          These fields are optional and help the AI DM portray your character authentically.
+        </p>
+
+        <div>
+          <label htmlFor="character-personality-traits" className={LABEL_CLASS}>
+            Personality Traits
+          </label>
+          <textarea
+            id="character-personality-traits"
+            value={state.traits.personalityTraits ?? ""}
+            onChange={(e) => handleTraitsChange("personalityTraits", e.target.value)}
+            placeholder="Describe how your character typically behaves, speaks, or presents themselves..."
+            rows={2}
+            className={[INPUT_CLASS, "resize-y leading-relaxed"].join(" ")}
+          />
+        </div>
+
+        <div>
+          <label htmlFor="character-ideals" className={LABEL_CLASS}>
+            Ideals
+          </label>
+          <textarea
+            id="character-ideals"
+            value={state.traits.ideals ?? ""}
+            onChange={(e) => handleTraitsChange("ideals", e.target.value)}
+            placeholder="What principles or beliefs does your character hold above all else?"
+            rows={2}
+            className={[INPUT_CLASS, "resize-y leading-relaxed"].join(" ")}
+          />
+        </div>
+
+        <div>
+          <label htmlFor="character-bonds" className={LABEL_CLASS}>
+            Bonds
+          </label>
+          <textarea
+            id="character-bonds"
+            value={state.traits.bonds ?? ""}
+            onChange={(e) => handleTraitsChange("bonds", e.target.value)}
+            placeholder="What connects your character to the world — people, places, or memories?"
+            rows={2}
+            className={[INPUT_CLASS, "resize-y leading-relaxed"].join(" ")}
+          />
+        </div>
+
+        <div>
+          <label htmlFor="character-flaws" className={LABEL_CLASS}>
+            Flaws
+          </label>
+          <textarea
+            id="character-flaws"
+            value={state.traits.flaws ?? ""}
+            onChange={(e) => handleTraitsChange("flaws", e.target.value)}
+            placeholder="What weakness, fear, or vice could get your character into trouble?"
+            rows={2}
+            className={[INPUT_CLASS, "resize-y leading-relaxed"].join(" ")}
+          />
+        </div>
+      </div>
+
+      <SectionDivider />
+
       {/* ── Appearance ── */}
       <div className="flex flex-col gap-4">
         <h2 className={SECTION_HEADING_CLASS}>Appearance</h2>
@@ -177,6 +260,36 @@ export function DetailsStep() {
                 onChange={(e) => handleAppearanceChange(key, e.target.value)}
                 placeholder={placeholder}
                 className={INPUT_CLASS}
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <SectionDivider />
+
+      {/* ── Starting Currency ── */}
+      <div className="flex flex-col gap-3">
+        <h2 className={SECTION_HEADING_CLASS}>Starting Currency</h2>
+        <p className="text-xs text-gray-500 -mt-2">
+          Set your starting gold and coins. Leave at zero to let the AI DM assign starting wealth.
+        </p>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {(["gp", "sp", "cp", "pp"] as const).map((coin) => (
+            <div key={coin}>
+              <label htmlFor={`currency-${coin}`} className={LABEL_CLASS}>
+                {coin.toUpperCase()}
+              </label>
+              <input
+                id={`currency-${coin}`}
+                type="number"
+                min={0}
+                value={state.currency[coin]}
+                onChange={(e) => handleCurrencyChange(coin, e.target.value)}
+                className={[
+                  INPUT_CLASS,
+                  "text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none",
+                ].join(" ")}
               />
             </div>
           ))}

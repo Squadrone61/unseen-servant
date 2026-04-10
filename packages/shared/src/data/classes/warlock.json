@@ -4,46 +4,319 @@
   "description": "A wielder of magic that is derived from a bargain with an extraplanar entity. Warlocks are defined by a pact with an otherworldly being. Sometimes the relationship between warlock and patron is like that of a cleric and a deity, though the beings that serve as patrons for warlocks are not gods. A warlock might lead a cult dedicated to a demon prince, an archdevil, or an utterly alien entity—beings not typically served by clerics.",
   "effects": {
     "properties": [
-      { "type": "proficiency", "category": "armor", "value": "Light Armor" },
-      { "type": "proficiency", "category": "weapon", "value": "Simple Weapons" },
-      { "type": "proficiency", "category": "save", "value": "Wisdom" },
-      { "type": "proficiency", "category": "save", "value": "Charisma" }
+      {
+        "type": "proficiency",
+        "category": "armor",
+        "value": "Light Armor"
+      },
+      {
+        "type": "proficiency",
+        "category": "weapon",
+        "value": "Simple Weapons"
+      },
+      {
+        "type": "proficiency",
+        "category": "save",
+        "value": "Wisdom"
+      },
+      {
+        "type": "proficiency",
+        "category": "save",
+        "value": "Charisma"
+      }
     ]
   },
   "hitDiceFaces": 8,
   "primaryAbility": "Charisma",
   "spellcastingAbility": "charisma",
-  "savingThrows": ["wisdom", "charisma"],
-  "armorProficiencies": ["Light Armor"],
-  "weaponProficiencies": ["Simple Weapons"],
+  "savingThrows": [
+    "wisdom",
+    "charisma"
+  ],
+  "armorProficiencies": [
+    "Light Armor"
+  ],
+  "weaponProficiencies": [
+    "Simple Weapons"
+  ],
   "toolProficiencies": [],
   "skillChoices": {
-    "from": ["Arcana", "Deception", "History", "Intimidation", "Investigation", "Nature", "Religion"],
+    "from": [
+      "Arcana",
+      "Deception",
+      "History",
+      "Intimidation",
+      "Investigation",
+      "Nature",
+      "Religion"
+    ],
     "count": 2
   },
-  "cantripProgression": [2, 2, 2, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
-  "preparedSpellsProgression": [2, 3, 4, 5, 6, 7, 8, 9, 10, 10, 11, 11, 12, 12, 13, 13, 14, 14, 15, 15],
+  "cantripProgression": [
+    2,
+    2,
+    2,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4
+  ],
+  "preparedSpellsProgression": [
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    10,
+    11,
+    11,
+    12,
+    12,
+    13,
+    13,
+    14,
+    14,
+    15,
+    15
+  ],
   "spellSlotTable": [
-    [1, 0, 0, 0, 0, 0, 0, 0, 0],
-    [2, 0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 2, 0, 0, 0, 0, 0, 0, 0],
-    [0, 2, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 2, 0, 0, 0, 0, 0, 0],
-    [0, 0, 2, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 2, 0, 0, 0, 0, 0],
-    [0, 0, 0, 2, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 2, 0, 0, 0, 0],
-    [0, 0, 0, 0, 2, 0, 0, 0, 0],
-    [0, 0, 0, 0, 3, 0, 0, 0, 0],
-    [0, 0, 0, 0, 3, 0, 0, 0, 0],
-    [0, 0, 0, 0, 3, 0, 0, 0, 0],
-    [0, 0, 0, 0, 3, 0, 0, 0, 0],
-    [0, 0, 0, 0, 3, 0, 0, 0, 0],
-    [0, 0, 0, 0, 3, 0, 0, 0, 0],
-    [0, 0, 0, 0, 4, 0, 0, 0, 0],
-    [0, 0, 0, 0, 4, 0, 0, 0, 0],
-    [0, 0, 0, 0, 4, 0, 0, 0, 0],
-    [0, 0, 0, 0, 4, 0, 0, 0, 0]
+    [
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      2,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      2,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      2,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      2,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      2,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      2,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      2,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      2,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      2,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      3,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      3,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      3,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      3,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      3,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      3,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      4,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      4,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      4,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      4,
+      0,
+      0,
+      0,
+      0
+    ]
   ],
   "pactMagic": true,
   "features": [
@@ -54,7 +327,10 @@
       "description": "You have unearthed Eldritch Invocations, pieces of forbidden knowledge that imbue you with an abiding magical ability or other lessons. You gain one invocation of your choice, such as Pact of the Tome. Invocations are described in the Eldritch Invocation Options section of this class's description.\n\n**Prerequisites.** If an invocation has a prerequisite, you must meet it to learn that invocation. For example, if an invocation requires you to be a level 5+ Warlock, you can select the invocation once you reach Warlock level 5.\n\n**Replacing and Gaining Invocations.** Whenever you gain a Warlock level, you can replace one of your invocations with another one for which you qualify. You can't replace an invocation if it's a prerequisite for another invocation that you have.\n\nWhen you gain certain Warlock levels, you gain more invocations of your choice, as shown in the Invocations column of the Warlock Features table. You can't pick the same invocation more than once unless its description says otherwise.",
       "effects": {
         "properties": [
-          { "type": "note", "text": "You gain Eldritch Invocations as shown in the Invocations column: 1 at level 1, 3 at levels 2–4, 5 at levels 5–6, 6 at level 7–8, 7 at levels 9–11, 8 at levels 12–14, 9 at levels 15–17, 10 at levels 18–20." }
+          {
+            "type": "note",
+            "text": "You gain Eldritch Invocations as shown in the Invocations column: 1 at level 1, 3 at levels 2–4, 5 at levels 5–6, 6 at level 7–8, 7 at levels 9–11, 8 at levels 12–14, 9 at levels 15–17, 10 at levels 18–20."
+          }
         ]
       }
     },
@@ -65,7 +341,10 @@
       "description": "Through occult ceremony, you have formed a pact with a mysterious entity to gain magical powers. The entity is a voice in the shadows—its identity unclear—but its boon to you is concrete: the ability to cast spells.\n\n**Cantrips.** You know two Warlock cantrips of your choice. {spell:Eldritch Blast} and {spell:Prestidigitation} are recommended. Whenever you gain a Warlock level, you can replace one of your cantrips from this feature with another Warlock cantrip of your choice. When you reach Warlock levels 4 and 10, you learn another Warlock cantrip of your choice, as shown in the Cantrips column of the Warlock Features table.\n\n**Spell Slots.** The Warlock Features table shows how many spell slots you have to cast your Warlock spells of levels 1–5. The table also shows the level of those slots, all of which are the same level. You regain all expended Pact Magic spell slots when you finish a {rule:Short Rest} or {rule:Long Rest}.\n\n**Prepared Spells of Level 1+.** You prepare the list of level 1+ spells that are available for you to cast with this feature. To start, choose two level 1 Warlock spells. {spell:Charm Person} and {spell:Hex} are recommended. The number of spells on your list increases as you gain Warlock levels, as shown in the Prepared Spells column of the Warlock Features table. Whenever that number increases, choose additional Warlock spells until the number of spells on your list matches the number in the table. The chosen spells must be of a level no higher than what's shown in the table's Slot Level column for your level.\n\nIf another Warlock feature gives you spells that you always have prepared, those spells don't count against the number of spells you can prepare with this feature, but those spells otherwise count as Warlock spells for you.\n\n**Changing Your Prepared Spells.** Whenever you gain a Warlock level, you can replace one spell on your list with another Warlock spell of an eligible level.\n\n**Spellcasting Ability.** Charisma is the spellcasting ability for your Warlock spells.\n\n**Spellcasting Focus.** You can use an {item:Arcane Focus} as a {rule:Spellcasting Focus} for your Warlock spells.",
       "effects": {
         "properties": [
-          { "type": "note", "text": "Pact Magic spell slots reset on a Short Rest or Long Rest. All slots are the same level. Slot level increases with Warlock level: 1st at levels 1–2, 2nd at levels 3–4, 3rd at levels 5–6, 4th at levels 7–8, 5th at levels 9+. Number of slots: 1 at level 1, 2 at levels 2–10, 3 at levels 11–16, 4 at levels 17–20." }
+          {
+            "type": "note",
+            "text": "Pact Magic spell slots reset on a Short Rest or Long Rest. All slots are the same level. Slot level increases with Warlock level: 1st at levels 1–2, 2nd at levels 3–4, 3rd at levels 5–6, 4th at levels 7–8, 5th at levels 9+. Number of slots: 1 at level 1, 2 at levels 2–10, 3 at levels 11–16, 4 at levels 17–20."
+          }
         ]
       }
     },
@@ -76,8 +355,16 @@
       "description": "You can perform an esoteric rite for 1 minute. At the end of it, you regain expended Pact Magic spell slots but no more than a number equal to half your maximum (round up). Once you use this feature, you can't do so again until you finish a {rule:Long Rest}.",
       "effects": {
         "properties": [
-          { "type": "resource", "name": "Magical Cunning", "maxUses": 1, "resetOn": "long" },
-          { "type": "note", "text": "1-minute rite to regain Pact Magic spell slots equal to half your maximum (round up). Once per Long Rest. At level 20 (Eldritch Master), this feature restores ALL expended Pact Magic spell slots instead." }
+          {
+            "type": "resource",
+            "name": "Magical Cunning",
+            "maxUses": 1,
+            "resetOn": "long"
+          },
+          {
+            "type": "note",
+            "text": "1-minute rite to regain Pact Magic spell slots equal to half your maximum (round up). Once per Long Rest. At level 20 (Eldritch Master), this feature restores ALL expended Pact Magic spell slots instead."
+          }
         ]
       }
     },
@@ -112,9 +399,22 @@
       "description": "In the past, you usually contacted your patron through intermediaries. Now you can communicate directly; you always have the {spell:Contact Other Plane} spell prepared. With this feature, you can cast the spell without expending a spell slot to contact your patron, and you automatically succeed on the spell's saving throw.\n\nOnce you cast the spell with this feature, you can't do so in this way again until you finish a {rule:Long Rest}.",
       "effects": {
         "properties": [
-          { "type": "spell_grant", "spell": "Contact Other Plane", "usage": "always_prepared", "castingAbility": "charisma" },
-          { "type": "resource", "name": "Contact Patron (Free Cast)", "maxUses": 1, "resetOn": "long" },
-          { "type": "note", "text": "When cast via this feature to contact your patron, the spell requires no slot and the saving throw automatically succeeds. Once per Long Rest." }
+          {
+            "type": "spell_grant",
+            "spell": "Contact Other Plane",
+            "usage": "always_prepared",
+            "castingAbility": "charisma"
+          },
+          {
+            "type": "resource",
+            "name": "Contact Patron (Free Cast)",
+            "maxUses": 1,
+            "resetOn": "long"
+          },
+          {
+            "type": "note",
+            "text": "When cast via this feature to contact your patron, the spell requires no slot and the saving throw automatically succeeds. Once per Long Rest."
+          }
         ]
       }
     },
@@ -131,7 +431,10 @@
       "description": "Your patron grants you a magical secret called an arcanum. Choose one level 6 Warlock spell as this arcanum.\n\nYou can cast your arcanum spell once without expending a spell slot, and you must finish a {rule:Long Rest} before you can cast it in this way again.\n\nAs shown in the Warlock Features table, you gain another Warlock spell of your choice that can be cast in this way when you reach Warlock levels 13 (level 7 spell), 15 (level 8 spell), and 17 (level 9 spell). You regain all uses of your Mystic Arcanum when you finish a {rule:Long Rest}.\n\nWhenever you gain a Warlock level, you can replace one of your arcanum spells with another Warlock spell of the same level.",
       "effects": {
         "properties": [
-          { "type": "note", "text": "Choose one Warlock spell of level 6 castable once per Long Rest without a slot. Gain additional arcanum spells at levels 13 (level 7), 15 (level 8), and 17 (level 9). Each can be cast once per Long Rest without a slot; all uses reset on Long Rest." }
+          {
+            "type": "note",
+            "text": "Choose one Warlock spell of level 6 castable once per Long Rest without a slot. Gain additional arcanum spells at levels 13 (level 7), 15 (level 8), and 17 (level 9). Each can be cast once per Long Rest without a slot; all uses reset on Long Rest."
+          }
         ]
       }
     },
@@ -184,7 +487,10 @@
       "description": "When you use your Magical Cunning feature, you regain all your expended Pact Magic spell slots.",
       "effects": {
         "properties": [
-          { "type": "note", "text": "Upgrades Magical Cunning: instead of regaining only half your maximum spell slots, you now regain all expended Pact Magic spell slots." }
+          {
+            "type": "note",
+            "text": "Upgrades Magical Cunning: instead of regaining only half your maximum spell slots, you now regain all expended Pact Magic spell slots."
+          }
         ]
       }
     }
@@ -196,10 +502,25 @@
       "className": "Warlock",
       "description": "Your pact draws on the power of the Feywild. When you choose this subclass, you might make a deal with an archfey, such as the Prince of Frost; the Queen of Air and Darkness, ruler of the Gloaming Court; Titania of the Summer Court; or an ancient hag. Or you might call on a spectrum of Fey, weaving a web of favors and debts. Whoever they are, your patron is often inscrutable and whimsical.",
       "additionalSpells": {
-        "level3": ["Calm Emotions", "Faerie Fire", "Misty Step", "Phantasmal Force", "Sleep"],
-        "level5": ["Blink", "Plant Growth"],
-        "level7": ["Dominate Beast", "Greater Invisibility"],
-        "level9": ["Dominate Person", "Seeming"]
+        "level3": [
+          "Calm Emotions",
+          "Faerie Fire",
+          "Misty Step",
+          "Phantasmal Force",
+          "Sleep"
+        ],
+        "level5": [
+          "Blink",
+          "Plant Growth"
+        ],
+        "level7": [
+          "Dominate Beast",
+          "Greater Invisibility"
+        ],
+        "level9": [
+          "Dominate Person",
+          "Seeming"
+        ]
       },
       "features": [
         {
@@ -210,19 +531,77 @@
           "description": "**Archfey Spells.** The magic of your patron ensures you always have certain spells ready. When you reach a Warlock level specified in the Archfey Spells table, you thereafter always have the listed spells prepared: level 3 — {spell:Calm Emotions}, {spell:Faerie Fire}, {spell:Misty Step}, {spell:Phantasmal Force}, {spell:Sleep}; level 5 — {spell:Blink}, {spell:Plant Growth}; level 7 — {spell:Dominate Beast}, {spell:Greater Invisibility}; level 9 — {spell:Dominate Person}, {spell:Seeming}.\n\n**Steps of the Fey.** Your patron grants you the ability to move between the boundaries of the planes. You can cast {spell:Misty Step} without expending a spell slot a number of times equal to your Charisma modifier (minimum of once), and you regain all expended uses when you finish a {rule:Long Rest}.\n\nIn addition, whenever you cast that spell, you can choose one of the following additional effects.\n\n**Refreshing Step.** Immediately after you teleport, you or one creature you can see within 10 feet of yourself gains 1d10 {rule:Temporary Hit Points}.\n\n**Taunting Step.** Creatures within 5 feet of the space you left must succeed on a Wisdom saving throw against your spell save DC or have {rule:Disadvantage} on attack rolls against creatures other than you until the start of your next turn.",
           "effects": {
             "properties": [
-              { "type": "spell_grant", "spell": "Calm Emotions", "usage": "always_prepared" },
-              { "type": "spell_grant", "spell": "Faerie Fire", "usage": "always_prepared" },
-              { "type": "spell_grant", "spell": "Misty Step", "usage": "always_prepared" },
-              { "type": "spell_grant", "spell": "Phantasmal Force", "usage": "always_prepared" },
-              { "type": "spell_grant", "spell": "Sleep", "usage": "always_prepared" },
-              { "type": "spell_grant", "spell": "Blink", "usage": "always_prepared", "minLevel": 5 },
-              { "type": "spell_grant", "spell": "Plant Growth", "usage": "always_prepared", "minLevel": 5 },
-              { "type": "spell_grant", "spell": "Dominate Beast", "usage": "always_prepared", "minLevel": 7 },
-              { "type": "spell_grant", "spell": "Greater Invisibility", "usage": "always_prepared", "minLevel": 7 },
-              { "type": "spell_grant", "spell": "Dominate Person", "usage": "always_prepared", "minLevel": 9 },
-              { "type": "spell_grant", "spell": "Seeming", "usage": "always_prepared", "minLevel": 9 },
-              { "type": "resource", "name": "Steps of the Fey", "maxUses": "max(cha, 1)", "resetOn": "long" },
-              { "type": "note", "text": "Steps of the Fey: cast Misty Step without a slot (max(CHA mod, 1) times per Long Rest). Each casting grants one of: Refreshing Step (1d10 temp HP for self or ally within 10 ft) or Taunting Step (creatures within 5 ft of vacated space make WIS save vs spell DC or have Disadvantage on attacks against others until start of your next turn)." }
+              {
+                "type": "spell_grant",
+                "spell": "Calm Emotions",
+                "usage": "always_prepared"
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Faerie Fire",
+                "usage": "always_prepared"
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Misty Step",
+                "usage": "always_prepared"
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Phantasmal Force",
+                "usage": "always_prepared"
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Sleep",
+                "usage": "always_prepared"
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Blink",
+                "usage": "always_prepared",
+                "minLevel": 5
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Plant Growth",
+                "usage": "always_prepared",
+                "minLevel": 5
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Dominate Beast",
+                "usage": "always_prepared",
+                "minLevel": 7
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Greater Invisibility",
+                "usage": "always_prepared",
+                "minLevel": 7
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Dominate Person",
+                "usage": "always_prepared",
+                "minLevel": 9
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Seeming",
+                "usage": "always_prepared",
+                "minLevel": 9
+              },
+              {
+                "type": "resource",
+                "name": "Steps of the Fey",
+                "maxUses": "max(cha, 1)",
+                "resetOn": "long"
+              },
+              {
+                "type": "note",
+                "text": "Steps of the Fey: cast Misty Step without a slot (max(CHA mod, 1) times per Long Rest). Each casting grants one of: Refreshing Step (1d10 temp HP for self or ally within 10 ft) or Taunting Step (creatures within 5 ft of vacated space make WIS save vs spell DC or have Disadvantage on attacks against others until start of your next turn)."
+              }
             ]
           }
         },
@@ -234,7 +613,10 @@
           "description": "You can cast {spell:Misty Step} as a {rule:Reaction} in response to taking damage.\n\nIn addition, the following effects are now among your Steps of the Fey options.\n\n**Disappearing Step.** You have the {condition:Invisible} condition until the start of your next turn or until immediately after you make an attack roll, deal damage, or cast a spell.\n\n**Dreadful Step.** Creatures within 5 feet of the space you left or the space you appear in (your choice) must succeed on a Wisdom saving throw against your spell save DC or take 2d10 Psychic damage.",
           "effects": {
             "properties": [
-              { "type": "note", "text": "Reaction: cast Misty Step when you take damage. Two new Steps of the Fey options: Disappearing Step (Invisible until start of next turn or until you attack/deal damage/cast) or Dreadful Step (creatures within 5 ft of departure or arrival space make WIS save vs DC or take 2d10 Psychic)." }
+              {
+                "type": "note",
+                "text": "Reaction: cast Misty Step when you take damage. Two new Steps of the Fey options: Disappearing Step (Invisible until start of next turn or until you attack/deal damage/cast) or Dreadful Step (creatures within 5 ft of departure or arrival space make WIS save vs DC or take 2d10 Psychic)."
+              }
             ]
           }
         },
@@ -246,9 +628,20 @@
           "description": "Your patron teaches you how to guard your mind and body. You are immune to the {condition:Charmed} condition.\n\nIn addition, immediately after a creature you can see hits you with an attack roll, you can take a {rule:Reaction} to reduce the damage you take by half (round down), and you can force the attacker to make a Wisdom saving throw against your spell save DC. On a failed save, the attacker takes Psychic damage equal to the damage you take. Once you use this Reaction, you can't use it again until you finish a {rule:Long Rest} unless you expend a Pact Magic spell slot (no action required) to restore your use of it.",
           "effects": {
             "properties": [
-              { "type": "condition_immunity", "conditionName": "Charmed" },
-              { "type": "resource", "name": "Beguiling Defenses Reaction", "maxUses": 1, "resetOn": "long" },
-              { "type": "note", "text": "Reaction when hit by an attack: reduce damage taken by half (round down); attacker makes WIS save vs spell DC or takes Psychic damage equal to the damage you take. Expend a Pact Magic slot to restore this use without resting." }
+              {
+                "type": "condition_immunity",
+                "conditionName": "Charmed"
+              },
+              {
+                "type": "resource",
+                "name": "Beguiling Defenses Reaction",
+                "maxUses": 1,
+                "resetOn": "long"
+              },
+              {
+                "type": "note",
+                "text": "Reaction when hit by an attack: reduce damage taken by half (round down); attacker makes WIS save vs spell DC or takes Psychic damage equal to the damage you take. Expend a Pact Magic slot to restore this use without resting."
+              }
             ]
           }
         },
@@ -260,7 +653,10 @@
           "description": "Your patron grants you the ability to weave your magic with teleportation. Immediately after you cast an Enchantment or Illusion spell using an action and a spell slot, you can cast {spell:Misty Step} as part of the same action and without expending a spell slot.",
           "effects": {
             "properties": [
-              { "type": "note", "text": "Immediately after casting an Enchantment or Illusion spell with an action and a spell slot, cast Misty Step as part of the same action at no slot cost." }
+              {
+                "type": "note",
+                "text": "Immediately after casting an Enchantment or Illusion spell with an action and a spell slot, cast Misty Step as part of the same action at no slot cost."
+              }
             ]
           }
         }
@@ -272,11 +668,28 @@
       "className": "Warlock",
       "description": "Your pact draws on the Upper Planes, the realms of everlasting bliss. You might enter an agreement with an empyrean, a couatl, a sphinx, a unicorn, or another heavenly entity. Or you might call on numerous such beings as you pursue goals aligned with theirs. Your pact allows you to experience a hint of the holy light that illuminates the multiverse.",
       "additionalSpells": {
-        "cantrips": ["Sacred Flame", "Light"],
-        "level3": ["Aid", "Cure Wounds", "Guiding Bolt", "Lesser Restoration"],
-        "level5": ["Daylight", "Revivify"],
-        "level7": ["Guardian of Faith", "Wall of Fire"],
-        "level9": ["Greater Restoration", "Summon Celestial"]
+        "cantrips": [
+          "Sacred Flame",
+          "Light"
+        ],
+        "level3": [
+          "Aid",
+          "Cure Wounds",
+          "Guiding Bolt",
+          "Lesser Restoration"
+        ],
+        "level5": [
+          "Daylight",
+          "Revivify"
+        ],
+        "level7": [
+          "Guardian of Faith",
+          "Wall of Fire"
+        ],
+        "level9": [
+          "Greater Restoration",
+          "Summon Celestial"
+        ]
       },
       "features": [
         {
@@ -287,20 +700,82 @@
           "description": "**Celestial Spells.** The magic of your patron ensures you always have certain spells ready. When you reach a Warlock level specified in the Celestial Spells table, you thereafter always have the listed spells prepared: level 3 — {spell:Aid}, {spell:Cure Wounds}, {spell:Guiding Bolt}, {spell:Lesser Restoration}; level 5 — {spell:Daylight}, {spell:Revivify}; level 7 — {spell:Guardian of Faith}, {spell:Wall of Fire}; level 9 — {spell:Greater Restoration}, {spell:Summon Celestial}.\n\n**Bonus Cantrips.** You learn the {spell:Sacred Flame} and {spell:Light} cantrips. These are bonus cantrips known for you — they don't count against your number of Cantrips Known and can be cast at will.\n\n**Healing Light.** You gain the ability to channel celestial energy to heal wounds. You have a pool of d6s to fuel this healing. The number of dice in the pool equals 1 plus your Warlock level.\n\nAs a {rule:Bonus Action}, you can heal yourself or one creature you can see within 60 feet of yourself, expending dice from the pool. The maximum number of dice you can expend at once equals your Charisma modifier (minimum of one die). Roll the dice you expend, and restore a number of {rule:Hit Points} equal to the roll's total. Your pool regains all expended dice when you finish a {rule:Long Rest}.",
           "effects": {
             "properties": [
-              { "type": "spell_grant", "spell": "Sacred Flame", "usage": "at_will" },
-              { "type": "spell_grant", "spell": "Light", "usage": "at_will" },
-              { "type": "spell_grant", "spell": "Aid", "usage": "always_prepared" },
-              { "type": "spell_grant", "spell": "Cure Wounds", "usage": "always_prepared" },
-              { "type": "spell_grant", "spell": "Guiding Bolt", "usage": "always_prepared" },
-              { "type": "spell_grant", "spell": "Lesser Restoration", "usage": "always_prepared" },
-              { "type": "spell_grant", "spell": "Daylight", "usage": "always_prepared", "minLevel": 5 },
-              { "type": "spell_grant", "spell": "Revivify", "usage": "always_prepared", "minLevel": 5 },
-              { "type": "spell_grant", "spell": "Guardian of Faith", "usage": "always_prepared", "minLevel": 7 },
-              { "type": "spell_grant", "spell": "Wall of Fire", "usage": "always_prepared", "minLevel": 7 },
-              { "type": "spell_grant", "spell": "Greater Restoration", "usage": "always_prepared", "minLevel": 9 },
-              { "type": "spell_grant", "spell": "Summon Celestial", "usage": "always_prepared", "minLevel": 9 },
-              { "type": "resource", "name": "Healing Light Dice", "maxUses": "clvl + 1", "resetOn": "long" },
-              { "type": "note", "text": "Healing Light: Bonus Action, spend up to CHA mod (min 1) d6s from your pool (pool size = Warlock level + 1) to restore HP equal to the roll to yourself or a creature within 60 ft. Pool resets on Long Rest." }
+              {
+                "type": "spell_grant",
+                "spell": "Sacred Flame",
+                "usage": "at_will"
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Light",
+                "usage": "at_will"
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Aid",
+                "usage": "always_prepared"
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Cure Wounds",
+                "usage": "always_prepared"
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Guiding Bolt",
+                "usage": "always_prepared"
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Lesser Restoration",
+                "usage": "always_prepared"
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Daylight",
+                "usage": "always_prepared",
+                "minLevel": 5
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Revivify",
+                "usage": "always_prepared",
+                "minLevel": 5
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Guardian of Faith",
+                "usage": "always_prepared",
+                "minLevel": 7
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Wall of Fire",
+                "usage": "always_prepared",
+                "minLevel": 7
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Greater Restoration",
+                "usage": "always_prepared",
+                "minLevel": 9
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Summon Celestial",
+                "usage": "always_prepared",
+                "minLevel": 9
+              },
+              {
+                "type": "resource",
+                "name": "Healing Light Dice",
+                "maxUses": "clvl + 1",
+                "resetOn": "long"
+              },
+              {
+                "type": "note",
+                "text": "Healing Light: Bonus Action, spend up to CHA mod (min 1) d6s from your pool (pool size = Warlock level + 1) to restore HP equal to the roll to yourself or a creature within 60 ft. Pool resets on Long Rest."
+              }
             ]
           }
         },
@@ -312,8 +787,14 @@
           "description": "Your link to your patron allows you to serve as a conduit for radiant energy. You have {rule:Resistance|resistance} to Radiant damage. Once per turn, when a spell you cast deals Radiant or Fire damage, you can add your Charisma modifier to that spell's damage against one of the spell's targets.",
           "effects": {
             "properties": [
-              { "type": "resistance", "damageType": "radiant" },
-              { "type": "note", "text": "Once per turn, when you cast a spell dealing Radiant or Fire damage, add your Charisma modifier to the damage against one target of that spell." }
+              {
+                "type": "resistance",
+                "damageType": "radiant"
+              },
+              {
+                "type": "note",
+                "text": "Once per turn, when you cast a spell dealing Radiant or Fire damage, add your Charisma modifier to the damage against one target of that spell."
+              }
             ]
           }
         },
@@ -325,7 +806,10 @@
           "description": "You gain {rule:Temporary Hit Points} whenever you use your Magical Cunning feature or finish a {rule:Short Rest} or {rule:Long Rest}. These Temporary Hit Points equal your Warlock level plus your Charisma modifier. Additionally, choose up to five creatures you can see when you gain the points. Those creatures each gain Temporary Hit Points equal to half your Warlock level plus your Charisma modifier.",
           "effects": {
             "properties": [
-              { "type": "note", "text": "On Magical Cunning use or Short/Long Rest finish: gain Temp HP = Warlock level + CHA mod. Also choose up to 5 visible creatures to each receive Temp HP = (half Warlock level) + CHA mod." }
+              {
+                "type": "note",
+                "text": "On Magical Cunning use or Short/Long Rest finish: gain Temp HP = Warlock level + CHA mod. Also choose up to 5 visible creatures to each receive Temp HP = (half Warlock level) + CHA mod."
+              }
             ]
           }
         },
@@ -337,8 +821,16 @@
           "description": "When you or an ally within 60 feet of you is about to make a {rule:Death Saving Throw}, you can unleash radiant energy to save the creature. The creature regains {rule:Hit Points} equal to half its Hit Point maximum and can end the {condition:Prone} condition on itself. Each creature of your choice that is within 30 feet of the creature takes Radiant damage equal to 2d8 plus your Charisma modifier, and each has the {condition:Blinded} condition until the end of the current turn.\n\nOnce you use this feature, you can't use it again until you finish a {rule:Long Rest}.",
           "effects": {
             "properties": [
-              { "type": "resource", "name": "Searing Vengeance", "maxUses": 1, "resetOn": "long" },
-              { "type": "note", "text": "When you or an ally within 60 ft is about to make a death save: that creature regains HP = half its HP maximum and can end Prone on itself. Creatures of your choice within 30 ft of that creature take 2d8 + CHA mod Radiant damage and are Blinded until end of current turn." }
+              {
+                "type": "resource",
+                "name": "Searing Vengeance",
+                "maxUses": 1,
+                "resetOn": "long"
+              },
+              {
+                "type": "note",
+                "text": "When you or an ally within 60 ft is about to make a death save: that creature regains HP = half its HP maximum and can end Prone on itself. Creatures of your choice within 30 ft of that creature take 2d8 + CHA mod Radiant damage and are Blinded until end of current turn."
+              }
             ]
           }
         }
@@ -350,10 +842,24 @@
       "className": "Warlock",
       "description": "Your pact draws on the Lower Planes, the realms of perdition. You might forge a bargain with a demon lord such as Demogorgon or Orcus; an archdevil such as Asmodeus; or a pit fiend, balor, yugoloth, or night hag that is especially mighty. That patron's aims are evil—the corruption or destruction of all things, ultimately including you—and your path is defined by the extent to which you strive against those aims.",
       "additionalSpells": {
-        "level3": ["Burning Hands", "Command", "Scorching Ray", "Suggestion"],
-        "level5": ["Fireball", "Stinking Cloud"],
-        "level7": ["Fire Shield", "Wall of Fire"],
-        "level9": ["Geas", "Insect Plague"]
+        "level3": [
+          "Burning Hands",
+          "Command",
+          "Scorching Ray",
+          "Suggestion"
+        ],
+        "level5": [
+          "Fireball",
+          "Stinking Cloud"
+        ],
+        "level7": [
+          "Fire Shield",
+          "Wall of Fire"
+        ],
+        "level9": [
+          "Geas",
+          "Insect Plague"
+        ]
       },
       "features": [
         {
@@ -364,17 +870,66 @@
           "description": "**Fiend Spells.** The magic of your patron ensures you always have certain spells ready. When you reach a Warlock level specified in the Fiend Spells table, you thereafter always have the listed spells prepared: level 3 — {spell:Burning Hands}, {spell:Command}, {spell:Scorching Ray}, {spell:Suggestion}; level 5 — {spell:Fireball}, {spell:Stinking Cloud}; level 7 — {spell:Fire Shield}, {spell:Wall of Fire}; level 9 — {spell:Geas}, {spell:Insect Plague}.\n\n**Dark One's Blessing.** When you reduce an enemy to 0 {rule:Hit Points}, you gain {rule:Temporary Hit Points} equal to your Charisma modifier plus your Warlock level (minimum of 1 Temporary Hit Point). You also gain this benefit if someone else reduces an enemy within 10 feet of you to 0 Hit Points.",
           "effects": {
             "properties": [
-              { "type": "spell_grant", "spell": "Burning Hands", "usage": "always_prepared" },
-              { "type": "spell_grant", "spell": "Command", "usage": "always_prepared" },
-              { "type": "spell_grant", "spell": "Scorching Ray", "usage": "always_prepared" },
-              { "type": "spell_grant", "spell": "Suggestion", "usage": "always_prepared" },
-              { "type": "spell_grant", "spell": "Fireball", "usage": "always_prepared", "minLevel": 5 },
-              { "type": "spell_grant", "spell": "Stinking Cloud", "usage": "always_prepared", "minLevel": 5 },
-              { "type": "spell_grant", "spell": "Fire Shield", "usage": "always_prepared", "minLevel": 7 },
-              { "type": "spell_grant", "spell": "Wall of Fire", "usage": "always_prepared", "minLevel": 7 },
-              { "type": "spell_grant", "spell": "Geas", "usage": "always_prepared", "minLevel": 9 },
-              { "type": "spell_grant", "spell": "Insect Plague", "usage": "always_prepared", "minLevel": 9 },
-              { "type": "note", "text": "Dark One's Blessing: when an enemy drops to 0 HP (by you or another creature within 10 ft of you), gain Temp HP = CHA mod + Warlock level (minimum 1)." }
+              {
+                "type": "spell_grant",
+                "spell": "Burning Hands",
+                "usage": "always_prepared"
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Command",
+                "usage": "always_prepared"
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Scorching Ray",
+                "usage": "always_prepared"
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Suggestion",
+                "usage": "always_prepared"
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Fireball",
+                "usage": "always_prepared",
+                "minLevel": 5
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Stinking Cloud",
+                "usage": "always_prepared",
+                "minLevel": 5
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Fire Shield",
+                "usage": "always_prepared",
+                "minLevel": 7
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Wall of Fire",
+                "usage": "always_prepared",
+                "minLevel": 7
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Geas",
+                "usage": "always_prepared",
+                "minLevel": 9
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Insect Plague",
+                "usage": "always_prepared",
+                "minLevel": 9
+              },
+              {
+                "type": "note",
+                "text": "Dark One's Blessing: when an enemy drops to 0 HP (by you or another creature within 10 ft of you), gain Temp HP = CHA mod + Warlock level (minimum 1)."
+              }
             ]
           }
         },
@@ -386,8 +941,16 @@
           "description": "You can call on your fiendish patron to alter fate in your favor. When you make an ability check or a saving throw, you can use this feature to add 1d10 to your roll. You can do so after seeing the roll but before any of the roll's effects occur.\n\nYou can use this feature a number of times equal to your Charisma modifier (minimum of once), but you can use it no more than once per roll. You regain all expended uses when you finish a {rule:Long Rest}.",
           "effects": {
             "properties": [
-              { "type": "resource", "name": "Dark One's Own Luck", "maxUses": "max(cha, 1)", "resetOn": "long" },
-              { "type": "note", "text": "After seeing an ability check or saving throw roll (before effects), add 1d10 to it. Once per roll. Uses = CHA mod (min 1). Resets on Long Rest." }
+              {
+                "type": "resource",
+                "name": "Dark One's Own Luck",
+                "maxUses": "max(cha, 1)",
+                "resetOn": "long"
+              },
+              {
+                "type": "note",
+                "text": "After seeing an ability check or saving throw roll (before effects), add 1d10 to it. Once per roll. Uses = CHA mod (min 1). Resets on Long Rest."
+              }
             ]
           }
         },
@@ -399,7 +962,10 @@
           "description": "Choose one damage type, other than Force, whenever you finish a {rule:Short Rest} or {rule:Long Rest}. You have {rule:Resistance|resistance} to that damage type until you choose a different one with this feature.",
           "effects": {
             "properties": [
-              { "type": "note", "text": "After each Short or Long Rest, choose one damage type (not Force). Gain resistance to it until your next Short or Long Rest when you choose again." }
+              {
+                "type": "note",
+                "text": "After each Short or Long Rest, choose one damage type (not Force). Gain resistance to it until your next Short or Long Rest when you choose again."
+              }
             ]
           }
         },
@@ -411,8 +977,16 @@
           "description": "Once per turn when you hit a creature with an attack roll, you can try to instantly transport the target through the Lower Planes. The target must succeed on a Charisma saving throw against your spell save DC, or the target disappears and hurtles through a nightmare landscape. The target takes 8d10 Psychic damage if it isn't a Fiend, and it has the {condition:Incapacitated} condition until the end of your next turn, when it returns to the space it previously occupied or the nearest unoccupied space.\n\nOnce you use this feature, you can't use it again until you finish a {rule:Long Rest} unless you expend a Pact Magic spell slot (no action required) to restore your use of it.",
           "effects": {
             "properties": [
-              { "type": "resource", "name": "Hurl Through Hell", "maxUses": 1, "resetOn": "long" },
-              { "type": "note", "text": "Once per turn on a hit: target makes CHA save vs spell DC. On failure: target disappears, takes 8d10 Psychic (if not a Fiend), and has Incapacitated condition until end of your next turn, then returns to its space. Expend a Pact Magic slot to restore this use without resting." }
+              {
+                "type": "resource",
+                "name": "Hurl Through Hell",
+                "maxUses": 1,
+                "resetOn": "long"
+              },
+              {
+                "type": "note",
+                "text": "Once per turn on a hit: target makes CHA save vs spell DC. On failure: target disappears, takes 8d10 Psychic (if not a Fiend), and has Incapacitated condition until end of your next turn, then returns to its space. Expend a Pact Magic slot to restore this use without resting."
+              }
             ]
           }
         }
@@ -424,11 +998,27 @@
       "className": "Warlock",
       "description": "When you choose this subclass, you might bind yourself to an unspeakable being from the Far Realm or an elder god—a being such as Tharizdun, the Chained God; Zargon, the Returner; Hadar, the Dark Hunger; or Great Cthulhu. Or you might invoke several entities without yoking yourself to one. The motives of these beings are incomprehensible, and the Great Old One might be indifferent to your existence. But the secrets you've learned nevertheless allow you to draw strange magic from it.",
       "additionalSpells": {
-        "level3": ["Detect Thoughts", "Dissonant Whispers", "Phantasmal Force", "Tasha's Hideous Laughter"],
-        "level5": ["Clairvoyance", "Hunger of Hadar"],
-        "level7": ["Confusion", "Summon Aberration"],
-        "level9": ["Modify Memory", "Telekinesis"],
-        "level10": ["Hex"]
+        "level3": [
+          "Detect Thoughts",
+          "Dissonant Whispers",
+          "Phantasmal Force",
+          "Tasha's Hideous Laughter"
+        ],
+        "level5": [
+          "Clairvoyance",
+          "Hunger of Hadar"
+        ],
+        "level7": [
+          "Confusion",
+          "Summon Aberration"
+        ],
+        "level9": [
+          "Modify Memory",
+          "Telekinesis"
+        ],
+        "level10": [
+          "Hex"
+        ]
       },
       "features": [
         {
@@ -439,18 +1029,70 @@
           "description": "**Great Old One Spells.** The magic of your patron ensures you always have certain spells ready. When you reach a Warlock level specified in the Great Old One Spells table, you thereafter always have the listed spells prepared: level 3 — {spell:Detect Thoughts}, {spell:Dissonant Whispers}, {spell:Phantasmal Force}, {spell:Tasha's Hideous Laughter}; level 5 — {spell:Clairvoyance}, {spell:Hunger of Hadar}; level 7 — {spell:Confusion}, {spell:Summon Aberration}; level 9 — {spell:Modify Memory}, {spell:Telekinesis}.\n\n**Awakened Mind.** You can form a telepathic connection between your mind and the mind of another. As a {rule:Bonus Action}, choose one creature you can see within 30 feet of yourself. You and the chosen creature can communicate telepathically with each other while the two of you are within a number of miles of each other equal to your Charisma modifier (minimum of 1 mile). To understand each other, you each must mentally use a language the other knows. The telepathic connection lasts for a number of minutes equal to your Warlock level. It ends early if you use this feature to connect with a different creature.\n\n**Psychic Spells.** When you cast a Warlock spell that deals damage, you can change its damage type to Psychic. In addition, when you cast a Warlock spell that is an Enchantment or Illusion, you can do so without Verbal or Somatic components.",
           "effects": {
             "properties": [
-              { "type": "spell_grant", "spell": "Detect Thoughts", "usage": "always_prepared" },
-              { "type": "spell_grant", "spell": "Dissonant Whispers", "usage": "always_prepared" },
-              { "type": "spell_grant", "spell": "Phantasmal Force", "usage": "always_prepared" },
-              { "type": "spell_grant", "spell": "Tasha's Hideous Laughter", "usage": "always_prepared" },
-              { "type": "spell_grant", "spell": "Clairvoyance", "usage": "always_prepared", "minLevel": 5 },
-              { "type": "spell_grant", "spell": "Hunger of Hadar", "usage": "always_prepared", "minLevel": 5 },
-              { "type": "spell_grant", "spell": "Confusion", "usage": "always_prepared", "minLevel": 7 },
-              { "type": "spell_grant", "spell": "Summon Aberration", "usage": "always_prepared", "minLevel": 7 },
-              { "type": "spell_grant", "spell": "Modify Memory", "usage": "always_prepared", "minLevel": 9 },
-              { "type": "spell_grant", "spell": "Telekinesis", "usage": "always_prepared", "minLevel": 9 },
-              { "type": "note", "text": "Awakened Mind: Bonus Action, form telepathic bond with one creature within 30 ft. Bond range = CHA mod (min 1) miles. Lasts Warlock level minutes. Ends if you bond with a different creature." },
-              { "type": "note", "text": "Psychic Spells: When casting a damage-dealing Warlock spell, you may change its damage type to Psychic. When casting a Warlock Enchantment or Illusion spell, you may omit Verbal and Somatic components." }
+              {
+                "type": "spell_grant",
+                "spell": "Detect Thoughts",
+                "usage": "always_prepared"
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Dissonant Whispers",
+                "usage": "always_prepared"
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Phantasmal Force",
+                "usage": "always_prepared"
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Tasha's Hideous Laughter",
+                "usage": "always_prepared"
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Clairvoyance",
+                "usage": "always_prepared",
+                "minLevel": 5
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Hunger of Hadar",
+                "usage": "always_prepared",
+                "minLevel": 5
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Confusion",
+                "usage": "always_prepared",
+                "minLevel": 7
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Summon Aberration",
+                "usage": "always_prepared",
+                "minLevel": 7
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Modify Memory",
+                "usage": "always_prepared",
+                "minLevel": 9
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Telekinesis",
+                "usage": "always_prepared",
+                "minLevel": 9
+              },
+              {
+                "type": "note",
+                "text": "Awakened Mind: Bonus Action, form telepathic bond with one creature within 30 ft. Bond range = CHA mod (min 1) miles. Lasts Warlock level minutes. Ends if you bond with a different creature."
+              },
+              {
+                "type": "note",
+                "text": "Psychic Spells: When casting a damage-dealing Warlock spell, you may change its damage type to Psychic. When casting a Warlock Enchantment or Illusion spell, you may omit Verbal and Somatic components."
+              }
             ]
           }
         },
@@ -462,8 +1104,16 @@
           "description": "When you form a telepathic bond with a creature using your Awakened Mind, you can force that creature to make a Wisdom saving throw against your spell save DC. On a failed save, the creature has {rule:Disadvantage} on attack rolls against you, and you have {rule:Advantage} on attack rolls against that creature for the duration of the bond.\n\nOnce you use this feature, you can't use it again until you finish a {rule:Short Rest} or {rule:Long Rest} unless you expend a Pact Magic spell slot (no action required) to restore your use of it.",
           "effects": {
             "properties": [
-              { "type": "resource", "name": "Clairvoyant Combatant", "maxUses": 1, "resetOn": "short" },
-              { "type": "note", "text": "When forming an Awakened Mind bond, force a WIS save vs spell DC. On fail: target has Disadvantage on attacks against you, you have Advantage on attacks against it for the bond's duration. Expend a Pact Magic slot to restore use without resting." }
+              {
+                "type": "resource",
+                "name": "Clairvoyant Combatant",
+                "maxUses": 1,
+                "resetOn": "short"
+              },
+              {
+                "type": "note",
+                "text": "When forming an Awakened Mind bond, force a WIS save vs spell DC. On fail: target has Disadvantage on attacks against you, you have Advantage on attacks against it for the bond's duration. Expend a Pact Magic slot to restore use without resting."
+              }
             ]
           }
         },
@@ -475,8 +1125,16 @@
           "description": "Your alien patron grants you a powerful curse. You always have the {spell:Hex} spell prepared. When you cast {spell:Hex} and choose an ability, the target also has {rule:Disadvantage} on saving throws of the chosen ability for the duration of the spell.",
           "effects": {
             "properties": [
-              { "type": "spell_grant", "spell": "Hex", "usage": "always_prepared", "castingAbility": "charisma" },
-              { "type": "note", "text": "When you cast Hex and choose an ability, the target also has Disadvantage on saving throws using that ability for the spell's duration." }
+              {
+                "type": "spell_grant",
+                "spell": "Hex",
+                "usage": "always_prepared",
+                "castingAbility": "charisma"
+              },
+              {
+                "type": "note",
+                "text": "When you cast Hex and choose an ability, the target also has Disadvantage on saving throws using that ability for the spell's duration."
+              }
             ]
           }
         },
@@ -488,8 +1146,14 @@
           "description": "Your thoughts can't be read by telepathy or other means unless you allow it. You also have {rule:Resistance|resistance} to Psychic damage, and whenever a creature deals Psychic damage to you, that creature takes the same amount of damage that you take.",
           "effects": {
             "properties": [
-              { "type": "resistance", "damageType": "psychic" },
-              { "type": "note", "text": "Your thoughts can't be read by telepathy or other means unless you allow it. Whenever a creature deals Psychic damage to you, that creature takes the same amount of Psychic damage." }
+              {
+                "type": "resistance",
+                "damageType": "psychic"
+              },
+              {
+                "type": "note",
+                "text": "Your thoughts can't be read by telepathy or other means unless you allow it. Whenever a creature deals Psychic damage to you, that creature takes the same amount of Psychic damage."
+              }
             ]
           }
         },
@@ -501,11 +1165,27 @@
           "description": "When you cast {spell:Summon Aberration}, you can modify it so that it doesn't require {status:Concentration}. If you do so, the spell's duration becomes 1 minute for that casting, and when summoned, the Aberration has a number of {rule:Temporary Hit Points} equal to your Warlock level plus your Charisma modifier.\n\nIn addition, the first time each turn the Aberration hits a creature under the effect of your {spell:Hex}, the Aberration deals extra Psychic damage to the target equal to the bonus damage of that spell.",
           "effects": {
             "properties": [
-              { "type": "note", "text": "When casting Summon Aberration, you may cast it without Concentration. If you do: duration becomes 1 minute and the summoned Aberration gains Temp HP = Warlock level + CHA mod. First time each turn the Aberration hits a target affected by your Hex, it deals extra Psychic damage equal to Hex's bonus damage." }
+              {
+                "type": "note",
+                "text": "When casting Summon Aberration, you may cast it without Concentration. If you do: duration becomes 1 minute and the summoned Aberration gains Temp HP = Warlock level + CHA mod. First time each turn the Aberration hits a target affected by your Hex, it deals extra Psychic damage equal to Hex's bonus damage."
+              }
             ]
           }
         }
       ]
     }
-  ]
+  ],
+  "multiclassing": {
+    "requirements": {
+      "charisma": 13
+    },
+    "proficienciesGained": {
+      "armor": [
+        "Light Armor"
+      ],
+      "weapons": [
+        "Simple Weapons"
+      ]
+    }
+  }
 }

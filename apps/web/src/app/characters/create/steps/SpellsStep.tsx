@@ -291,6 +291,12 @@ function AlwaysPreparedBadges({ spellNames }: { spellNames: string[] }) {
 }
 
 // ---------------------------------------------------------------------------
+// Classes with ritual casting
+// ---------------------------------------------------------------------------
+
+const RITUAL_CASTER_CLASSES = new Set(["Bard", "Cleric", "Druid", "Warlock", "Wizard"]);
+
+// ---------------------------------------------------------------------------
 // Main component
 // ---------------------------------------------------------------------------
 
@@ -439,7 +445,7 @@ export function SpellsStep() {
       {alwaysPrepared.length > 0 && <AlwaysPreparedBadges spellNames={alwaysPrepared} />}
 
       {/* ── Counter row ── */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-4 flex-wrap">
         {numCantrips > 0 && (
           <div className="flex items-center gap-2">
             <span className="text-sm text-gray-400">Cantrips:</span>
@@ -453,6 +459,13 @@ export function SpellsStep() {
           </div>
         )}
       </div>
+
+      {/* ── Ritual casting note ── */}
+      {state.className && RITUAL_CASTER_CLASSES.has(state.className) && (
+        <p className="text-xs text-violet-400/80 bg-violet-900/10 border border-violet-700/20 rounded-lg px-3 py-2 leading-relaxed">
+          Ritual spells can be cast without expending a spell slot if you have the spell prepared.
+        </p>
+      )}
 
       {/* ── Unified level tabs (Cantrips + spell levels) ── */}
       <div

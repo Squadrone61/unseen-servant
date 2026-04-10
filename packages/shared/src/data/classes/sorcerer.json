@@ -45,9 +45,6 @@
     ],
     "count": 2
   },
-  "multiclassingRequirements": {
-    "charisma": 13
-  },
   "cantripProgression": [
     4,
     4,
@@ -1187,5 +1184,11 @@
         }
       ]
     }
-  ]
+  ],
+  "multiclassing": {
+    "requirements": {
+      "charisma": 13
+    },
+    "proficienciesGained": {}
+  }
 }
