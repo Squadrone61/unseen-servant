@@ -138,7 +138,6 @@ export function DetailsStep() {
               "appearance-none cursor-pointer",
               !state.alignment ? "text-gray-600" : "",
             ].join(" ")}
-            style={{ colorScheme: "dark" }}
           >
             <option value="" disabled>
               Choose alignment...

@@ -140,9 +140,6 @@ interface StandardArrayAllocatorProps {
 }
 
 function StandardArrayAllocator({ bases, bgBonuses, onChange }: StandardArrayAllocatorProps) {
-  // Track which value is assigned to which ability
-  const _usedValues = Object.values(bases) as number[];
-
   function handleChange(ability: keyof AbilityScores, value: number) {
     onChange({ ...bases, [ability]: value });
   }
@@ -154,7 +151,6 @@ function StandardArrayAllocator({ bases, bgBonuses, onChange }: StandardArrayAll
         const bg = bgBonuses[ability] ?? 0;
         const final = base + bg;
 
-        // Options for this dropdown: all SA values; mark as "taken" if used elsewhere
         const availableOptions = STANDARD_ARRAY_VALUES.map((v) => {
           const takenByOther = ABILITY_KEYS.filter((a) => a !== ability).some(
             (a) => bases[a] === v,
@@ -165,20 +161,18 @@ function StandardArrayAllocator({ bases, bgBonuses, onChange }: StandardArrayAll
         return (
           <div
             key={ability}
-            className="flex items-center gap-3 bg-gray-800/40 border border-gray-700/30 rounded-lg px-4 py-3"
+            className="grid items-center gap-x-3 bg-gray-800/40 border border-gray-700/30 rounded-lg px-4 py-3"
+            style={{ gridTemplateColumns: "5rem 1fr auto auto auto" }}
           >
-            {/* Ability name */}
-            <span className="font-medium text-gray-300 w-10 shrink-0 text-sm">
-              {ABILITY_LABELS[ability]}
-            </span>
+            {/* Col 1: Ability name */}
+            <span className="font-medium text-gray-300 text-sm">{ABILITY_LABELS[ability]}</span>
 
-            {/* Base score dropdown */}
+            {/* Col 2: Base score dropdown */}
             <select
               value={base}
               onChange={(e) => handleChange(ability, Number(e.target.value))}
               aria-label={`${ABILITY_LABELS[ability]} base score`}
-              className="bg-gray-900/60 border border-gray-700/40 rounded px-2 py-1 w-16 text-center text-sm text-gray-200 focus:outline-none focus:border-amber-500/50 transition-colors"
-              style={{ colorScheme: "dark" }}
+              className="bg-gray-900/60 border border-gray-700/40 rounded px-2 py-1 text-center text-sm text-gray-200 focus:outline-none focus:border-amber-500/50 transition-colors"
             >
               {availableOptions.map((opt) => (
                 <option key={opt.value} value={opt.value} disabled={opt.disabled}>
@@ -187,33 +181,30 @@ function StandardArrayAllocator({ bases, bgBonuses, onChange }: StandardArrayAll
               ))}
             </select>
 
-            {/* Base modifier */}
-            <span className="text-gray-500 text-sm w-8 text-center" aria-hidden="true">
-              {formatMod(base)}
-            </span>
-
-            {/* Background bonus */}
+            {/* Col 3: Background bonus */}
             {bg !== 0 ? (
-              <span className="text-amber-400/80 text-xs w-12 text-center">+{bg} bg</span>
+              <span className="text-amber-400/80 text-xs text-center">+{bg} bg</span>
             ) : (
-              <span className="w-12" aria-hidden="true" />
+              <span className="text-xs text-transparent select-none" aria-hidden="true">
+                +0 bg
+              </span>
             )}
 
-            {/* Arrow */}
-            <span className="text-gray-600 text-xs" aria-hidden="true">
+            {/* Col 4: = sign */}
+            <span className="text-gray-600 text-xs text-center" aria-hidden="true">
               =
             </span>
 
-            {/* Final score */}
-            <span
-              className="text-amber-200 font-semibold w-8 text-center"
-              aria-label={`Final ${ABILITY_LABELS[ability]}`}
-            >
-              {final}
+            {/* Col 5: Final score + modifier */}
+            <span className="text-sm text-center">
+              <span
+                className="text-amber-200 font-semibold"
+                aria-label={`Final ${ABILITY_LABELS[ability]}`}
+              >
+                {final}
+              </span>
+              <span className="text-gray-400 ml-1">({formatMod(final)})</span>
             </span>
-
-            {/* Final modifier */}
-            <span className="text-gray-400 text-sm w-10 text-center">({formatMod(final)})</span>
           </div>
         );
       })}
@@ -293,80 +284,72 @@ function PointBuyAllocator({ bases, bgBonuses, onChange }: PointBuyAllocatorProp
           return (
             <div
               key={ability}
-              className="flex items-center gap-3 bg-gray-800/40 border border-gray-700/30 rounded-lg px-4 py-3"
+              className="grid items-center gap-x-3 bg-gray-800/40 border border-gray-700/30 rounded-lg px-4 py-3"
+              style={{ gridTemplateColumns: "5rem 1fr auto auto auto" }}
             >
-              {/* Ability name */}
-              <span className="font-medium text-gray-300 w-10 shrink-0 text-sm">
-                {ABILITY_LABELS[ability]}
-              </span>
+              {/* Col 1: Ability name */}
+              <span className="font-medium text-gray-300 text-sm">{ABILITY_LABELS[ability]}</span>
 
-              {/* Decrement */}
-              <button
-                type="button"
-                onClick={() => handleDecrease(ability)}
-                disabled={!canDecrease(ability)}
-                aria-label={`Decrease ${ABILITY_LABELS[ability]}`}
-                className={[
-                  "w-6 h-6 rounded flex items-center justify-center text-sm border transition-colors",
-                  canDecrease(ability)
-                    ? "border-gray-600/60 bg-gray-700/40 text-gray-300 hover:border-gray-500/80 hover:text-gray-100"
-                    : "border-gray-700/30 bg-gray-800/20 text-gray-700 cursor-not-allowed",
-                ].join(" ")}
-              >
-                −
-              </button>
+              {/* Col 2: − score + cost */}
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleDecrease(ability)}
+                  disabled={!canDecrease(ability)}
+                  aria-label={`Decrease ${ABILITY_LABELS[ability]}`}
+                  className={[
+                    "w-6 h-6 rounded flex items-center justify-center text-sm border transition-colors shrink-0",
+                    canDecrease(ability)
+                      ? "border-gray-600/60 bg-gray-700/40 text-gray-300 hover:border-gray-500/80 hover:text-gray-100"
+                      : "border-gray-700/30 bg-gray-800/20 text-gray-700 cursor-not-allowed",
+                  ].join(" ")}
+                >
+                  −
+                </button>
+                <span className="bg-gray-900/60 border border-gray-700/40 rounded px-2 py-1 w-10 text-center text-sm text-gray-200 tabular-nums">
+                  {base}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => handleIncrease(ability)}
+                  disabled={!canIncrease(ability)}
+                  aria-label={`Increase ${ABILITY_LABELS[ability]}`}
+                  className={[
+                    "w-6 h-6 rounded flex items-center justify-center text-sm border transition-colors shrink-0",
+                    canIncrease(ability)
+                      ? "border-gray-600/60 bg-gray-700/40 text-gray-300 hover:border-gray-500/80 hover:text-gray-100"
+                      : "border-gray-700/30 bg-gray-800/20 text-gray-700 cursor-not-allowed",
+                  ].join(" ")}
+                >
+                  +
+                </button>
+                <span className="text-gray-600 text-xs">{cost}pt</span>
+              </div>
 
-              {/* Base score */}
-              <span className="bg-gray-900/60 border border-gray-700/40 rounded px-2 py-1 w-10 text-center text-sm text-gray-200 tabular-nums">
-                {base}
-              </span>
-
-              {/* Increment */}
-              <button
-                type="button"
-                onClick={() => handleIncrease(ability)}
-                disabled={!canIncrease(ability)}
-                aria-label={`Increase ${ABILITY_LABELS[ability]}`}
-                className={[
-                  "w-6 h-6 rounded flex items-center justify-center text-sm border transition-colors",
-                  canIncrease(ability)
-                    ? "border-gray-600/60 bg-gray-700/40 text-gray-300 hover:border-gray-500/80 hover:text-gray-100"
-                    : "border-gray-700/30 bg-gray-800/20 text-gray-700 cursor-not-allowed",
-                ].join(" ")}
-              >
-                +
-              </button>
-
-              {/* Cost badge */}
-              <span className="text-gray-600 text-xs w-10 text-center">{cost}pt</span>
-
-              {/* Base modifier */}
-              <span className="text-gray-500 text-sm w-8 text-center" aria-hidden="true">
-                {formatMod(base)}
-              </span>
-
-              {/* Background bonus */}
+              {/* Col 3: Background bonus */}
               {bg !== 0 ? (
-                <span className="text-amber-400/80 text-xs w-12 text-center">+{bg} bg</span>
+                <span className="text-amber-400/80 text-xs text-center">+{bg} bg</span>
               ) : (
-                <span className="w-12" aria-hidden="true" />
+                <span className="text-xs text-transparent select-none" aria-hidden="true">
+                  +0 bg
+                </span>
               )}
 
-              {/* Arrow */}
-              <span className="text-gray-600 text-xs" aria-hidden="true">
+              {/* Col 4: = sign */}
+              <span className="text-gray-600 text-xs text-center" aria-hidden="true">
                 =
               </span>
 
-              {/* Final score */}
-              <span
-                className="text-amber-200 font-semibold w-8 text-center"
-                aria-label={`Final ${ABILITY_LABELS[ability]}`}
-              >
-                {final}
+              {/* Col 5: Final score + modifier */}
+              <span className="text-sm text-center">
+                <span
+                  className="text-amber-200 font-semibold"
+                  aria-label={`Final ${ABILITY_LABELS[ability]}`}
+                >
+                  {final}
+                </span>
+                <span className="text-gray-400 ml-1">({formatMod(final)})</span>
               </span>
-
-              {/* Final modifier */}
-              <span className="text-gray-400 text-sm w-10 text-center">({formatMod(final)})</span>
             </div>
           );
         })}
@@ -403,14 +386,13 @@ function ManualAllocator({ bases, bgBonuses, onChange }: ManualAllocatorProps) {
         return (
           <div
             key={ability}
-            className="flex items-center gap-3 bg-gray-800/40 border border-gray-700/30 rounded-lg px-4 py-3"
+            className="grid items-center gap-x-3 bg-gray-800/40 border border-gray-700/30 rounded-lg px-4 py-3"
+            style={{ gridTemplateColumns: "5rem 1fr auto auto auto" }}
           >
-            {/* Ability name */}
-            <span className="font-medium text-gray-300 w-10 shrink-0 text-sm">
-              {ABILITY_LABELS[ability]}
-            </span>
+            {/* Col 1: Ability name */}
+            <span className="font-medium text-gray-300 text-sm">{ABILITY_LABELS[ability]}</span>
 
-            {/* Free input */}
+            {/* Col 2: Free input */}
             <input
               type="number"
               min={1}
@@ -418,36 +400,33 @@ function ManualAllocator({ bases, bgBonuses, onChange }: ManualAllocatorProps) {
               value={base}
               onChange={(e) => handleChange(ability, e.target.value)}
               aria-label={`${ABILITY_LABELS[ability]} score`}
-              className="bg-gray-900/60 border border-gray-700/40 rounded px-2 py-1 w-16 text-center text-sm text-gray-200 focus:outline-none focus:border-amber-500/50 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              className="bg-gray-900/60 border border-gray-700/40 rounded px-2 py-1 text-center text-sm text-gray-200 focus:outline-none focus:border-amber-500/50 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
             />
 
-            {/* Base modifier */}
-            <span className="text-gray-500 text-sm w-8 text-center" aria-hidden="true">
-              {formatMod(base)}
-            </span>
-
-            {/* Background bonus */}
+            {/* Col 3: Background bonus */}
             {bg !== 0 ? (
-              <span className="text-amber-400/80 text-xs w-12 text-center">+{bg} bg</span>
+              <span className="text-amber-400/80 text-xs text-center">+{bg} bg</span>
             ) : (
-              <span className="w-12" aria-hidden="true" />
+              <span className="text-xs text-transparent select-none" aria-hidden="true">
+                +0 bg
+              </span>
             )}
 
-            {/* Arrow */}
-            <span className="text-gray-600 text-xs" aria-hidden="true">
+            {/* Col 4: = sign */}
+            <span className="text-gray-600 text-xs text-center" aria-hidden="true">
               =
             </span>
 
-            {/* Final score */}
-            <span
-              className="text-amber-200 font-semibold w-8 text-center"
-              aria-label={`Final ${ABILITY_LABELS[ability]}`}
-            >
-              {final}
+            {/* Col 5: Final score + modifier */}
+            <span className="text-sm text-center">
+              <span
+                className="text-amber-200 font-semibold"
+                aria-label={`Final ${ABILITY_LABELS[ability]}`}
+              >
+                {final}
+              </span>
+              <span className="text-gray-400 ml-1">({formatMod(final)})</span>
             </span>
-
-            {/* Final modifier */}
-            <span className="text-gray-400 text-sm w-10 text-center">({formatMod(final)})</span>
           </div>
         );
       })}
@@ -531,30 +510,15 @@ export function AbilitiesStep() {
       />
 
       {/* Column headers */}
-      <div className="flex items-center gap-3 px-4 text-xs text-gray-600 uppercase tracking-wider">
-        <span className="w-10 shrink-0">Ability</span>
-        {state.abilityMethod === "point-buy" ? (
-          <>
-            <span className="w-6" aria-hidden="true" />
-            <span className="w-10 text-center">Base</span>
-            <span className="w-6" aria-hidden="true" />
-            <span className="w-10 text-center">Cost</span>
-            <span className="w-8 text-center">Mod</span>
-            <span className="w-12 text-center">Bg</span>
-            <span className="w-4" aria-hidden="true" />
-            <span className="w-8 text-center">Final</span>
-            <span className="w-10 text-center">Mod</span>
-          </>
-        ) : (
-          <>
-            <span className="w-16 text-center">Base</span>
-            <span className="w-8 text-center">Mod</span>
-            <span className="w-12 text-center">Bg</span>
-            <span className="w-4" aria-hidden="true" />
-            <span className="w-8 text-center">Final</span>
-            <span className="w-10 text-center">Mod</span>
-          </>
-        )}
+      <div
+        className="grid items-center gap-x-3 px-4 text-xs text-gray-600 uppercase tracking-wider"
+        style={{ gridTemplateColumns: "5rem 1fr auto auto auto" }}
+      >
+        <span>Ability</span>
+        <span>{state.abilityMethod === "point-buy" ? "Base / Cost" : "Base"}</span>
+        <span className="text-center">Bg</span>
+        <span aria-hidden="true" />
+        <span className="text-center">Final / Mod</span>
       </div>
 
       {/* Allocator */}

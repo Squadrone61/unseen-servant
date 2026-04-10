@@ -6,6 +6,7 @@ import type {
   Currency,
   Ability,
 } from "@unseen-servant/shared/types";
+import { getClass, getSpell } from "@unseen-servant/shared/data";
 
 // ---------------------------------------------------------------------------
 // Step type
@@ -458,14 +459,46 @@ export function builderReducer(state: BuilderState, action: BuilderAction): Buil
       const updatedEntry: BuilderClassEntry = { ...entry, level: clampedLevel };
       const updatedClasses = state.classes.map((c, i) => (i === action.index ? updatedEntry : c));
       const newTotal = updatedClasses.reduce((sum, c) => sum + c.level, 0);
+      // Compute the highest accessible spell level at the new class level.
+      // Cantrips (level 0) are always kept — they don't depend on spell slot level.
+      // Prepared spells are filtered to those still accessible at the new level.
+      // If the class has no spellSlotTable it is a non-caster — clear all spells.
+      let nextCantrips = state.cantrips;
+      let nextPreparedSpells = state.preparedSpells;
+      if (action.index === 0) {
+        const primaryClass = updatedClasses[0];
+        const classDb = primaryClass ? getClass(primaryClass.name) : undefined;
+        const spellSlotTable = classDb?.spellSlotTable;
+        if (!spellSlotTable) {
+          // Non-caster: clear everything
+          nextCantrips = [];
+          nextPreparedSpells = [];
+        } else {
+          // Determine the highest spell level accessible at clampedLevel
+          const slotsAtLevel = spellSlotTable[clampedLevel - 1] ?? [];
+          let maxSpellLevel = 0;
+          for (let i = slotsAtLevel.length - 1; i >= 0; i--) {
+            if ((slotsAtLevel[i] ?? 0) > 0) {
+              maxSpellLevel = i + 1; // slot index is 0-based, spell level is 1-based
+              break;
+            }
+          }
+          // Keep cantrips unchanged (level 0, never restricted)
+          // Filter prepared spells to those whose level <= maxSpellLevel
+          nextPreparedSpells = state.preparedSpells.filter((spellName) => {
+            const spell = getSpell(spellName);
+            if (!spell) return false; // unknown spell — drop it
+            return spell.level <= maxSpellLevel;
+          });
+        }
+      }
       next = {
         ...state,
         classes: updatedClasses,
         // Trim feat selections that fall beyond the new total level
         featSelections: state.featSelections.filter((s) => s.level <= newTotal),
-        // Reset spells when level changes for the primary class
-        cantrips: action.index === 0 ? [] : state.cantrips,
-        preparedSpells: action.index === 0 ? [] : state.preparedSpells,
+        cantrips: nextCantrips,
+        preparedSpells: nextPreparedSpells,
       };
       break;
     }

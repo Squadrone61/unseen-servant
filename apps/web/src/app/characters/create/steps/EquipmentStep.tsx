@@ -75,20 +75,6 @@ const ADVENTURING_PACKS: { name: string; description: string }[] = [
   },
 ];
 
-// Classes that get martial weapon proficiency
-const MARTIAL_CLASSES = new Set(["Barbarian", "Fighter", "Paladin", "Ranger"]);
-
-// Classes that get shield proficiency (from class data armorProficiencies)
-const SHIELD_CLASSES = new Set([
-  "Barbarian",
-  "Bard",
-  "Cleric",
-  "Druid",
-  "Fighter",
-  "Paladin",
-  "Ranger",
-]);
-
 // ---------------------------------------------------------------------------
 // Derived type helpers
 // ---------------------------------------------------------------------------
@@ -102,7 +88,7 @@ function isWeapon(item: BaseItemDb): boolean {
   return item.weapon === true;
 }
 
-function isArmor(item: BaseItemDb): boolean {
+function _isArmor(item: BaseItemDb): boolean {
   return item.armor === true;
 }
 
@@ -120,42 +106,78 @@ function expandProps(props: string[] | undefined): string {
 }
 
 // ---------------------------------------------------------------------------
-// Weapon / Armor filtering by class proficiency
+// Weapon / Armor proficiency — multi-class aware
 // ---------------------------------------------------------------------------
 
-function weaponProficiencyLevel(className: string | null): "none" | "simple" | "martial" {
-  if (!className) return "none";
-  if (MARTIAL_CLASSES.has(className)) return "martial";
-  // Check class data for explicit weapon proficiencies
-  const cls = classesArray.find((c) => c.name === className);
-  if (!cls) return "none";
-  const hasSimple = cls.weaponProficiencies.some((p) => p.toLowerCase().includes("simple"));
-  const hasMartial = cls.weaponProficiencies.some((p) => p.toLowerCase().includes("martial"));
-  if (hasMartial) return "martial";
-  if (hasSimple) return "simple";
-  return "none";
+/**
+ * Compute the highest weapon proficiency level across all classes.
+ * "martial" > "simple" > "none"
+ */
+function weaponProficiencyLevelForClasses(classNames: string[]): "none" | "simple" | "martial" {
+  let best: "none" | "simple" | "martial" = "none";
+  for (const className of classNames) {
+    if (best === "martial") break; // can't go higher
+    const cls = classesArray.find((c) => c.name === className);
+    if (!cls) continue;
+    const hasMartial = cls.weaponProficiencies.some((p) => p.toLowerCase().includes("martial"));
+    const hasSimple = cls.weaponProficiencies.some((p) => p.toLowerCase().includes("simple"));
+    if (hasMartial) {
+      best = "martial";
+    } else if (hasSimple && best === "none") {
+      best = "simple";
+    }
+  }
+  return best;
 }
 
-function classArmorTypes(className: string | null): Set<string> {
+/**
+ * Return the union of allowed armor type codes across all classes.
+ */
+function classArmorTypesForClasses(classNames: string[]): Set<string> {
   const allowed = new Set<string>();
-  if (!className) return allowed;
-  const cls = classesArray.find((c) => c.name === className);
-  if (!cls) return allowed;
-  for (const p of cls.armorProficiencies) {
-    const lower = p.toLowerCase();
-    if (lower.includes("light")) allowed.add("LA");
-    if (lower.includes("medium")) allowed.add("MA");
-    if (lower.includes("heavy")) allowed.add("HA");
+  for (const className of classNames) {
+    const cls = classesArray.find((c) => c.name === className);
+    if (!cls) continue;
+    for (const p of cls.armorProficiencies) {
+      const lower = p.toLowerCase();
+      if (lower.includes("light")) allowed.add("LA");
+      if (lower.includes("medium")) allowed.add("MA");
+      if (lower.includes("heavy")) allowed.add("HA");
+    }
   }
   return allowed;
 }
 
-function classHasShieldProf(className: string | null): boolean {
-  if (!className) return false;
-  if (SHIELD_CLASSES.has(className)) return true;
-  const cls = classesArray.find((c) => c.name === className);
-  if (!cls) return false;
-  return cls.armorProficiencies.some((p) => p.toLowerCase().includes("shield"));
+/**
+ * Return true if any class grants shield proficiency.
+ */
+function classHasShieldProfForClasses(classNames: string[]): boolean {
+  for (const className of classNames) {
+    const cls = classesArray.find((c) => c.name === className);
+    if (!cls) continue;
+    if (cls.armorProficiencies.some((p) => p.toLowerCase().includes("shield"))) return true;
+  }
+  return false;
+}
+
+/**
+ * Return true if the character is proficient with the given weapon or armor item.
+ */
+function isItemProficient(
+  item: BaseItemDb,
+  weaponProf: "none" | "simple" | "martial",
+  allowedArmorTypes: Set<string>,
+  hasShieldProf: boolean,
+): boolean {
+  const tc = typeCode(item.type);
+  if (item.weapon) {
+    if (weaponProf === "martial") return true;
+    if (weaponProf === "simple") return item.weaponCategory === "simple";
+    return false;
+  }
+  if (tc === "S") return hasShieldProf;
+  if (item.armor) return allowedArmorTypes.has(tc);
+  return true; // gear items have no proficiency requirement
 }
 
 /** Filter to non-futuristic weapons (no AF property = no futuristic ammo, no RLD for modern) */
@@ -212,9 +234,11 @@ interface ItemCardProps {
   selected: boolean;
   onToggle: () => void;
   disabled?: boolean;
+  /** When true the item is shown dimmed with a "Not proficient" label */
+  notProficient?: boolean;
 }
 
-function WeaponCard({ item, selected, onToggle, disabled }: ItemCardProps) {
+function WeaponCard({ item, selected, onToggle, disabled, notProficient }: ItemCardProps) {
   const propsStr = expandProps(item.properties);
   const catLabel = item.weaponCategory === "martial" ? "Martial" : "Simple";
   const typeLabel = typeCode(item.type) === "M" ? "Melee" : "Ranged";
@@ -232,7 +256,9 @@ function WeaponCard({ item, selected, onToggle, disabled }: ItemCardProps) {
           ? "border-amber-500/60 bg-amber-500/10"
           : disabled
             ? "border-gray-700/20 bg-gray-900/20 opacity-40 cursor-not-allowed"
-            : "border-gray-700/30 bg-gray-800/40 hover:border-gray-600/50 hover:bg-gray-800/60",
+            : notProficient
+              ? "border-gray-700/20 bg-gray-900/20 opacity-50"
+              : "border-gray-700/30 bg-gray-800/40 hover:border-gray-600/50 hover:bg-gray-800/60",
       ]
         .filter(Boolean)
         .join(" ")}
@@ -246,11 +272,18 @@ function WeaponCard({ item, selected, onToggle, disabled }: ItemCardProps) {
         >
           {item.name}
         </span>
-        {item.damage && (
-          <span className="shrink-0 text-xs font-mono text-amber-400/80 bg-amber-900/20 border border-amber-700/20 rounded px-1.5 py-0.5 leading-tight">
-            {item.damage} {item.damageType}
-          </span>
-        )}
+        <div className="shrink-0 flex items-center gap-1.5">
+          {notProficient && (
+            <span className="text-xs text-red-400/80 bg-red-900/20 border border-red-700/20 rounded px-1.5 py-0.5 leading-tight">
+              Not proficient
+            </span>
+          )}
+          {item.damage && (
+            <span className="text-xs font-mono text-amber-400/80 bg-amber-900/20 border border-amber-700/20 rounded px-1.5 py-0.5 leading-tight">
+              {item.damage} {item.damageType}
+            </span>
+          )}
+        </div>
       </div>
 
       <div className="mt-1 flex flex-wrap gap-x-2 gap-y-0.5 text-xs text-gray-500">
@@ -266,7 +299,7 @@ function WeaponCard({ item, selected, onToggle, disabled }: ItemCardProps) {
   );
 }
 
-function ArmorCard({ item, selected, onToggle, disabled }: ItemCardProps) {
+function ArmorCard({ item, selected, onToggle, disabled, notProficient }: ItemCardProps) {
   const typeLabel = armorTypeLabel(item);
 
   return (
@@ -282,7 +315,9 @@ function ArmorCard({ item, selected, onToggle, disabled }: ItemCardProps) {
           ? "border-amber-500/60 bg-amber-500/10"
           : disabled
             ? "border-gray-700/20 bg-gray-900/20 opacity-40 cursor-not-allowed"
-            : "border-gray-700/30 bg-gray-800/40 hover:border-gray-600/50 hover:bg-gray-800/60",
+            : notProficient
+              ? "border-gray-700/20 bg-gray-900/20 opacity-50"
+              : "border-gray-700/30 bg-gray-800/40 hover:border-gray-600/50 hover:bg-gray-800/60",
       ]
         .filter(Boolean)
         .join(" ")}
@@ -296,9 +331,16 @@ function ArmorCard({ item, selected, onToggle, disabled }: ItemCardProps) {
         >
           {item.name}
         </span>
-        <span className="shrink-0 text-xs font-mono text-sky-400/80 bg-sky-900/20 border border-sky-700/20 rounded px-1.5 py-0.5 leading-tight">
-          AC {item.ac ?? (typeCode(item.type) === "S" ? "+2" : "?")}
-        </span>
+        <div className="shrink-0 flex items-center gap-1.5">
+          {notProficient && (
+            <span className="text-xs text-red-400/80 bg-red-900/20 border border-red-700/20 rounded px-1.5 py-0.5 leading-tight">
+              Not proficient
+            </span>
+          )}
+          <span className="text-xs font-mono text-sky-400/80 bg-sky-900/20 border border-sky-700/20 rounded px-1.5 py-0.5 leading-tight">
+            AC {item.ac ?? (typeCode(item.type) === "S" ? "+2" : "?")}
+          </span>
+        </div>
       </div>
 
       <div className="mt-1 flex flex-wrap gap-x-2 gap-y-0.5 text-xs text-gray-500">
@@ -358,9 +400,19 @@ interface ShopItemRowProps {
   goldCost: number;
   onAdd: () => void;
   onRemove: () => void;
+  /** When true the item is shown dimmed with a "Not proficient" label */
+  notProficient?: boolean;
 }
 
-function ShopItemRow({ item, inCart, canAfford, goldCost, onAdd, onRemove }: ShopItemRowProps) {
+function ShopItemRow({
+  item,
+  inCart,
+  canAfford,
+  goldCost,
+  onAdd,
+  onRemove,
+  notProficient,
+}: ShopItemRowProps) {
   const isWeaponItem = item.weapon === true;
   const propsStr = expandProps(item.properties);
 
@@ -368,12 +420,23 @@ function ShopItemRow({ item, inCart, canAfford, goldCost, onAdd, onRemove }: Sho
     <div
       className={[
         "flex items-center gap-3 px-3 py-2 rounded-lg border transition-all duration-100",
-        inCart ? "border-amber-500/40 bg-amber-500/8" : "border-gray-700/20 bg-gray-800/30",
+        inCart
+          ? "border-amber-500/40 bg-amber-500/8"
+          : notProficient
+            ? "border-gray-700/20 bg-gray-800/30 opacity-50"
+            : "border-gray-700/20 bg-gray-800/30",
       ].join(" ")}
     >
       {/* Info */}
       <div className="flex-1 min-w-0">
-        <span className="text-sm text-gray-200">{item.name}</span>
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-gray-200">{item.name}</span>
+          {notProficient && (
+            <span className="text-xs text-red-400/80 bg-red-900/20 border border-red-700/20 rounded px-1.5 py-0.5 leading-tight">
+              Not proficient
+            </span>
+          )}
+        </div>
         <div className="mt-0.5 flex flex-wrap gap-x-2 text-xs text-gray-500">
           {isWeaponItem && item.damage && (
             <span>
@@ -572,51 +635,33 @@ function StartingEquipmentPanel() {
   const [activeTab, setActiveTab] = useState<StartingTab>("weapons");
   const [tabSearch, setTabSearch] = useState("");
   const [selectedPack, setSelectedPack] = useState<string | null>(null);
+  // Default ON for starting mode — only show proficient items by default
+  const [showOnlyProficient, setShowOnlyProficient] = useState(true);
 
-  // Compute proficiency levels from class
-  const weaponProf = useMemo(
-    () => weaponProficiencyLevel(state.classes[0]?.name ?? null),
-    [state.classes[0]?.name ?? null],
-  );
-  const allowedArmorTypes = useMemo(
-    () => classArmorTypes(state.classes[0]?.name ?? null),
-    [state.classes[0]?.name ?? null],
-  );
-  const hasShieldProf = useMemo(
-    () => classHasShieldProf(state.classes[0]?.name ?? null),
-    [state.classes[0]?.name ?? null],
-  );
+  // Compute proficiency levels across all classes
+  const classNames = useMemo(() => state.classes.map((c) => c.name), [state.classes]);
+  const weaponProf = useMemo(() => weaponProficiencyLevelForClasses(classNames), [classNames]);
+  const allowedArmorTypes = useMemo(() => classArmorTypesForClasses(classNames), [classNames]);
+  const hasShieldProf = useMemo(() => classHasShieldProfForClasses(classNames), [classNames]);
 
-  // Filter weapons
-  const filteredWeapons = useMemo(() => {
+  // All standard weapons, with proficiency flag
+  const allWeapons = useMemo(() => {
     const q = tabSearch.toLowerCase();
     return weaponsArray
-      .filter((w) => {
-        if (!isWeapon(w)) return false;
-        if (!isStandardWeapon(w)) return false;
-        if (weaponProf === "none") return false;
-        if (weaponProf === "simple" && w.weaponCategory !== "simple") return false;
-        return w.name.toLowerCase().includes(q);
-      })
+      .filter((w) => isWeapon(w) && isStandardWeapon(w) && w.name.toLowerCase().includes(q))
       .sort((a, b) => {
         if (a.weaponCategory !== b.weaponCategory) {
           return a.weaponCategory === "simple" ? -1 : 1;
         }
         return a.name.localeCompare(b.name);
       });
-  }, [weaponProf, tabSearch]);
+  }, [tabSearch]);
 
-  // Filter armor — include shield
-  const filteredArmor = useMemo(() => {
+  // All armor items, with proficiency flag
+  const allArmor = useMemo(() => {
     const q = tabSearch.toLowerCase();
     return armorArray
-      .filter((a) => {
-        const tc = typeCode(a.type);
-        if (tc === "S") return hasShieldProf && a.name.toLowerCase().includes(q);
-        if (!isArmor(a)) return false;
-        if (!allowedArmorTypes.has(tc)) return false;
-        return a.name.toLowerCase().includes(q);
-      })
+      .filter((a) => a.name.toLowerCase().includes(q))
       .sort((a, b) => {
         const order = { LA: 0, MA: 1, HA: 2, S: 3 };
         const aOrder = order[typeCode(a.type) as keyof typeof order] ?? 9;
@@ -624,7 +669,27 @@ function StartingEquipmentPanel() {
         if (aOrder !== bOrder) return aOrder - bOrder;
         return a.name.localeCompare(b.name);
       });
-  }, [allowedArmorTypes, hasShieldProf, tabSearch]);
+  }, [tabSearch]);
+
+  // Proficiency gate — filter if toggle is on
+  const filteredWeapons = useMemo(() => {
+    if (weaponProf === "none") return [];
+    if (showOnlyProficient) {
+      return allWeapons.filter((w) =>
+        isItemProficient(w, weaponProf, allowedArmorTypes, hasShieldProf),
+      );
+    }
+    return allWeapons;
+  }, [allWeapons, weaponProf, allowedArmorTypes, hasShieldProf, showOnlyProficient]);
+
+  const filteredArmor = useMemo(() => {
+    if (showOnlyProficient) {
+      return allArmor.filter((a) =>
+        isItemProficient(a, weaponProf, allowedArmorTypes, hasShieldProf),
+      );
+    }
+    return allArmor;
+  }, [allArmor, weaponProf, allowedArmorTypes, hasShieldProf, showOnlyProficient]);
 
   const selectedNames = useMemo(
     () => new Set(state.equipment.map((e) => e.name)),
@@ -658,7 +723,7 @@ function StartingEquipmentPanel() {
     }
   }
 
-  const hasNoClass = !(state.classes[0]?.name ?? null);
+  const hasNoClass = classNames.length === 0;
   const hasWeapons = weaponProf !== "none";
   const hasArmor = allowedArmorTypes.size > 0 || hasShieldProf;
 
@@ -706,15 +771,28 @@ function StartingEquipmentPanel() {
         ))}
       </div>
 
-      {/* Search input */}
-      <input
-        type="search"
-        value={tabSearch}
-        onChange={(e) => setTabSearch(e.target.value)}
-        placeholder={`Search ${activeTab === "gear" ? "gear & packs" : activeTab}...`}
-        aria-label={`Search ${activeTab}`}
-        className="w-full bg-gray-800/60 border border-gray-700/40 rounded-lg px-3 py-1.5 text-sm text-gray-200 placeholder-gray-600 focus:border-amber-500/50 focus:outline-none"
-      />
+      {/* Search + proficiency filter row */}
+      <div className="flex items-center gap-3">
+        <input
+          type="search"
+          value={tabSearch}
+          onChange={(e) => setTabSearch(e.target.value)}
+          placeholder={`Search ${activeTab === "gear" ? "gear & packs" : activeTab}...`}
+          aria-label={`Search ${activeTab}`}
+          className="flex-1 bg-gray-800/60 border border-gray-700/40 rounded-lg px-3 py-1.5 text-sm text-gray-200 placeholder-gray-600 focus:border-amber-500/50 focus:outline-none"
+        />
+        {activeTab !== "gear" && (
+          <label className="flex items-center gap-2 shrink-0 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={showOnlyProficient}
+              onChange={(e) => setShowOnlyProficient(e.target.checked)}
+              className="w-3.5 h-3.5 rounded accent-amber-500 cursor-pointer"
+            />
+            <span className="text-xs text-gray-400">Proficient only</span>
+          </label>
+        )}
+      </div>
 
       {/* Weapons tab */}
       {activeTab === "weapons" && (
@@ -737,6 +815,10 @@ function StartingEquipmentPanel() {
                     item={w}
                     selected={selectedNames.has(w.name)}
                     onToggle={() => toggleItem(w, true)}
+                    notProficient={
+                      !showOnlyProficient &&
+                      !isItemProficient(w, weaponProf, allowedArmorTypes, hasShieldProf)
+                    }
                   />
                 ))}
               </div>
@@ -751,7 +833,7 @@ function StartingEquipmentPanel() {
       {/* Armor & Shields tab */}
       {activeTab === "armor" && (
         <div>
-          {!hasArmor ? (
+          {!hasArmor && showOnlyProficient ? (
             <p className="text-sm text-gray-600 italic">
               Your class does not grant armor proficiencies. Select a class to unlock armor.
             </p>
@@ -767,6 +849,10 @@ function StartingEquipmentPanel() {
                     item={a}
                     selected={selectedNames.has(a.name)}
                     onToggle={() => toggleItem(a, true)}
+                    notProficient={
+                      !showOnlyProficient &&
+                      !isItemProficient(a, weaponProf, allowedArmorTypes, hasShieldProf)
+                    }
                   />
                 ))}
               </div>
@@ -835,8 +921,16 @@ function GoldShopPanel() {
   const [shopTab, setShopTab] = useState<ShopTab>("weapons");
   const [goldInput, setGoldInput] = useState(String(state.startingGold ?? DEFAULT_STARTING_GOLD));
   const [shopSearch, setShopSearch] = useState("");
+  // Default OFF for gold mode — show all items, just mark non-proficient ones
+  const [showOnlyProficient, setShowOnlyProficient] = useState(false);
 
   const startingGold = state.startingGold ?? DEFAULT_STARTING_GOLD;
+
+  // Compute proficiency across all classes
+  const classNames = useMemo(() => state.classes.map((c) => c.name), [state.classes]);
+  const weaponProf = useMemo(() => weaponProficiencyLevelForClasses(classNames), [classNames]);
+  const allowedArmorTypes = useMemo(() => classArmorTypesForClasses(classNames), [classNames]);
+  const hasShieldProf = useMemo(() => classHasShieldProfForClasses(classNames), [classNames]);
 
   // Compute spent gold
   const spentGold = useMemo(() => {
@@ -851,21 +945,38 @@ function GoldShopPanel() {
 
   const remainingGold = startingGold - spentGold;
 
-  // All equippable weapon items (no futuristic)
+  // All equippable weapon items (no futuristic), optionally filtered
   const shopWeapons = useMemo(() => {
     const q = shopSearch.toLowerCase();
     return weaponsArray
-      .filter((w) => isWeapon(w) && isStandardWeapon(w) && w.name.toLowerCase().includes(q))
+      .filter((w) => {
+        if (!isWeapon(w) || !isStandardWeapon(w)) return false;
+        if (!w.name.toLowerCase().includes(q)) return false;
+        if (
+          showOnlyProficient &&
+          !isItemProficient(w, weaponProf, allowedArmorTypes, hasShieldProf)
+        )
+          return false;
+        return true;
+      })
       .sort((a, b) => {
         if (a.weaponCategory !== b.weaponCategory) return a.weaponCategory === "simple" ? -1 : 1;
         return a.name.localeCompare(b.name);
       });
-  }, [shopSearch]);
+  }, [shopSearch, showOnlyProficient, weaponProf, allowedArmorTypes, hasShieldProf]);
 
   const shopArmor = useMemo(() => {
     const q = shopSearch.toLowerCase();
     return armorArray
-      .filter((a) => a.name.toLowerCase().includes(q))
+      .filter((a) => {
+        if (!a.name.toLowerCase().includes(q)) return false;
+        if (
+          showOnlyProficient &&
+          !isItemProficient(a, weaponProf, allowedArmorTypes, hasShieldProf)
+        )
+          return false;
+        return true;
+      })
       .sort((a, b) => {
         const order = { LA: 0, MA: 1, HA: 2, S: 3 };
         const aO = order[typeCode(a.type) as keyof typeof order] ?? 9;
@@ -873,7 +984,7 @@ function GoldShopPanel() {
         if (aO !== bO) return aO - bO;
         return a.name.localeCompare(b.name);
       });
-  }, [shopSearch]);
+  }, [shopSearch, showOnlyProficient, weaponProf, allowedArmorTypes, hasShieldProf]);
 
   const shopGearItems = useMemo(() => {
     const q = shopSearch.toLowerCase();
@@ -988,15 +1099,28 @@ function GoldShopPanel() {
         ))}
       </div>
 
-      {/* Search */}
-      <input
-        type="search"
-        value={shopSearch}
-        onChange={(e) => setShopSearch(e.target.value)}
-        placeholder={`Search ${shopTab}...`}
-        aria-label={`Search ${shopTab}`}
-        className="w-full bg-gray-800/60 border border-gray-700/40 rounded-lg px-3 py-1.5 text-sm text-gray-200 placeholder-gray-600 focus:border-amber-500/50 focus:outline-none"
-      />
+      {/* Search + proficiency filter row */}
+      <div className="flex items-center gap-3">
+        <input
+          type="search"
+          value={shopSearch}
+          onChange={(e) => setShopSearch(e.target.value)}
+          placeholder={`Search ${shopTab}...`}
+          aria-label={`Search ${shopTab}`}
+          className="flex-1 bg-gray-800/60 border border-gray-700/40 rounded-lg px-3 py-1.5 text-sm text-gray-200 placeholder-gray-600 focus:border-amber-500/50 focus:outline-none"
+        />
+        {shopTab !== "gear" && (
+          <label className="flex items-center gap-2 shrink-0 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={showOnlyProficient}
+              onChange={(e) => setShowOnlyProficient(e.target.checked)}
+              className="w-3.5 h-3.5 rounded accent-amber-500 cursor-pointer"
+            />
+            <span className="text-xs text-gray-400">Proficient only</span>
+          </label>
+        )}
+      </div>
 
       {/* Item list */}
       <div className="flex flex-col gap-1.5">
@@ -1010,6 +1134,10 @@ function GoldShopPanel() {
               goldCost={itemCost(w)}
               onAdd={() => addItem(w)}
               onRemove={() => removeItem(w.name)}
+              notProficient={
+                !showOnlyProficient &&
+                !isItemProficient(w, weaponProf, allowedArmorTypes, hasShieldProf)
+              }
             />
           ))}
 
@@ -1023,6 +1151,10 @@ function GoldShopPanel() {
               goldCost={itemCost(a)}
               onAdd={() => addItem(a)}
               onRemove={() => removeItem(a.name)}
+              notProficient={
+                !showOnlyProficient &&
+                !isItemProficient(a, weaponProf, allowedArmorTypes, hasShieldProf)
+              }
             />
           ))}
 
