@@ -1245,5 +1245,6 @@
         "Martial Weapons"
       ]
     }
-  }
+  },
+  "casterProgression": "half"
 }

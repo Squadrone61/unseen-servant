@@ -1187,5 +1187,6 @@
         "Simple Weapons"
       ]
     }
-  }
+  },
+  "casterProgression": "pact"
 }
