@@ -10,6 +10,7 @@ import type {
 } from "@unseen-servant/shared/types";
 import { DetailPopover } from "@/components/character/DetailPopover";
 import { ChoicePicker } from "@/components/builder/ChoicePicker";
+import { WeaponMasteryPicker } from "@/components/builder/WeaponMasteryPicker";
 import { EffectSummary } from "@/components/builder/EffectSummary";
 import { RichText } from "@/components/ui/RichText";
 import { InfoButton } from "@/components/builder/InfoButton";
@@ -513,6 +514,8 @@ interface FeatureRowProps {
   choiceSelections: Record<string, string[]>;
   onChoiceSelect: (choiceId: string, values: string[]) => void;
   choicePrefix?: string;
+  /** When provided, renders a WeaponMasteryPicker for the "Weapon Mastery" feature. */
+  weaponMasteryClassName?: string;
 }
 
 function FeatureRow({
@@ -520,6 +523,7 @@ function FeatureRow({
   choiceSelections,
   onChoiceSelect,
   choicePrefix = "",
+  weaponMasteryClassName,
 }: FeatureRowProps) {
   const [expanded, setExpanded] = useState(false);
 
@@ -530,6 +534,14 @@ function FeatureRow({
   const permanentChoices = feature.choices?.filter((c) => c.timing === "permanent") ?? [];
   const hasPermanentChoices = permanentChoices.length > 0;
 
+  const isWeaponMastery =
+    feature.name === "Weapon Mastery" &&
+    weaponMasteryClassName !== undefined &&
+    weaponMasteryClassName in
+      ({ Barbarian: 1, Fighter: 1, Paladin: 1, Ranger: 1, Rogue: 1 } as Record<string, number>);
+
+  const WEAPON_MASTERY_CHOICE_ID = "weapon-mastery";
+
   return (
     <li className="flex flex-col gap-2 pl-4 border-l-2 border-gray-700/40">
       {/* Feature header */}
@@ -537,7 +549,7 @@ function FeatureRow({
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-sm font-semibold text-gray-200">{feature.name}</span>
           {hasEffects && <EffectSummary effects={feature.effects} compact />}
-          {hasPermanentChoices && (
+          {(hasPermanentChoices || isWeaponMastery) && (
             <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs border bg-amber-900/20 text-amber-400/80 border-amber-600/30">
               choose
             </span>
@@ -576,6 +588,16 @@ function FeatureRow({
         </div>
       )}
 
+      {isWeaponMastery && (
+        <div className="mt-1">
+          <WeaponMasteryPicker
+            className={weaponMasteryClassName!}
+            selected={choiceSelections[WEAPON_MASTERY_CHOICE_ID] ?? []}
+            onSelect={(weapons) => onChoiceSelect(WEAPON_MASTERY_CHOICE_ID, weapons)}
+          />
+        </div>
+      )}
+
       {hasPermanentChoices && (
         <div className="flex flex-col gap-2 mt-1">
           {permanentChoices.map((choice) => {
@@ -608,6 +630,7 @@ interface FeatureLevelGroupProps {
   onChoiceSelect: (choiceId: string, values: string[]) => void;
   choicePrefix?: string;
   extra?: React.ReactNode;
+  weaponMasteryClassName?: string;
 }
 
 function FeatureLevelGroup({
@@ -617,6 +640,7 @@ function FeatureLevelGroup({
   onChoiceSelect,
   choicePrefix,
   extra,
+  weaponMasteryClassName,
 }: FeatureLevelGroupProps) {
   return (
     <div className="flex flex-col gap-1">
@@ -633,6 +657,7 @@ function FeatureLevelGroup({
             choiceSelections={choiceSelections}
             onChoiceSelect={onChoiceSelect}
             choicePrefix={choicePrefix}
+            weaponMasteryClassName={weaponMasteryClassName}
           />
         ))}
         {extra}
@@ -664,11 +689,19 @@ export function ClassStep() {
     [],
   );
 
+  // Derive flat values from the primary class entry (index 0)
+  const primaryEntry = state.classes[0] ?? null;
+  const activeClassName = primaryEntry?.name ?? null;
+  const activeClassLevel = primaryEntry?.level ?? 1;
+  const activeSubclass = primaryEntry?.subclass ?? null;
+  const activeClassSkills = primaryEntry?.skills ?? [];
+  const activeClassChoices = primaryEntry?.choices ?? {};
+
   // Resolved selected class data
   const selectedClass = useMemo(
     () =>
-      state.className ? (sortedClasses.find((c) => c.name === state.className) ?? null) : null,
-    [state.className, sortedClasses],
+      activeClassName ? (sortedClasses.find((c) => c.name === activeClassName) ?? null) : null,
+    [activeClassName, sortedClasses],
   );
 
   // Subclass unlock level
@@ -677,21 +710,21 @@ export function ClassStep() {
     [selectedClass],
   );
 
-  const subclassAvailable = state.classLevel >= subclassUnlockLevel;
+  const subclassAvailable = activeClassLevel >= subclassUnlockLevel;
 
   // Resolved selected subclass data
   const selectedSubclass = useMemo(
     () =>
-      selectedClass && state.subclass
-        ? (selectedClass.subclasses.find((s) => s.name === state.subclass) ?? null)
+      selectedClass && activeSubclass
+        ? (selectedClass.subclasses.find((s) => s.name === activeSubclass) ?? null)
         : null,
-    [selectedClass, state.subclass],
+    [selectedClass, activeSubclass],
   );
 
   // Class features up to current level (excluding subclass placeholder)
   const classFeatures = useMemo(
-    () => (selectedClass ? getClassFeaturesUpToLevel(selectedClass, state.classLevel) : []),
-    [selectedClass, state.classLevel],
+    () => (selectedClass ? getClassFeaturesUpToLevel(selectedClass, activeClassLevel) : []),
+    [selectedClass, activeClassLevel],
   );
 
   const classFeaturesByLevel = useMemo(() => groupByLevel(classFeatures), [classFeatures]);
@@ -699,8 +732,8 @@ export function ClassStep() {
   // Subclass features up to current level
   const subclassFeatures = useMemo(
     () =>
-      selectedSubclass ? getSubclassFeaturesUpToLevel(selectedSubclass, state.classLevel) : [],
-    [selectedSubclass, state.classLevel],
+      selectedSubclass ? getSubclassFeaturesUpToLevel(selectedSubclass, activeClassLevel) : [],
+    [selectedSubclass, activeClassLevel],
   );
 
   const subclassFeaturesByLevel = useMemo(() => groupByLevel(subclassFeatures), [subclassFeatures]);
@@ -721,12 +754,18 @@ export function ClassStep() {
   }
 
   function handleClassCardClick(name: string) {
-    if (state.className === name) return; // class selection is not toggled off here; use Change button
-    dispatch({ type: "SET_CLASS", className: name });
+    if (activeClassName === name) return; // class selection is not toggled off here; use Change button
+    // If no class yet, add; otherwise remove old and add new
+    if (state.classes.length === 0) {
+      dispatch({ type: "ADD_CLASS", className: name });
+    } else {
+      dispatch({ type: "REMOVE_CLASS", index: 0 });
+      dispatch({ type: "ADD_CLASS", className: name });
+    }
   }
 
   function handleLevelChange(level: number) {
-    dispatch({ type: "SET_CLASS_LEVEL", level });
+    dispatch({ type: "SET_CLASS_LEVEL", index: 0, level });
   }
 
   function handleSubclassInfo(subclass: SubclassDb, e: React.MouseEvent) {
@@ -738,19 +777,19 @@ export function ClassStep() {
   }
 
   function handleSubclassToggleSelect(name: string) {
-    if (state.subclass === name) {
-      dispatch({ type: "SET_SUBCLASS", subclass: "" });
+    if (activeSubclass === name) {
+      dispatch({ type: "SET_CLASS_SUBCLASS", index: 0, subclass: "" });
     } else {
-      dispatch({ type: "SET_SUBCLASS", subclass: name });
+      dispatch({ type: "SET_CLASS_SUBCLASS", index: 0, subclass: name });
     }
   }
 
   function handleSkillSelect(skills: string[]) {
-    dispatch({ type: "SET_CLASS_SKILLS", skills });
+    dispatch({ type: "SET_CLASS_SKILLS", index: 0, skills });
   }
 
   function handleClassChoice(choiceId: string, values: string[]) {
-    dispatch({ type: "SET_CLASS_CHOICE", choiceId, values });
+    dispatch({ type: "SET_CLASS_CHOICE", index: 0, choiceId, values });
   }
 
   // ---- Derived display values -----------------------------------------------
@@ -786,7 +825,7 @@ export function ClassStep() {
             View Details
           </button>
           <button
-            onClick={() => dispatch({ type: "SET_CLASS", className: "" })}
+            onClick={() => dispatch({ type: "REMOVE_CLASS", index: 0 })}
             className="text-xs text-gray-500 hover:text-red-400 transition-colors"
           >
             Change
@@ -800,7 +839,7 @@ export function ClassStep() {
           <ClassCard
             key={cls.name}
             cls={cls}
-            isSelected={state.className === cls.name}
+            isSelected={activeClassName === cls.name}
             onClick={() => handleClassCardClick(cls.name)}
             onInfo={(e) => handleClassInfo(cls, e)}
           />
@@ -821,10 +860,10 @@ export function ClassStep() {
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium text-gray-300">Character Level</span>
               <span className="text-xs text-gray-500">
-                Proficiency Bonus: +{Math.floor((state.classLevel - 1) / 4) + 2}
+                Proficiency Bonus: +{Math.floor((activeClassLevel - 1) / 4) + 2}
               </span>
             </div>
-            <LevelPicker level={state.classLevel} onChange={handleLevelChange} />
+            <LevelPicker level={activeClassLevel} onChange={handleLevelChange} />
           </div>
 
           {/* ── Skill Proficiencies ── */}
@@ -848,7 +887,7 @@ export function ClassStep() {
                 pool: "skill_proficiency",
                 from: selectedClass.skillChoices.from,
               }}
-              selected={state.classSkills}
+              selected={activeClassSkills}
               onSelect={handleSkillSelect}
             />
           </div>
@@ -886,7 +925,9 @@ export function ClassStep() {
                       View Details
                     </button>
                     <button
-                      onClick={() => dispatch({ type: "SET_SUBCLASS", subclass: "" })}
+                      onClick={() =>
+                        dispatch({ type: "SET_CLASS_SUBCLASS", index: 0, subclass: "" })
+                      }
                       className="text-xs text-gray-500 hover:text-red-400 transition-colors"
                     >
                       Change
@@ -900,7 +941,7 @@ export function ClassStep() {
                     <SubclassCard
                       key={sub.name}
                       subclass={sub}
-                      isSelected={state.subclass === sub.name}
+                      isSelected={activeSubclass === sub.name}
                       onClick={() => handleSubclassCardClick(sub.name)}
                       onInfo={(e) => handleSubclassInfo(sub, e)}
                     />
@@ -924,7 +965,7 @@ export function ClassStep() {
                     Class Features
                   </h3>
                   <p className="text-xs text-gray-500">
-                    Features you gain from level 1 through {state.classLevel}. Features marked
+                    Features you gain from level 1 through {activeClassLevel}. Features marked
                     "choose" require a permanent selection below.
                   </p>
                 </div>
@@ -963,10 +1004,11 @@ export function ClassStep() {
                         key={lvl}
                         level={lvl}
                         features={[...classAtLevel, ...subclassAtLevel]}
-                        choiceSelections={state.classChoices}
+                        choiceSelections={activeClassChoices}
                         onChoiceSelect={handleClassChoice}
                         choicePrefix=""
                         extra={subclassPrompt}
+                        weaponMasteryClassName={activeClassName ?? undefined}
                       />
                     );
                   })}
@@ -977,7 +1019,7 @@ export function ClassStep() {
 
           {allFeatureLevels.length === 0 && (
             <p className="text-sm text-gray-500 italic">
-              No features available for level {state.classLevel}.
+              No features available for level {activeClassLevel}.
             </p>
           )}
         </>

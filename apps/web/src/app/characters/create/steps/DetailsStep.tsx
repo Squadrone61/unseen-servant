@@ -307,9 +307,9 @@ export function DetailsStep() {
             Starting equipment will be based on your class and background. The AI Dungeon Master
             will equip your character with appropriate gear when your adventure begins.
           </p>
-          {state.className && (
+          {(state.classes[0]?.name ?? null) && (
             <p className="mt-2 text-xs text-amber-400/70">
-              Class: {state.className}
+              Class: {state.classes[0]?.name ?? null}
               {state.background ? ` · Background: ${state.background}` : ""}
             </p>
           )}

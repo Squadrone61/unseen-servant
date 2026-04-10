@@ -70,7 +70,7 @@ function getUnlockedSteps(
   const backgroundDone = speciesDone && Boolean(state.background);
   if (backgroundDone) unlocked.add("class");
 
-  const classDone = backgroundDone && Boolean(state.className);
+  const classDone = backgroundDone && state.classes.length > 0;
   if (classDone) unlocked.add("abilities");
 
   const abilitiesDone = classDone && state.completedSteps.includes("abilities");

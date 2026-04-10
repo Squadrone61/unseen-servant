@@ -37,17 +37,33 @@ function computeFinalAbilities(state: BuilderState): AbilityScores {
 }
 
 /**
- * Compute average HP at the given level for a class, using average hit die
- * result (half + 1 for levels 2+) plus CON modifier per level.
+ * Compute average HP across all class entries.
+ * The primary class (index 0) contributes its full hit die at level 1; all
+ * other levels (including multiclass levels) use the average roll (half+1).
+ * CON modifier applies once per total level.
  */
-function computeMaxHP(className: string, classLevel: number, conScore: number): number {
-  const cls = getClass(className);
-  if (!cls) return 1;
-  const hitDie = cls.hitDiceFaces;
+function computeMaxHP(classes: Array<{ name: string; level: number }>, conScore: number): number {
+  if (classes.length === 0) return 1;
   const conMod = getAbilityMod(conScore);
-  // Level 1: full hit die + CON mod; subsequent levels: average (half+1) + CON mod
-  const averagePerLevel = Math.floor(hitDie / 2) + 1;
-  return hitDie + conMod + Math.max(0, classLevel - 1) * (averagePerLevel + conMod);
+  let hp = 0;
+  let isFirst = true;
+  for (const entry of classes) {
+    const cls = getClass(entry.name);
+    if (!cls) continue;
+    const hitDie = cls.hitDiceFaces;
+    const averagePerLevel = Math.floor(hitDie / 2) + 1;
+    if (isFirst) {
+      // Level 1 of primary class: max hit die
+      hp += hitDie + conMod;
+      if (entry.level > 1) {
+        hp += (entry.level - 1) * (averagePerLevel + conMod);
+      }
+      isFirst = false;
+    } else {
+      hp += entry.level * (averagePerLevel + conMod);
+    }
+  }
+  return Math.max(1, hp);
 }
 
 /**
@@ -79,8 +95,9 @@ function collectLanguages(state: BuilderState): string[] {
  */
 function collectToolProficiencies(state: BuilderState): string[] {
   const tools = new Set<string>();
-  if (state.className) {
-    const cls = getClass(state.className);
+  const primaryClassName = state.classes[0]?.name;
+  if (primaryClassName) {
+    const cls = getClass(primaryClassName);
     if (cls) cls.toolProficiencies.forEach((t) => tools.add(t));
   }
   if (state.background) {
@@ -93,8 +110,11 @@ function collectToolProficiencies(state: BuilderState): string[] {
 /**
  * Map builder cantrips + preparedSpells to CharacterSpell objects using the
  * D&D database to fill in spell details.
+ * Spells are attributed to the primary class (index 0).
  */
 function assembleSpells(state: BuilderState): CharacterSpell[] {
+  const primaryClassName = state.classes[0]?.name ?? undefined;
+  const primarySubclass = state.classes[0]?.subclass ?? null;
   const spells: CharacterSpell[] = [];
 
   for (const name of state.cantrips) {
@@ -106,7 +126,7 @@ function assembleSpells(state: BuilderState): CharacterSpell[] {
       alwaysPrepared: false,
       spellSource: "class",
       knownByClass: true,
-      sourceClass: state.className ?? undefined,
+      sourceClass: primaryClassName,
       school: db?.school,
       castingTime: db?.castingTime,
       range: db?.range,
@@ -127,7 +147,7 @@ function assembleSpells(state: BuilderState): CharacterSpell[] {
       alwaysPrepared: false,
       spellSource: "class",
       knownByClass: true,
-      sourceClass: state.className ?? undefined,
+      sourceClass: primaryClassName,
       school: db?.school,
       castingTime: db?.castingTime,
       range: db?.range,
@@ -139,10 +159,10 @@ function assembleSpells(state: BuilderState): CharacterSpell[] {
     });
   }
 
-  // Always-prepared subclass spells
-  if (state.subclass && state.className) {
-    const cls = getClass(state.className);
-    const sub = cls?.subclasses.find((s) => s.name.toLowerCase() === state.subclass?.toLowerCase());
+  // Always-prepared subclass spells from the primary class's subclass
+  if (primarySubclass && primaryClassName) {
+    const cls = getClass(primaryClassName);
+    const sub = cls?.subclasses.find((s) => s.name.toLowerCase() === primarySubclass.toLowerCase());
     if (sub?.additionalSpells) {
       for (const name of sub.additionalSpells) {
         // Skip if already in prepared list to avoid duplicates
@@ -155,7 +175,7 @@ function assembleSpells(state: BuilderState): CharacterSpell[] {
           alwaysPrepared: true,
           spellSource: "class",
           knownByClass: false,
-          sourceClass: state.className ?? undefined,
+          sourceClass: primaryClassName,
           school: db?.school,
           castingTime: db?.castingTime,
           range: db?.range,
@@ -176,7 +196,7 @@ function assembleSpells(state: BuilderState): CharacterSpell[] {
  * Collect skill proficiencies from class selections + background DB skills.
  */
 function assembleSkillProficiencies(state: BuilderState): string[] {
-  const skills = new Set<string>(state.classSkills);
+  const skills = new Set<string>(state.classes[0]?.skills ?? []);
   if (state.background) {
     const bg = getBackground(state.background);
     if (bg) bg.skills.forEach((s) => skills.add(s.toLowerCase()));
@@ -207,9 +227,10 @@ function assembleSkillProficiencies(state: BuilderState): string[] {
  */
 function assembleSkillExpertise(state: BuilderState): string[] {
   const expertise = new Set<string>();
-  for (const [choiceId, values] of Object.entries(state.classChoices)) {
+  const classChoices = state.classes[0]?.choices ?? {};
+  for (const [choiceId, values] of Object.entries(classChoices)) {
     if (choiceId.toLowerCase().includes("expertise")) {
-      values.forEach((v) => expertise.add(v));
+      (values as string[]).forEach((v) => expertise.add(v));
     }
   }
   // Also check feat choices for expertise (e.g. Skill Expert feat)
@@ -227,8 +248,9 @@ function assembleSkillExpertise(state: BuilderState): string[] {
  * Collect saving throw proficiencies from the class DB.
  */
 function assembleSaveProficiencies(state: BuilderState): (keyof AbilityScores)[] {
-  if (!state.className) return [];
-  const cls = getClass(state.className);
+  const primaryClassName = state.classes[0]?.name;
+  if (!primaryClassName) return [];
+  const cls = getClass(primaryClassName);
   if (!cls) return [];
   return cls.savingThrows as (keyof AbilityScores)[];
 }
@@ -239,18 +261,16 @@ function assembleSaveProficiencies(state: BuilderState): (keyof AbilityScores)[]
 
 function assembleIdentifiers(state: BuilderState): CharacterIdentifiers {
   const finalAbilities = computeFinalAbilities(state);
-  const maxHP = computeMaxHP(state.className ?? "", state.classLevel, finalAbilities.constitution);
+  const maxHP = computeMaxHP(state.classes, finalAbilities.constitution);
 
   return {
     name: state.name.trim() || "Unnamed",
     race: state.species ?? "",
-    classes: [
-      {
-        name: state.className ?? "",
-        level: state.classLevel,
-        subclass: state.subclass ?? undefined,
-      },
-    ],
+    classes: state.classes.map((c) => ({
+      name: c.name,
+      level: c.level,
+      subclass: c.subclass ?? undefined,
+    })),
     background: state.background ?? undefined,
     abilities: finalAbilities,
     maxHP,
@@ -287,14 +307,15 @@ export function useComputedCharacter(state: BuilderState): {
 } {
   return useMemo(() => {
     // Need at minimum a class and non-zero base abilities to produce anything useful
-    if (!state.className || !state.species) {
+    const primaryClassName = state.classes[0]?.name;
+    if (!primaryClassName || !state.species) {
       return { character: null, warnings: [] };
     }
     // Verify at least one ability score is set (all default to 8, which is > 0,
     // so check class exists in the DB before calling build)
-    const cls = getClass(state.className);
+    const cls = getClass(primaryClassName);
     if (!cls) {
-      return { character: null, warnings: [`Unknown class: ${state.className}`] };
+      return { character: null, warnings: [`Unknown class: ${primaryClassName}`] };
     }
 
     try {

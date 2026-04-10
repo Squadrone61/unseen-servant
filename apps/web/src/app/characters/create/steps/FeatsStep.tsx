@@ -702,8 +702,8 @@ export function FeatsStep() {
 
   // Determine which ASI levels are unlocked for the current class level
   const unlockedAsiLevels = useMemo(
-    () => STANDARD_ASI_LEVELS.filter((l) => l <= state.classLevel),
-    [state.classLevel],
+    () => STANDARD_ASI_LEVELS.filter((l) => l <= (state.classes[0]?.level ?? 1)),
+    [state.classes[0]?.level ?? 1],
   );
 
   // Sync featSelections array length to match unlockedAsiLevels.
@@ -752,7 +752,7 @@ export function FeatsStep() {
         <p className="text-sm text-gray-400">
           At certain levels your class grants an Ability Score Improvement. You may take the raw
           bonus or spend the slot on a feat instead.
-          {state.classLevel < 4 && (
+          {(state.classes[0]?.level ?? 1) < 4 && (
             <span className="block mt-1 text-gray-500">
               You will unlock your first ASI at level 4. Increase your class level to access this
               step.
@@ -799,7 +799,7 @@ export function FeatsStep() {
               slotIndex={i}
               level={level}
               selection={selections[i]}
-              classLevel={state.classLevel}
+              classLevel={state.classes[0]?.level ?? 1}
               alreadySelectedFeats={selectedFeatNames.filter((_, j) => j !== i)}
               onUpdate={(sel) => handleSlotUpdate(i, sel)}
               featChoices={state.featChoices}

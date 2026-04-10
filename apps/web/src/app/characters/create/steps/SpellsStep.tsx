@@ -313,25 +313,28 @@ export function SpellsStep() {
 
   // ── Resolve class data ──────────────────────────────────────────────────────
   const classDb = useMemo(
-    () => (state.className ? (classesArray.find((c) => c.name === state.className) ?? null) : null),
-    [state.className],
+    () =>
+      (state.classes[0]?.name ?? null)
+        ? (classesArray.find((c) => c.name === (state.classes[0]?.name ?? null)) ?? null)
+        : null,
+    [state.classes[0]?.name ?? null],
   );
 
   const isCaster = Boolean(classDb?.cantripProgression || classDb?.preparedSpellsProgression);
 
-  const numCantrips = classDb?.cantripProgression?.[state.classLevel - 1] ?? 0;
-  const numPrepared = classDb?.preparedSpellsProgression?.[state.classLevel - 1] ?? 0;
-  const highestSlotLevel = maxSpellLevel(classDb?.spellSlotTable, state.classLevel);
+  const numCantrips = classDb?.cantripProgression?.[(state.classes[0]?.level ?? 1) - 1] ?? 0;
+  const numPrepared = classDb?.preparedSpellsProgression?.[(state.classes[0]?.level ?? 1) - 1] ?? 0;
+  const highestSlotLevel = maxSpellLevel(classDb?.spellSlotTable, state.classes[0]?.level ?? 1);
 
   // ── Always-prepared spells from subclass additionalSpells ──────────────────
   const alwaysPrepared = useMemo<string[]>(() => {
-    if (!classDb || !state.subclass) return [];
-    const sub = classDb.subclasses.find((s) => s.name === state.subclass);
+    if (!classDb || !(state.classes[0]?.subclass ?? null)) return [];
+    const sub = classDb.subclasses.find((s) => s.name === (state.classes[0]?.subclass ?? null));
     return sub?.additionalSpells ?? [];
-  }, [classDb, state.subclass]);
+  }, [classDb, state.classes[0]?.subclass ?? null]);
 
   // ── Spell lists filtered by class ─────────────────────────────────────────
-  const className = state.className as ClassName | null;
+  const className = (state.classes[0]?.name ?? null) as ClassName | null;
 
   const classCantrips = useMemo<SpellDb[]>(() => {
     if (!className) return [];
@@ -411,8 +414,8 @@ export function SpellsStep() {
             Spells
           </h1>
           <p className="text-sm text-gray-400">
-            {state.className
-              ? `${state.className}s do not use spells. Continue to the next step.`
+            {(state.classes[0]?.name ?? null)
+              ? `${state.classes[0]?.name ?? null}s do not use spells. Continue to the next step.`
               : "Choose a class first to see spell options."}
           </p>
         </div>
@@ -437,7 +440,8 @@ export function SpellsStep() {
           Choose Your Spells
         </h1>
         <p className="text-sm text-gray-400">
-          Select spells for your {state.className} at level {state.classLevel}.
+          Select spells for your {state.classes[0]?.name ?? null} at level{" "}
+          {state.classes[0]?.level ?? 1}.
         </p>
       </div>
 
@@ -461,11 +465,12 @@ export function SpellsStep() {
       </div>
 
       {/* ── Ritual casting note ── */}
-      {state.className && RITUAL_CASTER_CLASSES.has(state.className) && (
-        <p className="text-xs text-violet-400/80 bg-violet-900/10 border border-violet-700/20 rounded-lg px-3 py-2 leading-relaxed">
-          Ritual spells can be cast without expending a spell slot if you have the spell prepared.
-        </p>
-      )}
+      {(state.classes[0]?.name ?? null) &&
+        RITUAL_CASTER_CLASSES.has(state.classes[0]?.name ?? null) && (
+          <p className="text-xs text-violet-400/80 bg-violet-900/10 border border-violet-700/20 rounded-lg px-3 py-2 leading-relaxed">
+            Ritual spells can be cast without expending a spell slot if you have the spell prepared.
+          </p>
+        )}
 
       {/* ── Unified level tabs (Cantrips + spell levels) ── */}
       <div

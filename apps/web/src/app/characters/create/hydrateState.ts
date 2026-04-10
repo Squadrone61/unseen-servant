@@ -78,11 +78,10 @@ export function hydrateBuilderState(character: CharacterData): BuilderState {
     abilityScoreAssignments: {}, // bonus assignments can't be split from base scores
 
     // Step 3: Class
-    className,
-    classLevel,
-    subclass,
-    classSkills,
-    classChoices: {}, // feature sub-choices can't be reconstructed
+    classes: className
+      ? [{ name: className, level: classLevel, subclass, skills: classSkills, choices: {} }]
+      : [],
+    activeClassIndex: 0,
 
     // Step 4: Abilities — treat final scores as manual base (already includes
     // background bonuses, ASIs, etc. baked in)

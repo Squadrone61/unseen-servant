@@ -574,9 +574,18 @@ function StartingEquipmentPanel() {
   const [selectedPack, setSelectedPack] = useState<string | null>(null);
 
   // Compute proficiency levels from class
-  const weaponProf = useMemo(() => weaponProficiencyLevel(state.className), [state.className]);
-  const allowedArmorTypes = useMemo(() => classArmorTypes(state.className), [state.className]);
-  const hasShieldProf = useMemo(() => classHasShieldProf(state.className), [state.className]);
+  const weaponProf = useMemo(
+    () => weaponProficiencyLevel(state.classes[0]?.name ?? null),
+    [state.classes[0]?.name ?? null],
+  );
+  const allowedArmorTypes = useMemo(
+    () => classArmorTypes(state.classes[0]?.name ?? null),
+    [state.classes[0]?.name ?? null],
+  );
+  const hasShieldProf = useMemo(
+    () => classHasShieldProf(state.classes[0]?.name ?? null),
+    [state.classes[0]?.name ?? null],
+  );
 
   // Filter weapons
   const filteredWeapons = useMemo(() => {
@@ -649,7 +658,7 @@ function StartingEquipmentPanel() {
     }
   }
 
-  const hasNoClass = !state.className;
+  const hasNoClass = !(state.classes[0]?.name ?? null);
   const hasWeapons = weaponProf !== "none";
   const hasArmor = allowedArmorTypes.size > 0 || hasShieldProf;
 

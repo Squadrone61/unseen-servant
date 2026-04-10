@@ -53,6 +53,19 @@ export interface FeatSelection {
   asiAbilities?: Partial<Record<Ability, number>>;
 }
 
+/**
+ * One entry per class the character has levels in.
+ */
+export interface BuilderClassEntry {
+  name: string;
+  level: number;
+  subclass: string | null;
+  /** Skill proficiency picks for this class */
+  skills: string[];
+  /** Feature choice selections keyed by choiceId, scoped to this class */
+  choices: Record<string, string[]>;
+}
+
 // ---------------------------------------------------------------------------
 // BuilderState
 // ---------------------------------------------------------------------------
@@ -76,13 +89,10 @@ export interface BuilderState {
   abilityScoreAssignments: Partial<Record<Ability, number>>;
 
   // --- Step 3: Class ---
-  className: string | null;
-  classLevel: number;
-  subclass: string | null;
-  /** Skill proficiency selections granted by class */
-  classSkills: string[];
-  /** Feature choice selections keyed by choiceId */
-  classChoices: Record<string, string[]>;
+  /** All class entries — index 0 is always the primary class. */
+  classes: BuilderClassEntry[];
+  /** Which class tab is currently being configured in the UI. */
+  activeClassIndex: number;
 
   // --- Step 4: Abilities ---
   abilityMethod: "standard-array" | "point-buy" | "manual";
@@ -132,11 +142,8 @@ export function createInitialState(): BuilderState {
     abilityScoreAssignments: {},
 
     // Step 3
-    className: null,
-    classLevel: 1,
-    subclass: null,
-    classSkills: [],
-    classChoices: {},
+    classes: [],
+    activeClassIndex: 0,
 
     // Step 4
     abilityMethod: "standard-array",
@@ -196,11 +203,13 @@ export type BuilderAction =
     }
 
   // Class
-  | { type: "SET_CLASS"; className: string }
-  | { type: "SET_CLASS_LEVEL"; level: number }
-  | { type: "SET_SUBCLASS"; subclass: string }
-  | { type: "SET_CLASS_SKILLS"; skills: string[] }
-  | { type: "SET_CLASS_CHOICE"; choiceId: string; values: string[] }
+  | { type: "ADD_CLASS"; className: string }
+  | { type: "REMOVE_CLASS"; index: number }
+  | { type: "SET_ACTIVE_CLASS"; index: number }
+  | { type: "SET_CLASS_LEVEL"; index: number; level: number }
+  | { type: "SET_CLASS_SUBCLASS"; index: number; subclass: string }
+  | { type: "SET_CLASS_SKILLS"; index: number; skills: string[] }
+  | { type: "SET_CLASS_CHOICE"; index: number; choiceId: string; values: string[] }
 
   // Abilities
   | { type: "SET_ABILITY_METHOD"; method: BuilderState["abilityMethod"] }
@@ -254,7 +263,7 @@ function isStepComplete(step: BuilderStep, state: BuilderState): boolean {
     case "background":
       return state.background !== null;
     case "class":
-      return state.className !== null;
+      return state.classes.length > 0;
     case "abilities":
       // All six base ability scores must be non-zero
       return (Object.values(state.baseAbilities) as number[]).every((v) => v > 0);
@@ -377,65 +386,141 @@ export function builderReducer(state: BuilderState, action: BuilderAction): Buil
       break;
 
     // ---- Class -------------------------------------------------------------
-    case "SET_CLASS":
+    case "ADD_CLASS": {
+      // Prevent duplicates and enforce total level cap (20)
+      const totalLevel = state.classes.reduce((sum, c) => sum + c.level, 0);
+      if (state.classes.some((c) => c.name === action.className)) {
+        next = state;
+        break;
+      }
+      if (totalLevel >= 20) {
+        next = state;
+        break;
+      }
+      const newEntry: BuilderClassEntry = {
+        name: action.className,
+        level: 1,
+        subclass: null,
+        skills: [],
+        choices: {},
+      };
+      const newClasses = [...state.classes, newEntry];
       next = {
         ...state,
-        className: action.className,
-        // Cascade: reset all class-dependent state
-        subclass: null,
-        classSkills: [],
-        classChoices: {},
-        featSelections: [],
-        featChoices: {},
+        classes: newClasses,
+        activeClassIndex: newClasses.length - 1,
+        // Reset spells when class composition changes
         cantrips: [],
         preparedSpells: [],
       };
       break;
+    }
 
-    case "SET_CLASS_LEVEL": {
-      const prevLevel = state.classLevel;
-      const newLevel = action.level;
+    case "REMOVE_CLASS": {
+      if (action.index >= state.classes.length) {
+        next = state;
+        break;
+      }
+      const remaining = state.classes.filter((_, i) => i !== action.index);
+      const newIndex = Math.min(state.activeClassIndex, remaining.length - 1);
+      // Trim feat selections to total level of remaining classes
+      const newTotal = remaining.reduce((sum, c) => sum + c.level, 0);
       next = {
         ...state,
-        classLevel: newLevel,
-        // Cascade: reset spells if the caster status boundary is crossed
-        // (level 1 → multi-level jumps may add/remove caster ability)
-        cantrips: newLevel !== prevLevel ? [] : state.cantrips,
-        preparedSpells: newLevel !== prevLevel ? [] : state.preparedSpells,
-        // Trim featSelections to the slots available at the new level;
-        // the builder page is responsible for computing how many slots exist,
-        // but we ensure the array never exceeds the new level's slot count
-        // by slicing conservatively — the page will repopulate slots as needed.
-        featSelections: state.featSelections.filter((s) => s.level <= newLevel),
+        classes: remaining,
+        activeClassIndex: newIndex,
+        featSelections: state.featSelections.filter((s) => s.level <= newTotal),
+        cantrips: [],
+        preparedSpells: [],
       };
       break;
     }
 
-    case "SET_SUBCLASS":
+    case "SET_ACTIVE_CLASS":
+      next = { ...state, activeClassIndex: action.index };
+      break;
+
+    case "SET_CLASS_LEVEL": {
+      const entry = state.classes[action.index];
+      if (!entry) {
+        next = state;
+        break;
+      }
+      const newLevel = action.level;
+      // Clamp so total never exceeds 20
+      const otherLevels = state.classes.reduce(
+        (sum, c, i) => (i === action.index ? sum : sum + c.level),
+        0,
+      );
+      const clampedLevel = Math.min(newLevel, Math.max(1, 20 - otherLevels));
+      const updatedEntry: BuilderClassEntry = { ...entry, level: clampedLevel };
+      const updatedClasses = state.classes.map((c, i) => (i === action.index ? updatedEntry : c));
+      const newTotal = updatedClasses.reduce((sum, c) => sum + c.level, 0);
       next = {
         ...state,
-        subclass: action.subclass,
-        // Cascade: clear subclass-specific class choices (those keyed with
-        // "subclass:" prefix by convention) when subclass changes
-        classChoices: Object.fromEntries(
-          Object.entries(state.classChoices).filter(([key]) => !key.startsWith("subclass:")),
+        classes: updatedClasses,
+        // Trim feat selections that fall beyond the new total level
+        featSelections: state.featSelections.filter((s) => s.level <= newTotal),
+        // Reset spells when level changes for the primary class
+        cantrips: action.index === 0 ? [] : state.cantrips,
+        preparedSpells: action.index === 0 ? [] : state.preparedSpells,
+      };
+      break;
+    }
+
+    case "SET_CLASS_SUBCLASS": {
+      const entry = state.classes[action.index];
+      if (!entry) {
+        next = state;
+        break;
+      }
+      // Clear subclass-specific choices (prefixed "subclass:") for this entry
+      const cleanedChoices = Object.fromEntries(
+        Object.entries(entry.choices).filter(([key]) => !key.startsWith("subclass:")),
+      );
+      const updatedEntry: BuilderClassEntry = {
+        ...entry,
+        subclass: action.subclass || null,
+        choices: cleanedChoices,
+      };
+      next = {
+        ...state,
+        classes: state.classes.map((c, i) => (i === action.index ? updatedEntry : c)),
+      };
+      break;
+    }
+
+    case "SET_CLASS_SKILLS": {
+      const entry = state.classes[action.index];
+      if (!entry) {
+        next = state;
+        break;
+      }
+      next = {
+        ...state,
+        classes: state.classes.map((c, i) =>
+          i === action.index ? { ...c, skills: action.skills } : c,
         ),
       };
       break;
+    }
 
-    case "SET_CLASS_SKILLS":
-      next = { ...state, classSkills: action.skills };
-      break;
-
-    case "SET_CLASS_CHOICE":
+    case "SET_CLASS_CHOICE": {
+      const entry = state.classes[action.index];
+      if (!entry) {
+        next = state;
+        break;
+      }
       next = {
         ...state,
-        classChoices: {
-          ...state.classChoices,
-          [action.choiceId]: action.values,
-        },
+        classes: state.classes.map((c, i) =>
+          i === action.index
+            ? { ...c, choices: { ...c.choices, [action.choiceId]: action.values } }
+            : c,
+        ),
       };
       break;
+    }
 
     // ---- Abilities ---------------------------------------------------------
     case "SET_ABILITY_METHOD":
