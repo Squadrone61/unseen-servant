@@ -6,7 +6,7 @@ import { TopBar } from "@/components/ui/TopBar";
 import { Button } from "@/components/ui/Button";
 import { useBuilder } from "./BuilderContext";
 import { useComputedCharacter } from "./useComputedCharacter";
-import { LivePreview } from "@/components/builder/LivePreview";
+import { CharacterSheet } from "@/components/character/CharacterSheet";
 import { useCharacterLibrary } from "@/hooks/useCharacterLibrary";
 import { SpeciesStep } from "./steps/SpeciesStep";
 import { BackgroundStep } from "./steps/BackgroundStep";
@@ -136,7 +136,7 @@ function StepSidebar({
   finishLabel = "Finish",
 }: StepSidebarProps) {
   return (
-    <aside className="w-[200px] shrink-0 flex flex-col bg-gray-900/50 border-r border-gray-700/40">
+    <aside className="w-[200px] shrink-0 flex flex-col bg-gray-900/50 border-l border-gray-700/40">
       <div className="flex-1 py-4 overflow-y-auto">
         <ul className="flex flex-col gap-0.5 px-2">
           {STEPS.map((step) => {
@@ -253,7 +253,7 @@ export function BuilderShell({ mode, editId, editName }: BuilderShellProps) {
   const [finishError, setFinishError] = useState<string | null>(null);
   const router = useRouter();
   const { saveCharacter, updateCharacter } = useCharacterLibrary();
-  const { character, warnings } = useComputedCharacter(state);
+  const { character, warnings: _warnings } = useComputedCharacter(state);
 
   const isEditMode = mode === "edit";
   const unlockedSteps = getUnlockedSteps(state, isEditMode);
@@ -306,17 +306,20 @@ export function BuilderShell({ mode, editId, editName }: BuilderShellProps) {
       <TopBar items={[{ label: "Characters", href: "/characters" }]} current={topBarCurrent} />
 
       <div className="flex flex-1 overflow-hidden">
-        <StepSidebar
-          activeStep={activeStep}
-          unlockedSteps={unlockedSteps}
-          completedSteps={completedSteps}
-          onSelectStep={setActiveStep}
-          onFinish={handleFinish}
-          canFinish={canFinish}
-          finishError={finishError}
-          finishLabel={isEditMode ? "Save Changes" : "Finish"}
-        />
+        {/* Character sheet — left panel */}
+        <aside className="w-[380px] shrink-0 overflow-y-auto border-r border-gray-700/40 bg-gray-900/30">
+          {character ? (
+            <CharacterSheet character={character} />
+          ) : (
+            <div className="flex items-center justify-center h-full p-6">
+              <p className="text-gray-600 text-sm text-center">
+                Select a species and class to see your character sheet
+              </p>
+            </div>
+          )}
+        </aside>
 
+        {/* Main content — center */}
         <main className="flex-1 overflow-y-auto p-6 min-w-0">
           <StepContent stepId={activeStep} />
 
@@ -342,7 +345,17 @@ export function BuilderShell({ mode, editId, editName }: BuilderShellProps) {
           </div>
         </main>
 
-        <LivePreview character={character} warnings={warnings} />
+        {/* Step sidebar — right panel */}
+        <StepSidebar
+          activeStep={activeStep}
+          unlockedSteps={unlockedSteps}
+          completedSteps={completedSteps}
+          onSelectStep={setActiveStep}
+          onFinish={handleFinish}
+          canFinish={canFinish}
+          finishError={finishError}
+          finishLabel={isEditMode ? "Save Changes" : "Finish"}
+        />
       </div>
     </div>
   );
