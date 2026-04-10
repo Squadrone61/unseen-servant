@@ -149,12 +149,12 @@ export function createInitialState(): BuilderState {
     // Step 4
     abilityMethod: "standard-array",
     baseAbilities: {
-      strength: 15,
-      dexterity: 14,
-      constitution: 13,
-      intelligence: 12,
-      wisdom: 10,
-      charisma: 8,
+      strength: 0,
+      dexterity: 0,
+      constitution: 0,
+      intelligence: 0,
+      wisdom: 0,
+      charisma: 0,
     },
 
     // Step 5
@@ -266,8 +266,8 @@ function isStepComplete(step: BuilderStep, state: BuilderState): boolean {
     case "class":
       return state.classes.length > 0;
     case "abilities":
-      // Complete when at least one score differs from default 8 (user has actively assigned)
-      return (Object.values(state.baseAbilities) as number[]).some((v) => v !== 8);
+      // Complete when all six scores have been assigned (no zeros)
+      return (Object.values(state.baseAbilities) as number[]).every((v) => v > 0);
     case "feats": {
       // Need a class first; then complete when no ASI slots exist or all are filled
       if (state.classes.length === 0) return false;

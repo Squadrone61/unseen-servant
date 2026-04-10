@@ -174,6 +174,7 @@ function StandardArrayAllocator({ bases, bgBonuses, onChange }: StandardArrayAll
               aria-label={`${ABILITY_LABELS[ability]} base score`}
               className="bg-gray-900/60 border border-gray-700/40 rounded px-2 py-1 text-center text-sm text-gray-200 focus:outline-none focus:border-amber-500/50 transition-colors"
             >
+              <option value={0}>{base === 0 ? "—" : "Clear"}</option>
               {availableOptions.map((opt) => (
                 <option key={opt.value} value={opt.value} disabled={opt.disabled}>
                   {opt.value}
@@ -197,13 +198,19 @@ function StandardArrayAllocator({ bases, bgBonuses, onChange }: StandardArrayAll
 
             {/* Col 5: Final score + modifier */}
             <span className="text-sm text-center">
-              <span
-                className="text-amber-200 font-semibold"
-                aria-label={`Final ${ABILITY_LABELS[ability]}`}
-              >
-                {final}
-              </span>
-              <span className="text-gray-400 ml-1">({formatMod(final)})</span>
+              {base === 0 ? (
+                <span className="text-gray-500">—</span>
+              ) : (
+                <>
+                  <span
+                    className="text-amber-200 font-semibold"
+                    aria-label={`Final ${ABILITY_LABELS[ability]}`}
+                  >
+                    {final}
+                  </span>
+                  <span className="text-gray-400 ml-1">({formatMod(final)})</span>
+                </>
+              )}
             </span>
           </div>
         );
@@ -447,16 +454,16 @@ export function AbilitiesStep() {
     dispatch({ type: "SET_ABILITY_METHOD", method });
     // Reset bases to the method's starting values
     if (method === "standard-array") {
-      // Assign standard array in order as default
+      // Reset to unassigned so user must pick each score
       dispatch({
         type: "SET_BASE_ABILITIES",
         abilities: {
-          strength: 15,
-          dexterity: 14,
-          constitution: 13,
-          intelligence: 12,
-          wisdom: 10,
-          charisma: 8,
+          strength: 0,
+          dexterity: 0,
+          constitution: 0,
+          intelligence: 0,
+          wisdom: 0,
+          charisma: 0,
         },
       });
     } else if (method === "point-buy") {

@@ -79,9 +79,7 @@ function SpeciesCard({
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-1.5 min-w-0">
           <span
-            className={`font-[family-name:var(--font-cinzel)] text-sm ${
-              isSelected ? "text-amber-200" : "text-gray-200"
-            }`}
+            className={`font-cinzel text-sm ${isSelected ? "text-amber-200" : "text-gray-200"}`}
           >
             {species.name}
           </span>
@@ -142,10 +140,7 @@ export function SpeciesStep() {
     <section aria-labelledby="species-step-heading" className="flex flex-col gap-5">
       {/* Header */}
       <div>
-        <h1
-          id="species-step-heading"
-          className="text-xl font-[family-name:var(--font-cinzel)] text-amber-200/90 mb-1"
-        >
+        <h1 id="species-step-heading" className="text-xl font-cinzel text-amber-200/90 mb-1">
           Choose Your Species
         </h1>
         <p className="text-sm text-gray-400">
@@ -221,9 +216,9 @@ export function SpeciesStep() {
       {/* Choices section (inline, below grid) */}
       {selectedSpecies && selectedSpecies.choices && selectedSpecies.choices.length > 0 && (
         <>
-          <div className="h-px bg-gradient-to-r from-transparent via-amber-500/20 to-transparent" />
+          <div className="h-px bg-linear-to-r from-transparent via-amber-500/20 to-transparent" />
           <div>
-            <h2 className="text-lg font-[family-name:var(--font-cinzel)] text-amber-200/90 mb-1">
+            <h2 className="text-lg font-cinzel text-amber-200/90 mb-1">
               {selectedSpecies.name} Traits
             </h2>
             <p className="text-sm text-gray-400">
