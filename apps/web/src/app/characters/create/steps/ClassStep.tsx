@@ -379,12 +379,13 @@ function SubclassCard({
 
 interface LevelPickerProps {
   level: number;
+  maxLevel: number;
   onChange: (level: number) => void;
 }
 
-function LevelPicker({ level, onChange }: LevelPickerProps) {
+function LevelPicker({ level, maxLevel, onChange }: LevelPickerProps) {
   function clamp(v: number) {
-    return Math.min(20, Math.max(1, v));
+    return Math.min(maxLevel, Math.max(1, v));
   }
 
   return (
@@ -420,12 +421,12 @@ function LevelPicker({ level, onChange }: LevelPickerProps) {
         <input
           type="range"
           min={1}
-          max={20}
+          max={maxLevel}
           value={level}
           onChange={(e) => onChange(Number(e.target.value))}
           aria-label="Level slider"
           aria-valuemin={1}
-          aria-valuemax={20}
+          aria-valuemax={maxLevel}
           aria-valuenow={level}
           className="
             flex-1 h-1.5 appearance-none rounded-full bg-gray-700
@@ -459,12 +460,12 @@ function LevelPicker({ level, onChange }: LevelPickerProps) {
       <button
         type="button"
         aria-label="Increase level"
-        disabled={level >= 20}
+        disabled={level >= maxLevel}
         onClick={() => onChange(clamp(level + 1))}
         className={[
           "w-8 h-8 rounded-lg border flex items-center justify-center transition-all duration-150",
           "focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/60",
-          level >= 20
+          level >= maxLevel
             ? "border-gray-700/30 text-gray-600 cursor-not-allowed"
             : "border-gray-600/40 text-gray-300 hover:border-amber-500/50 hover:text-amber-300 cursor-pointer",
         ].join(" ")}
@@ -591,7 +592,7 @@ function FeatureRow({
       {isWeaponMastery && (
         <div className="mt-1">
           <WeaponMasteryPicker
-            className={weaponMasteryClassName!}
+            className={weaponMasteryClassName ?? ""}
             selected={choiceSelections[WEAPON_MASTERY_CHOICE_ID] ?? []}
             onSelect={(weapons) => onChoiceSelect(WEAPON_MASTERY_CHOICE_ID, weapons)}
           />
@@ -667,6 +668,135 @@ function FeatureLevelGroup({
 }
 
 // ---------------------------------------------------------------------------
+// Class Tabs (multiclass)
+// ---------------------------------------------------------------------------
+
+interface ClassTabsProps {
+  classes: Array<{ name: string; level: number }>;
+  activeIndex: number;
+  atCap: boolean;
+  onTabClick: (index: number) => void;
+  onRemove: (index: number) => void;
+  onAddClass: () => void;
+}
+
+function ClassTabs({
+  classes,
+  activeIndex,
+  atCap,
+  onTabClick,
+  onRemove,
+  onAddClass,
+}: ClassTabsProps) {
+  return (
+    <div
+      className="flex gap-0 border-b border-gray-700/40 overflow-x-auto"
+      role="tablist"
+      aria-label="Class selection"
+    >
+      {classes.map((entry, idx) => (
+        <div key={entry.name} className="flex items-stretch shrink-0">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={idx === activeIndex}
+            onClick={() => onTabClick(idx)}
+            className={[
+              "px-3 py-2 text-sm border-b-2 transition-colors duration-100 flex items-center gap-1.5",
+              idx === activeIndex
+                ? "border-amber-500 text-amber-400 font-medium"
+                : "border-transparent text-gray-500 hover:text-gray-300",
+            ].join(" ")}
+          >
+            <span className="font-[family-name:var(--font-cinzel)]">{entry.name}</span>
+            <span className="text-[10px] text-gray-500 tabular-nums">Lv {entry.level}</span>
+          </button>
+          {/* Remove button — only show when there are multiple classes */}
+          {classes.length > 1 && (
+            <button
+              type="button"
+              aria-label={`Remove ${entry.name}`}
+              onClick={() => onRemove(idx)}
+              className="px-1 pb-0.5 text-gray-600 hover:text-red-400 transition-colors duration-100 border-b-2 border-transparent"
+            >
+              <svg
+                className="w-3 h-3"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2.5}
+                aria-hidden="true"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
+        </div>
+      ))}
+
+      {/* Add class tab */}
+      <button
+        type="button"
+        disabled={atCap}
+        onClick={onAddClass}
+        title={atCap ? "Total character level is 20 (maximum)" : "Add a multiclass"}
+        className={[
+          "shrink-0 px-3 py-2 text-sm border-b-2 border-transparent transition-colors duration-100 flex items-center gap-1",
+          atCap ? "text-gray-700 cursor-not-allowed" : "text-gray-500 hover:text-amber-300",
+        ].join(" ")}
+      >
+        <svg
+          className="w-3.5 h-3.5"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={2.5}
+          aria-hidden="true"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16M4 12h16" />
+        </svg>
+        Add Class
+      </button>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Multiclass Requirements Warning
+// ---------------------------------------------------------------------------
+
+interface MulticlassWarningProps {
+  cls: ClassDb;
+  /** Resolved ability scores (base + background bonuses) */
+  resolvedScores: Record<string, number>;
+}
+
+function MulticlassWarning({ cls, resolvedScores }: MulticlassWarningProps) {
+  if (!cls.multiclassing?.requirements) return null;
+
+  const unmet = Object.entries(cls.multiclassing.requirements).filter(([ability, minScore]) => {
+    const score = resolvedScores[ability.toLowerCase()] ?? 0;
+    return score < minScore;
+  });
+
+  if (unmet.length === 0) return null;
+
+  return (
+    <div className="flex flex-col gap-1 px-4 py-3 rounded-lg border border-amber-600/30 bg-amber-950/20">
+      {unmet.map(([ability, _minScore]) => {
+        const score = resolvedScores[ability.toLowerCase()] ?? 0;
+        return (
+          <p key={ability} className="text-xs text-amber-300/90 leading-relaxed">
+            Warning: {cls.name} multiclass requires {abilityAbbr(ability)} 13+. Your current score
+            is {score}.
+          </p>
+        );
+      })}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Main Component
 // ---------------------------------------------------------------------------
 
@@ -683,19 +813,37 @@ export function ClassStep() {
     position: { x: number; y: number };
   } | null>(null);
 
+  /** True when the user has opened the "add a class" picker panel. */
+  const [isAddingClass, setIsAddingClass] = useState(false);
+
   // Sorted class list
   const sortedClasses = useMemo(
     () => [...classesArray].sort((a, b) => a.name.localeCompare(b.name)),
     [],
   );
 
-  // Derive flat values from the primary class entry (index 0)
-  const primaryEntry = state.classes[0] ?? null;
-  const activeClassName = primaryEntry?.name ?? null;
-  const activeClassLevel = primaryEntry?.level ?? 1;
-  const activeSubclass = primaryEntry?.subclass ?? null;
-  const activeClassSkills = primaryEntry?.skills ?? [];
-  const activeClassChoices = primaryEntry?.choices ?? {};
+  // Derived values for the currently active class entry
+  const activeIdx = state.activeClassIndex;
+  const activeEntry = state.classes[activeIdx] ?? null;
+  const activeClassName = activeEntry?.name ?? null;
+  const activeClassLevel = activeEntry?.level ?? 1;
+  const activeSubclass = activeEntry?.subclass ?? null;
+  const activeClassSkills = activeEntry?.skills ?? [];
+  const activeClassChoices = activeEntry?.choices ?? {};
+
+  // Total level across all classes
+  const totalLevel = useMemo(
+    () => state.classes.reduce((sum, c) => sum + c.level, 0),
+    [state.classes],
+  );
+  const atCap = totalLevel >= 20;
+
+  // Max level this class can reach (20 minus all other classes' levels, min 1)
+  const otherLevels = useMemo(
+    () => state.classes.reduce((sum, c, i) => (i === activeIdx ? sum : sum + c.level), 0),
+    [state.classes, activeIdx],
+  );
+  const maxLevelForActive = Math.max(1, 20 - otherLevels);
 
   // Resolved selected class data
   const selectedClass = useMemo(
@@ -747,6 +895,35 @@ export function ClassStep() {
     return [...levelsSet].sort((a, b) => a - b);
   }, [classFeaturesByLevel, subclassFeaturesByLevel]);
 
+  // Resolved ability scores (base + background bonuses) for multiclass requirement checks
+  const resolvedAbilityScores = useMemo(() => {
+    const result: Record<string, number> = { ...state.baseAbilities };
+    for (const [ability, bonus] of Object.entries(state.abilityScoreAssignments)) {
+      if (typeof bonus === "number") {
+        result[ability] = (result[ability] ?? 0) + bonus;
+      }
+    }
+    return result;
+  }, [state.baseAbilities, state.abilityScoreAssignments]);
+
+  // Classes already chosen — used to exclude them from the add-class picker
+  const chosenClassNames = useMemo(
+    () => new Set(state.classes.map((c) => c.name)),
+    [state.classes],
+  );
+
+  // Filtered class list for the add-class picker (excludes already-chosen classes)
+  const availableToAdd = useMemo(
+    () => sortedClasses.filter((c) => !chosenClassNames.has(c.name)),
+    [sortedClasses, chosenClassNames],
+  );
+
+  // Whether to show the multiclass tabs (only when 2+ classes exist)
+  const showTabs = state.classes.length > 1;
+
+  // Whether to show the initial class grid (no class chosen yet, or user hit "Change")
+  const showInitialPicker = state.classes.length === 0;
+
   // ---- Handlers ------------------------------------------------------------
 
   function handleClassInfo(cls: ClassDb, e: React.MouseEvent) {
@@ -754,18 +931,24 @@ export function ClassStep() {
   }
 
   function handleClassCardClick(name: string) {
-    if (activeClassName === name) return; // class selection is not toggled off here; use Change button
-    // If no class yet, add; otherwise remove old and add new
+    if (activeClassName === name) return;
+    // No classes chosen yet: first selection
     if (state.classes.length === 0) {
       dispatch({ type: "ADD_CLASS", className: name });
     } else {
+      // Replacing the primary class (single-class mode, "Change" was clicked)
       dispatch({ type: "REMOVE_CLASS", index: 0 });
       dispatch({ type: "ADD_CLASS", className: name });
     }
   }
 
+  function handleAddClassCardClick(name: string) {
+    dispatch({ type: "ADD_CLASS", className: name });
+    setIsAddingClass(false);
+  }
+
   function handleLevelChange(level: number) {
-    dispatch({ type: "SET_CLASS_LEVEL", index: 0, level });
+    dispatch({ type: "SET_CLASS_LEVEL", index: activeIdx, level });
   }
 
   function handleSubclassInfo(subclass: SubclassDb, e: React.MouseEvent) {
@@ -778,23 +961,35 @@ export function ClassStep() {
 
   function handleSubclassToggleSelect(name: string) {
     if (activeSubclass === name) {
-      dispatch({ type: "SET_CLASS_SUBCLASS", index: 0, subclass: "" });
+      dispatch({ type: "SET_CLASS_SUBCLASS", index: activeIdx, subclass: "" });
     } else {
-      dispatch({ type: "SET_CLASS_SUBCLASS", index: 0, subclass: name });
+      dispatch({ type: "SET_CLASS_SUBCLASS", index: activeIdx, subclass: name });
     }
   }
 
   function handleSkillSelect(skills: string[]) {
-    dispatch({ type: "SET_CLASS_SKILLS", index: 0, skills });
+    dispatch({ type: "SET_CLASS_SKILLS", index: activeIdx, skills });
   }
 
   function handleClassChoice(choiceId: string, values: string[]) {
-    dispatch({ type: "SET_CLASS_CHOICE", index: 0, choiceId, values });
+    dispatch({ type: "SET_CLASS_CHOICE", index: activeIdx, choiceId, values });
+  }
+
+  function handleTabClick(index: number) {
+    dispatch({ type: "SET_ACTIVE_CLASS", index });
+    setIsAddingClass(false);
+  }
+
+  function handleRemoveClass(index: number) {
+    dispatch({ type: "REMOVE_CLASS", index });
+    setIsAddingClass(false);
   }
 
   // ---- Derived display values -----------------------------------------------
 
   const selectedClassStatLine = selectedClass ? buildStatLine(selectedClass) : null;
+
+  // ---- Render ---------------------------------------------------------------
 
   return (
     <section aria-labelledby="class-step-heading" className="flex flex-col gap-8">
@@ -812,215 +1007,336 @@ export function ClassStep() {
         </p>
       </div>
 
-      {/* ── Selected class banner ── */}
-      {selectedClass && (
-        <div className="flex items-center gap-3 px-4 py-3 rounded-lg border border-amber-500/30 bg-amber-950/15">
-          <span className="text-sm text-amber-200 font-medium">{selectedClass.name}</span>
-          <span className="text-xs text-gray-500">{selectedClassStatLine}</span>
-          <div className="flex-1" />
-          <button
-            onClick={(e) => handleClassInfo(selectedClass, e)}
-            className="text-xs text-amber-400/70 hover:text-amber-300 transition-colors"
-          >
-            View Details
-          </button>
-          <button
-            onClick={() => dispatch({ type: "REMOVE_CLASS", index: 0 })}
-            className="text-xs text-gray-500 hover:text-red-400 transition-colors"
-          >
-            Change
-          </button>
+      {/* ── Initial class grid (no class chosen yet) ── */}
+      {showInitialPicker && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+          {sortedClasses.map((cls) => (
+            <ClassCard
+              key={cls.name}
+              cls={cls}
+              isSelected={false}
+              onClick={() => handleClassCardClick(cls.name)}
+              onInfo={(e) => handleClassInfo(cls, e)}
+            />
+          ))}
         </div>
       )}
 
-      {/* ── Class compact grid ── always visible; selected card is highlighted */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-        {sortedClasses.map((cls) => (
-          <ClassCard
-            key={cls.name}
-            cls={cls}
-            isSelected={activeClassName === cls.name}
-            onClick={() => handleClassCardClick(cls.name)}
-            onInfo={(e) => handleClassInfo(cls, e)}
-          />
-        ))}
-      </div>
-
-      {/* ── Configuration panel — only shown when a class is selected ── */}
-      {selectedClass && (
+      {/* ── Configuration panel — shown when at least one class is chosen ── */}
+      {state.classes.length > 0 && (
         <>
-          {/* Divider */}
-          <div
-            className="h-px bg-gradient-to-r from-transparent via-amber-500/20 to-transparent"
-            aria-hidden="true"
-          />
-
-          {/* ── Level Picker ── */}
-          <div className="bg-gray-800/30 border border-gray-700/20 rounded-lg p-4 flex flex-col gap-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-gray-300">Character Level</span>
-              <span className="text-xs text-gray-500">
-                Proficiency Bonus: +{Math.floor((activeClassLevel - 1) / 4) + 2}
-              </span>
-            </div>
-            <LevelPicker level={activeClassLevel} onChange={handleLevelChange} />
-          </div>
-
-          {/* ── Skill Proficiencies ── */}
-          <div className="flex flex-col gap-3">
-            <div>
-              <h3 className="text-base font-[family-name:var(--font-cinzel)] text-gray-200 mb-1">
-                Skill Proficiencies
-              </h3>
-              <p className="text-xs text-gray-500">
-                Choose {selectedClass.skillChoices.count} skill
-                {selectedClass.skillChoices.count !== 1 ? "s" : ""} from the {selectedClass.name}{" "}
-                skill list.
-              </p>
-            </div>
-            <ChoicePicker
-              choice={{
-                id: "class-skills",
-                label: `${selectedClass.name} Skills`,
-                count: selectedClass.skillChoices.count,
-                timing: "permanent",
-                pool: "skill_proficiency",
-                from: selectedClass.skillChoices.from,
-              }}
-              selected={activeClassSkills}
-              onSelect={handleSkillSelect}
+          {/* ── Multiclass tabs (only when 2+ classes) ── */}
+          {showTabs && (
+            <ClassTabs
+              classes={state.classes}
+              activeIndex={activeIdx}
+              atCap={atCap}
+              onTabClick={handleTabClick}
+              onRemove={handleRemoveClass}
+              onAddClass={() => setIsAddingClass(true)}
             />
-          </div>
+          )}
 
-          {/* ── Subclass Picker ── (only when level >= subclass unlock level) */}
-          {subclassAvailable && selectedClass.subclasses.length > 0 && (
+          {/* ── Add class picker panel (shown when isAddingClass = true) ── */}
+          {isAddingClass && (
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-base font-[family-name:var(--font-cinzel)] text-gray-200 mb-0.5">
+                    Add a Class
+                  </h3>
+                  <p className="text-xs text-gray-500">
+                    Remaining levels: {20 - totalLevel}. Each class starts at level 1.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsAddingClass(false)}
+                  className="text-xs text-gray-500 hover:text-gray-300 transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                {availableToAdd.map((cls) => (
+                  <ClassCard
+                    key={cls.name}
+                    cls={cls}
+                    isSelected={false}
+                    onClick={() => handleAddClassCardClick(cls.name)}
+                    onInfo={(e) => handleClassInfo(cls, e)}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ── Single-class banner (only when not in tabs mode and not adding) ── */}
+          {!showTabs && !isAddingClass && selectedClass && (
+            <div className="flex items-center gap-3 px-4 py-3 rounded-lg border border-amber-500/30 bg-amber-950/15">
+              <span className="text-sm text-amber-200 font-medium">{selectedClass.name}</span>
+              <span className="text-xs text-gray-500">{selectedClassStatLine}</span>
+              <div className="flex-1" />
+              <button
+                onClick={(e) => handleClassInfo(selectedClass, e)}
+                className="text-xs text-amber-400/70 hover:text-amber-300 transition-colors"
+              >
+                View Details
+              </button>
+              <button
+                onClick={() => dispatch({ type: "REMOVE_CLASS", index: 0 })}
+                className="text-xs text-gray-500 hover:text-red-400 transition-colors"
+              >
+                Change
+              </button>
+            </div>
+          )}
+
+          {/* ── Active class configuration (hidden while adding) ── */}
+          {!isAddingClass && selectedClass && (
             <>
+              {/* Divider */}
               <div
-                className="h-px bg-gradient-to-r from-transparent via-gray-700/40 to-transparent"
+                className="h-px bg-gradient-to-r from-transparent via-amber-500/20 to-transparent"
                 aria-hidden="true"
               />
 
-              <div className="flex flex-col gap-4">
-                <div>
-                  <h3 className="text-base font-[family-name:var(--font-cinzel)] text-gray-200 mb-1">
-                    {selectedClass.name} Subclass
-                  </h3>
-                  <p className="text-xs text-gray-500">
-                    At level {subclassUnlockLevel}, you choose a subclass that specialises your{" "}
-                    {selectedClass.name}. Click any subclass to see details and select it.
+              {/* ── Multiclass requirement warning (for non-primary classes) ── */}
+              {activeIdx > 0 && (
+                <MulticlassWarning cls={selectedClass} resolvedScores={resolvedAbilityScores} />
+              )}
+
+              {/* ── Total level cap notice ── */}
+              {atCap && (
+                <div className="px-4 py-2.5 rounded-lg border border-gray-700/30 bg-gray-800/30">
+                  <p className="text-xs text-gray-400">
+                    Total character level: 20 (maximum). To increase one class, reduce another.
                   </p>
                 </div>
+              )}
 
-                {/* Selected subclass banner */}
-                {selectedSubclass && (
-                  <div className="flex items-center gap-3 px-4 py-2.5 rounded-lg border border-amber-500/20 bg-amber-950/10">
-                    <span className="text-sm text-amber-200 font-medium">
-                      {selectedSubclass.name}
+              {/* ── Level Picker ── */}
+              <div className="bg-gray-800/30 border border-gray-700/20 rounded-lg p-4 flex flex-col gap-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-300">
+                    {showTabs ? `${selectedClass.name} Level` : "Character Level"}
+                  </span>
+                  <div className="flex items-center gap-3">
+                    {showTabs && (
+                      <span className="text-xs text-gray-600 tabular-nums">
+                        Total: {totalLevel}/20
+                      </span>
+                    )}
+                    <span className="text-xs text-gray-500">
+                      Proficiency Bonus: +{Math.floor((totalLevel - 1) / 4) + 2}
                     </span>
-                    <div className="flex-1" />
+                  </div>
+                </div>
+                <LevelPicker
+                  level={activeClassLevel}
+                  maxLevel={maxLevelForActive}
+                  onChange={handleLevelChange}
+                />
+              </div>
+
+              {/* ── Skill Proficiencies ── */}
+              <div className="flex flex-col gap-3">
+                <div>
+                  <h3 className="text-base font-[family-name:var(--font-cinzel)] text-gray-200 mb-1">
+                    Skill Proficiencies
+                  </h3>
+                  <p className="text-xs text-gray-500">
+                    {activeIdx === 0
+                      ? `Choose ${selectedClass.skillChoices.count} skill${selectedClass.skillChoices.count !== 1 ? "s" : ""} from the ${selectedClass.name} skill list.`
+                      : `Multiclass: choose ${selectedClass.multiclassing?.proficienciesGained?.skills?.count ?? selectedClass.skillChoices.count} skill${(selectedClass.multiclassing?.proficienciesGained?.skills?.count ?? selectedClass.skillChoices.count) !== 1 ? "s" : ""} from the ${selectedClass.name} list.`}
+                  </p>
+                </div>
+                <ChoicePicker
+                  choice={{
+                    id: `class-skills-${activeIdx}`,
+                    label: `${selectedClass.name} Skills`,
+                    count:
+                      activeIdx === 0
+                        ? selectedClass.skillChoices.count
+                        : (selectedClass.multiclassing?.proficienciesGained?.skills?.count ??
+                          selectedClass.skillChoices.count),
+                    timing: "permanent",
+                    pool: "skill_proficiency",
+                    from:
+                      activeIdx === 0
+                        ? selectedClass.skillChoices.from
+                        : (selectedClass.multiclassing?.proficienciesGained?.skills?.from ??
+                          selectedClass.skillChoices.from),
+                  }}
+                  selected={activeClassSkills}
+                  onSelect={handleSkillSelect}
+                />
+              </div>
+
+              {/* ── Subclass Picker ── (only when level >= subclass unlock level) */}
+              {subclassAvailable && selectedClass.subclasses.length > 0 && (
+                <>
+                  <div
+                    className="h-px bg-gradient-to-r from-transparent via-gray-700/40 to-transparent"
+                    aria-hidden="true"
+                  />
+
+                  <div className="flex flex-col gap-4">
+                    <div>
+                      <h3 className="text-base font-[family-name:var(--font-cinzel)] text-gray-200 mb-1">
+                        {selectedClass.name} Subclass
+                      </h3>
+                      <p className="text-xs text-gray-500">
+                        At level {subclassUnlockLevel}, you choose a subclass that specialises your{" "}
+                        {selectedClass.name}. Click any subclass to see details and select it.
+                      </p>
+                    </div>
+
+                    {/* Selected subclass banner */}
+                    {selectedSubclass && (
+                      <div className="flex items-center gap-3 px-4 py-2.5 rounded-lg border border-amber-500/20 bg-amber-950/10">
+                        <span className="text-sm text-amber-200 font-medium">
+                          {selectedSubclass.name}
+                        </span>
+                        <div className="flex-1" />
+                        <button
+                          onClick={(e) => handleSubclassInfo(selectedSubclass, e)}
+                          className="text-xs text-amber-400/70 hover:text-amber-300 transition-colors"
+                        >
+                          View Details
+                        </button>
+                        <button
+                          onClick={() =>
+                            dispatch({
+                              type: "SET_CLASS_SUBCLASS",
+                              index: activeIdx,
+                              subclass: "",
+                            })
+                          }
+                          className="text-xs text-gray-500 hover:text-red-400 transition-colors"
+                        >
+                          Change
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Subclass compact grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2">
+                      {selectedClass.subclasses.map((sub) => (
+                        <SubclassCard
+                          key={sub.name}
+                          subclass={sub}
+                          isSelected={activeSubclass === sub.name}
+                          onClick={() => handleSubclassCardClick(sub.name)}
+                          onInfo={(e) => handleSubclassInfo(sub, e)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* ── Feature List ── */}
+              {allFeatureLevels.length > 0 && (
+                <>
+                  <div
+                    className="h-px bg-gradient-to-r from-transparent via-gray-700/40 to-transparent"
+                    aria-hidden="true"
+                  />
+
+                  <div className="flex flex-col gap-4">
+                    <div>
+                      <h3 className="text-base font-[family-name:var(--font-cinzel)] text-gray-200 mb-1">
+                        Class Features
+                      </h3>
+                      <p className="text-xs text-gray-500">
+                        Features you gain from level 1 through {activeClassLevel}. Features marked
+                        "choose" require a permanent selection below.
+                      </p>
+                    </div>
+
+                    <div className="flex flex-col gap-6">
+                      {allFeatureLevels.map((lvl) => {
+                        const classAtLevel = classFeaturesByLevel.get(lvl) ?? [];
+                        const subclassAtLevel = subclassFeaturesByLevel.get(lvl) ?? [];
+
+                        const isSubclassUnlockLevel = lvl === subclassUnlockLevel;
+                        const showSubclassPrompt =
+                          isSubclassUnlockLevel && subclassAvailable && !selectedSubclass;
+
+                        const subclassPrompt = showSubclassPrompt ? (
+                          <li className="flex items-center gap-2 pl-4 border-l-2 border-dashed border-amber-600/30 text-sm text-amber-400/70 italic">
+                            <svg
+                              className="w-4 h-4 shrink-0"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                              strokeWidth={1.5}
+                              aria-hidden="true"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"
+                              />
+                            </svg>
+                            Pick a subclass above to see its features here.
+                          </li>
+                        ) : null;
+
+                        return (
+                          <FeatureLevelGroup
+                            key={lvl}
+                            level={lvl}
+                            features={[...classAtLevel, ...subclassAtLevel]}
+                            choiceSelections={activeClassChoices}
+                            onChoiceSelect={handleClassChoice}
+                            choicePrefix=""
+                            extra={subclassPrompt}
+                            weaponMasteryClassName={activeClassName ?? undefined}
+                          />
+                        );
+                      })}
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {allFeatureLevels.length === 0 && (
+                <p className="text-sm text-gray-500 italic">
+                  No features available for level {activeClassLevel}.
+                </p>
+              )}
+
+              {/* ── Add a Class button (single-class mode, not at cap) ── */}
+              {!showTabs && !atCap && (
+                <>
+                  <div
+                    className="h-px bg-gradient-to-r from-transparent via-gray-700/20 to-transparent"
+                    aria-hidden="true"
+                  />
+                  <div className="flex justify-center">
                     <button
-                      onClick={(e) => handleSubclassInfo(selectedSubclass, e)}
-                      className="text-xs text-amber-400/70 hover:text-amber-300 transition-colors"
+                      type="button"
+                      onClick={() => setIsAddingClass(true)}
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-gray-400 border border-gray-700/40 rounded-lg hover:border-amber-500/30 hover:text-amber-300 transition-all duration-150"
                     >
-                      View Details
-                    </button>
-                    <button
-                      onClick={() =>
-                        dispatch({ type: "SET_CLASS_SUBCLASS", index: 0, subclass: "" })
-                      }
-                      className="text-xs text-gray-500 hover:text-red-400 transition-colors"
-                    >
-                      Change
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                        aria-hidden="true"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16M4 12h16" />
+                      </svg>
+                      Add a Class (Multiclass)
                     </button>
                   </div>
-                )}
-
-                {/* Subclass compact grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2">
-                  {selectedClass.subclasses.map((sub) => (
-                    <SubclassCard
-                      key={sub.name}
-                      subclass={sub}
-                      isSelected={activeSubclass === sub.name}
-                      onClick={() => handleSubclassCardClick(sub.name)}
-                      onInfo={(e) => handleSubclassInfo(sub, e)}
-                    />
-                  ))}
-                </div>
-              </div>
+                </>
+              )}
             </>
-          )}
-
-          {/* ── Feature List ── */}
-          {allFeatureLevels.length > 0 && (
-            <>
-              <div
-                className="h-px bg-gradient-to-r from-transparent via-gray-700/40 to-transparent"
-                aria-hidden="true"
-              />
-
-              <div className="flex flex-col gap-4">
-                <div>
-                  <h3 className="text-base font-[family-name:var(--font-cinzel)] text-gray-200 mb-1">
-                    Class Features
-                  </h3>
-                  <p className="text-xs text-gray-500">
-                    Features you gain from level 1 through {activeClassLevel}. Features marked
-                    "choose" require a permanent selection below.
-                  </p>
-                </div>
-
-                <div className="flex flex-col gap-6">
-                  {allFeatureLevels.map((lvl) => {
-                    const classAtLevel = classFeaturesByLevel.get(lvl) ?? [];
-                    const subclassAtLevel = subclassFeaturesByLevel.get(lvl) ?? [];
-
-                    const isSubclassUnlockLevel = lvl === subclassUnlockLevel;
-                    const showSubclassPrompt =
-                      isSubclassUnlockLevel && subclassAvailable && !selectedSubclass;
-
-                    const subclassPrompt = showSubclassPrompt ? (
-                      <li className="flex items-center gap-2 pl-4 border-l-2 border-dashed border-amber-600/30 text-sm text-amber-400/70 italic">
-                        <svg
-                          className="w-4 h-4 shrink-0"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                          strokeWidth={1.5}
-                          aria-hidden="true"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"
-                          />
-                        </svg>
-                        Pick a subclass above to see its features here.
-                      </li>
-                    ) : null;
-
-                    return (
-                      <FeatureLevelGroup
-                        key={lvl}
-                        level={lvl}
-                        features={[...classAtLevel, ...subclassAtLevel]}
-                        choiceSelections={activeClassChoices}
-                        onChoiceSelect={handleClassChoice}
-                        choicePrefix=""
-                        extra={subclassPrompt}
-                        weaponMasteryClassName={activeClassName ?? undefined}
-                      />
-                    );
-                  })}
-                </div>
-              </div>
-            </>
-          )}
-
-          {allFeatureLevels.length === 0 && (
-            <p className="text-sm text-gray-500 italic">
-              No features available for level {activeClassLevel}.
-            </p>
           )}
         </>
       )}
