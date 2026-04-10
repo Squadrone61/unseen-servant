@@ -168,7 +168,7 @@ function WeaponCard({ weapon, isSelected, disabled, onToggle }: WeaponCardProps)
 // Main component
 // ---------------------------------------------------------------------------
 
-export interface WeaponMasteryPickerProps {
+interface WeaponMasteryPickerProps {
   className: string;
   selected: string[];
   onSelect: (weapons: string[]) => void;

@@ -27,14 +27,8 @@ import type { ToolResponse } from "../services/game-state-manager.js";
 import { MessageQueue } from "../message-queue.js";
 import { CampaignManager } from "../services/campaign-manager.js";
 
-// Re-export all character fixtures for backward compatibility
-export {
-  createFighterCharacter,
-  createClericCharacter,
-  createWarlockCharacter,
-  createBarbarianCharacter,
-  createMulticlassCharacter,
-} from "./fixtures.js";
+// Re-export character fixtures used by tests that import from setup
+export { createFighterCharacter, createClericCharacter } from "./fixtures.js";
 
 // ---------------------------------------------------------------------------
 // createTestGSM

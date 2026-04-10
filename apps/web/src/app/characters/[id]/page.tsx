@@ -62,6 +62,11 @@ export default function CharacterDetailPage() {
   return (
     <div className="min-h-screen flex flex-col">
       <TopBar items={[{ label: "Characters", href: "/characters" }]} current={char.static.name}>
+        <Link href={`/characters/${id}/edit`}>
+          <Button variant="secondary" size="sm">
+            Edit
+          </Button>
+        </Link>
         <Button variant="secondary" size="sm" onClick={() => exportNative(char)}>
           Export
         </Button>

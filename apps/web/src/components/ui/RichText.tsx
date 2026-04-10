@@ -323,7 +323,7 @@ function renderBlock(block: Block, blockIdx: number): ReactNode {
 // Public component
 // ---------------------------------------------------------------------------
 
-export interface RichTextProps {
+interface RichTextProps {
   text: string;
   className?: string;
 }

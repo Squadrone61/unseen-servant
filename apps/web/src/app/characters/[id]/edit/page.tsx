@@ -26,8 +26,9 @@ function EditInner({ id }: EditInnerProps) {
       router.replace("/characters");
       return;
     }
-    const hydratedState = hydrateBuilderState(saved.character);
-    dispatch({ type: "LOAD_STATE", state: hydratedState });
+    // Prefer persisted builder state (lossless); fall back to hydration for imported characters
+    const restoredState = saved.builderState ?? hydrateBuilderState(saved.character);
+    dispatch({ type: "LOAD_STATE", state: restoredState });
   }, [id, loaded, getCharacter, dispatch, router]);
 
   if (!loaded) {
@@ -41,7 +42,14 @@ function EditInner({ id }: EditInnerProps) {
   const saved = getCharacter(id);
   const editName = saved?.character.static.name ?? "Character";
 
-  return <BuilderShell mode="edit" editId={id} editName={editName} />;
+  return (
+    <BuilderShell
+      mode="edit"
+      editId={id}
+      editName={editName}
+      editDynamicData={saved?.character.dynamic}
+    />
+  );
 }
 
 // ─── Page export ──────────────────────────────────────────────────────────────

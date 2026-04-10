@@ -541,7 +541,7 @@ function PoolFallback({ label }: { label: string }) {
 // Main component
 // ---------------------------------------------------------------------------
 
-export interface ChoicePickerProps {
+interface ChoicePickerProps {
   choice: FeatureChoice;
   selected: string[];
   onSelect: (selections: string[]) => void;

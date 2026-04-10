@@ -95,7 +95,7 @@ const MULTICLASS_SLOTS: number[][] = [
  * Collect all build-time EffectBundles from the character's sources:
  * species, class features, subclass features, and feats.
  */
-export function collectBuildEffects(ids: CharacterIdentifiers): EffectBundle[] {
+function collectBuildEffects(ids: CharacterIdentifiers): EffectBundle[] {
   const bundles: EffectBundle[] = [];
 
   // Species effects

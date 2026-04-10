@@ -22,6 +22,11 @@ async function shot(page: Page, name: string) {
   });
 }
 
+/** Get a sidebar step button by exact name (avoids matching "Continue to X" or "View details") */
+function stepBtn(page: Page, name: string) {
+  return page.getByRole("button", { name, exact: true });
+}
+
 // ─── Suite ────────────────────────────────────────────────────────────────────
 
 test.describe("Character Builder", () => {
@@ -41,43 +46,40 @@ test.describe("Character Builder", () => {
     await shot(page, "01-initial-layout");
 
     // Step sidebar (left panel) — should have a nav with the 7 steps
-    await expect(page.getByRole("button", { name: "Species" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Background" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Class" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Abilities" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Feats" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Spells" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "Details" })).toBeVisible();
+    await expect(stepBtn(page, "Species")).toBeVisible();
+    await expect(stepBtn(page, "Background")).toBeVisible();
+    await expect(stepBtn(page, "Class")).toBeVisible();
+    await expect(stepBtn(page, "Abilities")).toBeVisible();
+    await expect(stepBtn(page, "Feats")).toBeVisible();
+    await expect(stepBtn(page, "Spells")).toBeVisible();
+    await expect(stepBtn(page, "Details")).toBeVisible();
 
-    // Finish button at bottom of sidebar (exact match to avoid matching species card role="button" nodes)
-    await expect(page.getByRole("button", { name: "Finish", exact: true }).first()).toBeVisible();
+    // Finish button at bottom of sidebar (label includes checkmark)
+    await expect(page.getByRole("button", { name: /Finish/ })).toBeVisible();
 
     // Main content area — Species step heading
     await expect(page.getByRole("heading", { name: "Choose Your Species" })).toBeVisible();
 
-    // Right panel — live preview
-    await expect(page.getByText("Character Preview")).toBeVisible();
-    // Empty state message before anything is selected
-    await expect(page.getByText("Select a class and set abilities to see preview")).toBeVisible();
+    // Left panel — character sheet placeholder
+    await expect(
+      page.getByText("Select a species and class to see your character sheet"),
+    ).toBeVisible();
   });
 
   test("Species step is active on load, others locked except Details", async ({ page }) => {
     // Species: current step — has aria-current="step"
-    await expect(page.getByRole("button", { name: "Species" })).toHaveAttribute(
-      "aria-current",
-      "step",
-    );
+    await expect(stepBtn(page, "Species")).toHaveAttribute("aria-current", "step");
 
     // Background: locked — disabled
-    const backgroundBtn = page.getByRole("button", { name: "Background" });
+    const backgroundBtn = stepBtn(page, "Background");
     await expect(backgroundBtn).toBeDisabled();
 
     // Class: locked
-    const classBtn = page.getByRole("button", { name: "Class" });
+    const classBtn = stepBtn(page, "Class");
     await expect(classBtn).toBeDisabled();
 
     // Details: unlocked even before other steps
-    const detailsBtn = page.getByRole("button", { name: "Details" });
+    const detailsBtn = stepBtn(page, "Details");
     await expect(detailsBtn).not.toBeDisabled();
   });
 
@@ -88,8 +90,7 @@ test.describe("Character Builder", () => {
     await expect(page.getByPlaceholder("Search species...")).toBeVisible();
 
     // At least a few species cards render — the DB has 28 species
-    const cards = page.locator('[role="button"]').filter({ hasText: /Human|Elf|Dwarf/ });
-    await expect(cards.first()).toBeVisible();
+    await expect(page.getByText("Human", { exact: true }).first()).toBeVisible();
   });
 
   test("Species search filters results", async ({ page }) => {
@@ -118,7 +119,7 @@ test.describe("Character Builder", () => {
     await shot(page, "03-species-elf-selected");
 
     // Background step should now be unlocked
-    const backgroundBtn = page.getByRole("button", { name: "Background" });
+    const backgroundBtn = stepBtn(page, "Background");
     await expect(backgroundBtn).not.toBeDisabled();
   });
 
@@ -149,7 +150,7 @@ test.describe("Character Builder", () => {
     await page.getByText("Human", { exact: true }).first().click();
 
     // Navigate to Background
-    await page.getByRole("button", { name: "Background" }).click();
+    await stepBtn(page, "Background").click();
     await shot(page, "05-background-step");
 
     // Background heading
@@ -161,7 +162,7 @@ test.describe("Character Builder", () => {
 
   test("selecting Acolyte background shows ability score assignment", async ({ page }) => {
     await page.getByText("Human", { exact: true }).first().click();
-    await page.getByRole("button", { name: "Background" }).click();
+    await stepBtn(page, "Background").click();
 
     await page.getByText("Acolyte", { exact: true }).first().click();
     await shot(page, "06-background-acolyte-selected");
@@ -176,7 +177,7 @@ test.describe("Character Builder", () => {
 
   test("ability score mode toggle switches between +2/+1 and +1/+1/+1", async ({ page }) => {
     await page.getByText("Human", { exact: true }).first().click();
-    await page.getByRole("button", { name: "Background" }).click();
+    await stepBtn(page, "Background").click();
     await page.getByText("Acolyte", { exact: true }).first().click();
 
     // Switch to three-ones mode
@@ -195,16 +196,13 @@ test.describe("Character Builder", () => {
   test("Class step renders class grid", async ({ page }) => {
     // Complete prerequisite steps
     await page.getByText("Human", { exact: true }).first().click();
-    await page.getByRole("button", { name: "Background" }).click();
+    await stepBtn(page, "Background").click();
     await page.getByText("Acolyte", { exact: true }).first().click();
-    await page.getByRole("button", { name: "Class" }).click();
+    await stepBtn(page, "Class").click();
     await shot(page, "08-class-step");
 
     // Class heading
     await expect(page.getByRole("heading", { name: "Choose Your Class" })).toBeVisible();
-
-    // Search bar
-    await expect(page.getByPlaceholder("Search classes...")).toBeVisible();
 
     // At least Wizard should appear
     await expect(page.getByText("Wizard", { exact: true }).first()).toBeVisible();
@@ -212,9 +210,9 @@ test.describe("Character Builder", () => {
 
   test("selecting Wizard shows level picker, skill choices", async ({ page }) => {
     await page.getByText("Human", { exact: true }).first().click();
-    await page.getByRole("button", { name: "Background" }).click();
+    await stepBtn(page, "Background").click();
     await page.getByText("Acolyte", { exact: true }).first().click();
-    await page.getByRole("button", { name: "Class" }).click();
+    await stepBtn(page, "Class").click();
 
     await page.getByText("Wizard", { exact: true }).first().click();
     await shot(page, "09-wizard-selected");
@@ -231,9 +229,9 @@ test.describe("Character Builder", () => {
 
   test("level picker increments level correctly", async ({ page }) => {
     await page.getByText("Human", { exact: true }).first().click();
-    await page.getByRole("button", { name: "Background" }).click();
+    await stepBtn(page, "Background").click();
     await page.getByText("Acolyte", { exact: true }).first().click();
-    await page.getByRole("button", { name: "Class" }).click();
+    await stepBtn(page, "Class").click();
     await page.getByText("Wizard", { exact: true }).first().click();
 
     // Click "Increase level" twice
@@ -248,9 +246,9 @@ test.describe("Character Builder", () => {
 
   test("Wizard at level 3 shows subclass picker", async ({ page }) => {
     await page.getByText("Human", { exact: true }).first().click();
-    await page.getByRole("button", { name: "Background" }).click();
+    await stepBtn(page, "Background").click();
     await page.getByText("Acolyte", { exact: true }).first().click();
-    await page.getByRole("button", { name: "Class" }).click();
+    await stepBtn(page, "Class").click();
     await page.getByText("Wizard", { exact: true }).first().click();
 
     // Increase level to 3
@@ -271,11 +269,11 @@ test.describe("Character Builder", () => {
   test("Abilities step renders with Standard Array selected by default", async ({ page }) => {
     // Complete prerequisites
     await page.getByText("Human", { exact: true }).first().click();
-    await page.getByRole("button", { name: "Background" }).click();
+    await stepBtn(page, "Background").click();
     await page.getByText("Acolyte", { exact: true }).first().click();
-    await page.getByRole("button", { name: "Class" }).click();
+    await stepBtn(page, "Class").click();
     await page.getByText("Wizard", { exact: true }).first().click();
-    await page.getByRole("button", { name: "Abilities" }).click();
+    await stepBtn(page, "Abilities").click();
     await shot(page, "12-abilities-step");
 
     // Method selector
@@ -300,11 +298,11 @@ test.describe("Character Builder", () => {
 
   test("switching to Point Buy shows remaining points counter", async ({ page }) => {
     await page.getByText("Human", { exact: true }).first().click();
-    await page.getByRole("button", { name: "Background" }).click();
+    await stepBtn(page, "Background").click();
     await page.getByText("Acolyte", { exact: true }).first().click();
-    await page.getByRole("button", { name: "Class" }).click();
+    await stepBtn(page, "Class").click();
     await page.getByText("Wizard", { exact: true }).first().click();
-    await page.getByRole("button", { name: "Abilities" }).click();
+    await stepBtn(page, "Abilities").click();
 
     await page.getByRole("radio", { name: "Point Buy" }).click();
     await shot(page, "13-abilities-point-buy");
@@ -318,11 +316,11 @@ test.describe("Character Builder", () => {
 
   test("Point Buy increment button increases score and deducts points", async ({ page }) => {
     await page.getByText("Human", { exact: true }).first().click();
-    await page.getByRole("button", { name: "Background" }).click();
+    await stepBtn(page, "Background").click();
     await page.getByText("Acolyte", { exact: true }).first().click();
-    await page.getByRole("button", { name: "Class" }).click();
+    await stepBtn(page, "Class").click();
     await page.getByText("Wizard", { exact: true }).first().click();
-    await page.getByRole("button", { name: "Abilities" }).click();
+    await stepBtn(page, "Abilities").click();
     await page.getByRole("radio", { name: "Point Buy" }).click();
 
     // Click "Increase STR" once — should go from 8 to 9, costing 1 point
@@ -335,11 +333,11 @@ test.describe("Character Builder", () => {
 
   test("switching to Manual method shows free input fields", async ({ page }) => {
     await page.getByText("Human", { exact: true }).first().click();
-    await page.getByRole("button", { name: "Background" }).click();
+    await stepBtn(page, "Background").click();
     await page.getByText("Acolyte", { exact: true }).first().click();
-    await page.getByRole("button", { name: "Class" }).click();
+    await stepBtn(page, "Class").click();
     await page.getByText("Wizard", { exact: true }).first().click();
-    await page.getByRole("button", { name: "Abilities" }).click();
+    await stepBtn(page, "Abilities").click();
 
     await page.getByRole("radio", { name: "Manual" }).click();
     await shot(page, "15-abilities-manual");
@@ -353,31 +351,32 @@ test.describe("Character Builder", () => {
   test("Live Preview populates after class and abilities are set", async ({ page }) => {
     // Build a complete character up to abilities
     await page.getByText("Human", { exact: true }).first().click();
-    await page.getByRole("button", { name: "Background" }).click();
+    await stepBtn(page, "Background").click();
     await page.getByText("Acolyte", { exact: true }).first().click();
-    await page.getByRole("button", { name: "Class" }).click();
+    await stepBtn(page, "Class").click();
     await page.getByText("Wizard", { exact: true }).first().click();
-    await page.getByRole("button", { name: "Abilities" }).click();
+    await stepBtn(page, "Abilities").click();
     // Standard Array is default — just navigate away to trigger completedSteps update
     // The completion is tracked by the reducer; switching steps marks abilities done
 
     await shot(page, "16-live-preview-populated");
 
-    // Live preview should no longer show empty state
-    // (even before leaving the step, the preview reacts to state changes)
-    // Core stats section should appear once class is set
-    // Scope to the live preview aside to avoid strict mode conflicts with "Background", "AC", etc.
-    const preview = page.locator("aside").filter({ hasText: "Character Preview" });
-    await expect(preview.getByText("Core Stats")).toBeVisible();
-    await expect(preview.getByText("HP")).toBeVisible();
-    await expect(preview.getByText("AC")).toBeVisible();
+    // Character sheet (left panel) should populate once class is set
+    // The empty state message should be replaced by the actual character sheet
+    await expect(
+      page.getByText("Select a species and class to see your character sheet"),
+    ).not.toBeVisible();
+    // The character sheet renders species + class info
+    const sheet = page.locator("aside").first();
+    await expect(sheet.getByText("Human")).toBeVisible();
+    await expect(sheet.getByText("Wizard")).toBeVisible();
   });
 
   // ── 7. Details Step ─────────────────────────────────────────────────────────
 
   test("Details step is accessible without completing other steps", async ({ page }) => {
     // Details is always unlocked
-    await page.getByRole("button", { name: "Details" }).click();
+    await stepBtn(page, "Details").click();
     await shot(page, "17-details-step");
 
     await expect(page.getByRole("heading", { name: "Character Details" })).toBeVisible();
@@ -387,7 +386,7 @@ test.describe("Character Builder", () => {
   });
 
   test("typing a character name updates the name input", async ({ page }) => {
-    await page.getByRole("button", { name: "Details" }).click();
+    await stepBtn(page, "Details").click();
 
     const nameInput = page.getByLabel("Name");
     await nameInput.fill("Valdris Moonwhisper");
@@ -403,11 +402,11 @@ test.describe("Character Builder", () => {
     await page.getByText("Human", { exact: true }).first().click();
 
     // Go to Background
-    await page.getByRole("button", { name: "Background" }).click();
+    await stepBtn(page, "Background").click();
     await page.getByText("Acolyte", { exact: true }).first().click();
 
     // Go back to Species
-    await page.getByRole("button", { name: "Species" }).click();
+    await stepBtn(page, "Species").click();
     await shot(page, "19-species-back-preserved");
 
     // Human should still be highlighted (selected state)
@@ -421,14 +420,12 @@ test.describe("Character Builder", () => {
 
   // ── 9. Finish flow ──────────────────────────────────────────────────────────
 
-  test("Finish button shows error when character is incomplete", async ({ page }) => {
-    // Do not complete any steps
-    // Use the sidebar's Finish button specifically (exact: true, first() for safety)
-    await page.getByRole("button", { name: "Finish", exact: true }).first().click();
+  test("Finish button is disabled when character is incomplete", async ({ page }) => {
+    // Do not complete any steps — Finish button should be disabled with tooltip
+    const finishBtn = page.getByRole("button", { name: /Finish/ });
+    await expect(finishBtn).toBeDisabled();
+    await expect(finishBtn).toHaveAttribute("title", /Species.*Class.*Abilities/);
     await shot(page, "20-finish-incomplete");
-
-    // Error message
-    await expect(page.getByText(/incomplete.*Species.*Class.*Abilities/i)).toBeVisible();
   });
 
   test("complete character creation saves and redirects to /characters", async ({ page }) => {
@@ -436,7 +433,7 @@ test.describe("Character Builder", () => {
     await page.getByText("Human", { exact: true }).first().click();
 
     // Step 2: Background
-    await page.getByRole("button", { name: "Background" }).click();
+    await stepBtn(page, "Background").click();
     await page.getByText("Acolyte", { exact: true }).first().click();
 
     // For Acolyte the two-one mode should auto-select eligible abilities;
@@ -459,7 +456,7 @@ test.describe("Character Builder", () => {
     }
 
     // Step 3: Class
-    await page.getByRole("button", { name: "Class" }).click();
+    await stepBtn(page, "Class").click();
     await page.getByText("Wizard", { exact: true }).first().click();
 
     // Pick skill choices — Wizard gets 2 skills
@@ -474,11 +471,11 @@ test.describe("Character Builder", () => {
     }
 
     // Step 4: Abilities (Standard Array defaults are fine)
-    await page.getByRole("button", { name: "Abilities" }).click();
+    await stepBtn(page, "Abilities").click();
     await page.waitForTimeout(200);
 
     // Step 5: Details — set name (required for a clean finish)
-    await page.getByRole("button", { name: "Details" }).click();
+    await stepBtn(page, "Details").click();
     await page.getByLabel("Name").fill("Zara Spellweaver");
 
     // Finish
@@ -498,39 +495,45 @@ test.describe("Character Builder", () => {
   test("edit mode loads builder with all steps unlocked", async ({ page }) => {
     // First create a character so there's something to edit
     await page.getByText("Human", { exact: true }).first().click();
-    await page.getByRole("button", { name: "Background" }).click();
+    await stepBtn(page, "Background").click();
     await page.getByText("Acolyte", { exact: true }).first().click();
-    await page.getByRole("button", { name: "Class" }).click();
+    await stepBtn(page, "Class").click();
     await page.getByText("Wizard", { exact: true }).first().click();
-    await page.getByRole("button", { name: "Abilities" }).click();
+    await stepBtn(page, "Abilities").click();
     await page.waitForTimeout(200);
-    await page.getByRole("button", { name: "Details" }).click();
+    await stepBtn(page, "Details").click();
     await page.getByLabel("Name").fill("Edit Test Char");
     await page.getByRole("button", { name: "Finish" }).click();
     await page.waitForURL(/\/characters$/, { timeout: 10_000 });
 
-    // Find edit link for our character
-    // Characters page shows character cards — look for Edit link or click the character
+    // Navigate to character detail page
     const charCard = page.getByText("Edit Test Char").first();
     await charCard.click();
     await page.waitForURL(/\/characters\/.+$/, { timeout: 10_000 });
 
-    // Should be on the character detail page — look for Edit button
+    // Click the Edit button on the detail page
     const editLink = page.getByRole("link", { name: /Edit/i });
-    if (await editLink.isVisible().catch(() => false)) {
-      await editLink.click();
-      await page.waitForURL(/\/characters\/.+\/edit$/, { timeout: 10_000 });
-      await shot(page, "22-edit-mode");
+    await expect(editLink).toBeVisible();
+    await editLink.click();
+    await page.waitForURL(/\/characters\/.+\/edit$/, { timeout: 10_000 });
+    await shot(page, "22-edit-mode");
 
-      // In edit mode the button label should be "Save Changes"
-      await expect(page.getByRole("button", { name: "Save Changes" })).toBeVisible();
+    // In edit mode the button label should be "Save Changes"
+    await expect(page.getByRole("button", { name: "Save Changes" })).toBeVisible();
 
-      // All steps unlocked — Background should not be disabled
-      await expect(page.getByRole("button", { name: "Background" })).not.toBeDisabled();
-      await expect(page.getByRole("button", { name: "Class" })).not.toBeDisabled();
-      await expect(page.getByRole("button", { name: "Abilities" })).not.toBeDisabled();
-    }
-    // If no edit link, skip — the character detail page may not have one yet (coverage gap)
+    // All steps unlocked — Background, Class, Abilities should not be disabled
+    await expect(stepBtn(page, "Background")).not.toBeDisabled();
+    await expect(stepBtn(page, "Class")).not.toBeDisabled();
+    await expect(stepBtn(page, "Abilities")).not.toBeDisabled();
+
+    // Edit the name and save
+    await stepBtn(page, "Details").click();
+    await page.getByLabel("Name").fill("Edit Test Char Renamed");
+    await page.getByRole("button", { name: "Save Changes" }).click();
+    await page.waitForURL(/\/characters$/, { timeout: 10_000 });
+
+    // Verify the renamed character appears in the list
+    await expect(page.getByText("Edit Test Char Renamed")).toBeVisible();
   });
 
   // ── 11. Characters page ─────────────────────────────────────────────────────

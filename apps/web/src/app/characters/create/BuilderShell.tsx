@@ -241,13 +241,15 @@ export interface BuilderShellProps {
   editId?: string;
   /** Display name for the character being edited, shown in the header. */
   editName?: string;
+  /** Original dynamic data to preserve during edit (HP, conditions, spell slots, etc.) */
+  editDynamicData?: import("@unseen-servant/shared/types").CharacterDynamicData;
 }
 
 /**
  * Shared layout for both create and edit modes.
  * Must be rendered inside a BuilderProvider.
  */
-export function BuilderShell({ mode, editId, editName }: BuilderShellProps) {
+export function BuilderShell({ mode, editId, editName, editDynamicData }: BuilderShellProps) {
   const { state } = useBuilder();
   const [activeStep, setActiveStep] = useState<StepId>("species");
   const [finishError, setFinishError] = useState<string | null>(null);
@@ -291,9 +293,20 @@ export function BuilderShell({ mode, editId, editName }: BuilderShellProps) {
     setFinishError(null);
 
     if (isEditMode && editId) {
-      updateCharacter(editId, character);
+      // Merge: new static data from builder + preserved dynamic data from gameplay
+      const mergedCharacter = editDynamicData
+        ? {
+            static: character.static,
+            dynamic: {
+              ...editDynamicData,
+              // Clamp currentHP if maxHP decreased
+              currentHP: Math.min(editDynamicData.currentHP, character.static.maxHP),
+            },
+          }
+        : character;
+      updateCharacter(editId, mergedCharacter, state);
     } else {
-      saveCharacter(character);
+      saveCharacter(character, { builderState: state });
     }
 
     router.push("/characters");

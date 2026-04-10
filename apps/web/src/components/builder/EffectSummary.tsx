@@ -6,7 +6,7 @@ import type { EntityEffects, Modifier, Property } from "@unseen-servant/shared/t
 // Types
 // ---------------------------------------------------------------------------
 
-export interface EffectSummaryProps {
+interface EffectSummaryProps {
   effects?: EntityEffects;
   className?: string;
   /** true = single line with overflow hidden, false = wrap */

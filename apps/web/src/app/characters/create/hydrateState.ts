@@ -31,16 +31,7 @@ export function hydrateBuilderState(character: CharacterData): BuilderState {
   // Background: inferred from features (best effort)
   const background = inferBackground(character);
 
-  // Class data from first class entry
-  const primaryClass = s.classes[0] ?? null;
-  const className = primaryClass?.name ?? null;
-  const classLevel = primaryClass?.level ?? 1;
-  const subclass = primaryClass?.subclass ?? null;
-
-  // Class skills: skills that have proficient === true
-  // (background also grants skills, but we can't cleanly split them without
-  // the background DB; include all proficient skills and let the step UI
-  // handle any duplicates from background)
+  // Class data from all class entries (supports multiclass)
   const classSkills = s.skills.filter((sk) => sk.proficient).map((sk) => sk.name);
 
   // Feat selections: reconstruct from features with source === "feat"
@@ -77,10 +68,15 @@ export function hydrateBuilderState(character: CharacterData): BuilderState {
     abilityScoreMode: "two-one",
     abilityScoreAssignments: {}, // bonus assignments can't be split from base scores
 
-    // Step 3: Class
-    classes: className
-      ? [{ name: className, level: classLevel, subclass, skills: classSkills, choices: {} }]
-      : [],
+    // Step 3: Class (supports multiclass)
+    classes: s.classes.map((cls, i) => ({
+      name: cls.name,
+      level: cls.level,
+      subclass: cls.subclass ?? null,
+      // Only primary class gets skill proficiencies in the builder
+      skills: i === 0 ? classSkills : [],
+      choices: {},
+    })),
     activeClassIndex: 0,
 
     // Step 4: Abilities — treat final scores as manual base (already includes
