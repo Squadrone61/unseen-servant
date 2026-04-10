@@ -72,9 +72,9 @@ export function FeaturesTab({ character, onFeatureClick }: FeaturesTabProps) {
             </div>
           )}
           <div className="space-y-0.5">
-            {group.features.map((feat) => (
+            {group.features.map((feat, i) => (
               <div
-                key={feat.name}
+                key={`${feat.name}-${feat.sourceLabel}-${i}`}
                 className={`text-xs px-1.5 py-0.5 rounded flex items-center gap-1 ${
                   feat.description
                     ? "text-gray-300 cursor-pointer hover:text-amber-300 hover:bg-gray-800/60 transition-colors"

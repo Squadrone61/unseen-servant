@@ -173,9 +173,9 @@ export function ActionsTab({ character, onItemClick, onFeatureClick }: ActionsTa
             {group.label}
           </div>
           <div className="space-y-0.5">
-            {group.features.map((feature) => (
+            {group.features.map((feature, i) => (
               <div
-                key={feature.name}
+                key={`${feature.name}-${i}`}
                 className="flex items-center gap-1.5 text-xs px-1.5 py-1 rounded cursor-pointer hover:bg-gray-800/60 transition-colors group"
                 onClick={(e) => onFeatureClick(feature, e)}
               >
