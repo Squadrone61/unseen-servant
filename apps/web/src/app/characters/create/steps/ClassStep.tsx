@@ -197,10 +197,12 @@ function ClassCard({
   cls,
   isSelected,
   onClick,
+  onInfo,
 }: {
   cls: ClassDb;
   isSelected: boolean;
-  onClick: (e: React.MouseEvent) => void;
+  onClick: () => void;
+  onInfo: (e: React.MouseEvent) => void;
 }) {
   const statLine = buildStatLine(cls);
   const profLine = buildProficiencyLine(cls);
@@ -238,9 +240,20 @@ function ClassCard({
           </div>
           <span className="text-xs text-gray-500 truncate">{profLine}</span>
         </div>
-        <span className="text-xs text-gray-400 shrink-0 whitespace-nowrap tabular-nums">
-          {statLine}
-        </span>
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="text-xs text-gray-400 whitespace-nowrap tabular-nums">{statLine}</span>
+          <button
+            type="button"
+            aria-label={`Details for ${cls.name}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              onInfo(e);
+            }}
+            className="text-gray-500 hover:text-amber-300 transition-colors text-sm leading-none"
+          >
+            ⓘ
+          </button>
+        </div>
       </div>
     </button>
   );
@@ -365,10 +378,12 @@ function SubclassCard({
   subclass,
   isSelected,
   onClick,
+  onInfo,
 }: {
   subclass: SubclassDb;
   isSelected: boolean;
-  onClick: (e: React.MouseEvent) => void;
+  onClick: () => void;
+  onInfo: (e: React.MouseEvent) => void;
 }) {
   const casterBadge = getCasterBadge(subclass.casterProgression);
   const hasBonusSpells = subclass.additionalSpells && subclass.additionalSpells.length > 0;
@@ -404,6 +419,17 @@ function SubclassCard({
               {casterBadge.label}
             </span>
           )}
+          <button
+            type="button"
+            aria-label={`Details for ${subclass.name}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              onInfo(e);
+            }}
+            className="text-gray-500 hover:text-amber-300 transition-colors text-sm leading-none"
+          >
+            ⓘ
+          </button>
         </div>
       </div>
     </button>
@@ -754,12 +780,17 @@ export function ClassStep() {
 
   // ---- Handlers ------------------------------------------------------------
 
-  function handleClassCardClick(cls: ClassDb, e: React.MouseEvent) {
+  function handleClassInfo(cls: ClassDb, e: React.MouseEvent) {
     setClassPopover({ cls, position: { x: e.clientX, y: e.clientY } });
   }
 
-  function handleClassToggleSelect(name: string) {
+  function handleClassCardClick(name: string) {
     if (state.className === name) return; // class selection is not toggled off here; use Change button
+    dispatch({ type: "SET_CLASS", className: name });
+  }
+
+  function handleClassToggleSelect(name: string) {
+    if (state.className === name) return;
     dispatch({ type: "SET_CLASS", className: name });
   }
 
@@ -767,8 +798,12 @@ export function ClassStep() {
     dispatch({ type: "SET_CLASS_LEVEL", level });
   }
 
-  function handleSubclassCardClick(subclass: SubclassDb, e: React.MouseEvent) {
+  function handleSubclassInfo(subclass: SubclassDb, e: React.MouseEvent) {
     setSubclassPopover({ subclass, position: { x: e.clientX, y: e.clientY } });
+  }
+
+  function handleSubclassCardClick(name: string) {
+    handleSubclassToggleSelect(name);
   }
 
   function handleSubclassToggleSelect(name: string) {
@@ -814,7 +849,7 @@ export function ClassStep() {
           <span className="text-xs text-gray-500">{selectedClassStatLine}</span>
           <div className="flex-1" />
           <button
-            onClick={(e) => handleClassCardClick(selectedClass, e)}
+            onClick={(e) => handleClassInfo(selectedClass, e)}
             className="text-xs text-amber-400/70 hover:text-amber-300 transition-colors"
           >
             View Details
@@ -835,7 +870,8 @@ export function ClassStep() {
             key={cls.name}
             cls={cls}
             isSelected={state.className === cls.name}
-            onClick={(e) => handleClassCardClick(cls, e)}
+            onClick={() => handleClassCardClick(cls.name)}
+            onInfo={(e) => handleClassInfo(cls, e)}
           />
         ))}
       </div>
@@ -913,7 +949,7 @@ export function ClassStep() {
                     </span>
                     <div className="flex-1" />
                     <button
-                      onClick={(e) => handleSubclassCardClick(selectedSubclass, e)}
+                      onClick={(e) => handleSubclassInfo(selectedSubclass, e)}
                       className="text-xs text-amber-400/70 hover:text-amber-300 transition-colors"
                     >
                       View Details
@@ -934,7 +970,8 @@ export function ClassStep() {
                       key={sub.name}
                       subclass={sub}
                       isSelected={state.subclass === sub.name}
-                      onClick={(e) => handleSubclassCardClick(sub, e)}
+                      onClick={() => handleSubclassCardClick(sub.name)}
+                      onInfo={(e) => handleSubclassInfo(sub, e)}
                     />
                   ))}
                 </div>

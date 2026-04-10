@@ -76,10 +76,12 @@ function SpeciesCard({
   species,
   isSelected,
   onClick,
+  onDetailsClick,
 }: {
   species: SpeciesDb;
   isSelected: boolean;
-  onClick: (e: React.MouseEvent) => void;
+  onClick: () => void;
+  onDetailsClick: (e: React.MouseEvent) => void;
 }) {
   return (
     <button
@@ -94,13 +96,28 @@ function SpeciesCard({
       `}
     >
       <div className="flex items-center justify-between gap-2">
-        <span
-          className={`font-[family-name:var(--font-cinzel)] text-sm truncate ${
-            isSelected ? "text-amber-200" : "text-gray-200"
-          }`}
-        >
-          {species.name}
-        </span>
+        <div className="flex items-center gap-1.5 min-w-0">
+          <span
+            className={`font-[family-name:var(--font-cinzel)] text-sm truncate ${
+              isSelected ? "text-amber-200" : "text-gray-200"
+            }`}
+          >
+            {species.name}
+          </span>
+          <span
+            role="button"
+            tabIndex={0}
+            onClick={onDetailsClick}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ")
+                onDetailsClick(e as unknown as React.MouseEvent);
+            }}
+            className="text-xs text-gray-500 hover:text-amber-400 transition-colors shrink-0 leading-none"
+            title="View details"
+          >
+            ⓘ
+          </span>
+        </div>
         <span className="text-xs text-gray-500 shrink-0 whitespace-nowrap">
           {species.size.join("/")} · {species.speed} ft
           {species.darkvision ? ` · DV ${species.darkvision}` : ""}
@@ -136,7 +153,8 @@ export function SpeciesStep() {
     [state.species, sortedSpecies],
   );
 
-  function handleCardClick(species: SpeciesDb, e: React.MouseEvent) {
+  function handleDetailsClick(species: SpeciesDb, e: React.MouseEvent) {
+    e.stopPropagation();
     setPopover({ species, position: { x: e.clientX, y: e.clientY } });
   }
 
@@ -163,8 +181,8 @@ export function SpeciesStep() {
           Choose Your Species
         </h1>
         <p className="text-sm text-gray-400">
-          Your species shapes your physiology, innate abilities, and place in the world. Click any
-          species to see full details.
+          Your species shapes your physiology, innate abilities, and place in the world. Click a
+          card to select it, or use the ⓘ button to view full details.
         </p>
       </div>
 
@@ -178,7 +196,7 @@ export function SpeciesStep() {
           </span>
           <div className="flex-1" />
           <button
-            onClick={(e) => handleCardClick(selectedSpecies, e)}
+            onClick={(e) => handleDetailsClick(selectedSpecies, e)}
             className="text-xs text-amber-400/70 hover:text-amber-300 transition-colors"
           >
             View Details
@@ -219,7 +237,8 @@ export function SpeciesStep() {
             key={species.name}
             species={species}
             isSelected={state.species === species.name}
-            onClick={(e) => handleCardClick(species, e)}
+            onClick={() => handleToggleSelect(species.name)}
+            onDetailsClick={(e) => handleDetailsClick(species, e)}
           />
         ))}
         {filteredSpecies.length === 0 && (

@@ -143,10 +143,11 @@ function FeatPopover({ feat, isSelected, onToggleSelect, onClose, position }: Fe
 interface FeatCardProps {
   feat: FeatDb;
   isSelected: boolean;
-  onClick: (e: React.MouseEvent) => void;
+  onClick: () => void;
+  onInfo: (e: React.MouseEvent) => void;
 }
 
-function FeatCard({ feat, isSelected, onClick }: FeatCardProps) {
+function FeatCard({ feat, isSelected, onClick, onInfo }: FeatCardProps) {
   return (
     <button
       onClick={onClick}
@@ -167,10 +168,23 @@ function FeatCard({ feat, isSelected, onClick }: FeatCardProps) {
         >
           {feat.name}
         </span>
-        <span className="text-xs text-gray-500 shrink-0 whitespace-nowrap">
-          {feat.category}
-          {feat.prerequisite ? ` · ${feat.prerequisite}` : ""}
-        </span>
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="text-xs text-gray-500 whitespace-nowrap">
+            {feat.category}
+            {feat.prerequisite ? ` · ${feat.prerequisite}` : ""}
+          </span>
+          <button
+            type="button"
+            aria-label={`Details for ${feat.name}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              onInfo(e);
+            }}
+            className="text-gray-500 hover:text-amber-300 transition-colors text-sm leading-none"
+          >
+            ⓘ
+          </button>
+        </div>
       </div>
     </button>
   );
@@ -383,8 +397,12 @@ function AsiSlot({
     setPopover(null);
   }
 
-  function handleFeatCardClick(feat: FeatDb, e: React.MouseEvent) {
+  function handleFeatInfo(feat: FeatDb, e: React.MouseEvent) {
     setPopover({ feat, position: { x: e.clientX, y: e.clientY } });
+  }
+
+  function handleFeatCardClick(feat: FeatDb) {
+    handleFeatSelect(feat.name);
   }
 
   function handleFeatSelect(name: string) {
@@ -468,7 +486,7 @@ function AsiSlot({
               </span>
               <div className="flex-1" />
               <button
-                onClick={(e) => handleFeatCardClick(selectedFeatData, e)}
+                onClick={(e) => handleFeatInfo(selectedFeatData, e)}
                 className="text-xs text-amber-400/70 hover:text-amber-300 transition-colors"
               >
                 View Details
@@ -543,7 +561,8 @@ function AsiSlot({
                 key={feat.name}
                 feat={feat}
                 isSelected={selection.featName === feat.name}
-                onClick={(e) => handleFeatCardClick(feat, e)}
+                onClick={() => handleFeatCardClick(feat)}
+                onInfo={(e) => handleFeatInfo(feat, e)}
               />
             ))}
             {filteredFeats.length === 0 && (
@@ -554,8 +573,8 @@ function AsiSlot({
           </div>
 
           <p className="text-xs text-gray-600">
-            {filteredFeats.length} feat{filteredFeats.length !== 1 ? "s" : ""} available · click any
-            to view details
+            {filteredFeats.length} feat{filteredFeats.length !== 1 ? "s" : ""} available · click to
+            select · ⓘ for details
           </p>
 
           {/* Feat sub-choices */}

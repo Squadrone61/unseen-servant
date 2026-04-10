@@ -109,10 +109,12 @@ function BackgroundCard({
   background,
   isSelected,
   onClick,
+  onDetailsClick,
 }: {
   background: BackgroundDb;
   isSelected: boolean;
-  onClick: (e: React.MouseEvent) => void;
+  onClick: () => void;
+  onDetailsClick: (e: React.MouseEvent) => void;
 }) {
   const skillsText = background.skills.join(", ");
   const toolsText = background.tools.join(", ");
@@ -130,13 +132,28 @@ function BackgroundCard({
       `}
     >
       <div className="flex items-start justify-between gap-3">
-        <span
-          className={`font-[family-name:var(--font-cinzel)] text-sm shrink-0 ${
-            isSelected ? "text-amber-200" : "text-gray-200"
-          }`}
-        >
-          {background.name}
-        </span>
+        <div className="flex items-center gap-1.5 shrink-0">
+          <span
+            className={`font-[family-name:var(--font-cinzel)] text-sm ${
+              isSelected ? "text-amber-200" : "text-gray-200"
+            }`}
+          >
+            {background.name}
+          </span>
+          <span
+            role="button"
+            tabIndex={0}
+            onClick={onDetailsClick}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ")
+                onDetailsClick(e as unknown as React.MouseEvent);
+            }}
+            className="text-xs text-gray-500 hover:text-amber-400 transition-colors leading-none"
+            title="View details"
+          >
+            ⓘ
+          </span>
+        </div>
         <div className="flex flex-col items-end gap-0.5 min-w-0">
           {skillsText && (
             <span className="text-xs text-gray-400 truncate text-right">{skillsText}</span>
@@ -436,7 +453,8 @@ export function BackgroundStep() {
     return sortedBackgrounds.find((b) => b.name === state.background) ?? null;
   }, [state.background, sortedBackgrounds]);
 
-  function handleCardClick(background: BackgroundDb, e: React.MouseEvent) {
+  function handleDetailsClick(background: BackgroundDb, e: React.MouseEvent) {
+    e.stopPropagation();
     setPopover({ background, position: { x: e.clientX, y: e.clientY } });
   }
 
@@ -483,7 +501,7 @@ export function BackgroundStep() {
         </h1>
         <p className="text-sm text-gray-400">
           Your background reflects your life before adventuring — skills, tools, and a feat that
-          shapes who you are. Click any background to see full details.
+          shapes who you are. Click a card to select it, or use the ⓘ button to view full details.
         </p>
       </div>
 
@@ -497,7 +515,7 @@ export function BackgroundStep() {
           </span>
           <div className="flex-1" />
           <button
-            onClick={(e) => handleCardClick(selectedBg, e)}
+            onClick={(e) => handleDetailsClick(selectedBg, e)}
             className="text-xs text-amber-400/70 hover:text-amber-300 transition-colors"
           >
             View Details
@@ -538,7 +556,8 @@ export function BackgroundStep() {
             key={bg.name}
             background={bg}
             isSelected={state.background === bg.name}
-            onClick={(e) => handleCardClick(bg, e)}
+            onClick={() => handleToggleSelect(bg.name)}
+            onDetailsClick={(e) => handleDetailsClick(bg, e)}
           />
         ))}
         {filteredBackgrounds.length === 0 && (

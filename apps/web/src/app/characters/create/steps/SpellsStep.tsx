@@ -68,30 +68,27 @@ interface SpellCardProps {
 
 function SpellCard({ spell, selected, onToggle, disabled, onDetail }: SpellCardProps) {
   return (
-    <div
+    <button
+      type="button"
+      onClick={disabled ? undefined : onToggle}
+      disabled={disabled}
+      aria-label={selected ? `Deselect ${spell.name}` : `Select ${spell.name}`}
       className={[
-        "flex items-center gap-2.5 bg-gray-800/30 border rounded px-3 py-2 transition-colors duration-100",
+        "w-full flex items-center gap-2.5 bg-gray-800/30 border rounded px-3 py-2 transition-colors duration-100 text-left",
         selected
           ? "border-amber-500/50 bg-amber-500/5"
           : disabled
-            ? "border-gray-700/20 opacity-50"
-            : "border-gray-700/20 hover:border-gray-600/40",
+            ? "border-gray-700/20 opacity-50 cursor-not-allowed"
+            : "border-gray-700/20 hover:border-gray-600/40 cursor-pointer",
       ].join(" ")}
     >
-      {/* Checkbox */}
-      <button
-        type="button"
-        onClick={onToggle}
-        disabled={disabled}
-        aria-label={selected ? `Deselect ${spell.name}` : `Select ${spell.name}`}
+      {/* Selection indicator dot */}
+      <span
         className={[
           "w-4 h-4 shrink-0 rounded border flex items-center justify-center transition-colors",
-          selected
-            ? "border-amber-500 bg-amber-500/30"
-            : disabled
-              ? "border-gray-700/40 bg-gray-800/40 cursor-not-allowed"
-              : "border-gray-600 bg-gray-800/60 hover:border-amber-500/60",
+          selected ? "border-amber-500 bg-amber-500/30" : "border-gray-600 bg-gray-800/60",
         ].join(" ")}
+        aria-hidden="true"
       >
         {selected && (
           <svg
@@ -106,19 +103,30 @@ function SpellCard({ spell, selected, onToggle, disabled, onDetail }: SpellCardP
             <path d="M1.5 5l2.5 2.5 5-5" />
           </svg>
         )}
-      </button>
+      </span>
 
       {/* Name — clickable for detail popover */}
-      <button
-        type="button"
-        onClick={onDetail}
+      <span
+        role="button"
+        tabIndex={0}
+        onClick={(e) => {
+          e.stopPropagation();
+          onDetail(e);
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            e.stopPropagation();
+            onDetail(e as unknown as React.MouseEvent);
+          }
+        }}
         className={[
           "text-sm font-medium text-left hover:underline underline-offset-2 decoration-dotted transition-colors",
           selected ? "text-amber-200 hover:text-amber-100" : "text-gray-200 hover:text-gray-100",
         ].join(" ")}
       >
         {spell.name}
-      </button>
+      </span>
 
       {/* Badges */}
       <div className="flex items-center gap-1 ml-auto shrink-0">
@@ -141,7 +149,7 @@ function SpellCard({ spell, selected, onToggle, disabled, onDetail }: SpellCardP
           </span>
         )}
       </div>
-    </div>
+    </button>
   );
 }
 
