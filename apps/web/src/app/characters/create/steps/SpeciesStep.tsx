@@ -7,6 +7,7 @@ import { DetailPopover } from "@/components/character/DetailPopover";
 import { EffectSummary } from "@/components/builder/EffectSummary";
 import { ChoicePicker } from "@/components/builder/ChoicePicker";
 import { RichText } from "@/components/ui/RichText";
+import { InfoButton } from "@/components/builder/InfoButton";
 import { useBuilder } from "../BuilderContext";
 
 // ─── Species Detail Popover ──────────────────────────────────────────────────
@@ -104,19 +105,7 @@ function SpeciesCard({
           >
             {species.name}
           </span>
-          <span
-            role="button"
-            tabIndex={0}
-            onClick={onDetailsClick}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ")
-                onDetailsClick(e as unknown as React.MouseEvent);
-            }}
-            className="text-xs text-gray-500 hover:text-amber-400 transition-colors shrink-0 leading-none"
-            title="View details"
-          >
-            ⓘ
-          </span>
+          <InfoButton onClick={onDetailsClick} />
         </div>
         <span className="text-xs text-gray-500 shrink-0 whitespace-nowrap">
           {species.size.join("/")} · {species.speed} ft
@@ -154,7 +143,6 @@ export function SpeciesStep() {
   );
 
   function handleDetailsClick(species: SpeciesDb, e: React.MouseEvent) {
-    e.stopPropagation();
     setPopover({ species, position: { x: e.clientX, y: e.clientY } });
   }
 
@@ -182,7 +170,7 @@ export function SpeciesStep() {
         </h1>
         <p className="text-sm text-gray-400">
           Your species shapes your physiology, innate abilities, and place in the world. Click a
-          card to select it, or use the ⓘ button to view full details.
+          card to select it, or use the info icon to view full details.
         </p>
       </div>
 

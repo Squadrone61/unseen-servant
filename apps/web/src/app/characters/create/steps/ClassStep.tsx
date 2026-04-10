@@ -12,6 +12,7 @@ import { DetailPopover } from "@/components/character/DetailPopover";
 import { ChoicePicker } from "@/components/builder/ChoicePicker";
 import { EffectSummary } from "@/components/builder/EffectSummary";
 import { RichText } from "@/components/ui/RichText";
+import { InfoButton } from "@/components/builder/InfoButton";
 import { useBuilder } from "../BuilderContext";
 
 // ---------------------------------------------------------------------------
@@ -242,17 +243,7 @@ function ClassCard({
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <span className="text-xs text-gray-400 whitespace-nowrap tabular-nums">{statLine}</span>
-          <button
-            type="button"
-            aria-label={`Details for ${cls.name}`}
-            onClick={(e) => {
-              e.stopPropagation();
-              onInfo(e);
-            }}
-            className="text-gray-500 hover:text-amber-300 transition-colors text-sm leading-none"
-          >
-            ⓘ
-          </button>
+          <InfoButton onClick={onInfo} />
         </div>
       </div>
     </button>
@@ -419,17 +410,7 @@ function SubclassCard({
               {casterBadge.label}
             </span>
           )}
-          <button
-            type="button"
-            aria-label={`Details for ${subclass.name}`}
-            onClick={(e) => {
-              e.stopPropagation();
-              onInfo(e);
-            }}
-            className="text-gray-500 hover:text-amber-300 transition-colors text-sm leading-none"
-          >
-            ⓘ
-          </button>
+          <InfoButton onClick={onInfo} />
         </div>
       </div>
     </button>

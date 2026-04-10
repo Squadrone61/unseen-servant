@@ -8,6 +8,7 @@ import { DetailPopover } from "@/components/character/DetailPopover";
 import { EffectSummary } from "@/components/builder/EffectSummary";
 import { RichText } from "@/components/ui/RichText";
 import { ChoicePicker } from "@/components/builder/ChoicePicker";
+import { InfoButton } from "@/components/builder/InfoButton";
 import { useBuilder } from "../BuilderContext";
 
 // ---------------------------------------------------------------------------
@@ -140,19 +141,7 @@ function BackgroundCard({
           >
             {background.name}
           </span>
-          <span
-            role="button"
-            tabIndex={0}
-            onClick={onDetailsClick}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ")
-                onDetailsClick(e as unknown as React.MouseEvent);
-            }}
-            className="text-xs text-gray-500 hover:text-amber-400 transition-colors leading-none"
-            title="View details"
-          >
-            ⓘ
-          </span>
+          <InfoButton onClick={onDetailsClick} />
         </div>
         <div className="flex flex-col items-end gap-0.5 min-w-0">
           {skillsText && (
@@ -454,7 +443,6 @@ export function BackgroundStep() {
   }, [state.background, sortedBackgrounds]);
 
   function handleDetailsClick(background: BackgroundDb, e: React.MouseEvent) {
-    e.stopPropagation();
     setPopover({ background, position: { x: e.clientX, y: e.clientY } });
   }
 
@@ -501,7 +489,7 @@ export function BackgroundStep() {
         </h1>
         <p className="text-sm text-gray-400">
           Your background reflects your life before adventuring — skills, tools, and a feat that
-          shapes who you are. Click a card to select it, or use the ⓘ button to view full details.
+          shapes who you are. Click a card to select it, or use the info icon to view full details.
         </p>
       </div>
 

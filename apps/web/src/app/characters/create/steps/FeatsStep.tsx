@@ -7,6 +7,7 @@ import { DetailPopover } from "@/components/character/DetailPopover";
 import { EffectSummary } from "@/components/builder/EffectSummary";
 import { RichText } from "@/components/ui/RichText";
 import { ChoicePicker } from "@/components/builder/ChoicePicker";
+import { InfoButton } from "@/components/builder/InfoButton";
 import { useBuilder } from "../BuilderContext";
 import type { FeatSelection } from "../builder-state";
 
@@ -173,17 +174,7 @@ function FeatCard({ feat, isSelected, onClick, onInfo }: FeatCardProps) {
             {feat.category}
             {feat.prerequisite ? ` · ${feat.prerequisite}` : ""}
           </span>
-          <button
-            type="button"
-            aria-label={`Details for ${feat.name}`}
-            onClick={(e) => {
-              e.stopPropagation();
-              onInfo(e);
-            }}
-            className="text-gray-500 hover:text-amber-300 transition-colors text-sm leading-none"
-          >
-            ⓘ
-          </button>
+          <InfoButton onClick={onInfo} />
         </div>
       </div>
     </button>
@@ -574,7 +565,7 @@ function AsiSlot({
 
           <p className="text-xs text-gray-600">
             {filteredFeats.length} feat{filteredFeats.length !== 1 ? "s" : ""} available · click to
-            select · ⓘ for details
+            select · info icon for details
           </p>
 
           {/* Feat sub-choices */}
