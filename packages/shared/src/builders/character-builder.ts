@@ -38,6 +38,7 @@ import {
   getSpell,
   getFeat,
   getBaseItem,
+  getCondition,
   getCasterMultiplier,
   THIRD_CASTER_SLOTS,
 } from "../data/index";
@@ -799,4 +800,39 @@ function computeAdvantages(bundles: EffectBundle[], ids: CharacterIdentifiers): 
   }
 
   return advantages;
+}
+
+// ─── Runtime Effect Bundle Factories ────────────────────────────────────────
+
+/**
+ * Create an EffectBundle from a condition name using the DB.
+ * Used at runtime by the game engine when conditions are applied to a character.
+ *
+ * Returns null if the condition has no structured mechanical effects in the DB
+ * (e.g., conditions only described via prose notes).
+ *
+ * Lifetime is "manual" because conditions are always removed explicitly by the
+ * game engine via remove_condition — there is no automatic expiry at the bundle
+ * level (duration tracking lives in the game state layer).
+ */
+export function createConditionBundle(conditionName: string): EffectBundle | null {
+  const condition = getCondition(conditionName);
+  if (!condition?.effects) return null;
+  return {
+    id: `condition:${conditionName.toLowerCase()}`,
+    source: { type: "condition", name: conditionName },
+    lifetime: { type: "manual" },
+    effects: condition.effects,
+  };
+}
+
+/**
+ * Create an EffectBundle for a concentration spell.
+ * SpellDb does not yet carry structured effects, so this is a forward-looking
+ * hook — returns null until spell effects are added to the database.
+ */
+export function createSpellBundle(_spellName: string): EffectBundle | null {
+  // Spells don't have structured effects in SpellDb currently.
+  // This is the hook for future use once spell effects are populated.
+  return null;
 }

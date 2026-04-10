@@ -37,6 +37,7 @@ import diseasesData from "./diseases.json";
 import statusesData from "./statuses.json";
 import languagesData from "./languages.json";
 import actionsData from "./actions.json";
+import masteriesData from "./weapon-masteries.json";
 
 // Individual class files (pre-assembled ClassDb format)
 import barbarianData from "./classes/barbarian.json";
@@ -156,6 +157,17 @@ export const languages = buildMap(languagesArray);
 // Actions
 export const actionsArray = actionsData as unknown as ActionDb[];
 export const actions = buildMap(actionsArray);
+
+// Weapon Masteries
+export interface WeaponMastery {
+  name: string;
+  description: string;
+}
+export const weaponMasteriesArray = masteriesData as unknown as WeaponMastery[];
+export const weaponMasteries = buildMap(weaponMasteriesArray);
+export function getWeaponMastery(name: string): WeaponMastery | undefined {
+  return weaponMasteries.get(name.toLowerCase());
+}
 
 // ─── Convenience lookup functions ──────────────────────
 
