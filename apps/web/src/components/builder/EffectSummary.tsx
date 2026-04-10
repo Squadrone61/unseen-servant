@@ -233,12 +233,9 @@ function propertyBadge(prop: Property, compact: boolean): Badge | null {
 
     case "note": {
       if (compact) return null;
-      const MAX = 60;
-      const truncated = prop.text.length > MAX;
       return {
-        label: truncated ? prop.text.slice(0, MAX - 1) + "…" : prop.text,
-        className: "bg-transparent text-gray-500 border-0 italic",
-        title: truncated ? prop.text : undefined,
+        label: prop.text,
+        className: "bg-transparent text-gray-500 border-0 italic text-left",
       };
     }
   }
