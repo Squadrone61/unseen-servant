@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { spellsArray, classesArray } from "@unseen-servant/shared/data";
 import type { SpellDb, SpellLevel, ClassName } from "@unseen-servant/shared/types";
 import { RichText } from "@/components/ui/RichText";
+import { DetailPopover } from "@/components/character/DetailPopover";
 import { useBuilder } from "../BuilderContext";
 
 // ---------------------------------------------------------------------------
@@ -62,15 +63,14 @@ interface SpellCardProps {
   selected: boolean;
   onToggle: () => void;
   disabled: boolean;
+  onDetail: (e: React.MouseEvent) => void;
 }
 
-function SpellCard({ spell, selected, onToggle, disabled }: SpellCardProps) {
-  const [expanded, setExpanded] = useState(false);
-
+function SpellCard({ spell, selected, onToggle, disabled, onDetail }: SpellCardProps) {
   return (
     <div
       className={[
-        "bg-gray-800/30 border rounded px-3 py-2 transition-colors duration-100",
+        "flex items-center gap-2.5 bg-gray-800/30 border rounded px-3 py-2 transition-colors duration-100",
         selected
           ? "border-amber-500/50 bg-amber-500/5"
           : disabled
@@ -78,110 +78,168 @@ function SpellCard({ spell, selected, onToggle, disabled }: SpellCardProps) {
             : "border-gray-700/20 hover:border-gray-600/40",
       ].join(" ")}
     >
-      {/* Top row: checkbox + name + school + level */}
-      <div className="flex items-start gap-2.5">
-        <button
-          type="button"
-          onClick={onToggle}
-          disabled={disabled}
-          aria-label={selected ? `Deselect ${spell.name}` : `Select ${spell.name}`}
-          className={[
-            "mt-0.5 w-4 h-4 shrink-0 rounded border flex items-center justify-center transition-colors",
-            selected
-              ? "border-amber-500 bg-amber-500/30"
-              : disabled
-                ? "border-gray-700/40 bg-gray-800/40 cursor-not-allowed"
-                : "border-gray-600 bg-gray-800/60 hover:border-amber-500/60",
-          ].join(" ")}
-        >
-          {selected && (
-            <svg
-              viewBox="0 0 10 10"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={2}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="w-2.5 h-2.5 text-amber-400"
-            >
-              <path d="M1.5 5l2.5 2.5 5-5" />
-            </svg>
-          )}
-        </button>
-
-        <div className="flex-1 min-w-0">
-          {/* Name + badges */}
-          <div className="flex flex-wrap items-center gap-1.5 mb-0.5">
-            <span
-              className={[
-                "text-sm font-medium",
-                selected ? "text-amber-200" : "text-gray-200",
-              ].join(" ")}
-            >
-              {spell.name}
-            </span>
-            <span
-              className={[
-                "inline-flex items-center px-1.5 py-0 rounded text-[10px] border",
-                schoolBadge(spell.school),
-              ].join(" ")}
-            >
-              {spell.school}
-            </span>
-            {spell.level === 0 ? (
-              <span className="inline-flex items-center px-1.5 py-0 rounded text-[10px] border bg-gray-700/30 text-gray-400 border-gray-600/30">
-                Cantrip
-              </span>
-            ) : (
-              <span className="inline-flex items-center px-1.5 py-0 rounded text-[10px] border bg-gray-700/30 text-gray-400 border-gray-600/30">
-                Level {spell.level}
-              </span>
-            )}
-            {spell.concentration && (
-              <span className="inline-flex items-center px-1.5 py-0 rounded text-[10px] border bg-teal-900/30 text-teal-400 border-teal-700/30">
-                C
-              </span>
-            )}
-            {spell.ritual && (
-              <span className="inline-flex items-center px-1.5 py-0 rounded text-[10px] border bg-violet-900/30 text-violet-400 border-violet-700/30">
-                R
-              </span>
-            )}
-          </div>
-
-          {/* Meta line */}
-          <p className="text-xs text-gray-500 leading-snug">
-            {spell.castingTime} &middot; {spell.range} &middot; {spell.duration}
-          </p>
-        </div>
-      </div>
-
-      {/* Expandable description */}
-      <div className="mt-1.5 pl-6">
-        <button
-          type="button"
-          onClick={() => setExpanded((v) => !v)}
-          className="text-[11px] text-gray-600 hover:text-gray-400 transition-colors flex items-center gap-1"
-          aria-expanded={expanded}
-        >
+      {/* Checkbox */}
+      <button
+        type="button"
+        onClick={onToggle}
+        disabled={disabled}
+        aria-label={selected ? `Deselect ${spell.name}` : `Select ${spell.name}`}
+        className={[
+          "w-4 h-4 shrink-0 rounded border flex items-center justify-center transition-colors",
+          selected
+            ? "border-amber-500 bg-amber-500/30"
+            : disabled
+              ? "border-gray-700/40 bg-gray-800/40 cursor-not-allowed"
+              : "border-gray-600 bg-gray-800/60 hover:border-amber-500/60",
+        ].join(" ")}
+      >
+        {selected && (
           <svg
             viewBox="0 0 10 10"
             fill="none"
             stroke="currentColor"
-            strokeWidth={1.5}
-            className={["w-2.5 h-2.5 transition-transform", expanded ? "rotate-90" : ""].join(" ")}
+            strokeWidth={2}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="w-2.5 h-2.5 text-amber-400"
           >
-            <path d="M2.5 2l5 3-5 3" />
+            <path d="M1.5 5l2.5 2.5 5-5" />
           </svg>
-          {expanded ? "Hide" : "Description"}
-        </button>
-        {expanded && (
-          <div className="mt-1.5 text-xs text-gray-400 leading-relaxed">
-            <RichText text={spell.description} />
-          </div>
+        )}
+      </button>
+
+      {/* Name — clickable for detail popover */}
+      <button
+        type="button"
+        onClick={onDetail}
+        className={[
+          "text-sm font-medium text-left hover:underline underline-offset-2 decoration-dotted transition-colors",
+          selected ? "text-amber-200 hover:text-amber-100" : "text-gray-200 hover:text-gray-100",
+        ].join(" ")}
+      >
+        {spell.name}
+      </button>
+
+      {/* Badges */}
+      <div className="flex items-center gap-1 ml-auto shrink-0">
+        <span
+          className={[
+            "inline-flex items-center px-1.5 py-0 rounded text-[10px] border",
+            schoolBadge(spell.school),
+          ].join(" ")}
+        >
+          {spell.school}
+        </span>
+        {spell.concentration && (
+          <span className="inline-flex items-center px-1.5 py-0 rounded text-[10px] border bg-teal-900/30 text-teal-400 border-teal-700/30">
+            Conc.
+          </span>
+        )}
+        {spell.ritual && (
+          <span className="inline-flex items-center px-1.5 py-0 rounded text-[10px] border bg-violet-900/30 text-violet-400 border-violet-700/30">
+            Ritual
+          </span>
         )}
       </div>
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Spell detail popover
+// ---------------------------------------------------------------------------
+
+function SpellPopover({
+  spell,
+  selected,
+  onToggle,
+  onClose,
+  position,
+}: {
+  spell: SpellDb;
+  selected: boolean;
+  onToggle: () => void;
+  onClose: () => void;
+  position: { x: number; y: number };
+}) {
+  const selectButton = (
+    <button
+      onClick={() => {
+        onToggle();
+        onClose();
+      }}
+      className={`w-full px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+        selected
+          ? "bg-gray-700/60 hover:bg-gray-600/60 border border-gray-600/40 text-gray-300"
+          : "bg-amber-600/80 hover:bg-amber-500/80 text-amber-50 shadow-[0_0_12px_rgba(245,158,11,0.15)]"
+      }`}
+    >
+      {selected ? `Deselect ${spell.name}` : `Select ${spell.name}`}
+    </button>
+  );
+
+  return (
+    <DetailPopover title={spell.name} onClose={onClose} position={position} footer={selectButton}>
+      <div className="space-y-3">
+        {/* Meta badges */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <span
+            className={[
+              "inline-flex items-center px-1.5 py-0.5 rounded text-xs border",
+              schoolBadge(spell.school),
+            ].join(" ")}
+          >
+            {spell.school}
+          </span>
+          <span className="text-xs px-2 py-0.5 rounded-full bg-gray-700/50 text-gray-300 border border-gray-600/30">
+            {spell.level === 0 ? "Cantrip" : `Level ${spell.level}`}
+          </span>
+          {spell.concentration && (
+            <span className="text-xs px-2 py-0.5 rounded-full bg-teal-900/40 text-teal-300 border border-teal-700/30">
+              Concentration
+            </span>
+          )}
+          {spell.ritual && (
+            <span className="text-xs px-2 py-0.5 rounded-full bg-violet-900/40 text-violet-300 border border-violet-700/30">
+              Ritual
+            </span>
+          )}
+        </div>
+
+        {/* Stats */}
+        <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+          <div>
+            <span className="text-gray-500">Casting Time:</span>{" "}
+            <span className="text-gray-300">{spell.castingTime}</span>
+          </div>
+          <div>
+            <span className="text-gray-500">Range:</span>{" "}
+            <span className="text-gray-300">{spell.range}</span>
+          </div>
+          <div>
+            <span className="text-gray-500">Components:</span>{" "}
+            <span className="text-gray-300">{spell.components}</span>
+          </div>
+          <div>
+            <span className="text-gray-500">Duration:</span>{" "}
+            <span className="text-gray-300">{spell.duration}</span>
+          </div>
+        </div>
+
+        {/* Description */}
+        <div className="text-sm text-gray-300 leading-relaxed">
+          <RichText text={spell.description} />
+        </div>
+
+        {/* Higher levels */}
+        {spell.higherLevels && (
+          <div className="text-sm text-gray-400 leading-relaxed border-t border-gray-700/30 pt-2">
+            <span className="text-gray-500 font-medium">At Higher Levels: </span>
+            <RichText text={spell.higherLevels} />
+          </div>
+        )}
+      </div>
+    </DetailPopover>
   );
 }
 
@@ -229,6 +287,10 @@ export function SpellsStep() {
   const [cantripSearch, setCantripSearch] = useState("");
   const [spellSearch, setSpellSearch] = useState("");
   const [activeSpellLevel, setActiveSpellLevel] = useState<SpellLevel>(0 as SpellLevel);
+  const [popover, setPopover] = useState<{
+    spell: SpellDb;
+    position: { x: number; y: number };
+  } | null>(null);
 
   // ── Resolve class data ──────────────────────────────────────────────────────
   const classDb = useMemo(
@@ -473,6 +535,7 @@ export function SpellsStep() {
                   selected={selected}
                   onToggle={() => toggleCantrip(spell.name)}
                   disabled={!selected && atMax}
+                  onDetail={(e) => setPopover({ spell, position: { x: e.clientX, y: e.clientY } })}
                 />
               );
             })}
@@ -493,10 +556,30 @@ export function SpellsStep() {
                 selected={selected}
                 onToggle={() => toggleSpell(spell.name)}
                 disabled={!selected && atMax}
+                onDetail={(e) => setPopover({ spell, position: { x: e.clientX, y: e.clientY } })}
               />
             );
           })}
         </div>
+      )}
+
+      {/* Spell detail popover */}
+      {popover && (
+        <SpellPopover
+          spell={popover.spell}
+          selected={
+            popover.spell.level === 0
+              ? state.cantrips.includes(popover.spell.name)
+              : state.preparedSpells.includes(popover.spell.name)
+          }
+          onToggle={() =>
+            popover.spell.level === 0
+              ? toggleCantrip(popover.spell.name)
+              : toggleSpell(popover.spell.name)
+          }
+          onClose={() => setPopover(null)}
+          position={popover.position}
+        />
       )}
     </section>
   );
