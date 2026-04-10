@@ -2,9 +2,12 @@
 
 import { useState, useMemo } from "react";
 import type { FeatureChoice, ChoiceOption } from "@unseen-servant/shared/types";
-import { featsArray, spellsArray } from "@unseen-servant/shared";
+import type { FeatDb, SpellDb } from "@unseen-servant/shared/data";
+import { featsArray, spellsArray, getFeat, getSpell } from "@unseen-servant/shared";
 import { RichText } from "@/components/ui/RichText";
 import { EffectSummary } from "./EffectSummary";
+import { InfoButton } from "./InfoButton";
+import { DetailPopover } from "@/components/character/DetailPopover";
 
 // ---------------------------------------------------------------------------
 // Static pool data
@@ -229,37 +232,113 @@ interface PillGridProps {
   count: number;
   onToggle: (item: string) => void;
   disabled: boolean;
+  /** If provided, renders an InfoButton on each pill that calls this handler */
+  onInfo?: (item: string, e: React.MouseEvent) => void;
 }
 
-function PillGrid({ items, selected, count, onToggle, disabled }: PillGridProps) {
+function PillGrid({ items, selected, count, onToggle, disabled, onInfo }: PillGridProps) {
   return (
     <div className="flex flex-wrap gap-2">
       {items.map((item) => {
         const isSelected = selected.includes(item);
         const isDisabled = disabled || (!isSelected && selected.length >= count);
         return (
-          <button
-            key={item}
-            type="button"
-            aria-pressed={isSelected}
-            disabled={isDisabled && !isSelected}
-            onClick={() => onToggle(item)}
-            className={[
-              "px-3 py-1.5 rounded-full text-sm border transition-all duration-150",
-              "focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/60",
-              isSelected
-                ? "border-amber-500/50 bg-amber-900/20 text-amber-200"
-                : "border-gray-600/40 bg-gray-800/40 text-gray-300 hover:border-gray-500/60 hover:text-gray-200",
-              isDisabled && !isSelected ? "opacity-40 cursor-not-allowed" : "cursor-pointer",
-            ]
-              .filter(Boolean)
-              .join(" ")}
-          >
-            {item}
-          </button>
+          <div key={item} className="inline-flex items-center gap-1">
+            <button
+              type="button"
+              aria-pressed={isSelected}
+              disabled={isDisabled && !isSelected}
+              onClick={() => onToggle(item)}
+              className={[
+                "px-3 py-1.5 rounded-full text-sm border transition-all duration-150",
+                "focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/60",
+                isSelected
+                  ? "border-amber-500/50 bg-amber-900/20 text-amber-200"
+                  : "border-gray-600/40 bg-gray-800/40 text-gray-300 hover:border-gray-500/60 hover:text-gray-200",
+                isDisabled && !isSelected ? "opacity-40 cursor-not-allowed" : "cursor-pointer",
+              ]
+                .filter(Boolean)
+                .join(" ")}
+            >
+              {item}
+            </button>
+            {onInfo && <InfoButton onClick={(e) => onInfo(item, e)} />}
+          </div>
         );
       })}
     </div>
+  );
+}
+
+// ---- Pill info popovers ---------------------------------------------------
+
+function FeatInfoPopover({
+  feat,
+  position,
+  onClose,
+}: {
+  feat: FeatDb;
+  position: { x: number; y: number };
+  onClose: () => void;
+}) {
+  return (
+    <DetailPopover title={feat.name} onClose={onClose} position={position}>
+      <div className="space-y-3">
+        {feat.description && (
+          <div className="text-sm text-gray-300 leading-relaxed">
+            <RichText text={feat.description} />
+          </div>
+        )}
+        {feat.effects && <EffectSummary effects={feat.effects} />}
+      </div>
+    </DetailPopover>
+  );
+}
+
+function SpellInfoPopover({
+  spell,
+  position,
+  onClose,
+}: {
+  spell: SpellDb;
+  position: { x: number; y: number };
+  onClose: () => void;
+}) {
+  return (
+    <DetailPopover title={spell.name} onClose={onClose} position={position}>
+      <div className="space-y-3">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-xs px-2 py-0.5 rounded-full bg-gray-700/50 text-gray-300 border border-gray-600/30">
+            {spell.level === 0 ? "Cantrip" : `Level ${spell.level}`}
+          </span>
+          <span className="text-xs px-2 py-0.5 rounded-full bg-gray-700/50 text-gray-300 border border-gray-600/30">
+            {spell.school}
+          </span>
+          {spell.concentration && (
+            <span className="text-xs px-2 py-0.5 rounded-full bg-teal-900/40 text-teal-300 border border-teal-700/30">
+              Concentration
+            </span>
+          )}
+        </div>
+        <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+          <div>
+            <span className="text-gray-500">Casting Time:</span>{" "}
+            <span className="text-gray-300">{spell.castingTime}</span>
+          </div>
+          <div>
+            <span className="text-gray-500">Range:</span>{" "}
+            <span className="text-gray-300">{spell.range}</span>
+          </div>
+          <div>
+            <span className="text-gray-500">Duration:</span>{" "}
+            <span className="text-gray-300">{spell.duration}</span>
+          </div>
+        </div>
+        <div className="text-sm text-gray-300 leading-relaxed">
+          <RichText text={spell.description} />
+        </div>
+      </div>
+    </DetailPopover>
   );
 }
 
@@ -486,6 +565,14 @@ export function ChoicePicker({
   const remainingText = remainingLabel(choice.count, selected.length);
   const allPicked = selected.length >= choice.count;
 
+  // Pill info popover state (fighting_style + spell_cantrip pools)
+  // Must be declared unconditionally per Rules of Hooks.
+  const [pillPopover, setPillPopover] = useState<
+    | { kind: "feat"; entity: FeatDb; position: { x: number; y: number } }
+    | { kind: "spell"; entity: SpellDb; position: { x: number; y: number } }
+    | null
+  >(null);
+
   // ---- Options-based -------------------------------------------------------
 
   if ("options" in choice && choice.options) {
@@ -560,11 +647,36 @@ export function ChoicePicker({
   if ("pool" in choice && choice.pool) {
     const poolChoice = choice as Extract<FeatureChoice, { pool: string }>;
     const items = resolvePool(poolChoice);
+    const pool = poolChoice.pool;
 
     const handleToggle = (item: string) => {
       if (disabled) return;
       onSelect(toggleItem(selected, item, choice.count, radio));
     };
+
+    const handlePillInfo =
+      pool === "fighting_style" || pool === "spell_cantrip"
+        ? (item: string, e: React.MouseEvent) => {
+            e.stopPropagation();
+            if (pool === "fighting_style") {
+              const feat = getFeat(item);
+              if (feat)
+                setPillPopover({
+                  kind: "feat",
+                  entity: feat,
+                  position: { x: e.clientX, y: e.clientY },
+                });
+            } else {
+              const spell = getSpell(item);
+              if (spell)
+                setPillPopover({
+                  kind: "spell",
+                  entity: spell,
+                  position: { x: e.clientX, y: e.clientY },
+                });
+            }
+          }
+        : undefined;
 
     // Determine render tier
     const renderPoolBody = () => {
@@ -581,6 +693,7 @@ export function ChoicePicker({
             count={choice.count}
             onToggle={handleToggle}
             disabled={disabled}
+            onInfo={handlePillInfo}
           />
         );
       }
@@ -633,6 +746,22 @@ export function ChoicePicker({
         </div>
 
         {renderPoolBody()}
+
+        {/* Pill info popovers for fighting_style and spell_cantrip */}
+        {pillPopover && pillPopover.kind === "feat" && (
+          <FeatInfoPopover
+            feat={pillPopover.entity}
+            position={pillPopover.position}
+            onClose={() => setPillPopover(null)}
+          />
+        )}
+        {pillPopover && pillPopover.kind === "spell" && (
+          <SpellInfoPopover
+            spell={pillPopover.entity}
+            position={pillPopover.position}
+            onClose={() => setPillPopover(null)}
+          />
+        )}
       </div>
     );
   }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { spellsArray, classesArray } from "@unseen-servant/shared/data";
+import { spellsArray, classesArray, getSpell } from "@unseen-servant/shared/data";
 import type { SpellDb, SpellLevel, ClassName } from "@unseen-servant/shared/types";
 import { RichText } from "@/components/ui/RichText";
 import { DetailPopover } from "@/components/character/DetailPopover";
@@ -256,18 +256,36 @@ function Counter({ current, max }: { current: number; max: number }) {
 // ---------------------------------------------------------------------------
 
 function AlwaysPreparedBadges({ spellNames }: { spellNames: string[] }) {
+  const [popover, setPopover] = useState<{
+    spell: SpellDb;
+    position: { x: number; y: number };
+  } | null>(null);
+
   if (spellNames.length === 0) return null;
   return (
     <div className="flex flex-wrap gap-2 items-center">
       <span className="text-xs text-gray-500">Always Prepared:</span>
       {spellNames.map((name) => (
-        <span
+        <button
           key={name}
-          className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-violet-900/30 text-violet-300 border border-violet-700/30"
+          type="button"
+          onClick={(e) => {
+            const spell = getSpell(name);
+            if (spell) setPopover({ spell, position: { x: e.clientX, y: e.clientY } });
+          }}
+          className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-violet-900/30 text-violet-300 border border-violet-700/30 hover:bg-violet-900/50 hover:border-violet-600/50 transition-colors cursor-pointer"
+          title="Click to view spell details"
         >
           {name}
-        </span>
+        </button>
       ))}
+      {popover && (
+        <SpellPopover
+          spell={popover.spell}
+          onClose={() => setPopover(null)}
+          position={popover.position}
+        />
+      )}
     </div>
   );
 }

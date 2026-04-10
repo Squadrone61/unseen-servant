@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { backgroundsArray, getFeat } from "@unseen-servant/shared/data";
-import type { BackgroundDb } from "@unseen-servant/shared/data";
+import type { BackgroundDb, FeatDb } from "@unseen-servant/shared/data";
 import type { Ability } from "@unseen-servant/shared/types";
 import { DetailPopover } from "@/components/character/DetailPopover";
 import { EffectSummary } from "@/components/builder/EffectSummary";
@@ -72,6 +72,33 @@ function BackgroundPopover({
         <div className="text-sm text-gray-300 leading-relaxed">
           <RichText text={background.description} />
         </div>
+      </div>
+    </DetailPopover>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Feat Detail Popover
+// ---------------------------------------------------------------------------
+
+function FeatPopover({
+  feat,
+  onClose,
+  position,
+}: {
+  feat: FeatDb;
+  onClose: () => void;
+  position: { x: number; y: number };
+}) {
+  return (
+    <DetailPopover title={feat.name} onClose={onClose} position={position}>
+      <div className="space-y-3">
+        {feat.description && (
+          <div className="text-sm text-gray-300 leading-relaxed">
+            <RichText text={feat.description} />
+          </div>
+        )}
+        {feat.effects && <EffectSummary effects={feat.effects} />}
       </div>
     </DetailPopover>
   );
@@ -393,6 +420,10 @@ export function BackgroundStep() {
     background: BackgroundDb;
     position: { x: number; y: number };
   } | null>(null);
+  const [featPopover, setFeatPopover] = useState<{
+    feat: FeatDb;
+    position: { x: number; y: number };
+  } | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
   const sortedBackgrounds = useMemo(
@@ -583,41 +614,74 @@ export function BackgroundStep() {
             </div>
           )}
 
-          {/* Origin feat choices — configured here so they don't appear again in the Feats step */}
-          {originFeat && (originFeat.choices?.length ?? 0) > 0 && (
+          {/* Origin feat — always shown when background has a feat */}
+          {originFeat && (
             <div className="flex flex-col gap-3">
               <div className="h-px bg-gradient-to-r from-transparent via-violet-500/20 to-transparent" />
-              <h3
-                className="text-sm font-semibold text-violet-400/90 uppercase tracking-wider"
-                style={{ fontFamily: "var(--font-cinzel)" }}
-              >
-                {originFeat.name} Choices
-              </h3>
-              <p className="text-xs text-gray-500">
-                Your background grants the{" "}
-                <span className="text-violet-300">{originFeat.name}</span> origin feat. Configure
-                its choices here.
-              </p>
-              {(originFeat.choices ?? []).map((choice) => (
-                <ChoicePicker
-                  key={choice.id}
-                  choice={choice}
-                  selected={state.featChoices[originFeat.name]?.[choice.id] ?? []}
-                  onSelect={(values) => handleOriginFeatChoice(choice.id, values)}
-                  disabled={false}
+              <div className="flex items-center gap-2">
+                <h3
+                  className="text-sm font-semibold text-violet-400/90 uppercase tracking-wider"
+                  style={{ fontFamily: "var(--font-cinzel)" }}
+                >
+                  Origin Feat: {originFeat.name}
+                </h3>
+                <InfoButton
+                  onClick={(e) =>
+                    setFeatPopover({ feat: originFeat, position: { x: e.clientX, y: e.clientY } })
+                  }
                 />
-              ))}
+              </div>
+
+              {/* Feat description */}
+              {originFeat.description && (
+                <div className="bg-gray-800/30 border border-violet-700/20 rounded-lg p-4">
+                  <div className="text-sm text-gray-300 leading-relaxed">
+                    <RichText text={originFeat.description} />
+                  </div>
+                  {originFeat.effects && (
+                    <div className="mt-3">
+                      <EffectSummary effects={originFeat.effects} />
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Feat choices (if any) */}
+              {(originFeat.choices?.length ?? 0) > 0 && (
+                <>
+                  <p className="text-xs text-gray-500">
+                    Configure the choices granted by{" "}
+                    <span className="text-violet-300">{originFeat.name}</span> here.
+                  </p>
+                  {(originFeat.choices ?? []).map((choice) => (
+                    <ChoicePicker
+                      key={choice.id}
+                      choice={choice}
+                      selected={state.featChoices[originFeat.name]?.[choice.id] ?? []}
+                      onSelect={(values) => handleOriginFeatChoice(choice.id, values)}
+                      disabled={false}
+                    />
+                  ))}
+                </>
+              )}
             </div>
           )}
         </>
       )}
 
-      {/* Popover */}
+      {/* Popovers */}
       {popover && (
         <BackgroundPopover
           background={popover.background}
           onClose={() => setPopover(null)}
           position={popover.position}
+        />
+      )}
+      {featPopover && (
+        <FeatPopover
+          feat={featPopover.feat}
+          onClose={() => setFeatPopover(null)}
+          position={featPopover.position}
         />
       )}
     </section>
