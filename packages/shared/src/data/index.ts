@@ -54,20 +54,34 @@ import wizardData from "./classes/wizard.json";
 
 // ─── Type assertions for JSON imports ──────────────────
 
+/** Normalize additionalSpells: JSON stores objects {spell,usage,minLevel} but consumers expect string[]. */
+function normalizeClassData(raw: unknown): ClassDb {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const cls = raw as any;
+  for (const sub of cls.subclasses ?? []) {
+    if (Array.isArray(sub.additionalSpells)) {
+      sub.additionalSpells = sub.additionalSpells.map((entry: unknown) =>
+        typeof entry === "string" ? entry : (entry as { spell: string }).spell,
+      );
+    }
+  }
+  return cls as ClassDb;
+}
+
 const classesArray: ClassDb[] = [
-  barbarianData as unknown as ClassDb,
-  bardData as unknown as ClassDb,
-  clericData as unknown as ClassDb,
-  druidData as unknown as ClassDb,
-  fighterData as unknown as ClassDb,
-  monkData as unknown as ClassDb,
-  paladinData as unknown as ClassDb,
-  rangerData as unknown as ClassDb,
-  rogueData as unknown as ClassDb,
-  sorcererData as unknown as ClassDb,
-  warlockData as unknown as ClassDb,
-  wizardData as unknown as ClassDb,
-];
+  barbarianData,
+  bardData,
+  clericData,
+  druidData,
+  fighterData,
+  monkData,
+  paladinData,
+  rangerData,
+  rogueData,
+  sorcererData,
+  warlockData,
+  wizardData,
+].map((d) => normalizeClassData(d));
 
 // ─── Case-insensitive lookup maps ───────────────────────
 
