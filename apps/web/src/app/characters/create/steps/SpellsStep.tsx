@@ -159,35 +159,15 @@ function SpellCard({ spell, selected, onToggle, disabled, onDetail }: SpellCardP
 
 function SpellPopover({
   spell,
-  selected,
-  onToggle,
   onClose,
   position,
 }: {
   spell: SpellDb;
-  selected: boolean;
-  onToggle: () => void;
   onClose: () => void;
   position: { x: number; y: number };
 }) {
-  const selectButton = (
-    <button
-      onClick={() => {
-        onToggle();
-        onClose();
-      }}
-      className={`w-full px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-        selected
-          ? "bg-gray-700/60 hover:bg-gray-600/60 border border-gray-600/40 text-gray-300"
-          : "bg-amber-600/80 hover:bg-amber-500/80 text-amber-50 shadow-[0_0_12px_rgba(245,158,11,0.15)]"
-      }`}
-    >
-      {selected ? `Deselect ${spell.name}` : `Select ${spell.name}`}
-    </button>
-  );
-
   return (
-    <DetailPopover title={spell.name} onClose={onClose} position={position} footer={selectButton}>
+    <DetailPopover title={spell.name} onClose={onClose} position={position}>
       <div className="space-y-3">
         {/* Meta badges */}
         <div className="flex items-center gap-2 flex-wrap">
@@ -575,16 +555,6 @@ export function SpellsStep() {
       {popover && (
         <SpellPopover
           spell={popover.spell}
-          selected={
-            popover.spell.level === 0
-              ? state.cantrips.includes(popover.spell.name)
-              : state.preparedSpells.includes(popover.spell.name)
-          }
-          onToggle={() =>
-            popover.spell.level === 0
-              ? toggleCantrip(popover.spell.name)
-              : toggleSpell(popover.spell.name)
-          }
           onClose={() => setPopover(null)}
           position={popover.position}
         />

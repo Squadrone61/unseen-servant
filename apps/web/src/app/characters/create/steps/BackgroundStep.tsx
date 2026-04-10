@@ -30,40 +30,15 @@ function weightLabel(weight: number): string {
 
 function BackgroundPopover({
   background,
-  isSelected,
-  onToggleSelect,
   onClose,
   position,
 }: {
   background: BackgroundDb;
-  isSelected: boolean;
-  onToggleSelect: () => void;
   onClose: () => void;
   position: { x: number; y: number };
 }) {
-  const selectButton = (
-    <button
-      onClick={() => {
-        onToggleSelect();
-        onClose();
-      }}
-      className={`w-full px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-        isSelected
-          ? "bg-gray-700/60 hover:bg-gray-600/60 border border-gray-600/40 text-gray-300"
-          : "bg-amber-600/80 hover:bg-amber-500/80 text-amber-50 shadow-[0_0_12px_rgba(245,158,11,0.15)]"
-      }`}
-    >
-      {isSelected ? `Deselect ${background.name}` : `Select ${background.name}`}
-    </button>
-  );
-
   return (
-    <DetailPopover
-      title={background.name}
-      onClose={onClose}
-      position={position}
-      footer={selectButton}
-    >
+    <DetailPopover title={background.name} onClose={onClose} position={position}>
       <div className="space-y-3">
         {/* Stat badges */}
         <div className="flex items-center gap-2 flex-wrap">
@@ -641,8 +616,6 @@ export function BackgroundStep() {
       {popover && (
         <BackgroundPopover
           background={popover.background}
-          isSelected={state.background === popover.background.name}
-          onToggleSelect={() => handleToggleSelect(popover.background.name)}
           onClose={() => setPopover(null)}
           position={popover.position}
         />

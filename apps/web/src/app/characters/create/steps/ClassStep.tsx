@@ -120,38 +120,18 @@ function groupByLevel<T extends { level: number }>(features: T[]): Map<number, T
 
 function ClassPopover({
   cls,
-  isSelected,
-  onToggleSelect,
   onClose,
   position,
 }: {
   cls: ClassDb;
-  isSelected: boolean;
-  onToggleSelect: () => void;
   onClose: () => void;
   position: { x: number; y: number };
 }) {
   const casterBadge = getCasterBadge(cls.casterProgression);
   const profLine = buildProficiencyLine(cls);
 
-  const selectButton = (
-    <button
-      onClick={() => {
-        onToggleSelect();
-        onClose();
-      }}
-      className={`w-full px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-        isSelected
-          ? "bg-gray-700/60 hover:bg-gray-600/60 border border-gray-600/40 text-gray-300"
-          : "bg-amber-600/80 hover:bg-amber-500/80 text-amber-50 shadow-[0_0_12px_rgba(245,158,11,0.15)]"
-      }`}
-    >
-      {isSelected ? `Deselect ${cls.name}` : `Select ${cls.name}`}
-    </button>
-  );
-
   return (
-    <DetailPopover title={cls.name} onClose={onClose} position={position} footer={selectButton}>
+    <DetailPopover title={cls.name} onClose={onClose} position={position}>
       <div className="space-y-3">
         {/* Quick stats */}
         <div className="flex items-center gap-2 flex-wrap">
@@ -256,42 +236,17 @@ function ClassCard({
 
 function SubclassPopover({
   subclass,
-  isSelected,
-  onToggleSelect,
   onClose,
   position,
 }: {
   subclass: SubclassDb;
-  isSelected: boolean;
-  onToggleSelect: () => void;
   onClose: () => void;
   position: { x: number; y: number };
 }) {
   const casterBadge = getCasterBadge(subclass.casterProgression);
 
-  const selectButton = (
-    <button
-      onClick={() => {
-        onToggleSelect();
-        onClose();
-      }}
-      className={`w-full px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-        isSelected
-          ? "bg-gray-700/60 hover:bg-gray-600/60 border border-gray-600/40 text-gray-300"
-          : "bg-amber-600/80 hover:bg-amber-500/80 text-amber-50 shadow-[0_0_12px_rgba(245,158,11,0.15)]"
-      }`}
-    >
-      {isSelected ? `Deselect ${subclass.name}` : `Select ${subclass.name}`}
-    </button>
-  );
-
   return (
-    <DetailPopover
-      title={subclass.name}
-      onClose={onClose}
-      position={position}
-      footer={selectButton}
-    >
+    <DetailPopover title={subclass.name} onClose={onClose} position={position}>
       <div className="space-y-3">
         {/* Badges */}
         <div className="flex items-center gap-2 flex-wrap">
@@ -770,11 +725,6 @@ export function ClassStep() {
     dispatch({ type: "SET_CLASS", className: name });
   }
 
-  function handleClassToggleSelect(name: string) {
-    if (state.className === name) return;
-    dispatch({ type: "SET_CLASS", className: name });
-  }
-
   function handleLevelChange(level: number) {
     dispatch({ type: "SET_CLASS_LEVEL", level });
   }
@@ -1037,8 +987,6 @@ export function ClassStep() {
       {classPopover && (
         <ClassPopover
           cls={classPopover.cls}
-          isSelected={state.className === classPopover.cls.name}
-          onToggleSelect={() => handleClassToggleSelect(classPopover.cls.name)}
           onClose={() => setClassPopover(null)}
           position={classPopover.position}
         />
@@ -1048,8 +996,6 @@ export function ClassStep() {
       {subclassPopover && (
         <SubclassPopover
           subclass={subclassPopover.subclass}
-          isSelected={state.subclass === subclassPopover.subclass.name}
-          onToggleSelect={() => handleSubclassToggleSelect(subclassPopover.subclass.name)}
           onClose={() => setSubclassPopover(null)}
           position={subclassPopover.position}
         />

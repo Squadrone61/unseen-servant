@@ -14,35 +14,15 @@ import { useBuilder } from "../BuilderContext";
 
 function SpeciesPopover({
   species,
-  isSelected,
-  onToggleSelect,
   onClose,
   position,
 }: {
   species: SpeciesDb;
-  isSelected: boolean;
-  onToggleSelect: () => void;
   onClose: () => void;
   position: { x: number; y: number };
 }) {
-  const selectButton = (
-    <button
-      onClick={() => {
-        onToggleSelect();
-        onClose();
-      }}
-      className={`w-full px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-        isSelected
-          ? "bg-gray-700/60 hover:bg-gray-600/60 border border-gray-600/40 text-gray-300"
-          : "bg-amber-600/80 hover:bg-amber-500/80 text-amber-50 shadow-[0_0_12px_rgba(245,158,11,0.15)]"
-      }`}
-    >
-      {isSelected ? `Deselect ${species.name}` : `Select ${species.name}`}
-    </button>
-  );
-
   return (
-    <DetailPopover title={species.name} onClose={onClose} position={position} footer={selectButton}>
+    <DetailPopover title={species.name} onClose={onClose} position={position}>
       <div className="space-y-3">
         {/* Quick stats */}
         <div className="flex items-center gap-2 flex-wrap">
@@ -269,8 +249,6 @@ export function SpeciesStep() {
       {popover && (
         <SpeciesPopover
           species={popover.species}
-          isSelected={state.species === popover.species.name}
-          onToggleSelect={() => handleToggleSelect(popover.species.name)}
           onClose={() => setPopover(null)}
           position={popover.position}
         />
