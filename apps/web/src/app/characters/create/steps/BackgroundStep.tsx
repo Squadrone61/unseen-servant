@@ -1,11 +1,12 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { backgroundsArray } from "@unseen-servant/shared/data";
-import type { BackgroundDb } from "@unseen-servant/shared/types";
+import type { BackgroundDb } from "@unseen-servant/shared/data";
 import type { Ability } from "@unseen-servant/shared/types";
-import { EntityCard } from "@/components/builder/EntityCard";
-import { EntityGrid } from "@/components/builder/EntityGrid";
+import { DetailPopover } from "@/components/character/DetailPopover";
+import { EffectSummary } from "@/components/builder/EffectSummary";
+import { RichText } from "@/components/ui/RichText";
 import { ChoicePicker } from "@/components/builder/ChoicePicker";
 import { useBuilder } from "../BuilderContext";
 
@@ -18,12 +19,135 @@ function cap(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
-/**
- * Returns the weight label for a given weight value, given the full weights
- * array. Assumes the common patterns [2,1] or [1,1,1].
- */
 function weightLabel(weight: number): string {
   return `+${weight}`;
+}
+
+// ---------------------------------------------------------------------------
+// Background Detail Popover
+// ---------------------------------------------------------------------------
+
+function BackgroundPopover({
+  background,
+  isSelected,
+  onToggleSelect,
+  onClose,
+  position,
+}: {
+  background: BackgroundDb;
+  isSelected: boolean;
+  onToggleSelect: () => void;
+  onClose: () => void;
+  position: { x: number; y: number };
+}) {
+  const selectButton = (
+    <button
+      onClick={() => {
+        onToggleSelect();
+        onClose();
+      }}
+      className={`w-full px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+        isSelected
+          ? "bg-gray-700/60 hover:bg-gray-600/60 border border-gray-600/40 text-gray-300"
+          : "bg-amber-600/80 hover:bg-amber-500/80 text-amber-50 shadow-[0_0_12px_rgba(245,158,11,0.15)]"
+      }`}
+    >
+      {isSelected ? `Deselect ${background.name}` : `Select ${background.name}`}
+    </button>
+  );
+
+  return (
+    <DetailPopover
+      title={background.name}
+      onClose={onClose}
+      position={position}
+      footer={selectButton}
+    >
+      <div className="space-y-3">
+        {/* Stat badges */}
+        <div className="flex items-center gap-2 flex-wrap">
+          {background.skills.map((skill) => (
+            <span
+              key={skill}
+              className="text-xs px-2 py-0.5 rounded-full bg-emerald-900/30 text-emerald-300 border border-emerald-700/30"
+            >
+              {skill}
+            </span>
+          ))}
+          {background.tools.map((tool) => (
+            <span
+              key={tool}
+              className="text-xs px-2 py-0.5 rounded-full bg-blue-900/30 text-blue-300 border border-blue-700/30"
+            >
+              {tool}
+            </span>
+          ))}
+          {background.feat && (
+            <span className="text-xs px-2 py-0.5 rounded-full bg-violet-900/30 text-violet-300 border border-violet-700/30">
+              {background.feat}
+            </span>
+          )}
+        </div>
+
+        {/* Effect badges (if present) */}
+        {background.effects && <EffectSummary effects={background.effects} />}
+
+        {/* Full description */}
+        <div className="text-sm text-gray-300 leading-relaxed">
+          <RichText text={background.description} />
+        </div>
+      </div>
+    </DetailPopover>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Compact Background Card
+// ---------------------------------------------------------------------------
+
+function BackgroundCard({
+  background,
+  isSelected,
+  onClick,
+}: {
+  background: BackgroundDb;
+  isSelected: boolean;
+  onClick: (e: React.MouseEvent) => void;
+}) {
+  const skillsText = background.skills.join(", ");
+  const toolsText = background.tools.join(", ");
+
+  return (
+    <button
+      onClick={onClick}
+      className={`
+        w-full text-left px-4 py-3 rounded-lg border transition-all duration-200
+        ${
+          isSelected
+            ? "border-amber-500/50 bg-amber-950/20 ring-1 ring-amber-500/20"
+            : "border-gray-700/30 bg-gray-800/40 hover:border-gray-600/50 hover:bg-gray-800/60"
+        }
+      `}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <span
+          className={`font-[family-name:var(--font-cinzel)] text-sm shrink-0 ${
+            isSelected ? "text-amber-200" : "text-gray-200"
+          }`}
+        >
+          {background.name}
+        </span>
+        <div className="flex flex-col items-end gap-0.5 min-w-0">
+          {skillsText && (
+            <span className="text-xs text-gray-400 truncate text-right">{skillsText}</span>
+          )}
+          {toolsText && (
+            <span className="text-xs text-gray-500 truncate text-right">{toolsText}</span>
+          )}
+        </div>
+      </div>
+    </button>
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -88,8 +212,7 @@ function AbilityModeToggle({ mode, onChange }: AbilityModeToggleProps) {
 }
 
 // ---------------------------------------------------------------------------
-// AbilityDropdown — single dropdown constrained to the `from` ability list,
-// excluding whatever the other dropdown has already picked.
+// AbilityDropdown
 // ---------------------------------------------------------------------------
 
 interface AbilityDropdownProps {
@@ -137,8 +260,7 @@ function AbilityDropdown({ id, label, value, options, excluded, onChange }: Abil
 }
 
 // ---------------------------------------------------------------------------
-// AbilityScoreAssignment — the full sub-panel shown after a background is
-// selected. Handles both "two-one" and "three-ones" modes.
+// AbilityScoreAssignment
 // ---------------------------------------------------------------------------
 
 interface AbilityScoreAssignmentProps {
@@ -158,15 +280,10 @@ function AbilityScoreAssignment({
 }: AbilityScoreAssignmentProps) {
   const { from, weights } = background.abilityScores;
 
-  // Determine the sorted weight slots for "two-one" mode.
-  // Weights are sorted descending so index 0 = largest weight (+2), index 1 = smaller (+1).
   const sortedWeights = useMemo(() => [...weights].sort((a, b) => b - a), [weights]);
 
-  // For "three-ones" mode: every ability in `from` gets +1, no selection needed.
   const isThreeOnes = mode === "three-ones";
 
-  // For two-one mode: which ability has the +2 and which has the +1?
-  // Derivation: iterate assignment entries by insertion order.
   const assignedEntries = useMemo(
     () => Object.entries(assignments) as [Ability, number][],
     [assignments],
@@ -181,7 +298,6 @@ function AbilityScoreAssignment({
   function handlePlusTwoChange(ability: Ability) {
     const newAssignments: Partial<Record<Ability, number>> = {};
     newAssignments[ability] = sortedWeights[0];
-    // Preserve the +1 if it was already set and is different from the new +2 pick
     if (derivedPlusOne && derivedPlusOne !== ability) {
       newAssignments[derivedPlusOne] = sortedWeights[1];
     }
@@ -197,13 +313,10 @@ function AbilityScoreAssignment({
     onAssignmentsChange(newAssignments);
   }
 
-  // Determine if two-one weights are identical (e.g. both +1 rather than +2/+1).
-  // In that edge case we skip the dual dropdown since any ordering works.
   const weightsAreUniform = sortedWeights.length >= 2 && sortedWeights[0] === sortedWeights[1];
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Section header */}
       <div>
         <h3
           className="text-sm font-semibold text-amber-400/90 uppercase tracking-wider"
@@ -217,12 +330,9 @@ function AbilityScoreAssignment({
         </p>
       </div>
 
-      {/* Mode toggle */}
       <AbilityModeToggle mode={mode} onChange={onModeChange} />
 
-      {/* Assignment UI */}
       {isThreeOnes ? (
-        /* Three-ones: no interaction needed — show the fixed distribution */
         <div className="flex flex-wrap gap-2" aria-label="Automatic +1 distribution">
           {from.map((ability) => (
             <span
@@ -246,7 +356,6 @@ function AbilityScoreAssignment({
           ))}
         </div>
       ) : weightsAreUniform ? (
-        /* Uniform weights (e.g. +1/+1) — same treatment as three-ones */
         <div className="flex flex-wrap gap-2" aria-label="Automatic distribution">
           {from.slice(0, 2).map((ability) => (
             <span
@@ -259,7 +368,6 @@ function AbilityScoreAssignment({
           ))}
         </div>
       ) : (
-        /* Standard two-one: two dropdowns */
         <div className="flex flex-wrap gap-4 items-end">
           <AbilityDropdown
             id="ability-plus-two"
@@ -277,7 +385,6 @@ function AbilityScoreAssignment({
             excluded={derivedPlusTwo ? [derivedPlusTwo] : []}
             onChange={handlePlusOneChange}
           />
-          {/* Live preview chips once both are assigned */}
           {derivedPlusTwo && derivedPlusOne && (
             <div className="flex items-center gap-2 pb-0.5">
               <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md border border-amber-500/30 bg-amber-900/10 text-amber-300 text-xs font-medium">
@@ -301,18 +408,45 @@ function AbilityScoreAssignment({
 
 export function BackgroundStep() {
   const { state, dispatch } = useBuilder();
+  const [popover, setPopover] = useState<{
+    background: BackgroundDb;
+    position: { x: number; y: number };
+  } | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const sortedBackgrounds = useMemo(
+    () => [...backgroundsArray].sort((a, b) => a.name.localeCompare(b.name)),
+    [],
+  );
+
+  const filteredBackgrounds = useMemo(() => {
+    if (!searchQuery.trim()) return sortedBackgrounds;
+    const q = searchQuery.toLowerCase();
+    return sortedBackgrounds.filter(
+      (b) =>
+        b.name.toLowerCase().includes(q) ||
+        b.skills.some((s) => s.toLowerCase().includes(q)) ||
+        b.tools.some((t) => t.toLowerCase().includes(q)) ||
+        (b.feat && b.feat.toLowerCase().includes(q)),
+    );
+  }, [sortedBackgrounds, searchQuery]);
 
   const selectedBg = useMemo<BackgroundDb | null>(() => {
     if (!state.background) return null;
-    return backgroundsArray.find((b) => b.name === state.background) ?? null;
-  }, [state.background]);
+    return sortedBackgrounds.find((b) => b.name === state.background) ?? null;
+  }, [state.background, sortedBackgrounds]);
 
-  function handleSelect(name: string) {
-    // Toggle off if re-clicking the same background
-    if (state.background === name) return;
-    dispatch({ type: "SET_BACKGROUND", background: name });
-    // Reset mode to default when background changes (reducer handles this too, but be explicit)
-    dispatch({ type: "SET_ABILITY_SCORE_MODE", mode: "two-one" });
+  function handleCardClick(background: BackgroundDb, e: React.MouseEvent) {
+    setPopover({ background, position: { x: e.clientX, y: e.clientY } });
+  }
+
+  function handleToggleSelect(name: string) {
+    if (state.background === name) {
+      dispatch({ type: "CLEAR_BACKGROUND" });
+    } else {
+      dispatch({ type: "SET_BACKGROUND", background: name });
+      dispatch({ type: "SET_ABILITY_SCORE_MODE", mode: "two-one" });
+    }
   }
 
   function handleModeChange(mode: "two-one" | "three-ones") {
@@ -328,70 +462,98 @@ export function BackgroundStep() {
   }
 
   return (
-    <div className="flex flex-col gap-8">
-      {/* Step heading */}
+    <section aria-labelledby="background-step-heading" className="flex flex-col gap-5">
+      {/* Header */}
       <div>
-        <h2
-          className="text-xl font-semibold text-gray-100"
-          style={{ fontFamily: "var(--font-cinzel)" }}
+        <h1
+          id="background-step-heading"
+          className="text-xl font-[family-name:var(--font-cinzel)] text-amber-200/90 mb-1"
         >
           Choose Your Background
-        </h2>
-        <p className="mt-1 text-sm text-gray-500">
-          Your background reflects your life before adventuring — skills, connections, and a feat
-          that shapes who you are.
+        </h1>
+        <p className="text-sm text-gray-400">
+          Your background reflects your life before adventuring — skills, tools, and a feat that
+          shapes who you are. Click any background to see full details.
         </p>
       </div>
 
-      {/* Divider */}
-      <div className="h-px bg-gray-700/40" />
-
-      {/* Grid */}
-      <EntityGrid
-        items={backgroundsArray}
-        selected={state.background}
-        onSelect={handleSelect}
-        searchable
-        searchPlaceholder="Search backgrounds..."
-        renderCard={(bg: BackgroundDb, isSelected: boolean) => {
-          const stats: string[] = [];
-          if (bg.skills.length > 0) stats.push(bg.skills.join(", "));
-          if (bg.tools.length > 0) stats.push(bg.tools.join(", "));
-
-          const tags: { label: string; color?: string }[] = [];
-          if (bg.feat) {
-            tags.push({
-              label: bg.feat,
-              color: "bg-violet-900/30 text-violet-300 border-violet-600/30",
-            });
-          }
-
-          return (
-            <EntityCard
-              name={bg.name}
-              description={bg.description}
-              stats={stats.length > 0 ? stats : undefined}
-              tags={tags.length > 0 ? tags : undefined}
-              selected={isSelected}
-              expandable
-            />
-          );
-        }}
-      />
-
-      {/* Post-selection panel */}
+      {/* Selected banner */}
       {selectedBg && (
-        <div className="flex flex-col gap-6">
-          {/* Divider with label */}
-          <div className="flex items-center gap-3">
-            <div className="h-px flex-1 bg-gray-700/40" />
-            <span
-              className="text-xs font-medium text-amber-400/70 uppercase tracking-widest"
-              style={{ fontFamily: "var(--font-cinzel)" }}
-            >
+        <div className="flex items-center gap-3 px-4 py-3 rounded-lg border border-amber-500/30 bg-amber-950/15">
+          <span className="text-sm text-amber-200 font-medium">✓ {selectedBg.name}</span>
+          <span className="text-xs text-gray-500">
+            {selectedBg.skills.join(", ")}
+            {selectedBg.tools.length > 0 ? ` · ${selectedBg.tools.join(", ")}` : ""}
+          </span>
+          <div className="flex-1" />
+          <button
+            onClick={(e) => handleCardClick(selectedBg, e)}
+            className="text-xs text-amber-400/70 hover:text-amber-300 transition-colors"
+          >
+            View Details
+          </button>
+          <button
+            onClick={() => dispatch({ type: "CLEAR_BACKGROUND" })}
+            className="text-xs text-gray-500 hover:text-red-400 transition-colors"
+          >
+            Change
+          </button>
+        </div>
+      )}
+
+      {/* Search */}
+      <div className="relative">
+        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">🔍</span>
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search backgrounds..."
+          className="w-full pl-9 pr-4 py-2.5 bg-gray-800/60 border border-gray-700/40 rounded-lg text-sm text-gray-200 placeholder-gray-500 focus:border-amber-500/50 focus:outline-none transition-colors"
+        />
+        {searchQuery && (
+          <button
+            onClick={() => setSearchQuery("")}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300"
+          >
+            ✕
+          </button>
+        )}
+      </div>
+
+      {/* Compact grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+        {filteredBackgrounds.map((bg) => (
+          <BackgroundCard
+            key={bg.name}
+            background={bg}
+            isSelected={state.background === bg.name}
+            onClick={(e) => handleCardClick(bg, e)}
+          />
+        ))}
+        {filteredBackgrounds.length === 0 && (
+          <p className="col-span-full text-center text-gray-500 text-sm py-6">
+            No backgrounds match your search.
+          </p>
+        )}
+      </div>
+
+      <p className="text-xs text-gray-600 text-center">
+        {sortedBackgrounds.length} backgrounds available
+      </p>
+
+      {/* Configuration section */}
+      {selectedBg && (
+        <>
+          <div className="h-px bg-gradient-to-r from-transparent via-amber-500/20 to-transparent" />
+
+          <div>
+            <h2 className="text-lg font-[family-name:var(--font-cinzel)] text-amber-200/90 mb-1">
               Configure {selectedBg.name}
-            </span>
-            <div className="h-px flex-1 bg-gray-700/40" />
+            </h2>
+            <p className="text-sm text-gray-400">
+              Distribute your ability score bonuses and make any background choices.
+            </p>
           </div>
 
           {/* Ability score assignment */}
@@ -408,7 +570,7 @@ export function BackgroundStep() {
             />
           </section>
 
-          {/* Background choices (tool proficiency picks, etc.) */}
+          {/* Background choices */}
           {selectedBg.choices && selectedBg.choices.length > 0 && (
             <div className="flex flex-col gap-3">
               <h3
@@ -428,8 +590,19 @@ export function BackgroundStep() {
               ))}
             </div>
           )}
-        </div>
+        </>
       )}
-    </div>
+
+      {/* Popover */}
+      {popover && (
+        <BackgroundPopover
+          background={popover.background}
+          isSelected={state.background === popover.background.name}
+          onToggleSelect={() => handleToggleSelect(popover.background.name)}
+          onClose={() => setPopover(null)}
+          position={popover.position}
+        />
+      )}
+    </section>
   );
 }

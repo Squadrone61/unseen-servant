@@ -1,10 +1,11 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { featsArray, getFeat, getBackground } from "@unseen-servant/shared/data";
 import type { FeatDb, Ability } from "@unseen-servant/shared/types";
-import { EntityCard } from "@/components/builder/EntityCard";
-import { EntityGrid } from "@/components/builder/EntityGrid";
+import { DetailPopover } from "@/components/character/DetailPopover";
+import { EffectSummary } from "@/components/builder/EffectSummary";
+import { RichText } from "@/components/ui/RichText";
 import { ChoicePicker } from "@/components/builder/ChoicePicker";
 import { useBuilder } from "../BuilderContext";
 import type { FeatSelection } from "../builder-state";
@@ -37,6 +38,14 @@ const ABILITY_LABELS: Record<Ability, string> = {
 /** Categories excluded from the general feat picker. */
 const EXCLUDED_CATEGORIES = new Set(["Origin", "Fighting Style"]);
 
+// Category badge colours
+const CATEGORY_BADGE: Record<string, string> = {
+  General: "bg-gray-700/50 text-gray-300 border-gray-600/40",
+  "Epic Boon": "bg-amber-900/40 text-amber-300 border-amber-700/40",
+  "Fighting Style": "bg-blue-900/40 text-blue-300 border-blue-700/40",
+  Origin: "bg-violet-900/40 text-violet-300 border-violet-700/40",
+};
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -62,6 +71,109 @@ function meetsPrerequisite(feat: FeatDb, classLevel: number): boolean {
   }
 
   return true;
+}
+
+// ---------------------------------------------------------------------------
+// Feat Detail Popover
+// ---------------------------------------------------------------------------
+
+interface FeatPopoverProps {
+  feat: FeatDb;
+  isSelected: boolean;
+  onToggleSelect: () => void;
+  onClose: () => void;
+  position: { x: number; y: number };
+}
+
+function FeatPopover({ feat, isSelected, onToggleSelect, onClose, position }: FeatPopoverProps) {
+  const selectButton = (
+    <button
+      onClick={() => {
+        onToggleSelect();
+        onClose();
+      }}
+      className={`w-full px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+        isSelected
+          ? "bg-gray-700/60 hover:bg-gray-600/60 border border-gray-600/40 text-gray-300"
+          : "bg-amber-600/80 hover:bg-amber-500/80 text-amber-50 shadow-[0_0_12px_rgba(245,158,11,0.15)]"
+      }`}
+    >
+      {isSelected ? `Deselect ${feat.name}` : `Select ${feat.name}`}
+    </button>
+  );
+
+  return (
+    <DetailPopover title={feat.name} onClose={onClose} position={position} footer={selectButton}>
+      <div className="space-y-3">
+        {/* Meta badges */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <span
+            className={`text-xs px-2 py-0.5 rounded-full border ${CATEGORY_BADGE[feat.category] ?? "bg-gray-700/50 text-gray-300 border-gray-600/30"}`}
+          >
+            {feat.category}
+          </span>
+          {feat.prerequisite && (
+            <span className="text-xs px-2 py-0.5 rounded-full bg-gray-700/40 text-gray-400 border border-gray-600/40">
+              {feat.prerequisite}
+            </span>
+          )}
+          {feat.repeatable && (
+            <span className="text-xs px-2 py-0.5 rounded-full bg-teal-900/40 text-teal-300 border border-teal-700/40">
+              Repeatable
+            </span>
+          )}
+        </div>
+
+        {/* Effect badges */}
+        {feat.effects && <EffectSummary effects={feat.effects} />}
+
+        {/* Description */}
+        <div className="text-sm text-gray-300 leading-relaxed">
+          <RichText text={feat.description} />
+        </div>
+      </div>
+    </DetailPopover>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Compact Feat Card
+// ---------------------------------------------------------------------------
+
+interface FeatCardProps {
+  feat: FeatDb;
+  isSelected: boolean;
+  onClick: (e: React.MouseEvent) => void;
+}
+
+function FeatCard({ feat, isSelected, onClick }: FeatCardProps) {
+  return (
+    <button
+      onClick={onClick}
+      className={`
+        w-full text-left px-4 py-3 rounded-lg border transition-all duration-200
+        ${
+          isSelected
+            ? "border-amber-500/50 bg-amber-950/20 ring-1 ring-amber-500/20"
+            : "border-gray-700/30 bg-gray-800/40 hover:border-gray-600/50 hover:bg-gray-800/60"
+        }
+      `}
+    >
+      <div className="flex items-center justify-between gap-2">
+        <span
+          className={`font-[family-name:var(--font-cinzel)] text-sm truncate ${
+            isSelected ? "text-amber-200" : "text-gray-200"
+          }`}
+        >
+          {feat.name}
+        </span>
+        <span className="text-xs text-gray-500 shrink-0 whitespace-nowrap">
+          {feat.category}
+          {feat.prerequisite ? ` · ${feat.prerequisite}` : ""}
+        </span>
+      </div>
+    </button>
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -248,6 +360,12 @@ function AsiSlot({
   const isASI = selection.type === "asi";
   const isFeat = selection.type === "feat";
 
+  const [popover, setPopover] = useState<{
+    feat: FeatDb;
+    position: { x: number; y: number };
+  } | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+
   // Filter eligible feats
   const eligibleFeats = useMemo(() => {
     return featsArray.filter((f) => {
@@ -258,6 +376,17 @@ function AsiSlot({
       return true;
     });
   }, [alreadySelectedFeats, classLevel, selection.featName]);
+
+  const filteredFeats = useMemo(() => {
+    if (!searchQuery.trim()) return eligibleFeats;
+    const q = searchQuery.toLowerCase();
+    return eligibleFeats.filter(
+      (f) =>
+        f.name.toLowerCase().includes(q) ||
+        f.category.toLowerCase().includes(q) ||
+        (f.prerequisite ?? "").toLowerCase().includes(q),
+    );
+  }, [eligibleFeats, searchQuery]);
 
   const selectedFeatData = useMemo<FeatDb | undefined>(() => {
     if (!selection.featName) return undefined;
@@ -270,6 +399,13 @@ function AsiSlot({
     } else {
       onUpdate({ level, type: "feat", featName: undefined });
     }
+    // Clear search and popover when switching modes
+    setSearchQuery("");
+    setPopover(null);
+  }
+
+  function handleFeatCardClick(feat: FeatDb, e: React.MouseEvent) {
+    setPopover({ feat, position: { x: e.clientX, y: e.clientY } });
   }
 
   function handleFeatSelect(name: string) {
@@ -340,34 +476,108 @@ function AsiSlot({
 
       {/* Feat panel */}
       {isFeat && (
-        <div className="flex flex-col gap-4">
-          <EntityGrid<FeatDb>
-            items={eligibleFeats}
-            selected={selection.featName ?? null}
-            onSelect={handleFeatSelect}
-            searchable
-            searchPlaceholder="Search feats..."
-            renderCard={(feat, isSelected) => (
-              <EntityCard
-                name={feat.name}
-                description={feat.description}
-                effects={feat.effects}
-                tags={[
-                  { label: feat.category },
-                  ...(feat.prerequisite
-                    ? [
-                        {
-                          label: feat.prerequisite,
-                          color: "bg-gray-700/40 text-gray-400 border-gray-600/40",
-                        },
-                      ]
-                    : []),
-                ]}
-                selected={isSelected}
-                expandable
-              />
+        <div className="flex flex-col gap-3">
+          {/* Selected feat banner */}
+          {selectedFeatData && (
+            <div className="flex items-center gap-3 px-4 py-3 rounded-lg border border-amber-500/30 bg-amber-950/15">
+              <span className="text-sm text-amber-200 font-medium">
+                &#10003; {selectedFeatData.name}
+              </span>
+              <span className="text-xs text-gray-500">
+                {selectedFeatData.category}
+                {selectedFeatData.prerequisite ? ` · ${selectedFeatData.prerequisite}` : ""}
+              </span>
+              <div className="flex-1" />
+              <button
+                onClick={(e) => handleFeatCardClick(selectedFeatData, e)}
+                className="text-xs text-amber-400/70 hover:text-amber-300 transition-colors"
+              >
+                View Details
+              </button>
+              <button
+                onClick={() => onUpdate({ level, type: "feat", featName: undefined })}
+                className="text-xs text-gray-500 hover:text-red-400 transition-colors"
+              >
+                Change
+              </button>
+            </div>
+          )}
+
+          {/* Search */}
+          <div className="relative">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm pointer-events-none">
+              <svg
+                className="w-3.5 h-3.5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
+            </span>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search feats..."
+              aria-label="Search feats"
+              className="w-full pl-9 pr-4 py-2.5 bg-gray-800/60 border border-gray-700/40 rounded-lg text-sm text-gray-200 placeholder-gray-500 focus:border-amber-500/50 focus:outline-none transition-colors"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                aria-label="Clear search"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors"
+              >
+                <svg
+                  className="w-3.5 h-3.5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
             )}
-          />
+          </div>
+
+          {/* Compact feat grid — height capped to avoid infinite page growth */}
+          <div
+            className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 max-h-80 overflow-y-auto rounded-lg pr-1"
+            role="listbox"
+            aria-label="Available feats"
+          >
+            {filteredFeats.map((feat) => (
+              <FeatCard
+                key={feat.name}
+                feat={feat}
+                isSelected={selection.featName === feat.name}
+                onClick={(e) => handleFeatCardClick(feat, e)}
+              />
+            ))}
+            {filteredFeats.length === 0 && (
+              <p className="col-span-full text-center text-gray-500 text-sm py-6">
+                No feats match your search.
+              </p>
+            )}
+          </div>
+
+          <p className="text-xs text-gray-600">
+            {filteredFeats.length} feat{filteredFeats.length !== 1 ? "s" : ""} available · click any
+            to view details
+          </p>
 
           {/* Feat sub-choices */}
           {selectedFeatData && (selectedFeatData.choices?.length ?? 0) > 0 && (
@@ -398,12 +608,23 @@ function AsiSlot({
           )}
         </div>
       )}
+
+      {/* Feat popover — rendered at slot level so it can overlay the whole page */}
+      {popover && (
+        <FeatPopover
+          feat={popover.feat}
+          isSelected={selection.featName === popover.feat.name}
+          onToggleSelect={() => handleFeatSelect(popover.feat.name)}
+          onClose={() => setPopover(null)}
+          position={popover.position}
+        />
+      )}
     </div>
   );
 }
 
 // ---------------------------------------------------------------------------
-// Origin feat display (from background) — read-only
+// Origin feat display (from background)
 // ---------------------------------------------------------------------------
 
 interface OriginFeatDisplayProps {
@@ -414,6 +635,10 @@ interface OriginFeatDisplayProps {
 
 function OriginFeatDisplay({ featName, featChoices, onFeatChoice }: OriginFeatDisplayProps) {
   const feat = useMemo(() => getFeat(featName), [featName]);
+
+  const [popover, setPopover] = useState<{
+    position: { x: number; y: number };
+  } | null>(null);
 
   if (!feat) {
     return (
@@ -441,17 +666,30 @@ function OriginFeatDisplay({ featName, featChoices, onFeatChoice }: OriginFeatDi
         <span className="text-xs text-gray-500 ml-auto">Granted by background</span>
       </div>
 
-      <EntityCard
-        name={feat.name}
-        description={feat.description}
-        effects={feat.effects}
-        tags={[{ label: feat.category }]}
-        expandable
-      />
+      {/* Compact display row */}
+      <button
+        onClick={(e) => setPopover({ position: { x: e.clientX, y: e.clientY } })}
+        className="w-full text-left px-4 py-3 rounded-lg border border-violet-700/20 bg-gray-800/30 hover:border-violet-600/40 hover:bg-gray-800/50 transition-all duration-200 mb-3"
+      >
+        <div className="flex items-center justify-between gap-2">
+          <span className="font-[family-name:var(--font-cinzel)] text-sm text-violet-200">
+            {feat.name}
+          </span>
+          <span className="text-xs text-gray-500 shrink-0">
+            {feat.category}
+            {feat.prerequisite ? ` · ${feat.prerequisite}` : ""}
+          </span>
+        </div>
+        {feat.effects && (
+          <div className="mt-1.5">
+            <EffectSummary effects={feat.effects} compact />
+          </div>
+        )}
+      </button>
 
       {/* Origin feat choices */}
       {(feat.choices?.length ?? 0) > 0 && (
-        <div className="mt-4 flex flex-col gap-3">
+        <div className="flex flex-col gap-3">
           {(feat.choices ?? []).map((choice) => (
             <ChoicePicker
               key={choice.id}
@@ -461,6 +699,34 @@ function OriginFeatDisplay({ featName, featChoices, onFeatChoice }: OriginFeatDi
             />
           ))}
         </div>
+      )}
+
+      {/* Details popover */}
+      {popover && (
+        <DetailPopover
+          title={feat.name}
+          onClose={() => setPopover(null)}
+          position={popover.position}
+        >
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span
+                className={`text-xs px-2 py-0.5 rounded-full border ${CATEGORY_BADGE[feat.category] ?? "bg-gray-700/50 text-gray-300 border-gray-600/30"}`}
+              >
+                {feat.category}
+              </span>
+              {feat.prerequisite && (
+                <span className="text-xs px-2 py-0.5 rounded-full bg-gray-700/40 text-gray-400 border border-gray-600/40">
+                  {feat.prerequisite}
+                </span>
+              )}
+            </div>
+            {feat.effects && <EffectSummary effects={feat.effects} />}
+            <div className="text-sm text-gray-300 leading-relaxed">
+              <RichText text={feat.description} />
+            </div>
+          </div>
+        </DetailPopover>
       )}
     </div>
   );

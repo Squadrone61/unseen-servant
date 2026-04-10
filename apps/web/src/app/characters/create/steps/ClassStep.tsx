@@ -8,8 +8,7 @@ import type {
   SubclassDb,
   SubclassFeatureDb,
 } from "@unseen-servant/shared/types";
-import { EntityCard } from "@/components/builder/EntityCard";
-import { EntityGrid } from "@/components/builder/EntityGrid";
+import { DetailPopover } from "@/components/character/DetailPopover";
 import { ChoicePicker } from "@/components/builder/ChoicePicker";
 import { EffectSummary } from "@/components/builder/EffectSummary";
 import { RichText } from "@/components/ui/RichText";
@@ -33,43 +32,20 @@ function abilityAbbr(a: string): string {
   return ABILITY_ABBR[a.toLowerCase()] ?? a.toUpperCase().slice(0, 3);
 }
 
-/** Build quick-stat strings for a class card. */
-function buildClassStats(cls: ClassDb): string[] {
-  const stats: string[] = [];
-  stats.push(`d${cls.hitDiceFaces}`);
+/** Build the compact stat line: "d10 · STR/CON saves" */
+function buildStatLine(cls: ClassDb): string {
+  const parts: string[] = [`d${cls.hitDiceFaces}`];
   if (cls.savingThrows.length > 0) {
-    stats.push(cls.savingThrows.map(abilityAbbr).join("/") + " saves");
+    parts.push(cls.savingThrows.map(abilityAbbr).join("/") + " saves");
   }
-  return stats;
+  return parts.join(" · ");
 }
 
-/** Build proficiency summary tags for a class card. */
-function buildClassTags(cls: ClassDb): { label: string; color?: string }[] {
-  const tags: { label: string; color?: string }[] = [];
-
-  // Caster type
-  if (cls.casterProgression) {
-    const casterLabels: Record<string, string> = {
-      full: "Full Caster",
-      half: "Half Caster",
-      third: "1/3 Caster",
-      pact: "Pact Magic",
-    };
-    tags.push({
-      label: casterLabels[cls.casterProgression] ?? cls.casterProgression,
-      color: "bg-violet-900/40 text-violet-300 border border-violet-700/40",
-    });
-  }
-
-  return tags;
-}
-
-/** Proficiency summary line shown below the card stats. */
+/** Build proficiency summary line: "All Armor · All Weapons" */
 function buildProficiencyLine(cls: ClassDb): string {
   const parts: string[] = [];
 
   if (cls.armorProficiencies.length > 0) {
-    // Condense full armor suite to "All Armor"
     const armors = cls.armorProficiencies;
     const hasAllArmor =
       armors.includes("Light Armor") &&
@@ -93,9 +69,25 @@ function buildProficiencyLine(cls: ClassDb): string {
   return parts.join(" · ");
 }
 
+/** Caster type label + style for badge */
+function getCasterBadge(
+  progression: string | undefined,
+): { label: string; className: string } | null {
+  if (!progression) return null;
+  const labels: Record<string, string> = {
+    full: "Full Caster",
+    half: "Half Caster",
+    third: "1/3 Caster",
+    pact: "Pact Magic",
+  };
+  return {
+    label: labels[progression] ?? progression,
+    className: "bg-violet-900/40 text-violet-300 border border-violet-700/40",
+  };
+}
+
 /** Returns the subclass unlock level for a given class (defaults to 3). */
 function getSubclassUnlockLevel(cls: ClassDb): number {
-  // Find the lowest-level feature that mentions "Subclass" in its name
   const subclassFeature = cls.features.find((f) => f.name.toLowerCase().includes("subclass"));
   return subclassFeature?.level ?? 3;
 }
@@ -122,10 +114,305 @@ function groupByLevel<T extends { level: number }>(features: T[]): Map<number, T
 }
 
 // ---------------------------------------------------------------------------
-// Sub-components
+// Class Popover
 // ---------------------------------------------------------------------------
 
-// ---- Level Picker ----------------------------------------------------------
+function ClassPopover({
+  cls,
+  isSelected,
+  onToggleSelect,
+  onClose,
+  position,
+}: {
+  cls: ClassDb;
+  isSelected: boolean;
+  onToggleSelect: () => void;
+  onClose: () => void;
+  position: { x: number; y: number };
+}) {
+  const casterBadge = getCasterBadge(cls.casterProgression);
+  const profLine = buildProficiencyLine(cls);
+
+  const selectButton = (
+    <button
+      onClick={() => {
+        onToggleSelect();
+        onClose();
+      }}
+      className={`w-full px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+        isSelected
+          ? "bg-gray-700/60 hover:bg-gray-600/60 border border-gray-600/40 text-gray-300"
+          : "bg-amber-600/80 hover:bg-amber-500/80 text-amber-50 shadow-[0_0_12px_rgba(245,158,11,0.15)]"
+      }`}
+    >
+      {isSelected ? `Deselect ${cls.name}` : `Select ${cls.name}`}
+    </button>
+  );
+
+  return (
+    <DetailPopover title={cls.name} onClose={onClose} position={position} footer={selectButton}>
+      <div className="space-y-3">
+        {/* Quick stats */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-xs px-2 py-0.5 rounded-full bg-red-900/30 text-red-300 border border-red-700/30">
+            d{cls.hitDiceFaces} Hit Die
+          </span>
+          {cls.savingThrows.length > 0 && (
+            <span className="text-xs px-2 py-0.5 rounded-full bg-gray-700/50 text-gray-300 border border-gray-600/30">
+              {cls.savingThrows.map(abilityAbbr).join("/")} saves
+            </span>
+          )}
+          {casterBadge && (
+            <span className={`text-xs px-2 py-0.5 rounded-full ${casterBadge.className}`}>
+              {casterBadge.label}
+            </span>
+          )}
+        </div>
+
+        {/* Proficiencies */}
+        {profLine && <p className="text-xs text-gray-400 leading-relaxed">{profLine}</p>}
+
+        {/* Description */}
+        <div className="text-sm text-gray-300 leading-relaxed">
+          <RichText text={cls.description} />
+        </div>
+
+        {/* Skill choices count */}
+        {cls.skillChoices && (
+          <p className="text-xs text-gray-500">
+            Choose {cls.skillChoices.count} skill
+            {cls.skillChoices.count !== 1 ? "s" : ""} from {cls.skillChoices.from.length} options.
+          </p>
+        )}
+      </div>
+    </DetailPopover>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Compact Class Card
+// ---------------------------------------------------------------------------
+
+function ClassCard({
+  cls,
+  isSelected,
+  onClick,
+}: {
+  cls: ClassDb;
+  isSelected: boolean;
+  onClick: (e: React.MouseEvent) => void;
+}) {
+  const statLine = buildStatLine(cls);
+  const profLine = buildProficiencyLine(cls);
+  const casterBadge = getCasterBadge(cls.casterProgression);
+
+  return (
+    <button
+      onClick={onClick}
+      className={`
+        w-full text-left px-4 py-3 rounded-lg border transition-all duration-200
+        ${
+          isSelected
+            ? "border-amber-500/50 bg-amber-950/20 ring-1 ring-amber-500/20"
+            : "border-gray-700/30 bg-gray-800/40 hover:border-gray-600/50 hover:bg-gray-800/60"
+        }
+      `}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0 flex flex-col gap-0.5">
+          <div className="flex items-center gap-2">
+            <span
+              className={`font-[family-name:var(--font-cinzel)] text-sm truncate ${
+                isSelected ? "text-amber-200" : "text-gray-200"
+              }`}
+            >
+              {cls.name}
+            </span>
+            {casterBadge && (
+              <span
+                className={`text-[10px] px-1.5 py-px rounded-full shrink-0 ${casterBadge.className}`}
+              >
+                {casterBadge.label}
+              </span>
+            )}
+          </div>
+          <span className="text-xs text-gray-500 truncate">{profLine}</span>
+        </div>
+        <span className="text-xs text-gray-400 shrink-0 whitespace-nowrap tabular-nums">
+          {statLine}
+        </span>
+      </div>
+    </button>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Subclass Popover
+// ---------------------------------------------------------------------------
+
+function SubclassPopover({
+  subclass,
+  isSelected,
+  onToggleSelect,
+  onClose,
+  position,
+}: {
+  subclass: SubclassDb;
+  isSelected: boolean;
+  onToggleSelect: () => void;
+  onClose: () => void;
+  position: { x: number; y: number };
+}) {
+  const casterBadge = getCasterBadge(subclass.casterProgression);
+
+  const selectButton = (
+    <button
+      onClick={() => {
+        onToggleSelect();
+        onClose();
+      }}
+      className={`w-full px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+        isSelected
+          ? "bg-gray-700/60 hover:bg-gray-600/60 border border-gray-600/40 text-gray-300"
+          : "bg-amber-600/80 hover:bg-amber-500/80 text-amber-50 shadow-[0_0_12px_rgba(245,158,11,0.15)]"
+      }`}
+    >
+      {isSelected ? `Deselect ${subclass.name}` : `Select ${subclass.name}`}
+    </button>
+  );
+
+  return (
+    <DetailPopover
+      title={subclass.name}
+      onClose={onClose}
+      position={position}
+      footer={selectButton}
+    >
+      <div className="space-y-3">
+        {/* Badges */}
+        <div className="flex items-center gap-2 flex-wrap">
+          {casterBadge && (
+            <span className={`text-xs px-2 py-0.5 rounded-full ${casterBadge.className}`}>
+              {casterBadge.label}
+            </span>
+          )}
+          {subclass.additionalSpells && subclass.additionalSpells.length > 0 && (
+            <span className="text-xs px-2 py-0.5 rounded-full bg-blue-900/30 text-blue-300 border border-blue-700/30">
+              Bonus Spells
+            </span>
+          )}
+        </div>
+
+        {/* Description */}
+        {subclass.description && (
+          <div className="text-sm text-gray-300 leading-relaxed">
+            <RichText text={subclass.description} />
+          </div>
+        )}
+
+        {/* Additional spells */}
+        {subclass.additionalSpells && subclass.additionalSpells.length > 0 && (
+          <div className="flex flex-col gap-1.5">
+            <span className="text-xs font-semibold text-blue-300/80 uppercase tracking-wide">
+              Additional Spells
+            </span>
+            <div className="flex flex-wrap gap-1.5">
+              {subclass.additionalSpells.map((spell) => (
+                <span
+                  key={spell}
+                  className="inline-flex items-center px-2 py-0.5 rounded text-xs border bg-violet-900/20 text-violet-300 border-violet-700/30"
+                >
+                  {spell}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Feature preview (first feature name only as a teaser) */}
+        {subclass.features.length > 0 && (
+          <div className="flex flex-col gap-1.5">
+            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
+              Features
+            </span>
+            <ul className="flex flex-col gap-1">
+              {subclass.features.slice(0, 6).map((f) => (
+                <li key={f.name} className="flex items-center gap-2 text-xs text-gray-400">
+                  <span className="inline-flex items-center px-1 py-px rounded text-[10px] bg-gray-700/40 text-gray-500 border border-gray-600/30 tabular-nums font-mono">
+                    {f.level}
+                  </span>
+                  {f.name}
+                </li>
+              ))}
+              {subclass.features.length > 6 && (
+                <li className="text-xs text-gray-600 italic pl-5">
+                  +{subclass.features.length - 6} more
+                </li>
+              )}
+            </ul>
+          </div>
+        )}
+      </div>
+    </DetailPopover>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Compact Subclass Card
+// ---------------------------------------------------------------------------
+
+function SubclassCard({
+  subclass,
+  isSelected,
+  onClick,
+}: {
+  subclass: SubclassDb;
+  isSelected: boolean;
+  onClick: (e: React.MouseEvent) => void;
+}) {
+  const casterBadge = getCasterBadge(subclass.casterProgression);
+  const hasBonusSpells = subclass.additionalSpells && subclass.additionalSpells.length > 0;
+
+  return (
+    <button
+      onClick={onClick}
+      className={`
+        w-full text-left px-4 py-3 rounded-lg border transition-all duration-200
+        ${
+          isSelected
+            ? "border-amber-500/50 bg-amber-950/20 ring-1 ring-amber-500/20"
+            : "border-gray-700/30 bg-gray-800/40 hover:border-gray-600/50 hover:bg-gray-800/60"
+        }
+      `}
+    >
+      <div className="flex items-center justify-between gap-2">
+        <span
+          className={`font-[family-name:var(--font-cinzel)] text-sm truncate ${
+            isSelected ? "text-amber-200" : "text-gray-200"
+          }`}
+        >
+          {subclass.name}
+        </span>
+        <div className="flex items-center gap-1.5 shrink-0">
+          {hasBonusSpells && (
+            <span className="text-[10px] px-1.5 py-px rounded-full bg-blue-900/30 text-blue-300 border border-blue-700/30">
+              Spells
+            </span>
+          )}
+          {casterBadge && (
+            <span className={`text-[10px] px-1.5 py-px rounded-full ${casterBadge.className}`}>
+              {casterBadge.label}
+            </span>
+          )}
+        </div>
+      </div>
+    </button>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Level Picker
+// ---------------------------------------------------------------------------
 
 interface LevelPickerProps {
   level: number;
@@ -243,7 +530,9 @@ function ordinalLevel(n: number): string {
   return n + (suffix[(v - 20) % 10] ?? suffix[v] ?? suffix[0]) + " Level";
 }
 
-// ---- Level Badge -----------------------------------------------------------
+// ---------------------------------------------------------------------------
+// Level Badge
+// ---------------------------------------------------------------------------
 
 function LevelBadge({ level }: { level: number }) {
   return (
@@ -253,13 +542,14 @@ function LevelBadge({ level }: { level: number }) {
   );
 }
 
-// ---- Feature Row -----------------------------------------------------------
+// ---------------------------------------------------------------------------
+// Feature Row
+// ---------------------------------------------------------------------------
 
 interface FeatureRowProps {
   feature: ClassFeatureDb | SubclassFeatureDb;
   choiceSelections: Record<string, string[]>;
   onChoiceSelect: (choiceId: string, values: string[]) => void;
-  /** Prefix added to choice IDs to namespace subclass vs class choices */
   choicePrefix?: string;
 }
 
@@ -276,7 +566,6 @@ function FeatureRow({
     (feature.effects?.modifiers?.length ?? 0) > 0 || (feature.effects?.properties?.length ?? 0) > 0;
 
   const permanentChoices = feature.choices?.filter((c) => c.timing === "permanent") ?? [];
-
   const hasPermanentChoices = permanentChoices.length > 0;
 
   return (
@@ -293,7 +582,6 @@ function FeatureRow({
           )}
         </div>
 
-        {/* Expand description toggle */}
         {hasDescription && (
           <button
             type="button"
@@ -320,14 +608,12 @@ function FeatureRow({
         )}
       </div>
 
-      {/* Expanded description */}
       {expanded && hasDescription && (
         <div className="text-xs text-gray-400 leading-relaxed">
           <RichText text={feature.description} />
         </div>
       )}
 
-      {/* Permanent choices — always shown when the feature has them */}
       {hasPermanentChoices && (
         <div className="flex flex-col gap-2 mt-1">
           {permanentChoices.map((choice) => {
@@ -349,7 +635,9 @@ function FeatureRow({
   );
 }
 
-// ---- Feature Level Group ---------------------------------------------------
+// ---------------------------------------------------------------------------
+// Feature Level Group
+// ---------------------------------------------------------------------------
 
 interface FeatureLevelGroupProps {
   level: number;
@@ -357,7 +645,6 @@ interface FeatureLevelGroupProps {
   choiceSelections: Record<string, string[]>;
   onChoiceSelect: (choiceId: string, values: string[]) => void;
   choicePrefix?: string;
-  /** Extra list items appended after the feature rows (e.g. subclass prompt) */
   extra?: React.ReactNode;
 }
 
@@ -371,13 +658,11 @@ function FeatureLevelGroup({
 }: FeatureLevelGroupProps) {
   return (
     <div className="flex flex-col gap-1">
-      {/* Level header */}
       <div className="flex items-center gap-2 mb-2">
         <LevelBadge level={level} />
         <div className="h-px flex-1 bg-gray-700/30" aria-hidden="true" />
       </div>
 
-      {/* Feature rows */}
       <ul className="flex flex-col gap-3" role="list">
         {features.map((feature) => (
           <FeatureRow
@@ -394,51 +679,22 @@ function FeatureLevelGroup({
   );
 }
 
-// ---- Subclass Card ---------------------------------------------------------
-
-interface SubclassCardProps {
-  subclass: SubclassDb;
-  isSelected: boolean;
-}
-
-function SubclassCard({ subclass, isSelected }: SubclassCardProps) {
-  const tags: { label: string; color?: string }[] = [];
-  if (subclass.casterProgression) {
-    const labels: Record<string, string> = {
-      full: "Full Caster",
-      half: "Half Caster",
-      third: "1/3 Caster",
-      pact: "Pact Magic",
-    };
-    tags.push({
-      label: labels[subclass.casterProgression] ?? subclass.casterProgression,
-      color: "bg-violet-900/40 text-violet-300 border border-violet-700/40",
-    });
-  }
-  if (subclass.additionalSpells && subclass.additionalSpells.length > 0) {
-    tags.push({
-      label: "Bonus Spells",
-      color: "bg-blue-900/30 text-blue-300 border border-blue-700/30",
-    });
-  }
-
-  return (
-    <EntityCard
-      name={subclass.name}
-      description={subclass.description}
-      tags={tags}
-      selected={isSelected}
-      expandable
-    />
-  );
-}
-
 // ---------------------------------------------------------------------------
 // Main Component
 // ---------------------------------------------------------------------------
 
 export function ClassStep() {
   const { state, dispatch } = useBuilder();
+
+  const [classPopover, setClassPopover] = useState<{
+    cls: ClassDb;
+    position: { x: number; y: number };
+  } | null>(null);
+
+  const [subclassPopover, setSubclassPopover] = useState<{
+    subclass: SubclassDb;
+    position: { x: number; y: number };
+  } | null>(null);
 
   // Sorted class list
   const sortedClasses = useMemo(
@@ -476,7 +732,6 @@ export function ClassStep() {
     [selectedClass, state.classLevel],
   );
 
-  // Grouped class features by level
   const classFeaturesByLevel = useMemo(() => groupByLevel(classFeatures), [classFeatures]);
 
   // Subclass features up to current level
@@ -486,10 +741,9 @@ export function ClassStep() {
     [selectedSubclass, state.classLevel],
   );
 
-  // Grouped subclass features by level
   const subclassFeaturesByLevel = useMemo(() => groupByLevel(subclassFeatures), [subclassFeatures]);
 
-  // Merged level list (class + subclass) for the feature timeline
+  // Merged level list for feature timeline
   const allFeatureLevels = useMemo(() => {
     const levelsSet = new Set<number>([
       ...classFeaturesByLevel.keys(),
@@ -500,8 +754,12 @@ export function ClassStep() {
 
   // ---- Handlers ------------------------------------------------------------
 
-  function handleClassSelect(name: string) {
-    if (state.className === name) return; // already selected — no toggle needed for class
+  function handleClassCardClick(cls: ClassDb, e: React.MouseEvent) {
+    setClassPopover({ cls, position: { x: e.clientX, y: e.clientY } });
+  }
+
+  function handleClassToggleSelect(name: string) {
+    if (state.className === name) return; // class selection is not toggled off here; use Change button
     dispatch({ type: "SET_CLASS", className: name });
   }
 
@@ -509,9 +767,12 @@ export function ClassStep() {
     dispatch({ type: "SET_CLASS_LEVEL", level });
   }
 
-  function handleSubclassSelect(name: string) {
+  function handleSubclassCardClick(subclass: SubclassDb, e: React.MouseEvent) {
+    setSubclassPopover({ subclass, position: { x: e.clientX, y: e.clientY } });
+  }
+
+  function handleSubclassToggleSelect(name: string) {
     if (state.subclass === name) {
-      // Deselect
       dispatch({ type: "SET_SUBCLASS", subclass: "" });
     } else {
       dispatch({ type: "SET_SUBCLASS", subclass: name });
@@ -526,9 +787,9 @@ export function ClassStep() {
     dispatch({ type: "SET_CLASS_CHOICE", choiceId, values });
   }
 
-  // ---- Render --------------------------------------------------------------
+  // ---- Derived display values -----------------------------------------------
 
-  const profLine = selectedClass ? buildProficiencyLine(selectedClass) : null;
+  const selectedClassStatLine = selectedClass ? buildStatLine(selectedClass) : null;
 
   return (
     <section aria-labelledby="class-step-heading" className="flex flex-col gap-8">
@@ -542,28 +803,42 @@ export function ClassStep() {
         </h1>
         <p className="text-sm text-gray-400">
           Your class defines your primary role in the adventuring party — your combat style,
-          abilities, and the features you gain as you level up.
+          abilities, and the features you gain as you level up. Click any class to see full details.
         </p>
       </div>
 
-      {/* ── Class grid ── */}
-      <EntityGrid<ClassDb>
-        items={sortedClasses}
-        selected={state.className}
-        onSelect={handleClassSelect}
-        searchable
-        searchPlaceholder="Search classes..."
-        renderCard={(item, isSelected) => (
-          <EntityCard
-            name={item.name}
-            description={item.description}
-            stats={buildClassStats(item)}
-            tags={buildClassTags(item)}
-            selected={isSelected}
-            expandable
+      {/* ── Selected class banner ── */}
+      {selectedClass && (
+        <div className="flex items-center gap-3 px-4 py-3 rounded-lg border border-amber-500/30 bg-amber-950/15">
+          <span className="text-sm text-amber-200 font-medium">{selectedClass.name}</span>
+          <span className="text-xs text-gray-500">{selectedClassStatLine}</span>
+          <div className="flex-1" />
+          <button
+            onClick={(e) => handleClassCardClick(selectedClass, e)}
+            className="text-xs text-amber-400/70 hover:text-amber-300 transition-colors"
+          >
+            View Details
+          </button>
+          <button
+            onClick={() => dispatch({ type: "SET_CLASS", className: "" })}
+            className="text-xs text-gray-500 hover:text-red-400 transition-colors"
+          >
+            Change
+          </button>
+        </div>
+      )}
+
+      {/* ── Class compact grid ── always visible; selected card is highlighted */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+        {sortedClasses.map((cls) => (
+          <ClassCard
+            key={cls.name}
+            cls={cls}
+            isSelected={state.className === cls.name}
+            onClick={(e) => handleClassCardClick(cls, e)}
           />
-        )}
-      />
+        ))}
+      </div>
 
       {/* ── Configuration panel — only shown when a class is selected ── */}
       {selectedClass && (
@@ -573,23 +848,6 @@ export function ClassStep() {
             className="h-px bg-gradient-to-r from-transparent via-amber-500/20 to-transparent"
             aria-hidden="true"
           />
-
-          {/* Class configuration header */}
-          <div className="flex items-start gap-4 flex-wrap">
-            <div className="flex-1 min-w-0">
-              <h2 className="text-lg font-[family-name:var(--font-cinzel)] text-amber-200/90 mb-0.5">
-                {selectedClass.name}
-              </h2>
-              {profLine && <p className="text-xs text-gray-500">{profLine}</p>}
-            </div>
-            {/* Hit die badge */}
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-500 uppercase tracking-wide">Hit Die</span>
-              <span className="inline-flex items-center px-2.5 py-1 rounded-lg border bg-red-900/20 text-red-300 border-red-700/30 font-[family-name:var(--font-cinzel)] font-semibold text-sm">
-                d{selectedClass.hitDiceFaces}
-              </span>
-            </div>
-          </div>
 
           {/* ── Level Picker ── */}
           <div className="bg-gray-800/30 border border-gray-700/20 rounded-lg p-4 flex flex-col gap-3">
@@ -628,7 +886,7 @@ export function ClassStep() {
             />
           </div>
 
-          {/* ── Subclass Picker ── (only when level ≥ subclass unlock level) */}
+          {/* ── Subclass Picker ── (only when level >= subclass unlock level) */}
           {subclassAvailable && selectedClass.subclasses.length > 0 && (
             <>
               <div
@@ -643,51 +901,43 @@ export function ClassStep() {
                   </h3>
                   <p className="text-xs text-gray-500">
                     At level {subclassUnlockLevel}, you choose a subclass that specialises your{" "}
-                    {selectedClass.name}. Pick one below.
+                    {selectedClass.name}. Click any subclass to see details and select it.
                   </p>
                 </div>
 
-                {/* Subclass grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-                  {selectedClass.subclasses.map((sub) => (
-                    <div
-                      key={sub.name}
-                      role="button"
-                      tabIndex={0}
-                      aria-pressed={state.subclass === sub.name}
-                      onClick={() => handleSubclassSelect(sub.name)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          e.preventDefault();
-                          handleSubclassSelect(sub.name);
-                        }
-                      }}
-                      className="cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/60 rounded-lg"
+                {/* Selected subclass banner */}
+                {selectedSubclass && (
+                  <div className="flex items-center gap-3 px-4 py-2.5 rounded-lg border border-amber-500/20 bg-amber-950/10">
+                    <span className="text-sm text-amber-200 font-medium">
+                      {selectedSubclass.name}
+                    </span>
+                    <div className="flex-1" />
+                    <button
+                      onClick={(e) => handleSubclassCardClick(selectedSubclass, e)}
+                      className="text-xs text-amber-400/70 hover:text-amber-300 transition-colors"
                     >
-                      <SubclassCard subclass={sub} isSelected={state.subclass === sub.name} />
-                    </div>
+                      View Details
+                    </button>
+                    <button
+                      onClick={() => dispatch({ type: "SET_SUBCLASS", subclass: "" })}
+                      className="text-xs text-gray-500 hover:text-red-400 transition-colors"
+                    >
+                      Change
+                    </button>
+                  </div>
+                )}
+
+                {/* Subclass compact grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2">
+                  {selectedClass.subclasses.map((sub) => (
+                    <SubclassCard
+                      key={sub.name}
+                      subclass={sub}
+                      isSelected={state.subclass === sub.name}
+                      onClick={(e) => handleSubclassCardClick(sub, e)}
+                    />
                   ))}
                 </div>
-
-                {/* Subclass additional spells notice */}
-                {selectedSubclass?.additionalSpells &&
-                  selectedSubclass.additionalSpells.length > 0 && (
-                    <div className="bg-blue-900/10 border border-blue-700/20 rounded-lg p-3 flex flex-col gap-1.5">
-                      <span className="text-xs font-semibold text-blue-300/80 uppercase tracking-wide">
-                        Additional Spells
-                      </span>
-                      <div className="flex flex-wrap gap-1.5">
-                        {selectedSubclass.additionalSpells.map((spell) => (
-                          <span
-                            key={spell}
-                            className="inline-flex items-center px-2 py-0.5 rounded text-xs border bg-violet-900/20 text-violet-300 border-violet-700/30"
-                          >
-                            {spell}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
               </div>
             </>
           )}
@@ -716,7 +966,6 @@ export function ClassStep() {
                     const classAtLevel = classFeaturesByLevel.get(lvl) ?? [];
                     const subclassAtLevel = subclassFeaturesByLevel.get(lvl) ?? [];
 
-                    // Subclass unlock placeholder: show prompt when subclass not yet chosen
                     const isSubclassUnlockLevel = lvl === subclassUnlockLevel;
                     const showSubclassPrompt =
                       isSubclassUnlockLevel && subclassAvailable && !selectedSubclass;
@@ -758,13 +1007,34 @@ export function ClassStep() {
             </>
           )}
 
-          {/* Edge case: low level with no features yet (shouldn't happen but guard it) */}
           {allFeatureLevels.length === 0 && (
             <p className="text-sm text-gray-500 italic">
               No features available for level {state.classLevel}.
             </p>
           )}
         </>
+      )}
+
+      {/* ── Class Popover ── */}
+      {classPopover && (
+        <ClassPopover
+          cls={classPopover.cls}
+          isSelected={state.className === classPopover.cls.name}
+          onToggleSelect={() => handleClassToggleSelect(classPopover.cls.name)}
+          onClose={() => setClassPopover(null)}
+          position={classPopover.position}
+        />
+      )}
+
+      {/* ── Subclass Popover ── */}
+      {subclassPopover && (
+        <SubclassPopover
+          subclass={subclassPopover.subclass}
+          isSelected={state.subclass === subclassPopover.subclass.name}
+          onToggleSelect={() => handleSubclassToggleSelect(subclassPopover.subclass.name)}
+          onClose={() => setSubclassPopover(null)}
+          position={subclassPopover.position}
+        />
       )}
     </section>
   );

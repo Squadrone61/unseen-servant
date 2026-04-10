@@ -184,6 +184,7 @@ export type BuilderAction =
 
   // Background
   | { type: "SET_BACKGROUND"; background: string }
+  | { type: "CLEAR_BACKGROUND" }
   | { type: "SET_BACKGROUND_CHOICE"; choiceId: string; values: string[] }
   | { type: "SET_ABILITY_SCORE_MODE"; mode: BuilderState["abilityScoreMode"] }
   | {
@@ -331,6 +332,15 @@ export function builderReducer(state: BuilderState, action: BuilderAction): Buil
         ...state,
         background: action.background,
         // Cascade: clear dependent choices and assignments when background changes
+        backgroundChoices: {},
+        abilityScoreAssignments: {},
+      };
+      break;
+
+    case "CLEAR_BACKGROUND":
+      next = {
+        ...state,
+        background: null,
         backgroundChoices: {},
         abilityScoreAssignments: {},
       };
