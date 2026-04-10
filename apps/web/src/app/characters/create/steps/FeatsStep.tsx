@@ -188,55 +188,59 @@ interface ASIPanelProps {
 
 function ASIPanel({ index, selection, onUpdate }: ASIPanelProps) {
   const asiAbilities = selection.asiAbilities ?? {};
-  const totalPoints = Object.values(asiAbilities).reduce((s, v) => s + v, 0);
+  const selectedAbilities = Object.keys(asiAbilities) as Ability[];
+  const mode: "none" | "plus2" | "split" =
+    selectedAbilities.length === 0
+      ? "none"
+      : selectedAbilities.length === 1 && asiAbilities[selectedAbilities[0]] === 2
+        ? "plus2"
+        : "split";
 
-  // The player may add up to 2 points total, distributed as +2 to one or +1/+1 to two.
-  const canAdd = totalPoints < 2;
+  function handleClick(ability: Ability) {
+    const isSelected = (asiAbilities[ability] ?? 0) > 0;
 
-  function handleToggle(ability: Ability) {
-    const current = asiAbilities[ability] ?? 0;
-    if (current > 0) {
-      // Remove
-      const updated: Partial<Record<Ability, number>> = { ...asiAbilities };
+    if (isSelected) {
+      // Deselect this ability
+      const updated = { ...asiAbilities };
       delete updated[ability];
       onUpdate({ ...selection, asiAbilities: updated });
-    } else if (canAdd) {
-      // If we already have 1 point spent, add +1 to this ability
-      // If nothing spent, default to +2 on first pick (player can then split)
-      const remaining = 2 - totalPoints;
-      const grant = remaining === 2 ? 2 : 1;
-
-      // But if current total is 2 from a single +2, split it
-      const updatedEntries = { ...asiAbilities };
-
-      // If we had a +2 on one ability and now trying to split, keep +1/+1
-      // Here we just add +1 since remaining is 1
-      updatedEntries[ability] = grant;
-
-      onUpdate({ ...selection, asiAbilities: updatedEntries });
+    } else if (mode === "none") {
+      // Nothing selected yet — give +2 to this ability
+      onUpdate({
+        ...selection,
+        asiAbilities: { [ability]: 2 } as Partial<Record<Ability, number>>,
+      });
+    } else if (mode === "plus2") {
+      // One ability has +2 — split into +1/+1 with this new ability
+      const firstAbility = selectedAbilities[0];
+      onUpdate({
+        ...selection,
+        asiAbilities: {
+          [firstAbility]: 1,
+          [ability]: 1,
+        } as Partial<Record<Ability, number>>,
+      });
     }
+    // If mode === "split" and clicking an unselected ability, do nothing (already at 2 picks)
   }
 
-  function handleSwitchToPlus2(ability: Ability) {
-    // Reset to +2 on this single ability
-    onUpdate({
-      ...selection,
-      asiAbilities: { [ability]: 2 } as Partial<Record<Ability, number>>,
-    });
+  function handleClear() {
+    onUpdate({ ...selection, asiAbilities: {} });
   }
-
-  const selectedAbilities = Object.keys(asiAbilities) as Ability[];
 
   return (
     <div className="flex flex-col gap-3" aria-label={`ASI slot ${index + 1} ability selection`}>
       <p className="text-xs text-gray-400">
         Choose one ability for <span className="text-amber-300 font-medium">+2</span>, or two
         abilities for <span className="text-amber-300 font-medium">+1 / +1</span>.
+        {mode === "none" && " Click an ability to start."}
+        {mode === "plus2" &&
+          " Click another ability to split into +1/+1, or click the selected one to remove."}
       </p>
 
       {/* Current allocation chips */}
       {selectedAbilities.length > 0 && (
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {selectedAbilities.map((ab) => (
             <span
               key={ab}
@@ -245,7 +249,7 @@ function ASIPanel({ index, selection, onUpdate }: ASIPanelProps) {
               {cap(ab)} +{asiAbilities[ab]}
               <button
                 type="button"
-                onClick={() => handleToggle(ab)}
+                onClick={() => handleClick(ab)}
                 aria-label={`Remove ${cap(ab)} bonus`}
                 className="ml-1 text-amber-500/60 hover:text-amber-300 transition-colors"
               >
@@ -263,22 +267,13 @@ function ASIPanel({ index, selection, onUpdate }: ASIPanelProps) {
               </button>
             </span>
           ))}
-          {/* If a single +2 is chosen, offer a split option */}
-          {selectedAbilities.length === 1 && asiAbilities[selectedAbilities[0]] === 2 && (
-            <span className="text-xs text-gray-600 self-center">
-              or{" "}
-              <button
-                type="button"
-                className="text-amber-400/70 hover:text-amber-300 underline underline-offset-2 transition-colors"
-                onClick={() => {
-                  // Remove current +2 and start fresh for split
-                  onUpdate({ ...selection, asiAbilities: {} });
-                }}
-              >
-                split into +1/+1
-              </button>
-            </span>
-          )}
+          <button
+            type="button"
+            className="text-xs text-gray-600 hover:text-gray-400 transition-colors"
+            onClick={handleClear}
+          >
+            Reset
+          </button>
         </div>
       )}
 
@@ -286,7 +281,8 @@ function ASIPanel({ index, selection, onUpdate }: ASIPanelProps) {
       <div className="flex flex-wrap gap-2" role="group" aria-label="Ability choices">
         {ALL_ABILITIES.map((ability) => {
           const isSelected = (asiAbilities[ability] ?? 0) > 0;
-          const isDisabled = !isSelected && !canAdd;
+          // Disable unselected pills only when we already have two +1 picks
+          const isDisabled = !isSelected && mode === "split";
 
           return (
             <button
@@ -294,24 +290,7 @@ function ASIPanel({ index, selection, onUpdate }: ASIPanelProps) {
               type="button"
               aria-pressed={isSelected}
               disabled={isDisabled}
-              onClick={() => {
-                if (isSelected) {
-                  handleToggle(ability);
-                } else if (totalPoints === 0) {
-                  // First pick: grant +2
-                  handleSwitchToPlus2(ability);
-                } else {
-                  // Second pick: add +1 (reduces first pick to +1 too)
-                  const firstAbility = selectedAbilities[0];
-                  onUpdate({
-                    ...selection,
-                    asiAbilities: {
-                      [firstAbility]: 1,
-                      [ability]: 1,
-                    } as Partial<Record<Ability, number>>,
-                  });
-                }
-              }}
+              onClick={() => handleClick(ability)}
               className={[
                 "px-3 py-1.5 rounded-full text-sm border transition-all duration-150",
                 "focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/60",
