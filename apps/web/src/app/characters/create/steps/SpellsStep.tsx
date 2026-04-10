@@ -228,7 +228,7 @@ export function SpellsStep() {
 
   const [cantripSearch, setCantripSearch] = useState("");
   const [spellSearch, setSpellSearch] = useState("");
-  const [activeSpellLevel, setActiveSpellLevel] = useState<SpellLevel>(1);
+  const [activeSpellLevel, setActiveSpellLevel] = useState<SpellLevel>(0 as SpellLevel);
 
   // ── Resolve class data ──────────────────────────────────────────────────────
   const classDb = useMemo(
@@ -289,10 +289,15 @@ export function SpellsStep() {
 
   // Keep activeSpellLevel in bounds when class/level changes
   useEffect(() => {
-    if (availableSpellLevels.length > 0 && !availableSpellLevels.includes(activeSpellLevel)) {
-      setActiveSpellLevel(availableSpellLevels[0]);
+    // All valid tabs: cantrips (0) if available, plus leveled spell levels
+    const validTabs: SpellLevel[] = [];
+    if (numCantrips > 0) validTabs.push(0 as SpellLevel);
+    validTabs.push(...availableSpellLevels);
+
+    if (validTabs.length > 0 && !validTabs.includes(activeSpellLevel)) {
+      setActiveSpellLevel(validTabs[0]);
     }
-  }, [availableSpellLevels, activeSpellLevel]);
+  }, [availableSpellLevels, activeSpellLevel, numCantrips]);
 
   // ── Handlers ───────────────────────────────────────────────────────────────
   function toggleCantrip(name: string) {
@@ -358,136 +363,139 @@ export function SpellsStep() {
       {/* ── Always-prepared spells ── */}
       {alwaysPrepared.length > 0 && <AlwaysPreparedBadges spellNames={alwaysPrepared} />}
 
-      {/* ── Cantrips section ── */}
-      {numCantrips > 0 && (
-        <div className="flex flex-col gap-3">
-          {/* Section header + counter */}
-          <div className="flex items-center justify-between">
-            <h2 className="text-base font-[family-name:var(--font-cinzel)] text-amber-200/80">
-              Choose {numCantrips} Cantrip{numCantrips !== 1 ? "s" : ""}
-            </h2>
+      {/* ── Counter row ── */}
+      <div className="flex items-center gap-4">
+        {numCantrips > 0 && (
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-400">Cantrips:</span>
             <Counter current={state.cantrips.length} max={numCantrips} />
           </div>
-
-          {/* Search */}
-          <input
-            type="text"
-            value={cantripSearch}
-            onChange={(e) => setCantripSearch(e.target.value)}
-            placeholder="Search cantrips..."
-            className="w-full bg-gray-800/60 border border-gray-700/40 rounded-lg px-4 py-2 text-sm text-gray-200 placeholder-gray-600 focus:border-amber-500/50 focus:outline-none"
-            aria-label="Search cantrips"
-          />
-
-          {/* Cantrip grid */}
-          {filteredCantrips.length === 0 ? (
-            <p className="text-sm text-gray-600 py-4 text-center">No cantrips match your search.</p>
-          ) : (
-            <div className="flex flex-col gap-1.5">
-              {filteredCantrips.map((spell) => {
-                const selected = state.cantrips.includes(spell.name);
-                const atMax = state.cantrips.length >= numCantrips;
-                return (
-                  <SpellCard
-                    key={spell.name}
-                    spell={spell}
-                    selected={selected}
-                    onToggle={() => toggleCantrip(spell.name)}
-                    disabled={!selected && atMax}
-                  />
-                );
-              })}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Divider between cantrips and prepared spells */}
-      {numCantrips > 0 && numPrepared > 0 && (
-        <div
-          className="h-px bg-gradient-to-r from-transparent via-amber-500/20 to-transparent"
-          aria-hidden="true"
-        />
-      )}
-
-      {/* ── Prepared spells section ── */}
-      {numPrepared > 0 && availableSpellLevels.length > 0 && (
-        <div className="flex flex-col gap-3">
-          {/* Section header + counter */}
-          <div className="flex items-center justify-between">
-            <h2 className="text-base font-[family-name:var(--font-cinzel)] text-amber-200/80">
-              Prepare {numPrepared} Spell{numPrepared !== 1 ? "s" : ""}
-            </h2>
+        )}
+        {numPrepared > 0 && (
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-400">Prepared:</span>
             <Counter current={state.preparedSpells.length} max={numPrepared} />
           </div>
+        )}
+      </div>
 
-          {/* Level tabs */}
-          <div
-            className="flex gap-0 border-b border-gray-700/40 overflow-x-auto"
-            role="tablist"
-            aria-label="Spell level"
+      {/* ── Unified level tabs (Cantrips + spell levels) ── */}
+      <div
+        className="flex gap-0 border-b border-gray-700/40 overflow-x-auto"
+        role="tablist"
+        aria-label="Spell level"
+      >
+        {/* Cantrips tab */}
+        {numCantrips > 0 && (
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeSpellLevel === 0}
+            onClick={() => setActiveSpellLevel(0 as SpellLevel)}
+            className={[
+              "shrink-0 px-3 py-2 text-sm border-b-2 transition-colors duration-100 flex items-center gap-1.5",
+              activeSpellLevel === 0
+                ? "border-amber-500 text-amber-400 font-medium"
+                : "border-transparent text-gray-500 hover:text-gray-300",
+            ].join(" ")}
           >
-            {availableSpellLevels.map((level) => {
-              const isActive = level === activeSpellLevel;
-              const countAtLevel = state.preparedSpells.filter((name) => {
-                const spell = spellsArray.find((s) => s.name === name);
-                return spell?.level === level;
-              }).length;
+            Cantrips
+            {state.cantrips.length > 0 && (
+              <span className="w-4 h-4 rounded-full bg-amber-500/20 text-amber-400 text-[10px] flex items-center justify-center font-medium">
+                {state.cantrips.length}
+              </span>
+            )}
+          </button>
+        )}
+
+        {/* Spell level tabs */}
+        {availableSpellLevels.map((level) => {
+          const isActive = level === activeSpellLevel;
+          const countAtLevel = state.preparedSpells.filter((name) => {
+            const spell = spellsArray.find((s) => s.name === name);
+            return spell?.level === level;
+          }).length;
+          return (
+            <button
+              key={level}
+              type="button"
+              role="tab"
+              aria-selected={isActive}
+              onClick={() => setActiveSpellLevel(level)}
+              className={[
+                "shrink-0 px-3 py-2 text-sm border-b-2 transition-colors duration-100 flex items-center gap-1.5",
+                isActive
+                  ? "border-amber-500 text-amber-400 font-medium"
+                  : "border-transparent text-gray-500 hover:text-gray-300",
+              ].join(" ")}
+            >
+              {ORDINAL[level] ?? `${level}th`}
+              {countAtLevel > 0 && (
+                <span className="w-4 h-4 rounded-full bg-amber-500/20 text-amber-400 text-[10px] flex items-center justify-center font-medium">
+                  {countAtLevel}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* ── Search ── */}
+      <input
+        type="text"
+        value={activeSpellLevel === 0 ? cantripSearch : spellSearch}
+        onChange={(e) =>
+          activeSpellLevel === 0 ? setCantripSearch(e.target.value) : setSpellSearch(e.target.value)
+        }
+        placeholder={
+          activeSpellLevel === 0
+            ? "Search cantrips..."
+            : `Search ${ORDINAL[activeSpellLevel] ?? `level ${activeSpellLevel}`} spells...`
+        }
+        className="w-full bg-gray-800/60 border border-gray-700/40 rounded-lg px-4 py-2 text-sm text-gray-200 placeholder-gray-600 focus:border-amber-500/50 focus:outline-none"
+        aria-label="Search spells"
+      />
+
+      {/* ── Spell list for active tab ── */}
+      {activeSpellLevel === 0 ? (
+        /* Cantrips */
+        filteredCantrips.length === 0 ? (
+          <p className="text-sm text-gray-600 py-4 text-center">No cantrips match your search.</p>
+        ) : (
+          <div className="flex flex-col gap-1.5">
+            {filteredCantrips.map((spell) => {
+              const selected = state.cantrips.includes(spell.name);
+              const atMax = state.cantrips.length >= numCantrips;
               return (
-                <button
-                  key={level}
-                  type="button"
-                  role="tab"
-                  aria-selected={isActive}
-                  onClick={() => setActiveSpellLevel(level)}
-                  className={[
-                    "shrink-0 px-3 py-2 text-sm border-b-2 transition-colors duration-100 flex items-center gap-1.5",
-                    isActive
-                      ? "border-amber-500 text-amber-400 font-medium"
-                      : "border-transparent text-gray-500 hover:text-gray-300",
-                  ].join(" ")}
-                >
-                  {ORDINAL[level] ?? `${level}th`}
-                  {countAtLevel > 0 && (
-                    <span className="w-4 h-4 rounded-full bg-amber-500/20 text-amber-400 text-[10px] flex items-center justify-center font-medium">
-                      {countAtLevel}
-                    </span>
-                  )}
-                </button>
+                <SpellCard
+                  key={spell.name}
+                  spell={spell}
+                  selected={selected}
+                  onToggle={() => toggleCantrip(spell.name)}
+                  disabled={!selected && atMax}
+                />
               );
             })}
           </div>
-
-          {/* Search */}
-          <input
-            type="text"
-            value={spellSearch}
-            onChange={(e) => setSpellSearch(e.target.value)}
-            placeholder={`Search ${ORDINAL[activeSpellLevel] ?? `level ${activeSpellLevel}`} spells...`}
-            className="w-full bg-gray-800/60 border border-gray-700/40 rounded-lg px-4 py-2 text-sm text-gray-200 placeholder-gray-600 focus:border-amber-500/50 focus:outline-none"
-            aria-label="Search spells"
-          />
-
-          {/* Spell grid */}
-          {filteredSpells.length === 0 ? (
-            <p className="text-sm text-gray-600 py-4 text-center">No spells match your search.</p>
-          ) : (
-            <div className="flex flex-col gap-1.5">
-              {filteredSpells.map((spell) => {
-                const selected = state.preparedSpells.includes(spell.name);
-                const atMax = state.preparedSpells.length >= numPrepared;
-                return (
-                  <SpellCard
-                    key={spell.name}
-                    spell={spell}
-                    selected={selected}
-                    onToggle={() => toggleSpell(spell.name)}
-                    disabled={!selected && atMax}
-                  />
-                );
-              })}
-            </div>
-          )}
+        )
+      ) : /* Leveled spells */
+      filteredSpells.length === 0 ? (
+        <p className="text-sm text-gray-600 py-4 text-center">No spells match your search.</p>
+      ) : (
+        <div className="flex flex-col gap-1.5">
+          {filteredSpells.map((spell) => {
+            const selected = state.preparedSpells.includes(spell.name);
+            const atMax = state.preparedSpells.length >= numPrepared;
+            return (
+              <SpellCard
+                key={spell.name}
+                spell={spell}
+                selected={selected}
+                onToggle={() => toggleSpell(spell.name)}
+                disabled={!selected && atMax}
+              />
+            );
+          })}
         </div>
       )}
     </section>
