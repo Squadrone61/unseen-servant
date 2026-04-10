@@ -505,72 +505,56 @@ function itemCost(item: BaseItemDb): number {
 }
 
 // ---------------------------------------------------------------------------
-// Selected items summary panel
+// Equipment chip panel — always-visible "Your Equipment" summary at top
 // ---------------------------------------------------------------------------
 
-interface EquipmentSummaryProps {
+interface EquipmentChipPanelProps {
   equipment: InventoryItem[];
   onRemove: (index: number) => void;
-  onToggleEquipped: (index: number) => void;
-  currency: { gp: number };
-  showCurrency?: boolean;
+  goldInfo?: { remaining: number };
 }
 
-function EquipmentSummary({
-  equipment,
-  onRemove,
-  onToggleEquipped,
-  currency,
-  showCurrency,
-}: EquipmentSummaryProps) {
-  if (equipment.length === 0) {
-    return <p className="text-sm text-gray-600 italic">No items selected yet.</p>;
-  }
-
+function EquipmentChipPanel({ equipment, onRemove, goldInfo }: EquipmentChipPanelProps) {
   return (
-    <div className="flex flex-col gap-1">
-      {equipment.map((item, i) => (
-        <div
-          key={`${item.name}-${i}`}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-800/50 border border-gray-700/20"
+    <div className="rounded-lg border border-gray-700/30 bg-gray-900/40 p-4">
+      <div className="flex items-center justify-between gap-2 mb-3">
+        <h3
+          className="text-sm font-semibold text-amber-400/90 uppercase tracking-wider"
+          style={{ fontFamily: "var(--font-cinzel)" }}
         >
-          {/* Equipped toggle */}
-          <button
-            type="button"
-            onClick={() => onToggleEquipped(i)}
-            aria-label={item.equipped ? "Unequip" : "Equip"}
-            title={item.equipped ? "Equipped — click to unequip" : "Click to equip"}
+          Your Equipment
+        </h3>
+        {goldInfo !== undefined && (
+          <span
             className={[
-              "shrink-0 w-5 h-5 rounded border transition-colors flex items-center justify-center text-xs",
-              item.type === "Weapon" || item.type === "Armor" || item.type === "Shield"
-                ? item.equipped
-                  ? "border-amber-500/60 bg-amber-500/20 text-amber-300"
-                  : "border-gray-600/40 bg-gray-800 text-gray-600 hover:border-gray-500/60"
-                : "border-transparent bg-transparent cursor-default text-transparent",
+              "text-xs font-mono font-semibold",
+              goldInfo.remaining < 0 ? "text-red-400" : "text-emerald-400",
             ].join(" ")}
-            disabled={item.type !== "Weapon" && item.type !== "Armor" && item.type !== "Shield"}
           >
-            {item.equipped ? "⚔" : ""}
-          </button>
-
-          <span className="flex-1 text-sm text-gray-300 truncate">{item.name}</span>
-
-          {item.type && <span className="shrink-0 text-xs text-gray-600">{item.type}</span>}
-
-          <button
-            type="button"
-            onClick={() => onRemove(i)}
-            aria-label={`Remove ${item.name}`}
-            className="shrink-0 text-gray-600 hover:text-red-400 transition-colors text-sm leading-none focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500/40 rounded"
-          >
-            &times;
-          </button>
-        </div>
-      ))}
-
-      {showCurrency && currency.gp > 0 && (
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-yellow-900/20 border border-yellow-700/20 mt-1">
-          <span className="text-sm text-yellow-400/80">{currency.gp} gp remaining</span>
+            {goldInfo.remaining} gp remaining
+          </span>
+        )}
+      </div>
+      {equipment.length === 0 ? (
+        <p className="text-sm text-gray-600 italic">No equipment selected yet.</p>
+      ) : (
+        <div className="flex flex-wrap gap-2">
+          {equipment.map((item, i) => (
+            <span
+              key={`${item.name}-${i}`}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-amber-500/30 bg-amber-900/15 text-amber-200 text-xs font-medium"
+            >
+              {item.name}
+              <button
+                type="button"
+                onClick={() => onRemove(i)}
+                aria-label={`Remove ${item.name}`}
+                className="text-amber-500/60 hover:text-red-400 transition-colors leading-none focus:outline-none"
+              >
+                &times;
+              </button>
+            </span>
+          ))}
         </div>
       )}
     </div>
@@ -578,26 +562,15 @@ function EquipmentSummary({
 }
 
 // ---------------------------------------------------------------------------
-// Section divider helper
-// ---------------------------------------------------------------------------
-
-function SectionDivider() {
-  return (
-    <div
-      className="h-px bg-gradient-to-r from-transparent via-amber-500/20 to-transparent"
-      aria-hidden="true"
-    />
-  );
-}
-
-// ---------------------------------------------------------------------------
 // Starting Equipment mode
 // ---------------------------------------------------------------------------
 
+type StartingTab = "weapons" | "armor" | "gear";
+
 function StartingEquipmentPanel() {
   const { state, dispatch } = useBuilder();
-  const [weaponSearch, setWeaponSearch] = useState("");
-  const [armorSearch, setArmorSearch] = useState("");
+  const [activeTab, setActiveTab] = useState<StartingTab>("weapons");
+  const [tabSearch, setTabSearch] = useState("");
   const [selectedPack, setSelectedPack] = useState<string | null>(null);
 
   // Compute proficiency levels from class
@@ -607,29 +580,26 @@ function StartingEquipmentPanel() {
 
   // Filter weapons
   const filteredWeapons = useMemo(() => {
-    const q = weaponSearch.toLowerCase();
+    const q = tabSearch.toLowerCase();
     return weaponsArray
       .filter((w) => {
         if (!isWeapon(w)) return false;
         if (!isStandardWeapon(w)) return false;
-        // Proficiency gate
         if (weaponProf === "none") return false;
         if (weaponProf === "simple" && w.weaponCategory !== "simple") return false;
-        // Search filter
         return w.name.toLowerCase().includes(q);
       })
       .sort((a, b) => {
-        // Simple weapons first, then alphabetical
         if (a.weaponCategory !== b.weaponCategory) {
           return a.weaponCategory === "simple" ? -1 : 1;
         }
         return a.name.localeCompare(b.name);
       });
-  }, [weaponProf, weaponSearch]);
+  }, [weaponProf, tabSearch]);
 
-  // Filter armor — include shield in armor panel
+  // Filter armor — include shield
   const filteredArmor = useMemo(() => {
-    const q = armorSearch.toLowerCase();
+    const q = tabSearch.toLowerCase();
     return armorArray
       .filter((a) => {
         const tc = typeCode(a.type);
@@ -639,16 +609,14 @@ function StartingEquipmentPanel() {
         return a.name.toLowerCase().includes(q);
       })
       .sort((a, b) => {
-        // Light → Medium → Heavy → Shield
         const order = { LA: 0, MA: 1, HA: 2, S: 3 };
         const aOrder = order[typeCode(a.type) as keyof typeof order] ?? 9;
         const bOrder = order[typeCode(b.type) as keyof typeof order] ?? 9;
         if (aOrder !== bOrder) return aOrder - bOrder;
         return a.name.localeCompare(b.name);
       });
-  }, [allowedArmorTypes, hasShieldProf, armorSearch]);
+  }, [allowedArmorTypes, hasShieldProf, tabSearch]);
 
-  // Track selected weapon/armor names
   const selectedNames = useMemo(
     () => new Set(state.equipment.map((e) => e.name)),
     [state.equipment],
@@ -672,7 +640,6 @@ function StartingEquipmentPanel() {
       if (idx !== -1) dispatch({ type: "REMOVE_EQUIPMENT", index: idx });
       setSelectedPack(null);
     } else {
-      // Remove old pack if any
       if (selectedPack) {
         const oldIdx = state.equipment.findIndex((e) => e.name === selectedPack);
         if (oldIdx !== -1) dispatch({ type: "REMOVE_EQUIPMENT", index: oldIdx });
@@ -683,123 +650,153 @@ function StartingEquipmentPanel() {
   }
 
   const hasNoClass = !state.className;
+  const hasWeapons = weaponProf !== "none";
+  const hasArmor = allowedArmorTypes.size > 0 || hasShieldProf;
+
+  const tabs: { id: StartingTab; label: string }[] = [
+    { id: "weapons", label: "Weapons" },
+    { id: "armor", label: "Armor & Shields" },
+    { id: "gear", label: "Gear & Packs" },
+  ];
+
+  function handleTabChange(tab: StartingTab) {
+    setActiveTab(tab);
+    setTabSearch("");
+  }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       {hasNoClass && (
         <div className="rounded-lg border border-amber-700/30 bg-amber-900/10 px-4 py-3 text-sm text-amber-300/80">
           Select a class first to see equipment options filtered to your proficiencies.
         </div>
       )}
 
-      {/* ── Weapons ── */}
-      {weaponProf !== "none" && (
-        <section aria-labelledby="weapons-heading">
-          <h3
-            id="weapons-heading"
-            className="text-base font-[family-name:var(--font-cinzel)] text-amber-200/80 mb-1"
+      {/* Persistent equipment chip panel */}
+      <EquipmentChipPanel
+        equipment={state.equipment}
+        onRemove={(i) => dispatch({ type: "REMOVE_EQUIPMENT", index: i })}
+      />
+
+      {/* Tab bar */}
+      <div className="flex border-b border-gray-700">
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => handleTabChange(tab.id)}
+            className={[
+              "px-4 py-2.5 flex items-center justify-center text-xs font-medium transition-colors",
+              activeTab === tab.id
+                ? "text-amber-300 border-b-2 border-amber-400/70"
+                : "text-gray-500 hover:text-gray-300",
+            ].join(" ")}
           >
-            Weapons
-          </h3>
-          <p className="text-xs text-gray-500 mb-3">
-            {weaponProf === "martial"
-              ? "You are proficient with simple and martial weapons."
-              : "You are proficient with simple weapons."}
-          </p>
+            {tab.label}
+          </button>
+        ))}
+      </div>
 
-          {/* Search */}
-          <input
-            type="search"
-            value={weaponSearch}
-            onChange={(e) => setWeaponSearch(e.target.value)}
-            placeholder="Search weapons..."
-            aria-label="Search weapons"
-            className="w-full mb-3 bg-gray-800/60 border border-gray-700/40 rounded-lg px-3 py-1.5 text-sm text-gray-200 placeholder-gray-600 focus:border-amber-500/50 focus:outline-none"
-          />
+      {/* Search input */}
+      <input
+        type="search"
+        value={tabSearch}
+        onChange={(e) => setTabSearch(e.target.value)}
+        placeholder={`Search ${activeTab === "gear" ? "gear & packs" : activeTab}...`}
+        aria-label={`Search ${activeTab}`}
+        className="w-full bg-gray-800/60 border border-gray-700/40 rounded-lg px-3 py-1.5 text-sm text-gray-200 placeholder-gray-600 focus:border-amber-500/50 focus:outline-none"
+      />
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {filteredWeapons.map((w) => (
-              <WeaponCard
-                key={w.name}
-                item={w}
-                selected={selectedNames.has(w.name)}
-                onToggle={() => toggleItem(w, true)}
-              />
-            ))}
-          </div>
-
-          {filteredWeapons.length === 0 && (
-            <p className="text-sm text-gray-600 italic">No weapons match your search.</p>
+      {/* Weapons tab */}
+      {activeTab === "weapons" && (
+        <div>
+          {!hasWeapons ? (
+            <p className="text-sm text-gray-600 italic">
+              Your class does not grant weapon proficiencies. Select a class to unlock weapons.
+            </p>
+          ) : (
+            <>
+              <p className="text-xs text-gray-500 mb-3">
+                {weaponProf === "martial"
+                  ? "You are proficient with simple and martial weapons."
+                  : "You are proficient with simple weapons."}
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {filteredWeapons.map((w) => (
+                  <WeaponCard
+                    key={w.name}
+                    item={w}
+                    selected={selectedNames.has(w.name)}
+                    onToggle={() => toggleItem(w, true)}
+                  />
+                ))}
+              </div>
+              {filteredWeapons.length === 0 && (
+                <p className="text-sm text-gray-600 italic">No weapons match your search.</p>
+              )}
+            </>
           )}
-        </section>
+        </div>
       )}
 
-      {/* ── Armor ── */}
-      {(allowedArmorTypes.size > 0 || hasShieldProf) && (
-        <>
-          <SectionDivider />
-          <section aria-labelledby="armor-heading">
-            <h3
-              id="armor-heading"
-              className="text-base font-[family-name:var(--font-cinzel)] text-amber-200/80 mb-1"
-            >
-              Armor &amp; Shields
-            </h3>
-            <p className="text-xs text-gray-500 mb-3">
-              Select the armor you start with. You can only wear one set of armor at a time.
+      {/* Armor & Shields tab */}
+      {activeTab === "armor" && (
+        <div>
+          {!hasArmor ? (
+            <p className="text-sm text-gray-600 italic">
+              Your class does not grant armor proficiencies. Select a class to unlock armor.
             </p>
+          ) : (
+            <>
+              <p className="text-xs text-gray-500 mb-3">
+                Select the armor and shield you start with.
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {filteredArmor.map((a) => (
+                  <ArmorCard
+                    key={a.name}
+                    item={a}
+                    selected={selectedNames.has(a.name)}
+                    onToggle={() => toggleItem(a, true)}
+                  />
+                ))}
+              </div>
+              {filteredArmor.length === 0 && (
+                <p className="text-sm text-gray-600 italic">No armor matches your search.</p>
+              )}
+            </>
+          )}
+        </div>
+      )}
 
-            <input
-              type="search"
-              value={armorSearch}
-              onChange={(e) => setArmorSearch(e.target.value)}
-              placeholder="Search armor..."
-              aria-label="Search armor"
-              className="w-full mb-3 bg-gray-800/60 border border-gray-700/40 rounded-lg px-3 py-1.5 text-sm text-gray-200 placeholder-gray-600 focus:border-amber-500/50 focus:outline-none"
-            />
-
+      {/* Gear & Packs tab */}
+      {activeTab === "gear" && (
+        <div className="flex flex-col gap-4">
+          <div>
+            <h4
+              className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-2"
+              style={{ fontFamily: "var(--font-cinzel)" }}
+            >
+              Adventuring Packs
+            </h4>
+            <p className="text-xs text-gray-500 mb-3">
+              Choose one pack. Each contains a curated set of supplies.
+            </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {filteredArmor.map((a) => (
-                <ArmorCard
-                  key={a.name}
-                  item={a}
-                  selected={selectedNames.has(a.name)}
-                  onToggle={() => toggleItem(a, true)}
+              {ADVENTURING_PACKS.filter((p) =>
+                tabSearch ? p.name.toLowerCase().includes(tabSearch.toLowerCase()) : true,
+              ).map((pack) => (
+                <PackCard
+                  key={pack.name}
+                  pack={pack}
+                  selected={selectedPack === pack.name}
+                  onToggle={() => togglePack(pack)}
                 />
               ))}
             </div>
-
-            {filteredArmor.length === 0 && (
-              <p className="text-sm text-gray-600 italic">No armor matches your search.</p>
-            )}
-          </section>
-        </>
-      )}
-
-      {/* ── Adventuring Pack ── */}
-      <SectionDivider />
-      <section aria-labelledby="pack-heading">
-        <h3
-          id="pack-heading"
-          className="text-base font-[family-name:var(--font-cinzel)] text-amber-200/80 mb-1"
-        >
-          Adventuring Pack
-        </h3>
-        <p className="text-xs text-gray-500 mb-3">
-          Choose one pack to start with. Each pack contains a curated set of adventuring supplies.
-        </p>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          {ADVENTURING_PACKS.map((pack) => (
-            <PackCard
-              key={pack.name}
-              pack={pack}
-              selected={selectedPack === pack.name}
-              onToggle={() => togglePack(pack)}
-            />
-          ))}
+          </div>
         </div>
-      </section>
+      )}
     </div>
   );
 }
@@ -951,6 +948,13 @@ function GoldShopPanel() {
           </div>
         </div>
       </div>
+
+      {/* Persistent equipment chip panel */}
+      <EquipmentChipPanel
+        equipment={state.equipment}
+        onRemove={(i) => dispatch({ type: "REMOVE_EQUIPMENT", index: i })}
+        goldInfo={{ remaining: remainingGold }}
+      />
 
       {/* Shop tabs */}
       <div className="flex gap-1 p-1 bg-gray-900/60 rounded-lg border border-gray-700/30 w-fit">
@@ -1108,28 +1112,6 @@ export function EquipmentStep() {
 
       {/* ── Mode panels ── */}
       {mode === "starting" ? <StartingEquipmentPanel /> : <GoldShopPanel />}
-
-      {/* ── Summary ── */}
-      {state.equipment.length > 0 && (
-        <>
-          <SectionDivider />
-          <section aria-labelledby="equipment-summary-heading">
-            <h3
-              id="equipment-summary-heading"
-              className="text-base font-[family-name:var(--font-cinzel)] text-amber-200/80 mb-3"
-            >
-              Selected Equipment
-            </h3>
-            <EquipmentSummary
-              equipment={state.equipment}
-              onRemove={(i) => dispatch({ type: "REMOVE_EQUIPMENT", index: i })}
-              onToggleEquipped={(i) => dispatch({ type: "TOGGLE_EQUIPPED", index: i })}
-              currency={{ gp: state.startingGold ?? DEFAULT_STARTING_GOLD }}
-              showCurrency={mode === "gold"}
-            />
-          </section>
-        </>
-      )}
     </section>
   );
 }

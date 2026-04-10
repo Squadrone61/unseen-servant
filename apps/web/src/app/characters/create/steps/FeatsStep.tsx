@@ -624,16 +624,14 @@ function AsiSlot({
 }
 
 // ---------------------------------------------------------------------------
-// Origin feat display (from background)
+// Origin feat display (from background) — read-only, choices configured in Background step
 // ---------------------------------------------------------------------------
 
 interface OriginFeatDisplayProps {
   featName: string;
-  featChoices: Record<string, string[]>;
-  onFeatChoice: (choiceId: string, values: string[]) => void;
 }
 
-function OriginFeatDisplay({ featName, featChoices, onFeatChoice }: OriginFeatDisplayProps) {
+function OriginFeatDisplay({ featName }: OriginFeatDisplayProps) {
   const feat = useMemo(() => getFeat(featName), [featName]);
 
   const [popover, setPopover] = useState<{
@@ -687,18 +685,12 @@ function OriginFeatDisplay({ featName, featChoices, onFeatChoice }: OriginFeatDi
         )}
       </button>
 
-      {/* Origin feat choices */}
+      {/* Note for feats that have choices */}
       {(feat.choices?.length ?? 0) > 0 && (
-        <div className="flex flex-col gap-3">
-          {(feat.choices ?? []).map((choice) => (
-            <ChoicePicker
-              key={choice.id}
-              choice={choice}
-              selected={featChoices[choice.id] ?? []}
-              onSelect={(values) => onFeatChoice(choice.id, values)}
-            />
-          ))}
-        </div>
+        <p className="text-xs text-gray-500 italic">
+          Choices for this feat are configured in the{" "}
+          <span className="text-violet-400">Background</span> step.
+        </p>
       )}
 
       {/* Details popover */}
@@ -776,11 +768,6 @@ export function FeatsStep() {
     dispatch({ type: "SET_FEAT_CHOICE", featName, choiceId, values });
   }
 
-  function handleOriginFeatChoice(choiceId: string, values: string[]) {
-    if (!originFeatName) return;
-    dispatch({ type: "SET_FEAT_CHOICE", featName: originFeatName, choiceId, values });
-  }
-
   const hasAsiSlots = unlockedAsiLevels.length > 0;
 
   return (
@@ -815,11 +802,7 @@ export function FeatsStep() {
             >
               Background Origin Feat
             </h2>
-            <OriginFeatDisplay
-              featName={originFeatName}
-              featChoices={state.featChoices[originFeatName] ?? {}}
-              onFeatChoice={handleOriginFeatChoice}
-            />
+            <OriginFeatDisplay featName={originFeatName} />
           </div>
 
           {/* Divider */}

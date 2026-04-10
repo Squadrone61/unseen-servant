@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { backgroundsArray } from "@unseen-servant/shared/data";
+import { backgroundsArray, getFeat } from "@unseen-servant/shared/data";
 import type { BackgroundDb } from "@unseen-servant/shared/data";
 import type { Ability } from "@unseen-servant/shared/types";
 import { DetailPopover } from "@/components/character/DetailPopover";
@@ -461,6 +461,16 @@ export function BackgroundStep() {
     dispatch({ type: "SET_BACKGROUND_CHOICE", choiceId, values });
   }
 
+  function handleOriginFeatChoice(choiceId: string, values: string[]) {
+    if (!selectedBg?.feat) return;
+    dispatch({ type: "SET_FEAT_CHOICE", featName: selectedBg.feat, choiceId, values });
+  }
+
+  const originFeat = useMemo(() => {
+    if (!selectedBg?.feat) return null;
+    return getFeat(selectedBg.feat) ?? null;
+  }, [selectedBg]);
+
   return (
     <section aria-labelledby="background-step-heading" className="flex flex-col gap-5">
       {/* Header */}
@@ -585,6 +595,33 @@ export function BackgroundStep() {
                   choice={choice}
                   selected={state.backgroundChoices[choice.id] ?? []}
                   onSelect={(values) => handleBackgroundChoice(choice.id, values)}
+                  disabled={false}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* Origin feat choices — configured here so they don't appear again in the Feats step */}
+          {originFeat && (originFeat.choices?.length ?? 0) > 0 && (
+            <div className="flex flex-col gap-3">
+              <div className="h-px bg-gradient-to-r from-transparent via-violet-500/20 to-transparent" />
+              <h3
+                className="text-sm font-semibold text-violet-400/90 uppercase tracking-wider"
+                style={{ fontFamily: "var(--font-cinzel)" }}
+              >
+                {originFeat.name} Choices
+              </h3>
+              <p className="text-xs text-gray-500">
+                Your background grants the{" "}
+                <span className="text-violet-300">{originFeat.name}</span> origin feat. Configure
+                its choices here.
+              </p>
+              {(originFeat.choices ?? []).map((choice) => (
+                <ChoicePicker
+                  key={choice.id}
+                  choice={choice}
+                  selected={state.featChoices[originFeat.name]?.[choice.id] ?? []}
+                  onSelect={(values) => handleOriginFeatChoice(choice.id, values)}
                   disabled={false}
                 />
               ))}
