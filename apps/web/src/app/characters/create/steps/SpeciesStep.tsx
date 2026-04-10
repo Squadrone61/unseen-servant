@@ -24,8 +24,24 @@ function SpeciesPopover({
   onClose: () => void;
   position: { x: number; y: number };
 }) {
+  const selectButton = (
+    <button
+      onClick={() => {
+        onToggleSelect();
+        onClose();
+      }}
+      className={`w-full px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+        isSelected
+          ? "bg-gray-700/60 hover:bg-gray-600/60 border border-gray-600/40 text-gray-300"
+          : "bg-amber-600/80 hover:bg-amber-500/80 text-amber-50 shadow-[0_0_12px_rgba(245,158,11,0.15)]"
+      }`}
+    >
+      {isSelected ? `Deselect ${species.name}` : `Select ${species.name}`}
+    </button>
+  );
+
   return (
-    <DetailPopover title={species.name} onClose={onClose} position={position}>
+    <DetailPopover title={species.name} onClose={onClose} position={position} footer={selectButton}>
       <div className="space-y-3">
         {/* Quick stats */}
         <div className="flex items-center gap-2 flex-wrap">
@@ -45,25 +61,10 @@ function SpeciesPopover({
         {/* Effect badges */}
         {species.effects && <EffectSummary effects={species.effects} />}
 
-        {/* Description */}
+        {/* Description — never truncated */}
         <div className="text-sm text-gray-300 leading-relaxed">
           <RichText text={species.description} />
         </div>
-
-        {/* Select / Deselect button */}
-        <button
-          onClick={() => {
-            onToggleSelect();
-            onClose();
-          }}
-          className={`w-full mt-1 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-            isSelected
-              ? "bg-gray-700/60 hover:bg-gray-600/60 border border-gray-600/40 text-gray-300"
-              : "bg-amber-600/80 hover:bg-amber-500/80 text-amber-50 shadow-[0_0_12px_rgba(245,158,11,0.15)]"
-          }`}
-        >
-          {isSelected ? `Deselect ${species.name}` : `Select ${species.name}`}
-        </button>
       </div>
     </DetailPopover>
   );

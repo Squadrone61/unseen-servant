@@ -8,9 +8,11 @@ interface DetailPopoverProps {
   onClose: () => void;
   children: React.ReactNode;
   position: { x: number; y: number };
+  /** Optional sticky footer rendered below scrollable content */
+  footer?: React.ReactNode;
 }
 
-export function DetailPopover({ title, onClose, children, position }: DetailPopoverProps) {
+export function DetailPopover({ title, onClose, children, position, footer }: DetailPopoverProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [coords, setCoords] = useState<{ left: number; top: number } | null>(null);
 
@@ -86,7 +88,7 @@ export function DetailPopover({ title, onClose, children, position }: DetailPopo
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-700/40 shrink-0">
         <h3
-          className="text-base font-semibold text-amber-200/90 truncate pr-2"
+          className="text-base font-semibold text-amber-200/90 pr-2"
           style={{ fontFamily: "var(--font-cinzel)" }}
         >
           {title}
@@ -105,6 +107,9 @@ export function DetailPopover({ title, onClose, children, position }: DetailPopo
 
       {/* Scrollable content */}
       <div className="overflow-y-auto p-4">{children}</div>
+
+      {/* Optional sticky footer */}
+      {footer && <div className="shrink-0 border-t border-gray-700/40 px-4 py-3">{footer}</div>}
     </div>
   );
 }
