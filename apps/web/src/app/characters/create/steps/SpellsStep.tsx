@@ -68,17 +68,24 @@ interface SpellCardProps {
 
 function SpellCard({ spell, selected, onToggle, disabled, onDetail }: SpellCardProps) {
   return (
-    <button
-      type="button"
-      onClick={disabled ? undefined : onToggle}
-      disabled={disabled}
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={disabled && !selected ? undefined : onToggle}
+      onKeyDown={(e) => {
+        if ((e.key === "Enter" || e.key === " ") && (!disabled || selected)) {
+          e.preventDefault();
+          onToggle();
+        }
+      }}
       aria-label={selected ? `Deselect ${spell.name}` : `Select ${spell.name}`}
+      aria-disabled={disabled && !selected}
       className={[
         "w-full flex items-center gap-2.5 bg-gray-800/30 border rounded px-3 py-2 transition-colors duration-100 text-left",
         selected
-          ? "border-amber-500/50 bg-amber-500/5"
+          ? "border-amber-500/50 bg-amber-500/5 cursor-pointer"
           : disabled
-            ? "border-gray-700/20 opacity-50 cursor-not-allowed"
+            ? "border-gray-700/20 opacity-50"
             : "border-gray-700/20 hover:border-gray-600/40 cursor-pointer",
       ].join(" ")}
     >
@@ -149,7 +156,7 @@ function SpellCard({ spell, selected, onToggle, disabled, onDetail }: SpellCardP
           </span>
         )}
       </div>
-    </button>
+    </div>
   );
 }
 
