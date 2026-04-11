@@ -24,6 +24,7 @@ import type {
   CreatureSize,
   AoEOverlay,
   DieRoll,
+  EffectBundle,
 } from "@unseen-servant/shared/types";
 import {
   rollInitiative,
@@ -36,6 +37,8 @@ import {
 } from "@unseen-servant/shared/utils";
 import { rollNotation } from "./dice-engine.js";
 import { getClass } from "@unseen-servant/shared/data";
+import { createConditionBundle } from "@unseen-servant/shared/builders";
+import { hasConditionImmunity } from "@unseen-servant/shared/utils";
 import { log } from "../logger.js";
 import type { MessageQueue } from "../message-queue.js";
 import type { CampaignManager } from "./campaign-manager.js";
@@ -1099,6 +1102,9 @@ export class GameStateManager {
           }
           return true;
         });
+        if (active.activeEffects) {
+          active.activeEffects = this.syncConditionBundles(active.conditions, active.activeEffects);
+        }
         if (warnings.length > 0) {
           this.conversationHistory.push({
             role: "user",
@@ -1124,6 +1130,12 @@ export class GameStateManager {
               }
               return true;
             });
+            if (char.dynamic.activeEffects) {
+              char.dynamic.activeEffects = this.syncConditionBundles(
+                char.dynamic.conditions,
+                char.dynamic.activeEffects,
+              );
+            }
             if (warnings.length > 0) {
               this.conversationHistory.push({
                 role: "user",
@@ -1157,6 +1169,12 @@ export class GameStateManager {
           }
           return true;
         });
+        if (prevCombatant.activeEffects) {
+          prevCombatant.activeEffects = this.syncConditionBundles(
+            prevCombatant.conditions,
+            prevCombatant.activeEffects,
+          );
+        }
         if (warnings.length > 0) {
           this.conversationHistory.push({
             role: "user",
@@ -1183,6 +1201,12 @@ export class GameStateManager {
               }
               return true;
             });
+            if (char.dynamic.activeEffects) {
+              char.dynamic.activeEffects = this.syncConditionBundles(
+                char.dynamic.conditions,
+                char.dynamic.activeEffects,
+              );
+            }
             if (warnings.length > 0) {
               this.conversationHistory.push({
                 role: "user",
@@ -1709,8 +1733,25 @@ export class GameStateManager {
     ]);
   }
 
+  /**
+   * Sync activeEffects with current conditions — removes any condition bundles
+   * whose condition is no longer in the conditions array. Call after any
+   * bulk condition filtering (advanceTurn expiry, longRest clearing, etc.).
+   */
+  private syncConditionBundles(
+    conditions: Array<{ name: string }>,
+    activeEffects: EffectBundle[],
+  ): EffectBundle[] {
+    const activeConditionIds = new Set(conditions.map((c) => `condition:${c.name.toLowerCase()}`));
+    return activeEffects.filter(
+      (b) => !b.id.startsWith("condition:") || activeConditionIds.has(b.id),
+    );
+  }
+
   /** Add a condition */
   addCondition(targetName: string, condition: string, duration?: number): ToolResponse {
+    const conditionBundle = createConditionBundle(condition);
+
     // NPC combatants
     const combat = this.gameState.encounter?.combat;
     if (combat) {
@@ -1718,12 +1759,25 @@ export class GameStateManager {
         (c) => c.name.toLowerCase() === targetName.toLowerCase() && c.type !== "player",
       );
       if (combatant) {
+        // Check condition immunity from active effect bundles
+        if (combatant.activeEffects && hasConditionImmunity(combatant.activeEffects, condition)) {
+          return toResponse(`${combatant.name} is immune to ${condition}`, {
+            target: combatant.name,
+            condition,
+            immune: true,
+          });
+        }
         this.createEvent("condition_added", `${combatant.name} is now ${condition}`, [
           { type: "condition_add", target: targetName, condition },
         ]);
         if (!combatant.conditions) combatant.conditions = [];
         if (!combatant.conditions.some((c) => c.name === condition)) {
           combatant.conditions.push({ name: condition, duration, startRound: combat.round });
+          // Push condition effect bundle
+          if (conditionBundle) {
+            if (!combatant.activeEffects) combatant.activeEffects = [];
+            combatant.activeEffects.push(conditionBundle);
+          }
         }
         this.broadcast({
           type: "server:combat_update",
@@ -1743,6 +1797,15 @@ export class GameStateManager {
 
     for (const [pName, char] of Object.entries(this.characters)) {
       if (char.static.name.toLowerCase() === targetName.toLowerCase()) {
+        // Check condition immunity from active effect bundles
+        const activeEffects = char.dynamic.activeEffects ?? [];
+        if (hasConditionImmunity(activeEffects, condition)) {
+          return toResponse(`${char.static.name} is immune to ${condition}`, {
+            target: char.static.name,
+            condition,
+            immune: true,
+          });
+        }
         this.createEvent("condition_added", `${char.static.name} is now ${condition}`, [
           { type: "condition_add", target: targetName, condition },
         ]);
@@ -1752,6 +1815,11 @@ export class GameStateManager {
             duration,
             startRound: this.gameState.encounter?.combat?.round,
           });
+          // Push condition effect bundle
+          if (conditionBundle) {
+            if (!char.dynamic.activeEffects) char.dynamic.activeEffects = [];
+            char.dynamic.activeEffects.push(conditionBundle);
+          }
         }
         this.broadcast({
           type: "server:character_updated",
@@ -1775,6 +1843,7 @@ export class GameStateManager {
 
   /** Remove a condition */
   removeCondition(targetName: string, condition: string): ToolResponse {
+    const bundleId = `condition:${condition.toLowerCase()}`;
     const combat = this.gameState.encounter?.combat;
     if (combat) {
       const combatant = Object.values(combat.combatants).find(
@@ -1785,6 +1854,10 @@ export class GameStateManager {
           { type: "condition_remove", target: targetName, condition },
         ]);
         combatant.conditions = combatant.conditions.filter((c) => c.name !== condition);
+        // Remove matching condition effect bundle
+        if (combatant.activeEffects) {
+          combatant.activeEffects = combatant.activeEffects.filter((b) => b.id !== bundleId);
+        }
         this.broadcast({
           type: "server:combat_update",
           combat,
@@ -1806,6 +1879,10 @@ export class GameStateManager {
           { type: "condition_remove", target: targetName, condition },
         ]);
         char.dynamic.conditions = char.dynamic.conditions.filter((c) => c.name !== condition);
+        // Remove matching condition effect bundle
+        if (char.dynamic.activeEffects) {
+          char.dynamic.activeEffects = char.dynamic.activeEffects.filter((b) => b.id !== bundleId);
+        }
         this.broadcast({
           type: "server:character_updated",
           playerName: pName,
@@ -3292,6 +3369,13 @@ export class GameStateManager {
           char.dynamic.conditions = char.dynamic.conditions.filter(
             (c) => !clearedNames.has(c.name),
           );
+          // Sync effect bundles with remaining conditions
+          if (char.dynamic.activeEffects) {
+            char.dynamic.activeEffects = this.syncConditionBundles(
+              char.dynamic.conditions,
+              char.dynamic.activeEffects,
+            );
+          }
           restored.push(`Cleared: ${cleared.map((c) => c.name).join(", ")}`);
         }
 

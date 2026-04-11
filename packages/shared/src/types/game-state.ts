@@ -2,6 +2,7 @@
 // Phase 3: Structured game mechanics — dice, checks, combat, events.
 
 import type { CharacterDynamicData } from "./character";
+import type { EffectBundle } from "./effects";
 
 // ─── Dice ───
 
@@ -121,6 +122,8 @@ export interface Combatant {
   armorClass?: number;
   conditions?: ConditionEntry[];
   concentratingOn?: { spellName: string; since?: number };
+  /** Runtime effect bundles from conditions, spells, etc. */
+  activeEffects?: EffectBundle[];
   /**
    * Optional per-ability saving throw bonuses for NPC/enemy combatants.
    * Keys are lowercase ability names (e.g. "dexterity", "wisdom").

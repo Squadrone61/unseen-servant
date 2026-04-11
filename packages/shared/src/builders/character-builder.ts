@@ -23,7 +23,13 @@ import type {
   AdvantageEntry,
 } from "../types/character";
 import type { CharacterIdentifiers } from "./types";
-import type { EffectBundle, EffectSource, ResolveContext } from "../types/effects";
+import type {
+  EffectBundle,
+  EffectSource,
+  EntityEffects,
+  Property,
+  ResolveContext,
+} from "../types/effects";
 import {
   resolveStat,
   collectProperties,
@@ -306,6 +312,7 @@ export function buildCharacter(ids: CharacterIdentifiers): {
     inventory: ids.equipment,
     currency: ids.currency ?? { cp: 0, sp: 0, gp: 0, pp: 0 },
     heroicInspiration: false,
+    activeEffects: [],
   };
 
   return { character: { static: staticData, dynamic: dynamicData }, warnings };
@@ -818,11 +825,50 @@ function computeAdvantages(bundles: EffectBundle[], ids: CharacterIdentifiers): 
 export function createConditionBundle(conditionName: string): EffectBundle | null {
   const condition = getCondition(conditionName);
   if (!condition?.effects) return null;
+
+  // Resolve grant properties: inline granted condition effects (e.g., Paralyzed → Incapacitated)
+  const mergedEffects = resolveConditionGrants(condition.effects);
+
   return {
     id: `condition:${conditionName.toLowerCase()}`,
     source: { type: "condition", name: conditionName },
     lifetime: { type: "manual" },
-    effects: condition.effects,
+    effects: mergedEffects,
+  };
+}
+
+/**
+ * Recursively resolve "grant" properties that reference other conditions.
+ * Inlines the granted condition's effects (modifiers + properties) into the
+ * parent, so a single bundle carries all transitive mechanical effects.
+ * Capped at depth 3 to prevent cycles.
+ */
+function resolveConditionGrants(effects: EntityEffects, depth: number = 0): EntityEffects {
+  if (depth > 3) return effects;
+
+  const grants = (effects.properties ?? []).filter(
+    (p): p is Extract<Property, { type: "grant" }> =>
+      p.type === "grant" && p.grantType === "condition",
+  );
+  if (grants.length === 0) return effects;
+
+  const mergedModifiers = [...(effects.modifiers ?? [])];
+  // Keep non-grant properties, drop the grant references (they're being inlined)
+  const mergedProperties = (effects.properties ?? []).filter(
+    (p) => p.type !== "grant" || p.grantType !== "condition",
+  );
+
+  for (const grant of grants) {
+    const grantedCondition = getCondition(grant.grant);
+    if (!grantedCondition?.effects) continue;
+    const resolved = resolveConditionGrants(grantedCondition.effects, depth + 1);
+    mergedModifiers.push(...(resolved.modifiers ?? []));
+    mergedProperties.push(...(resolved.properties ?? []));
+  }
+
+  return {
+    modifiers: mergedModifiers.length > 0 ? mergedModifiers : undefined,
+    properties: mergedProperties.length > 0 ? mergedProperties : undefined,
   };
 }
 

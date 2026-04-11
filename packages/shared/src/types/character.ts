@@ -2,6 +2,7 @@
 // Structured to separate static (imported) data from dynamic (gameplay) data.
 
 import type { ConditionEntry } from "./game-state";
+import type { EffectBundle } from "./effects";
 
 export interface AbilityScores {
   strength: number;
@@ -203,6 +204,8 @@ export interface CharacterDynamicData {
   currency: Currency;
   heroicInspiration?: boolean;
   concentratingOn?: { spellName: string; since?: number };
+  /** Runtime effect bundles from conditions, spells, activatable features, etc. */
+  activeEffects?: EffectBundle[];
 }
 
 /**
