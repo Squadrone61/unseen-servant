@@ -877,10 +877,15 @@ function resolveConditionGrants(effects: EntityEffects, depth: number = 0): Enti
  * SpellDb does not yet carry structured effects, so this is a forward-looking
  * hook — returns null until spell effects are added to the database.
  */
-export function createSpellBundle(_spellName: string): EffectBundle | null {
-  // Spells don't have structured effects in SpellDb currently.
-  // This is the hook for future use once spell effects are populated.
-  return null;
+export function createSpellBundle(spellName: string): EffectBundle | null {
+  const spell = getSpell(spellName);
+  if (!spell?.effects) return null;
+  return {
+    id: `spell:${spellName.toLowerCase()}`,
+    source: { type: "spell", name: spellName },
+    lifetime: spell.concentration ? { type: "concentration" } : { type: "manual" },
+    effects: spell.effects,
+  };
 }
 
 /**

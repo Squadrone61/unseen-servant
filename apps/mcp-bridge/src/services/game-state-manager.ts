@@ -37,7 +37,11 @@ import {
 } from "@unseen-servant/shared/utils";
 import { rollNotation } from "./dice-engine.js";
 import { getClass } from "@unseen-servant/shared/data";
-import { createConditionBundle, createActivationBundle } from "@unseen-servant/shared/builders";
+import {
+  createConditionBundle,
+  createActivationBundle,
+  createSpellBundle,
+} from "@unseen-servant/shared/builders";
 import {
   hasConditionImmunity,
   applyDamageWithEffects,
@@ -3547,10 +3551,16 @@ export class GameStateManager {
           restored.push(`Cleared: ${cleared.map((c) => c.name).join(", ")}`);
         }
 
-        // Clear concentration
+        // Clear concentration and its spell bundle
         if (char.dynamic.concentratingOn) {
-          restored.push(`Concentration on ${char.dynamic.concentratingOn.spellName} ended`);
+          const concSpell = char.dynamic.concentratingOn.spellName;
+          restored.push(`Concentration on ${concSpell} ended`);
           char.dynamic.concentratingOn = undefined;
+          if (char.dynamic.activeEffects) {
+            char.dynamic.activeEffects = char.dynamic.activeEffects.filter(
+              (b) => b.id !== `spell:${concSpell.toLowerCase()}`,
+            );
+          }
         }
 
         // Decrement exhaustion by 1 on long rest (PHB 2024 p.367)
@@ -3716,7 +3726,19 @@ export class GameStateManager {
       );
       if (combatant) {
         const prev = combatant.concentratingOn?.spellName;
+        // Remove previous spell bundle if switching concentration
+        if (prev && combatant.activeEffects) {
+          combatant.activeEffects = combatant.activeEffects.filter(
+            (b) => b.id !== `spell:${prev.toLowerCase()}`,
+          );
+        }
         combatant.concentratingOn = { spellName, since: combat.round };
+        // Add new spell bundle
+        const spellBundle = createSpellBundle(spellName);
+        if (spellBundle) {
+          if (!combatant.activeEffects) combatant.activeEffects = [];
+          combatant.activeEffects.push(spellBundle);
+        }
         this.broadcast({
           type: "server:combat_update",
           combat,
@@ -3731,6 +3753,7 @@ export class GameStateManager {
           target: combatant.name,
           spell: spellName,
           previousSpell: prev ?? null,
+          effectsApplied: !!spellBundle,
         });
       }
     }
@@ -3739,7 +3762,19 @@ export class GameStateManager {
     for (const [pName, char] of Object.entries(this.characters)) {
       if (char.static.name.toLowerCase() === targetName.toLowerCase()) {
         const prev = char.dynamic.concentratingOn?.spellName;
+        // Remove previous spell bundle if switching concentration
+        if (prev && char.dynamic.activeEffects) {
+          char.dynamic.activeEffects = char.dynamic.activeEffects.filter(
+            (b) => b.id !== `spell:${prev.toLowerCase()}`,
+          );
+        }
         char.dynamic.concentratingOn = { spellName, since: combat?.round };
+        // Add new spell bundle
+        const spellBundle = createSpellBundle(spellName);
+        if (spellBundle) {
+          if (!char.dynamic.activeEffects) char.dynamic.activeEffects = [];
+          char.dynamic.activeEffects.push(spellBundle);
+        }
         this.broadcast({
           type: "server:character_updated",
           playerName: pName,
@@ -3753,6 +3788,7 @@ export class GameStateManager {
           target: char.static.name,
           spell: spellName,
           previousSpell: prev ?? null,
+          effectsApplied: !!spellBundle,
         });
       }
     }
@@ -3779,6 +3815,12 @@ export class GameStateManager {
         }
         const spell = combatant.concentratingOn.spellName;
         combatant.concentratingOn = undefined;
+        // Remove spell effect bundle
+        if (combatant.activeEffects) {
+          combatant.activeEffects = combatant.activeEffects.filter(
+            (b) => b.id !== `spell:${spell.toLowerCase()}`,
+          );
+        }
         this.broadcast({
           type: "server:combat_update",
           combat,
@@ -3803,6 +3845,12 @@ export class GameStateManager {
         }
         const spell = char.dynamic.concentratingOn.spellName;
         char.dynamic.concentratingOn = undefined;
+        // Remove spell effect bundle
+        if (char.dynamic.activeEffects) {
+          char.dynamic.activeEffects = char.dynamic.activeEffects.filter(
+            (b) => b.id !== `spell:${spell.toLowerCase()}`,
+          );
+        }
         this.broadcast({
           type: "server:character_updated",
           playerName: pName,

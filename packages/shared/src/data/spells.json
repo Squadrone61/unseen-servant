@@ -1051,7 +1051,19 @@
     "savingThrow": [
       "charisma"
     ],
-    "higherLevels": "**Using a Higher-Level Spell Slot.**\nYou can target one additional creature for each spell slot level above 1."
+    "higherLevels": "**Using a Higher-Level Spell Slot.**\nYou can target one additional creature for each spell slot level above 1.",
+    "effects": {
+      "modifiers": [
+        {
+          "target": "attack",
+          "value": "-1d4"
+        },
+        {
+          "target": "save",
+          "value": "-1d4"
+        }
+      ]
+    }
   },
   {
     "name": "Beast Bond",
@@ -1084,7 +1096,19 @@
       "Cleric",
       "Paladin"
     ],
-    "higherLevels": "**Using a Higher-Level Spell Slot.**\nYou can target one additional creature for each spell slot level above 1."
+    "higherLevels": "**Using a Higher-Level Spell Slot.**\nYou can target one additional creature for each spell slot level above 1.",
+    "effects": {
+      "modifiers": [
+        {
+          "target": "attack",
+          "value": "1d4"
+        },
+        {
+          "target": "save",
+          "value": "1d4"
+        }
+      ]
+    }
   },
   {
     "name": "Burning Hands",
@@ -1808,7 +1832,22 @@
     "damageType": [
       "necrotic"
     ],
-    "higherLevels": "**Using a Higher-Level Spell Slot.**\nYour {status:Concentration} can last longer with a spell slot of level 2 (up to 4 hours), 3-4 (up to 8 hours), or 5+ (24 hours)."
+    "higherLevels": "**Using a Higher-Level Spell Slot.**\nYour {status:Concentration} can last longer with a spell slot of level 2 (up to 4 hours), 3-4 (up to 8 hours), or 5+ (24 hours).",
+    "effects": {
+      "modifiers": [
+        {
+          "target": "damage",
+          "value": "1d6",
+          "condition": "necrotic, on attacks against hexed target"
+        }
+      ],
+      "properties": [
+        {
+          "type": "note",
+          "text": "The hexed target has disadvantage on ability checks with one ability of your choice."
+        }
+      ]
+    }
   },
   {
     "name": "Hunter's Mark",
@@ -1827,7 +1866,16 @@
     "damageType": [
       "force"
     ],
-    "higherLevels": "**Using a Higher-Level Spell Slot.**\nYour {status:Concentration} can last longer with a spell slot of level 3-4 (up to 8 hours) or 5+ (up to 24 hours)."
+    "higherLevels": "**Using a Higher-Level Spell Slot.**\nYour {status:Concentration} can last longer with a spell slot of level 3-4 (up to 8 hours) or 5+ (up to 24 hours).",
+    "effects": {
+      "modifiers": [
+        {
+          "target": "damage",
+          "value": "1d6",
+          "condition": "on weapon attacks against marked target"
+        }
+      ]
+    }
   },
   {
     "name": "Ice Knife",
@@ -1961,7 +2009,17 @@
     "classes": [
       "Sorcerer",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "modifiers": [
+        {
+          "target": "ac",
+          "value": "13 + dex",
+          "operation": "set",
+          "condition": "not wearing armor"
+        }
+      ]
+    }
   },
   {
     "name": "Magic Missile",
@@ -2000,7 +2058,15 @@
       "Paladin",
       "Warlock",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "properties": [
+        {
+          "type": "note",
+          "text": "Aberrations, celestials, elementals, fey, fiends, and undead have disadvantage on attack rolls against the target. Target cannot be charmed, frightened, or possessed by them."
+        }
+      ]
+    }
   },
   {
     "name": "Purify Food and Drink",
@@ -2094,7 +2160,22 @@
     "classes": [
       "Sorcerer",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "modifiers": [
+        {
+          "target": "ac",
+          "value": 5
+        }
+      ],
+      "properties": [
+        {
+          "type": "immunity",
+          "damageType": "force",
+          "condition": "Magic Missile only"
+        }
+      ]
+    }
   },
   {
     "name": "Shield of Faith",
@@ -2110,7 +2191,15 @@
     "classes": [
       "Cleric",
       "Paladin"
-    ]
+    ],
+    "effects": {
+      "modifiers": [
+        {
+          "target": "ac",
+          "value": 2
+        }
+      ]
+    }
   },
   {
     "name": "Silent Image",
@@ -2519,7 +2608,16 @@
     "classes": [
       "Druid",
       "Ranger"
-    ]
+    ],
+    "effects": {
+      "modifiers": [
+        {
+          "target": "ac",
+          "value": 16,
+          "operation": "set"
+        }
+      ]
+    }
   },
   {
     "name": "Beast Sense",
@@ -2573,7 +2671,15 @@
     "classes": [
       "Sorcerer",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "properties": [
+        {
+          "type": "note",
+          "text": "Attack rolls against you have disadvantage (attacker must not rely on Blindsight or Truesight)."
+        }
+      ]
+    }
   },
   {
     "name": "Calm Emotions",
@@ -3270,7 +3376,15 @@
       "Sorcerer",
       "Warlock",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "properties": [
+        {
+          "type": "note",
+          "text": "Three illusory duplicates. Attack rolls may target a duplicate instead (AC 10 + DEX mod). Duplicate destroyed on hit."
+        }
+      ]
+    }
   },
   {
     "name": "Misty Step",
@@ -4348,7 +4462,33 @@
     "classes": [
       "Sorcerer",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "modifiers": [
+        {
+          "target": "ac",
+          "value": 2
+        }
+      ],
+      "properties": [
+        {
+          "type": "note",
+          "text": "Speed is doubled."
+        },
+        {
+          "type": "extra_attack",
+          "count": 1
+        },
+        {
+          "type": "advantage",
+          "on": "save_dexterity"
+        },
+        {
+          "type": "note",
+          "text": "Haste grants one additional action per turn (Attack [one weapon attack only], Dash, Disengage, Hide, or Utilize). When the spell ends, the target cannot move or take actions until after its next turn."
+        }
+      ]
+    }
   },
   {
     "name": "Hunger of Hadar",
@@ -4811,7 +4951,15 @@
     "savingThrow": [
       "wisdom"
     ],
-    "higherLevels": "**Using a Higher-Level Spell Slot.**\nThe damage increases by 3d8 for each spell slot level above 3."
+    "higherLevels": "**Using a Higher-Level Spell Slot.**\nThe damage increases by 3d8 for each spell slot level above 3.",
+    "effects": {
+      "properties": [
+        {
+          "type": "note",
+          "text": "Hostile creatures that enter or start turn within 15ft take 3d8 radiant/necrotic damage (WIS save for half). Area is difficult terrain for hostile creatures."
+        }
+      ]
+    }
   },
   {
     "name": "Spirit Shroud",
@@ -5929,7 +6077,23 @@
       "Ranger",
       "Sorcerer",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "properties": [
+        {
+          "type": "resistance",
+          "damageType": "bludgeoning"
+        },
+        {
+          "type": "resistance",
+          "damageType": "piercing"
+        },
+        {
+          "type": "resistance",
+          "damageType": "slashing"
+        }
+      ]
+    }
   },
   {
     "name": "Storm Sphere",
