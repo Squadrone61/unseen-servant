@@ -882,3 +882,78 @@ export function createSpellBundle(_spellName: string): EffectBundle | null {
   // This is the hook for future use once spell effects are populated.
   return null;
 }
+
+/**
+ * Create an EffectBundle for an activated class/subclass feature (Rage, Wild Shape, etc.).
+ *
+ * Searches class features, then subclass features, for a feature matching `featureName`
+ * that has an `activation` field. Returns null if not found or no activation effects.
+ *
+ * The bundle uses `lifetime: { type: "manual" }` — the AI DM explicitly deactivates it.
+ *
+ * @param className     Class name (e.g. "Barbarian")
+ * @param featureName   Feature name (e.g. "Rage")
+ * @param classLevel    Class level for expression context (clvl token)
+ * @param subclassName  Optional subclass to search subclass features
+ */
+export function createActivationBundle(
+  className: string,
+  featureName: string,
+  classLevel: number,
+  subclassName?: string,
+): EffectBundle | null {
+  const cls = getClass(className);
+  if (!cls) return null;
+
+  // Search class features first
+  const classFeature = cls.features.find(
+    (f) => f.name.toLowerCase() === featureName.toLowerCase() && f.activation,
+  );
+  if (classFeature?.activation) {
+    return {
+      id: `activation:${className.toLowerCase()}:${featureName.toLowerCase()}`,
+      source: { type: "class", name: className, featureName, level: classLevel },
+      lifetime: { type: "manual" },
+      effects: classFeature.activation,
+    };
+  }
+
+  // Search subclass features if subclassName provided
+  if (subclassName) {
+    const subclass = cls.subclasses.find(
+      (sc) => sc.name.toLowerCase() === subclassName.toLowerCase(),
+    );
+    if (subclass) {
+      const subFeature = subclass.features.find(
+        (f) => f.name.toLowerCase() === featureName.toLowerCase() && f.activation,
+      );
+      if (subFeature?.activation) {
+        return {
+          id: `activation:${className.toLowerCase()}:${featureName.toLowerCase()}`,
+          source: { type: "subclass", name: subclassName, featureName, level: classLevel },
+          lifetime: { type: "manual" },
+          effects: subFeature.activation,
+        };
+      }
+    }
+  }
+
+  // Search ALL subclass features if no subclassName given (fuzzy lookup)
+  if (!subclassName) {
+    for (const sc of cls.subclasses) {
+      const subFeature = sc.features.find(
+        (f) => f.name.toLowerCase() === featureName.toLowerCase() && f.activation,
+      );
+      if (subFeature?.activation) {
+        return {
+          id: `activation:${className.toLowerCase()}:${featureName.toLowerCase()}`,
+          source: { type: "subclass", name: sc.name, featureName, level: classLevel },
+          lifetime: { type: "manual" },
+          effects: subFeature.activation,
+        };
+      }
+    }
+  }
+
+  return null;
+}

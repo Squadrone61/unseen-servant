@@ -37,7 +37,7 @@ import {
 } from "@unseen-servant/shared/utils";
 import { rollNotation } from "./dice-engine.js";
 import { getClass } from "@unseen-servant/shared/data";
-import { createConditionBundle } from "@unseen-servant/shared/builders";
+import { createConditionBundle, createActivationBundle } from "@unseen-servant/shared/builders";
 import {
   hasConditionImmunity,
   applyDamageWithEffects,
@@ -1944,6 +1944,129 @@ export class GameStateManager {
 
     return toResponse(`Target "${targetName}" not found`, { target: targetName }, true, [
       `Available targets: ${this.listTargetNames().join(", ")}`,
+    ]);
+  }
+
+  /** Activate a class/subclass feature's effects (Rage, Wild Shape, etc.) */
+  activateFeature(characterName: string, featureName: string): ToolResponse {
+    for (const [pName, char] of Object.entries(this.characters)) {
+      if (char.static.name.toLowerCase() !== characterName.toLowerCase()) continue;
+
+      // Check if already active
+      const bundleId = `activation:${char.static.classes[0]?.name.toLowerCase() ?? "unknown"}:${featureName.toLowerCase()}`;
+      const existing = (char.dynamic.activeEffects ?? []).find((b) => b.id === bundleId);
+      if (existing) {
+        return toResponse(`${featureName} is already active on ${char.static.name}`, {
+          target: char.static.name,
+          feature: featureName,
+          alreadyActive: true,
+        });
+      }
+
+      // Try to create a bundle from each class the character has
+      let bundle: EffectBundle | null = null;
+      for (const cls of char.static.classes) {
+        bundle = createActivationBundle(
+          cls.name,
+          featureName,
+          cls.level,
+          cls.subclass ?? undefined,
+        );
+        if (bundle) break;
+      }
+
+      if (!bundle) {
+        return toResponse(
+          `No activation effects found for "${featureName}" on ${char.static.name}`,
+          { target: char.static.name, feature: featureName },
+          true,
+          [`Feature may not have structured activation effects in the database.`],
+        );
+      }
+
+      if (!char.dynamic.activeEffects) char.dynamic.activeEffects = [];
+      char.dynamic.activeEffects.push(bundle);
+
+      this.createEvent("condition_added", `${char.static.name} activates ${featureName}`, []);
+      this.broadcast({
+        type: "server:character_updated",
+        playerName: pName,
+        character: char,
+      });
+      this.markCharacterDirty(pName);
+
+      // Summarize what the activation grants
+      const effects = bundle.effects;
+      const modCount = effects.modifiers?.length ?? 0;
+      const propCount = effects.properties?.length ?? 0;
+      const notes = (effects.properties ?? [])
+        .filter((p): p is Extract<typeof p, { type: "note" }> => p.type === "note")
+        .map((p) => p.text);
+
+      return toResponse(
+        `${char.static.name} activates ${featureName} (${modCount} modifiers, ${propCount} properties applied)${notes.length > 0 ? "\n" + notes.join("\n") : ""}`,
+        {
+          target: char.static.name,
+          feature: featureName,
+          activated: true,
+          bundleId: bundle.id,
+          modifiers: modCount,
+          properties: propCount,
+        },
+      );
+    }
+
+    return toResponse(`Character "${characterName}" not found`, { target: characterName }, true, [
+      `Available characters: ${this.listTargetNames().join(", ")}`,
+    ]);
+  }
+
+  /** Deactivate a class/subclass feature's effects */
+  deactivateFeature(characterName: string, featureName: string): ToolResponse {
+    for (const [pName, char] of Object.entries(this.characters)) {
+      if (char.static.name.toLowerCase() !== characterName.toLowerCase()) continue;
+
+      if (!char.dynamic.activeEffects) {
+        return toResponse(
+          `${char.static.name} has no active feature effects`,
+          {
+            target: char.static.name,
+            feature: featureName,
+          },
+          true,
+        );
+      }
+
+      const beforeCount = char.dynamic.activeEffects.length;
+      char.dynamic.activeEffects = char.dynamic.activeEffects.filter(
+        (b) => !(b.id.startsWith("activation:") && b.id.endsWith(`:${featureName.toLowerCase()}`)),
+      );
+      const removed = beforeCount - char.dynamic.activeEffects.length;
+
+      if (removed === 0) {
+        return toResponse(`${featureName} is not active on ${char.static.name}`, {
+          target: char.static.name,
+          feature: featureName,
+          wasActive: false,
+        });
+      }
+
+      this.createEvent("condition_removed", `${char.static.name} deactivates ${featureName}`, []);
+      this.broadcast({
+        type: "server:character_updated",
+        playerName: pName,
+        character: char,
+      });
+      this.markCharacterDirty(pName);
+      return toResponse(`${char.static.name} deactivates ${featureName}`, {
+        target: char.static.name,
+        feature: featureName,
+        deactivated: true,
+      });
+    }
+
+    return toResponse(`Character "${characterName}" not found`, { target: characterName }, true, [
+      `Available characters: ${this.listTargetNames().join(", ")}`,
     ]);
   }
 

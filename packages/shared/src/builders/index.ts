@@ -1,2 +1,7 @@
-export { buildCharacter, createConditionBundle, createSpellBundle } from "./character-builder";
+export {
+  buildCharacter,
+  createConditionBundle,
+  createSpellBundle,
+  createActivationBundle,
+} from "./character-builder";
 export type { CharacterIdentifiers } from "./types";

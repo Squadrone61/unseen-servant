@@ -370,6 +370,46 @@ export function registerGameTools(
     },
   );
 
+  // ─── Feature Activation ───
+
+  server.registerTool(
+    "activate_feature",
+    {
+      description:
+        "Activate a class or subclass feature's mechanical effects (e.g., Rage, Wild Shape, Bladesong). Creates an effect bundle with bonuses/resistances that apply until deactivated. Use alongside use_class_resource when the feature costs a resource.",
+      inputSchema: {
+        name: z.string().describe("Character name"),
+        feature: z.string().describe("Feature name (e.g., 'Rage', 'Wild Shape', 'Bladesong')"),
+      },
+    },
+    async ({ name, feature }) => {
+      return fromToolResponse(
+        wsClient.gameStateManager.activateFeature(name, feature),
+        "activate_feature",
+        { name, feature },
+      );
+    },
+  );
+
+  server.registerTool(
+    "deactivate_feature",
+    {
+      description:
+        "Deactivate a class or subclass feature's mechanical effects. Removes the effect bundle so bonuses/resistances no longer apply.",
+      inputSchema: {
+        name: z.string().describe("Character name"),
+        feature: z.string().describe("Feature name to deactivate"),
+      },
+    },
+    async ({ name, feature }) => {
+      return fromToolResponse(
+        wsClient.gameStateManager.deactivateFeature(name, feature),
+        "deactivate_feature",
+        { name, feature },
+      );
+    },
+  );
+
   // ─── Combat Management ───
 
   server.registerTool(
