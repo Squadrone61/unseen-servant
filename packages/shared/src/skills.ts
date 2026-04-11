@@ -281,6 +281,12 @@ user-invocable: false
 - Use \`get_combat_summary\` instead of \`get_game_state\` during combat — it's optimized for tactical decisions.
 - SRD lookups default to summary mode (~30 tokens). Use \`detail: "full"\` only for rules disputes or complex interactions.
 
+### Effect System
+- **Damage types matter.** Always include \`damage_type\` when calling \`apply_damage\` — resistance, immunity, and vulnerability are applied automatically. Don't manually halve or double damage.
+- **Feature activation.** When a class feature with mechanical effects is used (Rage, Bladesong, Wild Shape), call \`activate_feature\` to apply its bonuses. Pair with \`use_class_resource\` if it costs a resource. Call \`deactivate_feature\` when it ends.
+- **Concentration vs features.** \`set_concentration\` is for concentration spells (broken by damage/new spell). \`activate_feature\` is for class features (manual deactivation).
+- **Advantage/disadvantage hints.** When \`roll_dice\` returns effect hints (e.g., "Advantage on STR checks from Rage"), use them to decide whether to roll with advantage/disadvantage.
+
 ### Position & Range Validation (STRICT)
 - Before allowing any melee attack, CHECK positions using \`get_combat_summary\` — it shows distances between combatants.
 - Melee range = 5ft = 1 adjacent tile (including diagonals). Reach weapons = 10ft = 2 tiles.

@@ -49,6 +49,7 @@ packages/shared/   → Shared types (Zod 4 schemas), constants, utils, dice, che
 - **Dual-format tool results:** MCP tools return `"Human summary\n---\n{json}"` — human-readable text line + structured JSON after separator. GSM methods return `ToolResponse { text, data, error?, hints? }`
 - **Campaign configuration** flow: host configures campaign (name, pacing, encounter length) before starting story via CampaignConfigModal
 - **A1 coordinate notation** throughout: all tool inputs/outputs use A1 grid coordinates (formatGridPosition/parseGridPosition in shared/utils/grid.ts)
+- **Effect system:** structured EffectBundles (conditions, spells, items, features) with automatic resolution for stat modifiers, resistance/immunity/vulnerability, and advantage/disadvantage. Types in `shared/types/effects.ts`, resolver in `shared/utils/effect-resolver.ts`
 - **Unified MCP tool arg naming:** `name` for character/combatant identity (singular), `names` for arrays, `item` for item identity, `player` only in roll_dice (interactive roll semantics)
 - **WebSocket Hibernation API** for Durable Objects (persistent connections survive hibernation)
 
@@ -166,14 +167,21 @@ pnpm deploy:web     # Deploy web only
 
 ### HP & Conditions
 
-| Tool               | Description                                                        |
-| ------------------ | ------------------------------------------------------------------ |
-| `apply_damage`     | Deal damage to a character/combatant (handles temp HP absorption). |
-| `heal`             | Restore HP (capped at max).                                        |
-| `set_hp`           | Set exact HP value.                                                |
-| `set_temp_hp`      | Set temporary HP (non-stacking: takes higher of current and new).  |
-| `add_condition`    | Add condition (poisoned, stunned, etc.) with optional duration.    |
-| `remove_condition` | Remove a condition.                                                |
+| Tool               | Description                                                                                                     |
+| ------------------ | --------------------------------------------------------------------------------------------------------------- |
+| `apply_damage`     | Deal damage (handles temp HP). With `damage_type`, auto-applies resistance/immunity/vulnerability from effects. |
+| `heal`             | Restore HP (capped at max).                                                                                     |
+| `set_hp`           | Set exact HP value.                                                                                             |
+| `set_temp_hp`      | Set temporary HP (non-stacking: takes higher of current and new).                                               |
+| `add_condition`    | Add condition — creates effect bundle with mechanical effects. Checks condition immunity.                       |
+| `remove_condition` | Remove a condition and its effect bundle.                                                                       |
+
+### Feature Activation
+
+| Tool                 | Description                                                                                         |
+| -------------------- | --------------------------------------------------------------------------------------------------- |
+| `activate_feature`   | Activate a class/subclass feature's effects (Rage, Bladesong, etc.). Use with `use_class_resource`. |
+| `deactivate_feature` | Deactivate a feature, removing its effect bundle.                                                   |
 
 ### Combat Management
 
@@ -181,7 +189,9 @@ pnpm deploy:web     # Deploy web only
 | ------------------ | --------------------------------------------------------------------------------- |
 | `start_combat`     | Initialize combat, auto-roll initiative, create turn order.                       |
 | `end_combat`       | End combat, return to exploration phase.                                          |
-| `advance_turn`     | Next combatant's turn, increment round counter.                                   |
+| `advance_turn`     | Next combatant's turn, increment round counter. Expires duration-based effects.   |
+| `set_initiative`   | Override a combatant's initiative value and re-sort turn order.                   |
+| `set_active_turn`  | Jump to a specific combatant's turn (DM override, skips condition expiry).        |
 | `add_combatant`    | Add mid-fight reinforcements.                                                     |
 | `remove_combatant` | Remove dead/fled/dismissed combatant.                                             |
 | `move_combatant`   | Move token on battle map (accepts A1 notation).                                   |
@@ -189,17 +199,23 @@ pnpm deploy:web     # Deploy web only
 
 ### Rests
 
-| Tool         | Description                                                                                       |
-| ------------ | ------------------------------------------------------------------------------------------------- |
-| `short_rest` | Short rest for specified characters — restores short-rest class resources and Warlock pact slots. |
-| `long_rest`  | Long rest for specified characters — full HP, all spell slots, all resources, clears conditions.  |
+| Tool         | Description                                                                                            |
+| ------------ | ------------------------------------------------------------------------------------------------------ |
+| `short_rest` | Short rest — restores short-rest class resources, Warlock pact slots, clears temporary effect bundles. |
+| `long_rest`  | Long rest — full HP, all spell slots, all resources, clears conditions and temporary effect bundles.   |
 
 ### Concentration
 
-| Tool                  | Description                                                          |
-| --------------------- | -------------------------------------------------------------------- |
-| `set_concentration`   | Set a character as concentrating on a spell (auto-breaks previous).  |
-| `break_concentration` | Break a character's concentration, ending their concentration spell. |
+| Tool                  | Description                                                                                      |
+| --------------------- | ------------------------------------------------------------------------------------------------ |
+| `set_concentration`   | Set a character as concentrating on a spell (auto-breaks previous). Creates spell effect bundle. |
+| `break_concentration` | Break a character's concentration, ending their concentration spell and removing effect bundle.  |
+
+### Exhaustion
+
+| Tool             | Description                                                                               |
+| ---------------- | ----------------------------------------------------------------------------------------- |
+| `set_exhaustion` | Set exhaustion level (0-10). PHB 2024: -2 to d20 rolls per level, -5ft speed. 10 = death. |
 
 ### Encounter Building
 
@@ -245,12 +261,12 @@ pnpm deploy:web     # Deploy web only
 
 ### Inventory & Currency
 
-| Tool              | Description                                                                     |
-| ----------------- | ------------------------------------------------------------------------------- |
-| `add_item`        | Add an item to a character's inventory (stacks if exists).                      |
-| `update_item`     | Modify an existing item — equip/unequip, attune, change quantity, update stats. |
-| `remove_item`     | Remove an item from inventory (decrement or remove entirely).                   |
-| `update_currency` | Add or subtract currency (positive adds, negative subtracts).                   |
+| Tool              | Description                                                                  |
+| ----------------- | ---------------------------------------------------------------------------- |
+| `add_item`        | Add an item to a character's inventory (stacks if exists).                   |
+| `update_item`     | Modify an existing item — equip/attune toggles create/remove effect bundles. |
+| `remove_item`     | Remove an item from inventory (decrement or remove entirely).                |
+| `update_currency` | Add or subtract currency (positive adds, negative subtracts).                |
 
 ### Class Resources
 
@@ -263,22 +279,22 @@ pnpm deploy:web     # Deploy web only
 
 All lookup tools accept `detail`: `"summary"` (default, ~30 tokens) or `"full"` (complete rules text).
 
-| Tool                      | Description                                                                                                                                                                                                                                                                          |
-| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `lookup_spell`            | Look up spell details from D&D 2024 database (490 spells).                                                                                                                                                                                                                           |
-| `lookup_monster`          | Look up monster stat block from D&D 2024 database (580 monsters).                                                                                                                                                                                                                    |
-| `lookup_condition`        | Look up condition effects from D&D 2024 database (15 conditions).                                                                                                                                                                                                                    |
-| `lookup_magic_item`       | Look up a magic item from D&D 2024 database (563 items).                                                                                                                                                                                                                             |
-| `lookup_feat`             | Look up a feat from D&D 2024 database (103 feats).                                                                                                                                                                                                                                   |
-| `lookup_class`            | Look up class details from D&D 2024 database (12 classes with subclasses).                                                                                                                                                                                                           |
-| `lookup_species`          | Look up species from D&D 2024 database (28 species).                                                                                                                                                                                                                                 |
-| `lookup_background`       | Look up background from D&D 2024 database (27 backgrounds).                                                                                                                                                                                                                          |
-| `lookup_optional_feature` | Look up optional class feature (Eldritch Invocations, Maneuvers, Metamagic, etc.).                                                                                                                                                                                                   |
-| `lookup_action`           | Look up a standard game action (Attack, Dash, Dodge, Disengage, Help, Hide, etc.).                                                                                                                                                                                                   |
-| `lookup_language`         | Look up a D&D language from the 2024 database.                                                                                                                                                                                                                                       |
-| `lookup_disease`          | Look up a disease from the D&D 2024 database.                                                                                                                                                                                                                                        |
-| `search_rules`            | Search across all D&D data categories by keyword.                                                                                                                                                                                                                                    |
-| `roll_dice`               | Roll dice — notation always required. Optional checkType ("perception", "dexterity_save", "melee_attack", etc.) auto-computes modifier from character sheet (requires player). Advantage = "2d20kh1", disadvantage = "2d20kl1". With player = interactive, without = DM server-side. |
+| Tool                      | Description                                                                                                                                                                                                                                                                                |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `lookup_spell`            | Look up spell details from D&D 2024 database (490 spells).                                                                                                                                                                                                                                 |
+| `lookup_monster`          | Look up monster stat block from D&D 2024 database (580 monsters).                                                                                                                                                                                                                          |
+| `lookup_condition`        | Look up condition effects from D&D 2024 database (15 conditions).                                                                                                                                                                                                                          |
+| `lookup_magic_item`       | Look up a magic item from D&D 2024 database (563 items).                                                                                                                                                                                                                                   |
+| `lookup_feat`             | Look up a feat from D&D 2024 database (103 feats).                                                                                                                                                                                                                                         |
+| `lookup_class`            | Look up class details from D&D 2024 database (12 classes with subclasses).                                                                                                                                                                                                                 |
+| `lookup_species`          | Look up species from D&D 2024 database (28 species).                                                                                                                                                                                                                                       |
+| `lookup_background`       | Look up background from D&D 2024 database (27 backgrounds).                                                                                                                                                                                                                                |
+| `lookup_optional_feature` | Look up optional class feature (Eldritch Invocations, Maneuvers, Metamagic, etc.).                                                                                                                                                                                                         |
+| `lookup_action`           | Look up a standard game action (Attack, Dash, Dodge, Disengage, Help, Hide, etc.).                                                                                                                                                                                                         |
+| `lookup_language`         | Look up a D&D language from the 2024 database.                                                                                                                                                                                                                                             |
+| `lookup_disease`          | Look up a disease from the D&D 2024 database.                                                                                                                                                                                                                                              |
+| `search_rules`            | Search across all D&D data categories by keyword.                                                                                                                                                                                                                                          |
+| `roll_dice`               | Roll dice — notation always required. Optional checkType auto-computes modifier from character sheet (requires player) and returns advantage/disadvantage hints from active effects. Advantage = "2d20kh1", disadvantage = "2d20kl1". With player = interactive, without = DM server-side. |
 
 ### Campaign Persistence
 

@@ -31,6 +31,10 @@ When checkType is omitted, notation is rolled exactly as-is — include any modi
 Examples:
   Player perception check:  { notation: "1d20", player: "Arlon", checkType: "perception", dc: 15 }
   Player DEX save (adv):    { notation: "2d20kh1", player: "Arlon", checkType: "dexterity_save", dc: 14 }
+
+When checkType + player are provided, the tool checks active effects for advantage/disadvantage and returns hints (e.g., "Advantage on STR checks from Rage"). Use these hints to decide whether to roll with advantage/disadvantage.
+
+Examples:
   Monster attack (DM roll): { notation: "1d20+6", dc: 15, reason: "Goblin attacks Arlon" }
   Damage roll:              { notation: "2d6+3", reason: "Goblin shortsword damage" }
   Player rolls damage:      { notation: "1d8+2d6+3", player: "Rogue", reason: "Sneak attack" }`,

@@ -273,7 +273,7 @@ export function registerGameTools(
     "apply_damage",
     {
       description:
-        "Deal damage to a character or combatant. Handles temp HP absorption automatically. If the target was already at 0 HP, records a death save failure instead (2 failures if is_critical_hit is true).",
+        "Deal damage to a character or combatant. Handles temp HP absorption automatically. When damage_type is provided, resistance (half), immunity (zero), and vulnerability (double) are applied automatically from active effects. If the target was already at 0 HP, records a death save failure instead (2 failures if is_critical_hit is true).",
       inputSchema: {
         name: z.string().describe("Character or combatant name"),
         amount: z.coerce.number().describe("Amount of damage to deal"),
@@ -336,7 +336,7 @@ export function registerGameTools(
     "add_condition",
     {
       description:
-        "Add a condition to a character or combatant (e.g., poisoned, stunned, prone, frightened).",
+        "Add a condition to a character or combatant. Creates an effect bundle with mechanical effects (e.g., speed 0, disadvantage). Checks condition immunity first.",
       inputSchema: {
         name: z.string().describe("Character or combatant name"),
         condition: z.string().describe("Condition name (e.g., 'poisoned', 'stunned', 'prone')"),
@@ -355,7 +355,7 @@ export function registerGameTools(
   server.registerTool(
     "remove_condition",
     {
-      description: "Remove a condition from a character or combatant.",
+      description: "Remove a condition and its effect bundle from a character or combatant.",
       inputSchema: {
         name: z.string().describe("Character or combatant name"),
         condition: z.string().describe("Condition name to remove"),
@@ -476,7 +476,7 @@ export function registerGameTools(
     "advance_turn",
     {
       description:
-        "Move to the next combatant's turn in initiative order. Increments round counter on wrap-around.",
+        "Move to the next combatant's turn in initiative order. Increments round counter on wrap-around. Expires duration-based effects and processes start/end-of-turn condition effects.",
     },
     async () => {
       return fromToolResponse(wsClient.gameStateManager.advanceTurnMCP(), "advance_turn", {});
@@ -1069,7 +1069,7 @@ export function registerGameTools(
     "update_item",
     {
       description:
-        "Modify an existing item in a character's inventory. Specify only the fields you want to change.",
+        "Modify an existing item in a character's inventory. Toggling equipped/attuned on magic items creates or removes effect bundles (AC, resistance, etc.). Specify only the fields you want to change.",
       inputSchema: {
         name: z.string().describe("Character name"),
         item: z.string().describe("Item name to update (lookup key)"),
@@ -1242,7 +1242,7 @@ export function registerGameTools(
     "short_rest",
     {
       description:
-        "Process a short rest for specified characters. Restores short-rest class resources and Warlock pact magic slots. Does NOT auto-heal — Hit Dice healing requires interactive player choice.",
+        "Process a short rest for specified characters. Restores short-rest class resources and Warlock pact magic slots. Clears temporary effect bundles (until-rest). Does NOT auto-heal — Hit Dice healing requires interactive player choice.",
       inputSchema: {
         names: z.array(z.string()).describe("Names of characters taking the short rest"),
       },
@@ -1257,7 +1257,7 @@ export function registerGameTools(
     "long_rest",
     {
       description:
-        "Process a long rest for specified characters. Restores full HP, all spell slots, all class resources, resets death saves, clears non-permanent conditions.",
+        "Process a long rest for specified characters. Restores full HP, all spell slots, all class resources, resets death saves, clears non-permanent conditions and temporary effect bundles.",
       inputSchema: {
         names: z.array(z.string()).describe("Names of characters taking the long rest"),
       },
