@@ -3,7 +3,7 @@ import { z } from "zod";
 import type { WSClient } from "../ws-client.js";
 import type { GameLogger } from "../services/game-logger.js";
 import { rollNotation, buildOutputFromResult, formatRollOutput } from "../services/dice-engine.js";
-import { parseCheckType } from "@unseen-servant/shared/utils";
+import { parseCheckType, getCheckAdvantageInfo } from "@unseen-servant/shared/utils";
 
 export function registerDndTools(
   server: McpServer,
@@ -88,6 +88,23 @@ Examples:
         }
       }
 
+      // ── Build advantage/disadvantage hints from active effects ──
+      let effectHints = "";
+      if (checkType && player) {
+        const char = Object.values(wsClient.gameStateManager.characters).find(
+          (c) => c.static.name.toLowerCase() === player.toLowerCase(),
+        );
+        if (char) {
+          const advInfo = getCheckAdvantageInfo(char, checkType);
+          if (advInfo.sources.length > 0) {
+            effectHints = "\n⚡ " + advInfo.sources.join("; ");
+            if (advInfo.advantage && advInfo.disadvantage) {
+              effectHints += " (advantage and disadvantage cancel out → normal roll)";
+            }
+          }
+        }
+      }
+
       // ── Interactive player roll ──
       if (player) {
         try {
@@ -109,8 +126,9 @@ Examples:
             checkLabel: result.roll.label,
           });
 
-          gameLogger.toolCall("roll_dice", { notation, checkType, player, dc, reason }, formatted);
-          return { content: [{ type: "text" as const, text: formatted }] };
+          const fullResult = formatted + effectHints;
+          gameLogger.toolCall("roll_dice", { notation, checkType, player, dc, reason }, fullResult);
+          return { content: [{ type: "text" as const, text: fullResult }] };
         } catch (error) {
           const errMsg = `Check request failed: ${error instanceof Error ? error.message : String(error)}`;
           gameLogger.toolCall("roll_dice", { notation, checkType, player, dc, reason }, errMsg);

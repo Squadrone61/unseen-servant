@@ -47,6 +47,7 @@ import {
   hasConditionImmunity,
   applyDamageWithEffects,
   resolveEffectiveStat,
+  resolveStat,
 } from "@unseen-servant/shared/utils";
 import { log } from "../logger.js";
 import type { MessageQueue } from "../message-queue.js";
@@ -780,10 +781,28 @@ export class GameStateManager {
     const dy = Math.abs(to.y - from.y);
     const distance = Math.max(dx, dy) * 5;
 
-    // Compute effective speed (conditions like Grappled set speed to 0)
-    const effectiveSpeed = char
-      ? resolveEffectiveStat(char, "speed", combatant.speed)
-      : combatant.speed; // TODO: NPC activeEffects speed resolution in Phase 4+
+    // Compute effective speed (conditions like Grappled/Restrained set speed to 0)
+    let effectiveSpeed: number;
+    if (char) {
+      effectiveSpeed = resolveEffectiveStat(char, "speed", combatant.speed);
+    } else if (combatant.activeEffects && combatant.activeEffects.length > 0) {
+      // NPC — resolve speed through effect bundles with a minimal context
+      const npcCtx = {
+        abilities: {
+          strength: 10,
+          dexterity: 10,
+          constitution: 10,
+          intelligence: 10,
+          wisdom: 10,
+          charisma: 10,
+        },
+        totalLevel: 0,
+        proficiencyBonus: 0,
+      };
+      effectiveSpeed = resolveStat(combatant.activeEffects, "speed", combatant.speed, npcCtx);
+    } else {
+      effectiveSpeed = combatant.speed;
+    }
     if (combatant.movementUsed + distance > effectiveSpeed) {
       this.broadcast(
         {
@@ -1196,6 +1215,21 @@ export class GameStateManager {
         }
       }
 
+      // Expire duration-based effect bundles on NPC end-of-turn
+      if (prevCombatant.activeEffects && prevCombatant.activeEffects.length > 0) {
+        const { effects, warnings } = this.expireDurationBundles(
+          prevCombatant.activeEffects,
+          prevCombatant.name,
+        );
+        prevCombatant.activeEffects = effects;
+        if (warnings.length > 0) {
+          this.conversationHistory.push({
+            role: "user",
+            content: `[System: ${warnings.join(". ")}]`,
+          });
+        }
+      }
+
       // Also check player character end-of-turn conditions via their character data
       if (prevCombatant.type === "player") {
         for (const [, char] of Object.entries(this.characters)) {
@@ -1219,6 +1253,15 @@ export class GameStateManager {
                 char.dynamic.conditions,
                 char.dynamic.activeEffects,
               );
+              // Expire duration-based effect bundles on player end-of-turn
+              const durResult = this.expireDurationBundles(
+                char.dynamic.activeEffects,
+                char.static.name,
+              );
+              char.dynamic.activeEffects = durResult.effects;
+              if (durResult.warnings.length > 0) {
+                warnings.push(...durResult.warnings);
+              }
             }
             if (warnings.length > 0) {
               this.conversationHistory.push({
@@ -1796,6 +1839,33 @@ export class GameStateManager {
     return activeEffects.filter(
       (b) => !b.id.startsWith("condition:") || activeConditionIds.has(b.id),
     );
+  }
+
+  /**
+   * Expire duration-based effect bundles. Decrements `rounds` on bundles with
+   * lifetime type "duration" and removes them when they reach 0.
+   * Returns warnings about expired/expiring effects.
+   */
+  private expireDurationBundles(
+    activeEffects: EffectBundle[],
+    ownerName: string,
+  ): { effects: EffectBundle[]; warnings: string[] } {
+    const warnings: string[] = [];
+    const remaining = activeEffects.filter((b) => {
+      if (b.lifetime.type !== "duration") return true;
+      b.lifetime.rounds--;
+      if (b.lifetime.rounds <= 0) {
+        warnings.push(`${b.source.featureName ?? b.source.name} expired on ${ownerName}`);
+        return false;
+      }
+      if (b.lifetime.rounds === 1) {
+        warnings.push(
+          `⚠ ${b.source.featureName ?? b.source.name} on ${ownerName} expires next round`,
+        );
+      }
+      return true;
+    });
+    return { effects: remaining, warnings };
   }
 
   /** Add a condition */
@@ -3443,6 +3513,18 @@ export class GameStateManager {
           }
         }
 
+        // Clear effect bundles with until_rest lifetime (both short and long expire on short rest)
+        if (char.dynamic.activeEffects) {
+          const beforeLen = char.dynamic.activeEffects.length;
+          char.dynamic.activeEffects = char.dynamic.activeEffects.filter(
+            (b) => b.lifetime.type !== "until_rest",
+          );
+          const clearedCount = beforeLen - char.dynamic.activeEffects.length;
+          if (clearedCount > 0) {
+            restored.push(`${clearedCount} temporary effect(s) expired`);
+          }
+        }
+
         this.createEvent("rest_short", `${char.static.name} completed a short rest`, []);
 
         this.broadcast({
@@ -3594,6 +3676,18 @@ export class GameStateManager {
             char.dynamic.activeEffects = char.dynamic.activeEffects.filter(
               (b) => b.id !== `spell:${concSpell.toLowerCase()}`,
             );
+          }
+        }
+
+        // Clear effect bundles with until_rest lifetime (long rest clears both short and long)
+        if (char.dynamic.activeEffects) {
+          const beforeLen = char.dynamic.activeEffects.length;
+          char.dynamic.activeEffects = char.dynamic.activeEffects.filter(
+            (b) => b.lifetime.type !== "until_rest",
+          );
+          const clearedCount = beforeLen - char.dynamic.activeEffects.length;
+          if (clearedCount > 0) {
+            restored.push(`${clearedCount} temporary effect(s) expired`);
           }
         }
 

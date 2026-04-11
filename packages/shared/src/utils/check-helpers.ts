@@ -6,7 +6,16 @@
 
 import type { CheckRequest } from "../types/game-state";
 import type { CharacterData } from "../types/character";
-import { getModifier, getSkillModifier, getSavingThrowModifier } from "./character-helpers";
+import type { ModifierTarget, AdvantageTarget } from "../types/effects";
+import { getModifier } from "./character-helpers";
+import {
+  resolveEffectiveStat,
+  getActiveEffects,
+  buildResolveContext,
+  resolveStat,
+  hasAdvantage,
+  hasDisadvantage,
+} from "./effect-resolver";
 
 // ─── Check type parsing ───
 
@@ -118,7 +127,34 @@ export function buildCheckLabel(check: CheckRequest): string {
   }
 }
 
-/** Compute the modifier for a check based on the character's stats. */
+/**
+ * Resolve an ability score through activeEffects (e.g., Gauntlets of Ogre Power sets STR=19).
+ * Falls back to the static score if no effects modify it.
+ */
+function resolveAbilityScore(
+  char: CharacterData,
+  ability: keyof typeof char.static.abilities,
+): number {
+  const bundles = getActiveEffects(char);
+  if (bundles.length === 0) return char.static.abilities[ability];
+  return resolveEffectiveStat(char, ability as ModifierTarget, char.static.abilities[ability]);
+}
+
+/**
+ * Get the flat bonus from activeEffects for a specific modifier target.
+ * This captures bonuses like Bless (+1d4 to attacks/saves) — for constant-value
+ * modifiers only (expression/dice values are skipped since we can't add them to
+ * a flat modifier).
+ */
+function getEffectBonus(char: CharacterData, target: ModifierTarget): number {
+  const bundles = getActiveEffects(char);
+  if (bundles.length === 0) return 0;
+  const ctx = buildResolveContext(char);
+  // resolveStat with base=0 gives us just the effect delta
+  return resolveStat(bundles, target, 0, ctx);
+}
+
+/** Compute the modifier for a check based on the character's stats and activeEffects. */
 export function computeCheckModifier(char: CharacterData, check: CheckRequest): number {
   const s = char.static;
 
@@ -130,39 +166,47 @@ export function computeCheckModifier(char: CharacterData, check: CheckRequest): 
   if (parsed.category === "skill") {
     const skill = s.skills.find((sk) => sk.name.toLowerCase() === parsed.skill);
     if (skill) {
-      return getSkillModifier(skill, s.abilities, s.proficiencyBonus);
+      // Resolve the ability score through effects before computing the skill modifier
+      const effectiveAbilityScore = resolveAbilityScore(
+        char,
+        SKILL_ABILITY_MAP[parsed.skill] as keyof typeof s.abilities,
+      );
+      const abilityMod = getModifier(effectiveAbilityScore);
+      const profBonus = skill.proficient ? s.proficiencyBonus * (skill.expertise ? 2 : 1) : 0;
+      return abilityMod + profBonus + (skill.bonus ?? 0) + getEffectBonus(char, "d20");
     }
   }
 
   if (parsed.category === "saving_throw") {
+    const effectiveAbilityScore = resolveAbilityScore(
+      char,
+      parsed.ability as keyof typeof s.abilities,
+    );
+    const abilityMod = getModifier(effectiveAbilityScore);
     const save = s.savingThrows.find((sv) => sv.ability === parsed.ability);
-    if (save) {
-      return getSavingThrowModifier(save, s.abilities, s.proficiencyBonus);
-    }
-    // Fallback: raw ability modifier
-    const abilityKey = parsed.ability as keyof typeof s.abilities;
-    if (s.abilities[abilityKey] !== undefined) {
-      return getModifier(s.abilities[abilityKey]);
-    }
+    const profBonus = save?.proficient ? s.proficiencyBonus : 0;
+    const target = `save_${parsed.ability}` as ModifierTarget;
+    return abilityMod + profBonus + getEffectBonus(char, target);
   }
 
   if (parsed.category === "ability") {
-    const abilityKey = parsed.ability as keyof typeof s.abilities;
-    if (s.abilities[abilityKey] !== undefined) {
-      return getModifier(s.abilities[abilityKey]);
-    }
+    const effectiveAbilityScore = resolveAbilityScore(
+      char,
+      parsed.ability as keyof typeof s.abilities,
+    );
+    return getModifier(effectiveAbilityScore) + getEffectBonus(char, "d20");
   }
 
   if (parsed.category === "attack") {
-    // Spell attacks use spellAttackBonus directly
+    // Spell attacks use spellAttackBonus directly + effect bonuses
     if (parsed.attackType === "spell" && s.spellAttackBonus !== undefined) {
-      return s.spellAttackBonus;
+      return s.spellAttackBonus + getEffectBonus(char, "attack_spell");
     }
 
     // Finesse: max(STR, DEX) mod + proficiency
     if (parsed.attackType === "finesse") {
-      const strMod = getModifier(s.abilities.strength);
-      const dexMod = getModifier(s.abilities.dexterity);
+      const strMod = getModifier(resolveAbilityScore(char, "strength"));
+      const dexMod = getModifier(resolveAbilityScore(char, "dexterity"));
       let modifier = Math.max(strMod, dexMod) + s.proficiencyBonus;
 
       if (s.combatBonuses) {
@@ -175,14 +219,14 @@ export function computeCheckModifier(char: CharacterData, check: CheckRequest): 
         }
       }
 
-      return modifier;
+      return modifier + getEffectBonus(char, "attack_melee");
     }
 
-    // Ranged → DEX mod; Melee → STR mod
+    // Ranged → DEX mod; Melee → STR mod (resolved through effects)
     const abilityMod =
       parsed.attackType === "ranged"
-        ? getModifier(s.abilities.dexterity)
-        : getModifier(s.abilities.strength);
+        ? getModifier(resolveAbilityScore(char, "dexterity"))
+        : getModifier(resolveAbilityScore(char, "strength"));
 
     let modifier = abilityMod + s.proficiencyBonus;
 
@@ -198,8 +242,84 @@ export function computeCheckModifier(char: CharacterData, check: CheckRequest): 
       }
     }
 
-    return modifier;
+    const target = `attack_${parsed.attackType}` as ModifierTarget;
+    return modifier + getEffectBonus(char, target);
   }
 
   return 0;
+}
+
+/**
+ * Map a ParsedCheck to the AdvantageTarget(s) that should be checked for
+ * advantage/disadvantage from active effects.
+ */
+function checkToAdvantageTargets(parsed: ParsedCheck): AdvantageTarget[] {
+  switch (parsed.category) {
+    case "skill": {
+      // Check the specific skill + its parent ability check + generic ability_check
+      const abilityCheck = `${SKILL_ABILITY_MAP[parsed.skill]}_check` as AdvantageTarget;
+      return [parsed.skill as AdvantageTarget, abilityCheck, "ability_check"];
+    }
+    case "ability":
+      return [`${parsed.ability}_check` as AdvantageTarget, "ability_check"];
+    case "saving_throw":
+      return [`save_${parsed.ability}` as AdvantageTarget, "save"];
+    case "attack": {
+      const specific = `attack_${parsed.attackType}` as AdvantageTarget;
+      return [specific, "attack"];
+    }
+  }
+}
+
+/**
+ * Check if a character has advantage or disadvantage on a given check type
+ * from their active effect bundles.
+ *
+ * Returns { advantage, disadvantage, sources } where sources describe where
+ * the advantage/disadvantage comes from.
+ */
+export function getCheckAdvantageInfo(
+  char: CharacterData,
+  checkType: string,
+): { advantage: boolean; disadvantage: boolean; sources: string[] } {
+  const parsed = parseCheckType(checkType);
+  if (!parsed) return { advantage: false, disadvantage: false, sources: [] };
+
+  const bundles = getActiveEffects(char);
+  if (bundles.length === 0) return { advantage: false, disadvantage: false, sources: [] };
+
+  const targets = checkToAdvantageTargets(parsed);
+  let advantage = false;
+  let disadvantage = false;
+  const sources: string[] = [];
+
+  for (const target of targets) {
+    if (hasAdvantage(bundles, target)) {
+      advantage = true;
+      // Find the source bundle(s)
+      for (const b of bundles) {
+        if (
+          b.effects.properties?.some(
+            (p) => p.type === "advantage" && p.on.toLowerCase() === target.toLowerCase(),
+          )
+        ) {
+          sources.push(`advantage on ${target} from ${b.source.featureName ?? b.source.name}`);
+        }
+      }
+    }
+    if (hasDisadvantage(bundles, target)) {
+      disadvantage = true;
+      for (const b of bundles) {
+        if (
+          b.effects.properties?.some(
+            (p) => p.type === "disadvantage" && p.on.toLowerCase() === target.toLowerCase(),
+          )
+        ) {
+          sources.push(`disadvantage on ${target} from ${b.source.featureName ?? b.source.name}`);
+        }
+      }
+    }
+  }
+
+  return { advantage, disadvantage, sources };
 }
