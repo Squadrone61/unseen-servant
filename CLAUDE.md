@@ -308,15 +308,6 @@ All lookup tools accept `detail`: `"summary"` (default, ~30 tokens) or `"full"` 
 6. Bridge stores response in conversation history, sends `client:broadcast` with `server:ai` payload
 7. Worker receives `client:broadcast` → relays AI narrative to all players
 
-## Phase Completion
-
-- Phase 1 (Foundation): COMPLETE — multiplayer chat, multi-provider AI, OAuth, reconnection
-- Phase 2 (Character Integration): COMPLETE — character builder, character sheet, party list, native 5e.tools database
-- Phase 3 (Game State & Rules): COMPLETE — dice, spell tracking, HP, state resolver, initiative, skill check flow, event log with rollback, editable system prompt
-- Phase 4 (Battle Map): COMPLETE — CSS Grid map renderer, token placement, click-to-move with BFS range highlighting, conditions on tokens, InitiativeTracker integration. Architecture migration: extension → MCP bridge, worker → pure relay
-- Phase 5 (Campaign Persistence): IN PROGRESS — campaign config UI (CampaignConfigModal), local file persistence (.unseen/campaigns/), campaign manifest with session tracking, character snapshots, system prompt persistence. D1 database NOT YET started
-- Phase 6 (Polish): NOT STARTED
-
 ## Testing
 
 - **Automated tests** (Playwright) live in `tests/` and `playwright.config.ts` at the repo root — these are committed to the repo.
