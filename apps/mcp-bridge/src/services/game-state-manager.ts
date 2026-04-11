@@ -41,6 +41,7 @@ import {
   createConditionBundle,
   createActivationBundle,
   createSpellBundle,
+  createItemBundle,
 } from "@unseen-servant/shared/builders";
 import {
   hasConditionImmunity,
@@ -3068,6 +3069,13 @@ export class GameStateManager {
 
         if (removeQty >= existing.quantity) {
           char.dynamic.inventory.splice(idx, 1);
+          // Clean up any active item effect bundle
+          const bundleId = `item:${existing.name.toLowerCase()}`;
+          if (char.dynamic.activeEffects) {
+            char.dynamic.activeEffects = char.dynamic.activeEffects.filter(
+              (b) => b.id !== bundleId,
+            );
+          }
         } else {
           existing.quantity -= removeQty;
         }
@@ -3152,6 +3160,32 @@ export class GameStateManager {
           changesList.push(updates.attunement ? "requires attunement" : "no attunement required");
 
         Object.assign(item, updates);
+
+        // Manage magic item effect bundles on equip/attune state changes
+        if (
+          item.isMagicItem &&
+          (updates.equipped !== undefined || updates.isAttuned !== undefined)
+        ) {
+          const shouldHaveEffects = item.equipped && (!item.attunement || item.isAttuned);
+          const bundleId = `item:${item.name.toLowerCase()}`;
+          const hasBundle = (char.dynamic.activeEffects ?? []).some((b) => b.id === bundleId);
+
+          if (shouldHaveEffects && !hasBundle) {
+            const bundle = createItemBundle(item.name);
+            if (bundle) {
+              if (!char.dynamic.activeEffects) char.dynamic.activeEffects = [];
+              char.dynamic.activeEffects.push(bundle);
+              changesList.push("effects applied");
+            }
+          } else if (!shouldHaveEffects && hasBundle) {
+            if (char.dynamic.activeEffects) {
+              char.dynamic.activeEffects = char.dynamic.activeEffects.filter(
+                (b) => b.id !== bundleId,
+              );
+              changesList.push("effects removed");
+            }
+          }
+        }
 
         this.broadcast({
           type: "server:character_updated",

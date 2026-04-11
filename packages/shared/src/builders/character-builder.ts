@@ -45,6 +45,7 @@ import {
   getFeat,
   getBaseItem,
   getCondition,
+  getMagicItem,
   getCasterMultiplier,
   THIRD_CASTER_SLOTS,
 } from "../data/index";
@@ -961,4 +962,20 @@ export function createActivationBundle(
   }
 
   return null;
+}
+
+/**
+ * Create an EffectBundle for a magic item when it is equipped and attuned.
+ * Looks up the item in the magic item database. Returns null if the item
+ * has no structured effects or is not found in the database.
+ */
+export function createItemBundle(itemName: string): EffectBundle | null {
+  const item = getMagicItem(itemName);
+  if (!item?.effects) return null;
+  return {
+    id: `item:${itemName.toLowerCase()}`,
+    source: { type: "item", name: itemName },
+    lifetime: { type: "manual" },
+    effects: item.effects,
+  };
 }

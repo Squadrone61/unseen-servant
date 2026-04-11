@@ -268,7 +268,16 @@
     "description": "Your Constitution score is 19 while you wear this amulet. It has no effect on you if your Constitution is already 19 or higher without it.",
     "rarity": "rare",
     "type": "Wondrous Item",
-    "attunement": true
+    "attunement": true,
+    "effects": {
+      "modifiers": [
+        {
+          "target": "constitution",
+          "value": 19,
+          "operation": "set"
+        }
+      ]
+    }
   },
   {
     "name": "Amulet of Proof against Detection and Location",
@@ -564,7 +573,16 @@
     "description": "While wearing this belt, your Strength score changes to 27. The item has no effect on you if your Strength without the belt is equal to or greater than the belt's score.",
     "rarity": "legendary",
     "type": "Wondrous Item",
-    "attunement": true
+    "attunement": true,
+    "effects": {
+      "modifiers": [
+        {
+          "target": "strength",
+          "value": 27,
+          "operation": "set"
+        }
+      ]
+    }
   },
   {
     "name": "Belt of Dwarvenkind",
@@ -578,35 +596,80 @@
     "description": "While wearing this belt, your Strength score changes to 25. The item has no effect on you if your Strength without the belt is equal to or greater than the belt's score.",
     "rarity": "very rare",
     "type": "Wondrous Item",
-    "attunement": true
+    "attunement": true,
+    "effects": {
+      "modifiers": [
+        {
+          "target": "strength",
+          "value": 25,
+          "operation": "set"
+        }
+      ]
+    }
   },
   {
     "name": "Belt of Frost Giant Strength",
     "description": "While wearing this belt, your Strength score changes to 23. The item has no effect on you if your Strength without the belt is equal to or greater than the belt's score.",
     "rarity": "very rare",
     "type": "Wondrous Item",
-    "attunement": true
+    "attunement": true,
+    "effects": {
+      "modifiers": [
+        {
+          "target": "strength",
+          "value": 23,
+          "operation": "set"
+        }
+      ]
+    }
   },
   {
     "name": "Belt of Hill Giant Strength",
     "description": "While wearing this belt, your Strength score changes to 21. The item has no effect on you if your Strength without the belt is equal to or greater than the belt's score.",
     "rarity": "rare",
     "type": "Wondrous Item",
-    "attunement": true
+    "attunement": true,
+    "effects": {
+      "modifiers": [
+        {
+          "target": "strength",
+          "value": 21,
+          "operation": "set"
+        }
+      ]
+    }
   },
   {
     "name": "Belt of Stone Giant Strength",
     "description": "While wearing this belt, your Strength score changes to 23. The item has no effect on you if your Strength without the belt is equal to or greater than the belt's score.",
     "rarity": "very rare",
     "type": "Wondrous Item",
-    "attunement": true
+    "attunement": true,
+    "effects": {
+      "modifiers": [
+        {
+          "target": "strength",
+          "value": 23,
+          "operation": "set"
+        }
+      ]
+    }
   },
   {
     "name": "Belt of Storm Giant Strength",
     "description": "While wearing this belt, your Strength score changes to 29. The item has no effect on you if your Strength without the belt is equal to or greater than the belt's score.",
     "rarity": "legendary",
     "type": "Wondrous Item",
-    "attunement": true
+    "attunement": true,
+    "effects": {
+      "modifiers": [
+        {
+          "target": "strength",
+          "value": 29,
+          "operation": "set"
+        }
+      ]
+    }
   },
   {
     "name": "Black Dragon Scale Mail",
@@ -748,7 +811,15 @@
     "description": "While you wear these boots, you can take a Bonus Action to click the boots' heels together. If you do, the boots double your Speed, and any creature that makes an {action:Opportunity Attack} against you has Disadvantage on the attack roll. If you click your heels together again, you end the effect.\nWhen you've used the boots' property for a total of 10 minutes, the magic ceases to function for you until you finish a Long Rest.",
     "rarity": "rare",
     "type": "Wondrous Item",
-    "attunement": true
+    "attunement": true,
+    "effects": {
+      "properties": [
+        {
+          "type": "note",
+          "text": "Click heels to double walking speed for 10 minutes (requires bonus action). 3 charges, regains 1d3 daily at dawn."
+        }
+      ]
+    }
   },
   {
     "name": "Boots of Striding and Springing",
@@ -794,7 +865,16 @@
     "description": "While wearing these bracers, you gain a +2 bonus to Armor Class if you are wearing no armor and using no Shield.",
     "rarity": "rare",
     "type": "Wondrous Item",
-    "attunement": true
+    "attunement": true,
+    "effects": {
+      "modifiers": [
+        {
+          "target": "ac",
+          "value": 2,
+          "condition": "not wearing armor or using a shield"
+        }
+      ]
+    }
   },
   {
     "name": "Brass Dragon Scale Mail",
@@ -1121,7 +1201,15 @@
     "description": "While you wear this cloak, it magically projects an illusion that makes you appear to be standing in a place near your actual location, causing any creature to have Disadvantage on attack rolls against you. If you take damage, the property ceases to function until the start of your next turn. This property is suppressed while your Speed is 0.",
     "rarity": "rare",
     "type": "Wondrous Item",
-    "attunement": true
+    "attunement": true,
+    "effects": {
+      "properties": [
+        {
+          "type": "note",
+          "text": "Attacks against you have disadvantage. If you are hit or fail to dodge, this property ceases until the start of your next turn."
+        }
+      ]
+    }
   },
   {
     "name": "Cloak of Elvenkind",
@@ -1150,7 +1238,19 @@
     "description": "You gain a +1 bonus to Armor Class and saving throws while you wear this cloak.",
     "rarity": "uncommon",
     "type": "Wondrous Item",
-    "attunement": true
+    "attunement": true,
+    "effects": {
+      "modifiers": [
+        {
+          "target": "ac",
+          "value": 1
+        },
+        {
+          "target": "save",
+          "value": 1
+        }
+      ]
+    }
   },
   {
     "name": "Cloak of the Bat",
@@ -2020,7 +2120,16 @@
     "description": "Your Strength score is 19 while you wear these gauntlets. They have no effect on you if your Strength is 19 or higher without them.",
     "rarity": "uncommon",
     "type": "Wondrous Item",
-    "attunement": true
+    "attunement": true,
+    "effects": {
+      "modifiers": [
+        {
+          "target": "strength",
+          "value": 19,
+          "operation": "set"
+        }
+      ]
+    }
   },
   {
     "name": "Gem of Brightness",
@@ -2296,7 +2405,16 @@
     "description": "Your Intelligence score is 19 while you wear this headband. It has no effect on you if your Intelligence is 19 or higher without it.",
     "rarity": "uncommon",
     "type": "Wondrous Item",
-    "attunement": true
+    "attunement": true,
+    "effects": {
+      "modifiers": [
+        {
+          "target": "intelligence",
+          "value": 19,
+          "operation": "set"
+        }
+      ]
+    }
   },
   {
     "name": "Healer's Kit",
@@ -3866,7 +3984,15 @@
     "name": "Ring of Acid Resistance",
     "description": "{#itemEntry Ring of Resistance|XDMG}",
     "rarity": "rare",
-    "type": "RG|XDMG"
+    "type": "RG|XDMG",
+    "effects": {
+      "properties": [
+        {
+          "type": "resistance",
+          "damageType": "acid"
+        }
+      ]
+    }
   },
   {
     "name": "Ring of Animal Influence",
@@ -3880,7 +4006,15 @@
     "name": "Ring of Cold Resistance",
     "description": "{#itemEntry Ring of Resistance|XDMG}",
     "rarity": "rare",
-    "type": "RG|XDMG"
+    "type": "RG|XDMG",
+    "effects": {
+      "properties": [
+        {
+          "type": "resistance",
+          "damageType": "cold"
+        }
+      ]
+    }
   },
   {
     "name": "Ring of Djinni Summoning",
@@ -3945,13 +4079,29 @@
     "name": "Ring of Fire Resistance",
     "description": "{#itemEntry Ring of Resistance|XDMG}",
     "rarity": "rare",
-    "type": "RG|XDMG"
+    "type": "RG|XDMG",
+    "effects": {
+      "properties": [
+        {
+          "type": "resistance",
+          "damageType": "fire"
+        }
+      ]
+    }
   },
   {
     "name": "Ring of Force Resistance",
     "description": "{#itemEntry Ring of Resistance|XDMG}",
     "rarity": "rare",
-    "type": "RG|XDMG"
+    "type": "RG|XDMG",
+    "effects": {
+      "properties": [
+        {
+          "type": "resistance",
+          "damageType": "force"
+        }
+      ]
+    }
   },
   {
     "name": "Ring of Free Action",
@@ -3978,7 +4128,15 @@
     "name": "Ring of Lightning Resistance",
     "description": "{#itemEntry Ring of Resistance|XDMG}",
     "rarity": "rare",
-    "type": "RG|XDMG"
+    "type": "RG|XDMG",
+    "effects": {
+      "properties": [
+        {
+          "type": "resistance",
+          "damageType": "lightning"
+        }
+      ]
+    }
   },
   {
     "name": "Ring of Mind Shielding",
@@ -3991,32 +4149,76 @@
     "name": "Ring of Necrotic Resistance",
     "description": "{#itemEntry Ring of Resistance|XDMG}",
     "rarity": "rare",
-    "type": "RG|XDMG"
+    "type": "RG|XDMG",
+    "effects": {
+      "properties": [
+        {
+          "type": "resistance",
+          "damageType": "necrotic"
+        }
+      ]
+    }
   },
   {
     "name": "Ring of Poison Resistance",
     "description": "{#itemEntry Ring of Resistance|XDMG}",
     "rarity": "rare",
-    "type": "RG|XDMG"
+    "type": "RG|XDMG",
+    "effects": {
+      "properties": [
+        {
+          "type": "resistance",
+          "damageType": "poison"
+        }
+      ]
+    }
   },
   {
     "name": "Ring of Protection",
     "description": "You gain a +1 bonus to Armor Class and saving throws while wearing this ring.",
     "rarity": "rare",
     "type": "RG|XDMG",
-    "attunement": true
+    "attunement": true,
+    "effects": {
+      "modifiers": [
+        {
+          "target": "ac",
+          "value": 1
+        },
+        {
+          "target": "save",
+          "value": 1
+        }
+      ]
+    }
   },
   {
     "name": "Ring of Psychic Resistance",
     "description": "{#itemEntry Ring of Resistance|XDMG}",
     "rarity": "rare",
-    "type": "RG|XDMG"
+    "type": "RG|XDMG",
+    "effects": {
+      "properties": [
+        {
+          "type": "resistance",
+          "damageType": "psychic"
+        }
+      ]
+    }
   },
   {
     "name": "Ring of Radiant Resistance",
     "description": "{#itemEntry Ring of Resistance|XDMG}",
     "rarity": "rare",
-    "type": "RG|XDMG"
+    "type": "RG|XDMG",
+    "effects": {
+      "properties": [
+        {
+          "type": "resistance",
+          "damageType": "radiant"
+        }
+      ]
+    }
   },
   {
     "name": "Ring of Regeneration",
@@ -4080,7 +4282,15 @@
     "name": "Ring of Thunder Resistance",
     "description": "{#itemEntry Ring of Resistance|XDMG}",
     "rarity": "rare",
-    "type": "RG|XDMG"
+    "type": "RG|XDMG",
+    "effects": {
+      "properties": [
+        {
+          "type": "resistance",
+          "damageType": "thunder"
+        }
+      ]
+    }
   },
   {
     "name": "Ring of Warmth",
@@ -5342,7 +5552,17 @@
     "type": "Wondrous Item",
     "attunement": true,
     "charges": 4,
-    "recharge": "dawn"
+    "recharge": "dawn",
+    "effects": {
+      "modifiers": [
+        {
+          "target": "speed_fly",
+          "value": 30,
+          "operation": "set",
+          "condition": "4 hours per day"
+        }
+      ]
+    }
   },
   {
     "name": "Wings of Flying",

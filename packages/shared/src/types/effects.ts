@@ -153,7 +153,14 @@ export type ModifierTarget =
   | "save_intelligence"
   | "save_wisdom"
   | "save_charisma"
-  | "d20";
+  | "d20"
+  // Ability scores (for items like Gauntlets of Ogre Power that set a score)
+  | "strength"
+  | "dexterity"
+  | "constitution"
+  | "intelligence"
+  | "wisdom"
+  | "charisma";
 
 // ---------------------------------------------------------------------------
 // AdvantageTarget
@@ -452,14 +459,13 @@ export type EffectLifetime =
 /**
  * Runtime wrapper that gives EntityEffects an identity, source, and lifetime.
  *
- * Build-time bundles (species, class, feat, background) live in
- * CharacterStaticData.buildEffects and have lifetime: "permanent".
+ * Build-time bundles (species, class, feat, background) are collected by
+ * collectBuildEffects() and resolved into CharacterStaticData at build time.
  *
- * Runtime bundles (spells, conditions, item attunements, environmental effects)
- * live in CharacterDynamicData.activeEffects and have a finite lifetime.
- *
- * Equipment effects are not stored as bundles — they are resolved dynamically
- * from the character's inventory + the item database at stat-computation time.
+ * Runtime bundles (conditions, spells, item effects, feature activations)
+ * live in CharacterDynamicData.activeEffects. They are created/removed by
+ * the GSM when conditions are added, spells are concentrated on, items are
+ * equipped/attuned, or features are activated.
  */
 export interface EffectBundle {
   /** Unique identifier for targeted removal ("remove bundle with id X"). */
