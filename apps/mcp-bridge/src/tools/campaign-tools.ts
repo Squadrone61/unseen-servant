@@ -126,6 +126,9 @@ export function registerCampaignTools(
         );
         const text = `Session ${result.sessionNumber} ended. Summary saved, active context updated.${hasCharacters ? " Characters snapshotted." : ""}`;
         gameLogger.toolCall("end_session", { summary: summary.slice(0, 100) + "..." }, text);
+        if (campaignManager.activeSlug) {
+          gameLogger.sessionEnd(campaignManager.activeSlug);
+        }
         return { content: [{ type: "text" as const, text }] };
       } catch (e) {
         return {

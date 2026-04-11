@@ -213,9 +213,9 @@ pnpm deploy:web     # Deploy web only
 
 ### Exhaustion
 
-| Tool             | Description                                                                               |
-| ---------------- | ----------------------------------------------------------------------------------------- |
-| `set_exhaustion` | Set exhaustion level (0-10). PHB 2024: -2 to d20 rolls per level, -5ft speed. 10 = death. |
+| Tool             | Description                                                                                                            |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `set_exhaustion` | Set exhaustion level (0-10). PHB 2024: -2 to all D20 Tests (attacks, checks, saves) per level, -5ft speed. 10 = death. |
 
 ### Encounter Building
 

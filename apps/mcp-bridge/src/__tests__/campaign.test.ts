@@ -21,11 +21,12 @@ import { createFighterCharacter } from "./setup.js";
  * - Creates starter text files:
  *     {slug}/system-prompt.md          (empty)
  *     {slug}/active-context.md         ("# Active Context\n\nNew campaign...")
- *     {slug}/world/npcs.md
- *     {slug}/world/locations.md
- *     {slug}/world/factions.md
- *     {slug}/world/quests.md
- *     {slug}/world/items.md
+ * - Creates per-entity world directories (empty, populated during play):
+ *     {slug}/world/npcs/
+ *     {slug}/world/locations/
+ *     {slug}/world/quests/
+ *     {slug}/world/factions/
+ *     {slug}/world/items/
  * - Sets activeSlug and caches manifest in memory (manifestDirty=false).
  * - Returns the CampaignManifest object.
  *
@@ -87,8 +88,8 @@ import { createFighterCharacter } from "./setup.js";
  *     1. Campaign manifest summary (name, sessionCount, players, lastPlayedAt).
  *     2. DM Instructions from system-prompt.md (omitted if file absent or empty).
  *     3. Current State from active-context.md (omitted if absent or empty).
- *     4. World Notes: aggregates world/npcs.md, locations.md, quests.md, factions.md,
- *        items.md — skips files that are absent, empty, or contain "_No " or "_no ".
+ *     4. World Notes: reads per-entity directories (world/npcs/*.md, world/locations/*.md,
+ *        etc.). Falls back to legacy flat files (world/npcs.md) if directory doesn't exist.
  *     5. DM Planning from dm/story-arc.md (omitted if absent or empty).
  *     6. Session History: reads all sessions/*.md files, sorted newest first.
  *        Skips empty session files.
@@ -149,17 +150,18 @@ describe("createCampaign", () => {
       expect(fs.existsSync(path.join(base, "characters"))).toBe(true);
     });
 
-    it("creates all expected starter text files", () => {
+    it("creates all expected starter files and per-entity directories", () => {
       manager.createCampaign("The Sunken Keep");
       const slug = "the-sunken-keep";
       const base = path.join(campaignsDir, slug);
       expect(fs.existsSync(path.join(base, "system-prompt.md"))).toBe(true);
       expect(fs.existsSync(path.join(base, "active-context.md"))).toBe(true);
-      expect(fs.existsSync(path.join(base, "world", "npcs.md"))).toBe(true);
-      expect(fs.existsSync(path.join(base, "world", "locations.md"))).toBe(true);
-      expect(fs.existsSync(path.join(base, "world", "factions.md"))).toBe(true);
-      expect(fs.existsSync(path.join(base, "world", "quests.md"))).toBe(true);
-      expect(fs.existsSync(path.join(base, "world", "items.md"))).toBe(true);
+      // Per-entity world directories (empty, populated during play)
+      for (const category of ["npcs", "locations", "quests", "factions", "items"]) {
+        const dirPath = path.join(base, "world", category);
+        expect(fs.existsSync(dirPath)).toBe(true);
+        expect(fs.statSync(dirPath).isDirectory()).toBe(true);
+      }
     });
   });
 
@@ -525,7 +527,6 @@ describe("listFiles", () => {
       expect(files).toContain("active-context.md");
       expect(files).toContain("campaign.json");
       expect(files).toContain("system-prompt.md");
-      expect(files).toContain("world/npcs.md");
       expect(files).toContain("notes/custom.md");
 
       // Must be sorted lexicographically.
@@ -740,18 +741,16 @@ describe("getStartupContext", () => {
     });
   });
 
-  describe("omits world notes sections that contain placeholder text (_No )", () => {
-    it("does not include default placeholder world notes in the output", () => {
-      manager.createCampaign("Placeholder World Notes Context");
-      // Starter files contain "_No NPCs recorded yet." etc. — must be skipped.
+  describe("omits empty world categories", () => {
+    it("does not include world notes when entity directories are empty", () => {
+      manager.createCampaign("Empty World Dirs Context");
       const ctx = manager.getStartupContext();
-      expect(ctx).not.toContain("_No NPCs recorded yet.");
-      expect(ctx).not.toContain("_No locations recorded yet.");
+      expect(ctx).not.toContain("## World Notes");
     });
 
-    it("includes world notes when placeholder text is replaced with real content", () => {
+    it("includes world notes when per-entity files exist", () => {
       manager.createCampaign("Real World Notes Context");
-      manager.writeFile("world/npcs", "# NPCs\n- Elara Moonwhisper, elven sage");
+      manager.writeFile("world/npcs/elara", "# Elara Moonwhisper\n- Elven sage");
       const ctx = manager.getStartupContext();
       expect(ctx).toContain("Elara Moonwhisper");
     });

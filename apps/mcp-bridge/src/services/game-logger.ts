@@ -39,7 +39,7 @@ export class GameLogger {
 
   // ─── Session Lifecycle ───
 
-  sessionStart(campaignSlug: string, sessionNumber: number): void {
+  sessionStart(campaignSlug: string, sessionNumber: number, resumed = false): void {
     // Close any existing stream
     this.stream?.end();
     this.stream = null;
@@ -59,7 +59,11 @@ export class GameLogger {
     });
 
     log("game-logger", `Logging to ${logPath}`);
-    this.write("SESSION", "Session started", { campaign: campaignSlug, session: sessionNumber });
+    this.write("SESSION", resumed ? "Session resumed" : "Session started", {
+      campaign: campaignSlug,
+      session: sessionNumber,
+      resumed,
+    });
   }
 
   sessionEnd(campaignSlug: string): void {

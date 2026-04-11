@@ -117,31 +117,11 @@ export class CampaignManager {
       "# Active Context\n\nNew campaign — no context yet.\n",
       "utf-8",
     );
-    fs.writeFileSync(
-      path.join(dir, "world", "npcs.md"),
-      "# NPCs\n\n_No NPCs recorded yet._\n",
-      "utf-8",
-    );
-    fs.writeFileSync(
-      path.join(dir, "world", "locations.md"),
-      "# Locations\n\n_No locations recorded yet._\n",
-      "utf-8",
-    );
-    fs.writeFileSync(
-      path.join(dir, "world", "factions.md"),
-      "# Factions\n\n_No factions recorded yet._\n",
-      "utf-8",
-    );
-    fs.writeFileSync(
-      path.join(dir, "world", "quests.md"),
-      "# Quests\n\n_No quests recorded yet._\n",
-      "utf-8",
-    );
-    fs.writeFileSync(
-      path.join(dir, "world", "items.md"),
-      "# Notable Items\n\n_No items recorded yet._\n",
-      "utf-8",
-    );
+
+    // Create per-entity world directories (files are created per-entity during play)
+    for (const category of ["npcs", "locations", "quests", "factions", "items"]) {
+      this.ensureDir(path.join(dir, "world", category));
+    }
 
     return manifest;
   }
@@ -368,21 +348,33 @@ export class CampaignManager {
       }
     }
 
-    // 4. World notes
+    // 4. World notes (per-entity directories)
     const worldNotes: string[] = [];
-    const worldFiles: Array<{ label: string; file: string }> = [
-      { label: "NPCs", file: "world/npcs.md" },
-      { label: "Locations", file: "world/locations.md" },
-      { label: "Quests", file: "world/quests.md" },
-      { label: "Factions", file: "world/factions.md" },
-      { label: "Notable Items", file: "world/items.md" },
+    const worldCategories: Array<{ label: string; dir: string }> = [
+      { label: "NPCs", dir: "world/npcs" },
+      { label: "Locations", dir: "world/locations" },
+      { label: "Quests", dir: "world/quests" },
+      { label: "Factions", dir: "world/factions" },
+      { label: "Notable Items", dir: "world/items" },
     ];
-    for (const { label, file } of worldFiles) {
-      const filePath = path.join(this.activeDir, file);
-      if (fs.existsSync(filePath)) {
-        const content = fs.readFileSync(filePath, "utf-8").trim();
-        if (content && !content.includes("_No ") && !content.includes("_no ")) {
-          worldNotes.push(`### ${label}\n${content}`);
+    for (const { label, dir } of worldCategories) {
+      const dirPath = path.join(this.activeDir, dir);
+      if (fs.existsSync(dirPath) && fs.statSync(dirPath).isDirectory()) {
+        const entityFiles = fs
+          .readdirSync(dirPath)
+          .filter((f) => f.endsWith(".md"))
+          .sort();
+        if (entityFiles.length > 0) {
+          const entries: string[] = [];
+          for (const file of entityFiles) {
+            const content = fs.readFileSync(path.join(dirPath, file), "utf-8").trim();
+            if (content) {
+              entries.push(content);
+            }
+          }
+          if (entries.length > 0) {
+            worldNotes.push(`### ${label}\n${entries.join("\n\n")}`);
+          }
         }
       }
     }

@@ -1343,7 +1343,7 @@ export function registerGameTools(
     "set_exhaustion",
     {
       description:
-        "Set a character's exhaustion level (0–10). PHB 2024: each level applies -2 to all d20 rolls and spell save DC, speed reduced by 5ft per level. Level 0 removes exhaustion. Level 10 = death. Long rest reduces exhaustion by 1.",
+        "Set a character's exhaustion level (0–10). PHB 2024: each level applies -2 to all D20 Tests (attack rolls, ability checks, saving throws), speed reduced by 5ft per level. Level 0 removes exhaustion. Level 10 = death. Long rest reduces exhaustion by 1.",
       inputSchema: {
         name: z.string().describe("Character name"),
         level: z.coerce

@@ -41,7 +41,7 @@ Create a detailed NPC based on the user's description:
    - **Speech pattern** — a verbal tic, accent note, or catchphrase that makes them recognizable (e.g., always speaks in questions, uses nautical metaphors, whispers everything)
    - **Motivation** — what they want right now
    - **Secret** — something they're hiding that could become a plot hook
-3. **Save to campaign notes** — call \`read_campaign_file\` for "world/npcs", then \`save_campaign_file\` to append the new NPC
+3. **Save to campaign notes** — call \`save_campaign_file\` to create \`world/npcs/{slug}\` with the NPC's details
 4. **Introduce them** — send a brief introduction via \`send_response\`, demonstrating their speech pattern in a line of dialogue
 
 Example usage: \`/npc-voice grizzled dwarf blacksmith with a gambling problem\`
@@ -98,7 +98,7 @@ Generate loot appropriate to the encounter and party:
    - **Description** — what it looks like
    - **Mechanical effect** — what it does in game terms
    - **Narrative hook** — "Who made this? Why is it here?" — a sentence that ties it to the world
-5. **Save notable items** — call \`read_campaign_file\` for "world/items.md", then \`save_campaign_file\` to append new items
+5. **Save notable items** — for each notable item, call \`save_campaign_file\` to create \`world/items/{slug}\` with the item's details
 6. **Narrate the loot** — call \`send_response\` to describe the party finding the treasure in-character
 
 Example usage: \`/loot-drop goblin ambush in the forest, party level 3\`
@@ -124,8 +124,8 @@ Generate a tavern or shop on the fly:
    - If campaign context exists (check via \`load_campaign_context\`), tie rumors to active quests or world events
 4. **Generate a menu** with 3-4 items — flavorful names and descriptions (no mechanical effects needed)
 5. **Save to campaign notes:**
-   - Call \`read_campaign_file\` for "world/locations.md", then \`save_campaign_file\` to append the new location
-   - Call \`read_campaign_file\` for "world/npcs.md", then \`save_campaign_file\` to append the new NPCs
+   - Call \`save_campaign_file\` to create \`world/locations/{slug}\` with the location's details
+   - For each NPC, call \`save_campaign_file\` to create \`world/npcs/{slug}\` with their details
 6. **Send the scene** — call \`send_response\` to describe the party entering the establishment, with NPC dialogue demonstrating their speech patterns
 
 Example usage: \`/tavern seedy port tavern\`
@@ -167,9 +167,10 @@ Design a trap based on the user's description:
 3. **Trigger** — what sets it off (pressure plate, tripwire, proximity, opening a container)
 4. **Effect** — damage dice and type, or condition (poison, restrained, etc.), save DC
 5. **Hints** — subtle clues for observant players (scuff marks, faint clicking, discolored stone)
-6. **Place it** — note the trap location and status in your DM planning
+6. **Place it** — note the trap location and status in your DM planning. Save to \`dm/\` notes via \`save_campaign_file\` if it's part of a planned dungeon.
+7. **During play** — when players encounter the trap, describe ONLY observable clues via \`send_response\`. Call for Perception/Investigation checks with \`roll_dice\`. If triggered, roll damage/saves and apply with \`apply_damage\`/\`add_condition\`.
 
-Do NOT reveal trap details to players via send_response — only describe what they can observe.
+Do NOT reveal trap details to players — only describe what they can observe.
 Present the trap design to the DM operator only.
 
 Example usage: \`/trap poison dart trap in a tomb corridor, party level 5\`
@@ -192,6 +193,7 @@ Design a puzzle for the party:
 3. **Solution** — the correct sequence, answer, or action
 4. **Mechanical resolution** — what checks help (Investigation, Arcana, History, Perception), DCs, and what info each reveals
 5. **Reward** — what solving the puzzle grants (passage, treasure, lore, shortcut)
+6. **During play** — describe the initial scene via \`send_response\`. As players attempt solutions, call for relevant checks with \`roll_dice\`, reveal hints based on the tier system, and narrate outcomes. When solved, deliver rewards narratively and mechanically (\`add_item\`, etc.).
 
 Present the puzzle design to the DM operator. When players encounter it in play, describe only what they observe and respond to their attempts.
 
@@ -224,7 +226,7 @@ Advise the DM on monster tactics during combat:
    - Int 1-5: animalistic, attacks nearest target or most threatening
    - Int 6-9: basic tactics, focuses wounded targets, avoids obvious danger
    - Int 10+: smart tactics, targets casters, uses terrain, coordinates with allies
-5. **Present to DM only** — this is advice for the DM operator. **DO NOT call \`send_response\`** — players must not see monster tactical analysis. The DM decides what actions to take.
+5. **Present to DM only** — output the tactical advice as regular text (it goes to the DM's terminal, not to players). **DO NOT call \`send_response\`**. After the DM decides, execute the chosen actions using combat tools (move_combatant, roll_dice, apply_damage, etc.) and THEN narrate the result via \`send_response\`.
 `;
 
 export const NATIVE_SKILL_COMBAT_PREP = `---
@@ -239,6 +241,7 @@ When initiating combat, follow these steps IN ORDER. Do NOT skip any step. Do NO
 
 1. Call \`lookup_monster\` for EVERY enemy type to get accurate stats
 2. Call \`calculate_encounter_difficulty\` to validate the encounter is appropriately challenging for the party
+   - Use \`get_character\` for party members if you need to check current HP, spell slots, or abilities to tune the encounter
 3. Call \`update_battle_map\` to create the terrain grid with rich tiles — use objects, cover, and elevation to make the battlefield tactical and interesting
 4. Call \`start_combat\` with ALL combatants, including position in A1 notation (e.g., "E5") for each so tokens appear on the map
 5. ONLY THEN narrate the combat beginning
@@ -279,13 +282,12 @@ user-invocable: false
 
 ### Tactical Tools
 - Use \`get_combat_summary\` instead of \`get_game_state\` during combat — it's optimized for tactical decisions.
+- Use \`get_map_info\` to check terrain, objects, cover, and elevation in an area (e.g., area: "C3:F6") — useful for answering player questions about the battlefield.
+- Use \`apply_batch_effects\` to apply multiple effects (damage, heal, conditions, movement) in one call — efficient for multi-target resolution. Max 10 effects.
 - SRD lookups default to summary mode (~30 tokens). Use \`detail: "full"\` only for rules disputes or complex interactions.
 
 ### Effect System
-- **Damage types matter.** Always include \`damage_type\` when calling \`apply_damage\` — resistance, immunity, and vulnerability are applied automatically. Don't manually halve or double damage.
-- **Feature activation.** When a class feature with mechanical effects is used (Rage, Bladesong, Wild Shape), call \`activate_feature\` to apply its bonuses. Pair with \`use_class_resource\` if it costs a resource. Call \`deactivate_feature\` when it ends.
-- **Concentration vs features.** \`set_concentration\` is for concentration spells (broken by damage/new spell). \`activate_feature\` is for class features (manual deactivation).
-- **Advantage/disadvantage hints.** When \`roll_dice\` returns effect hints (e.g., "Advantage on STR checks from Rage"), use them to decide whether to roll with advantage/disadvantage.
+See the **rules** skill for damage type handling, feature activation, concentration mechanics, and advantage/disadvantage hints.
 
 ### Position & Range Validation (STRICT)
 - Before allowing any melee attack, CHECK positions using \`get_combat_summary\` — it shows distances between combatants.
@@ -303,11 +305,18 @@ user-invocable: false
 - **DO call \`advance_turn\` for NPCs/enemies** after resolving all their actions.
 - When a player's turn begins, announce: "{pc:CharacterName}, it's your turn. What do you do?"
 
+### Combat Lifecycle Tools
+- Call \`end_combat\` when combat ends (all enemies defeated, flee, retreat). Clears combat state, returns to exploration.
+- Call \`add_combatant\` to add reinforcements, summoned creatures, or late arrivals mid-combat. Initiative is rolled automatically.
+- Call \`remove_combatant\` when a creature dies, flees, or is dismissed. Removes from turn order.
+- Use \`set_initiative\` to override initiative (readied actions, DM adjustments).
+- Use \`set_active_turn\` to jump to a specific combatant's turn (DM override — skips condition expiry for skipped turns).
+
 ### Attack Resolution
 - For monster attacks: roll attack with \`roll_dice({ checkType: "attack", notation: "1d20+X", reason: "Monster attack" })\` — if it hits, roll damage
 - For player attacks: the player describes the attack, you determine if it hits using the attack roll, then have the player roll damage with \`roll_dice({ player: "CharName", checkType: "damage", notation: "..." })\`
 - **Players ALWAYS roll their own damage.** When a player's attack/spell hits, use roll_dice with player + checkType="damage" so the player sees "Roll Damage". NEVER roll damage on behalf of a player.
-- **Always pass DC and attackType for attack rolls.** Use roll_dice with player, checkType="attack", attackType="melee"/"ranged"/"spell", dc=TARGET_AC. Melee attacks also require ability ("strength" or "dexterity" for Finesse weapons). "ranged" uses DEX automatically. "spell" uses spellAttackBonus. Combat bonuses like Archery +2 are applied automatically.
+- **Always pass DC and checkType for attack rolls.** Use roll_dice with player, checkType="melee_attack"/"ranged_attack"/"spell_attack"/"finesse_attack", dc=TARGET_AC. "melee_attack" uses STR + prof. "ranged_attack" uses DEX + prof. "spell_attack" uses spell attack bonus. "finesse_attack" uses max(STR,DEX) + prof. Combat bonuses like Archery +2 are applied automatically.
 - Describe attacks cinematically, not just mechanically
 - Give enemies tactical behavior appropriate to their intelligence
 - Make combat dynamic — use the environment, have enemies adapt
@@ -327,7 +336,7 @@ user-invocable: false
 
 ### Concentration Checks
 - When a concentrating creature takes damage, it must make a Constitution saving throw (DC = 10 or half the damage taken, whichever is higher)
-- If the check fails, the spell ends — remove the condition and narrate the effect fading
+- If the check fails, call \`break_concentration\` to end the spell, then narrate the effect fading
 
 ### Opportunity Attacks
 - When a creature moves out of an enemy's reach without Disengaging, that enemy can use a reaction to make one melee attack
@@ -335,8 +344,8 @@ user-invocable: false
 
 ### Death Saves
 - At 0 HP, a creature makes death saving throws at the start of each turn (DC 10 Constitution save)
-- Track 3 successes (stabilize) or 3 failures (death) — announce the count
-- A natural 20 restores 1 HP; a natural 1 counts as two failures
+- After rolling, call \`death_save\` to record the result — pass \`critical_fail: true\` for nat 1 (2 failures), \`critical_success: true\` for nat 20 (regain 1 HP, reset saves)
+- The tool auto-stabilizes at 3 successes or marks dead at 3 failures — announce the count
 - Any damage while at 0 HP = one death save failure (critical hit = two failures)
 
 ### Cover
@@ -453,13 +462,22 @@ All rules lookups use the **2024 D&D rules (SRD 5.2)**, not the 2014 edition.
 - BEFORE applying any condition: call \`lookup_condition\` to get exact 2024 mechanical effects
 - For magic items: call \`lookup_magic_item\` to get rarity, attunement, and effects
 - For feats: call \`lookup_feat\` to get prerequisites and effects
+- For game actions (Attack, Dash, Dodge, Grapple, Shove): call \`lookup_action\` for exact 2024 rules
+- For optional class features (Invocations, Maneuvers, Metamagic): call \`lookup_optional_feature\`
+- For species traits: call \`lookup_species\`; for backgrounds: call \`lookup_background\`
+- For languages: call \`lookup_language\`; for diseases: call \`lookup_disease\`
 - For general rules questions (combat mechanics, class features, gameplay): call \`search_rules\` with a keyword query
 NEVER guess spell effects, monster stats, or condition rules. ALWAYS look them up.
 - If a lookup returns "not found", the entry is not in the SRD — tell players you're using general knowledge and the activity log will show a notice
 
 ### Dice Rolling
 - ALL rolls go through \`roll_dice\` so players see them in chat — never narrate a roll without actually rolling
-- \`checkType\` is always required: 'attack', 'ability', 'skill', 'saving_throw' for d20 checks; 'damage' for damage dice; 'custom' for arbitrary rolls
+- \`checkType\` auto-computes modifiers from the character sheet. Valid values:
+  - **Skills:** perception, stealth, athletics, acrobatics, arcana, deception, history, insight, intimidation, investigation, medicine, nature, performance, persuasion, religion, sleight_of_hand, animal_handling, survival
+  - **Abilities:** strength, dexterity, constitution, intelligence, wisdom, charisma
+  - **Saves:** strength_save, dexterity_save, constitution_save, intelligence_save, wisdom_save, charisma_save
+  - **Attacks:** melee_attack (STR + prof), ranged_attack (DEX + prof), spell_attack (spell bonus), finesse_attack (max(STR,DEX) + prof)
+  - **Other:** damage, custom (modifier not auto-computed — include in notation)
 - For monster/NPC rolls, omit \`player\` — the DM rolls server-side
 - For player rolls, include \`player\` (character name) so the player rolls interactively on their client
 
@@ -471,7 +489,25 @@ NEVER guess spell effects, monster stats, or condition rules. ALWAYS look them u
 ### Mechanical Tracking (STRICT)
 - ALWAYS use tools to modify HP, spell slots, conditions, inventory, and currency — don't just narrate changes.
 - Use \`use_spell_slot\` every time a player casts a leveled spell.
+- Use \`add_item\` immediately when a character receives, finds, or buys an item — don't wait for the player to ask.
+- Use \`update_item\` when an item's properties change (awakened, attuned, damaged, etc.).
+- Use \`remove_item\` when an item is given away, consumed, or destroyed.
+- Use \`add_condition\` to apply conditions (poisoned, stunned, prone, etc.) — creates an effect bundle with mechanical effects. Use \`remove_condition\` to clear them.
+- Use \`set_hp\` to set a character's HP to an exact value (e.g., after a complex effect that isn't simple damage or healing).
+- Use \`set_temp_hp\` when a spell or ability grants temporary HP (Heroism, Dark One's Blessing). Temp HP doesn't stack — takes the higher value.
+- Use \`update_currency\` when players earn, spend, or trade gold. Positive adds, negative subtracts. Auto-converts from higher denominations when spending.
+- Use \`restore_spell_slot\` when a slot is recovered outside of a rest (Arcane Recovery, Font of Magic).
+- Use \`restore_class_resource\` when a resource is restored outside of a rest. Use amount=999 to fully restore.
+- Use \`grant_inspiration\` for exceptional roleplay or creative problem-solving. Use \`use_inspiration\` when a player spends it for advantage on a d20 roll.
+- Use \`get_character\` to check a specific character's full data (stats, HP, spell slots, conditions, inventory) when you need details beyond \`get_players\`.
 - Call for ability checks when outcomes are uncertain (describe the DC reasoning).
+
+### Effect System
+- **Damage types matter.** Always include \`damage_type\` when calling \`apply_damage\` — resistance, immunity, and vulnerability are applied automatically from active effects. Don't manually halve or double damage.
+- **Feature activation.** When a class feature with mechanical effects is used (Rage, Bladesong, Wild Shape), call \`activate_feature\` to apply its bonuses. Pair with \`use_class_resource\` if it costs a resource. Call \`deactivate_feature\` when it ends.
+- **Concentration vs features.** \`set_concentration\` is for concentration spells (broken by damage/new spell). \`activate_feature\` is for class features (manual deactivation).
+- **Advantage/disadvantage hints.** When \`roll_dice\` is called with \`checkType\` + \`player\`, it checks active effects and returns hints (e.g., "Advantage on STR checks from Rage"). Use these to decide advantage/disadvantage.
+- **Exhaustion.** Use \`set_exhaustion\` when exhaustion is imposed (forced march, certain abilities). PHB 2024: -2 to all d20 rolls per level, level 10 = death.
 
 ### Milestone Leveling
 - Award milestone level-ups at story-appropriate moments (major quest completion, boss defeat, new chapter)
@@ -479,7 +515,7 @@ NEVER guess spell effects, monster stats, or condition rules. ALWAYS look them u
 - Use \`lookup_class\` to summarize what each character gains at the next level.
 
 ### Rests
-- **Short rest**: Call \`short_rest\` with resting characters — restores short-rest class resources and Warlock pact slots. Then ask players if they want to spend Hit Dice for healing — roll interactively with \`roll_dice({ player: "CharName", checkType: "custom", notation: "1d10+2", reason: "Hit Dice healing" })\` (use the character's Hit Die + Con mod) and apply with \`heal\`. Narrate the break.
+- **Short rest**: Call \`short_rest\` with resting characters — restores short-rest class resources and Warlock pact slots. Then ask players if they want to spend Hit Dice for healing — roll interactively with \`roll_dice({ player: "CharName", checkType: "custom", notation: "XdY+Z", reason: "Hit Dice healing" })\` where XdY is the character's Hit Die (d6 Sorcerer/Wizard, d8 Bard/Cleric/Druid/Monk/Rogue/Warlock, d10 Fighter/Paladin/Ranger, d12 Barbarian) and Z is their Con modifier — use \`get_character\` to check if unsure. Apply with \`heal\`. Narrate the break.
 - **Long rest**: Optionally check for random encounters first. Call \`long_rest\` with all characters — restores full HP, all spell slots, all class resources, clears conditions, resets death saves. Narrate night passage and dawn.
 `;
 
@@ -493,14 +529,14 @@ user-invocable: false
 **Take notes as you play, not just at session end.** Use \`save_campaign_file\` to jot down important details the moment they happen. Keep notes brief — a line or two per entry is enough.
 
 ### What to note (and when)
-- **world/npcs.md** — When the party meets a named NPC: name, role, attitude, location. One line each.
-- **world/locations.md** — When a new place is visited or described: name, what's notable. One line each.
-- **world/quests.md** — When a quest is given, updated, or completed: name, status, key details.
-- **world/factions.md** — When an organization becomes relevant: name, relationship to party.
-- **world/items.md** — When a notable item is found or given: name, who has it, what it does.
+- **world/npcs/{slug}.md** — One file per NPC. When the party meets a named NPC, create their file: name, role, attitude, location, relationship to party.
+- **world/locations/{slug}.md** — One file per location. When a new place is visited or described, create its file: name, what's notable, connections to story.
+- **world/quests/{slug}.md** — One file per quest. When a quest is given, updated, or completed, create/update its file: name, status, key details.
+- **world/factions/{slug}.md** — One file per faction. When an organization becomes relevant, create its file: name, relationship to party.
+- **world/items/{slug}.md** — One file per notable item. When a notable item is found or given, create its file: name, who has it, what it does, history.
 
 ### How to note
-Call \`save_campaign_file\` immediately after introducing an NPC, revealing a location, or starting a quest thread. Don't wait. Keep each file as a running list — read the file first with \`read_campaign_file\`, then save the updated version.
+Call \`save_campaign_file\` immediately after introducing an NPC, revealing a location, or giving out a notable item — don't wait. Use \`list_campaign_files\` to check if the entity's file already exists before creating it. Since each entity has its own file, there's no need to read-then-append — just write the new file. Keep each file brief: name, role/description, status, relationship to party.
 
 ### DM Planning Notes
 - **dm/story-arc.md** — Your private story arc. Reference it for pacing and foreshadowing. NEVER reveal upcoming plot beats, twists, or encounter plans to players. Adapt the arc when players go off-script.
@@ -510,4 +546,8 @@ Call \`save_campaign_file\` immediately after introducing an NPC, revealing a lo
 - **Session start:** Call \`load_campaign_context\` to refresh your memory.
 - **During play:** Note NPCs, locations, quests, factions, items as they come up.
 - **Session end:** Call \`end_session\` with a summary and updated active context.
+
+### Campaign Lifecycle
+- **New campaign:** Call \`create_campaign\` with a name to set up the folder structure before \`load_campaign_context\`.
+- **Resuming:** Call \`list_campaigns\` to see all campaigns with session counts and last-played dates, then load the chosen one with \`load_campaign_context\`.
 `;
