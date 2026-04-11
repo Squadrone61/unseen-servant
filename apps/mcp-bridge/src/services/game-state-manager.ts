@@ -38,7 +38,11 @@ import {
 import { rollNotation } from "./dice-engine.js";
 import { getClass } from "@unseen-servant/shared/data";
 import { createConditionBundle } from "@unseen-servant/shared/builders";
-import { hasConditionImmunity } from "@unseen-servant/shared/utils";
+import {
+  hasConditionImmunity,
+  applyDamageWithEffects,
+  resolveEffectiveStat,
+} from "@unseen-servant/shared/utils";
 import { log } from "../logger.js";
 import type { MessageQueue } from "../message-queue.js";
 import type { CampaignManager } from "./campaign-manager.js";
@@ -771,7 +775,11 @@ export class GameStateManager {
     const dy = Math.abs(to.y - from.y);
     const distance = Math.max(dx, dy) * 5;
 
-    if (combatant.movementUsed + distance > combatant.speed) {
+    // Compute effective speed (conditions like Grappled set speed to 0)
+    const effectiveSpeed = char
+      ? resolveEffectiveStat(char, "speed", combatant.speed)
+      : combatant.speed; // TODO: NPC activeEffects speed resolution in Phase 4+
+    if (combatant.movementUsed + distance > effectiveSpeed) {
       this.broadcast(
         {
           type: "server:error",
@@ -795,7 +803,7 @@ export class GameStateManager {
 
     // Notify AI of the movement (deferred — AI sees it in history on next real action)
     if (char) {
-      const systemMsg = `[System: ${char.static.name} moved from ${formatGridPosition(from)} to ${formatGridPosition(to)}, ${distance}ft used (${combatant.speed - combatant.movementUsed}ft remaining)]`;
+      const systemMsg = `[System: ${char.static.name} moved from ${formatGridPosition(from)} to ${formatGridPosition(to)}, ${distance}ft used (${effectiveSpeed - combatant.movementUsed}ft remaining)]`;
       this.conversationHistory.push({ role: "user", content: systemMsg });
     }
     this.markDirty();
@@ -1281,7 +1289,7 @@ export class GameStateManager {
       const c: Record<string, unknown> = {
         name: char.static.name,
         hp: `${char.dynamic.currentHP}/${char.static.maxHP}`,
-        ac: char.static.armorClass,
+        ac: resolveEffectiveStat(char, "ac", char.static.armorClass),
         classes: char.static.classes.map((cl) => `${cl.name} ${cl.level}`).join("/"),
       };
       if (char.dynamic.tempHP > 0) c.tempHP = char.dynamic.tempHP;
@@ -1321,9 +1329,12 @@ export class GameStateManager {
               : `${cb.currentHP ?? 0}/${cb.maxHP ?? "?"}`,
           ac:
             cb.type === "player"
-              ? (Object.values(this.characters).find(
-                  (c) => c.static.name.toLowerCase() === cb.name.toLowerCase(),
-                )?.static.armorClass ?? cb.armorClass)
+              ? (() => {
+                  const ch = Object.values(this.characters).find(
+                    (c) => c.static.name.toLowerCase() === cb.name.toLowerCase(),
+                  );
+                  return ch ? resolveEffectiveStat(ch, "ac", ch.static.armorClass) : cb.armorClass;
+                })()
               : cb.armorClass,
         };
         if (id === activeId) entry.current = true;
@@ -1427,10 +1438,24 @@ export class GameStateManager {
         (c) => c.name.toLowerCase() === targetName.toLowerCase() && c.type !== "player",
       );
       if (combatant) {
-        this.createEvent("damage", `${combatant.name} takes ${dmg} damage`, [
-          { type: "damage", target: targetName, amount: dmg, damageType },
+        // Check NPC activeEffects for condition-granted resistances
+        let npcDmg = dmg;
+        let npcApplied: "normal" | "resistant" | "immune" | "vulnerable" = "normal";
+        if (damageType && combatant.activeEffects && combatant.activeEffects.length > 0) {
+          const result = applyDamageWithEffects(combatant.activeEffects, dmg, damageType);
+          npcDmg = result.effectiveDamage;
+          npcApplied = result.applied;
+          if (npcApplied === "immune") {
+            return toResponse(
+              `${combatant.name} is immune to ${damageType} damage — no damage taken`,
+              { target: combatant.name, damageType, applied: "immune", damageDealt: 0 },
+            );
+          }
+        }
+        this.createEvent("damage", `${combatant.name} takes ${npcDmg} damage`, [
+          { type: "damage", target: targetName, amount: npcDmg, damageType },
         ]);
-        let remaining = dmg;
+        let remaining = npcDmg;
         let tempAbsorbed = 0;
         if ((combatant.tempHP ?? 0) > 0) {
           tempAbsorbed = Math.min(combatant.tempHP!, remaining);
@@ -1446,23 +1471,24 @@ export class GameStateManager {
           timestamp: Date.now(),
         });
 
-        let text = `${combatant.name} takes ${dmg} ${damageType ?? ""} damage → ${combatant.currentHP}/${combatant.maxHP} HP`;
+        let text = `${combatant.name} takes ${npcDmg} ${damageType ?? ""} damage${npcApplied !== "normal" ? ` (${npcApplied})` : ""} → ${combatant.currentHP}/${combatant.maxHP} HP`;
         const data: Record<string, unknown> = {
           target: combatant.name,
-          damageDealt: dmg,
+          damageDealt: npcDmg,
           tempHpAbsorbed: tempAbsorbed,
           currentHP: combatant.currentHP,
           maxHP: combatant.maxHP,
           damageType,
+          applied: npcApplied,
         };
         if (combatant.concentratingOn) {
-          const concDC = Math.max(10, Math.floor(dmg / 2));
+          const concDC = Math.max(10, Math.floor(npcDmg / 2));
           text += `\n⚠ ${combatant.name} is concentrating on ${combatant.concentratingOn.spellName} — Constitution save DC ${concDC} required to maintain`;
           data.concentrating = combatant.concentratingOn.spellName;
           data.concentrationDC = concDC;
         }
-        if (damageType) {
-          text += `\nNOTE: Verify whether ${combatant.name} has resistance, immunity, or vulnerability to ${damageType} damage — if so, adjust the amount before calling this tool.`;
+        if (damageType && npcApplied === "normal") {
+          text += `\nNOTE: Verify whether ${combatant.name} has innate resistance, immunity, or vulnerability to ${damageType} damage (from monster stat block) — if so, adjust the amount before calling this tool.`;
         }
         const combatantCover = this.getCoverInfo(combatant.name);
         if (combatantCover) {
@@ -1476,8 +1502,27 @@ export class GameStateManager {
     // Check player characters
     for (const [pName, char] of Object.entries(this.characters)) {
       if (char.static.name.toLowerCase() === targetName.toLowerCase()) {
-        this.createEvent("damage", `${char.static.name} takes ${dmg} damage`, [
-          { type: "damage", target: targetName, amount: dmg, damageType },
+        // Apply resistance/immunity/vulnerability from active effect bundles
+        let effectiveDmg = dmg;
+        let damageApplied: "normal" | "resistant" | "immune" | "vulnerable" = "normal";
+        if (damageType) {
+          const activeEffects = char.dynamic.activeEffects ?? [];
+          if (activeEffects.length > 0) {
+            const result = applyDamageWithEffects(activeEffects, dmg, damageType);
+            effectiveDmg = result.effectiveDamage;
+            damageApplied = result.applied;
+          }
+        }
+
+        if (damageApplied === "immune") {
+          return toResponse(
+            `${char.static.name} is immune to ${damageType} damage — no damage taken`,
+            { target: char.static.name, damageType, applied: "immune", damageDealt: 0 },
+          );
+        }
+
+        this.createEvent("damage", `${char.static.name} takes ${effectiveDmg} damage`, [
+          { type: "damage", target: targetName, amount: effectiveDmg, damageType },
         ]);
 
         // Fix 1 (RULES-CRIT-3): Damage at 0 HP auto-fails death saves
@@ -1492,8 +1537,9 @@ export class GameStateManager {
           let deathText = `${char.static.name} takes damage while at 0 HP — ${failuresAdded} death save failure${failuresAdded > 1 ? "s" : ""} (${char.dynamic.deathSaves.successes}S/${char.dynamic.deathSaves.failures}F)`;
           const deathData: Record<string, unknown> = {
             target: char.static.name,
-            damageDealt: dmg,
+            damageDealt: effectiveDmg,
             damageType,
+            applied: damageApplied,
             deathSaves: { ...char.dynamic.deathSaves },
             failuresAdded,
           };
@@ -1512,7 +1558,7 @@ export class GameStateManager {
           return toResponse(deathText, deathData);
         }
 
-        let remaining = dmg;
+        let remaining = effectiveDmg;
         let tempAbsorbed = 0;
         if (char.dynamic.tempHP > 0) {
           tempAbsorbed = Math.min(char.dynamic.tempHP, remaining);
@@ -1533,14 +1579,15 @@ export class GameStateManager {
           this.broadcast({ type: "server:character_updated", playerName: pName, character: char });
           this.markCharacterDirty(pName);
           return toResponse(
-            `${char.static.name} takes ${dmg} ${damageType ?? ""} damage — MASSIVE DAMAGE, instant death! (overshoot ${overshoot} >= max HP ${char.static.maxHP})`,
+            `${char.static.name} takes ${effectiveDmg} ${damageType ?? ""} damage${damageApplied !== "normal" ? ` (${damageApplied})` : ""} — MASSIVE DAMAGE, instant death! (overshoot ${overshoot} >= max HP ${char.static.maxHP})`,
             {
               target: char.static.name,
-              damageDealt: dmg,
+              damageDealt: effectiveDmg,
               tempHpAbsorbed: tempAbsorbed,
               currentHP: 0,
               maxHP: char.static.maxHP,
               damageType,
+              applied: damageApplied,
               status: "dead",
               massiveDamage: true,
             },
@@ -1556,23 +1603,21 @@ export class GameStateManager {
           character: char,
         });
 
-        let text = `${char.static.name} takes ${dmg} ${damageType ?? ""} damage → ${char.dynamic.currentHP}/${char.static.maxHP} HP`;
+        let text = `${char.static.name} takes ${effectiveDmg} ${damageType ?? ""} damage${damageApplied !== "normal" ? ` (${damageApplied})` : ""} → ${char.dynamic.currentHP}/${char.static.maxHP} HP`;
         const data: Record<string, unknown> = {
           target: char.static.name,
-          damageDealt: dmg,
+          damageDealt: effectiveDmg,
           tempHpAbsorbed: tempAbsorbed,
           currentHP: char.dynamic.currentHP,
           maxHP: char.static.maxHP,
           damageType,
+          applied: damageApplied,
         };
         if (char.dynamic.concentratingOn) {
-          const concDC = Math.max(10, Math.floor(dmg / 2));
+          const concDC = Math.max(10, Math.floor(effectiveDmg / 2));
           text += `\n⚠ ${char.static.name} is concentrating on ${char.dynamic.concentratingOn.spellName} — Constitution save DC ${concDC} required to maintain`;
           data.concentrating = char.dynamic.concentratingOn.spellName;
           data.concentrationDC = concDC;
-        }
-        if (damageType) {
-          text += `\nNOTE: Verify whether ${char.static.name} has resistance, immunity, or vulnerability to ${damageType} damage — if so, adjust the amount before calling this tool.`;
         }
         const charCover = this.getCoverInfo(char.static.name);
         if (charCover) {
@@ -3966,7 +4011,7 @@ export class GameStateManager {
         if (charEntry) {
           const [, ch] = charEntry;
           hp = `${ch.dynamic.currentHP}/${ch.static.maxHP} HP`;
-          ac = `AC ${ch.static.armorClass}`;
+          ac = `AC ${resolveEffectiveStat(ch, "ac", ch.static.armorClass)}`;
           speed = c.speed ?? 30;
           conditions = ch.dynamic.conditions.map((cond) =>
             cond.duration !== undefined ? `${cond.name}(${cond.duration}rd)` : cond.name,
