@@ -21,7 +21,14 @@ export {
   getResources,
   getNotes,
   applyDamageWithEffects,
+  getAction,
 } from "./utils/effect-resolver";
+export type { ActionContext } from "./utils/effect-resolver";
+// Character resolver accessors (Phase 2 — fallback reads; Phase 7 — effect-driven).
+// `export *` silently skips names already exported above (getProficiencies, getSenses,
+// getExtraAttacks from effect-resolver). Consumers needing the char-level overloads
+// of those three should import directly from "@unseen-servant/shared/character/resolve".
+export * from "./character/resolve";
 // Re-export 5etools utils (avoid conflicts with data/index getCasterMultiplier)
 export {
   SCHOOL_MAP,

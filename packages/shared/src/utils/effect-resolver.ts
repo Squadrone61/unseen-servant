@@ -4,6 +4,9 @@ import type {
   ModifierTarget,
   Property,
   ResolveContext,
+  ActionEffect,
+  ActionOutcome,
+  EntityEffects,
 } from "../types/effects";
 import type { CharacterData } from "../types/character";
 import { evaluateExpression } from "./expression-evaluator";
@@ -293,6 +296,128 @@ export function resolveEffectiveStat(
 // ---------------------------------------------------------------------------
 // Damage Application Helper
 // ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// Action Resolution
+// ---------------------------------------------------------------------------
+
+/**
+ * Context for resolving an ActionEffect at use-time.
+ *
+ * - `spellSaveDC`     — caster's computed save DC; substitutes "spell_save_dc" placeholder.
+ * - `upcastLevel`     — number of EXTRA spell levels above the base casting level.
+ *                       e.g. Fireball (base 3) cast at slot 5 → upcastLevel: 2.
+ *                       Magic Missile (base 1) cast at slot 3 → upcastLevel: 2.
+ * - `characterLevel`  — total character level; used for cantrip damage scaling.
+ */
+export interface ActionContext {
+  spellSaveDC?: number;
+  upcastLevel?: number;
+  characterLevel?: number;
+}
+
+/**
+ * Merge two partial ActionOutcome objects by concatenating damage arrays and
+ * taking the last defined value for scalar fields.
+ * Does NOT mutate either argument.
+ */
+function mergeOutcome(
+  base: ActionOutcome | undefined,
+  delta: Partial<ActionOutcome> | undefined,
+): ActionOutcome | undefined {
+  if (!base && !delta) return undefined;
+  if (!delta) return base;
+  if (!base) return delta as ActionOutcome;
+
+  return {
+    ...base,
+    ...delta,
+    // Concatenate damage arrays rather than replace.
+    damage:
+      base.damage || delta.damage ? [...(base.damage ?? []), ...(delta.damage ?? [])] : undefined,
+    // Concatenate applyConditions arrays.
+    applyConditions:
+      base.applyConditions || delta.applyConditions
+        ? [...(base.applyConditions ?? []), ...(delta.applyConditions ?? [])]
+        : undefined,
+  };
+}
+
+/**
+ * Resolve a fully-substituted ActionEffect from an entity and optional context.
+ *
+ * Substitutions applied:
+ * 1. `save.dc === "spell_save_dc"` → replaced with `context.spellSaveDC` (number) when provided.
+ * 2. Upcast scaling: if `context.upcastLevel` and the action has `upcast.perLevel`, append
+ *    the delta outcome (damage, healing, etc.) for each extra spell level above base.
+ *    `upcastLevel` is the count of extra levels (not the total slot level).
+ *    Example: Fireball (base 3) cast at slot 5 → upcastLevel: 2 → +2 × perLevel damage.
+ * 3. Cantrip scaling: if `context.characterLevel` and the action has `cantripScaling`, pick
+ *    the highest entry where `entry.level <= characterLevel` and merge its outcome.
+ *
+ * Does NOT mutate the input entity or its effects. Returns a new ActionEffect or null.
+ *
+ * Phase 2 role: used by Phase 12 (MCP tool wiring) to resolve actions at cast/use time.
+ */
+export function getAction(
+  entity: { effects?: EntityEffects },
+  context: ActionContext = {},
+): ActionEffect | null {
+  const baseAction = entity.effects?.action;
+  if (!baseAction) return null;
+
+  // Start with a shallow copy so we don't mutate the original.
+  let action: ActionEffect = { ...baseAction };
+
+  // --- 1. Substitute spell_save_dc ---
+  if (action.save && action.save.dc === "spell_save_dc" && context.spellSaveDC !== undefined) {
+    action = {
+      ...action,
+      save: { ...action.save, dc: context.spellSaveDC },
+    };
+  }
+
+  // --- 2. Upcast scaling ---
+  // `upcastLevel` is the number of extra spell levels above the spell's base level.
+  // Each extra level adds one copy of `perLevel` to the relevant outcome branches.
+  if (context.upcastLevel !== undefined && context.upcastLevel > 0 && action.upcast?.perLevel) {
+    const extraLevels = context.upcastLevel;
+    const perLevel = action.upcast.perLevel;
+
+    // Build a composite delta by repeating perLevel for each extra level.
+    let cumulativeDelta: Partial<ActionOutcome> = {};
+    for (let i = 0; i < extraLevels; i++) {
+      cumulativeDelta = mergeOutcome(
+        cumulativeDelta as ActionOutcome,
+        perLevel,
+      ) as Partial<ActionOutcome>;
+    }
+
+    action = {
+      ...action,
+      onHit: mergeOutcome(action.onHit, cumulativeDelta),
+      onFailedSave: mergeOutcome(action.onFailedSave, cumulativeDelta),
+      onSuccessfulSave: mergeOutcome(action.onSuccessfulSave, cumulativeDelta),
+    };
+  }
+
+  // --- 3. Cantrip scaling ---
+  if (context.characterLevel !== undefined && action.cantripScaling) {
+    // Pick the highest entry whose level is <= characterLevel.
+    const sorted = [...action.cantripScaling].sort((a, b) => b.level - a.level);
+    const entry = sorted.find((e) => e.level <= context.characterLevel!);
+    if (entry) {
+      action = {
+        ...action,
+        onHit: mergeOutcome(action.onHit, entry.outcome),
+        onFailedSave: mergeOutcome(action.onFailedSave, entry.outcome),
+        onSuccessfulSave: mergeOutcome(action.onSuccessfulSave, entry.outcome),
+      };
+    }
+  }
+
+  return action;
+}
 
 /**
  * Apply damage considering resistance/immunity/vulnerability from effects.
