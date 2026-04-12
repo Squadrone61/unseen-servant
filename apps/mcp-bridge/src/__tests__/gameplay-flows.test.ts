@@ -355,8 +355,9 @@ describe("short rest with mixed party — each archetype handled correctly", () 
     expect(pact!.used).toBe(0);
     expect(warlock.dynamic.currentHP).toBe(25);
 
-    // Barbarian: Rage NOT restored (long rest), HP unchanged
-    expect(barbarian.dynamic.resourcesUsed?.["Rage"]).toBe(1);
+    // Barbarian: Rage recovers 1 use on short rest (2024 PHB), all uses on long rest.
+    // Used 1 → recover 1 → 0 used.
+    expect(barbarian.dynamic.resourcesUsed?.["Rage"]).toBe(0);
     expect(barbarian.dynamic.currentHP).toBe(40);
   });
 

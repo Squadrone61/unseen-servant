@@ -19,7 +19,7 @@ const minimalCharacter = {
     maxHP: 10,
     armorClass: 10,
     proficiencyBonus: 2,
-    speed: 30,
+    speed: { walk: 30 },
     features: [],
     proficiencies: { armor: [], weapons: [], tools: [], other: [] },
     skills: [],

@@ -4183,7 +4183,7 @@ export class GameStateManager {
    *  PHB 2024: each level applies -2 to all D20 Tests (attacks, checks, saves) and -5ft speed.
    *  Long rest removes 1 level. Level 6 = death. */
   setExhaustion(characterName: string, level: number): ToolResponse {
-    const clampedLevel = Math.max(0, Math.min(6, Math.round(level)));
+    const clampedLevel = Math.max(0, Math.min(10, Math.round(level)));
 
     for (const [pName, char] of Object.entries(this.characters)) {
       if (char.static.name.toLowerCase() !== characterName.toLowerCase()) continue;
@@ -4202,8 +4202,8 @@ export class GameStateManager {
         );
       }
 
-      // Level 6 = death
-      if (clampedLevel >= 6) {
+      // Level 10 = death (PHB 2024)
+      if (clampedLevel >= 10) {
         if (!char.dynamic.conditions.some((c) => c.name === "Dead")) {
           char.dynamic.conditions.push({ name: "Dead" });
         }
@@ -4226,7 +4226,7 @@ export class GameStateManager {
           : "none";
       this.markCharacterDirty(pName);
       return toResponse(
-        `${char.static.name} exhaustion level set to ${clampedLevel}${clampedLevel >= 6 ? " — DEAD" : ""}`,
+        `${char.static.name} exhaustion level set to ${clampedLevel}${clampedLevel >= 10 ? " — DEAD" : ""}`,
         {
           target: char.static.name,
           previousLevel: prevLevel,
@@ -4236,7 +4236,7 @@ export class GameStateManager {
         false,
         clampedLevel > 0
           ? [
-              `Exhaustion level ${clampedLevel}: ${penalty}. Long rest reduces by 1. Level 6 = death.`,
+              `Exhaustion level ${clampedLevel}: ${penalty}. Long rest reduces by 1. Level 10 = death.`,
             ]
           : undefined,
       );

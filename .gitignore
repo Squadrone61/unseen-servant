@@ -12,6 +12,7 @@ worker-configuration.d.ts
 .claude
 .unseen
 .testing
+plans
 test-results
 playwright-report
 .playwright-mcp
