@@ -91,7 +91,8 @@
             "type": "resource",
             "name": "Focus Points",
             "maxUses": "table(2:2, 3:3, 4:4, 5:5, 6:6, 7:7, 8:8, 9:9, 10:10, 11:11, 12:12, 13:13, 14:14, 15:15, 16:16, 17:17, 18:18, 19:19, 20:20)",
-            "longRest": "all", "shortRest": "all"
+            "longRest": "all",
+            "shortRest": "all"
           },
           {
             "type": "note",
@@ -155,7 +156,8 @@
             "text": "Reaction: when hit by an attack dealing Bludgeoning, Piercing, or Slashing damage, reduce damage by 1d10 + DEX modifier + Monk level. If reduced to 0, can spend 1 Focus Point to redirect: a creature within 5 ft (melee) or 60 ft not behind Total Cover (ranged) must make a DEX save or take 2 × Martial Arts die + DEX modifier damage of the same type."
           }
         ]
-      }
+      },
+      "activationType": "reaction"
     },
     {
       "name": "Monk Subclass",
@@ -181,7 +183,8 @@
             "text": "Reaction: when falling, reduce fall damage by 5 × Monk level."
           }
         ]
-      }
+      },
+      "activationType": "reaction"
     },
     {
       "name": "Extra Attack",
@@ -465,7 +468,8 @@
                 "text": "Hand of Healing: Magic action, spend 1 Focus Point to touch a creature and restore HP equal to one Martial Arts die roll + WIS modifier. When using Flurry of Blows, can replace one strike with a free use of Hand of Healing."
               }
             ]
-          }
+          },
+          "activationType": "action"
         },
         {
           "name": "Physician's Touch",
@@ -526,7 +530,8 @@
                 "text": "Magic action, spend 5 Focus Points: touch a corpse that died within 24 hours. The creature returns to life with 4d10 + WIS modifier HP, and revives without the Blinded, Deafened, Paralyzed, Poisoned, or Stunned conditions if it died with them. Once per Long Rest."
               }
             ]
-          }
+          },
+          "activationType": "action"
         }
       ]
     },
@@ -575,7 +580,8 @@
                 "text": "Bonus Action: while in Dim Light or Darkness, teleport up to 60 ft to another Dim Light or Darkness space you can see. Gain Advantage on the next melee attack roll you make before the end of the turn."
               }
             ]
-          }
+          },
+          "activationType": "bonus"
         },
         {
           "name": "Improved Shadow Step",
@@ -590,7 +596,8 @@
                 "text": "When using Shadow Step, you can spend 1 Focus Point to ignore the Dim Light/Darkness location requirement. You can also make an Unarmed Strike immediately after teleporting as part of the same Bonus Action."
               }
             ]
-          }
+          },
+          "activationType": "bonus"
         },
         {
           "name": "Cloak of Shadows",
@@ -605,7 +612,8 @@
                 "text": "Magic action, spend 3 Focus Points while in Dim Light or Darkness: shroud yourself in shadows for 1 minute (ends early if Incapacitated or you end your turn in Bright Light). While active: you have the Invisible condition; you can move through occupied spaces as Difficult Terrain (shunted out if you end turn there); Flurry of Blows costs no Focus Points."
               }
             ]
-          }
+          },
+          "activationType": "action"
         }
       ]
     },
@@ -649,7 +657,8 @@
                 "text": "Magic action, spend 2 Focus Points: elemental burst in a 20-ft-radius Sphere within 120 ft. Choose Acid, Cold, Fire, Lightning, or Thunder. Each creature in the area makes a DEX save — fail: 3 × Martial Arts die damage; success: half."
               }
             ]
-          }
+          },
+          "activationType": "action"
         },
         {
           "name": "Stride of the Elements",
@@ -723,7 +732,8 @@
                 "text": "Bonus Action: roll Martial Arts die and regain HP equal to the roll + WIS modifier (minimum 1 HP). Uses equal to WIS modifier (min 1). Recharges on Long Rest."
               }
             ]
-          }
+          },
+          "activationType": "bonus"
         },
         {
           "name": "Fleet Step",
@@ -738,7 +748,8 @@
                 "text": "When you take a Bonus Action other than Step of the Wind, you can immediately use Step of the Wind afterward as well."
               }
             ]
-          }
+          },
+          "activationType": "bonus"
         },
         {
           "name": "Quivering Palm",

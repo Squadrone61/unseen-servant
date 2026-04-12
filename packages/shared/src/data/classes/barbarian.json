@@ -121,7 +121,8 @@
             "text": "Rage ends early if you don Heavy armor or gain the Incapacitated condition."
           }
         ]
-      }
+      },
+      "activationType": "bonus"
     },
     {
       "name": "Unarmored Defense",
@@ -278,7 +279,8 @@
       "name": "Instinctive Pounce",
       "level": 7,
       "className": "Barbarian",
-      "description": "As part of the {rule:Bonus Action} you take to enter your Rage, you can move up to half your {rule:Speed}."
+      "description": "As part of the {rule:Bonus Action} you take to enter your Rage, you can move up to half your {rule:Speed}.",
+      "activationType": "bonus"
     },
     {
       "name": "Ability Score Improvement",
@@ -473,7 +475,8 @@
                 "text": "Reaction: when you take damage from a creature within 5 feet, make one melee attack (weapon or Unarmed Strike) against it."
               }
             ]
-          }
+          },
+          "activationType": "reaction"
         },
         {
           "name": "Intimidating Presence",
@@ -494,7 +497,8 @@
                 "text": "Bonus Action: creatures of your choice in 30-ft Emanation make WIS save (DC 8 + STR mod + Prof). Fail: Frightened 1 minute (repeating save each turn). Can expend a Rage use to restore this feature without resting."
               }
             ]
-          }
+          },
+          "activationType": "bonus"
         }
       ]
     },
@@ -784,7 +788,8 @@
                 "text": "Reaction: while raging, when a creature you can see starts its turn within 30 ft, force a STR save (DC 8 + STR mod + Prof). Fail: teleported to within 5 ft of you. After teleport, you can reduce its Speed to 0 until end of that turn."
               }
             ]
-          }
+          },
+          "activationType": "reaction"
         },
         {
           "name": "Battering Roots",
@@ -814,7 +819,8 @@
                 "text": "On Rage activation and as a Bonus Action while raging, teleport up to 60 ft to an unoccupied space you can see. Once per Rage, extend that teleport to 150 ft and bring up to 6 willing creatures within 10 ft; each appears within 10 ft of your destination."
               }
             ]
-          }
+          },
+          "activationType": "bonus"
         }
       ]
     },
@@ -858,7 +864,8 @@
                 "text": "Pool of d12s (4 at level 3, 5 at 6, 6 at 12, 7 at 17). Bonus Action: expend any number of dice from pool, roll them, regain that many HP."
               }
             ]
-          }
+          },
+          "activationType": "bonus"
         },
         {
           "name": "Fanatical Focus",
@@ -894,7 +901,8 @@
                 "text": "Bonus Action: up to 10 other creatures of your choice within 60 ft gain advantage on attack rolls and saving throws until start of your next turn. Can expend a Rage use to restore this feature without resting."
               }
             ]
-          }
+          },
+          "activationType": "bonus"
         },
         {
           "name": "Rage of the Gods",

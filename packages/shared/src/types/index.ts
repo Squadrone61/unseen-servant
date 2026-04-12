@@ -18,6 +18,7 @@ export type {
   SpellDb,
   ClassDb,
   ClassFeatureDb,
+  FeatureActivation,
   SubclassDb,
   SubclassFeatureDb,
   FeatDb,

@@ -220,7 +220,10 @@
       2
     ]
   ],
-  "preparedSpellFormula": { "ability": "charisma", "levelScale": "half" },
+  "preparedSpellFormula": {
+    "ability": "charisma",
+    "levelScale": "half"
+  },
   "features": [
     {
       "name": "Lay on Hands",
@@ -236,7 +239,8 @@
             "longRest": "all"
           }
         ]
-      }
+      },
+      "activationType": "bonus"
     },
     {
       "name": "Spellcasting",
@@ -305,7 +309,8 @@
             "type": "resource",
             "name": "Channel Divinity",
             "maxUses": "table(3:2, 11:3)",
-            "longRest": "all", "shortRest": "all"
+            "longRest": "all",
+            "shortRest": "all"
           }
         ]
       }
@@ -322,7 +327,8 @@
             "text": "Channel Divinity — Bonus Action: detect Celestials, Fiends, and Undead within 60 ft for 10 minutes (or until Incapacitated). Learn creature type and location, and sense consecrated/desecrated places and objects."
           }
         ]
-      }
+      },
+      "activationType": "bonus"
     },
     {
       "name": "Paladin Subclass",
@@ -676,7 +682,8 @@
                 "text": "Holy Ward: advantage on saves forced by Fiends or Undead. Radiant Damage: enemies starting their turn in the aura take Radiant damage equal to CHA modifier + Proficiency Bonus. Sunlight: aura filled with Bright Light that counts as sunlight."
               }
             ]
-          }
+          },
+          "activationType": "bonus"
         }
       ]
     },
@@ -797,7 +804,8 @@
                 "text": "Channel Divinity — Bonus Action: for 1 hour, gain advantage on Athletics and Acrobatics checks, and Long/High Jump distances increase by 10 feet."
               }
             ]
-          }
+          },
+          "activationType": "bonus"
         },
         {
           "name": "Aura of Alacrity",
@@ -839,7 +847,8 @@
                 "text": "Reaction: when you or a creature within 10 ft is hit by an attack, grant bonus equal to CHA modifier (min +1) to that creature's AC against the triggering attack. If the attack then misses, you can make one weapon attack against the attacker as part of this Reaction (if in range)."
               }
             ]
-          }
+          },
+          "activationType": "reaction"
         },
         {
           "name": "Living Legend",
@@ -868,7 +877,8 @@
                 "text": "Charismatic: advantage on all Charisma checks. Saving Throw Reroll: once per activation, use Reaction to reroll a failed save (must use new roll). Unerring Strike: once per turn, when you miss with a weapon attack, you can cause it to hit instead."
               }
             ]
-          }
+          },
+          "activationType": "bonus"
         }
       ]
     },
@@ -1043,7 +1053,8 @@
                 "text": "Bonus Action: activate for 1 minute (1/Long Rest, or expend level 5 spell slot to restore). Diminish Defiance: enemies in aura have disadvantage on saves against your spells and Channel Divinity. Regeneration: regain 10 HP at the start of each of your turns. Swift Spells: spells with a casting time of an action can instead be cast as a Bonus Action."
               }
             ]
-          }
+          },
+          "activationType": "bonus"
         }
       ]
     },
@@ -1183,7 +1194,8 @@
                 "text": "Reaction: immediately after a creature under your Vow of Enmity hits or misses with an attack roll, make one melee attack against that creature if it's within range."
               }
             ]
-          }
+          },
+          "activationType": "reaction"
         },
         {
           "name": "Avenging Angel",
@@ -1204,7 +1216,8 @@
                 "text": "Bonus Action: activate for 10 minutes (1/Long Rest, or expend level 5 spell slot to restore). Flight: Fly Speed 60 ft with hover. Frightful Aura: enemies starting their turn in your Aura of Protection make WIS save or gain Frightened 1 minute (ends on damage); attack rolls against Frightened creatures have advantage."
               }
             ]
-          }
+          },
+          "activationType": "bonus"
         }
       ]
     }
@@ -1224,6 +1237,5 @@
         "Martial Weapons"
       ]
     }
-  },
-  "casterProgression": "half"
+  }
 }

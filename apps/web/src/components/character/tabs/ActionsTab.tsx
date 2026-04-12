@@ -37,7 +37,7 @@ const STANDARD_ACTION_GROUPS = (() => {
   return { actions, bonusActions, reactions };
 })();
 
-type GroupId = "weapons" | "actions" | "bonus" | "reactions" | "other";
+type GroupId = "weapons" | "actions" | "bonus" | "reactions";
 
 interface FeatureGroup {
   id: GroupId;
@@ -52,13 +52,19 @@ const SOURCE_BADGE_STYLES: Record<string, string> = {
   background: "text-cyan-400/70",
 };
 
-function classifyFeature(f: CharacterFeature): GroupId {
-  if (!f.activationType) return "other";
-  const t = f.activationType.toLowerCase();
-  if (t.includes("bonus action")) return "bonus";
-  if (t.includes("reaction")) return "reactions";
-  if (t.includes("action")) return "actions";
-  return "other";
+type FeatureGroupId = "actions" | "bonus" | "reactions";
+
+function classifyFeature(f: CharacterFeature): FeatureGroupId | null {
+  switch (f.activationType) {
+    case "action":
+      return "actions";
+    case "bonus":
+      return "bonus";
+    case "reaction":
+      return "reactions";
+    default:
+      return null; // passive features stay in the Features tab
+  }
 }
 
 export function ActionsTab({ character, onItemClick, onFeatureClick }: ActionsTabProps) {
@@ -89,17 +95,15 @@ export function ActionsTab({ character, onItemClick, onFeatureClick }: ActionsTa
 
   // Feature-based actions grouped by type
   const featureGroups: FeatureGroup[] = useMemo(() => {
-    const buckets: Record<GroupId, CharacterFeature[]> = {
+    const buckets: Record<Exclude<GroupId, "weapons">, CharacterFeature[]> = {
       actions: [],
       bonus: [],
       reactions: [],
-      other: [],
-      weapons: [], // unused, weapons are separate
     };
 
     for (const f of s.features) {
-      if (!f.activationType) continue;
-      buckets[classifyFeature(f)].push(f);
+      const id = classifyFeature(f);
+      if (id) buckets[id].push(f);
     }
 
     const groups: FeatureGroup[] = [];
@@ -109,8 +113,6 @@ export function ActionsTab({ character, onItemClick, onFeatureClick }: ActionsTa
       groups.push({ id: "bonus", label: "Bonus Actions", features: buckets.bonus });
     if (buckets.reactions.length > 0)
       groups.push({ id: "reactions", label: "Reactions", features: buckets.reactions });
-    if (buckets.other.length > 0)
-      groups.push({ id: "other", label: "Other", features: buckets.other });
     return groups;
   }, [s.features]);
 
@@ -133,8 +135,39 @@ export function ActionsTab({ character, onItemClick, onFeatureClick }: ActionsTa
   const visibleGroups =
     filter === "all" ? featureGroups : featureGroups.filter((g) => g.id === filter);
 
+  const classResources = s.classResources || [];
+
   return (
     <div className="space-y-2">
+      {/* Class Resources (Rage, Ki, Channel Divinity, Superiority Dice, etc.) */}
+      {classResources.length > 0 && (
+        <div className="space-y-1 pb-2 border-b border-gray-700/40">
+          <div
+            className="text-sm text-gray-500 uppercase tracking-wider font-medium px-1.5"
+            style={{ fontFamily: "var(--font-cinzel)" }}
+          >
+            Class Resources
+          </div>
+          {classResources.map((resource) => {
+            const used = (d.resourcesUsed || {})[resource.name] ?? 0;
+            const remaining = resource.maxUses - used;
+            return (
+              <div key={resource.name} className="flex items-center gap-1.5 text-xs px-1.5 py-0.5">
+                <span className="text-gray-300 truncate flex-1">{resource.name}</span>
+                <span className="text-xs text-gray-500">
+                  {[resource.shortRest && "SR", resource.longRest && "LR"]
+                    .filter(Boolean)
+                    .join("/")}
+                </span>
+                <span className="text-amber-400/80 shrink-0">
+                  {remaining}/{resource.maxUses}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
       <FilterChipBar chips={chips} activeChipId={filter} onSelect={setFilter} />
 
       {/* Weapon attacks */}

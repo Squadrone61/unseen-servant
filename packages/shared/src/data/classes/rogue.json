@@ -145,7 +145,8 @@
             "text": "On your turn, you can take Dash, Disengage, or Hide as a Bonus Action."
           }
         ]
-      }
+      },
+      "activationType": "bonus"
     },
     {
       "name": "Rogue Subclass",
@@ -165,7 +166,8 @@
             "text": "Bonus Action: gain Advantage on your next attack roll this turn. You must not have moved this turn; your Speed becomes 0 until the turn ends."
           }
         ]
-      }
+      },
+      "activationType": "bonus"
     },
     {
       "name": "Ability Score Improvement",
@@ -199,7 +201,8 @@
             "text": "Reaction: when an attacker you can see hits you with an attack roll, halve the attack's damage against you (round down)."
           }
         ]
-      }
+      },
+      "activationType": "reaction"
     },
     {
       "name": "Expertise",
@@ -300,7 +303,8 @@
             "text": "Three additional Cunning Strike options: Daze (2d6 cost, CON save or can only move OR take one action/bonus action on its next turn), Knock Out (6d6 cost, CON save or Unconscious 1 min or until damaged), Obscure (3d6 cost, DEX save or Blinded until end of its next turn). Save DC = 8 + DEX mod + Prof."
           }
         ]
-      }
+      },
+      "activationType": "bonus"
     },
     {
       "name": "Slippery Mind",
@@ -365,7 +369,8 @@
             "type": "resource",
             "name": "Stroke of Luck",
             "maxUses": 1,
-            "longRest": "all", "shortRest": "all"
+            "longRest": "all",
+            "shortRest": "all"
           },
           {
             "type": "note",
@@ -384,26 +389,126 @@
       "spellcastingAbility": "intelligence",
       "casterProgression": "third",
       "spellSlotTable": [
-        [0, 0, 0, 0],
-        [0, 0, 0, 0],
-        [2, 0, 0, 0],
-        [3, 0, 0, 0],
-        [3, 0, 0, 0],
-        [3, 0, 0, 0],
-        [4, 2, 0, 0],
-        [4, 2, 0, 0],
-        [4, 2, 0, 0],
-        [4, 3, 0, 0],
-        [4, 3, 0, 0],
-        [4, 3, 0, 0],
-        [4, 3, 2, 0],
-        [4, 3, 2, 0],
-        [4, 3, 2, 0],
-        [4, 3, 3, 0],
-        [4, 3, 3, 0],
-        [4, 3, 3, 0],
-        [4, 3, 3, 1],
-        [4, 3, 3, 1]
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          2,
+          0,
+          0,
+          0
+        ],
+        [
+          3,
+          0,
+          0,
+          0
+        ],
+        [
+          3,
+          0,
+          0,
+          0
+        ],
+        [
+          3,
+          0,
+          0,
+          0
+        ],
+        [
+          4,
+          2,
+          0,
+          0
+        ],
+        [
+          4,
+          2,
+          0,
+          0
+        ],
+        [
+          4,
+          2,
+          0,
+          0
+        ],
+        [
+          4,
+          3,
+          0,
+          0
+        ],
+        [
+          4,
+          3,
+          0,
+          0
+        ],
+        [
+          4,
+          3,
+          0,
+          0
+        ],
+        [
+          4,
+          3,
+          2,
+          0
+        ],
+        [
+          4,
+          3,
+          2,
+          0
+        ],
+        [
+          4,
+          3,
+          2,
+          0
+        ],
+        [
+          4,
+          3,
+          3,
+          0
+        ],
+        [
+          4,
+          3,
+          3,
+          0
+        ],
+        [
+          4,
+          3,
+          3,
+          0
+        ],
+        [
+          4,
+          3,
+          3,
+          1
+        ],
+        [
+          4,
+          3,
+          3,
+          1
+        ]
       ],
       "features": [
         {
@@ -438,7 +543,8 @@
                 "text": "Mage Hand can be cast as a Bonus Action and made Invisible. Can be controlled as a Bonus Action. Can use it to make Dexterity (Sleight of Hand) checks."
               }
             ]
-          }
+          },
+          "activationType": "bonus"
         },
         {
           "name": "Magical Ambush",
@@ -489,7 +595,8 @@
                 "text": "Reaction: when a creature casts a spell targeting you or including you in its area, force an INT save (DC = your spell save DC). On failure: negate the spell's effect against you, steal the spell for 8 hours (prepared; must be level 1+ and a level you can cast). The creature can't cast it for 8 hours."
               }
             ]
-          }
+          },
+          "activationType": "reaction"
         }
       ]
     },
@@ -657,7 +764,8 @@
                 "text": "Psychic Teleportation (Bonus Action): expend one Psionic Energy Die, throw a psychic blade to an unoccupied space up to 10 × the die roll feet away, then teleport there."
               }
             ]
-          }
+          },
+          "activationType": "bonus"
         },
         {
           "name": "Psychic Veil",
@@ -722,7 +830,8 @@
                 "text": "Bonus Action: either (a) make a Dexterity (Sleight of Hand) check to pick a lock, disarm a trap, or pick a pocket, or (b) take the Utilize action or use a magic item requiring the Magic action."
               }
             ]
-          }
+          },
+          "activationType": "bonus"
         },
         {
           "name": "Second-Story Work",

@@ -1894,7 +1894,8 @@
           "type": "resource",
           "name": "Fade Away",
           "maxUses": 1,
-          "longRest": "all", "shortRest": "all"
+          "longRest": "all",
+          "shortRest": "all"
         },
         {
           "type": "note",
@@ -2417,7 +2418,8 @@
           "text": "Reaction: When a visible creature hits another creature within 5 feet of you, reduce the damage by 1d10 + Proficiency Bonus. Requires holding a shield or Simple/Martial weapon."
         }
       ]
-    }
+    },
+    "activationType": "reaction"
   },
   {
     "name": "Keen Mind",
@@ -2577,7 +2579,8 @@
           "type": "resource",
           "name": "Guarded Mind",
           "maxUses": 1,
-          "longRest": "all", "shortRest": "all"
+          "longRest": "all",
+          "shortRest": "all"
         },
         {
           "type": "note",
@@ -3000,7 +3003,8 @@
           "type": "resource",
           "name": "Orcish Fury",
           "maxUses": 1,
-          "longRest": "all", "shortRest": "all"
+          "longRest": "all",
+          "shortRest": "all"
         },
         {
           "type": "note",
@@ -3216,7 +3220,8 @@
           "text": "Reaction (requires Shield): When a visible creature attacks a target within 5 feet of you (not you), impose Disadvantage on that attack and all attacks against the same target until the start of your next turn, while you remain within 5 feet."
         }
       ]
-    }
+    },
+    "activationType": "reaction"
   },
   {
     "name": "Resilient",
@@ -3472,7 +3477,8 @@
           "type": "resource",
           "name": "Second Chance",
           "maxUses": 1,
-          "longRest": "all", "shortRest": "all"
+          "longRest": "all",
+          "shortRest": "all"
         },
         {
           "type": "note",

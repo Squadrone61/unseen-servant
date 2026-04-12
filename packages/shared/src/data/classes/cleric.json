@@ -306,7 +306,10 @@
     5,
     5
   ],
-  "preparedSpellFormula": { "ability": "wisdom", "levelScale": "full" },
+  "preparedSpellFormula": {
+    "ability": "wisdom",
+    "levelScale": "full"
+  },
   "features": [
     {
       "name": "Spellcasting",
@@ -369,7 +372,8 @@
             "type": "resource",
             "name": "Channel Divinity",
             "maxUses": "table(2:2, 6:3, 18:4)",
-            "longRest": "all", "shortRest": "all"
+            "longRest": "all",
+            "shortRest": "all"
           },
           {
             "type": "note",
@@ -477,7 +481,8 @@
             "text": "As a Magic action, cast any Cleric spell of level 5 or lower (no Reaction requirement) without expending a spell slot or Material components. Recharges on Long Rest."
           }
         ]
-      }
+      },
+      "activationType": "action"
     },
     {
       "name": "Ability Score Improvement",
@@ -674,7 +679,8 @@
                 "text": "Channel Divinity: Preserve Life — Magic action. Distribute HP restoration equal to 5 × Cleric level among Bloodied creatures within 30 ft (no more than half HP maximum per creature). Costs one Channel Divinity use."
               }
             ]
-          }
+          },
+          "activationType": "action"
         },
         {
           "name": "Blessed Healer",
@@ -841,7 +847,8 @@
                 "usage": "always_prepared"
               }
             ]
-          }
+          },
+          "activationType": "reaction"
         },
         {
           "name": "Channel Divinity: Radiance of the Dawn",
@@ -892,7 +899,8 @@
                 "text": "Magic action: Activate sunlight aura (1 minute, dismissible without action). You shed Bright Light 60 ft and Dim Light 30 ft beyond. Enemies in Bright Light have disadvantage on saves against Radiance of the Dawn and spells dealing Fire or Radiant damage."
               }
             ]
-          }
+          },
+          "activationType": "action"
         }
       ]
     },
@@ -1041,7 +1049,8 @@
                 "condition": "when both you and your illusion are within 5 feet of the target"
               }
             ]
-          }
+          },
+          "activationType": "bonus"
         },
         {
           "name": "Trickster's Transposition",
@@ -1056,7 +1065,8 @@
                 "text": "Trickster's Transposition — Whenever you use the Bonus Action to create or move the Invoke Duplicity illusion, you may teleport and swap places with it."
               }
             ]
-          }
+          },
+          "activationType": "bonus"
         },
         {
           "name": "Improved Duplicity",
@@ -1155,7 +1165,8 @@
                 "type": "resource",
                 "name": "War Priest",
                 "maxUses": "max(wis, 1)",
-                "longRest": "all", "shortRest": "all"
+                "longRest": "all",
+                "shortRest": "all"
               },
               {
                 "type": "note",
@@ -1212,7 +1223,8 @@
                 "usage": "always_prepared"
               }
             ]
-          }
+          },
+          "activationType": "bonus"
         },
         {
           "name": "Channel Divinity: Guided Strike",

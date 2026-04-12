@@ -340,7 +340,8 @@
             "text": "Spell save DC increases by 1, and you have advantage on Sorcerer spell attack rolls."
           }
         ]
-      }
+      },
+      "activationType": "bonus"
     },
     {
       "name": "Font of Magic",
@@ -420,7 +421,8 @@
             "text": "Can activate Innate Sorcery even when no uses remain by spending 2 Sorcery Points. While Innate Sorcery is active, you can apply up to two Metamagic options per spell."
           }
         ]
-      }
+      },
+      "activationType": "bonus"
     },
     {
       "name": "Ability Score Improvement",
@@ -599,7 +601,8 @@
                 "text": "Bonus Action: establish telepathic link with one creature you can see within 30 ft. Link range = Charisma modifier miles (min. 1). Duration = Sorcerer level in minutes. Ends early if you link to a new creature. Both must share a known language."
               }
             ]
-          }
+          },
+          "activationType": "bonus"
         },
         {
           "name": "Psionic Sorcery",
@@ -649,7 +652,8 @@
                 "text": "Bonus Action: spend 1+ Sorcery Points (1 per benefit) to alter your body for 10 minutes. Benefits: Swim Speed ×2 + water breathing; Fly Speed = Speed + hover; see Invisible creatures within 60 ft not in Total Cover; move through 1-inch spaces and escape nonmagical restraints/Grappled with 5 ft of movement."
               }
             ]
-          }
+          },
+          "activationType": "bonus"
         },
         {
           "name": "Warping Implosion",
@@ -787,7 +791,8 @@
                 "text": "Reaction: when a creature you can see within 60 ft is about to roll a d20 with Advantage or Disadvantage, cancel both — the roll is made normally."
               }
             ]
-          }
+          },
+          "activationType": "reaction"
         },
         {
           "name": "Bastion of Law",
@@ -823,7 +828,8 @@
                 "text": "Bonus Action: enter trance for 1 minute. During trance: attack rolls against you can't have Advantage; on any D20 Test you make, treat d20 rolls of 1–9 as a 10. Restore use by spending 5 Sorcery Points."
               }
             ]
-          }
+          },
+          "activationType": "bonus"
         },
         {
           "name": "Clockwork Cavalcade",
@@ -1063,7 +1069,8 @@
                 "text": "Bonus Action: sprout draconic wings for 1 hour (dismissible free). Grants Fly Speed 60 ft. Restore use by spending 3 Sorcery Points."
               }
             ]
-          }
+          },
+          "activationType": "bonus"
         },
         {
           "name": "Dragon Companion",
@@ -1144,7 +1151,8 @@
                 "text": "Reaction: after a creature you can see rolls a D20 Test, spend 1 Sorcery Point to roll 1d4 and add or subtract that value (your choice) from the d20 result."
               }
             ]
-          }
+          },
+          "activationType": "reaction"
         },
         {
           "name": "Controlled Chaos",

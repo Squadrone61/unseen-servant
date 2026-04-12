@@ -153,9 +153,13 @@ export interface ClassDb extends DbEntity {
   canRitualCast?: boolean;
 }
 
+/** Action economy classification for a feature. Undefined = passive. */
+export type FeatureActivation = "action" | "bonus" | "reaction";
+
 export interface ClassFeatureDb extends DbEntity {
   level: number;
   className: ClassName;
+  activationType?: FeatureActivation;
 }
 
 export interface SubclassDb {
@@ -175,6 +179,7 @@ export interface SubclassFeatureDb extends DbEntity {
   level: number;
   className: ClassName;
   subclassName: string;
+  activationType?: FeatureActivation;
 }
 
 // ─── Feats ─────────────────────────────────────────────────
@@ -184,6 +189,7 @@ export interface FeatDb extends DbEntity {
   /** Pre-formatted: "Level 4+", "Strength 13+" */
   prerequisite?: string;
   repeatable?: boolean;
+  activationType?: FeatureActivation;
 }
 
 // ─── Species ───────────────────────────────────────────────

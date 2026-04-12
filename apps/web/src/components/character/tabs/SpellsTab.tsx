@@ -98,41 +98,11 @@ export function SpellsTab({ character, onSpellClick }: SpellsTabProps) {
 
   const filteredLevels = filter === "all" ? spellLevels : [Number(filter)];
 
-  const classResources = s.classResources || [];
   const pactSlots = (d.pactMagicSlots || []).filter((sl) => sl.total > 0);
 
   return (
     <div className="space-y-2">
       <FilterChipBar chips={chips} activeChipId={filter} onSelect={setFilter} />
-
-      {/* Class Resources (Channel Divinity, Ki, Rage, etc.) */}
-      {classResources.length > 0 && (
-        <div className="space-y-1 pb-2 border-b border-gray-700/40">
-          <div
-            className="text-sm text-gray-500 uppercase tracking-wider font-medium px-1.5"
-            style={{ fontFamily: "var(--font-cinzel)" }}
-          >
-            Class Resources
-          </div>
-          {classResources.map((resource) => {
-            const used = (d.resourcesUsed || {})[resource.name] ?? 0;
-            const remaining = resource.maxUses - used;
-            return (
-              <div key={resource.name} className="flex items-center gap-1.5 text-xs px-1.5 py-0.5">
-                <span className="text-gray-300 truncate flex-1">{resource.name}</span>
-                <span className="text-xs text-gray-500">
-                  {[resource.shortRest && "SR", resource.longRest && "LR"]
-                    .filter(Boolean)
-                    .join("/")}
-                </span>
-                <span className="text-amber-400/80 shrink-0">
-                  {remaining}/{resource.maxUses}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      )}
 
       {/* Pact Magic Slots (Warlock) */}
       {pactSlots.length > 0 && (
@@ -150,7 +120,7 @@ export function SpellsTab({ character, onSpellClick }: SpellsTabProps) {
         </div>
       )}
 
-      {s.spells.length === 0 && classResources.length === 0 && (
+      {s.spells.length === 0 && pactSlots.length === 0 && (
         <div className="text-xs text-gray-600 text-center py-4">No spells known</div>
       )}
 

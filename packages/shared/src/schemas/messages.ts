@@ -121,7 +121,7 @@ export const characterFeatureSchema = z.object({
   source: z.enum(["class", "race", "feat", "background"]),
   sourceLabel: z.string(),
   requiredLevel: z.number().optional(),
-  activationType: z.string().optional(),
+  activationType: z.enum(["action", "bonus", "reaction"]).optional(),
 });
 
 export const advantageEntrySchema = z.object({

@@ -619,7 +619,8 @@
                 "text": "Reaction: cast Misty Step when you take damage. Two new Steps of the Fey options: Disappearing Step (Invisible until start of next turn or until you attack/deal damage/cast) or Dreadful Step (creatures within 5 ft of departure or arrival space make WIS save vs DC or take 2d10 Psychic)."
               }
             ]
-          }
+          },
+          "activationType": "reaction"
         },
         {
           "name": "Beguiling Defenses",
@@ -644,7 +645,8 @@
                 "text": "Reaction when hit by an attack: reduce damage taken by half (round down); attacker makes WIS save vs spell DC or takes Psychic damage equal to the damage you take. Expend a Pact Magic slot to restore this use without resting."
               }
             ]
-          }
+          },
+          "activationType": "reaction"
         },
         {
           "name": "Bewitching Magic",
@@ -1109,7 +1111,8 @@
                 "type": "resource",
                 "name": "Clairvoyant Combatant",
                 "maxUses": 1,
-                "longRest": "all", "shortRest": "all"
+                "longRest": "all",
+                "shortRest": "all"
               },
               {
                 "type": "note",

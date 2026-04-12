@@ -74,7 +74,10 @@
   },
   "spellcastingAbility": "wisdom",
   "casterProgression": "half",
-  "preparedSpellFormula": { "ability": "wisdom", "levelScale": "half" },
+  "preparedSpellFormula": {
+    "ability": "wisdom",
+    "levelScale": "half"
+  },
   "spellSlotTable": [
     [
       2,
@@ -476,7 +479,8 @@
             "text": "Bonus Action: gain the Invisible condition until the end of your next turn."
           }
         ]
-      }
+      },
+      "activationType": "bonus"
     },
     {
       "name": "Subclass Feature",
@@ -576,7 +580,8 @@
                 "text": "When you command the beast with your Bonus Action, it can also take Dash, Disengage, Dodge, or Help as its own Bonus Action. Its attacks can deal Force damage instead of their normal type."
               }
             ]
-          }
+          },
+          "activationType": "bonus"
         },
         {
           "name": "Bestial Fury",
@@ -707,7 +712,8 @@
                 "text": "Reaction: when you or a visible creature within 120 ft succeeds a save vs. Charmed/Frightened, force a different visible creature within 120 ft to make a WIS save (DC = spell save DC) or be Charmed or Frightened (your choice) for 1 minute (repeating save each turn)."
               }
             ]
-          }
+          },
+          "activationType": "reaction"
         },
         {
           "name": "Fey Reinforcements",
@@ -916,7 +922,8 @@
                 "text": "Reaction: when a creature makes an attack roll against you, impose Disadvantage on that roll. Whether it hits or misses, teleport up to 30 ft to an unoccupied space you can see."
               }
             ]
-          }
+          },
+          "activationType": "reaction"
         }
       ]
     },
@@ -1051,7 +1058,8 @@
                 "text": "Reaction: when you take damage, gain Resistance to that damage type until end of the current turn (applies to the triggering damage and any further damage of the same type on that turn)."
               }
             ]
-          }
+          },
+          "activationType": "reaction"
         }
       ]
     }

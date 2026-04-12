@@ -101,14 +101,16 @@
             "type": "resource",
             "name": "Second Wind",
             "maxUses": "table(1:2, 4:3, 10:4)",
-            "longRest": "all", "shortRest": "all"
+            "longRest": "all",
+            "shortRest": "all"
           },
           {
             "type": "note",
             "text": "As a Bonus Action, expend one use to regain 1d10 + Fighter level Hit Points."
           }
         ]
-      }
+      },
+      "activationType": "bonus"
     },
     {
       "name": "Weapon Mastery",
@@ -135,7 +137,8 @@
             "type": "resource",
             "name": "Action Surge",
             "maxUses": "table(2:1, 17:2)",
-            "longRest": "all", "shortRest": "all"
+            "longRest": "all",
+            "shortRest": "all"
           },
           {
             "type": "note",
@@ -196,7 +199,8 @@
             "text": "When you use Second Wind as a Bonus Action, you can move up to half your Speed without provoking Opportunity Attacks."
           }
         ]
-      }
+      },
+      "activationType": "bonus"
     },
     {
       "name": "Ability Score Improvement",
@@ -372,7 +376,8 @@
                 "type": "resource",
                 "name": "Superiority Dice",
                 "maxUses": "table(3:4, 7:5, 15:6)",
-                "longRest": "all", "shortRest": "all"
+                "longRest": "all",
+                "shortRest": "all"
               },
               {
                 "type": "note",
@@ -434,7 +439,8 @@
                 "text": "As a Bonus Action, learn the Immunities, Resistances, and Vulnerabilities of a creature within 30 feet. Restore a use by expending one Superiority Die (no action required)."
               }
             ]
-          }
+          },
+          "activationType": "bonus"
         },
         {
           "name": "Improved Combat Superiority",
@@ -605,26 +611,126 @@
       "spellcastingAbility": "intelligence",
       "casterProgression": "third",
       "spellSlotTable": [
-        [0, 0, 0, 0],
-        [0, 0, 0, 0],
-        [2, 0, 0, 0],
-        [3, 0, 0, 0],
-        [3, 0, 0, 0],
-        [3, 0, 0, 0],
-        [4, 2, 0, 0],
-        [4, 2, 0, 0],
-        [4, 2, 0, 0],
-        [4, 3, 0, 0],
-        [4, 3, 0, 0],
-        [4, 3, 0, 0],
-        [4, 3, 2, 0],
-        [4, 3, 2, 0],
-        [4, 3, 2, 0],
-        [4, 3, 3, 0],
-        [4, 3, 3, 0],
-        [4, 3, 3, 0],
-        [4, 3, 3, 1],
-        [4, 3, 3, 1]
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          2,
+          0,
+          0,
+          0
+        ],
+        [
+          3,
+          0,
+          0,
+          0
+        ],
+        [
+          3,
+          0,
+          0,
+          0
+        ],
+        [
+          3,
+          0,
+          0,
+          0
+        ],
+        [
+          4,
+          2,
+          0,
+          0
+        ],
+        [
+          4,
+          2,
+          0,
+          0
+        ],
+        [
+          4,
+          2,
+          0,
+          0
+        ],
+        [
+          4,
+          3,
+          0,
+          0
+        ],
+        [
+          4,
+          3,
+          0,
+          0
+        ],
+        [
+          4,
+          3,
+          0,
+          0
+        ],
+        [
+          4,
+          3,
+          2,
+          0
+        ],
+        [
+          4,
+          3,
+          2,
+          0
+        ],
+        [
+          4,
+          3,
+          2,
+          0
+        ],
+        [
+          4,
+          3,
+          3,
+          0
+        ],
+        [
+          4,
+          3,
+          3,
+          0
+        ],
+        [
+          4,
+          3,
+          3,
+          0
+        ],
+        [
+          4,
+          3,
+          3,
+          1
+        ],
+        [
+          4,
+          3,
+          3,
+          1
+        ]
       ],
       "features": [
         {
@@ -737,7 +843,8 @@
                 "type": "resource",
                 "name": "Psionic Energy Dice",
                 "maxUses": "table(3:4, 5:6, 9:8, 11:8, 13:10, 17:12)",
-                "longRest": "all", "shortRest": "all"
+                "longRest": "all",
+                "shortRest": "all"
               },
               {
                 "type": "note",
@@ -759,7 +866,8 @@
                 "text": "Psi-Powered Leap (Bonus Action, 1/short rest or spend a die): gain Fly Speed equal to twice your Speed until end of your current turn. Telekinetic Thrust: on a successful Psionic Strike, force target STR save (DC 8 + INT mod + prof); on failure, choose Prone or push 10 ft horizontally."
               }
             ]
-          }
+          },
+          "activationType": "bonus"
         },
         {
           "name": "Guarded Mind",
@@ -799,7 +907,8 @@
                 "text": "As a Bonus Action, grant Half Cover to up to INT modifier creatures (minimum 1) within 30 ft for 1 minute (ends early if you become Incapacitated). Restore a use by expending one Psionic Energy Die (no action)."
               }
             ]
-          }
+          },
+          "activationType": "bonus"
         },
         {
           "name": "Telekinetic Master",
@@ -820,7 +929,8 @@
                 "text": "Cast Telekinesis (INT-based, no slot or components, 1/long rest or spend a Psionic Energy Die). While concentrating on it, you can make one weapon attack as a Bonus Action on each of your turns (including the casting turn)."
               }
             ]
-          }
+          },
+          "activationType": "bonus"
         }
       ]
     }

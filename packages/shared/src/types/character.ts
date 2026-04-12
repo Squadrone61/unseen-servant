@@ -4,6 +4,7 @@
 import type { ConditionEntry } from "./game-state";
 import type { EffectBundle } from "./effects";
 import type { BuilderState } from "./builder";
+import type { FeatureActivation } from "./data";
 
 export interface AbilityScores {
   strength: number;
@@ -100,7 +101,7 @@ export interface CharacterFeature {
   source: "class" | "race" | "feat" | "background";
   sourceLabel: string; // "Wizard", "Half-Orc", "War Caster"
   requiredLevel?: number; // class features only
-  activationType?: string; // "1 action", "1 bonus action", "1 reaction", etc.
+  activationType?: FeatureActivation; // undefined = passive
 }
 
 export interface CombatBonus {

@@ -619,6 +619,7 @@ function computeFeatures(ids: CharacterIdentifiers): CharacterFeature[] {
           source: "class",
           sourceLabel: cls.name,
           requiredLevel: feature.level,
+          activationType: feature.activationType,
         });
       }
     }
@@ -648,6 +649,7 @@ function computeFeatures(ids: CharacterIdentifiers): CharacterFeature[] {
               source: "class",
               sourceLabel: `${cls.name} (${sub.name})`,
               requiredLevel: sf.level,
+              activationType: sf.activationType,
             });
           }
         }
@@ -671,8 +673,16 @@ function computeFeatures(ids: CharacterIdentifiers): CharacterFeature[] {
     const dbFeat = getFeat(feat.name);
     if (dbFeat) {
       const idx = features.findIndex((f) => f.name === feat.name);
-      if (idx >= 0 && (!features[idx].description || features[idx].description === feat.name)) {
-        features[idx] = { ...features[idx], description: dbFeat.description };
+      if (idx >= 0) {
+        const current = features[idx];
+        const needsDesc = !current.description || current.description === feat.name;
+        if (needsDesc || (!current.activationType && dbFeat.activationType)) {
+          features[idx] = {
+            ...current,
+            description: needsDesc ? dbFeat.description : current.description,
+            activationType: current.activationType ?? dbFeat.activationType,
+          };
+        }
       }
     }
   }

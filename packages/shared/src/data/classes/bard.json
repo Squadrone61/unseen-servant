@@ -350,7 +350,8 @@
             "text": "Bardic Inspiration die: d6 (levels 1-4), d8 (levels 5-9), d10 (levels 10-14), d12 (levels 15-20). The inspired creature can roll the die and add it to a D20 Test after failing, within 1 hour."
           }
         ]
-      }
+      },
+      "activationType": "bonus"
     },
     {
       "name": "Spellcasting",
@@ -431,7 +432,8 @@
             "text": "Reaction: when you or a creature within 30 ft fails a save against Charmed or Frightened, you can cause the save to be rerolled with Advantage."
           }
         ]
-      }
+      },
+      "activationType": "reaction"
     },
     {
       "name": "Ability Score Improvement",
@@ -590,7 +592,8 @@
                 "text": "Reaction + 1 Bardic Inspiration: when an enemy within 5 ft ends its turn, move up to half Speed (no Opportunity Attacks). One ally within 30 ft can also use their Reaction to move up to half their Speed (no Opportunity Attacks)."
               }
             ]
-          }
+          },
+          "activationType": "reaction"
         },
         {
           "name": "Tandem Footwork",
@@ -679,7 +682,8 @@
                 "text": "Bonus Action: expend 1 Bardic Inspiration, roll the die. Up to CHA modifier creatures (min 1) within 60 ft each gain Temporary HP equal to 2 × the die result, and can Reaction-move up to their Speed without provoking Opportunity Attacks."
               }
             ]
-          }
+          },
+          "activationType": "bonus"
         },
         {
           "name": "Mantle of Majesty",
@@ -705,7 +709,8 @@
                 "text": "Bonus Action: cast Command without a spell slot and assume unearthly appearance for 1 min (Concentration). Each turn of the duration, cast Command again as Bonus Action (no slot). Charmed creatures auto-fail saves against this Command. Restore use by expending a level 3+ spell slot (no action)."
               }
             ]
-          }
+          },
+          "activationType": "bonus"
         },
         {
           "name": "Unbreakable Majesty",
@@ -719,14 +724,16 @@
                 "type": "resource",
                 "name": "Unbreakable Majesty",
                 "maxUses": 1,
-                "longRest": "all", "shortRest": "all"
+                "longRest": "all",
+                "shortRest": "all"
               },
               {
                 "type": "note",
                 "text": "Bonus Action: assume majestic presence for 1 min (ends if Incapacitated). The first time each turn a creature hits you with an attack roll, it must make a CHA save (DC = your spell save DC) or the attack misses."
               }
             ]
-          }
+          },
+          "activationType": "bonus"
         }
       ]
     },
@@ -765,7 +772,8 @@
                 "text": "Reaction + 1 Bardic Inspiration: when a creature within 60 ft makes a damage roll or succeeds on an ability check or attack roll, subtract the Bardic Inspiration die result from the roll (potentially turning success into failure)."
               }
             ]
-          }
+          },
+          "activationType": "reaction"
         },
         {
           "name": "Magical Discoveries",
@@ -831,7 +839,8 @@
                 "text": "Creatures with your Bardic Inspiration die can use it for: Defense (Reaction when hit — add die result to AC against that attack) or Offense (after hitting — add die result to the attack's damage)."
               }
             ]
-          }
+          },
+          "activationType": "reaction"
         },
         {
           "name": "Martial Training",
@@ -895,7 +904,8 @@
                 "text": "After casting a spell with a casting time of 1 action, you can make one weapon attack as a Bonus Action."
               }
             ]
-          }
+          },
+          "activationType": "bonus"
         }
       ]
     }

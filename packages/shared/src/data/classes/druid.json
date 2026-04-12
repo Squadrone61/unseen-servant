@@ -89,7 +89,10 @@
     4,
     4
   ],
-  "preparedSpellFormula": { "ability": "wisdom", "levelScale": "full" },
+  "preparedSpellFormula": {
+    "ability": "wisdom",
+    "levelScale": "full"
+  },
   "spellSlotTable": [
     [
       2,
@@ -401,14 +404,16 @@
             "type": "resource",
             "name": "Wild Shape",
             "maxUses": "table(2:2, 6:3, 17:4)",
-            "longRest": "all", "shortRest": "all"
+            "longRest": "all",
+            "shortRest": "all"
           },
           {
             "type": "note",
             "text": "When assuming a Wild Shape form, gain Temporary Hit Points equal to Druid level. Can't cast spells while shape-shifted (Concentration is maintained)."
           }
         ]
-      }
+      },
+      "activationType": "bonus"
     },
     {
       "name": "Druid Subclass",
@@ -960,7 +965,8 @@
                 "text": "Bonus Action: teleport up to 30 ft to a visible unoccupied space; gain advantage on the next attack roll before end of this turn. Can also restore uses by expending a level 2+ spell slot per use (no action required)."
               }
             ]
-          }
+          },
+          "activationType": "bonus"
         },
         {
           "name": "Lunar Form",
@@ -1081,7 +1087,8 @@
                 "text": "Bonus Action: expend one Wild Shape use to surround yourself with a 5-ft ocean spray Emanation for 10 minutes. Each turn (Bonus Action), target one creature in the Emanation: CON save vs spell save DC or take Cold damage (Wis modifier in d6s, min 1d6) and be pushed 15 ft if Large or smaller."
               }
             ]
-          }
+          },
+          "activationType": "bonus"
         },
         {
           "name": "Aquatic Affinity",
@@ -1204,7 +1211,8 @@
                 "text": "Bonus Action: expend one Wild Shape use to enter Starry Form (10 min; sheds bright light 10 ft, dim light 10 ft more). Choose constellation: Archer (Bonus Action ranged spell attack, 1d8 + Wis Radiant on hit), Chalice (heal self or ally within 30 ft for 1d8 + Wis when casting a healing spell slot), or Dragon (treat d20 rolls of 9 or lower as 10 for Intelligence/Wisdom checks and CON saves to maintain Concentration)."
               }
             ]
-          }
+          },
+          "activationType": "bonus"
         },
         {
           "name": "Cosmic Omen",
@@ -1225,7 +1233,8 @@
                 "text": "After each Long Rest, roll a die: even = Weal (Reaction to add 1d6 to a D20 Test by a creature you can see within 30 ft), odd = Woe (Reaction to subtract 1d6 from such a test). Uses per Long Rest = Wisdom modifier (minimum 1)."
               }
             ]
-          }
+          },
+          "activationType": "reaction"
         },
         {
           "name": "Twinkling Constellations",
@@ -1279,6 +1288,5 @@
         "Shield"
       ]
     }
-  },
-  "casterProgression": "full"
+  }
 }
