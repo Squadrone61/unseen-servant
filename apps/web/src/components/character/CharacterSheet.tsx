@@ -3,7 +3,7 @@
 import { useState } from "react";
 import type {
   CharacterData,
-  CharacterSpell,
+  Spell,
   CharacterFeature,
   AdvantageEntry,
   InventoryItem,
@@ -43,7 +43,7 @@ type ClickPosition = { x: number; y: number };
 
 type PopupState =
   | { type: "ability"; id: keyof AbilityScores; position: ClickPosition }
-  | { type: "spell"; spell: CharacterSpell; position: ClickPosition }
+  | { type: "spell"; spell: Spell; position: ClickPosition }
   | { type: "item"; item: InventoryItem; position: ClickPosition }
   | { type: "feature"; feature: CharacterFeature; position: ClickPosition }
   | null;

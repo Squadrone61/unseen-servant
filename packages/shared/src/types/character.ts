@@ -5,6 +5,7 @@ import type { ConditionEntry } from "./game-state";
 import type { EffectBundle } from "./effects";
 import type { BuilderState } from "./builder";
 import type { FeatureActivation } from "./data";
+import type { Spell } from "./spell";
 
 export interface AbilityScores {
   strength: number;
@@ -21,23 +22,7 @@ export interface CharacterClass {
   subclass?: string;
 }
 
-export interface CharacterSpell {
-  name: string;
-  level: number; // 0 = cantrip
-  prepared: boolean;
-  alwaysPrepared: boolean; // from class/subclass features (domain spells, etc.)
-  spellSource: "class" | "race" | "feat" | "item" | "background";
-  knownByClass: boolean; // in spellbook/known list (e.g. wizard spells in book)
-  sourceClass?: string; // which class this spell comes from (e.g. "Paladin", "Warlock")
-  school?: string; // "Evocation", "Abjuration", etc.
-  castingTime?: string; // "1 action", "1 bonus action", etc.
-  range?: string; // "120 feet", "Self", "Touch"
-  components?: string; // "V, S, M (a pinch of sulfur)"
-  duration?: string; // "Instantaneous", "Concentration, up to 1 minute"
-  description?: string; // Full text description (HTML stripped)
-  ritual?: boolean;
-  concentration?: boolean;
-}
+export type { Spell };
 
 export interface SpellSlotLevel {
   level: number; // 1-9
@@ -204,7 +189,7 @@ export interface CharacterStaticData {
   savingThrows: SavingThrowProficiency[];
   senses: string[]; // "Darkvision 60 ft.", "Passive Perception 14"
   languages: string[]; // "Common", "Elvish"
-  spells: CharacterSpell[];
+  spells: Spell[];
   spellcasting?: Record<
     string,
     {

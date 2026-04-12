@@ -1,12 +1,12 @@
 import { useState, useMemo } from "react";
-import type { CharacterData, CharacterSpell } from "@unseen-servant/shared/types";
+import type { CharacterData, Spell } from "@unseen-servant/shared/types";
 import { getSpellAvailability } from "@unseen-servant/shared/utils";
 import type { SpellAvailability } from "@unseen-servant/shared/utils";
 import { FilterChipBar } from "../FilterChipBar";
 
 interface SpellsTabProps {
   character: CharacterData;
-  onSpellClick: (spell: CharacterSpell, e: React.MouseEvent) => void;
+  onSpellClick: (spell: Spell, e: React.MouseEvent) => void;
 }
 
 const AVAILABILITY_STYLES: Record<SpellAvailability, { dot: string; text: string }> = {
@@ -15,13 +15,7 @@ const AVAILABILITY_STYLES: Record<SpellAvailability, { dot: string; text: string
   known: { dot: "bg-gray-600 ring-1 ring-gray-500", text: "text-gray-500" },
 };
 
-function SpellRow({
-  spell,
-  onClick,
-}: {
-  spell: CharacterSpell;
-  onClick: (e: React.MouseEvent) => void;
-}) {
+function SpellRow({ spell, onClick }: { spell: Spell; onClick: (e: React.MouseEvent) => void }) {
   const availability = getSpellAvailability(spell);
   const styles = AVAILABILITY_STYLES[availability];
 
@@ -65,7 +59,7 @@ export function SpellsTab({ character, onSpellClick }: SpellsTabProps) {
   const d = character.dynamic;
 
   // Sort: active first, then ritual-only, then known; within each group alphabetical
-  const spellSort = (a: CharacterSpell, b: CharacterSpell) => {
+  const spellSort = (a: Spell, b: Spell) => {
     const order: Record<SpellAvailability, number> = {
       active: 0,
       "ritual-only": 1,

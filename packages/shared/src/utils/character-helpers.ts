@@ -4,12 +4,12 @@ import type {
   CharacterData,
   CharacterDynamicData,
   CharacterSpeed,
-  CharacterSpell,
   CharacterStaticData,
   SkillProficiency,
   SavingThrowProficiency,
   SpellSlotLevel,
 } from "../types/character";
+import type { Spell } from "../types/spell";
 
 /**
  * Extract the walk speed from a speed value that may be a plain number (legacy)
@@ -403,7 +403,7 @@ export type SpellAvailability = "active" | "ritual-only" | "known";
 /**
  * Determine the availability tier of a spell for display.
  */
-export function getSpellAvailability(spell: CharacterSpell): SpellAvailability {
+export function getSpellAvailability(spell: Spell): SpellAvailability {
   // Cantrips are always active
   if (spell.level === 0) return "active";
   // Always-prepared from class/subclass features

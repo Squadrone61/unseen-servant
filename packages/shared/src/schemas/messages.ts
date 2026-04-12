@@ -39,12 +39,33 @@ export const characterClassSchema = z.object({
   subclass: z.string().optional(),
 });
 
+export const spellSchema = z.object({
+  // Spell metadata (required — enriched once at build time)
+  name: z.string(),
+  level: z.number(),
+  school: z.string(),
+  castingTime: z.string(),
+  range: z.string(),
+  components: z.string(),
+  duration: z.string(),
+  ritual: z.boolean(),
+  concentration: z.boolean(),
+  description: z.string(),
+  // Character-bound fields
+  prepared: z.boolean(),
+  alwaysPrepared: z.boolean(),
+  spellSource: z.enum(["class", "race", "feat", "item", "species"]),
+  knownByClass: z.boolean(),
+  sourceClass: z.string(),
+});
+
+/** @deprecated Use spellSchema. Kept only for reading legacy saved data. */
 export const characterSpellSchema = z.object({
   name: z.string(),
   level: z.number(),
   prepared: z.boolean(),
   alwaysPrepared: z.boolean(),
-  spellSource: z.enum(["class", "race", "feat", "item", "background"]),
+  spellSource: z.enum(["class", "race", "feat", "item", "background", "species"]),
   knownByClass: z.boolean(),
   school: z.string().optional(),
   castingTime: z.string().optional(),
@@ -187,7 +208,7 @@ export const characterStaticDataSchema = z.object({
   savingThrows: z.array(savingThrowProficiencySchema),
   senses: z.array(z.string()),
   languages: z.array(z.string()),
-  spells: z.array(characterSpellSchema),
+  spells: z.array(spellSchema),
   spellcasting: z
     .record(
       z.string(),

@@ -23,8 +23,8 @@ import type {
   CombatBonus,
   AdvantageEntry,
   CharacterClass,
-  CharacterSpell,
 } from "../types/character";
+import type { Spell } from "../types/spell";
 import type { BuilderState } from "../types/builder";
 import type {
   EffectBundle,
@@ -157,11 +157,12 @@ function collectToolProficienciesFromState(state: BuilderState): string[] {
 }
 
 /**
- * Map builder cantrips + preparedSpells to CharacterSpell objects using the
- * D&D database to fill in spell details.
+ * Map builder cantrips + preparedSpells to Spell objects using the
+ * D&D database to fill in spell metadata. Returns both the enriched spells
+ * and any warnings for spells that could not be found in the DB.
  */
-function assembleSpellsFromState(state: BuilderState): CharacterSpell[] {
-  const spells: CharacterSpell[] = [];
+function assembleSpellsFromState(state: BuilderState, warnings: string[]): Spell[] {
+  const spells: Spell[] = [];
   const allCantrips = new Set(Object.values(state.cantrips).flat());
   const allPrepared = new Set(Object.values(state.preparedSpells).flat());
 
@@ -171,43 +172,51 @@ function assembleSpellsFromState(state: BuilderState): CharacterSpell[] {
 
     for (const name of classCantrips) {
       const db = getSpell(name);
+      if (!db) {
+        warnings.push(`Unknown spell "${name}" — skipped (no DB entry)`);
+        continue;
+      }
       spells.push({
         name,
         level: 0,
+        school: db.school,
+        castingTime: db.castingTime,
+        range: db.range,
+        components: db.components,
+        duration: db.duration,
+        description: db.description,
+        ritual: db.ritual ?? false,
+        concentration: db.concentration ?? false,
         prepared: true,
         alwaysPrepared: false,
         spellSource: "class",
         knownByClass: true,
         sourceClass: cls.name,
-        school: db?.school,
-        castingTime: db?.castingTime,
-        range: db?.range,
-        components: db?.components,
-        duration: db?.duration,
-        description: db?.description,
-        ritual: db?.ritual,
-        concentration: db?.concentration,
       });
     }
 
     for (const name of classPrepared) {
       const db = getSpell(name);
+      if (!db) {
+        warnings.push(`Unknown spell "${name}" — skipped (no DB entry)`);
+        continue;
+      }
       spells.push({
         name,
-        level: db?.level ?? 1,
+        level: db.level,
+        school: db.school,
+        castingTime: db.castingTime,
+        range: db.range,
+        components: db.components,
+        duration: db.duration,
+        description: db.description,
+        ritual: db.ritual ?? false,
+        concentration: db.concentration ?? false,
         prepared: true,
         alwaysPrepared: false,
         spellSource: "class",
         knownByClass: true,
         sourceClass: cls.name,
-        school: db?.school,
-        castingTime: db?.castingTime,
-        range: db?.range,
-        components: db?.components,
-        duration: db?.duration,
-        description: db?.description,
-        ritual: db?.ritual,
-        concentration: db?.concentration,
       });
     }
 
@@ -221,22 +230,26 @@ function assembleSpellsFromState(state: BuilderState): CharacterSpell[] {
         for (const name of sub.additionalSpells) {
           if (allPrepared.has(name) || allCantrips.has(name)) continue;
           const db = getSpell(name);
+          if (!db) {
+            warnings.push(`Unknown spell "${name}" — skipped (no DB entry)`);
+            continue;
+          }
           spells.push({
             name,
-            level: db?.level ?? 1,
+            level: db.level,
+            school: db.school,
+            castingTime: db.castingTime,
+            range: db.range,
+            components: db.components,
+            duration: db.duration,
+            description: db.description,
+            ritual: db.ritual ?? false,
+            concentration: db.concentration ?? false,
             prepared: true,
             alwaysPrepared: true,
             spellSource: "class",
             knownByClass: false,
             sourceClass: cls.name,
-            school: db?.school,
-            castingTime: db?.castingTime,
-            range: db?.range,
-            components: db?.components,
-            duration: db?.duration,
-            description: db?.description,
-            ritual: db?.ritual,
-            concentration: db?.concentration,
           });
         }
       }
@@ -490,7 +503,7 @@ export function buildCharacter(state: BuilderState): {
   const skillProficiencies = assembleSkillProficienciesFromState(state);
   const skillExpertise = assembleSkillExpertiseFromState(state);
   const saveProficiencies = assembleSaveProficienciesFromState(state);
-  const spellsRaw = assembleSpellsFromState(state);
+  const spellsRaw = assembleSpellsFromState(state, warnings);
   const languages = collectLanguagesFromState(state);
   const toolProficiencies = collectToolProficienciesFromState(state);
   const additionalFeatures = assembleAdditionalFeatures(state);

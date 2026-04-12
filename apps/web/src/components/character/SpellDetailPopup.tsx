@@ -1,12 +1,12 @@
 "use client";
 
-import type { CharacterSpell } from "@unseen-servant/shared/types";
+import type { Spell } from "@unseen-servant/shared/types";
 import { DetailPopover } from "./DetailPopover";
 import { RichText } from "../ui/RichText";
 import { useEntityClick } from "./EntityPopoverContext";
 
 interface SpellDetailPopupProps {
-  spell: CharacterSpell;
+  spell: Spell;
   onClose: () => void;
   position: { x: number; y: number };
 }
