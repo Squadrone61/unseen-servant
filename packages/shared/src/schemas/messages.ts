@@ -59,25 +59,6 @@ export const spellSchema = z.object({
   sourceClass: z.string(),
 });
 
-/** @deprecated Use spellSchema. Kept only for reading legacy saved data. */
-export const characterSpellSchema = z.object({
-  name: z.string(),
-  level: z.number(),
-  prepared: z.boolean(),
-  alwaysPrepared: z.boolean(),
-  spellSource: z.enum(["class", "race", "feat", "item", "background", "species"]),
-  knownByClass: z.boolean(),
-  school: z.string().optional(),
-  castingTime: z.string().optional(),
-  range: z.string().optional(),
-  components: z.string().optional(),
-  duration: z.string().optional(),
-  description: z.string().optional(),
-  ritual: z.boolean().optional(),
-  concentration: z.boolean().optional(),
-  sourceClass: z.string().optional(),
-});
-
 export const spellSlotLevelSchema = z.object({
   level: z.number(),
   total: z.number(),
