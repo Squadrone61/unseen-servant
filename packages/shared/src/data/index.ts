@@ -17,6 +17,7 @@ import type {
   OptionalFeatureDb,
   LanguageDb,
   ActionDb,
+  PackDb,
 } from "../types/data";
 
 // ─── Raw JSON imports ──────────────────────────────────
@@ -38,6 +39,7 @@ import statusesData from "./statuses.json";
 import languagesData from "./languages.json";
 import actionsData from "./actions.json";
 import masteriesData from "./weapon-masteries.json";
+import packsData from "./items/packs.json";
 
 // Individual class files (pre-assembled ClassDb format)
 import barbarianData from "./classes/barbarian.json";
@@ -169,6 +171,13 @@ export function getWeaponMastery(name: string): WeaponMastery | undefined {
   return weaponMasteries.get(name.toLowerCase());
 }
 
+// Equipment Packs
+export const packsArray = packsData as unknown as PackDb[];
+export const packs = buildMap(packsArray);
+export function getPack(name: string): PackDb | undefined {
+  return packs.get(name.toLowerCase());
+}
+
 // ─── Convenience lookup functions ──────────────────────
 
 export function getClass(name: string): ClassDb | undefined {
@@ -267,30 +276,6 @@ export function getCasterMultiplier(className: string): number {
   }
 }
 
-// Third-Caster Spell Slot Table (Eldritch Knight, Arcane Trickster)
-export const THIRD_CASTER_SLOTS: Record<number, number[]> = {
-  1: [],
-  2: [],
-  3: [2],
-  4: [3],
-  5: [3],
-  6: [3],
-  7: [4, 2],
-  8: [4, 2],
-  9: [4, 2],
-  10: [4, 3],
-  11: [4, 3],
-  12: [4, 3],
-  13: [4, 3, 2],
-  14: [4, 3, 2],
-  15: [4, 3, 2],
-  16: [4, 3, 3],
-  17: [4, 3, 3],
-  18: [4, 3, 3],
-  19: [4, 3, 3, 1],
-  20: [4, 3, 3, 1],
-};
-
 // ─── Fuzzy lookup ────────────────────────────────────────
 
 export { fuzzyLookup, type FuzzyResult } from "../utils/fuzzy-lookup";
@@ -351,6 +336,7 @@ export type {
   SpellSchool,
   SpellLevel,
   ClassName,
+  PackDb,
   // Note: CreatureSize is intentionally NOT re-exported here — game-state.ts
   // exports a different CreatureSize (lowercase) via types/index, and re-exporting
   // the titlecase data.ts version would cause a conflict in shared/src/index.ts.

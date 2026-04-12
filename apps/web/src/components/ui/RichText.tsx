@@ -120,19 +120,43 @@ function renderInlineMarkdown(text: string, keyPrefix: string): ReactNode[] {
 }
 
 // ---------------------------------------------------------------------------
+// Entity click handler type
+// ---------------------------------------------------------------------------
+
+type EntityClickHandler = (
+  category: EntityCategory,
+  name: string,
+  position: { x: number; y: number },
+) => void;
+
+// ---------------------------------------------------------------------------
 // Render a single line's segments (inline entities + markdown)
 // ---------------------------------------------------------------------------
 
-function renderLineSegments(segments: Segment[], lineKey: string): ReactNode {
+function renderLineSegments(
+  segments: Segment[],
+  lineKey: string,
+  onEntityClick?: EntityClickHandler,
+): ReactNode {
   return segments.map((seg, idx) => {
     if (seg.kind === "entity") {
       const colorClass = categoryStyles[seg.category];
+      // "rule" category has no backing data — keep as styled text only
+      const isClickable = onEntityClick && seg.category !== "rule";
       return (
         <span
           key={`${lineKey}-e${idx}`}
-          className={`${colorClass} cursor-help underline decoration-dotted underline-offset-2`}
+          className={`${colorClass} ${isClickable ? "cursor-pointer" : "cursor-help"} underline decoration-dotted underline-offset-2`}
           title={`${seg.category}: ${seg.name}`}
           data-entity={`${seg.category}:${seg.name}`}
+          onClick={
+            isClickable
+              ? (e) => {
+                  e.stopPropagation();
+                  onEntityClick(seg.category, seg.name, { x: e.clientX, y: e.clientY });
+                }
+              : undefined
+          }
         >
           {seg.display}
         </span>
@@ -234,7 +258,11 @@ function groupBlocks(rawLines: string[]): Block[] {
   return blocks;
 }
 
-function renderBlock(block: Block, blockIdx: number): ReactNode {
+function renderBlock(
+  block: Block,
+  blockIdx: number,
+  onEntityClick?: EntityClickHandler,
+): ReactNode {
   const bk = `block-${blockIdx}`;
 
   if (block.type === "paragraph") {
@@ -245,7 +273,7 @@ function renderBlock(block: Block, blockIdx: number): ReactNode {
           return (
             <span key={`${bk}-l${li}`}>
               {li > 0 && <br />}
-              {renderLineSegments(segments, `${bk}-l${li}`)}
+              {renderLineSegments(segments, `${bk}-l${li}`, onEntityClick)}
             </span>
           );
         })}
@@ -263,7 +291,7 @@ function renderBlock(block: Block, blockIdx: number): ReactNode {
           return (
             <li key={`${bk}-li${li}`} className="flex gap-2">
               <span className="mt-px text-gray-500 select-none shrink-0">&bull;</span>
-              <span>{renderLineSegments(segments, `${bk}-li${li}`)}</span>
+              <span>{renderLineSegments(segments, `${bk}-li${li}`, onEntityClick)}</span>
             </li>
           );
         })}
@@ -289,7 +317,7 @@ function renderBlock(block: Block, blockIdx: number): ReactNode {
                     key={`${bk}-th${ci}`}
                     className="border border-gray-700 px-2 py-1 text-left text-gray-300 font-semibold bg-gray-800/60"
                   >
-                    {renderLineSegments(parseSegments(cell), `${bk}-th${ci}`)}
+                    {renderLineSegments(parseSegments(cell), `${bk}-th${ci}`, onEntityClick)}
                   </th>
                 ))}
               </tr>
@@ -304,7 +332,11 @@ function renderBlock(block: Block, blockIdx: number): ReactNode {
                       key={`${bk}-td${ri}-${ci}`}
                       className="border border-gray-700/60 px-2 py-1 text-gray-400"
                     >
-                      {renderLineSegments(parseSegments(cell), `${bk}-td${ri}-${ci}`)}
+                      {renderLineSegments(
+                        parseSegments(cell),
+                        `${bk}-td${ri}-${ci}`,
+                        onEntityClick,
+                      )}
                     </td>
                   ))}
                 </tr>
@@ -326,11 +358,16 @@ function renderBlock(block: Block, blockIdx: number): ReactNode {
 interface RichTextProps {
   text: string;
   className?: string;
+  onEntityClick?: EntityClickHandler;
 }
 
-export function RichText({ text, className }: RichTextProps) {
+export function RichText({ text, className, onEntityClick }: RichTextProps) {
   const rawLines = text.split("\n");
   const blocks = groupBlocks(rawLines);
 
-  return <div className={className}>{blocks.map((block, idx) => renderBlock(block, idx))}</div>;
+  return (
+    <div className={className}>
+      {blocks.map((block, idx) => renderBlock(block, idx, onEntityClick))}
+    </div>
+  );
 }

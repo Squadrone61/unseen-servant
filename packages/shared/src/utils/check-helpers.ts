@@ -186,7 +186,8 @@ export function computeCheckModifier(char: CharacterData, check: CheckRequest): 
     const save = s.savingThrows.find((sv) => sv.ability === parsed.ability);
     const profBonus = save?.proficient ? s.proficiencyBonus : 0;
     const target = `save_${parsed.ability}` as ModifierTarget;
-    return abilityMod + profBonus + getEffectBonus(char, target);
+    const flatBonus = save?.bonus ?? 0;
+    return abilityMod + profBonus + flatBonus + getEffectBonus(char, target);
   }
 
   if (parsed.category === "ability") {
@@ -198,9 +199,12 @@ export function computeCheckModifier(char: CharacterData, check: CheckRequest): 
   }
 
   if (parsed.category === "attack") {
-    // Spell attacks use spellAttackBonus directly + effect bonuses
-    if (parsed.attackType === "spell" && s.spellAttackBonus !== undefined) {
-      return s.spellAttackBonus + getEffectBonus(char, "attack_spell");
+    // Spell attacks use the first (or only) spellcasting entry + effect bonuses
+    if (parsed.attackType === "spell" && s.spellcasting) {
+      const entries = Object.values(s.spellcasting);
+      if (entries.length > 0) {
+        return entries[0].attackBonus + getEffectBonus(char, "attack_spell");
+      }
     }
 
     // Finesse: max(STR, DEX) mod + proficiency

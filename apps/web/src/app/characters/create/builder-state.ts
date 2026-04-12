@@ -1,26 +1,20 @@
-import type {
-  AbilityScores,
-  CharacterAppearance,
-  CharacterTraits,
-  InventoryItem,
-  Currency,
-  Ability,
-} from "@unseen-servant/shared/types";
 import { getClass, getSpell } from "@unseen-servant/shared/data";
 
-// ---------------------------------------------------------------------------
-// Step type
-// ---------------------------------------------------------------------------
+// Re-export types from shared for backward compatibility with local imports
+export type {
+  BuilderStep,
+  BuilderClassEntry,
+  FeatSelection,
+  BuilderState,
+  BuilderAction,
+} from "@unseen-servant/shared/types";
 
-export type BuilderStep =
-  | "species"
-  | "background"
-  | "class"
-  | "abilities"
-  | "feats"
-  | "spells"
-  | "equipment"
-  | "details";
+import type {
+  BuilderState,
+  BuilderStep,
+  BuilderAction,
+  BuilderClassEntry,
+} from "@unseen-servant/shared/types";
 
 export const BUILDER_STEPS: BuilderStep[] = [
   "species",
@@ -32,96 +26,6 @@ export const BUILDER_STEPS: BuilderStep[] = [
   "equipment",
   "details",
 ];
-
-// ---------------------------------------------------------------------------
-// Supporting types
-// ---------------------------------------------------------------------------
-
-/**
- * Represents a single ASI/feat selection at a given class level.
- */
-export interface FeatSelection {
-  /** Class level that grants this ASI/feat slot. */
-  level: number;
-  /** Whether the player picked a feat or a raw ability score increase. */
-  type: "feat" | "asi";
-  /** Feat name — populated when type === 'feat'. */
-  featName?: string;
-  /**
-   * Ability increases — populated when type === 'asi'.
-   * Keys are ability names; values are the numeric increase (+1 or +2).
-   */
-  asiAbilities?: Partial<Record<Ability, number>>;
-}
-
-/**
- * One entry per class the character has levels in.
- */
-export interface BuilderClassEntry {
-  name: string;
-  level: number;
-  subclass: string | null;
-  /** Skill proficiency picks for this class */
-  skills: string[];
-  /** Feature choice selections keyed by choiceId, scoped to this class */
-  choices: Record<string, string[]>;
-}
-
-// ---------------------------------------------------------------------------
-// BuilderState
-// ---------------------------------------------------------------------------
-
-export interface BuilderState {
-  currentStep: BuilderStep;
-  completedSteps: BuilderStep[];
-
-  // --- Step 1: Species ---
-  species: string | null;
-  /** choiceId → selected values (e.g. "skill-proficiency" → ["Perception"]) */
-  speciesChoices: Record<string, string[]>;
-
-  // --- Step 2: Background ---
-  background: string | null;
-  /** choiceId → selected values */
-  backgroundChoices: Record<string, string[]>;
-  /** How the background's ability score bonuses are distributed: +2/+1 or +1/+1/+1 */
-  abilityScoreMode: "two-one" | "three-ones";
-  /** Which abilities receive the background's ability score bonuses */
-  abilityScoreAssignments: Partial<Record<Ability, number>>;
-
-  // --- Step 3: Class ---
-  /** All class entries — index 0 is always the primary class. */
-  classes: BuilderClassEntry[];
-  /** Which class tab is currently being configured in the UI. */
-  activeClassIndex: number;
-
-  // --- Step 4: Abilities ---
-  abilityMethod: "standard-array" | "point-buy" | "manual";
-  baseAbilities: AbilityScores;
-
-  // --- Step 5: Feats & ASIs ---
-  /** One entry per ASI slot unlocked by class level */
-  featSelections: FeatSelection[];
-  /** featName → choiceId → selections (for feats that have sub-choices) */
-  featChoices: Record<string, Record<string, string[]>>;
-
-  // --- Step 6: Spells ---
-  cantrips: string[];
-  preparedSpells: string[];
-
-  // --- Step 7: Equipment ---
-  equipmentMode: "starting" | "gold";
-  startingGold: number;
-
-  // --- Step 8: Details ---
-  name: string;
-  appearance: Partial<CharacterAppearance>;
-  backstory: string;
-  alignment: string;
-  traits: CharacterTraits;
-  equipment: InventoryItem[];
-  currency: Currency;
-}
 
 // ---------------------------------------------------------------------------
 // Initial state factory
@@ -162,12 +66,10 @@ export function createInitialState(): BuilderState {
     featChoices: {},
 
     // Step 6
-    cantrips: [],
-    preparedSpells: [],
+    cantrips: {},
+    preparedSpells: {},
 
     // Step 7
-    equipmentMode: "starting",
-    startingGold: 75,
 
     // Step 8
     name: "",
@@ -179,75 +81,6 @@ export function createInitialState(): BuilderState {
     currency: { cp: 0, sp: 0, gp: 0, pp: 0 },
   };
 }
-
-// ---------------------------------------------------------------------------
-// BuilderAction discriminated union
-// ---------------------------------------------------------------------------
-
-export type BuilderAction =
-  // Navigation
-  | { type: "SET_STEP"; step: BuilderStep }
-
-  // Species
-  | { type: "SET_SPECIES"; species: string }
-  | { type: "SET_SPECIES_CHOICE"; choiceId: string; values: string[] }
-  | { type: "CLEAR_SPECIES" }
-
-  // Background
-  | { type: "SET_BACKGROUND"; background: string }
-  | { type: "CLEAR_BACKGROUND" }
-  | { type: "SET_BACKGROUND_CHOICE"; choiceId: string; values: string[] }
-  | { type: "SET_ABILITY_SCORE_MODE"; mode: BuilderState["abilityScoreMode"] }
-  | {
-      type: "SET_ABILITY_SCORE_ASSIGNMENT";
-      assignments: Partial<Record<Ability, number>>;
-    }
-
-  // Class
-  | { type: "ADD_CLASS"; className: string }
-  | { type: "REMOVE_CLASS"; index: number }
-  | { type: "SET_ACTIVE_CLASS"; index: number }
-  | { type: "SET_CLASS_LEVEL"; index: number; level: number }
-  | { type: "SET_CLASS_SUBCLASS"; index: number; subclass: string }
-  | { type: "SET_CLASS_SKILLS"; index: number; skills: string[] }
-  | { type: "SET_CLASS_CHOICE"; index: number; choiceId: string; values: string[] }
-
-  // Abilities
-  | { type: "SET_ABILITY_METHOD"; method: BuilderState["abilityMethod"] }
-  | { type: "SET_BASE_ABILITIES"; abilities: AbilityScores }
-
-  // Feats & ASIs
-  | { type: "SET_FEAT_SELECTION"; index: number; selection: FeatSelection }
-  | {
-      type: "SET_FEAT_CHOICE";
-      featName: string;
-      choiceId: string;
-      values: string[];
-    }
-
-  // Spells
-  | { type: "SET_CANTRIPS"; cantrips: string[] }
-  | { type: "SET_PREPARED_SPELLS"; spells: string[] }
-
-  // Equipment
-  | { type: "SET_EQUIPMENT_MODE"; mode: "starting" | "gold" }
-  | { type: "SET_STARTING_GOLD"; gold: number }
-  | { type: "ADD_EQUIPMENT"; item: InventoryItem }
-  | { type: "REMOVE_EQUIPMENT"; index: number }
-  | { type: "TOGGLE_EQUIPPED"; index: number }
-
-  // Details
-  | { type: "SET_NAME"; name: string }
-  | { type: "SET_APPEARANCE"; appearance: Partial<CharacterAppearance> }
-  | { type: "SET_BACKSTORY"; backstory: string }
-  | { type: "SET_ALIGNMENT"; alignment: string }
-  | { type: "SET_TRAITS"; traits: Partial<CharacterTraits> }
-  | { type: "SET_EQUIPMENT"; equipment: InventoryItem[] }
-  | { type: "SET_CURRENCY"; currency: Currency }
-
-  // Lifecycle
-  | { type: "LOAD_STATE"; state: BuilderState }
-  | { type: "RESET" };
 
 // ---------------------------------------------------------------------------
 // Step completion helpers
@@ -412,9 +245,9 @@ export function builderReducer(state: BuilderState, action: BuilderAction): Buil
         ...state,
         classes: newClasses,
         activeClassIndex: newClasses.length - 1,
-        // Reset spells when class composition changes
-        cantrips: [],
-        preparedSpells: [],
+        // Keep existing class spells, new class starts empty
+        cantrips: { ...state.cantrips },
+        preparedSpells: { ...state.preparedSpells },
       };
       break;
     }
@@ -424,17 +257,21 @@ export function builderReducer(state: BuilderState, action: BuilderAction): Buil
         next = state;
         break;
       }
+      const removedName = state.classes[action.index].name;
       const remaining = state.classes.filter((_, i) => i !== action.index);
       const newIndex = Math.min(state.activeClassIndex, remaining.length - 1);
       // Trim feat selections to total level of remaining classes
       const newTotal = remaining.reduce((sum, c) => sum + c.level, 0);
+      // Remove spells for the removed class
+      const { [removedName]: _rc, ...keptCantrips } = state.cantrips;
+      const { [removedName]: _rp, ...keptPrepared } = state.preparedSpells;
       next = {
         ...state,
         classes: remaining,
         activeClassIndex: newIndex,
         featSelections: state.featSelections.filter((s) => s.level <= newTotal),
-        cantrips: [],
-        preparedSpells: [],
+        cantrips: keptCantrips,
+        preparedSpells: keptPrepared,
       };
       break;
     }
@@ -459,38 +296,40 @@ export function builderReducer(state: BuilderState, action: BuilderAction): Buil
       const updatedEntry: BuilderClassEntry = { ...entry, level: clampedLevel };
       const updatedClasses = state.classes.map((c, i) => (i === action.index ? updatedEntry : c));
       const newTotal = updatedClasses.reduce((sum, c) => sum + c.level, 0);
-      // Compute the highest accessible spell level at the new class level.
-      // Cantrips (level 0) are always kept — they don't depend on spell slot level.
-      // Prepared spells are filtered to those still accessible at the new level.
-      // If the class has no spellSlotTable it is a non-caster — clear all spells.
-      let nextCantrips = state.cantrips;
-      let nextPreparedSpells = state.preparedSpells;
-      if (action.index === 0) {
-        const primaryClass = updatedClasses[0];
-        const classDb = primaryClass ? getClass(primaryClass.name) : undefined;
-        const spellSlotTable = classDb?.spellSlotTable;
-        if (!spellSlotTable) {
-          // Non-caster: clear everything
-          nextCantrips = [];
-          nextPreparedSpells = [];
-        } else {
-          // Determine the highest spell level accessible at clampedLevel
-          const slotsAtLevel = spellSlotTable[clampedLevel - 1] ?? [];
-          let maxSpellLevel = 0;
-          for (let i = slotsAtLevel.length - 1; i >= 0; i--) {
-            if ((slotsAtLevel[i] ?? 0) > 0) {
-              maxSpellLevel = i + 1; // slot index is 0-based, spell level is 1-based
-              break;
-            }
+      // Prune spells for the changed class that exceed the new max spell level.
+      const changedClassName = updatedEntry.name;
+      const classDb = getClass(changedClassName);
+      const spellSlotTable = classDb?.spellSlotTable;
+      let nextCantrips: typeof state.cantrips;
+      let nextPreparedSpells: typeof state.preparedSpells;
+      if (!spellSlotTable) {
+        // Non-caster: clear this class's spells
+        const { [changedClassName]: _cc, ...restC } = state.cantrips;
+        const { [changedClassName]: _cp, ...restP } = state.preparedSpells;
+        nextCantrips = restC;
+        nextPreparedSpells = restP;
+      } else {
+        // Cantrips unaffected by level change
+        nextCantrips = state.cantrips;
+        // Determine the highest spell level accessible at the new level
+        const slotsAtLevel = spellSlotTable[clampedLevel - 1] ?? [];
+        let maxSpellLevel = 0;
+        for (let i = slotsAtLevel.length - 1; i >= 0; i--) {
+          if ((slotsAtLevel[i] ?? 0) > 0) {
+            maxSpellLevel = i + 1;
+            break;
           }
-          // Keep cantrips unchanged (level 0, never restricted)
-          // Filter prepared spells to those whose level <= maxSpellLevel
-          nextPreparedSpells = state.preparedSpells.filter((spellName) => {
-            const spell = getSpell(spellName);
-            if (!spell) return false; // unknown spell — drop it
-            return spell.level <= maxSpellLevel;
-          });
         }
+        // Filter this class's prepared spells to those within the new max level
+        const classSpells = state.preparedSpells[changedClassName] ?? [];
+        nextPreparedSpells = {
+          ...state.preparedSpells,
+          [changedClassName]: classSpells.filter((spellName) => {
+            const spell = getSpell(spellName);
+            if (!spell) return false;
+            return spell.level <= maxSpellLevel;
+          }),
+        };
       }
       next = {
         ...state,
@@ -600,28 +439,36 @@ export function builderReducer(state: BuilderState, action: BuilderAction): Buil
 
     // ---- Spells ------------------------------------------------------------
     case "SET_CANTRIPS":
-      next = { ...state, cantrips: action.cantrips };
+      next = {
+        ...state,
+        cantrips: { ...state.cantrips, [action.className]: action.cantrips },
+      };
       break;
 
     case "SET_PREPARED_SPELLS":
-      next = { ...state, preparedSpells: action.spells };
+      next = {
+        ...state,
+        preparedSpells: { ...state.preparedSpells, [action.className]: action.spells },
+      };
       break;
 
     // ---- Equipment ---------------------------------------------------------
-    case "SET_EQUIPMENT_MODE":
-      next = { ...state, equipmentMode: action.mode };
-      break;
-
-    case "SET_STARTING_GOLD":
-      next = { ...state, startingGold: action.gold };
-      break;
-
     case "ADD_EQUIPMENT":
       next = { ...state, equipment: [...state.equipment, action.item] };
       break;
 
+    case "ADD_EQUIPMENT_BATCH":
+      next = { ...state, equipment: [...state.equipment, ...action.items] };
+      break;
+
     case "REMOVE_EQUIPMENT": {
       const updated = state.equipment.filter((_, i) => i !== action.index);
+      next = { ...state, equipment: updated };
+      break;
+    }
+
+    case "REMOVE_EQUIPMENT_BATCH": {
+      const updated = state.equipment.filter((item) => item.fromPack !== action.packName);
       next = { ...state, equipment: updated };
       break;
     }

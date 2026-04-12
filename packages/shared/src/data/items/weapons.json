@@ -308,9 +308,7 @@
     "damage": "1d10",
     "damageType": "piercing",
     "properties": [
-      "H",
-      "R",
-      "2H"
+      "R"
     ],
     "mastery": [
       "Topple"

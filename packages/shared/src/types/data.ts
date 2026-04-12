@@ -141,11 +141,16 @@ export interface ClassDb extends DbEntity {
   /** 20 rows × 9 columns, casters only */
   spellSlotTable?: number[][];
   cantripProgression?: number[];
+  /** Fixed spells-known table for known casters (Bard, Sorcerer, Warlock). */
   preparedSpellsProgression?: number[];
+  /** Formula for prepared casters (Wizard, Cleric, Druid, Paladin, Ranger). */
+  preparedSpellFormula?: { ability: Ability; levelScale: "full" | "half" };
   features: ClassFeatureDb[];
   subclasses: SubclassDb[];
   /** Multiclassing requirements and proficiencies gained (D&D 2024 rules) */
   multiclassing?: ClassMulticlassing;
+  spellcastingAbility?: Ability;
+  canRitualCast?: boolean;
 }
 
 export interface ClassFeatureDb extends DbEntity {
@@ -159,7 +164,10 @@ export interface SubclassDb {
   className: ClassName;
   description: string;
   casterProgression?: CasterProgression;
+  spellcastingAbility?: Ability;
   additionalSpells?: string[];
+  /** Spell slot table: 20 rows (index 0 = level 1), same format as ClassDb.spellSlotTable */
+  spellSlotTable?: number[][];
   features: SubclassFeatureDb[];
 }
 
@@ -218,6 +226,7 @@ export interface MagicItemDb extends DbEntity {
 
 export interface BaseItemDb {
   name: string;
+  description?: string;
   type: BaseItemType;
   ac?: number;
   armor?: boolean;
@@ -238,6 +247,13 @@ export interface BaseItemDb {
   stealth?: boolean;
   /** Strength requirement: "13" */
   strength?: string;
+}
+
+// ─── Equipment Packs ────────────────────────────────────
+
+export interface PackDb {
+  name: string;
+  contents: Array<{ item: string; quantity: number }>;
 }
 
 // ─── Optional Features ─────────────────────────────────────

@@ -369,6 +369,7 @@ describe("buildCheckLabel — missing or invalid checkType", () => {
 //         stealth (DEX, expertise).
 // Saves: strength (proficient), constitution (proficient), dexterity (not proficient).
 const mockChar: CharacterData = {
+  builder: {} as CharacterData["builder"],
   static: {
     name: "Tester",
     race: "Human",
@@ -404,7 +405,7 @@ const mockChar: CharacterData = {
     combatBonuses: [],
     traits: {},
     importedAt: 0,
-    spellAttackBonus: undefined,
+    spellcasting: undefined,
   },
   dynamic: {
     currentHP: 44,
@@ -515,18 +516,21 @@ describe("computeCheckModifier — attack rolls", () => {
     ).toBe(6);
   });
 
-  it("spell_attack with spellAttackBonus: returns spellAttackBonus directly", () => {
+  it("spell_attack with spellcasting map: returns attackBonus from first entry", () => {
     const caster: CharacterData = {
       ...mockChar,
-      static: { ...mockChar.static, spellAttackBonus: 7 },
+      static: {
+        ...mockChar.static,
+        spellcasting: { Wizard: { ability: "intelligence", dc: 15, attackBonus: 7 } },
+      },
     };
     expect(
       computeCheckModifier(caster, makeCheck({ checkType: "spell_attack", reason: "fire bolt" })),
     ).toBe(7);
   });
 
-  it("spell_attack without spellAttackBonus: STR mod +3 + prof +3 = 6", () => {
-    // spellAttackBonus is undefined → falls through to melee/ranged path using STR
+  it("spell_attack without spellcasting map: STR mod +3 + prof +3 = 6", () => {
+    // spellcasting is undefined → falls through to melee/ranged path using STR
     expect(
       computeCheckModifier(
         mockChar,

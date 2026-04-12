@@ -2,24 +2,56 @@ import { describe, it, expect } from "vitest";
 import { buildCharacter } from "../builders/character-builder.js";
 import type { CharacterIdentifiers } from "../builders/types.js";
 import type { AbilityScores } from "../types/character.js";
+import type { BuilderState } from "../types/builder.js";
 
 // ---------------------------------------------------------------------------
 // Fixture helper
 // ---------------------------------------------------------------------------
 
-function makeIdentifiers(overrides: Partial<CharacterIdentifiers> = {}): CharacterIdentifiers {
+const defaultAbilities: AbilityScores = {
+  strength: 16,
+  dexterity: 14,
+  constitution: 14,
+  intelligence: 10,
+  wisdom: 12,
+  charisma: 8,
+};
+
+function stubBuilderState(partial?: Partial<BuilderState>): BuilderState {
   return {
+    currentStep: "details",
+    completedSteps: [],
+    species: "Human",
+    speciesChoices: {},
+    background: null,
+    backgroundChoices: {},
+    abilityScoreMode: "two-one",
+    abilityScoreAssignments: {},
+    classes: [{ name: "Fighter", level: 1, subclass: null, skills: [], choices: {} }],
+    activeClassIndex: 0,
+    abilityMethod: "manual",
+    baseAbilities: defaultAbilities,
+    featSelections: [],
+    featChoices: {},
+    cantrips: {},
+    preparedSpells: {},
+    name: "Test Character",
+    appearance: {},
+    backstory: "",
+    alignment: "",
+    traits: {},
+    equipment: [],
+    currency: { cp: 0, sp: 0, gp: 0, pp: 0 },
+    ...partial,
+  };
+}
+
+function makeIdentifiers(overrides: Partial<CharacterIdentifiers> = {}): CharacterIdentifiers {
+  const base: CharacterIdentifiers = {
     name: "Test Character",
     race: "Human",
     classes: [{ name: "Fighter", level: 1 }],
-    abilities: {
-      strength: 16,
-      dexterity: 14,
-      constitution: 14,
-      intelligence: 10,
-      wisdom: 12,
-      charisma: 8,
-    },
+    abilities: defaultAbilities,
     maxHP: 12,
     skillProficiencies: ["athletics", "perception"],
     skillExpertise: [],
@@ -28,8 +60,10 @@ function makeIdentifiers(overrides: Partial<CharacterIdentifiers> = {}): Charact
     equipment: [],
     languages: ["Common"],
     source: "builder",
+    builderState: stubBuilderState(),
     ...overrides,
   };
+  return base;
 }
 
 // ---------------------------------------------------------------------------
@@ -91,7 +125,7 @@ describe("Fighter 5 — non-caster build", () => {
 
   it("has no spellcasting ability", () => {
     const { character } = buildCharacter(ids);
-    expect(character.static.spellcastingAbility).toBeUndefined();
+    expect(character.static.spellcasting).toBeUndefined();
   });
 
   it("HP reflects maxHP from identifiers", () => {
@@ -145,17 +179,17 @@ describe("Wizard 3 — full caster build", () => {
 
   it("spellcasting ability is Intelligence", () => {
     const { character } = buildCharacter(ids);
-    expect(character.static.spellcastingAbility).toBe("intelligence");
+    expect(character.static.spellcasting?.["Wizard"]?.ability).toBe("intelligence");
   });
 
   it("spell save DC = 8 + profBonus(2) + INT mod(+3) = 13", () => {
     const { character } = buildCharacter(ids);
-    expect(character.static.spellSaveDC).toBe(13);
+    expect(character.static.spellcasting?.["Wizard"]?.dc).toBe(13);
   });
 
   it("spell attack bonus = profBonus(2) + INT mod(+3) = 5", () => {
     const { character } = buildCharacter(ids);
-    expect(character.static.spellAttackBonus).toBe(5);
+    expect(character.static.spellcasting?.["Wizard"]?.attackBonus).toBe(5);
   });
 
   it("has first and second level spell slots at level 3", () => {
@@ -298,7 +332,7 @@ describe("Ability score computation", () => {
     });
     const { character } = buildCharacter(ids);
     // profBonus at level 1 = Math.ceil(1/4)+1 = 2, INT mod = 5, DC = 8+2+5 = 15
-    expect(character.static.spellSaveDC).toBe(15);
+    expect(character.static.spellcasting?.["Wizard"]?.dc).toBe(15);
   });
 
   it("proficiency bonus is correctly calculated by level", () => {
@@ -1092,7 +1126,7 @@ describe("Eldritch Knight — third-caster subclass", () => {
       saveProficiencies: ["strength", "constitution"],
     });
     const { character } = buildCharacter(ids);
-    expect(character.static.spellcastingAbility).toBe("intelligence");
+    expect(character.static.spellcasting?.["Fighter"]?.ability).toBe("intelligence");
   });
 });
 
@@ -1137,7 +1171,7 @@ describe("Warlock pact magic", () => {
       saveProficiencies: ["wisdom", "charisma"],
     });
     const { character } = buildCharacter(ids);
-    expect(character.static.spellcastingAbility).toBe("charisma");
+    expect(character.static.spellcasting?.["Warlock"]?.ability).toBe("charisma");
   });
 });
 

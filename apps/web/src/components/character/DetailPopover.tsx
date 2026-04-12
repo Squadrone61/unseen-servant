@@ -10,17 +10,31 @@ interface DetailPopoverProps {
   position: { x: number; y: number };
   /** Optional sticky footer rendered below scrollable content */
   footer?: React.ReactNode;
+  /** Nesting depth (0 = root). Higher levels get higher z-index. */
+  level?: number;
+  /** Unique ID for this popover in the stack. */
+  popoverId?: string;
+  /** Whether this popover is the topmost in the stack. Click-outside only fires for topmost. */
+  isTopmost?: boolean;
 }
 
-export function DetailPopover({ title, onClose, children, position, footer }: DetailPopoverProps) {
+export function DetailPopover({
+  title,
+  onClose,
+  children,
+  position,
+  footer,
+  level = 0,
+  isTopmost = true,
+}: DetailPopoverProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [coords, setCoords] = useState<{ left: number; top: number } | null>(null);
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape" && isTopmost) onClose();
     },
-    [onClose],
+    [onClose, isTopmost],
   );
 
   useEffect(() => {
@@ -28,8 +42,9 @@ export function DetailPopover({ title, onClose, children, position, footer }: De
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [handleKeyDown]);
 
-  // Click-outside detection
+  // Click-outside detection — only fires for topmost popover
   useEffect(() => {
+    if (!isTopmost) return;
     const handleClickOutside = (e: MouseEvent) => {
       if (cardRef.current && !cardRef.current.contains(e.target as Node)) {
         onClose();
@@ -43,7 +58,7 @@ export function DetailPopover({ title, onClose, children, position, footer }: De
       clearTimeout(timer);
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [onClose]);
+  }, [onClose, isTopmost]);
 
   // Measure actual card size after render and position within viewport
   useLayoutEffect(() => {
@@ -78,8 +93,9 @@ export function DetailPopover({ title, onClose, children, position, footer }: De
   return (
     <div
       ref={cardRef}
-      className="fixed z-50 bg-gray-800/60 border border-gray-700/40 rounded-lg shadow-xl max-w-sm w-[384px] max-h-[70vh] flex flex-col backdrop-blur-sm"
+      className="fixed bg-gray-800/60 border border-gray-700/40 rounded-lg shadow-xl max-w-sm w-[384px] max-h-[70vh] flex flex-col backdrop-blur-sm"
       style={{
+        zIndex: 50 + level * 10,
         left: coords?.left ?? -9999,
         top: coords?.top ?? -9999,
         visibility: coords ? "visible" : "hidden",

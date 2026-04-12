@@ -2,10 +2,17 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { spellsArray, classesArray, getSpell } from "@unseen-servant/shared/data";
-import type { SpellDb, SpellLevel, ClassName } from "@unseen-servant/shared/types";
+import type {
+  SpellDb,
+  SpellLevel,
+  ClassName,
+  ClassDb,
+  AbilityScores,
+} from "@unseen-servant/shared/types";
 import { RichText } from "@/components/ui/RichText";
 import { DetailPopover } from "@/components/character/DetailPopover";
 import { useBuilder } from "../BuilderContext";
+import { computeFinalAbilities } from "../useComputedCharacter";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -42,16 +49,66 @@ function schoolBadge(school: string): string {
   return SCHOOL_COLORS[school] ?? "bg-gray-700/40 text-gray-400 border-gray-600/40";
 }
 
+function getAbilityMod(score: number): number {
+  return Math.floor((score - 10) / 2);
+}
+
 /** Highest spell level the class can access at this level via spell slot table. */
 function maxSpellLevel(slotTable: number[][] | undefined, classLevel: number): number {
   if (!slotTable) return 0;
   const row = slotTable[classLevel - 1];
   if (!row) return 0;
-  // row index 0 = level 1 slots, index 8 = level 9 slots
   for (let i = 8; i >= 0; i--) {
     if (row[i] > 0) return i + 1;
   }
   return 0;
+}
+
+/** Compute the number of prepared/known spells for a class at a given level. */
+function computePreparedCount(
+  classDb: ClassDb,
+  classLevel: number,
+  abilityScores: AbilityScores,
+): number {
+  // Formula-based (prepared casters: Wizard, Cleric, Druid, Paladin, Ranger)
+  if (classDb.preparedSpellFormula) {
+    const { ability, levelScale } = classDb.preparedSpellFormula;
+    const mod = getAbilityMod(abilityScores[ability as keyof AbilityScores] ?? 10);
+    const levelPart = levelScale === "full" ? classLevel : Math.floor(classLevel / 2);
+    return Math.max(1, mod + levelPart);
+  }
+  // Table-based (known casters: Bard, Sorcerer, Warlock)
+  return classDb.preparedSpellsProgression?.[classLevel - 1] ?? 0;
+}
+
+/** Collect caster class info for all classes in the build. */
+function getCasterClasses(
+  classes: Array<{ name: string; level: number; subclass: string | null }>,
+): Array<{
+  name: string;
+  level: number;
+  subclass: string | null;
+  classDb: ClassDb;
+}> {
+  const result: Array<{
+    name: string;
+    level: number;
+    subclass: string | null;
+    classDb: ClassDb;
+  }> = [];
+  for (const cls of classes) {
+    const classDb = classesArray.find((c) => c.name === cls.name);
+    if (!classDb) continue;
+    // Has cantrips or spells (via slot table + prepared count/formula)
+    const isCaster =
+      classDb.cantripProgression ||
+      classDb.preparedSpellsProgression ||
+      classDb.preparedSpellFormula;
+    if (isCaster) {
+      result.push({ name: cls.name, level: cls.level, subclass: cls.subclass, classDb });
+    }
+  }
+  return result;
 }
 
 // ---------------------------------------------------------------------------
@@ -89,7 +146,6 @@ function SpellCard({ spell, selected, onToggle, disabled, onDetail }: SpellCardP
             : "border-gray-700/20 hover:border-gray-600/40 cursor-pointer",
       ].join(" ")}
     >
-      {/* Selection indicator dot */}
       <span
         className={[
           "w-4 h-4 shrink-0 rounded border flex items-center justify-center transition-colors",
@@ -112,7 +168,6 @@ function SpellCard({ spell, selected, onToggle, disabled, onDetail }: SpellCardP
         )}
       </span>
 
-      {/* Name — clickable for detail popover */}
       <span
         role="button"
         tabIndex={0}
@@ -135,7 +190,6 @@ function SpellCard({ spell, selected, onToggle, disabled, onDetail }: SpellCardP
         {spell.name}
       </span>
 
-      {/* Badges */}
       <div className="flex items-center gap-1 ml-auto shrink-0">
         <span
           className={[
@@ -176,7 +230,6 @@ function SpellPopover({
   return (
     <DetailPopover title={spell.name} onClose={onClose} position={position}>
       <div className="space-y-3">
-        {/* Meta badges */}
         <div className="flex items-center gap-2 flex-wrap">
           <span
             className={[
@@ -201,7 +254,6 @@ function SpellPopover({
           )}
         </div>
 
-        {/* Stats */}
         <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
           <div>
             <span className="text-gray-500">Casting Time:</span>{" "}
@@ -221,12 +273,10 @@ function SpellPopover({
           </div>
         </div>
 
-        {/* Description */}
         <div className="text-sm text-gray-300 leading-relaxed">
           <RichText text={spell.description} />
         </div>
 
-        {/* Higher levels */}
         {spell.higherLevels && (
           <div className="text-sm text-gray-400 leading-relaxed border-t border-gray-700/30 pt-2">
             <span className="text-gray-500 font-medium">At Higher Levels: </span>
@@ -242,11 +292,12 @@ function SpellPopover({
 // Counter badge
 // ---------------------------------------------------------------------------
 
-function Counter({ current, max }: { current: number; max: number }) {
+function Counter({ current, max, label }: { current: number; max: number; label?: string }) {
   const full = current >= max;
   return (
     <span className={["text-sm font-medium", full ? "text-amber-400" : "text-gray-400"].join(" ")}>
-      {current} of {max} selected
+      {label && <span className="text-gray-400 font-normal">{label} </span>}
+      {current} of {max}
     </span>
   );
 }
@@ -291,18 +342,32 @@ function AlwaysPreparedBadges({ spellNames }: { spellNames: string[] }) {
 }
 
 // ---------------------------------------------------------------------------
-// Classes with ritual casting
+// Per-class spell panel
 // ---------------------------------------------------------------------------
 
-const RITUAL_CASTER_CLASSES = new Set(["Bard", "Cleric", "Druid", "Warlock", "Wizard"]);
+interface ClassSpellPanelProps {
+  className: string;
+  classLevel: number;
+  subclass: string | null;
+  classDb: ClassDb;
+  abilityScores: AbilityScores;
+  cantrips: string[];
+  preparedSpells: string[];
+  onSetCantrips: (cantrips: string[]) => void;
+  onSetPrepared: (spells: string[]) => void;
+}
 
-// ---------------------------------------------------------------------------
-// Main component
-// ---------------------------------------------------------------------------
-
-export function SpellsStep() {
-  const { state, dispatch } = useBuilder();
-
+function ClassSpellPanel({
+  className,
+  classLevel,
+  subclass,
+  classDb,
+  abilityScores,
+  cantrips,
+  preparedSpells,
+  onSetCantrips,
+  onSetPrepared,
+}: ClassSpellPanelProps) {
   const [cantripSearch, setCantripSearch] = useState("");
   const [spellSearch, setSpellSearch] = useState("");
   const [activeSpellLevel, setActiveSpellLevel] = useState<SpellLevel>(0 as SpellLevel);
@@ -311,46 +376,46 @@ export function SpellsStep() {
     position: { x: number; y: number };
   } | null>(null);
 
-  // ── Resolve class data ──────────────────────────────────────────────────────
-  const classDb = useMemo(
-    () =>
-      (state.classes[0]?.name ?? null)
-        ? (classesArray.find((c) => c.name === (state.classes[0]?.name ?? null)) ?? null)
-        : null,
-    [state.classes[0]?.name ?? null],
-  );
+  const numCantrips = classDb.cantripProgression?.[classLevel - 1] ?? 0;
+  const numPrepared = computePreparedCount(classDb, classLevel, abilityScores);
+  const highestSlotLevel = maxSpellLevel(classDb.spellSlotTable, classLevel);
 
-  const isCaster = Boolean(classDb?.cantripProgression || classDb?.preparedSpellsProgression);
+  // Formula description for prepared casters
+  const formulaDesc = useMemo(() => {
+    if (!classDb.preparedSpellFormula) return null;
+    const { ability, levelScale } = classDb.preparedSpellFormula;
+    const abilityLabel = ability.charAt(0).toUpperCase() + ability.slice(1);
+    const mod = getAbilityMod(abilityScores[ability as keyof AbilityScores] ?? 10);
+    const modStr = mod >= 0 ? `+${mod}` : `${mod}`;
+    const levelLabel = levelScale === "full" ? "level" : "half level";
+    return `${abilityLabel} modifier (${modStr}) + ${levelLabel} (${levelScale === "full" ? classLevel : Math.floor(classLevel / 2)})`;
+  }, [classDb.preparedSpellFormula, abilityScores, classLevel]);
 
-  const numCantrips = classDb?.cantripProgression?.[(state.classes[0]?.level ?? 1) - 1] ?? 0;
-  const numPrepared = classDb?.preparedSpellsProgression?.[(state.classes[0]?.level ?? 1) - 1] ?? 0;
-  const highestSlotLevel = maxSpellLevel(classDb?.spellSlotTable, state.classes[0]?.level ?? 1);
-
-  // ── Always-prepared spells from subclass additionalSpells ──────────────────
+  // Always-prepared spells from subclass
   const alwaysPrepared = useMemo<string[]>(() => {
-    if (!classDb || !(state.classes[0]?.subclass ?? null)) return [];
-    const sub = classDb.subclasses.find((s) => s.name === (state.classes[0]?.subclass ?? null));
+    if (!subclass) return [];
+    const sub = classDb.subclasses.find((s) => s.name === subclass);
     return sub?.additionalSpells ?? [];
-  }, [classDb, state.classes[0]?.subclass ?? null]);
+  }, [classDb, subclass]);
 
-  // ── Spell lists filtered by class ─────────────────────────────────────────
-  const className = (state.classes[0]?.name ?? null) as ClassName | null;
+  // Spell lists filtered by class
+  const typedClassName = className as ClassName;
 
   const classCantrips = useMemo<SpellDb[]>(() => {
-    if (!className) return [];
     return spellsArray
-      .filter((s) => s.level === 0 && s.classes.includes(className))
+      .filter((s) => s.level === 0 && s.classes.includes(typedClassName))
       .sort((a, b) => a.name.localeCompare(b.name));
-  }, [className]);
+  }, [typedClassName]);
 
   const classSpells = useMemo<SpellDb[]>(() => {
-    if (!className) return [];
     return spellsArray
-      .filter((s) => s.level > 0 && s.level <= highestSlotLevel && s.classes.includes(className))
+      .filter(
+        (s) => s.level > 0 && s.level <= highestSlotLevel && s.classes.includes(typedClassName),
+      )
       .sort((a, b) => a.name.localeCompare(b.name));
-  }, [className, highestSlotLevel]);
+  }, [typedClassName, highestSlotLevel]);
 
-  // ── Filtered views (search) ────────────────────────────────────────────────
+  // Filtered views (search)
   const filteredCantrips = useMemo<SpellDb[]>(() => {
     const q = cantripSearch.trim().toLowerCase();
     if (!q) return classCantrips;
@@ -364,7 +429,7 @@ export function SpellsStep() {
     return levelFiltered.filter((s) => s.name.toLowerCase().includes(q));
   }, [classSpells, spellSearch, activeSpellLevel]);
 
-  // ── Available spell levels ─────────────────────────────────────────────────
+  // Available spell levels
   const availableSpellLevels = useMemo<SpellLevel[]>(() => {
     const levels = new Set<SpellLevel>();
     for (const s of classSpells) levels.add(s.level);
@@ -373,112 +438,62 @@ export function SpellsStep() {
 
   // Keep activeSpellLevel in bounds when class/level changes
   useEffect(() => {
-    // All valid tabs: cantrips (0) if available, plus leveled spell levels
     const validTabs: SpellLevel[] = [];
     if (numCantrips > 0) validTabs.push(0 as SpellLevel);
     validTabs.push(...availableSpellLevels);
-
     if (validTabs.length > 0 && !validTabs.includes(activeSpellLevel)) {
       setActiveSpellLevel(validTabs[0]);
     }
   }, [availableSpellLevels, activeSpellLevel, numCantrips]);
 
-  // ── Handlers ───────────────────────────────────────────────────────────────
+  // Handlers
   function toggleCantrip(name: string) {
-    const current = state.cantrips;
-    if (current.includes(name)) {
-      dispatch({ type: "SET_CANTRIPS", cantrips: current.filter((c) => c !== name) });
-    } else if (current.length < numCantrips) {
-      dispatch({ type: "SET_CANTRIPS", cantrips: [...current, name] });
+    if (cantrips.includes(name)) {
+      onSetCantrips(cantrips.filter((c) => c !== name));
+    } else if (cantrips.length < numCantrips) {
+      onSetCantrips([...cantrips, name]);
     }
   }
 
   function toggleSpell(name: string) {
-    const current = state.preparedSpells;
-    if (current.includes(name)) {
-      dispatch({ type: "SET_PREPARED_SPELLS", spells: current.filter((s) => s !== name) });
-    } else if (current.length < numPrepared) {
-      dispatch({ type: "SET_PREPARED_SPELLS", spells: [...current, name] });
+    if (preparedSpells.includes(name)) {
+      onSetPrepared(preparedSpells.filter((s) => s !== name));
+    } else if (preparedSpells.length < numPrepared) {
+      onSetPrepared([...preparedSpells, name]);
     }
   }
 
-  // ── Non-caster ─────────────────────────────────────────────────────────────
-  if (!isCaster) {
-    return (
-      <section aria-labelledby="spells-step-heading" className="flex flex-col gap-6">
-        <div>
-          <h1
-            id="spells-step-heading"
-            className="text-xl font-[family-name:var(--font-cinzel)] text-amber-200/90 mb-1"
-          >
-            Spells
-          </h1>
-          <p className="text-sm text-gray-400">
-            {(state.classes[0]?.name ?? null)
-              ? `${state.classes[0]?.name ?? null}s do not use spells. Continue to the next step.`
-              : "Choose a class first to see spell options."}
-          </p>
-        </div>
-
-        <div className="bg-gray-800/30 border border-gray-700/20 rounded-lg p-8 text-center">
-          <p className="text-gray-600 text-sm font-[family-name:var(--font-cinzel)]">
-            No spells available for this class.
-          </p>
-        </div>
-      </section>
-    );
-  }
-
   return (
-    <section aria-labelledby="spells-step-heading" className="flex flex-col gap-8">
-      {/* ── Header ── */}
-      <div>
-        <h1
-          id="spells-step-heading"
-          className="text-xl font-[family-name:var(--font-cinzel)] text-amber-200/90 mb-1"
-        >
-          Choose Your Spells
-        </h1>
-        <p className="text-sm text-gray-400">
-          Select spells for your {state.classes[0]?.name ?? null} at level{" "}
-          {state.classes[0]?.level ?? 1}.
-        </p>
-      </div>
-
-      {/* ── Always-prepared spells ── */}
+    <div className="flex flex-col gap-6">
+      {/* Always-prepared spells */}
       {alwaysPrepared.length > 0 && <AlwaysPreparedBadges spellNames={alwaysPrepared} />}
 
-      {/* ── Counter row ── */}
+      {/* Counter row */}
       <div className="flex items-center gap-4 flex-wrap">
         {numCantrips > 0 && (
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-400">Cantrips:</span>
-            <Counter current={state.cantrips.length} max={numCantrips} />
-          </div>
+          <Counter current={cantrips.length} max={numCantrips} label="Cantrips:" />
         )}
         {numPrepared > 0 && (
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-400">Prepared:</span>
-            <Counter current={state.preparedSpells.length} max={numPrepared} />
-          </div>
+          <Counter current={preparedSpells.length} max={numPrepared} label="Prepared:" />
         )}
       </div>
 
-      {/* ── Ritual casting note ── */}
-      {(state.classes[0]?.name ?? null) &&
-        RITUAL_CASTER_CLASSES.has(state.classes[0]?.name ?? null) && (
-          <p className="text-xs text-violet-400/80 bg-violet-900/10 border border-violet-700/20 rounded-lg px-3 py-2 leading-relaxed">
-            Ritual spells can be cast without expending a spell slot if you have the spell prepared.
-          </p>
-        )}
+      {/* Formula explanation for prepared casters */}
+      {formulaDesc && <p className="text-xs text-gray-500 -mt-4">{formulaDesc}</p>}
 
-      {/* ── Unified level tabs (Cantrips + spell levels) ── */}
+      {/* Ritual casting note */}
+      {classDb.canRitualCast && (
+        <p className="text-xs text-violet-400/80 bg-violet-900/10 border border-violet-700/20 rounded-lg px-3 py-2 leading-relaxed">
+          Ritual spells can be cast without expending a spell slot if you have the spell prepared.
+        </p>
+      )}
+
+      {/* Spell level tabs */}
       <div
         className="flex gap-0 border-b border-gray-700/40 overflow-x-auto"
         role="tablist"
         aria-label="Spell level"
       >
-        {/* Cantrips tab */}
         {numCantrips > 0 && (
           <button
             type="button"
@@ -493,18 +508,16 @@ export function SpellsStep() {
             ].join(" ")}
           >
             Cantrips
-            {state.cantrips.length > 0 && (
+            {cantrips.length > 0 && (
               <span className="w-4 h-4 rounded-full bg-amber-500/20 text-amber-400 text-[10px] flex items-center justify-center font-medium">
-                {state.cantrips.length}
+                {cantrips.length}
               </span>
             )}
           </button>
         )}
-
-        {/* Spell level tabs */}
         {availableSpellLevels.map((level) => {
           const isActive = level === activeSpellLevel;
-          const countAtLevel = state.preparedSpells.filter((name) => {
+          const countAtLevel = preparedSpells.filter((name) => {
             const spell = spellsArray.find((s) => s.name === name);
             return spell?.level === level;
           }).length;
@@ -533,7 +546,7 @@ export function SpellsStep() {
         })}
       </div>
 
-      {/* ── Search ── */}
+      {/* Search */}
       <input
         type="text"
         value={activeSpellLevel === 0 ? cantripSearch : spellSearch}
@@ -549,16 +562,15 @@ export function SpellsStep() {
         aria-label="Search spells"
       />
 
-      {/* ── Spell list for active tab ── */}
+      {/* Spell list for active tab */}
       {activeSpellLevel === 0 ? (
-        /* Cantrips */
         filteredCantrips.length === 0 ? (
           <p className="text-sm text-gray-600 py-4 text-center">No cantrips match your search.</p>
         ) : (
           <div className="flex flex-col gap-1.5">
             {filteredCantrips.map((spell) => {
-              const selected = state.cantrips.includes(spell.name);
-              const atMax = state.cantrips.length >= numCantrips;
+              const selected = cantrips.includes(spell.name);
+              const atMax = cantrips.length >= numCantrips;
               return (
                 <SpellCard
                   key={spell.name}
@@ -572,14 +584,13 @@ export function SpellsStep() {
             })}
           </div>
         )
-      ) : /* Leveled spells */
-      filteredSpells.length === 0 ? (
+      ) : filteredSpells.length === 0 ? (
         <p className="text-sm text-gray-600 py-4 text-center">No spells match your search.</p>
       ) : (
         <div className="flex flex-col gap-1.5">
           {filteredSpells.map((spell) => {
-            const selected = state.preparedSpells.includes(spell.name);
-            const atMax = state.preparedSpells.length >= numPrepared;
+            const selected = preparedSpells.includes(spell.name);
+            const atMax = preparedSpells.length >= numPrepared;
             return (
               <SpellCard
                 key={spell.name}
@@ -600,6 +611,125 @@ export function SpellsStep() {
           spell={popover.spell}
           onClose={() => setPopover(null)}
           position={popover.position}
+        />
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Main component
+// ---------------------------------------------------------------------------
+
+export function SpellsStep() {
+  const { state, dispatch } = useBuilder();
+
+  const abilities = useMemo(
+    () => computeFinalAbilities(state),
+    [state.baseAbilities, state.abilityScoreAssignments, state.featSelections],
+  );
+
+  const casterClasses = useMemo(() => getCasterClasses(state.classes), [state.classes]);
+
+  const [activeClassTab, setActiveClassTab] = useState(0);
+
+  // Keep active class tab in bounds
+  useEffect(() => {
+    if (activeClassTab >= casterClasses.length) {
+      setActiveClassTab(Math.max(0, casterClasses.length - 1));
+    }
+  }, [casterClasses.length, activeClassTab]);
+
+  // Non-caster
+  if (casterClasses.length === 0) {
+    return (
+      <section aria-labelledby="spells-step-heading" className="flex flex-col gap-6">
+        <div>
+          <h1
+            id="spells-step-heading"
+            className="text-xl font-[family-name:var(--font-cinzel)] text-amber-200/90 mb-1"
+          >
+            Spells
+          </h1>
+          <p className="text-sm text-gray-400">
+            {state.classes.length > 0
+              ? `${state.classes[0].name}s do not use spells. Continue to the next step.`
+              : "Choose a class first to see spell options."}
+          </p>
+        </div>
+        <div className="bg-gray-800/30 border border-gray-700/20 rounded-lg p-8 text-center">
+          <p className="text-gray-600 text-sm font-[family-name:var(--font-cinzel)]">
+            No spells available for this class.
+          </p>
+        </div>
+      </section>
+    );
+  }
+
+  const activeCaster = casterClasses[activeClassTab];
+
+  return (
+    <section aria-labelledby="spells-step-heading" className="flex flex-col gap-6">
+      {/* Header */}
+      <div>
+        <h1
+          id="spells-step-heading"
+          className="text-xl font-[family-name:var(--font-cinzel)] text-amber-200/90 mb-1"
+        >
+          Choose Your Spells
+        </h1>
+        <p className="text-sm text-gray-400">
+          {casterClasses.length === 1
+            ? `Select spells for your ${activeCaster.name} at level ${activeCaster.level}.`
+            : "Select spells for each of your spellcasting classes."}
+        </p>
+      </div>
+
+      {/* Class tabs (only show for multiclass with multiple casters) */}
+      {casterClasses.length > 1 && (
+        <div
+          className="flex gap-0 border-b border-gray-700/40"
+          role="tablist"
+          aria-label="Spellcasting class"
+        >
+          {casterClasses.map((cc, i) => (
+            <button
+              key={cc.name}
+              type="button"
+              role="tab"
+              aria-selected={i === activeClassTab}
+              onClick={() => setActiveClassTab(i)}
+              className={[
+                "shrink-0 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors duration-100",
+                i === activeClassTab
+                  ? "border-amber-500 text-amber-300"
+                  : "border-transparent text-gray-500 hover:text-gray-300",
+              ].join(" ")}
+            >
+              {cc.name}
+              <span className="ml-1.5 text-xs text-gray-500">Lv{cc.level}</span>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Active class spell panel */}
+      {activeCaster && (
+        <ClassSpellPanel
+          key={activeCaster.name}
+          className={activeCaster.name}
+          classLevel={activeCaster.level}
+          subclass={activeCaster.subclass}
+          classDb={activeCaster.classDb}
+          abilityScores={abilities}
+          cantrips={state.cantrips[activeCaster.name] ?? []}
+          preparedSpells={state.preparedSpells[activeCaster.name] ?? []}
+          onSetCantrips={(cantrips) =>
+            dispatch({ type: "SET_CANTRIPS", className: activeCaster.name, cantrips })
+          }
+          onSetPrepared={(spells) =>
+            dispatch({ type: "SET_PREPARED_SPELLS", className: activeCaster.name, spells })
+          }
         />
       )}
     </section>

@@ -4,7 +4,6 @@ import { use, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { BuilderProvider, useBuilder } from "@/app/characters/create/BuilderContext";
 import { BuilderShell } from "@/app/characters/create/BuilderShell";
-import { hydrateBuilderState } from "@/app/characters/create/hydrateState";
 import { useCharacterLibrary } from "@/hooks/useCharacterLibrary";
 
 // ─── Inner component (needs builder context + library) ────────────────────────
@@ -26,8 +25,7 @@ function EditInner({ id }: EditInnerProps) {
       router.replace("/characters");
       return;
     }
-    // Prefer persisted builder state (lossless); fall back to hydration for imported characters
-    const restoredState = saved.builderState ?? hydrateBuilderState(saved.character);
+    const restoredState = saved.character.builder;
     dispatch({ type: "LOAD_STATE", state: restoredState });
   }, [id, loaded, getCharacter, dispatch, router]);
 

@@ -1,5 +1,4 @@
 import type { CharacterData } from "@unseen-servant/shared/types";
-import type { BuilderState } from "@/app/characters/create/builder-state";
 
 export interface SavedCharacter {
   id: string;
@@ -9,6 +8,4 @@ export interface SavedCharacter {
   campaignSlug?: string;
   roomCode?: string;
   character: CharacterData;
-  /** Original builder state for lossless edit round-trips. Absent for imported characters. */
-  builderState?: BuilderState;
 }

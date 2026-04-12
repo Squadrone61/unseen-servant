@@ -2,7 +2,8 @@
 
 import type { CharacterFeature } from "@unseen-servant/shared/types";
 import { DetailPopover } from "./DetailPopover";
-import { Prose } from "../Prose";
+import { RichText } from "../ui/RichText";
+import { useEntityClick } from "./EntityPopoverContext";
 
 const SOURCE_COLORS: Record<CharacterFeature["source"], { bg: string; text: string }> = {
   class: { bg: "bg-amber-900/20", text: "text-amber-300" },
@@ -25,6 +26,7 @@ interface FeatureDetailPopupProps {
 }
 
 export function FeatureDetailPopup({ feature, onClose, position }: FeatureDetailPopupProps) {
+  const onEntityClick = useEntityClick();
   const colors = SOURCE_COLORS[feature.source];
   const sourceTag = feature.sourceLabel
     ? `${SOURCE_LABELS[feature.source]}: ${feature.sourceLabel}`
@@ -46,9 +48,11 @@ export function FeatureDetailPopup({ feature, onClose, position }: FeatureDetail
         </div>
 
         {/* Description */}
-        <Prose className="text-gray-300">
-          {feature.description || "No description available."}
-        </Prose>
+        <RichText
+          text={feature.description || "No description available."}
+          className="text-gray-300 text-sm"
+          onEntityClick={onEntityClick}
+        />
       </div>
     </DetailPopover>
   );

@@ -17,6 +17,7 @@ import type {
   Currency,
   CharacterFeature,
 } from "../types/character";
+import type { BuilderState } from "../types/builder";
 
 export interface CharacterIdentifiers {
   name: string;
@@ -67,4 +68,7 @@ export interface CharacterIdentifiers {
 
   // Import metadata
   source: "builder";
+
+  // Builder snapshot for lossless edit round-trips
+  builderState: BuilderState;
 }

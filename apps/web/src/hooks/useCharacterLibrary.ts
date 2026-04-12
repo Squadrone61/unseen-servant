@@ -53,7 +53,6 @@ export function useCharacterLibrary() {
       opts?: {
         campaignSlug?: string;
         roomCode?: string;
-        builderState?: SavedCharacter["builderState"];
       },
     ): SavedCharacter => {
       const now = Date.now();
@@ -65,7 +64,6 @@ export function useCharacterLibrary() {
         campaignSlug: opts?.campaignSlug,
         roomCode: opts?.roomCode,
         character: char,
-        builderState: opts?.builderState,
       };
       const updated = [...readLibrary(), saved];
       writeLibrary(updated);
@@ -75,22 +73,18 @@ export function useCharacterLibrary() {
     [],
   );
 
-  const updateCharacter = useCallback(
-    (id: string, char: CharacterData, builderState?: SavedCharacter["builderState"]) => {
-      const lib = readLibrary();
-      const idx = lib.findIndex((c) => c.id === id);
-      if (idx === -1) return;
-      lib[idx] = {
-        ...lib[idx],
-        character: char,
-        builderState,
-        updatedAt: Date.now(),
-      };
-      writeLibrary(lib);
-      setCharacters(lib);
-    },
-    [],
-  );
+  const updateCharacter = useCallback((id: string, char: CharacterData) => {
+    const lib = readLibrary();
+    const idx = lib.findIndex((c) => c.id === id);
+    if (idx === -1) return;
+    lib[idx] = {
+      ...lib[idx],
+      character: char,
+      updatedAt: Date.now(),
+    };
+    writeLibrary(lib);
+    setCharacters(lib);
+  }, []);
 
   const deleteCharacter = useCallback((id: string) => {
     const lib = readLibrary().filter((c) => c.id !== id);

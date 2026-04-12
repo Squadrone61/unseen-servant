@@ -47,8 +47,8 @@ import {
   getCondition,
   getMagicItem,
   getCasterMultiplier,
-  THIRD_CASTER_SLOTS,
 } from "../data/index";
+import multiclassSlots from "../data/multiclass-slots.json";
 import { SKILL_ABILITY_MAP } from "../utils/5etools";
 
 // ─── Helpers ─────────────────────────────────────────────
@@ -56,45 +56,6 @@ import { SKILL_ABILITY_MAP } from "../utils/5etools";
 function abilityMod(score: number): number {
   return Math.floor((score - 10) / 2);
 }
-
-/** Third-caster subclasses that grant spellcasting */
-const THIRD_CASTER_SUBCLASSES = new Set(["eldritch knight", "arcane trickster"]);
-
-/** Spellcasting ability by class name */
-const SPELLCASTING_ABILITY: Record<string, keyof AbilityScores> = {
-  bard: "charisma",
-  cleric: "wisdom",
-  druid: "wisdom",
-  paladin: "charisma",
-  ranger: "wisdom",
-  sorcerer: "charisma",
-  warlock: "charisma",
-  wizard: "intelligence",
-};
-
-/** Multiclass spell slot table (caster levels 1-20) */
-const MULTICLASS_SLOTS: number[][] = [
-  [2, 0, 0, 0, 0, 0, 0, 0, 0],
-  [3, 0, 0, 0, 0, 0, 0, 0, 0],
-  [4, 2, 0, 0, 0, 0, 0, 0, 0],
-  [4, 3, 0, 0, 0, 0, 0, 0, 0],
-  [4, 3, 2, 0, 0, 0, 0, 0, 0],
-  [4, 3, 3, 0, 0, 0, 0, 0, 0],
-  [4, 3, 3, 1, 0, 0, 0, 0, 0],
-  [4, 3, 3, 2, 0, 0, 0, 0, 0],
-  [4, 3, 3, 3, 1, 0, 0, 0, 0],
-  [4, 3, 3, 3, 2, 0, 0, 0, 0],
-  [4, 3, 3, 3, 2, 1, 0, 0, 0],
-  [4, 3, 3, 3, 2, 1, 0, 0, 0],
-  [4, 3, 3, 3, 2, 1, 1, 0, 0],
-  [4, 3, 3, 3, 2, 1, 1, 0, 0],
-  [4, 3, 3, 3, 2, 1, 1, 1, 0],
-  [4, 3, 3, 3, 2, 1, 1, 1, 0],
-  [4, 3, 3, 3, 2, 1, 1, 1, 1],
-  [4, 3, 3, 3, 3, 1, 1, 1, 1],
-  [4, 3, 3, 3, 3, 2, 1, 1, 1],
-  [4, 3, 3, 3, 3, 2, 2, 1, 1],
-];
 
 // ─── Effect Collection ───────────────────────────────────
 
@@ -176,6 +137,56 @@ function collectBuildEffects(ids: CharacterIdentifiers): EffectBundle[] {
   }
 
   return bundles;
+}
+
+// ─── Weapon Attack Bonus ─────────────────────────────────
+
+/**
+ * Compute the attack bonus for a weapon inventory item.
+ * Returns undefined if the item is not a weapon or has no damage die.
+ *
+ * Rules (D&D 2024):
+ *   - Ammunition property → ranged weapon → DEX mod
+ *   - Finesse property → max(STR mod, DEX mod)
+ *   - Otherwise → STR mod (melee/thrown)
+ *   - Add proficiency bonus if proficient with the weapon
+ */
+function computeWeaponAttackBonus(
+  item: import("../types/character").InventoryItem,
+  abilities: AbilityScores,
+  profBonus: number,
+  weaponProficiencies: string[],
+): number | undefined {
+  if (item.type !== "Weapon") return undefined;
+
+  const strMod = abilityMod(abilities.strength);
+  const dexMod = abilityMod(abilities.dexterity);
+
+  const props = item.properties ?? [];
+
+  let abilityBonus: number;
+  if (props.includes("Ammunition")) {
+    abilityBonus = dexMod;
+  } else if (props.includes("Finesse")) {
+    abilityBonus = Math.max(strMod, dexMod);
+  } else {
+    abilityBonus = strMod;
+  }
+
+  // Determine proficiency
+  const baseItem = getBaseItem(item.name);
+  const category = baseItem?.weaponCategory; // "simple" | "martial" | undefined
+  const profSet = new Set(weaponProficiencies.map((p) => p.toLowerCase()));
+
+  const nameLower = item.name.toLowerCase();
+  const proficient =
+    category === "simple"
+      ? profSet.has("simple weapons") || profSet.has("simple") || profSet.has(nameLower)
+      : category === "martial"
+        ? profSet.has("martial weapons") || profSet.has("martial") || profSet.has(nameLower)
+        : profSet.has(nameLower);
+
+  return abilityBonus + (proficient ? profBonus : 0);
 }
 
 // ─── Main Builder ────────────────────────────────────────
@@ -290,33 +301,48 @@ export function buildCharacter(ids: CharacterIdentifiers): {
     senses,
     languages: ids.languages,
     spells,
-    spellcastingAbility: spellcasting.ability,
-    spellSaveDC: spellcasting.dc,
-    spellAttackBonus: spellcasting.attackBonus,
+    spellcasting: Object.keys(spellcasting).length > 0 ? spellcasting : undefined,
     combatBonuses,
     advantages,
     traits: ids.traits ?? {},
     appearance: ids.appearance,
     backstory: ids.backstory || undefined,
+    alignment: ids.builderState.alignment || undefined,
     importedAt: Date.now(),
     source: ids.source,
   };
+
+  // ── Inventory (with computed weapon attack bonuses) ─────
+  const inventory = ids.equipment.map((item) => {
+    if (item.type !== "Weapon") return item;
+    const bonus = computeWeaponAttackBonus(
+      item,
+      ids.abilities,
+      proficiencyBonus,
+      proficiencies.weapons,
+    );
+    if (bonus === undefined) return item;
+    return { ...item, attackBonus: bonus };
+  });
 
   const dynamicData: CharacterDynamicData = {
     currentHP: maxHP,
     tempHP: 0,
     spellSlotsUsed: regularSlots,
     pactMagicSlots: pactSlots.length > 0 ? pactSlots : undefined,
-    resourcesUsed: {},
+    resourcesUsed: Object.fromEntries((classResources ?? []).map((r) => [r.name, 0])),
     conditions: [],
     deathSaves: { successes: 0, failures: 0 },
-    inventory: ids.equipment,
+    inventory,
     currency: ids.currency ?? { cp: 0, sp: 0, gp: 0, pp: 0 },
     heroicInspiration: false,
     activeEffects: [],
   };
 
-  return { character: { static: staticData, dynamic: dynamicData }, warnings };
+  return {
+    character: { builder: ids.builderState, static: staticData, dynamic: dynamicData },
+    warnings,
+  };
 }
 
 // ─── Equipment AC ────────────────────────────────────────
@@ -399,39 +425,45 @@ function computeSavingThrows(ids: CharacterIdentifiers): SavingThrowProficiency[
 function computeSpellcasting(
   ids: CharacterIdentifiers,
   profBonus: number,
-): { ability?: keyof AbilityScores; dc?: number; attackBonus?: number } {
-  let bestAbility: keyof AbilityScores | undefined;
-  let bestLevel = 0;
+): Record<string, { ability: keyof AbilityScores; dc: number; attackBonus: number }> {
+  const result: Record<string, { ability: keyof AbilityScores; dc: number; attackBonus: number }> =
+    {};
 
   for (const cls of ids.classes) {
-    const clsLower = cls.name.toLowerCase();
-    const subLower = (cls.subclass ?? "").toLowerCase();
+    const classDb = getClass(cls.name);
 
-    // Standard caster
-    const scAbility = SPELLCASTING_ABILITY[clsLower];
-    if (scAbility) {
-      if (cls.level > bestLevel) {
-        bestAbility = scAbility;
-        bestLevel = cls.level;
-      }
+    // Class-level spellcasting ability (full/half/pact casters)
+    const classAbility = classDb?.spellcastingAbility as keyof AbilityScores | undefined;
+    if (classAbility) {
+      const mod = abilityMod(ids.abilities[classAbility]);
+      result[cls.name] = {
+        ability: classAbility,
+        dc: 8 + profBonus + mod,
+        attackBonus: profBonus + mod,
+      };
       continue;
     }
 
-    // Third-caster subclasses
-    if (THIRD_CASTER_SUBCLASSES.has(subLower) && cls.level > bestLevel) {
-      bestAbility = "intelligence";
-      bestLevel = cls.level;
+    // Subclass spellcasting ability (third-caster subclasses like Eldritch Knight, Arcane Trickster)
+    if (cls.subclass && classDb) {
+      const sub = classDb.subclasses.find(
+        (s) =>
+          s.name.toLowerCase() === cls.subclass!.toLowerCase() ||
+          s.shortName.toLowerCase() === cls.subclass!.toLowerCase(),
+      );
+      const subAbility = sub?.spellcastingAbility as keyof AbilityScores | undefined;
+      if (subAbility && sub?.casterProgression != null) {
+        const mod = abilityMod(ids.abilities[subAbility]);
+        result[cls.name] = {
+          ability: subAbility,
+          dc: 8 + profBonus + mod,
+          attackBonus: profBonus + mod,
+        };
+      }
     }
   }
 
-  if (!bestAbility) return {};
-
-  const mod = abilityMod(ids.abilities[bestAbility]);
-  return {
-    ability: bestAbility,
-    dc: 8 + profBonus + mod,
-    attackBonus: profBonus + mod,
-  };
+  return result;
 }
 
 // ─── Spell Slots ─────────────────────────────────────────
@@ -452,8 +484,16 @@ function computeSpellSlots(ids: CharacterIdentifiers): {
       continue;
     }
     const classDb = getClass(cls.name);
-    const subLower = (cls.subclass ?? "").toLowerCase();
-    if (classDb?.casterProgression || THIRD_CASTER_SUBCLASSES.has(subLower)) {
+    // A class is a caster if it has a casterProgression, OR if its active subclass has one
+    const sub =
+      cls.subclass && classDb
+        ? classDb.subclasses.find(
+            (s) =>
+              s.name.toLowerCase() === cls.subclass!.toLowerCase() ||
+              s.shortName.toLowerCase() === cls.subclass!.toLowerCase(),
+          )
+        : undefined;
+    if (classDb?.casterProgression || sub?.casterProgression != null) {
       casterClasses.push(cls);
     }
   }
@@ -480,12 +520,20 @@ function computeSpellSlots(ids: CharacterIdentifiers): {
 
   if (casterClasses.length === 1) {
     const cls = casterClasses[0];
-    const subLower = (cls.subclass ?? "").toLowerCase();
+    const classDb = getClass(cls.name);
+    const sub =
+      cls.subclass && classDb
+        ? classDb.subclasses.find(
+            (s) =>
+              s.name.toLowerCase() === cls.subclass!.toLowerCase() ||
+              s.shortName.toLowerCase() === cls.subclass!.toLowerCase(),
+          )
+        : undefined;
 
-    if (THIRD_CASTER_SUBCLASSES.has(subLower)) {
-      slotRow = THIRD_CASTER_SLOTS[cls.level] ?? [];
+    // Subclass-only casters (Eldritch Knight, Arcane Trickster) use their own spellSlotTable
+    if (!classDb?.casterProgression && sub?.casterProgression != null) {
+      slotRow = sub.spellSlotTable?.[cls.level - 1] ?? [];
     } else {
-      const classDb = getClass(cls.name);
       const table = classDb?.spellSlotTable;
       slotRow = table && cls.level <= table.length ? table[cls.level - 1] : [];
     }
@@ -493,13 +541,23 @@ function computeSpellSlots(ids: CharacterIdentifiers): {
     // Multiclass: compute weighted caster level
     let combinedCasterLevel = 0;
     for (const cls of casterClasses) {
+      const classDb = getClass(cls.name);
+      const sub =
+        cls.subclass && classDb
+          ? classDb.subclasses.find(
+              (s) =>
+                s.name.toLowerCase() === cls.subclass!.toLowerCase() ||
+                s.shortName.toLowerCase() === cls.subclass!.toLowerCase(),
+            )
+          : undefined;
+      // Use class-level multiplier; if no class progression, check subclass (third-caster)
       const multiplier = getCasterMultiplier(cls.name.toLowerCase());
-      const subLower = (cls.subclass ?? "").toLowerCase();
-      const thirdMult = THIRD_CASTER_SUBCLASSES.has(subLower) ? 1 / 3 : 0;
-      combinedCasterLevel += cls.level * (multiplier || thirdMult);
+      const subThirdMult =
+        !classDb?.casterProgression && sub?.casterProgression != null ? 1 / 3 : 0;
+      combinedCasterLevel += cls.level * (multiplier || subThirdMult);
     }
     const effectiveLevel = Math.min(Math.max(Math.floor(combinedCasterLevel), 1), 20);
-    slotRow = MULTICLASS_SLOTS[effectiveLevel - 1];
+    slotRow = (multiclassSlots as number[][])[effectiveLevel - 1];
   }
 
   if (slotRow) {

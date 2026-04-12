@@ -15,9 +15,53 @@
  * | Selene  | Half-Elf Cleric3/Warlock2 | Multiclass hybrid    | Mixed hit dice, pact + regular slots, dual CHA   |
  */
 
-import type { CharacterData } from "@unseen-servant/shared/types";
+import type { CharacterData, BuilderState } from "@unseen-servant/shared/types";
 import { buildCharacter } from "@unseen-servant/shared/builders";
 import type { CharacterIdentifiers } from "@unseen-servant/shared/builders";
+
+/** Minimal BuilderState stub for test fixtures. */
+function stubBuilderState(ids: CharacterIdentifiers): BuilderState {
+  return {
+    currentStep: "details",
+    completedSteps: [
+      "species",
+      "background",
+      "class",
+      "abilities",
+      "feats",
+      "spells",
+      "equipment",
+      "details",
+    ],
+    species: ids.race,
+    speciesChoices: {},
+    background: ids.background ?? null,
+    backgroundChoices: {},
+    abilityScoreMode: "two-one",
+    abilityScoreAssignments: {},
+    classes: ids.classes.map((c) => ({
+      name: c.name,
+      level: c.level,
+      subclass: c.subclass ?? null,
+      skills: [],
+      choices: {},
+    })),
+    activeClassIndex: 0,
+    abilityMethod: "manual",
+    baseAbilities: ids.abilities,
+    featSelections: [],
+    featChoices: {},
+    cantrips: {},
+    preparedSpells: {},
+    name: ids.name,
+    appearance: {},
+    backstory: ids.backstory ?? "",
+    alignment: "",
+    traits: ids.traits ?? {},
+    equipment: ids.equipment,
+    currency: ids.currency ?? { cp: 0, sp: 0, gp: 0, pp: 0 },
+  };
+}
 
 // ---------------------------------------------------------------------------
 // Theron — Level 5 Human Fighter / Champion
@@ -78,7 +122,9 @@ export function createFighterCharacter(): CharacterData {
     currency: { cp: 0, sp: 0, gp: 50, pp: 0 },
     traits: { personalityTraits: "Brave and loyal" },
     source: "builder",
+    builderState: undefined!,
   };
+  ids.builderState = stubBuilderState(ids);
 
   const { character } = buildCharacter(ids);
   return character;
@@ -189,7 +235,9 @@ export function createClericCharacter(): CharacterData {
     currency: { cp: 0, sp: 0, gp: 75, pp: 0 },
     traits: { personalityTraits: "Compassionate healer" },
     source: "builder",
+    builderState: undefined!,
   };
+  ids.builderState = stubBuilderState(ids);
 
   const { character } = buildCharacter(ids);
   return character;
@@ -302,7 +350,9 @@ export function createWarlockCharacter(): CharacterData {
     currency: { cp: 0, sp: 0, gp: 30, pp: 0 },
     traits: { personalityTraits: "Haunted by the pact she made" },
     source: "builder",
+    builderState: undefined!,
   };
+  ids.builderState = stubBuilderState(ids);
 
   const { character } = buildCharacter(ids);
   return character;
@@ -366,7 +416,9 @@ export function createBarbarianCharacter(): CharacterData {
     currency: { cp: 0, sp: 5, gp: 10, pp: 0 },
     traits: { personalityTraits: "Fierce but protective of allies" },
     source: "builder",
+    builderState: undefined!,
   };
+  ids.builderState = stubBuilderState(ids);
 
   const { character } = buildCharacter(ids);
   return character;
@@ -498,7 +550,9 @@ export function createMulticlassCharacter(): CharacterData {
     currency: { cp: 0, sp: 0, gp: 40, pp: 0 },
     traits: { personalityTraits: "Torn between divine duty and fey bargain" },
     source: "builder",
+    builderState: undefined!,
   };
+  ids.builderState = stubBuilderState(ids);
 
   const { character } = buildCharacter(ids);
   return character;

@@ -3,6 +3,7 @@
 
 import type { ConditionEntry } from "./game-state";
 import type { EffectBundle } from "./effects";
+import type { BuilderState } from "./builder";
 
 export interface AbilityScores {
   strength: number;
@@ -60,6 +61,8 @@ export interface InventoryItem {
   attunement?: boolean;
   isAttuned?: boolean;
   isMagicItem?: boolean;
+  mastery?: { name: string; description: string };
+  fromPack?: string;
 }
 
 export interface Currency {
@@ -170,14 +173,20 @@ export interface CharacterStaticData {
   senses: string[]; // "Darkvision 60 ft.", "Passive Perception 14"
   languages: string[]; // "Common", "Elvish"
   spells: CharacterSpell[];
-  spellcastingAbility?: keyof AbilityScores;
-  spellSaveDC?: number;
-  spellAttackBonus?: number;
+  spellcasting?: Record<
+    string,
+    {
+      ability: keyof AbilityScores;
+      dc: number;
+      attackBonus: number;
+    }
+  >;
   advantages: AdvantageEntry[];
   combatBonuses?: CombatBonus[];
   traits: CharacterTraits;
   appearance?: CharacterAppearance;
   backstory?: string;
+  alignment?: string;
   importedAt: number; // timestamp
   source?: "builder"; // import source
 }
@@ -209,9 +218,12 @@ export interface CharacterDynamicData {
 }
 
 /**
- * Complete character data — static + dynamic.
+ * Complete character data — builder snapshot + static + dynamic.
+ * The `builder` field stores the full BuilderState for lossless edit round-trips.
+ * It is stripped before being sent to DM tools or other players.
  */
 export interface CharacterData {
+  builder: BuilderState;
   static: CharacterStaticData;
   dynamic: CharacterDynamicData;
 }

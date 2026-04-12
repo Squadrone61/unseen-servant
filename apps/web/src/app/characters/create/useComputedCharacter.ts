@@ -18,7 +18,7 @@ function getAbilityMod(score: number): number {
  * Compute final ability scores by applying background bonuses from
  * state.abilityScoreAssignments on top of state.baseAbilities.
  */
-function computeFinalAbilities(state: BuilderState): AbilityScores {
+export function computeFinalAbilities(state: BuilderState): AbilityScores {
   const base = { ...state.baseAbilities };
   for (const [ability, bonus] of Object.entries(state.abilityScoreAssignments)) {
     const key = ability as keyof AbilityScores;
@@ -113,78 +113,84 @@ function collectToolProficiencies(state: BuilderState): string[] {
  * Spells are attributed to the primary class (index 0).
  */
 function assembleSpells(state: BuilderState): CharacterSpell[] {
-  const primaryClassName = state.classes[0]?.name ?? undefined;
-  const primarySubclass = state.classes[0]?.subclass ?? null;
   const spells: CharacterSpell[] = [];
+  const allCantrips = new Set(Object.values(state.cantrips).flat());
+  const allPrepared = new Set(Object.values(state.preparedSpells).flat());
 
-  for (const name of state.cantrips) {
-    const db = getSpell(name);
-    spells.push({
-      name,
-      level: 0,
-      prepared: true,
-      alwaysPrepared: false,
-      spellSource: "class",
-      knownByClass: true,
-      sourceClass: primaryClassName,
-      school: db?.school,
-      castingTime: db?.castingTime,
-      range: db?.range,
-      components: db?.components,
-      duration: db?.duration,
-      description: db?.description,
-      ritual: db?.ritual,
-      concentration: db?.concentration,
-    });
-  }
+  for (const cls of state.classes) {
+    const classCantrips = state.cantrips[cls.name] ?? [];
+    const classPrepared = state.preparedSpells[cls.name] ?? [];
 
-  for (const name of state.preparedSpells) {
-    const db = getSpell(name);
-    spells.push({
-      name,
-      level: db?.level ?? 1,
-      prepared: true,
-      alwaysPrepared: false,
-      spellSource: "class",
-      knownByClass: true,
-      sourceClass: primaryClassName,
-      school: db?.school,
-      castingTime: db?.castingTime,
-      range: db?.range,
-      components: db?.components,
-      duration: db?.duration,
-      description: db?.description,
-      ritual: db?.ritual,
-      concentration: db?.concentration,
-    });
-  }
+    for (const name of classCantrips) {
+      const db = getSpell(name);
+      spells.push({
+        name,
+        level: 0,
+        prepared: true,
+        alwaysPrepared: false,
+        spellSource: "class",
+        knownByClass: true,
+        sourceClass: cls.name,
+        school: db?.school,
+        castingTime: db?.castingTime,
+        range: db?.range,
+        components: db?.components,
+        duration: db?.duration,
+        description: db?.description,
+        ritual: db?.ritual,
+        concentration: db?.concentration,
+      });
+    }
 
-  // Always-prepared subclass spells from the primary class's subclass
-  if (primarySubclass && primaryClassName) {
-    const cls = getClass(primaryClassName);
-    const sub = cls?.subclasses.find((s) => s.name.toLowerCase() === primarySubclass.toLowerCase());
-    if (sub?.additionalSpells) {
-      for (const name of sub.additionalSpells) {
-        // Skip if already in prepared list to avoid duplicates
-        if (state.preparedSpells.includes(name) || state.cantrips.includes(name)) continue;
-        const db = getSpell(name);
-        spells.push({
-          name,
-          level: db?.level ?? 1,
-          prepared: true,
-          alwaysPrepared: true,
-          spellSource: "class",
-          knownByClass: false,
-          sourceClass: primaryClassName,
-          school: db?.school,
-          castingTime: db?.castingTime,
-          range: db?.range,
-          components: db?.components,
-          duration: db?.duration,
-          description: db?.description,
-          ritual: db?.ritual,
-          concentration: db?.concentration,
-        });
+    for (const name of classPrepared) {
+      const db = getSpell(name);
+      spells.push({
+        name,
+        level: db?.level ?? 1,
+        prepared: true,
+        alwaysPrepared: false,
+        spellSource: "class",
+        knownByClass: true,
+        sourceClass: cls.name,
+        school: db?.school,
+        castingTime: db?.castingTime,
+        range: db?.range,
+        components: db?.components,
+        duration: db?.duration,
+        description: db?.description,
+        ritual: db?.ritual,
+        concentration: db?.concentration,
+      });
+    }
+
+    // Always-prepared subclass spells
+    if (cls.subclass) {
+      const classDb = getClass(cls.name);
+      const sub = classDb?.subclasses.find(
+        (s) => s.name.toLowerCase() === cls.subclass!.toLowerCase(),
+      );
+      if (sub?.additionalSpells) {
+        for (const name of sub.additionalSpells) {
+          if (allPrepared.has(name) || allCantrips.has(name)) continue;
+          const db = getSpell(name);
+          spells.push({
+            name,
+            level: db?.level ?? 1,
+            prepared: true,
+            alwaysPrepared: true,
+            spellSource: "class",
+            knownByClass: false,
+            sourceClass: cls.name,
+            school: db?.school,
+            castingTime: db?.castingTime,
+            range: db?.range,
+            components: db?.components,
+            duration: db?.duration,
+            description: db?.description,
+            ritual: db?.ritual,
+            concentration: db?.concentration,
+          });
+        }
       }
     }
   }
@@ -294,6 +300,7 @@ function assembleIdentifiers(state: BuilderState): CharacterIdentifiers {
     backstory: state.backstory || undefined,
     currency: state.currency,
     source: "builder",
+    builderState: state,
   };
 }
 

@@ -2,7 +2,8 @@
 
 import type { CharacterSpell } from "@unseen-servant/shared/types";
 import { DetailPopover } from "./DetailPopover";
-import { Prose } from "../Prose";
+import { RichText } from "../ui/RichText";
+import { useEntityClick } from "./EntityPopoverContext";
 
 interface SpellDetailPopupProps {
   spell: CharacterSpell;
@@ -11,6 +12,7 @@ interface SpellDetailPopupProps {
 }
 
 export function SpellDetailPopup({ spell, onClose, position }: SpellDetailPopupProps) {
+  const onEntityClick = useEntityClick();
   const levelStr =
     spell.level === 0 ? "Cantrip" : `Level ${spell.level}${spell.school ? ` ${spell.school}` : ""}`;
 
@@ -74,7 +76,11 @@ export function SpellDetailPopup({ spell, onClose, position }: SpellDetailPopupP
             >
               Description
             </div>
-            <Prose className="text-gray-300">{spell.description}</Prose>
+            <RichText
+              text={spell.description}
+              className="text-gray-300 text-sm"
+              onEntityClick={onEntityClick}
+            />
           </div>
         )}
       </div>

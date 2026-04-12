@@ -2,7 +2,8 @@
 
 import type { InventoryItem } from "@unseen-servant/shared/types";
 import { DetailPopover } from "./DetailPopover";
-import { Prose } from "../Prose";
+import { RichText } from "../ui/RichText";
+import { useEntityClick } from "./EntityPopoverContext";
 import { RARITY_COLORS } from "./utils";
 
 interface ItemDetailPopupProps {
@@ -12,6 +13,7 @@ interface ItemDetailPopupProps {
 }
 
 export function ItemDetailPopup({ item, onClose, position }: ItemDetailPopupProps) {
+  const onEntityClick = useEntityClick();
   const rarityColor = RARITY_COLORS[item.rarity ?? ""] ?? "text-gray-300";
 
   return (
@@ -103,6 +105,23 @@ export function ItemDetailPopup({ item, onClose, position }: ItemDetailPopupProp
           </div>
         )}
 
+        {/* Mastery */}
+        {item.mastery && (
+          <div>
+            <div
+              className="text-sm text-gray-500 uppercase tracking-wider font-medium mb-1"
+              style={{ fontFamily: "var(--font-cinzel)" }}
+            >
+              Mastery: {item.mastery.name}
+            </div>
+            <RichText
+              text={item.mastery.description}
+              className="text-gray-300 text-sm"
+              onEntityClick={onEntityClick}
+            />
+          </div>
+        )}
+
         {/* Description */}
         {item.description && (
           <div>
@@ -112,7 +131,11 @@ export function ItemDetailPopup({ item, onClose, position }: ItemDetailPopupProp
             >
               Description
             </div>
-            <Prose className="text-gray-300">{item.description}</Prose>
+            <RichText
+              text={item.description}
+              className="text-gray-300 text-sm"
+              onEntityClick={onEntityClick}
+            />
           </div>
         )}
       </div>

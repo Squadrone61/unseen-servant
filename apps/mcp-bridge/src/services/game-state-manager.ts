@@ -2158,6 +2158,7 @@ export class GameStateManager {
       position?: GridPosition;
       size?: CreatureSize;
       tokenColor?: string;
+      saveBonuses?: Record<string, number>;
     }>,
     surprisedCombatants?: string[],
   ): ToolResponse {
@@ -2225,6 +2226,7 @@ export class GameStateManager {
         armorClass: c.armorClass,
         conditions: [],
         playerId: linkedPlayerId,
+        ...(c.saveBonuses ? { saveBonuses: c.saveBonuses } : {}),
       };
 
       initiativeOrder.push({ id, initiative, dexScore });
@@ -2482,6 +2484,7 @@ export class GameStateManager {
     position?: GridPosition;
     size?: CreatureSize;
     tokenColor?: string;
+    saveBonuses?: Record<string, number>;
   }): ToolResponse {
     const combat = this.gameState.encounter?.combat;
     if (!combat || combat.phase !== "active") {
@@ -2531,6 +2534,7 @@ export class GameStateManager {
       tempHP: 0,
       armorClass: c.armorClass,
       conditions: [],
+      ...(c.saveBonuses ? { saveBonuses: c.saveBonuses } : {}),
     };
 
     // Insert into turn order by initiative

@@ -181,16 +181,29 @@ export const characterStaticDataSchema = z.object({
   senses: z.array(z.string()),
   languages: z.array(z.string()),
   spells: z.array(characterSpellSchema),
-  spellcastingAbility: z
-    .enum(["strength", "dexterity", "constitution", "intelligence", "wisdom", "charisma"])
+  spellcasting: z
+    .record(
+      z.string(),
+      z.object({
+        ability: z.enum([
+          "strength",
+          "dexterity",
+          "constitution",
+          "intelligence",
+          "wisdom",
+          "charisma",
+        ]),
+        dc: z.number(),
+        attackBonus: z.number(),
+      }),
+    )
     .optional(),
-  spellSaveDC: z.number().optional(),
-  spellAttackBonus: z.number().optional(),
   advantages: z.array(advantageEntrySchema),
   combatBonuses: z.array(combatBonusSchema).optional(),
   traits: characterTraitsSchema,
   appearance: characterAppearanceSchema.optional(),
   backstory: z.string().optional(),
+  alignment: z.string().optional(),
   importedAt: z.number(),
   source: z.enum(["builder"]).optional(),
 });
@@ -211,6 +224,7 @@ export const characterDynamicDataSchema = z.object({
 });
 
 export const characterDataSchema = z.object({
+  builder: z.any(),
   static: characterStaticDataSchema,
   dynamic: characterDynamicDataSchema,
 });

@@ -29,6 +29,7 @@
   "hitDiceFaces": 8,
   "primaryAbility": "Charisma",
   "spellcastingAbility": "charisma",
+  "canRitualCast": true,
   "savingThrows": [
     "wisdom",
     "charisma"

@@ -103,5 +103,359 @@
       "Topple"
     ],
     "weight": 4
+  },
+  {
+    "name": "Alms Box",
+    "type": "G|XPHB",
+    "weight": 1,
+    "description": "A small box used to collect offerings and tithes for religious purposes."
+  },
+  {
+    "name": "Backpack",
+    "type": "G|XPHB",
+    "weight": 5,
+    "description": "A Backpack can hold up to 30 pounds of gear, not exceeding a volume of 1 cubic foot."
+  },
+  {
+    "name": "Ball Bearings (bag of 1,000)",
+    "type": "G|XPHB",
+    "weight": 2,
+    "description": "As a Utilize action, you can spread these across a 10-foot square. Any creature entering the area must succeed on a DC 10 Dexterity saving throw or have the Prone condition. Picking up all the ball bearings takes 1 minute."
+  },
+  {
+    "name": "Bedroll",
+    "type": "G|XPHB",
+    "weight": 7,
+    "description": "A bedroll consists of bedding and a blanket thin enough to be rolled up and tied. It provides a comfortable place to sleep outdoors."
+  },
+  {
+    "name": "Bell",
+    "type": "G|XPHB",
+    "weight": 0,
+    "description": "A small brass bell that produces a clear ringing tone when struck."
+  },
+  {
+    "name": "Blanket",
+    "type": "G|XPHB",
+    "weight": 3,
+    "description": "A thick, woven blanket suitable for warmth during a rest or travel."
+  },
+  {
+    "name": "Book",
+    "type": "G|XPHB",
+    "weight": 5,
+    "description": "A book contains blank pages suitable for recording text, spells, maps, or other information. A wizard can use it as a spellbook."
+  },
+  {
+    "name": "Candle",
+    "type": "G|XPHB",
+    "weight": 0,
+    "description": "A candle illuminates a 5-foot radius with bright light and a 10-foot radius with dim light. It burns for 1 hour."
+  },
+  {
+    "name": "Censer",
+    "type": "G|XPHB",
+    "weight": 1,
+    "description": "A metal vessel on a chain used for burning incense during religious ceremonies. It can be used as a holy symbol by clerics or paladins."
+  },
+  {
+    "name": "Chain (10 ft)",
+    "type": "G|XPHB",
+    "weight": 10,
+    "description": "A 10-foot length of iron chain has AC 19, 10 Hit Points, and immunity to Poison and Psychic damage. It can be used to bind a creature with a DC 20 Strength check to break free."
+  },
+  {
+    "name": "Chest",
+    "type": "G|XPHB",
+    "weight": 25,
+    "description": "A chest can hold up to 300 pounds of gear, not exceeding a volume of 12 cubic feet."
+  },
+  {
+    "name": "Climber's Kit",
+    "type": "G|XPHB",
+    "weight": 12,
+    "description": "A climber's kit includes special pitons, boot tips, gloves, and a harness. As a Utilize action, you can anchor yourself so you can't fall more than 25 feet from the point where you anchored."
+  },
+  {
+    "name": "Component Pouch",
+    "type": "G|XPHB",
+    "weight": 2,
+    "description": "A small, watertight leather belt pouch with compartments for storing material components needed for spellcasting, except those that have a specified cost."
+  },
+  {
+    "name": "Costume",
+    "type": "G|XPHB",
+    "weight": 4,
+    "description": "An outfit or disguise suitable for a theatrical performance or masquerade."
+  },
+  {
+    "name": "Crowbar",
+    "type": "G|XPHB",
+    "weight": 5,
+    "description": "Using a crowbar grants Advantage on Strength checks where the crowbar's leverage can be applied."
+  },
+  {
+    "name": "Disguise Kit",
+    "type": "T|XPHB",
+    "weight": 3,
+    "description": "This pouch of cosmetics, hair dye, and small props lets you create disguises that change your physical appearance. Proficiency with this kit lets you add your Proficiency Bonus to Charisma (Deception) checks made to pass off a disguise."
+  },
+  {
+    "name": "Fine Clothes",
+    "type": "G|XPHB",
+    "weight": 6,
+    "description": "Fine clothes are made from high-quality materials and are required when attending formal social events or impersonating nobility."
+  },
+  {
+    "name": "Flask",
+    "type": "G|XPHB",
+    "weight": 1,
+    "description": "A glass or metal flask holds 1 pint of liquid."
+  },
+  {
+    "name": "Grappling Hook",
+    "type": "G|XPHB",
+    "weight": 4,
+    "description": "When attached to a rope, a grappling hook can be thrown to anchor the rope to a battlement, ledge, or other fixed object."
+  },
+  {
+    "name": "Hammer",
+    "type": "G|XPHB",
+    "weight": 3,
+    "description": "A hammer can be used to drive spikes, pitons, or stakes into hard surfaces."
+  },
+  {
+    "name": "Healer's Kit",
+    "type": "T|XPHB",
+    "weight": 3,
+    "description": "This kit contains bandages, salves, and splints. As a Utilize action, you can expend one use (10 uses total) to stabilize a creature at 0 Hit Points without a Wisdom (Medicine) check."
+  },
+  {
+    "name": "Hempen Rope (50 ft)",
+    "type": "G|XPHB",
+    "weight": 10,
+    "description": "Hemp rope has AC 11, 2 Hit Points, and can hold up to 3 Medium or smaller creatures. It can be burst with a DC 17 Strength check."
+  },
+  {
+    "name": "Holy Water",
+    "type": "G|XPHB",
+    "weight": 1,
+    "description": "As a Utilize action, you can splash Holy Water on a Fiend or Undead within 5 feet or throw it up to 20 feet. A successful hit deals 2d8 Radiant damage."
+  },
+  {
+    "name": "Hooded Lantern",
+    "type": "G|XPHB",
+    "weight": 2,
+    "description": "A hooded lantern casts bright light in a 30-foot radius and dim light for an additional 30 feet. As a Utilize action, you can close or open the hood, reducing the bright light to a 5-foot radius."
+  },
+  {
+    "name": "Hunting Trap",
+    "type": "G|XPHB",
+    "weight": 25,
+    "description": "As a Utilize action, you can set this trap. A creature that steps on the trap must succeed on a DC 13 Dexterity saving throw or take 1d4 Piercing damage and have its Speed reduced to 0 until freed."
+  },
+  {
+    "name": "Incense",
+    "type": "G|XPHB",
+    "weight": 0,
+    "description": "A block of aromatic incense used during religious ceremonies and meditation."
+  },
+  {
+    "name": "Ink",
+    "type": "G|XPHB",
+    "weight": 0,
+    "description": "A 1-ounce bottle of black ink used for writing."
+  },
+  {
+    "name": "Ink Pen",
+    "type": "G|XPHB",
+    "weight": 0,
+    "description": "A slender quill or metal-tipped pen for writing with ink."
+  },
+  {
+    "name": "Lamp",
+    "type": "G|XPHB",
+    "weight": 1,
+    "description": "A lamp casts bright light in a 15-foot radius and dim light for an additional 30 feet. Using 1 pint of oil as fuel, it burns for 6 hours."
+  },
+  {
+    "name": "Lock",
+    "type": "G|XPHB",
+    "weight": 1,
+    "description": "A lock comes with a key. A creature proficient with Thieves' Tools can pick the lock with a DC 15 Dexterity (Thieves' Tools) check."
+  },
+  {
+    "name": "Magnifying Glass",
+    "type": "G|XPHB",
+    "weight": 0,
+    "description": "A magnifying glass grants Advantage on Wisdom (Perception) checks that rely on sight when examining objects smaller than 1 foot. It can also be used to start a fire given bright sunlight."
+  },
+  {
+    "name": "Map or Scroll Case",
+    "type": "G|XPHB",
+    "weight": 1,
+    "description": "A cylindrical leather case used to store and protect rolled maps or scrolls. It holds up to 10 sheets of rolled paper."
+  },
+  {
+    "name": "Mess Kit",
+    "type": "G|XPHB",
+    "weight": 1,
+    "description": "A tin box containing a cup, a small skillet, and utensils for eating and cooking. It clamps together for easy storage."
+  },
+  {
+    "name": "Mirror",
+    "type": "G|XPHB",
+    "weight": 0.5,
+    "description": "A small steel mirror used for signaling or viewing around corners."
+  },
+  {
+    "name": "Oil (flask)",
+    "type": "G|XPHB",
+    "weight": 1,
+    "description": "Oil can be used as fuel for lamps or spread on a 5-foot square as a Utilize action. If lit, it burns for 2 rounds dealing 5 Fire damage to any creature that enters the area or starts its turn there."
+  },
+  {
+    "name": "Paper",
+    "type": "G|XPHB",
+    "weight": 0,
+    "description": "A single sheet of high-quality paper suitable for writing or drawing."
+  },
+  {
+    "name": "Parchment",
+    "type": "G|XPHB",
+    "weight": 0,
+    "description": "A single sheet of treated animal skin suitable for writing."
+  },
+  {
+    "name": "Perfume",
+    "type": "G|XPHB",
+    "weight": 0,
+    "description": "A small vial of scented perfume."
+  },
+  {
+    "name": "Piton",
+    "type": "G|XPHB",
+    "weight": 0.25,
+    "description": "A metal spike driven into stone or ice to serve as an anchor point for climbing."
+  },
+  {
+    "name": "Pole (10 ft)",
+    "type": "G|XPHB",
+    "weight": 7,
+    "description": "A 10-foot wooden pole used for probing, carrying, or vaulting. Too unwieldy to use as a weapon."
+  },
+  {
+    "name": "Pouch",
+    "type": "G|XPHB",
+    "weight": 1,
+    "description": "A cloth or leather pouch can hold up to 6 pounds of gear, not exceeding a volume of 1/5 cubic foot. It is the default container for carrying coins."
+  },
+  {
+    "name": "Rations (1 day)",
+    "type": "G|XPHB",
+    "weight": 2,
+    "description": "Rations consist of dry foods suitable for extended travel, including jerky, dried fruit, hardtack, and nuts."
+  },
+  {
+    "name": "Sealing Wax",
+    "type": "G|XPHB",
+    "weight": 0,
+    "description": "Wax used with a signet ring to seal letters and documents."
+  },
+  {
+    "name": "Shovel",
+    "type": "G|XPHB",
+    "weight": 5,
+    "description": "A shovel is used for digging. It can dig a 1-cubic-foot hole in 1 minute in loose earth."
+  },
+  {
+    "name": "Signal Whistle",
+    "type": "G|XPHB",
+    "weight": 0,
+    "description": "A small metal whistle used for signaling across distances."
+  },
+  {
+    "name": "Silk Rope (50 ft)",
+    "type": "G|XPHB",
+    "weight": 5,
+    "description": "Silk rope has AC 13, 4 Hit Points, and can hold up to 3 Medium or smaller creatures. It can be burst with a DC 17 Strength check."
+  },
+  {
+    "name": "Sledgehammer",
+    "type": "G|XPHB",
+    "weight": 10,
+    "description": "A heavy hammer used for breaking down doors, walls, and other obstacles."
+  },
+  {
+    "name": "Small Knife",
+    "type": "G|XPHB",
+    "weight": 0.25,
+    "description": "A small blade useful for cutting rope, preparing food, and other mundane tasks. Not suited for use as a weapon in combat."
+  },
+  {
+    "name": "Soap",
+    "type": "G|XPHB",
+    "weight": 0,
+    "description": "A bar of soap used for washing."
+  },
+  {
+    "name": "Spyglass",
+    "type": "G|XPHB",
+    "weight": 1,
+    "description": "Objects viewed through a spyglass are magnified to twice their size. This extends the range of sight-based Perception checks."
+  },
+  {
+    "name": "String (10 ft)",
+    "type": "G|XPHB",
+    "weight": 0,
+    "description": "A 10-foot length of thin string or twine, useful for setting simple traps or tying bundles."
+  },
+  {
+    "name": "Tent",
+    "type": "G|XPHB",
+    "weight": 20,
+    "description": "A simple and portable canvas shelter that can fit two Medium creatures."
+  },
+  {
+    "name": "Thieves' Tools",
+    "type": "T|XPHB",
+    "weight": 1,
+    "description": "This set of tools includes a small file, a set of lock picks, a small mirror on a metal handle, a set of narrow-bladed scissors, and a pair of pliers. Proficiency with these tools lets you add your Proficiency Bonus to checks made to disarm traps or open locks."
+  },
+  {
+    "name": "Tinderbox",
+    "type": "G|XPHB",
+    "weight": 1,
+    "description": "A tinderbox contains flint, fire steel, and tinder. Using it as a Utilize action allows you to start a fire for a torch or campfire."
+  },
+  {
+    "name": "Torch",
+    "type": "G|XPHB",
+    "weight": 1,
+    "description": "A torch burns for 1 hour, casting bright light in a 20-foot radius and dim light for an additional 20 feet. As an improvised weapon, a torch deals 1 Fire damage on a hit."
+  },
+  {
+    "name": "Traveler's Clothes",
+    "type": "G|XPHB",
+    "weight": 4,
+    "description": "Sturdy, practical clothing suitable for long journeys."
+  },
+  {
+    "name": "Vestments",
+    "type": "G|XPHB",
+    "weight": 4,
+    "description": "Religious garments worn by clergy during ceremonies."
+  },
+  {
+    "name": "Vial",
+    "type": "G|XPHB",
+    "weight": 0,
+    "description": "A small glass vial holds up to 4 ounces of liquid."
+  },
+  {
+    "name": "Waterskin",
+    "type": "G|XPHB",
+    "weight": 5,
+    "description": "A waterskin can hold up to 4 pints of liquid. It weighs 5 pounds when full."
   }
 ]

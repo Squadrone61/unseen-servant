@@ -245,8 +245,11 @@ export function registerGameTools(
           content: [{ type: "text" as const, text: `Character "${name}" not found` }],
         };
       }
-      // Format combatant position as A1 notation if in combat
+      // Strip builder state (not needed by DM) and format for output
       const output = JSON.parse(JSON.stringify(result));
+      if (output.character?.builder) {
+        delete output.character.builder;
+      }
       if (
         output.combatant?.position &&
         typeof output.combatant.position === "object" &&
@@ -445,6 +448,12 @@ export function registerGameTools(
                 .optional()
                 .describe("Creature size (default medium)"),
               tokenColor: z.string().optional().describe("Token color for battle map"),
+              saveBonuses: z
+                .record(z.string(), z.number())
+                .optional()
+                .describe(
+                  "Per-ability saving throw bonuses (e.g., {dexterity: 5, wisdom: 3}). From monster stat block.",
+                ),
             }),
           )
           .describe("List of combatants to add to combat"),
@@ -539,6 +548,12 @@ export function registerGameTools(
         position: z.string().optional().describe("Grid position in A1 notation (e.g., 'C4')"),
         size: z.enum(["tiny", "small", "medium", "large", "huge", "gargantuan"]).optional(),
         tokenColor: z.string().optional(),
+        saveBonuses: z
+          .record(z.string(), z.number())
+          .optional()
+          .describe(
+            "Per-ability saving throw bonuses (e.g., {dexterity: 5, wisdom: 3}). From monster stat block.",
+          ),
       },
     },
     async (params) => {

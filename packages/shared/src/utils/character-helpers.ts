@@ -122,10 +122,18 @@ export function buildCharacterContextBlock(playerName: string, char: CharacterDa
   }
 
   // Spellcasting stats
-  if (s.spellSaveDC) {
-    lines.push(
-      `**Spell Save DC:** ${s.spellSaveDC} | **Spell Attack:** ${formatBonus(s.spellAttackBonus ?? 0)}`,
-    );
+  if (s.spellcasting && Object.keys(s.spellcasting).length > 0) {
+    const entries = Object.entries(s.spellcasting);
+    if (entries.length === 1) {
+      const [, sc] = entries[0];
+      lines.push(`**Spell Save DC:** ${sc.dc} | **Spell Attack:** ${formatBonus(sc.attackBonus)}`);
+    } else {
+      for (const [className, sc] of entries) {
+        lines.push(
+          `**${className} Spell Save DC:** ${sc.dc} | **Spell Attack:** ${formatBonus(sc.attackBonus)}`,
+        );
+      }
+    }
   }
 
   // Spell slot availability
@@ -256,6 +264,7 @@ export function mergeReimport(
   }
 
   return {
+    builder: existing.builder,
     static: newStaticData,
     dynamic,
   };

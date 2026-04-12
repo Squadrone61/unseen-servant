@@ -28,6 +28,8 @@ import { InventoryTab } from "./tabs/InventoryTab";
 import { FeaturesTab } from "./tabs/FeaturesTab";
 import { StatsTab } from "./tabs/StatsTab";
 import { TabBar } from "@/components/ui/TabBar";
+import { EntityPopoverProvider, useEntityPopover } from "./EntityPopoverContext";
+import { EntityDetailPopover } from "./EntityDetailPopover";
 
 // ─── Helpers ───
 
@@ -86,12 +88,22 @@ function SheetTabBar({
 // ─── Main Component ───
 
 export function CharacterSheet({ character }: CharacterSheetProps) {
+  return (
+    <EntityPopoverProvider>
+      <CharacterSheetInner character={character} />
+    </EntityPopoverProvider>
+  );
+}
+
+function CharacterSheetInner({ character }: CharacterSheetProps) {
   const s = character.static;
   const d = character.dynamic;
   const [activeTab, setActiveTab] = useState<TabId>("actions");
   const [popup, setPopup] = useState<PopupState>(null);
+  const { stack } = useEntityPopover();
 
-  const isCaster = s.spellSaveDC != null && s.spellSaveDC > 0;
+  const primarySpellcasting = s.spellcasting ? Object.values(s.spellcasting)[0] : undefined;
+  const isCaster = primarySpellcasting != null;
 
   return (
     <div className="flex flex-col h-full text-sm">
@@ -132,12 +144,12 @@ export function CharacterSheet({ character }: CharacterSheetProps) {
             <>
               <div className="bg-gray-900/60 border border-gray-700/50 rounded py-1">
                 <div className="text-xs text-gray-500 uppercase">Spell DC</div>
-                <div className="text-base font-bold text-gray-200">{s.spellSaveDC}</div>
+                <div className="text-base font-bold text-gray-200">{primarySpellcasting?.dc}</div>
               </div>
               <div className="bg-gray-900/60 border border-gray-700/50 rounded py-1">
                 <div className="text-xs text-gray-500 uppercase">Spell Atk</div>
                 <div className="text-base font-bold text-gray-200">
-                  {formatBonus(s.spellAttackBonus ?? 0)}
+                  {formatBonus(primarySpellcasting?.attackBonus ?? 0)}
                 </div>
               </div>
               <div className="bg-gray-900/60 border border-gray-700/50 rounded py-1">
@@ -377,6 +389,18 @@ export function CharacterSheet({ character }: CharacterSheetProps) {
           position={popup.position}
         />
       )}
+
+      {/* Entity popover stack (nested popovers from RichText entity clicks) */}
+      {stack.map((entry) => (
+        <EntityDetailPopover
+          key={entry.id}
+          id={entry.id}
+          category={entry.category}
+          name={entry.name}
+          position={entry.position}
+          level={entry.level}
+        />
+      ))}
     </div>
   );
 }

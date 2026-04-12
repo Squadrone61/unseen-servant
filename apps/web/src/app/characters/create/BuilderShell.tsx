@@ -296,6 +296,7 @@ export function BuilderShell({ mode, editId, editName, editDynamicData }: Builde
       // Merge: new static data from builder + preserved dynamic data from gameplay
       const mergedCharacter = editDynamicData
         ? {
+            builder: state,
             static: character.static,
             dynamic: {
               ...editDynamicData,
@@ -304,9 +305,9 @@ export function BuilderShell({ mode, editId, editName, editDynamicData }: Builde
             },
           }
         : character;
-      updateCharacter(editId, mergedCharacter, state);
+      updateCharacter(editId, mergedCharacter);
     } else {
-      saveCharacter(character, { builderState: state });
+      saveCharacter(character);
     }
 
     router.push("/characters");
