@@ -4,7 +4,6 @@
 import type { ConditionEntry } from "./game-state";
 import type { EffectBundle } from "./effects";
 import type { BuilderState } from "./builder";
-import type { FeatureActivation } from "./data";
 import type { Spell } from "./spell";
 import type { Item } from "./item";
 
@@ -58,15 +57,6 @@ export interface CharacterAppearance {
 export interface DeathSaves {
   successes: number;
   failures: number;
-}
-
-export interface CharacterFeature {
-  name: string;
-  description: string;
-  source: "class" | "race" | "feat" | "background";
-  sourceLabel: string; // "Wizard", "Half-Orc", "War Caster"
-  requiredLevel?: number; // class features only
-  activationType?: FeatureActivation; // undefined = passive
 }
 
 /**
@@ -162,7 +152,7 @@ export interface CharacterStaticData {
   armorClass: number;
   proficiencyBonus: number;
   speed: CharacterSpeed;
-  features: CharacterFeature[];
+  features: CharacterFeatureRef[];
   classResources?: ClassResource[];
   proficiencies: ProficiencyGroup;
   skills: SkillProficiency[];

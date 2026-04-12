@@ -4,7 +4,7 @@ import { useState } from "react";
 import type {
   CharacterData,
   Spell,
-  CharacterFeature,
+  CharacterFeatureRef,
   AdvantageEntry,
   Item,
   AbilityScores,
@@ -45,7 +45,7 @@ type PopupState =
   | { type: "ability"; id: keyof AbilityScores; position: ClickPosition }
   | { type: "spell"; spell: Spell; position: ClickPosition }
   | { type: "item"; item: Item; position: ClickPosition }
-  | { type: "feature"; feature: CharacterFeature; position: ClickPosition }
+  | { type: "feature"; feature: CharacterFeatureRef; position: ClickPosition }
   | null;
 
 type TabId = "stats" | "actions" | "spells" | "inventory" | "features";

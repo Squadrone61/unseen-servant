@@ -207,9 +207,8 @@ describe("shortRest", () => {
     it("includes rest-relevant feat hints when character has the feat", () => {
       // Add Chef feat to Brynn
       getBrynn(gsm).static.features.push({
-        name: "Chef",
-        description: "Replenishing Meal",
-        source: "feat",
+        dbKind: "feat",
+        dbName: "Chef",
         sourceLabel: "Chef",
       });
       const result = gsm.shortRest(["Brynn"]);

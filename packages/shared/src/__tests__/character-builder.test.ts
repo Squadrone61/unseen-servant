@@ -33,7 +33,7 @@ describe("Fighter 5 — non-caster build", () => {
 
   it("has Extra Attack feature", () => {
     const { character } = buildCharacter(state);
-    const featureNames = character.static.features.map((f) => f.name);
+    const featureNames = character.static.features.map((f) => f.featureName ?? f.dbName);
     expect(featureNames).toContain("Extra Attack");
   });
 
@@ -186,19 +186,19 @@ describe("Rogue 1 — martial build", () => {
 
   it("has Sneak Attack feature", () => {
     const { character } = buildCharacter(state);
-    const featureNames = character.static.features.map((f) => f.name);
+    const featureNames = character.static.features.map((f) => f.featureName ?? f.dbName);
     expect(featureNames).toContain("Sneak Attack");
   });
 
   it("has Expertise feature", () => {
     const { character } = buildCharacter(state);
-    const featureNames = character.static.features.map((f) => f.name);
+    const featureNames = character.static.features.map((f) => f.featureName ?? f.dbName);
     expect(featureNames).toContain("Expertise");
   });
 
   it("has Thieves' Cant feature", () => {
     const { character } = buildCharacter(state);
-    const featureNames = character.static.features.map((f) => f.name);
+    const featureNames = character.static.features.map((f) => f.featureName ?? f.dbName);
     expect(featureNames).toContain("Thieves' Cant");
   });
 

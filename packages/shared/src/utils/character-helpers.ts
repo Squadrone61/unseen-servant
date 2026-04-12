@@ -188,7 +188,7 @@ export function buildCharacterContextBlock(playerName: string, char: CharacterDa
   }
 
   if (s.features.length > 0) {
-    lines.push(`**Features:** ${s.features.map((f) => f.name).join(", ")}`);
+    lines.push(`**Features:** ${s.features.map((f) => f.featureName ?? f.dbName).join(", ")}`);
   }
 
   // Languages & senses

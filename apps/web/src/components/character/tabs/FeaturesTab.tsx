@@ -1,13 +1,14 @@
 import { useState, useMemo } from "react";
-import type { CharacterData, CharacterFeature } from "@unseen-servant/shared/types";
+import type { CharacterData, CharacterFeatureRef } from "@unseen-servant/shared/types";
+import { resolveFeatureDescription } from "@unseen-servant/shared/data";
 import { FilterChipBar } from "../FilterChipBar";
 
 interface FeaturesTabProps {
   character: CharacterData;
-  onFeatureClick: (feature: CharacterFeature, e: React.MouseEvent) => void;
+  onFeatureClick: (feature: CharacterFeatureRef, e: React.MouseEvent) => void;
 }
 
-type FeatureFilter = "all" | "class" | "race" | "feat" | "background";
+type FeatureFilter = "all" | "class" | "subclass" | "feat" | "species" | "background";
 
 export function FeaturesTab({ character, onFeatureClick }: FeaturesTabProps) {
   const [filter, setFilter] = useState<string>("all");
@@ -16,39 +17,43 @@ export function FeaturesTab({ character, onFeatureClick }: FeaturesTabProps) {
   const s = character.static;
 
   const counts = useMemo(() => {
-    const cls = s.features.filter((f) => f.source === "class").length;
-    const race = s.features.filter((f) => f.source === "race").length;
-    const feat = s.features.filter((f) => f.source === "feat").length;
-    const bg = s.features.filter((f) => f.source === "background").length;
+    const cls = s.features.filter((f) => f.dbKind === "class" || f.dbKind === "subclass").length;
+    const race = s.features.filter((f) => f.dbKind === "species").length;
+    const feat = s.features.filter((f) => f.dbKind === "feat").length;
+    const bg = s.features.filter((f) => f.dbKind === "background").length;
     return { cls, race, feat, bg };
   }, [s.features]);
 
   const chips = [
     { id: "all", label: "ALL", count: s.features.length },
     ...(counts.cls > 0 ? [{ id: "class", label: "CLASS", count: counts.cls }] : []),
-    ...(counts.race > 0 ? [{ id: "race", label: "SPECIES", count: counts.race }] : []),
+    ...(counts.race > 0 ? [{ id: "species", label: "SPECIES", count: counts.race }] : []),
     ...(counts.feat > 0 ? [{ id: "feat", label: "FEATS", count: counts.feat }] : []),
     ...(counts.bg > 0 ? [{ id: "background", label: "BACKGROUND", count: counts.bg }] : []),
   ];
 
   const filtered = useMemo(() => {
     if (filter === "all") return s.features;
-    return s.features.filter((f) => f.source === (filter as FeatureFilter));
+    if (filter === "class")
+      return s.features.filter((f) => f.dbKind === "class" || f.dbKind === "subclass");
+    return s.features.filter((f) => f.dbKind === (filter as FeatureFilter));
   }, [s.features, filter]);
 
-  // Group by source for "all" view
+  // Group by dbKind for "all" view
   const groups = useMemo(() => {
     if (filter !== "all") return [{ key: filter, label: "", features: filtered }];
     const sourceOrder: { key: string; label: string }[] = [
       { key: "class", label: "Class Features" },
-      { key: "race", label: "Species Traits" },
+      { key: "species", label: "Species Traits" },
       { key: "feat", label: "Feats" },
       { key: "background", label: "Background" },
     ];
     return sourceOrder
       .map((g) => ({
         ...g,
-        features: filtered.filter((f) => f.source === g.key),
+        features: filtered.filter((f) =>
+          g.key === "class" ? f.dbKind === "class" || f.dbKind === "subclass" : f.dbKind === g.key,
+        ),
       }))
       .filter((g) => g.features.length > 0);
   }, [filtered, filter]);
@@ -72,22 +77,26 @@ export function FeaturesTab({ character, onFeatureClick }: FeaturesTabProps) {
             </div>
           )}
           <div className="space-y-0.5">
-            {group.features.map((feat, i) => (
-              <div
-                key={`${feat.name}-${feat.sourceLabel}-${i}`}
-                className={`text-xs px-1.5 py-0.5 rounded flex items-center gap-1 ${
-                  feat.description
-                    ? "text-gray-300 cursor-pointer hover:text-amber-300 hover:bg-gray-800/60 transition-colors"
-                    : "text-gray-400"
-                }`}
-                onClick={feat.description ? (e) => onFeatureClick(feat, e) : undefined}
-              >
-                <span className="truncate">{feat.name}</span>
-                {feat.source === "class" && feat.sourceLabel && (
-                  <span className="text-xs text-amber-400/60 shrink-0">{feat.sourceLabel}</span>
-                )}
-              </div>
-            ))}
+            {group.features.map((feat, i) => {
+              const displayName = feat.featureName ?? feat.dbName;
+              const description = resolveFeatureDescription(feat);
+              return (
+                <div
+                  key={`${feat.dbKind}-${feat.dbName}-${feat.featureName ?? ""}-${i}`}
+                  className={`text-xs px-1.5 py-0.5 rounded flex items-center gap-1 ${
+                    description
+                      ? "text-gray-300 cursor-pointer hover:text-amber-300 hover:bg-gray-800/60 transition-colors"
+                      : "text-gray-400"
+                  }`}
+                  onClick={description ? (e) => onFeatureClick(feat, e) : undefined}
+                >
+                  <span className="truncate">{displayName}</span>
+                  {(feat.dbKind === "class" || feat.dbKind === "subclass") && feat.sourceLabel && (
+                    <span className="text-xs text-amber-400/60 shrink-0">{feat.sourceLabel}</span>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       ))}

@@ -3671,7 +3671,7 @@ export class GameStateManager {
         // Scan for rest-relevant feats (2024 PHB only)
         const restFeatures: string[] = [];
         for (const feat of char.static.features) {
-          const hint = REST_FEAT_HINTS[feat.name.toLowerCase()];
+          const hint = REST_FEAT_HINTS[(feat.featureName ?? feat.dbName).toLowerCase()];
           if (hint) restFeatures.push(hint);
         }
         for (const hint of restFeatures) {

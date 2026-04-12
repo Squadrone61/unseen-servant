@@ -145,13 +145,12 @@ export const savingThrowProficiencySchema = z.object({
   bonus: z.number().optional(),
 });
 
-export const characterFeatureSchema = z.object({
-  name: z.string(),
-  description: z.string(),
-  source: z.enum(["class", "race", "feat", "background"]),
+export const characterFeatureRefSchema = z.object({
+  dbKind: z.enum(["class", "subclass", "feat", "species", "background"]),
+  dbName: z.string(),
+  featureName: z.string().optional(),
   sourceLabel: z.string(),
   requiredLevel: z.number().optional(),
-  activationType: z.enum(["action", "bonus", "reaction"]).optional(),
 });
 
 export const advantageEntrySchema = z.object({
@@ -210,7 +209,7 @@ export const characterStaticDataSchema = z.object({
     climb: z.number().optional(),
     burrow: z.number().optional(),
   }),
-  features: z.array(characterFeatureSchema),
+  features: z.array(characterFeatureRefSchema),
   classResources: z.array(classResourceSchema).optional().default([]),
   proficiencies: proficiencyGroupSchema,
   skills: z.array(skillProficiencySchema),

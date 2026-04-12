@@ -269,7 +269,9 @@ export function getWeaponAttack(char: CharacterData, item: Item): number | undef
  */
 export function getExtraAttacks(char: CharacterData): number {
   // Count "Extra Attack" features (Fighter 5 has 1 → 2 attacks; Fighter 11 has 2 → 3).
-  const extraAttackFeatures = char.static.features.filter((f) => f.name === "Extra Attack").length;
+  const extraAttackFeatures = char.static.features.filter(
+    (f) => (f.featureName ?? f.dbName) === "Extra Attack",
+  ).length;
   // Return at minimum 1 (base attack every character has).
   return 1 + extraAttackFeatures;
 }

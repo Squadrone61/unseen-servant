@@ -18,7 +18,9 @@ import type {
   LanguageDb,
   ActionDb,
   PackDb,
+  FeatureActivation,
 } from "../types/data";
+import type { CharacterFeatureRef } from "../types/character";
 
 // ─── Raw JSON imports ──────────────────────────────────
 
@@ -295,6 +297,94 @@ export function searchMonsters(query: string): MonsterDb[] {
 export function searchMagicItems(query: string): MagicItemDb[] {
   const lower = query.toLowerCase();
   return magicItemsArray.filter((s) => s.name.toLowerCase().includes(lower));
+}
+
+// ─── Feature Ref Helpers ───────────────────────────────
+
+/** Return all classes in the DB (useful for subclass lookups). */
+export function listClasses(): ClassDb[] {
+  return classesArray;
+}
+
+/**
+ * Resolve a human-readable description for a CharacterFeatureRef by looking up
+ * the appropriate DB entity. Returns empty string if the entity is not found.
+ */
+export function resolveFeatureDescription(ref: CharacterFeatureRef): string {
+  switch (ref.dbKind) {
+    case "class": {
+      const cls = getClass(ref.dbName);
+      if (!cls) return "";
+      if (ref.featureName) {
+        const feature = cls.features.find((f) => f.name === ref.featureName);
+        return feature?.description ?? "";
+      }
+      return cls.description;
+    }
+    case "subclass": {
+      for (const cls of classesArray) {
+        const sub = cls.subclasses.find(
+          (s) =>
+            s.name.toLowerCase() === ref.dbName.toLowerCase() ||
+            s.shortName.toLowerCase() === ref.dbName.toLowerCase(),
+        );
+        if (sub) {
+          if (ref.featureName) {
+            const feature = sub.features.find((f) => f.name === ref.featureName);
+            return feature?.description ?? "";
+          }
+          return sub.description;
+        }
+      }
+      return "";
+    }
+    case "feat":
+      return getFeat(ref.dbName)?.description ?? "";
+    case "species":
+      return getSpecies(ref.dbName)?.description ?? "";
+    case "background":
+      return getBackground(ref.dbName)?.description ?? "";
+  }
+}
+
+/**
+ * Resolve the activation type for a CharacterFeatureRef by looking up the
+ * appropriate DB entity. Returns undefined for passive features.
+ */
+export function resolveFeatureActivation(ref: CharacterFeatureRef): FeatureActivation | undefined {
+  switch (ref.dbKind) {
+    case "class": {
+      const cls = getClass(ref.dbName);
+      if (!cls) return undefined;
+      if (ref.featureName) {
+        const feature = cls.features.find((f) => f.name === ref.featureName);
+        return feature?.activationType;
+      }
+      return undefined;
+    }
+    case "subclass": {
+      for (const cls of classesArray) {
+        const sub = cls.subclasses.find(
+          (s) =>
+            s.name.toLowerCase() === ref.dbName.toLowerCase() ||
+            s.shortName.toLowerCase() === ref.dbName.toLowerCase(),
+        );
+        if (sub) {
+          if (ref.featureName) {
+            const feature = sub.features.find((f) => f.name === ref.featureName);
+            return feature?.activationType;
+          }
+          return undefined;
+        }
+      }
+      return undefined;
+    }
+    case "feat":
+      return getFeat(ref.dbName)?.activationType;
+    case "species":
+    case "background":
+      return undefined;
+  }
 }
 
 export function searchFeats(query: string): FeatDb[] {

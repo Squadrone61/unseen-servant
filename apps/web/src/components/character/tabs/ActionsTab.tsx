@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
-import type { CharacterData, CharacterFeature, Item } from "@unseen-servant/shared/types";
-import { actionsArray } from "@unseen-servant/shared/data";
+import type { CharacterData, CharacterFeatureRef, Item } from "@unseen-servant/shared/types";
+import { actionsArray, resolveFeatureActivation } from "@unseen-servant/shared/data";
 import { FilterChipBar } from "../FilterChipBar";
 
 interface ActionEntry {
@@ -12,7 +12,7 @@ interface ActionEntry {
 interface ActionsTabProps {
   character: CharacterData;
   onItemClick: (item: Item, e: React.MouseEvent) => void;
-  onFeatureClick: (feature: CharacterFeature, e: React.MouseEvent) => void;
+  onFeatureClick: (feature: CharacterFeatureRef, e: React.MouseEvent) => void;
 }
 
 // Standard D&D combat actions from database, grouped by activation type
@@ -42,20 +42,22 @@ type GroupId = "weapons" | "actions" | "bonus" | "reactions";
 interface FeatureGroup {
   id: GroupId;
   label: string;
-  features: CharacterFeature[];
+  features: CharacterFeatureRef[];
 }
 
 const SOURCE_BADGE_STYLES: Record<string, string> = {
-  race: "text-emerald-400/70",
+  species: "text-emerald-400/70",
   class: "text-amber-400/70",
+  subclass: "text-amber-400/70",
   feat: "text-amber-300/70",
   background: "text-cyan-400/70",
 };
 
 type FeatureGroupId = "actions" | "bonus" | "reactions";
 
-function classifyFeature(f: CharacterFeature): FeatureGroupId | null {
-  switch (f.activationType) {
+function classifyFeature(f: CharacterFeatureRef): FeatureGroupId | null {
+  const activation = resolveFeatureActivation(f);
+  switch (activation) {
     case "action":
       return "actions";
     case "bonus":
@@ -113,7 +115,7 @@ export function ActionsTab({ character, onItemClick, onFeatureClick }: ActionsTa
 
   // Feature-based actions grouped by type
   const featureGroups: FeatureGroup[] = useMemo(() => {
-    const buckets: Record<Exclude<GroupId, "weapons">, CharacterFeature[]> = {
+    const buckets: Record<Exclude<GroupId, "weapons">, CharacterFeatureRef[]> = {
       actions: [],
       bonus: [],
       reactions: [],
@@ -226,15 +228,15 @@ export function ActionsTab({ character, onItemClick, onFeatureClick }: ActionsTa
           <div className="space-y-0.5">
             {group.features.map((feature, i) => (
               <div
-                key={`${feature.name}-${i}`}
+                key={`${feature.dbKind}-${feature.dbName}-${feature.featureName ?? ""}-${i}`}
                 className="flex items-center gap-1.5 text-xs px-1.5 py-1 rounded cursor-pointer hover:bg-gray-800/60 transition-colors group"
                 onClick={(e) => onFeatureClick(feature, e)}
               >
                 <span className="text-gray-200 group-hover:text-amber-300 transition-colors truncate flex-1">
-                  {feature.name}
+                  {feature.featureName ?? feature.dbName}
                 </span>
                 <span
-                  className={`text-xs shrink-0 ${SOURCE_BADGE_STYLES[feature.source] || "text-gray-500"}`}
+                  className={`text-xs shrink-0 ${SOURCE_BADGE_STYLES[feature.dbKind] || "text-gray-500"}`}
                 >
                   {feature.sourceLabel}
                 </span>

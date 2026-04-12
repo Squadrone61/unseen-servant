@@ -13,7 +13,7 @@ import type {
   CharacterSpeed,
   CharacterStaticData,
   CharacterDynamicData,
-  CharacterFeature,
+  CharacterFeatureRef,
   ClassResource,
   ProficiencyGroup,
   SkillProficiency,
@@ -336,18 +336,15 @@ function assembleCharacterClasses(state: BuilderState): CharacterClass[] {
 
 /**
  * Collect additional features (feat grants) from feat selections.
- * Looks up feat description from the DB; falls back to empty string.
  */
-function assembleAdditionalFeatures(state: BuilderState): CharacterFeature[] {
-  const features: CharacterFeature[] = [];
+function assembleAdditionalFeatures(state: BuilderState): CharacterFeatureRef[] {
+  const features: CharacterFeatureRef[] = [];
   for (const selection of state.featSelections) {
     if (selection.type === "feat" && selection.featName) {
-      const dbFeat = getFeat(selection.featName);
       features.push({
-        name: selection.featName,
-        description: dbFeat?.description ?? "",
-        source: "feat",
-        sourceLabel: "Feat",
+        dbKind: "feat",
+        dbName: selection.featName,
+        sourceLabel: `Feat`,
       });
     }
   }
@@ -363,7 +360,7 @@ function assembleAdditionalFeatures(state: BuilderState): CharacterFeature[] {
 function collectBuildEffects(
   race: string,
   classes: CharacterClass[],
-  additionalFeatures: CharacterFeature[],
+  additionalFeatures: CharacterFeatureRef[],
 ): EffectBundle[] {
   const bundles: EffectBundle[] = [];
 
@@ -422,12 +419,12 @@ function collectBuildEffects(
 
   // Feat effects (from additional features)
   for (const feat of additionalFeatures) {
-    if (feat.source === "feat") {
-      const dbFeat = getFeat(feat.name);
+    if (feat.dbKind === "feat") {
+      const dbFeat = getFeat(feat.dbName);
       if (dbFeat?.effects) {
         bundles.push({
-          id: `feat:${feat.name}`,
-          source: { type: "feat", name: feat.name },
+          id: `feat:${feat.dbName}`,
+          source: { type: "feat", name: feat.dbName },
           lifetime: { type: "permanent" },
           effects: dbFeat.effects,
         });
@@ -963,19 +960,23 @@ function computeSpellSlots(classes: CharacterClass[]): {
 function computeFeatures(
   race: string,
   classes: CharacterClass[],
-  additionalFeatures: CharacterFeature[],
-): CharacterFeature[] {
-  const features: CharacterFeature[] = [];
+  additionalFeatures: CharacterFeatureRef[],
+): CharacterFeatureRef[] {
+  const features: CharacterFeatureRef[] = [];
+  // Dedup key: dbKind+dbName+featureName
   const seen = new Set<string>();
 
-  const add = (f: CharacterFeature) => {
-    if (!seen.has(f.name)) {
-      seen.add(f.name);
+  const dedupeKey = (f: CharacterFeatureRef) => `${f.dbKind}:${f.dbName}:${f.featureName ?? ""}`;
+
+  const add = (f: CharacterFeatureRef) => {
+    const key = dedupeKey(f);
+    if (!seen.has(key)) {
+      seen.add(key);
       features.push(f);
     }
   };
 
-  // Caller-provided features first (may have richer data)
+  // Caller-provided feat features first
   for (const f of additionalFeatures) add(f);
 
   // Class features from DB
@@ -986,12 +987,11 @@ function computeFeatures(
     for (const feature of classDb.features) {
       if (feature.level <= cls.level) {
         add({
-          name: feature.name,
-          description: feature.description,
-          source: "class",
-          sourceLabel: cls.name,
+          dbKind: "class",
+          dbName: classDb.name,
+          featureName: feature.name,
+          sourceLabel: `${cls.name} ${feature.level}`,
           requiredLevel: feature.level,
-          activationType: feature.activationType,
         });
       }
     }
@@ -1004,24 +1004,21 @@ function computeFeatures(
           s.shortName.toLowerCase() === cls.subclass!.toLowerCase(),
       );
       if (sub) {
-        if (!seen.has(sub.name)) {
-          add({
-            name: sub.name,
-            description: sub.description,
-            source: "class",
-            sourceLabel: cls.name,
-            requiredLevel: 3,
-          });
-        }
+        // Subclass itself as an entry
+        add({
+          dbKind: "subclass",
+          dbName: sub.name,
+          sourceLabel: sub.name,
+          requiredLevel: 3,
+        });
         for (const sf of sub.features) {
           if (sf.level <= cls.level) {
             add({
-              name: sf.name,
-              description: sf.description,
-              source: "class",
-              sourceLabel: `${cls.name} (${sub.name})`,
+              dbKind: "subclass",
+              dbName: sub.name,
+              featureName: sf.name,
+              sourceLabel: `${sub.name} ${sf.level}`,
               requiredLevel: sf.level,
-              activationType: sf.activationType,
             });
           }
         }
@@ -1029,34 +1026,14 @@ function computeFeatures(
     }
   }
 
-  // Species description as a feature
-  const species = getSpecies(race);
-  if (species) {
+  // Species as a feature
+  const speciesEntity = getSpecies(race);
+  if (speciesEntity) {
     add({
-      name: race,
-      description: species.description,
-      source: "race",
+      dbKind: "species",
+      dbName: race,
       sourceLabel: race,
     });
-  }
-
-  // Enrich feat descriptions
-  for (const feat of additionalFeatures.filter((f) => f.source === "feat")) {
-    const dbFeat = getFeat(feat.name);
-    if (dbFeat) {
-      const idx = features.findIndex((f) => f.name === feat.name);
-      if (idx >= 0) {
-        const current = features[idx];
-        const needsDesc = !current.description || current.description === feat.name;
-        if (needsDesc || (!current.activationType && dbFeat.activationType)) {
-          features[idx] = {
-            ...current,
-            description: needsDesc ? dbFeat.description : current.description,
-            activationType: current.activationType ?? dbFeat.activationType,
-          };
-        }
-      }
-    }
   }
 
   return features;

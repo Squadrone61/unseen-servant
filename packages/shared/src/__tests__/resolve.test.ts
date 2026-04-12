@@ -144,7 +144,9 @@ describe("resolve.ts — snapshot invariant (Phase 2 fallback reads)", () => {
   it("getExtraAttacks for Fighter 5 returns 2 (1 base + 1 Extra Attack feature)", () => {
     const count = getExtraAttacks(character);
     // Fighter 5 has the Extra Attack feature → 1 extra → 2 total attacks.
-    const extraFeatureCount = s.features.filter((f) => f.name === "Extra Attack").length;
+    const extraFeatureCount = s.features.filter(
+      (f) => (f.featureName ?? f.dbName) === "Extra Attack",
+    ).length;
     expect(count).toBe(1 + extraFeatureCount);
   });
 });
