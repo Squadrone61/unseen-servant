@@ -84,6 +84,7 @@ export const combatantSchema = z.object({
   playerId: z.string().optional(),
   initiative: z.number(),
   initiativeModifier: z.number(),
+  dexScore: z.number(),
   speed: z.object({
     walk: z.number(),
     fly: z.number().optional(),

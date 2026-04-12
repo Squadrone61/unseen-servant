@@ -2298,6 +2298,7 @@ export class GameStateManager {
         type: c.type,
         initiative,
         initiativeModifier: initMod,
+        dexScore,
         speed: combatantSpeed,
         movementUsed: 0,
         position: c.position,
@@ -2471,12 +2472,12 @@ export class GameStateManager {
 
     combatant.initiative = initiative;
 
-    // Re-sort turn order: descending initiative, tiebreak by initiativeModifier
+    // Re-sort turn order: descending initiative, tiebreak by DEX score (consistent with startCombat)
     combat.turnOrder.sort((aId, bId) => {
       const a = combat.combatants[aId];
       const b = combat.combatants[bId];
       if (b.initiative !== a.initiative) return b.initiative - a.initiative;
-      return b.initiativeModifier - a.initiativeModifier;
+      return b.dexScore - a.dexScore;
     });
 
     // Restore turnIndex to track the same combatant that was active before
@@ -2580,13 +2581,14 @@ export class GameStateManager {
     // For players, auto-read initiative modifier from character sheet (Dex mod)
     // Also apply initiative combat bonuses (e.g. Alert feat) — mirrors startCombat logic
     let initMod = c.initiativeModifier ?? 0;
+    let dexScore = 10;
     if (c.type === "player") {
       const charEntry = Object.entries(this.characters).find(
         ([, ch]) => ch.static.name.toLowerCase() === c.name.toLowerCase(),
       );
       if (charEntry) {
-        const dex = charEntry[1].static.abilities.dexterity;
-        initMod = c.initiativeModifier ?? Math.floor((dex - 10) / 2);
+        dexScore = charEntry[1].static.abilities.dexterity;
+        initMod = c.initiativeModifier ?? Math.floor((dexScore - 10) / 2);
         // Apply initiative bonuses from feats (e.g. Alert)
         const initBonuses =
           charEntry[1].static.combatBonuses?.filter(
@@ -2619,6 +2621,7 @@ export class GameStateManager {
       type: c.type,
       initiative,
       initiativeModifier: initMod,
+      dexScore,
       speed: addCombatantSpeed,
       movementUsed: 0,
       position: c.position,

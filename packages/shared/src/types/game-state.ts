@@ -90,6 +90,8 @@ export interface Combatant {
   playerId?: string;
   initiative: number;
   initiativeModifier: number;
+  /** DEX score used as initiative tiebreaker (higher goes first). */
+  dexScore: number;
   speed: CharacterSpeed;
   movementUsed: number;
   position?: GridPosition;
