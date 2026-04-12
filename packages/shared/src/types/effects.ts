@@ -390,14 +390,166 @@ export type FeatureChoice = {
 // EntityEffects
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// ActionEffect / ActionOutcome
+// ---------------------------------------------------------------------------
+
+/**
+ * Describes what a DB entity DOES when actively used — cast (spell), attack
+ * with (weapon), use (monster action), activate (feature). This is distinct
+ * from the passive `modifiers`/`properties` on EntityEffects which describe
+ * what the entity IS (e.g. Rage's damage_melee bonus, Poisoned's advantage-against).
+ *
+ * A single entity can have both: Rage has passive modifiers AND an optional
+ * `action` for any triggered outcome. Breath Weapon is pure `action`.
+ *
+ * Resolution flow:
+ *   - `spell_save_dc` / `weapon_melee` / etc. are substituted with actual values
+ *     at resolution time via getAction(entity, context).
+ *   - Upcast/cantrip scaling applies the delta to the base outcome.
+ *   - `onHit`, `onMiss`, `onFailedSave`, `onSuccessfulSave` are independent outcome
+ *     branches; callers pick the appropriate branch based on the roll result.
+ */
+export interface ActionEffect {
+  /**
+   * How the action resolves targeting.
+   *   "attack" — uses an attack roll
+   *   "save"   — targets make a saving throw
+   *   "auto"   — automatically applies (Magic Missile, Healing Word)
+   */
+  kind: "attack" | "save" | "auto";
+
+  /** Attack-roll actions (weapon swings, spell attack rolls). */
+  attack?: {
+    /** How the attack bonus is computed. */
+    bonus: "spell_attack" | "weapon_melee" | "weapon_ranged" | "monster";
+    range?: { normal: number; long?: number } | "touch" | "self";
+    /** Reach in feet for melee attacks. */
+    reach?: number;
+  };
+
+  /** Save-based actions (Fireball, Hold Person). */
+  save?: {
+    ability: Ability;
+    /** "spell_save_dc" substituted at resolution time; fixed number for monsters. */
+    dc: "spell_save_dc" | number;
+    onSuccess: "half" | "none" | "negates";
+  };
+
+  /** Area-targeting descriptor. Resolved with show_aoe / apply_area_effect. */
+  area?: {
+    shape: "sphere" | "cone" | "line" | "cube" | "cylinder";
+    /** Size in feet (radius for sphere/cylinder, length for cone/line, side for cube). */
+    size: number;
+  };
+
+  /** Targeting (single-target spells, multi-creature, self, area). */
+  targeting?: {
+    type: "self" | "creature" | "creatures" | "point" | "area";
+    /** Number of creatures targeted (for "creatures" type). */
+    count?: number;
+  };
+
+  /** Outcome applied on a hit (attack actions). */
+  onHit?: ActionOutcome;
+  /** Outcome applied on a miss (usually empty; some effects trigger on miss). */
+  onMiss?: ActionOutcome;
+  /** Outcome applied when a target fails their saving throw. */
+  onFailedSave?: ActionOutcome;
+  /** Outcome applied when a target succeeds on their saving throw (e.g. half damage). */
+  onSuccessfulSave?: ActionOutcome;
+
+  /**
+   * Upcast / cast-at-higher-level scaling.
+   * `perLevel` is a partial ActionOutcome added PER extra spell level above the
+   * base casting level (e.g. +1d6 damage per level for Fireball).
+   */
+  upcast?: {
+    perLevel?: Partial<ActionOutcome>;
+  };
+
+  /**
+   * Cantrip damage scaling by character level.
+   * Array entries are additive replacements — when character level >= entry.level,
+   * that entry's outcome replaces lower-level entries.
+   */
+  cantripScaling?: Array<{
+    level: number;
+    outcome: Partial<ActionOutcome>;
+  }>;
+
+  /**
+   * Action-level metadata mirroring spell metadata so the action is self-contained.
+   * Consumers that only have an EntityEffects handle can still read casting time,
+   * components, etc. without a separate DB lookup.
+   */
+  meta?: {
+    castingTime?: string;
+    components?: string[];
+    ritual?: boolean;
+    concentration?: boolean;
+  };
+}
+
+/**
+ * The mechanical payload produced by one branch of an ActionEffect.
+ * Multiple outcome fields can coexist (e.g. damage + applyConditions on a
+ * Poison spray that deals poison damage AND applies Poisoned on a failed save).
+ */
+export interface ActionOutcome {
+  /** Damage rolls to apply on this branch. Multiple entries add together. */
+  damage?: Array<{ dice: string; type: DamageType }>;
+  /** Healing to apply (Cure Wounds, Healing Word). */
+  healing?: { dice: string };
+  /** Temporary HP granted (False Life, Aid). */
+  tempHp?: { dice: string };
+  /**
+   * Nested EntityEffects applied as an EffectBundle on the target.
+   * Reuses the existing lifetime/condition machinery for duration-based effects.
+   */
+  applyEffects?: EntityEffects;
+  /**
+   * Shortcut for applying named conditions to the target.
+   * Each entry creates a condition bundle on the target with the specified lifetime.
+   * `repeatSave` triggers a repeat saving throw at the "start" or "end" of each turn.
+   */
+  applyConditions?: Array<{
+    name: ConditionName;
+    duration?: EffectLifetime;
+    repeatSave?: "start" | "end";
+  }>;
+  /**
+   * Forced movement applied to the target (Thunderwave, Repelling Blast).
+   * push/pull are distances in feet; knockProne applies the Prone condition.
+   */
+  forcedMovement?: {
+    push?: number;
+    pull?: number;
+    knockProne?: boolean;
+  };
+  /**
+   * Free-form fallback for mechanics too rare or complex to type structurally.
+   * The AI DM reads this text.
+   */
+  note?: string;
+}
+
 /**
  * Pure mechanical payload that lives on database entities (spells, conditions,
  * feats, class features, species traits, magic items). Has no identity, source,
  * or lifetime — those are added by EffectBundle at runtime.
+ *
+ * `modifiers` and `properties` describe passive traits of the bearer while active.
+ * `action` describes what triggers an outcome when the entity is used actively
+ * (spells, weapon attacks, monster actions, activated features). An entity can
+ * have both passive effects and an action (e.g. a magic weapon with a +1 damage
+ * modifier AND a special attack action).
  */
 export interface EntityEffects {
   modifiers?: Modifier[];
   properties?: Property[];
+  /** Active-use outcome descriptor. Present on spells, weapons, monster attacks, activated features. */
+  action?: ActionEffect;
 }
 
 // ---------------------------------------------------------------------------

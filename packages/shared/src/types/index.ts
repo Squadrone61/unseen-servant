@@ -4,6 +4,8 @@ export * from "./character";
 export * from "./game-state";
 export * from "./effects";
 export * from "./builder";
+export * from "./spell";
+export * from "./item";
 export type {
   SpellSchool,
   SpellLevel,

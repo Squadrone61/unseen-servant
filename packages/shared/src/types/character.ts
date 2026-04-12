@@ -104,6 +104,26 @@ export interface CharacterFeature {
   activationType?: FeatureActivation; // undefined = passive
 }
 
+/**
+ * A DB pointer to a class/subclass/feat/species/background feature.
+ * Replaces CharacterFeature (which copied description text) so that descriptions
+ * are resolved on demand via resolveFeatureDescription(ref) in data/index.ts
+ * rather than stored redundantly.
+ *
+ * - dbKind: which DB category to look up
+ * - dbName: the entity name ("Barbarian", "Alert", "Tiefling")
+ * - featureName: the specific sub-feature within the entity ("Rage", "Reckless Attack")
+ * - sourceLabel: human-readable label for display ("Barbarian 3", "Alert Feat")
+ * - requiredLevel: minimum class level to gain this feature (class features only)
+ */
+export interface CharacterFeatureRef {
+  dbKind: "class" | "subclass" | "feat" | "species" | "background";
+  dbName: string; // "Barbarian", "Alert", "Tiefling"
+  featureName?: string; // "Rage", "Reckless Attack"
+  sourceLabel: string; // "Barbarian 3"
+  requiredLevel?: number;
+}
+
 export interface CombatBonus {
   type: "attack" | "damage" | "initiative";
   value: number;
