@@ -78,7 +78,8 @@
             "type": "resource",
             "name": "Rage",
             "maxUses": "table(1:2, 3:3, 6:4, 12:5, 17:6)",
-            "resetOn": "long"
+            "longRest": "all",
+            "shortRest": 1
           }
         ]
       },
@@ -486,7 +487,7 @@
                 "type": "resource",
                 "name": "Intimidating Presence",
                 "maxUses": 1,
-                "resetOn": "long"
+                "longRest": "all"
               },
               {
                 "type": "note",
@@ -850,7 +851,7 @@
                 "type": "resource",
                 "name": "Warrior of the Gods Dice",
                 "maxUses": "table(1:4, 6:5, 12:6, 17:7)",
-                "resetOn": "long"
+                "longRest": "all"
               },
               {
                 "type": "note",
@@ -886,7 +887,7 @@
                 "type": "resource",
                 "name": "Zealous Presence",
                 "maxUses": 1,
-                "resetOn": "long"
+                "longRest": "all"
               },
               {
                 "type": "note",
@@ -907,7 +908,7 @@
                 "type": "resource",
                 "name": "Rage of the Gods",
                 "maxUses": 1,
-                "resetOn": "long"
+                "longRest": "all"
               }
             ]
           },

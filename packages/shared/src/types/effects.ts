@@ -300,7 +300,10 @@ export type Property = {
        * Expression example: "max(cha, 1)" for Bardic Inspiration.
        */
       maxUses: number | string;
-      resetOn: "short" | "long";
+      /** Amount recovered on long rest. "all" = full recovery, number = partial. */
+      longRest: number | "all";
+      /** Amount recovered on short rest. Omit if not recovered on short rest. */
+      shortRest?: number | "all";
     }
   | { type: "extra_attack"; count: number }
   | {

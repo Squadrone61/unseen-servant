@@ -360,7 +360,7 @@
             "type": "resource",
             "name": "Magical Cunning",
             "maxUses": 1,
-            "resetOn": "long"
+            "longRest": "all"
           },
           {
             "type": "note",
@@ -410,7 +410,7 @@
             "type": "resource",
             "name": "Contact Patron (Free Cast)",
             "maxUses": 1,
-            "resetOn": "long"
+            "longRest": "all"
           },
           {
             "type": "note",
@@ -597,7 +597,7 @@
                 "type": "resource",
                 "name": "Steps of the Fey",
                 "maxUses": "max(cha, 1)",
-                "resetOn": "long"
+                "longRest": "all"
               },
               {
                 "type": "note",
@@ -637,7 +637,7 @@
                 "type": "resource",
                 "name": "Beguiling Defenses Reaction",
                 "maxUses": 1,
-                "resetOn": "long"
+                "longRest": "all"
               },
               {
                 "type": "note",
@@ -771,7 +771,7 @@
                 "type": "resource",
                 "name": "Healing Light Dice",
                 "maxUses": "clvl + 1",
-                "resetOn": "long"
+                "longRest": "all"
               },
               {
                 "type": "note",
@@ -826,7 +826,7 @@
                 "type": "resource",
                 "name": "Searing Vengeance",
                 "maxUses": 1,
-                "resetOn": "long"
+                "longRest": "all"
               },
               {
                 "type": "note",
@@ -946,7 +946,7 @@
                 "type": "resource",
                 "name": "Dark One's Own Luck",
                 "maxUses": "max(cha, 1)",
-                "resetOn": "long"
+                "longRest": "all"
               },
               {
                 "type": "note",
@@ -982,7 +982,7 @@
                 "type": "resource",
                 "name": "Hurl Through Hell",
                 "maxUses": 1,
-                "resetOn": "long"
+                "longRest": "all"
               },
               {
                 "type": "note",
@@ -1109,7 +1109,7 @@
                 "type": "resource",
                 "name": "Clairvoyant Combatant",
                 "maxUses": 1,
-                "resetOn": "short"
+                "longRest": "all", "shortRest": "all"
               },
               {
                 "type": "note",

@@ -156,7 +156,11 @@ export function buildCharacterContextBlock(playerName: string, char: CharacterDa
   if (s.classResources && s.classResources.length > 0) {
     const resLines = s.classResources.map((r) => {
       const used = (d.resourcesUsed || {})[r.name] ?? 0;
-      return `${r.name}: ${r.maxUses - used}/${r.maxUses} (${r.resetType} rest)`;
+      const parts: string[] = [];
+      if (r.shortRest) parts.push(`${r.shortRest === "all" ? "all" : r.shortRest} SR`);
+      if (r.longRest) parts.push(`${r.longRest === "all" ? "all" : r.longRest} LR`);
+      const resetLabel = parts.length > 0 ? parts.join(", ") : "manual";
+      return `${r.name}: ${r.maxUses - used}/${r.maxUses} (${resetLabel})`;
     });
     lines.push(`**Resources:** ${resLines.join(", ")}`);
   }

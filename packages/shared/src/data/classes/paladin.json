@@ -233,7 +233,7 @@
             "type": "resource",
             "name": "Lay on Hands",
             "maxUses": "5 * clvl",
-            "resetOn": "long"
+            "longRest": "all"
           }
         ]
       }
@@ -289,7 +289,7 @@
             "type": "resource",
             "name": "Paladin's Smite (free cast)",
             "maxUses": 1,
-            "resetOn": "long"
+            "longRest": "all"
           }
         ]
       }
@@ -305,7 +305,7 @@
             "type": "resource",
             "name": "Channel Divinity",
             "maxUses": "table(3:2, 11:3)",
-            "resetOn": "short"
+            "longRest": "all", "shortRest": "all"
           }
         ]
       }
@@ -366,7 +366,7 @@
             "type": "resource",
             "name": "Faithful Steed (free cast)",
             "maxUses": 1,
-            "resetOn": "long"
+            "longRest": "all"
           }
         ]
       }
@@ -660,7 +660,7 @@
                 "type": "resource",
                 "name": "Holy Nimbus",
                 "maxUses": 1,
-                "resetOn": "long"
+                "longRest": "all"
               }
             ]
           },
@@ -832,7 +832,7 @@
                 "type": "resource",
                 "name": "Glorious Defense",
                 "maxUses": "max(cha, 1)",
-                "resetOn": "long"
+                "longRest": "all"
               },
               {
                 "type": "note",
@@ -853,7 +853,7 @@
                 "type": "resource",
                 "name": "Living Legend",
                 "maxUses": 1,
-                "resetOn": "long"
+                "longRest": "all"
               }
             ]
           },
@@ -1015,7 +1015,7 @@
                 "type": "resource",
                 "name": "Undying Sentinel",
                 "maxUses": 1,
-                "resetOn": "long"
+                "longRest": "all"
               },
               {
                 "type": "note",
@@ -1036,7 +1036,7 @@
                 "type": "resource",
                 "name": "Elder Champion",
                 "maxUses": 1,
-                "resetOn": "long"
+                "longRest": "all"
               },
               {
                 "type": "note",
@@ -1197,7 +1197,7 @@
                 "type": "resource",
                 "name": "Avenging Angel",
                 "maxUses": 1,
-                "resetOn": "long"
+                "longRest": "all"
               },
               {
                 "type": "note",

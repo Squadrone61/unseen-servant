@@ -315,7 +315,7 @@
             "type": "resource",
             "name": "Arcane Recovery",
             "maxUses": 1,
-            "resetOn": "long"
+            "longRest": "all"
           },
           {
             "type": "note",
@@ -432,7 +432,7 @@
             "type": "resource",
             "name": "Signature Spells",
             "maxUses": 2,
-            "resetOn": "short"
+            "longRest": "all", "shortRest": "all"
           },
           {
             "type": "note",
@@ -591,7 +591,7 @@
                 "type": "resource",
                 "name": "The Third Eye",
                 "maxUses": 1,
-                "resetOn": "short"
+                "longRest": "all", "shortRest": "all"
               },
               {
                 "type": "note",
@@ -745,13 +745,13 @@
                 "type": "resource",
                 "name": "Phantasmal Creatures (Summon Beast)",
                 "maxUses": 1,
-                "resetOn": "long"
+                "longRest": "all"
               },
               {
                 "type": "resource",
                 "name": "Phantasmal Creatures (Summon Fey)",
                 "maxUses": 1,
-                "resetOn": "long"
+                "longRest": "all"
               },
               {
                 "type": "note",
@@ -772,7 +772,7 @@
                 "type": "resource",
                 "name": "Illusory Self",
                 "maxUses": 1,
-                "resetOn": "short"
+                "longRest": "all", "shortRest": "all"
               },
               {
                 "type": "note",

@@ -102,7 +102,8 @@ describe("Fighter 5 — non-caster build", () => {
     const resources = character.static.classResources ?? [];
     const secondWind = resources.find((r) => r.name === "Second Wind");
     expect(secondWind).toBeDefined();
-    expect(secondWind?.resetType).toBe("short");
+    expect(secondWind?.longRest).toBe("all");
+    expect(secondWind?.shortRest).toBe("all");
   });
 
   it("has Action Surge class resource at level 5", () => {
@@ -110,7 +111,8 @@ describe("Fighter 5 — non-caster build", () => {
     const resources = character.static.classResources ?? [];
     const surge = resources.find((r) => r.name === "Action Surge");
     expect(surge).toBeDefined();
-    expect(surge?.resetType).toBe("short");
+    expect(surge?.longRest).toBe("all");
+    expect(surge?.shortRest).toBe("all");
   });
 
   it("proficiency bonus is +3 at level 5", () => {
@@ -599,7 +601,8 @@ describe("Barbarian class resources", () => {
     const rage = character.static.classResources?.find((r) => r.name === "Rage");
     expect(rage).toBeDefined();
     expect(rage?.maxUses).toBe(2);
-    expect(rage?.resetType).toBe("long");
+    expect(rage?.longRest).toBe("all");
+    expect(rage?.shortRest).toBe(1);
   });
 
   it("Barbarian level 3 has 3 Rage uses", () => {
@@ -632,7 +635,8 @@ describe("Fighter class resources", () => {
     const sw = character.static.classResources?.find((r) => r.name === "Second Wind");
     expect(sw).toBeDefined();
     expect(sw?.maxUses).toBe(2);
-    expect(sw?.resetType).toBe("short");
+    expect(sw?.longRest).toBe("all");
+    expect(sw?.shortRest).toBe("all");
   });
 
   it("Fighter level 2 gains Action Surge (1 use, short rest)", () => {
@@ -644,7 +648,8 @@ describe("Fighter class resources", () => {
     const surge = character.static.classResources?.find((r) => r.name === "Action Surge");
     expect(surge).toBeDefined();
     expect(surge?.maxUses).toBe(1);
-    expect(surge?.resetType).toBe("short");
+    expect(surge?.longRest).toBe("all");
+    expect(surge?.shortRest).toBe("all");
   });
 
   it("Fighter level 1 does NOT have Action Surge", () => {
@@ -662,7 +667,8 @@ describe("Fighter class resources", () => {
     const { character } = buildCharacter(ids);
     const indom = character.static.classResources?.find((r) => r.name === "Indomitable");
     expect(indom).toBeDefined();
-    expect(indom?.resetType).toBe("long");
+    expect(indom?.longRest).toBe("all");
+    expect(indom?.shortRest).toBeUndefined();
   });
 });
 
@@ -723,7 +729,8 @@ describe("Bard Bardic Inspiration — ability-mod-based uses", () => {
     const { character } = buildCharacter(ids);
     const bi = character.static.classResources?.find((r) => r.name === "Bardic Inspiration");
     expect(bi).toBeDefined();
-    expect(bi?.resetType).toBe("long");
+    expect(bi?.longRest).toBe("all");
+    expect(bi?.shortRest).toBeUndefined();
   });
 
   it("Bard with CHA 8 (-1) still gets minimum 1 Bardic Inspiration use", () => {

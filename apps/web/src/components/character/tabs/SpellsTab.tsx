@@ -121,7 +121,9 @@ export function SpellsTab({ character, onSpellClick }: SpellsTabProps) {
               <div key={resource.name} className="flex items-center gap-1.5 text-xs px-1.5 py-0.5">
                 <span className="text-gray-300 truncate flex-1">{resource.name}</span>
                 <span className="text-xs text-gray-500">
-                  {resource.resetType === "short" ? "SR" : "LR"}
+                  {[resource.shortRest && "SR", resource.longRest && "LR"]
+                    .filter(Boolean)
+                    .join("/")}
                 </span>
                 <span className="text-amber-400/80 shrink-0">
                   {remaining}/{resource.maxUses}

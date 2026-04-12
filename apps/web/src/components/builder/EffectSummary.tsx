@@ -195,7 +195,8 @@ function propertyBadge(prop: Property, compact: boolean): Badge | null {
     }
 
     case "resource": {
-      const restLabel = prop.resetOn === "short" ? "SR" : "LR";
+      const restLabel =
+        [prop.shortRest && "SR", prop.longRest && "LR"].filter(Boolean).join("/") || "LR";
       const maxLabel = typeof prop.maxUses === "number" ? String(prop.maxUses) : "Scaled";
       return {
         label: `${prop.name} (${maxLabel}/${restLabel})`,

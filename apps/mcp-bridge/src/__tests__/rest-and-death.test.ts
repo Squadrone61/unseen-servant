@@ -602,13 +602,14 @@ describe("shortRest — Barbarian Rage NOT restored (Gruk, Barbarian 5)", () => 
     registerCharacter(gsm, "Player4", createBarbarianCharacter());
   });
 
-  it("Rage (resetType=long) is still used after a short rest", () => {
+  it("Rage recovers 1 use on short rest (shortRest=1 partial recovery)", () => {
     const char = gsm.characters["Player4"];
-    char.dynamic.resourcesUsed = { Rage: 1 };
+    char.dynamic.resourcesUsed = { Rage: 2 };
 
     const result = gsm.shortRest(["Gruk"]);
     assertToolSuccess(result);
 
+    // shortRest=1 means recover 1 use; 2 used - 1 recovered = 1 still used
     expect(char.dynamic.resourcesUsed!["Rage"]).toBe(1);
   });
 

@@ -141,7 +141,8 @@ export const proficiencyGroupSchema = z.object({
 export const classResourceSchema = z.object({
   name: z.string(),
   maxUses: z.number(),
-  resetType: z.enum(["short", "long"]),
+  longRest: z.union([z.number(), z.literal("all")]),
+  shortRest: z.union([z.number(), z.literal("all")]).optional(),
   source: z.string(),
 });
 

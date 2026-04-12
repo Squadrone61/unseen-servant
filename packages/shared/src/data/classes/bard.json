@@ -343,7 +343,7 @@
             "type": "resource",
             "name": "Bardic Inspiration",
             "maxUses": "max(cha, 1)",
-            "resetOn": "long"
+            "longRest": "all"
           },
           {
             "type": "note",
@@ -657,7 +657,7 @@
                 "type": "resource",
                 "name": "Beguiling Magic",
                 "maxUses": 1,
-                "resetOn": "long"
+                "longRest": "all"
               },
               {
                 "type": "note",
@@ -698,7 +698,7 @@
                 "type": "resource",
                 "name": "Mantle of Majesty",
                 "maxUses": 1,
-                "resetOn": "long"
+                "longRest": "all"
               },
               {
                 "type": "note",
@@ -719,7 +719,7 @@
                 "type": "resource",
                 "name": "Unbreakable Majesty",
                 "maxUses": 1,
-                "resetOn": "short"
+                "longRest": "all", "shortRest": "all"
               },
               {
                 "type": "note",

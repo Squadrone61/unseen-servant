@@ -91,7 +91,7 @@
             "type": "resource",
             "name": "Focus Points",
             "maxUses": "table(2:2, 3:3, 4:4, 5:5, 6:6, 7:7, 8:8, 9:9, 10:10, 11:11, 12:12, 13:13, 14:14, 15:15, 16:16, 17:17, 18:18, 19:19, 20:20)",
-            "resetOn": "short"
+            "longRest": "all", "shortRest": "all"
           },
           {
             "type": "note",
@@ -134,7 +134,7 @@
             "type": "resource",
             "name": "Uncanny Metabolism",
             "maxUses": 1,
-            "resetOn": "long"
+            "longRest": "all"
           },
           {
             "type": "note",
@@ -498,7 +498,7 @@
                 "type": "resource",
                 "name": "Flurry of Healing and Harm",
                 "maxUses": "max(wis, 1)",
-                "resetOn": "long"
+                "longRest": "all"
               },
               {
                 "type": "note",
@@ -519,7 +519,7 @@
                 "type": "resource",
                 "name": "Hand of Ultimate Mercy",
                 "maxUses": 1,
-                "resetOn": "long"
+                "longRest": "all"
               },
               {
                 "type": "note",
@@ -716,7 +716,7 @@
                 "type": "resource",
                 "name": "Wholeness of Body",
                 "maxUses": "max(wis, 1)",
-                "resetOn": "long"
+                "longRest": "all"
               },
               {
                 "type": "note",

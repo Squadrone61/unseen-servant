@@ -114,7 +114,10 @@ export interface CombatBonus {
 export interface ClassResource {
   name: string;
   maxUses: number;
-  resetType: "short" | "long";
+  /** Amount recovered on long rest. "all" = full recovery, number = partial. */
+  longRest: number | "all";
+  /** Amount recovered on short rest. Omit if not recovered on short rest. */
+  shortRest?: number | "all";
   source: string; // class name: "Paladin", "Cleric", "Monk", etc.
 }
 

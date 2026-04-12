@@ -241,7 +241,7 @@ export function buildCharacter(ids: CharacterIdentifiers): {
   const savingThrows = computeSavingThrows(ids);
 
   // ── Spellcasting ────────────────────────────────────────
-  const spellcasting = computeSpellcasting(ids, proficiencyBonus);
+  const spellcasting = computeSpellcasting(ids, proficiencyBonus, bundles, ctx);
 
   // ── Spell Slots ─────────────────────────────────────────
   const { regularSlots, pactSlots } = computeSpellSlots(ids);
@@ -425,6 +425,8 @@ function computeSavingThrows(ids: CharacterIdentifiers): SavingThrowProficiency[
 function computeSpellcasting(
   ids: CharacterIdentifiers,
   profBonus: number,
+  bundles: EffectBundle[],
+  ctx: ResolveContext,
 ): Record<string, { ability: keyof AbilityScores; dc: number; attackBonus: number }> {
   const result: Record<string, { ability: keyof AbilityScores; dc: number; attackBonus: number }> =
     {};
@@ -436,10 +438,12 @@ function computeSpellcasting(
     const classAbility = classDb?.spellcastingAbility as keyof AbilityScores | undefined;
     if (classAbility) {
       const mod = abilityMod(ids.abilities[classAbility]);
+      const baseDC = 8 + profBonus + mod;
+      const baseAttack = profBonus + mod;
       result[cls.name] = {
         ability: classAbility,
-        dc: 8 + profBonus + mod,
-        attackBonus: profBonus + mod,
+        dc: resolveStat(bundles, "spell_save_dc", baseDC, ctx),
+        attackBonus: resolveStat(bundles, "spell_attack", baseAttack, ctx),
       };
       continue;
     }
@@ -454,10 +458,12 @@ function computeSpellcasting(
       const subAbility = sub?.spellcastingAbility as keyof AbilityScores | undefined;
       if (subAbility && sub?.casterProgression != null) {
         const mod = abilityMod(ids.abilities[subAbility]);
+        const baseDC = 8 + profBonus + mod;
+        const baseAttack = profBonus + mod;
         result[cls.name] = {
           ability: subAbility,
-          dc: 8 + profBonus + mod,
-          attackBonus: profBonus + mod,
+          dc: resolveStat(bundles, "spell_save_dc", baseDC, ctx),
+          attackBonus: resolveStat(bundles, "spell_attack", baseAttack, ctx),
         };
       }
     }
@@ -687,7 +693,8 @@ function computeResources(bundles: EffectBundle[], ctx: ResolveContext): ClassRe
     resources.push({
       name: res.name,
       maxUses: Math.floor(maxUses),
-      resetType: res.resetOn === "short" ? "short" : "long",
+      longRest: res.longRest,
+      shortRest: res.shortRest,
       source: className,
     });
   }

@@ -365,7 +365,7 @@
             "type": "resource",
             "name": "Stroke of Luck",
             "maxUses": 1,
-            "resetOn": "short"
+            "longRest": "all", "shortRest": "all"
           },
           {
             "type": "note",
@@ -482,7 +482,7 @@
                 "type": "resource",
                 "name": "Spell Thief",
                 "maxUses": 1,
-                "resetOn": "long"
+                "longRest": "all"
               },
               {
                 "type": "note",
@@ -608,7 +608,7 @@
                 "type": "resource",
                 "name": "Psionic Energy Dice",
                 "maxUses": "table(3:4, 5:6, 9:8, 11:8, 13:10, 17:12)",
-                "resetOn": "long"
+                "longRest": "all"
               },
               {
                 "type": "note",
@@ -671,7 +671,7 @@
                 "type": "resource",
                 "name": "Psychic Veil",
                 "maxUses": 1,
-                "resetOn": "long"
+                "longRest": "all"
               },
               {
                 "type": "note",
@@ -692,7 +692,7 @@
                 "type": "resource",
                 "name": "Rend Mind",
                 "maxUses": 1,
-                "resetOn": "long"
+                "longRest": "all"
               },
               {
                 "type": "note",

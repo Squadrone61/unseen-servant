@@ -48,6 +48,8 @@ import {
   applyDamageWithEffects,
   resolveEffectiveStat,
   resolveStat,
+  hasAdvantage,
+  hasDisadvantage,
 } from "@unseen-servant/shared/utils";
 import { log } from "../logger.js";
 import type { MessageQueue } from "../message-queue.js";
@@ -1078,6 +1080,26 @@ export class GameStateManager {
 
   handleSetCharacter(playerName: string, character: CharacterData): void {
     this.characters[playerName] = character;
+
+    // Apply effect bundles for equipped magic items (avoids duplicates on reconnect)
+    const inventory = character.dynamic.inventory ?? [];
+    for (const item of inventory) {
+      if (!item.equipped) continue;
+      if (item.attunement && !item.isAttuned) continue;
+      if (!item.isMagicItem) continue;
+      const bundleId = `item:${item.name.toLowerCase()}`;
+      const alreadyHasBundle = (character.dynamic.activeEffects ?? []).some(
+        (b) => b.id === bundleId,
+      );
+      if (!alreadyHasBundle) {
+        const bundle = createItemBundle(item.name);
+        if (bundle) {
+          if (!character.dynamic.activeEffects) character.dynamic.activeEffects = [];
+          character.dynamic.activeEffects.push(bundle);
+        }
+      }
+    }
+
     this.markCharacterDirty(playerName);
 
     // Snapshot to campaign
@@ -1872,6 +1894,14 @@ export class GameStateManager {
   addCondition(targetName: string, condition: string, duration?: number): ToolResponse {
     const conditionBundle = createConditionBundle(condition);
 
+    const INCAPACITATING_CONDITIONS = new Set([
+      "Incapacitated",
+      "Paralyzed",
+      "Stunned",
+      "Unconscious",
+      "Petrified",
+    ]);
+
     // NPC combatants
     const combat = this.gameState.encounter?.combat;
     if (combat) {
@@ -1898,6 +1928,10 @@ export class GameStateManager {
             if (!combatant.activeEffects) combatant.activeEffects = [];
             combatant.activeEffects.push(conditionBundle);
           }
+        }
+        // Auto-break concentration if an incapacitating condition is applied
+        if (INCAPACITATING_CONDITIONS.has(condition) && combatant.concentratingOn) {
+          this.breakConcentration(combatant.name);
         }
         this.broadcast({
           type: "server:combat_update",
@@ -1940,6 +1974,10 @@ export class GameStateManager {
             if (!char.dynamic.activeEffects) char.dynamic.activeEffects = [];
             char.dynamic.activeEffects.push(conditionBundle);
           }
+        }
+        // Auto-break concentration if an incapacitating condition is applied
+        if (INCAPACITATING_CONDITIONS.has(condition) && char.dynamic.concentratingOn) {
+          this.breakConcentration(char.static.name);
         }
         this.broadcast({
           type: "server:character_updated",
@@ -2183,6 +2221,9 @@ export class GameStateManager {
       let linkedPlayerId: string | undefined;
       let dexScore = 10; // default for tiebreaking
 
+      let initAdvantage = false;
+      let initDisadvantage = false;
+
       if (c.type === "player") {
         const charEntry = Object.entries(this.characters).find(
           ([, ch]) => ch.static.name.toLowerCase() === c.name.toLowerCase(),
@@ -2199,10 +2240,21 @@ export class GameStateManager {
           for (const b of initBonuses) {
             initMod += b.value;
           }
+          // Check for advantage/disadvantage from active effects
+          const activeEffects = charEntry[1].dynamic.activeEffects ?? [];
+          initAdvantage = hasAdvantage(activeEffects, "initiative");
+          initDisadvantage = hasDisadvantage(activeEffects, "initiative");
         }
       }
 
-      const initiative = rollInitiative(initMod);
+      let initiative: number;
+      if (initAdvantage && !initDisadvantage) {
+        initiative = Math.max(rollInitiative(initMod), rollInitiative(initMod));
+      } else if (initDisadvantage && !initAdvantage) {
+        initiative = Math.min(rollInitiative(initMod), rollInitiative(initMod));
+      } else {
+        initiative = rollInitiative(initMod);
+      }
 
       const isSurprised =
         surprisedCombatants !== undefined &&
@@ -2945,7 +2997,20 @@ export class GameStateManager {
               maxUses: resource.maxUses,
             },
             true,
-            [`Resets on ${resource.resetType} rest`],
+            [
+              (() => {
+                const parts: string[] = [];
+                if (resource.shortRest)
+                  parts.push(
+                    `${resource.shortRest === "all" ? "all" : resource.shortRest} on short rest`,
+                  );
+                if (resource.longRest)
+                  parts.push(
+                    `${resource.longRest === "all" ? "all" : resource.longRest} on long rest`,
+                  );
+                return parts.length > 0 ? `Resets: ${parts.join(", ")}` : "No automatic reset";
+              })(),
+            ],
           );
         }
 
@@ -3497,14 +3562,17 @@ export class GameStateManager {
 
         const restored: string[] = [];
 
-        // Restore class resources with resetType "short"
+        // Restore class resources with shortRest defined
         char.dynamic.resourcesUsed = char.dynamic.resourcesUsed ?? {};
         for (const resource of char.static.classResources ?? []) {
-          if (resource.resetType === "short") {
+          if (resource.shortRest !== undefined) {
             const used = char.dynamic.resourcesUsed[resource.name] ?? 0;
             if (used > 0) {
-              char.dynamic.resourcesUsed[resource.name] = 0;
-              restored.push(`${resource.name} (${resource.maxUses}/${resource.maxUses})`);
+              const recover =
+                resource.shortRest === "all" ? used : Math.min(used, resource.shortRest);
+              char.dynamic.resourcesUsed[resource.name] = used - recover;
+              const newRemaining = resource.maxUses - (used - recover);
+              restored.push(`${resource.name} (${newRemaining}/${resource.maxUses})`);
             }
           }
         }
@@ -3632,13 +3700,18 @@ export class GameStateManager {
           }
         }
 
-        // Reset ALL class resources
+        // Reset class resources according to longRest field
         char.dynamic.resourcesUsed = char.dynamic.resourcesUsed ?? {};
         for (const resource of char.static.classResources ?? []) {
-          const used = char.dynamic.resourcesUsed[resource.name] ?? 0;
-          if (used > 0) {
-            char.dynamic.resourcesUsed[resource.name] = 0;
-            restored.push(`${resource.name} (${resource.maxUses}/${resource.maxUses})`);
+          if (resource.longRest !== undefined) {
+            const used = char.dynamic.resourcesUsed[resource.name] ?? 0;
+            if (used > 0) {
+              const recover =
+                resource.longRest === "all" ? used : Math.min(used, resource.longRest);
+              char.dynamic.resourcesUsed[resource.name] = used - recover;
+              const newRemaining = resource.maxUses - (used - recover);
+              restored.push(`${resource.name} (${newRemaining}/${resource.maxUses})`);
+            }
           }
         }
 
@@ -4060,11 +4133,11 @@ export class GameStateManager {
     ]);
   }
 
-  /** Set a character's exhaustion level (0 = none, 1–9 = penalties, 10 = dead).
-   *  PHB 2024: each level applies -2 to all d20 rolls and spell save DC, speed -5ft × level.
-   *  Long rest removes 1 level. Level 10 = instant death. */
+  /** Set a character's exhaustion level (0 = none, 1–5 = stacking penalties, 6 = dead).
+   *  PHB 2024: each level applies -2 to all D20 Tests (attacks, checks, saves) and -5ft speed.
+   *  Long rest removes 1 level. Level 6 = death. */
   setExhaustion(characterName: string, level: number): ToolResponse {
-    const clampedLevel = Math.max(0, Math.min(10, Math.round(level)));
+    const clampedLevel = Math.max(0, Math.min(6, Math.round(level)));
 
     for (const [pName, char] of Object.entries(this.characters)) {
       if (char.static.name.toLowerCase() !== characterName.toLowerCase()) continue;
@@ -4083,8 +4156,8 @@ export class GameStateManager {
         );
       }
 
-      // Level 10 = death
-      if (clampedLevel >= 10) {
+      // Level 6 = death
+      if (clampedLevel >= 6) {
         if (!char.dynamic.conditions.some((c) => c.name === "Dead")) {
           char.dynamic.conditions.push({ name: "Dead" });
         }
@@ -4103,11 +4176,11 @@ export class GameStateManager {
 
       const penalty =
         clampedLevel > 0
-          ? `-${clampedLevel * 2} to all d20 rolls and spell save DC; speed -${clampedLevel * 5}ft`
+          ? `-${clampedLevel * 2} to all D20 Tests (attacks, checks, saves); speed -${clampedLevel * 5}ft`
           : "none";
       this.markCharacterDirty(pName);
       return toResponse(
-        `${char.static.name} exhaustion level set to ${clampedLevel}${clampedLevel >= 10 ? " — DEAD" : ""}`,
+        `${char.static.name} exhaustion level set to ${clampedLevel}${clampedLevel >= 6 ? " — DEAD" : ""}`,
         {
           target: char.static.name,
           previousLevel: prevLevel,
@@ -4117,7 +4190,7 @@ export class GameStateManager {
         false,
         clampedLevel > 0
           ? [
-              `Exhaustion level ${clampedLevel}: ${penalty}. Long rest reduces by 1. Level 10 = death.`,
+              `Exhaustion level ${clampedLevel}: ${penalty}. Long rest reduces by 1. Level 6 = death.`,
             ]
           : undefined,
       );

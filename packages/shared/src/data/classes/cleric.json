@@ -369,7 +369,7 @@
             "type": "resource",
             "name": "Channel Divinity",
             "maxUses": "table(2:2, 6:3, 18:4)",
-            "resetOn": "short"
+            "longRest": "all", "shortRest": "all"
           },
           {
             "type": "note",
@@ -470,7 +470,7 @@
             "type": "resource",
             "name": "Divine Intervention",
             "maxUses": 1,
-            "resetOn": "long"
+            "longRest": "all"
           },
           {
             "type": "note",
@@ -784,7 +784,7 @@
                 "type": "resource",
                 "name": "Warding Flare",
                 "maxUses": "max(wis, 1)",
-                "resetOn": "long"
+                "longRest": "all"
               },
               {
                 "type": "note",
@@ -885,7 +885,7 @@
                 "type": "resource",
                 "name": "Corona of Light",
                 "maxUses": "max(wis, 1)",
-                "resetOn": "long"
+                "longRest": "all"
               },
               {
                 "type": "note",
@@ -1155,7 +1155,7 @@
                 "type": "resource",
                 "name": "War Priest",
                 "maxUses": "max(wis, 1)",
-                "resetOn": "short"
+                "longRest": "all", "shortRest": "all"
               },
               {
                 "type": "note",

@@ -423,7 +423,7 @@
             "type": "resource",
             "name": "Tireless (Temp HP)",
             "maxUses": "max(wis, 1)",
-            "resetOn": "long"
+            "longRest": "all"
           },
           {
             "type": "note",
@@ -469,7 +469,7 @@
             "type": "resource",
             "name": "Nature's Veil",
             "maxUses": "max(wis, 1)",
-            "resetOn": "long"
+            "longRest": "all"
           },
           {
             "type": "note",
@@ -742,7 +742,7 @@
                 "type": "resource",
                 "name": "Misty Wanderer (Misty Step)",
                 "maxUses": "max(wis, 1)",
-                "resetOn": "long"
+                "longRest": "all"
               },
               {
                 "type": "note",
@@ -799,7 +799,7 @@
                 "type": "resource",
                 "name": "Dreadful Strike",
                 "maxUses": "max(wis, 1)",
-                "resetOn": "long"
+                "longRest": "all"
               },
               {
                 "type": "note",

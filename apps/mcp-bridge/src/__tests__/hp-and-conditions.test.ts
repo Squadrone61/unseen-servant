@@ -753,12 +753,13 @@ describe("Barbarian character data integrity — Gruk (Barbarian 5)", () => {
     expect(char.static.maxHP).toBe(55);
   });
 
-  it("static.classResources contains Rage with maxUses=3 and resetType='long'", () => {
+  it("static.classResources contains Rage with maxUses=3, longRest=all, shortRest=1", () => {
     const char = gsm.characters["Player4"];
     const rage = char.static.classResources?.find((r) => r.name === "Rage");
     expect(rage).toBeDefined();
     expect(rage!.maxUses).toBe(3);
-    expect(rage!.resetType).toBe("long");
+    expect(rage!.longRest).toBe("all");
+    expect(rage!.shortRest).toBe(1);
   });
 
   it("dynamic.spellSlotsUsed is empty (Barbarian has no spell slots)", () => {

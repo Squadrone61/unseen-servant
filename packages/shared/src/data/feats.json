@@ -768,7 +768,7 @@
           "type": "resource",
           "name": "Recover Vitality Dice",
           "maxUses": 10,
-          "resetOn": "long"
+          "longRest": "all"
         },
         {
           "type": "note",
@@ -1894,7 +1894,7 @@
           "type": "resource",
           "name": "Fade Away",
           "maxUses": 1,
-          "resetOn": "short"
+          "longRest": "all", "shortRest": "all"
         },
         {
           "type": "note",
@@ -2517,7 +2517,7 @@
           "type": "resource",
           "name": "Luck Points",
           "maxUses": "prof",
-          "resetOn": "long"
+          "longRest": "all"
         },
         {
           "type": "note",
@@ -2577,7 +2577,7 @@
           "type": "resource",
           "name": "Guarded Mind",
           "maxUses": 1,
-          "resetOn": "short"
+          "longRest": "all", "shortRest": "all"
         },
         {
           "type": "note",
@@ -2740,7 +2740,7 @@
           "type": "resource",
           "name": "Metamagic Adept Sorcery Points",
           "maxUses": 2,
-          "resetOn": "long"
+          "longRest": "all"
         },
         {
           "type": "note",
@@ -3000,7 +3000,7 @@
           "type": "resource",
           "name": "Orcish Fury",
           "maxUses": 1,
-          "resetOn": "short"
+          "longRest": "all", "shortRest": "all"
         },
         {
           "type": "note",
@@ -3396,7 +3396,7 @@
           "type": "resource",
           "name": "Quick Ritual",
           "maxUses": 1,
-          "resetOn": "long"
+          "longRest": "all"
         },
         {
           "type": "note",
@@ -3472,7 +3472,7 @@
           "type": "resource",
           "name": "Second Chance",
           "maxUses": 1,
-          "resetOn": "short"
+          "longRest": "all", "shortRest": "all"
         },
         {
           "type": "note",

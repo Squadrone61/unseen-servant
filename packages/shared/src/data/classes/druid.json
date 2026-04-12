@@ -401,7 +401,7 @@
             "type": "resource",
             "name": "Wild Shape",
             "maxUses": "table(2:2, 6:3, 17:4)",
-            "resetOn": "short"
+            "longRest": "all", "shortRest": "all"
           },
           {
             "type": "note",
@@ -953,7 +953,7 @@
                 "type": "resource",
                 "name": "Moonlight Step",
                 "maxUses": "max(wis, 1)",
-                "resetOn": "long"
+                "longRest": "all"
               },
               {
                 "type": "note",
@@ -1182,7 +1182,7 @@
                 "type": "resource",
                 "name": "Guiding Bolt (free cast)",
                 "maxUses": "max(wis, 1)",
-                "resetOn": "long"
+                "longRest": "all"
               },
               {
                 "type": "note",
@@ -1218,7 +1218,7 @@
                 "type": "resource",
                 "name": "Cosmic Omen",
                 "maxUses": "max(wis, 1)",
-                "resetOn": "long"
+                "longRest": "all"
               },
               {
                 "type": "note",
