@@ -1,11 +1,11 @@
 import { useState, useMemo } from "react";
-import type { CharacterData, InventoryItem } from "@unseen-servant/shared/types";
+import type { CharacterData, Item } from "@unseen-servant/shared/types";
 import { FilterChipBar } from "../FilterChipBar";
 import { RARITY_COLORS } from "../utils";
 
 interface InventoryTabProps {
   character: CharacterData;
-  onItemClick: (item: InventoryItem, e: React.MouseEvent) => void;
+  onItemClick: (item: Item, e: React.MouseEvent) => void;
 }
 
 export function InventoryTab({ character, onItemClick }: InventoryTabProps) {
@@ -76,12 +76,23 @@ export function InventoryTab({ character, onItemClick }: InventoryTabProps) {
 
       <div className="space-y-0.5">
         {sorted.map((item, i) => {
+          const isMagic = !!item.rarity && item.rarity !== "Common";
           const rarityColor =
             item.rarity && RARITY_COLORS[item.rarity]
               ? RARITY_COLORS[item.rarity]
               : item.equipped
                 ? "text-gray-200"
                 : "text-gray-400";
+
+          // Determine type label from sub-objects
+          let typeLabel: string | undefined;
+          if (item.weapon) typeLabel = "Weapon";
+          else if (item.armor) {
+            typeLabel =
+              item.armor.type === "shield"
+                ? "Shield"
+                : `${item.armor.type.charAt(0).toUpperCase() + item.armor.type.slice(1)} Armor`;
+          }
 
           return (
             <div
@@ -101,16 +112,16 @@ export function InventoryTab({ character, onItemClick }: InventoryTabProps) {
                 className={`truncate flex-1 group-hover:text-amber-300 transition-colors ${rarityColor}`}
               >
                 {item.name}
-                {item.isMagicItem && <span className="text-amber-400 ml-0.5">✦</span>}
+                {isMagic && <span className="text-amber-400 ml-0.5">✦</span>}
               </span>
 
               {/* Attunement indicator */}
               {item.attunement && (
                 <span
                   className={`text-xs shrink-0 ${
-                    item.isAttuned ? "text-amber-400" : "text-gray-600"
+                    item.attuned ? "text-amber-400" : "text-gray-600"
                   }`}
-                  title={item.isAttuned ? "Attuned" : "Requires attunement"}
+                  title={item.attuned ? "Attuned" : "Requires attunement"}
                 >
                   ◈
                 </span>
@@ -122,7 +133,7 @@ export function InventoryTab({ character, onItemClick }: InventoryTabProps) {
               )}
 
               {/* Type badge */}
-              {item.type && <span className="text-xs text-gray-600 shrink-0">{item.type}</span>}
+              {typeLabel && <span className="text-xs text-gray-600 shrink-0">{typeLabel}</span>}
             </div>
           );
         })}

@@ -37,12 +37,13 @@ import {
   computeAoETiles,
 } from "@unseen-servant/shared/utils";
 import { rollNotation } from "./dice-engine.js";
-import { getClass } from "@unseen-servant/shared/data";
+import { getClass, getMagicItem } from "@unseen-servant/shared/data";
 import {
   createConditionBundle,
   createActivationBundle,
   createSpellBundle,
   createItemBundle,
+  enrichItem,
 } from "@unseen-servant/shared/builders";
 import {
   hasConditionImmunity,
@@ -1083,12 +1084,14 @@ export class GameStateManager {
   handleSetCharacter(playerName: string, character: CharacterData): void {
     this.characters[playerName] = character;
 
-    // Apply effect bundles for equipped magic items (avoids duplicates on reconnect)
+    // Apply effect bundles for equipped magic items (avoids duplicates on reconnect).
+    // A magic item is one that has a DB entry with effects (looked up via getMagicItem).
     const inventory = character.dynamic.inventory ?? [];
     for (const item of inventory) {
       if (!item.equipped) continue;
-      if (item.attunement && !item.isAttuned) continue;
-      if (!item.isMagicItem) continue;
+      if (item.attunement && !item.attuned) continue;
+      const magicDb = getMagicItem(item.name);
+      if (!magicDb?.effects) continue;
       const bundleId = `item:${item.name.toLowerCase()}`;
       const alreadyHasBundle = (character.dynamic.activeEffects ?? []).some(
         (b) => b.id === bundleId,
@@ -3159,13 +3162,8 @@ export class GameStateManager {
     item: {
       name: string;
       quantity?: number;
-      type?: string;
       description?: string;
       rarity?: string;
-      isMagicItem?: boolean;
-      damage?: string;
-      damageType?: string;
-      properties?: string[];
       weight?: number;
     },
   ): ToolResponse {
@@ -3185,19 +3183,16 @@ export class GameStateManager {
         if (existing) {
           existing.quantity += item.quantity ?? 1;
         } else {
-          char.dynamic.inventory.push({
+          // Build a fully-enriched Item from the DB; caller-supplied overrides win.
+          const newItem = enrichItem({
             name: item.name,
-            equipped: false,
             quantity: item.quantity ?? 1,
-            type: item.type,
+            equipped: false,
             description: item.description,
             rarity: item.rarity,
-            isMagicItem: item.isMagicItem,
-            damage: item.damage,
-            damageType: item.damageType,
-            properties: item.properties,
             weight: item.weight,
           });
+          char.dynamic.inventory.push(newItem);
         }
 
         this.broadcast({
@@ -3290,11 +3285,21 @@ export class GameStateManager {
     );
   }
 
-  /** Update properties of an existing inventory item */
+  /** Update instance flags of an existing inventory item.
+   *
+   * Only mutable instance flags may be changed: equipped, attuned, quantity,
+   * description. Weapon/armor intrinsics (damage, baseAc, etc.) are DB-sourced
+   * and immutable on the item instance.
+   */
   updateItem(
     characterName: string,
     itemName: string,
-    updates: Partial<Omit<import("@unseen-servant/shared/types").InventoryItem, "name">>,
+    updates: {
+      equipped?: boolean;
+      attuned?: boolean;
+      quantity?: number;
+      description?: string;
+    },
   ): ToolResponse {
     for (const [pName, char] of Object.entries(this.characters)) {
       if (char.static.name.toLowerCase() === characterName.toLowerCase()) {
@@ -3323,35 +3328,20 @@ export class GameStateManager {
         const changesList: string[] = [];
         if (updates.equipped !== undefined)
           changesList.push(updates.equipped ? "equipped" : "unequipped");
-        if (updates.isAttuned !== undefined)
-          changesList.push(updates.isAttuned ? "attuned" : "unattuned");
+        if (updates.attuned !== undefined)
+          changesList.push(updates.attuned ? "attuned" : "unattuned");
         if (updates.quantity !== undefined) changesList.push(`quantity → ${updates.quantity}`);
         if (updates.description !== undefined) changesList.push("description updated");
-        if (updates.damage !== undefined) changesList.push(`damage → ${updates.damage}`);
-        if (updates.damageType !== undefined)
-          changesList.push(`damage type → ${updates.damageType}`);
-        if (updates.properties !== undefined)
-          changesList.push(`properties → [${updates.properties.join(", ")}]`);
-        if (updates.armorClass !== undefined) changesList.push(`AC → ${updates.armorClass}`);
-        if (updates.attackBonus !== undefined)
-          changesList.push(`attack bonus → +${updates.attackBonus}`);
-        if (updates.range !== undefined) changesList.push(`range → ${updates.range}`);
-        if (updates.type !== undefined) changesList.push(`type → ${updates.type}`);
-        if (updates.rarity !== undefined) changesList.push(`rarity → ${updates.rarity}`);
-        if (updates.weight !== undefined) changesList.push(`weight → ${updates.weight} lb`);
-        if (updates.isMagicItem !== undefined)
-          changesList.push(updates.isMagicItem ? "marked as magic item" : "unmarked as magic item");
-        if (updates.attunement !== undefined)
-          changesList.push(updates.attunement ? "requires attunement" : "no attunement required");
 
         Object.assign(item, updates);
 
-        // Manage magic item effect bundles on equip/attune state changes
-        if (
-          item.isMagicItem &&
-          (updates.equipped !== undefined || updates.isAttuned !== undefined)
-        ) {
-          const shouldHaveEffects = item.equipped && (!item.attunement || item.isAttuned);
+        // Manage magic item effect bundles on equip/attune state changes.
+        // A magic item (one in the DB with effects) should have its bundle
+        // applied when: equipped AND (no attunement required OR currently attuned).
+        const magicDb = getMagicItem(item.name);
+        const hasMagicEffects = !!magicDb?.effects;
+        if (hasMagicEffects && (updates.equipped !== undefined || updates.attuned !== undefined)) {
+          const shouldHaveEffects = item.equipped && (!item.attunement || item.attuned);
           const bundleId = `item:${item.name.toLowerCase()}`;
           const hasBundle = (char.dynamic.activeEffects ?? []).some((b) => b.id === bundleId);
 

@@ -998,66 +998,33 @@ export function registerGameTools(
     "add_item",
     {
       description:
-        "Add an item to a character's inventory. Stacks by name if the item already exists.",
+        "Add an item to a character's inventory. Weapon and armor stats (damage, AC, properties) are automatically populated from the D&D 2024 database by item name — do not supply them manually. Stacks by name if the item already exists.",
       inputSchema: {
         name: z.string().describe("Character name"),
-        item: z.string().describe("Item name"),
+        item: z.string().describe("Item name (must match DB name exactly for weapons/armor)"),
         quantity: z.coerce.number().optional().describe("Quantity (default 1)"),
-        type: z
-          .string()
-          .optional()
-          .describe("Item type (e.g., 'Weapon', 'Armor', 'Gear', 'Potion')"),
-        description: z.string().optional().describe("Item description"),
+        description: z.string().optional().describe("Description override (optional)"),
         rarity: z
           .string()
           .optional()
-          .describe("Rarity (Common, Uncommon, Rare, Very Rare, Legendary)"),
-        is_magic_item: z.boolean().optional().describe("Whether this is a magic item"),
-        damage: z.string().optional().describe("Damage dice (e.g., '1d8', '2d6')"),
-        damage_type: z.string().optional().describe("Damage type (e.g., 'slashing', 'fire')"),
-        properties: z
-          .array(z.string())
-          .optional()
-          .describe("Item properties (e.g., ['Versatile', 'Light'])"),
-        weight: z.coerce.number().optional().describe("Item weight in pounds"),
+          .describe("Rarity override — normally read from DB (Common, Uncommon, Rare, etc.)"),
+        weight: z.coerce.number().optional().describe("Weight override in pounds"),
       },
     },
-    async ({
-      name,
-      item,
-      quantity,
-      type,
-      description,
-      rarity,
-      is_magic_item,
-      damage,
-      damage_type,
-      properties,
-      weight,
-    }) => {
+    async ({ name, item, quantity, description, rarity, weight }) => {
       const result = wsClient.gameStateManager.addItem(name, {
         name: item,
         quantity,
-        type,
         description,
         rarity,
-        isMagicItem: is_magic_item,
-        damage,
-        damageType: damage_type,
-        properties,
         weight,
       });
       return fromToolResponse(result, "add_item", {
         name,
         item,
         quantity,
-        type,
         description,
         rarity,
-        is_magic_item,
-        damage,
-        damage_type,
-        properties,
         weight,
       });
     },
@@ -1084,67 +1051,35 @@ export function registerGameTools(
     "update_item",
     {
       description:
-        "Modify an existing item in a character's inventory. Toggling equipped/attuned on magic items creates or removes effect bundles (AC, resistance, etc.). Specify only the fields you want to change.",
+        "Modify an existing item's instance flags. Toggling equipped/attuned on magic items creates or removes effect bundles (AC, resistance, etc.). Weapon/armor intrinsics (damage dice, AC, properties) are DB-sourced and cannot be changed here — use add_item to replace the item. Specify only the fields you want to change.",
       inputSchema: {
         name: z.string().describe("Character name"),
         item: z.string().describe("Item name to update (lookup key)"),
         equipped: z.boolean().optional().describe("Equip or unequip the item"),
         quantity: z.coerce.number().optional().describe("Set exact quantity"),
-        is_attuned: z.boolean().optional().describe("Toggle attunement"),
-        description: z.string().optional().describe("Update description"),
-        damage: z.string().optional().describe("Update damage dice (e.g., '1d8', '2d6+1')"),
-        damage_type: z
-          .string()
-          .optional()
-          .describe("Update damage type (e.g., 'slashing', 'fire')"),
-        properties: z
-          .array(z.string())
-          .optional()
-          .describe("Update item properties (e.g., ['Versatile', 'Light'])"),
-        armor_class: z.coerce.number().optional().describe("Update AC value"),
-        attack_bonus: z.coerce.number().optional().describe("Update attack bonus"),
-        range: z.string().optional().describe("Update range (e.g., '5 ft.', '20/60 ft.')"),
+        attuned: z.boolean().optional().describe("Toggle attunement (for magic items)"),
+        description: z.string().optional().describe("Update description text"),
       },
     },
-    async ({
-      name,
-      item,
-      equipped,
-      quantity,
-      is_attuned,
-      description,
-      damage,
-      damage_type,
-      properties,
-      armor_class,
-      attack_bonus,
-      range,
-    }) => {
-      const updates: Record<string, unknown> = {};
+    async ({ name, item, equipped, quantity, attuned, description }) => {
+      const updates: {
+        equipped?: boolean;
+        attuned?: boolean;
+        quantity?: number;
+        description?: string;
+      } = {};
       if (equipped !== undefined) updates.equipped = equipped;
       if (quantity !== undefined) updates.quantity = quantity;
-      if (is_attuned !== undefined) updates.isAttuned = is_attuned;
+      if (attuned !== undefined) updates.attuned = attuned;
       if (description !== undefined) updates.description = description;
-      if (damage !== undefined) updates.damage = damage;
-      if (damage_type !== undefined) updates.damageType = damage_type;
-      if (properties !== undefined) updates.properties = properties;
-      if (armor_class !== undefined) updates.armorClass = armor_class;
-      if (attack_bonus !== undefined) updates.attackBonus = attack_bonus;
-      if (range !== undefined) updates.range = range;
       const result = wsClient.gameStateManager.updateItem(name, item, updates);
       return fromToolResponse(result, "update_item", {
         name,
         item,
         equipped,
         quantity,
-        is_attuned,
+        attuned,
         description,
-        damage,
-        damage_type,
-        properties,
-        armor_class,
-        attack_bonus,
-        range,
       });
     },
   );

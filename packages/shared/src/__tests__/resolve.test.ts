@@ -118,18 +118,25 @@ describe("resolve.ts — snapshot invariant (Phase 2 fallback reads)", () => {
     }
   });
 
-  it("getWeaponAttack returns item.attackBonus", () => {
-    // Inject a mock weapon item — builder doesn't add equipment in the fixture.
-    const mockItem = {
+  it("getWeaponAttack computes attack bonus from abilities + proficiency for a weapon item", () => {
+    // Fighter 5 (Champion): STR 16 (mod +3), proficiency bonus 3.
+    // Longsword is a martial weapon; Fighter is proficient with martial weapons.
+    // Expected: +3 (STR) + 3 (prof) = +6
+    const mockWeapon = {
       name: "Longsword",
       equipped: true,
       quantity: 1,
-      attackBonus: 6,
+      weapon: {
+        damage: "1d8",
+        damageType: "slashing" as const,
+        properties: ["Versatile"],
+        versatile: "1d10",
+      },
     };
-    expect(getWeaponAttack(character, mockItem)).toBe(6);
+    expect(getWeaponAttack(character, mockWeapon)).toBe(6);
   });
 
-  it("getWeaponAttack returns undefined when item has no attackBonus", () => {
+  it("getWeaponAttack returns undefined for non-weapon items (no weapon sub-object)", () => {
     const nonWeapon = { name: "Rations", equipped: false, quantity: 10 };
     expect(getWeaponAttack(character, nonWeapon)).toBeUndefined();
   });

@@ -25,6 +25,7 @@ import type {
   CharacterClass,
 } from "../types/character";
 import type { Spell } from "../types/spell";
+import type { Item } from "../types/item";
 import type { BuilderState } from "../types/builder";
 import type {
   EffectBundle,
@@ -437,54 +438,109 @@ function collectBuildEffects(
   return bundles;
 }
 
-// ─── Weapon Attack Bonus ─────────────────────────────────
+// ─── Item Enrichment ─────────────────────────────────────
 
 /**
- * Compute the attack bonus for a weapon inventory item.
- * Returns undefined if the item is not a weapon or has no damage die.
+ * Convert a raw equipment entry (from BuilderState.equipment or an ad-hoc
+ * addition) into the unified Item shape by pulling weapon/armor intrinsics
+ * from BaseItemDb at construction time.
  *
- * Rules (D&D 2024):
- *   - Ammunition property → ranged weapon → DEX mod
- *   - Finesse property → max(STR mod, DEX mod)
- *   - Otherwise → STR mod (melee/thrown)
- *   - Add proficiency bonus if proficient with the weapon
+ * Attack bonus is NOT stored on Item — call getWeaponAttack(char, item) at
+ * display time. Damage dice and range ARE stored as a DB snapshot so renderers
+ * don't need a live DB lookup.
+ *
+ * Phase 10: when EntityEffects.action is populated on all weapons, this
+ * snapshot may be superseded by action-driven derivation.
  */
-function computeWeaponAttackBonus(
-  item: import("../types/character").InventoryItem,
-  abilities: AbilityScores,
-  profBonus: number,
-  weaponProficiencies: string[],
-): number | undefined {
-  if (item.type !== "Weapon") return undefined;
+export function enrichItem(raw: {
+  name: string;
+  quantity?: number;
+  equipped?: boolean;
+  attuned?: boolean;
+  rarity?: string;
+  description?: string;
+  weight?: number;
+  attunement?: boolean;
+  fromPack?: string;
+}): Item {
+  const baseDb = getBaseItem(raw.name);
+  const magicDb = getMagicItem(raw.name);
 
-  const strMod = abilityMod(abilities.strength);
-  const dexMod = abilityMod(abilities.dexterity);
+  const base: Item = {
+    name: raw.name,
+    quantity: raw.quantity ?? 1,
+    equipped: raw.equipped ?? false,
+    ...(raw.attuned !== undefined ? { attuned: raw.attuned } : {}),
+    ...(raw.fromPack !== undefined ? { fromPack: raw.fromPack } : {}),
+  };
 
-  const props = item.properties ?? [];
+  // Weight: prefer explicit override, then DB
+  const weight = raw.weight ?? baseDb?.weight;
+  if (weight !== undefined) base.weight = weight;
 
-  let abilityBonus: number;
-  if (props.includes("Ammunition")) {
-    abilityBonus = dexMod;
-  } else if (props.includes("Finesse")) {
-    abilityBonus = Math.max(strMod, dexMod);
-  } else {
-    abilityBonus = strMod;
+  // Rarity: prefer explicit override, then DB (magic items carry rarity)
+  const rarity = raw.rarity ?? (magicDb?.rarity as string | undefined);
+  if (rarity !== undefined) base.rarity = rarity;
+
+  // Description: prefer explicit override, then DB
+  const description = raw.description ?? baseDb?.description ?? magicDb?.description;
+  if (description !== undefined) base.description = description;
+
+  // Attunement flag (whether the item type requires attunement)
+  if (raw.attunement !== undefined) {
+    base.attunement = raw.attunement;
+  } else if (magicDb?.attunement) {
+    base.attunement = true;
   }
 
-  // Determine proficiency
-  const baseItem = getBaseItem(item.name);
-  const category = baseItem?.weaponCategory; // "simple" | "martial" | undefined
-  const profSet = new Set(weaponProficiencies.map((p) => p.toLowerCase()));
+  // Weapon intrinsics from DB
+  if (baseDb?.weapon && baseDb.damage && baseDb.damageType) {
+    base.weapon = {
+      damage: baseDb.damage,
+      damageType: baseDb.damageType,
+      ...(baseDb.properties?.length ? { properties: baseDb.properties } : {}),
+      ...(baseDb.mastery?.length ? { mastery: baseDb.mastery[0] } : {}),
+      ...(baseDb.range !== undefined ? { range: baseDb.range } : {}),
+      ...(baseDb.versatileDamage !== undefined ? { versatile: baseDb.versatileDamage } : {}),
+    };
+  }
 
-  const nameLower = item.name.toLowerCase();
-  const proficient =
-    category === "simple"
-      ? profSet.has("simple weapons") || profSet.has("simple") || profSet.has(nameLower)
-      : category === "martial"
-        ? profSet.has("martial weapons") || profSet.has("martial") || profSet.has(nameLower)
-        : profSet.has(nameLower);
+  // Armor/shield intrinsics from DB
+  if (baseDb?.armor && baseDb.ac != null) {
+    const typePrefix = baseDb.type.split("|")[0];
+    let armorType: "light" | "medium" | "heavy" | "shield";
+    switch (typePrefix) {
+      case "LA":
+        armorType = "light";
+        break;
+      case "MA":
+        armorType = "medium";
+        break;
+      case "HA":
+        armorType = "heavy";
+        break;
+      case "S":
+        armorType = "shield";
+        break;
+      default:
+        armorType = "light"; // fallback — shouldn't happen for armor
+    }
+    base.armor = {
+      type: armorType,
+      baseAc: baseDb.ac,
+      ...(typePrefix === "MA" ? { dexCap: 2 } : {}),
+      ...(baseDb.strength ? { strReq: parseInt(baseDb.strength, 10) || undefined } : {}),
+      ...(baseDb.stealth ? { stealthDisadvantage: true } : {}),
+    };
+  } else if (baseDb && baseDb.type.split("|")[0] === "S" && baseDb.ac != null) {
+    // Shield
+    base.armor = {
+      type: "shield",
+      baseAc: baseDb.ac,
+    };
+  }
 
-  return abilityBonus + (proficient ? profBonus : 0);
+  return base;
 }
 
 // ─── Main Builder ────────────────────────────────────────
@@ -529,8 +585,12 @@ export function buildCharacter(state: BuilderState): {
   const maxHP = Math.max(1, baseMaxHP + hpBonus);
 
   // ── AC ──────────────────────────────────────────────────
-  // Start with equipment AC, then apply effects
-  const equipmentAC = computeEquipmentAC(state.equipment, abilities);
+  // Start with equipment AC, then apply effects. Items need to be enriched
+  // first so their armor sub-objects are present.
+  const enrichedEquipment = state.equipment.map((item) =>
+    item.weapon !== undefined || item.armor !== undefined ? item : enrichItem(item),
+  );
+  const equipmentAC = computeEquipmentAC(enrichedEquipment, abilities);
   const ac = resolveStat(bundles, "ac", equipmentAC.base, ctx) + equipmentAC.shieldBonus;
 
   // ── Speed ───────────────────────────────────────────────
@@ -632,17 +692,16 @@ export function buildCharacter(state: BuilderState): {
     source: "builder",
   };
 
-  // ── Inventory (with computed weapon attack bonuses) ─────
-  const inventory = state.equipment.map((item) => {
-    if (item.type !== "Weapon") return item;
-    const bonus = computeWeaponAttackBonus(
-      item,
-      abilities,
-      proficiencyBonus,
-      proficiencies.weapons,
-    );
-    if (bonus === undefined) return item;
-    return { ...item, attackBonus: bonus };
+  // ── Inventory (enriched from DB — weapon/armor intrinsics populated) ──
+  // Each item in BuilderState.equipment is already an Item (set by EquipmentStep).
+  // Pass through as-is; enrichItem is used by add_item at runtime and by
+  // EquipmentStep when constructing the initial item from BaseItemDb.
+  const inventory: Item[] = state.equipment.map((item) => {
+    // If the item already has weapon/armor sub-objects (built by EquipmentStep via
+    // enrichItem), pass it through. If it's a legacy plain item with no sub-objects,
+    // re-enrich it from the DB.
+    if (item.weapon !== undefined || item.armor !== undefined) return item;
+    return enrichItem(item);
   });
 
   const dynamicData: CharacterDynamicData = {
@@ -672,7 +731,7 @@ export function buildCharacter(state: BuilderState): {
 // and then stacks all "add" modifiers on top.
 
 function computeEquipmentAC(
-  equipment: import("../types/character").InventoryItem[],
+  equipment: Item[],
   abilities: AbilityScores,
 ): { base: number; shieldBonus: number } {
   const dexMod = abilityMod(abilities.dexterity);
@@ -682,21 +741,19 @@ function computeEquipmentAC(
   for (const item of equipment) {
     if (!item.equipped) continue;
 
-    if (item.type === "Shield") {
+    if (item.armor?.type === "shield") {
       shieldBonus = 2;
       continue;
     }
 
-    if (item.type === "Armor" && item.name) {
-      const baseItem = getBaseItem(item.name);
-      if (baseItem?.armor && baseItem.ac != null) {
-        // type codes may have source suffix (e.g. "HA|XPHB") — check the prefix only
-        const typePrefix = baseItem.type.split("|")[0];
-        if (typePrefix === "LA") base = baseItem.ac + dexMod;
-        else if (typePrefix === "MA") base = baseItem.ac + Math.min(dexMod, 2);
-        else if (typePrefix === "HA") base = baseItem.ac;
-      } else if (item.armorClass) {
-        base = item.armorClass + dexMod;
+    if (item.armor) {
+      const { type: armorType, baseAc, dexCap } = item.armor;
+      if (armorType === "light") {
+        base = baseAc + dexMod;
+      } else if (armorType === "medium") {
+        base = baseAc + Math.min(dexMod, dexCap ?? 2);
+      } else if (armorType === "heavy") {
+        base = baseAc;
       }
     }
   }

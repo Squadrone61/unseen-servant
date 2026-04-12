@@ -977,8 +977,13 @@ describe("AC computation", () => {
     const state = makeBuilderState({
       classes: [{ name: "Fighter", level: 1, subclass: null, skills: [], choices: {} }],
       equipment: [
-        { name: "Chain Mail", equipped: true, quantity: 1, type: "Armor", armorClass: 16 },
-        { name: "Shield", equipped: true, quantity: 1, type: "Shield", armorClass: 2 },
+        {
+          name: "Chain Mail",
+          equipped: true,
+          quantity: 1,
+          armor: { type: "heavy", baseAc: 16, stealthDisadvantage: true },
+        },
+        { name: "Shield", equipped: true, quantity: 1, armor: { type: "shield", baseAc: 2 } },
       ],
     });
     const { character } = buildCharacter(state);

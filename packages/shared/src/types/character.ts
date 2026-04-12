@@ -6,6 +6,7 @@ import type { EffectBundle } from "./effects";
 import type { BuilderState } from "./builder";
 import type { FeatureActivation } from "./data";
 import type { Spell } from "./spell";
+import type { Item } from "./item";
 
 export interface AbilityScores {
   strength: number;
@@ -22,33 +23,12 @@ export interface CharacterClass {
   subclass?: string;
 }
 
-export type { Spell };
+export type { Spell, Item };
 
 export interface SpellSlotLevel {
   level: number; // 1-9
   total: number;
   used: number;
-}
-
-export interface InventoryItem {
-  name: string;
-  equipped: boolean;
-  quantity: number;
-  type?: string; // "Weapon", "Armor", "Shield", "Gear", etc.
-  armorClass?: number; // for armor/shields
-  description?: string; // Full text description (HTML stripped)
-  damage?: string; // "1d8" or "2d6"
-  damageType?: string; // "slashing", "fire", etc.
-  range?: string; // "5 ft." or "20/60 ft." for weapons
-  attackBonus?: number; // computed: proficiency + ability mod
-  properties?: string[]; // ["Versatile", "Light", "Finesse"]
-  weight?: number;
-  rarity?: string; // "Common", "Uncommon", "Rare", etc.
-  attunement?: boolean;
-  isAttuned?: boolean;
-  isMagicItem?: boolean;
-  mastery?: { name: string; description: string };
-  fromPack?: string;
 }
 
 export interface Currency {
@@ -226,7 +206,7 @@ export interface CharacterDynamicData {
    */
   exhaustionLevel?: number;
   deathSaves: DeathSaves;
-  inventory: InventoryItem[];
+  inventory: Item[];
   currency: Currency;
   heroicInspiration?: boolean;
   concentratingOn?: { spellName: string; since?: number };

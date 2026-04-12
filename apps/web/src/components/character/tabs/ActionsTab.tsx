@@ -1,17 +1,17 @@
 import { useState, useMemo } from "react";
-import type { CharacterData, CharacterFeature, InventoryItem } from "@unseen-servant/shared/types";
+import type { CharacterData, CharacterFeature, Item } from "@unseen-servant/shared/types";
 import { actionsArray } from "@unseen-servant/shared/data";
 import { FilterChipBar } from "../FilterChipBar";
 
 interface ActionEntry {
   name: string;
   detail: string;
-  item: InventoryItem;
+  item: Item;
 }
 
 interface ActionsTabProps {
   character: CharacterData;
-  onItemClick: (item: InventoryItem, e: React.MouseEvent) => void;
+  onItemClick: (item: Item, e: React.MouseEvent) => void;
   onFeatureClick: (feature: CharacterFeature, e: React.MouseEvent) => void;
 }
 
@@ -75,14 +75,32 @@ export function ActionsTab({ character, onItemClick, onFeatureClick }: ActionsTa
   // Equipped weapons with damage
   const weapons: ActionEntry[] = useMemo(() => {
     const result: ActionEntry[] = [];
+    const profBonus = s.proficiencyBonus;
     for (const item of d.inventory) {
-      if (item.equipped && item.damage) {
+      if (item.equipped && item.weapon) {
         const parts: string[] = [];
-        if (item.range) parts.push(item.range);
-        if (item.attackBonus != null) {
-          parts.push(`${item.attackBonus >= 0 ? "+" : ""}${item.attackBonus}`);
+        const { damage, damageType, range, properties } = item.weapon;
+        if (range) parts.push(range);
+        // Compute attack bonus inline (mirrors getWeaponAttack logic):
+        // Ammunition → DEX, Finesse → max(STR,DEX), else STR
+        const strMod = Math.floor((s.abilities.strength - 10) / 2);
+        const dexMod = Math.floor((s.abilities.dexterity - 10) / 2);
+        const props = properties ?? [];
+        let abilityMod: number;
+        if (props.includes("Ammunition")) {
+          abilityMod = dexMod;
+        } else if (props.includes("Finesse")) {
+          abilityMod = Math.max(strMod, dexMod);
+        } else {
+          abilityMod = strMod;
         }
-        parts.push([item.damage, item.damageType].filter(Boolean).join(" "));
+        const weaponProfs = s.proficiencies.weapons.map((p) => p.toLowerCase());
+        const isProficient =
+          weaponProfs.some((p) => p.includes("simple") || p.includes("martial")) ||
+          weaponProfs.includes(item.name.toLowerCase());
+        const attackBonus = abilityMod + (isProficient ? profBonus : 0);
+        parts.push(`${attackBonus >= 0 ? "+" : ""}${attackBonus}`);
+        parts.push([damage, damageType].filter(Boolean).join(" "));
         result.push({
           name: item.name,
           detail: parts.join(" · "),
@@ -91,7 +109,7 @@ export function ActionsTab({ character, onItemClick, onFeatureClick }: ActionsTa
       }
     }
     return result;
-  }, [d.inventory]);
+  }, [d.inventory, s.abilities, s.proficiencyBonus, s.proficiencies.weapons]);
 
   // Feature-based actions grouped by type
   const featureGroups: FeatureGroup[] = useMemo(() => {

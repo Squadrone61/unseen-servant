@@ -65,23 +65,51 @@ export const spellSlotLevelSchema = z.object({
   used: z.number(),
 });
 
-export const inventoryItemSchema = z.object({
-  name: z.string(),
-  equipped: z.boolean(),
-  quantity: z.number(),
-  type: z.string().optional(),
-  armorClass: z.number().optional(),
-  description: z.string().optional(),
-  damage: z.string().optional(),
-  damageType: z.string().optional(),
-  range: z.string().optional(),
-  attackBonus: z.number().optional(),
+const DAMAGE_TYPES = [
+  "acid",
+  "bludgeoning",
+  "cold",
+  "fire",
+  "force",
+  "lightning",
+  "necrotic",
+  "piercing",
+  "poison",
+  "psychic",
+  "radiant",
+  "slashing",
+  "thunder",
+] as const;
+
+export const itemWeaponSchema = z.object({
+  damage: z.string(),
+  damageType: z.enum(DAMAGE_TYPES),
   properties: z.array(z.string()).optional(),
+  mastery: z.string().optional(),
+  range: z.string().optional(),
+  versatile: z.string().optional(),
+});
+
+export const itemArmorSchema = z.object({
+  type: z.enum(["light", "medium", "heavy", "shield"]),
+  baseAc: z.number(),
+  dexCap: z.number().optional(),
+  strReq: z.number().optional(),
+  stealthDisadvantage: z.boolean().optional(),
+});
+
+export const itemSchema = z.object({
+  name: z.string(),
+  quantity: z.number(),
+  equipped: z.boolean(),
+  attuned: z.boolean().optional(),
   weight: z.number().optional(),
   rarity: z.string().optional(),
   attunement: z.boolean().optional(),
-  isAttuned: z.boolean().optional(),
-  isMagicItem: z.boolean().optional(),
+  description: z.string().optional(),
+  fromPack: z.string().optional(),
+  weapon: itemWeaponSchema.optional(),
+  armor: itemArmorSchema.optional(),
 });
 
 export const currencySchema = z.object({
@@ -226,7 +254,7 @@ export const characterDynamicDataSchema = z.object({
   conditions: z.array(conditionEntrySchema),
   exhaustionLevel: z.number().optional(),
   deathSaves: deathSavesSchema,
-  inventory: z.array(inventoryItemSchema),
+  inventory: z.array(itemSchema),
   currency: currencySchema,
   heroicInspiration: z.boolean().optional().default(false),
   concentratingOn: z.object({ spellName: z.string(), since: z.number().optional() }).optional(),

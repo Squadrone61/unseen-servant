@@ -10,7 +10,7 @@
  * that way Phase 7 can flip the implementation in one place with no consumer changes.
  */
 
-import type { CharacterData, InventoryItem } from "../types/character";
+import type { CharacterData } from "../types/character";
 import type {
   SkillProficiency,
   SavingThrowProficiency,
@@ -19,6 +19,8 @@ import type {
   ClassResource,
   CombatBonus,
 } from "../types/character";
+import type { Item } from "../types/item";
+import { getBaseItem } from "../data/index";
 
 // Re-export for convenience so consumers don't need two imports.
 export type { SkillProficiency, SavingThrowProficiency, CharacterSpeed, AdvantageEntry };
@@ -200,16 +202,50 @@ export function getPassivePerception(char: CharacterData): number {
 /**
  * Attack bonus for a weapon item.
  *
- * Phase 2: returns `item.attackBonus` as computed by `buildCharacter`
- *          (proficiency bonus + ability modifier + magic bonus pre-computed).
- * Phase 7: will derive from weapon's ActionEffect.attack.bonus + effect-resolver modifiers.
+ * Phase 5: computes from character ability scores + proficiency bonus. No longer
+ *          reads a stored `attackBonus` field (which has been removed from Item).
+ *          Rules:
+ *            - Ammunition property → ranged weapon → DEX modifier
+ *            - Finesse property    → max(STR, DEX) modifier
+ *            - Otherwise          → STR modifier (melee/thrown)
+ *            - Add proficiency bonus if proficient with the weapon category
+ * Phase 7: will add effect-resolver modifiers (fighting styles, magic weapon bonuses).
  *
- * Returns `undefined` for non-weapon items (no `attackBonus` field).
+ * Returns `undefined` for non-weapon items (no `weapon` sub-object).
  */
-export function getWeaponAttack(char: CharacterData, item: InventoryItem): number | undefined {
-  // Phase 2: attackBonus is already computed by buildCharacter at import time.
-  // Phase 7: derive from weapon's DB ActionEffect + character effect bundles.
-  return item.attackBonus;
+export function getWeaponAttack(char: CharacterData, item: Item): number | undefined {
+  if (!item.weapon) return undefined;
+
+  const abilities = char.static.abilities;
+  const profBonus = char.static.proficiencyBonus;
+  const strMod = abilityMod(abilities.strength);
+  const dexMod = abilityMod(abilities.dexterity);
+  const props = item.weapon.properties ?? [];
+
+  let abilityBonus: number;
+  if (props.includes("Ammunition")) {
+    abilityBonus = dexMod;
+  } else if (props.includes("Finesse")) {
+    abilityBonus = Math.max(strMod, dexMod);
+  } else {
+    abilityBonus = strMod;
+  }
+
+  // Determine proficiency from DB weapon category
+  const baseDb = getBaseItem(item.name);
+  const category = baseDb?.weaponCategory; // "simple" | "martial" | undefined
+  const weaponProfs = char.static.proficiencies.weapons;
+  const profSet = new Set(weaponProfs.map((p) => p.toLowerCase()));
+  const nameLower = item.name.toLowerCase();
+
+  const proficient =
+    category === "simple"
+      ? profSet.has("simple weapons") || profSet.has("simple") || profSet.has(nameLower)
+      : category === "martial"
+        ? profSet.has("martial weapons") || profSet.has("martial") || profSet.has(nameLower)
+        : profSet.has(nameLower);
+
+  return abilityBonus + (proficient ? profBonus : 0);
 }
 
 /**

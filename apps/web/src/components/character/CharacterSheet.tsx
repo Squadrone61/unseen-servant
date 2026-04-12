@@ -6,7 +6,7 @@ import type {
   Spell,
   CharacterFeature,
   AdvantageEntry,
-  InventoryItem,
+  Item,
   AbilityScores,
 } from "@unseen-servant/shared/types";
 import {
@@ -44,7 +44,7 @@ type ClickPosition = { x: number; y: number };
 type PopupState =
   | { type: "ability"; id: keyof AbilityScores; position: ClickPosition }
   | { type: "spell"; spell: Spell; position: ClickPosition }
-  | { type: "item"; item: InventoryItem; position: ClickPosition }
+  | { type: "item"; item: Item; position: ClickPosition }
   | { type: "feature"; feature: CharacterFeature; position: ClickPosition }
   | null;
 

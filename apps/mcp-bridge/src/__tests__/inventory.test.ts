@@ -70,7 +70,7 @@ describe("addItem", () => {
     it("adds a new item and inventory grows by one entry with correct quantity", () => {
       const { gsm } = env;
       const startCount = gsm.characters["Player1"].dynamic.inventory.length;
-      const result = gsm.addItem("Theron", { name: "Healing Potion", quantity: 2, type: "Gear" });
+      const result = gsm.addItem("Theron", { name: "Healing Potion", quantity: 2 });
 
       assertToolSuccess(result);
 
@@ -87,8 +87,8 @@ describe("addItem", () => {
     it("stacks into a single entry when the same item is added twice", () => {
       const { gsm } = env;
 
-      gsm.addItem("Theron", { name: "Healing Potion", quantity: 2, type: "Gear" });
-      const result = gsm.addItem("Theron", { name: "Healing Potion", quantity: 1, type: "Gear" });
+      gsm.addItem("Theron", { name: "Healing Potion", quantity: 2 });
+      const result = gsm.addItem("Theron", { name: "Healing Potion", quantity: 1 });
 
       assertToolSuccess(result);
 
@@ -135,7 +135,7 @@ describe("removeItem", () => {
     it("subtracts removeQty and leaves the item in inventory", () => {
       const { gsm } = env;
       // Add an item with qty 3 first
-      gsm.addItem("Theron", { name: "Arrow", quantity: 3, type: "Gear" });
+      gsm.addItem("Theron", { name: "Arrow", quantity: 3 });
       const result = gsm.removeItem("Theron", "Arrow", 1);
 
       assertToolSuccess(result);

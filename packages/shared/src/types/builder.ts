@@ -3,13 +3,8 @@
  * and CharacterData (which stores the snapshot for lossless edit round-trips).
  */
 
-import type {
-  AbilityScores,
-  CharacterAppearance,
-  CharacterTraits,
-  InventoryItem,
-  Currency,
-} from "./character";
+import type { AbilityScores, CharacterAppearance, CharacterTraits, Currency } from "./character";
+import type { Item } from "./item";
 import type { Ability } from "./effects";
 
 // ---------------------------------------------------------------------------
@@ -87,7 +82,7 @@ export interface BuilderState {
   backstory: string;
   alignment: string;
   traits: CharacterTraits;
-  equipment: InventoryItem[];
+  equipment: Item[];
   currency: Currency;
 }
 
@@ -133,8 +128,8 @@ export type BuilderAction =
   | { type: "SET_PREPARED_SPELLS"; className: string; spells: string[] }
 
   // Equipment
-  | { type: "ADD_EQUIPMENT"; item: InventoryItem }
-  | { type: "ADD_EQUIPMENT_BATCH"; items: InventoryItem[] }
+  | { type: "ADD_EQUIPMENT"; item: Item }
+  | { type: "ADD_EQUIPMENT_BATCH"; items: Item[] }
   | { type: "REMOVE_EQUIPMENT"; index: number }
   | { type: "REMOVE_EQUIPMENT_BATCH"; packName: string }
   | { type: "TOGGLE_EQUIPPED"; index: number }
@@ -145,7 +140,7 @@ export type BuilderAction =
   | { type: "SET_BACKSTORY"; backstory: string }
   | { type: "SET_ALIGNMENT"; alignment: string }
   | { type: "SET_TRAITS"; traits: Partial<CharacterTraits> }
-  | { type: "SET_EQUIPMENT"; equipment: InventoryItem[] }
+  | { type: "SET_EQUIPMENT"; equipment: Item[] }
   | { type: "SET_CURRENCY"; currency: Currency }
 
   // Lifecycle

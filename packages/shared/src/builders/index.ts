@@ -5,4 +5,5 @@ export {
   createSpellBundle,
   createActivationBundle,
   createItemBundle,
+  enrichItem,
 } from "./character-builder";

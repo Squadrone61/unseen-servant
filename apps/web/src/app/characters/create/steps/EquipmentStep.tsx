@@ -7,10 +7,9 @@ import {
   classesArray,
   packsArray,
   getBaseItem,
-  getWeaponMastery,
 } from "@unseen-servant/shared/data";
 import type { BaseItemDb, PackDb } from "@unseen-servant/shared/types";
-import type { InventoryItem } from "@unseen-servant/shared/types";
+import type { Item } from "@unseen-servant/shared/types";
 import { useBuilder } from "../BuilderContext";
 
 // ---------------------------------------------------------------------------
@@ -162,49 +161,76 @@ function isStandardWeapon(item: BaseItemDb): boolean {
 }
 
 // ---------------------------------------------------------------------------
-// InventoryItem factory
+// Item factory — converts BaseItemDb into the unified Item shape
 // ---------------------------------------------------------------------------
 
-function baseItemToInventoryItem(item: BaseItemDb, equipped = false): InventoryItem {
-  const tc = typeCode(item.type);
-  let itemType = "Gear";
-  if (item.weapon) itemType = "Weapon";
-  else if (item.armor) itemType = "Armor";
-  else if (tc === "S") itemType = "Shield";
+function baseItemToItem(dbItem: BaseItemDb, equipped = false): Item {
+  const tc = typeCode(dbItem.type);
 
-  const masteryName = item.mastery?.[0];
-  const masteryData = masteryName ? getWeaponMastery(masteryName) : undefined;
-
-  return {
-    name: item.name,
+  const result: Item = {
+    name: dbItem.name,
     equipped,
     quantity: 1,
-    type: itemType,
-    armorClass: item.ac,
-    description: item.description,
-    damage: item.damage,
-    damageType: item.damageType,
-    range: item.range,
-    properties: item.properties?.map((p) => PROP_LABELS[p] ?? p),
-    weight: item.weight,
-    mastery: masteryData
-      ? { name: masteryData.name, description: masteryData.description }
-      : undefined,
+    ...(dbItem.description ? { description: dbItem.description } : {}),
+    ...(dbItem.weight !== undefined ? { weight: dbItem.weight } : {}),
   };
+
+  if (dbItem.weapon && dbItem.damage && dbItem.damageType) {
+    const masteryName = dbItem.mastery?.[0];
+    result.weapon = {
+      damage: dbItem.damage,
+      damageType: dbItem.damageType,
+      ...(dbItem.properties?.length
+        ? { properties: dbItem.properties.map((p) => PROP_LABELS[p] ?? p) }
+        : {}),
+      ...(masteryName ? { mastery: masteryName } : {}),
+      ...(dbItem.range !== undefined ? { range: dbItem.range } : {}),
+      ...(dbItem.versatileDamage !== undefined ? { versatile: dbItem.versatileDamage } : {}),
+    };
+  } else if (dbItem.armor && dbItem.ac != null) {
+    const typePrefix = tc;
+    let armorType: "light" | "medium" | "heavy" | "shield";
+    switch (typePrefix) {
+      case "LA":
+        armorType = "light";
+        break;
+      case "MA":
+        armorType = "medium";
+        break;
+      case "HA":
+        armorType = "heavy";
+        break;
+      default:
+        armorType = "light";
+    }
+    result.armor = {
+      type: armorType,
+      baseAc: dbItem.ac,
+      ...(typePrefix === "MA" ? { dexCap: 2 } : {}),
+      ...(dbItem.strength ? { strReq: parseInt(dbItem.strength, 10) || undefined } : {}),
+      ...(dbItem.stealth ? { stealthDisadvantage: true } : {}),
+    };
+  } else if (tc === "S" && dbItem.ac != null) {
+    result.armor = {
+      type: "shield",
+      baseAc: dbItem.ac,
+    };
+  }
+
+  return result;
 }
 
-function packToInventoryItems(pack: PackDb): InventoryItem[] {
+function packToItems(pack: PackDb): Item[] {
   return pack.contents.map(({ item, quantity }) => {
     const gearItem = getBaseItem(item);
     return {
       name: item,
       equipped: false,
       quantity,
-      type: "Gear",
-      weight: gearItem?.weight,
-      description: gearItem?.description,
+      ...(gearItem?.weight !== undefined ? { weight: gearItem.weight } : {}),
+      ...(gearItem?.description ? { description: gearItem.description } : {}),
       fromPack: pack.name,
-    };
+    } as Item;
   });
 }
 
@@ -382,7 +408,7 @@ function PackCard({ pack, selected, onToggle }: PackCardProps) {
 // ---------------------------------------------------------------------------
 
 interface EquipmentChipPanelProps {
-  equipment: InventoryItem[];
+  equipment: Item[];
   onRemove: (index: number) => void;
 }
 
@@ -505,7 +531,7 @@ function StartingEquipmentPanel() {
     } else {
       dispatch({
         type: "ADD_EQUIPMENT",
-        item: baseItemToInventoryItem(item, equipOnAdd),
+        item: baseItemToItem(item, equipOnAdd),
       });
     }
   }
@@ -518,7 +544,7 @@ function StartingEquipmentPanel() {
       if (selectedPack) {
         dispatch({ type: "REMOVE_EQUIPMENT_BATCH", packName: selectedPack });
       }
-      dispatch({ type: "ADD_EQUIPMENT_BATCH", items: packToInventoryItems(pack) });
+      dispatch({ type: "ADD_EQUIPMENT_BATCH", items: packToItems(pack) });
       setSelectedPack(pack.name);
     }
   }
