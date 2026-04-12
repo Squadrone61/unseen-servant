@@ -5,7 +5,7 @@
  * and feats, then resolves stats through the Universal Effect System.
  * No hardcoded class-specific logic — everything comes from the database.
  *
- * Flow: CharacterIdentifiers → collectBuildEffects() → resolveStat/collectProperties → CharacterData
+ * Flow: BuilderState → derive fields → collectBuildEffects() → resolveStat/collectProperties → CharacterData
  */
 
 import type {
@@ -22,8 +22,10 @@ import type {
   AbilityScores,
   CombatBonus,
   AdvantageEntry,
+  CharacterClass,
+  CharacterSpell,
 } from "../types/character";
-import type { CharacterIdentifiers } from "./types";
+import type { BuilderState } from "../types/builder";
 import type {
   EffectBundle,
   EffectSource,
@@ -48,6 +50,7 @@ import {
   getCondition,
   getMagicItem,
   getCasterMultiplier,
+  getBackground,
 } from "../data/index";
 import multiclassSlots from "../data/multiclass-slots.json";
 import { SKILL_ABILITY_MAP } from "../utils/5etools";
@@ -58,28 +61,311 @@ function abilityMod(score: number): number {
   return Math.floor((score - 10) / 2);
 }
 
+// ─── BuilderState Derivation ─────────────────────────────
+// These functions replicate (and now own) what used to live in
+// apps/web/.../useComputedCharacter.ts — deriving the "identifiers"
+// directly from a BuilderState.
+
+/**
+ * Compute final ability scores by applying background bonuses from
+ * state.abilityScoreAssignments on top of state.baseAbilities, then
+ * applying ASI increases from feat selections.
+ */
+export function computeFinalAbilities(state: BuilderState): AbilityScores {
+  const base = { ...state.baseAbilities };
+  for (const [ability, bonus] of Object.entries(state.abilityScoreAssignments)) {
+    const key = ability as keyof AbilityScores;
+    base[key] = (base[key] ?? 8) + (bonus as number);
+  }
+  for (const selection of state.featSelections) {
+    if (selection.type === "asi" && selection.asiAbilities) {
+      for (const [ability, increase] of Object.entries(selection.asiAbilities)) {
+        const key = ability as keyof AbilityScores;
+        base[key] = (base[key] ?? 8) + (increase as number);
+      }
+    }
+  }
+  return base;
+}
+
+/**
+ * Compute average HP across all class entries.
+ * The primary class (index 0) contributes its full hit die at level 1; all
+ * other levels (including multiclass levels) use the average roll (half+1).
+ * CON modifier applies once per total level.
+ */
+function computeMaxHPFromState(
+  classes: Array<{ name: string; level: number }>,
+  conScore: number,
+): number {
+  if (classes.length === 0) return 1;
+  const conMod = abilityMod(conScore);
+  let hp = 0;
+  let isFirst = true;
+  for (const entry of classes) {
+    const cls = getClass(entry.name);
+    if (!cls) continue;
+    const hitDie = cls.hitDiceFaces;
+    const averagePerLevel = Math.floor(hitDie / 2) + 1;
+    if (isFirst) {
+      hp += hitDie + conMod;
+      if (entry.level > 1) {
+        hp += (entry.level - 1) * (averagePerLevel + conMod);
+      }
+      isFirst = false;
+    } else {
+      hp += entry.level * (averagePerLevel + conMod);
+    }
+  }
+  return Math.max(1, hp);
+}
+
+/**
+ * Collect languages granted by species and background from the DB.
+ * Common is always granted; language choice IDs add additional languages.
+ */
+function collectLanguagesFromState(state: BuilderState): string[] {
+  const langs = new Set<string>(["Common"]);
+  for (const [choiceId, values] of Object.entries(state.speciesChoices)) {
+    if (choiceId.toLowerCase().includes("language")) {
+      values.forEach((v) => langs.add(v));
+    }
+  }
+  for (const [choiceId, values] of Object.entries(state.backgroundChoices)) {
+    if (choiceId.toLowerCase().includes("language")) {
+      values.forEach((v) => langs.add(v));
+    }
+  }
+  return [...langs];
+}
+
+/**
+ * Collect tool proficiencies from class DB and background DB.
+ */
+function collectToolProficienciesFromState(state: BuilderState): string[] {
+  const tools = new Set<string>();
+  const primaryClassName = state.classes[0]?.name;
+  if (primaryClassName) {
+    const cls = getClass(primaryClassName);
+    if (cls) cls.toolProficiencies.forEach((t) => tools.add(t));
+  }
+  if (state.background) {
+    const bg = getBackground(state.background);
+    if (bg) bg.tools.forEach((t) => tools.add(t));
+  }
+  return [...tools];
+}
+
+/**
+ * Map builder cantrips + preparedSpells to CharacterSpell objects using the
+ * D&D database to fill in spell details.
+ */
+function assembleSpellsFromState(state: BuilderState): CharacterSpell[] {
+  const spells: CharacterSpell[] = [];
+  const allCantrips = new Set(Object.values(state.cantrips).flat());
+  const allPrepared = new Set(Object.values(state.preparedSpells).flat());
+
+  for (const cls of state.classes) {
+    const classCantrips = state.cantrips[cls.name] ?? [];
+    const classPrepared = state.preparedSpells[cls.name] ?? [];
+
+    for (const name of classCantrips) {
+      const db = getSpell(name);
+      spells.push({
+        name,
+        level: 0,
+        prepared: true,
+        alwaysPrepared: false,
+        spellSource: "class",
+        knownByClass: true,
+        sourceClass: cls.name,
+        school: db?.school,
+        castingTime: db?.castingTime,
+        range: db?.range,
+        components: db?.components,
+        duration: db?.duration,
+        description: db?.description,
+        ritual: db?.ritual,
+        concentration: db?.concentration,
+      });
+    }
+
+    for (const name of classPrepared) {
+      const db = getSpell(name);
+      spells.push({
+        name,
+        level: db?.level ?? 1,
+        prepared: true,
+        alwaysPrepared: false,
+        spellSource: "class",
+        knownByClass: true,
+        sourceClass: cls.name,
+        school: db?.school,
+        castingTime: db?.castingTime,
+        range: db?.range,
+        components: db?.components,
+        duration: db?.duration,
+        description: db?.description,
+        ritual: db?.ritual,
+        concentration: db?.concentration,
+      });
+    }
+
+    // Always-prepared subclass spells
+    if (cls.subclass) {
+      const classDb = getClass(cls.name);
+      const sub = classDb?.subclasses.find(
+        (s) => s.name.toLowerCase() === cls.subclass!.toLowerCase(),
+      );
+      if (sub?.additionalSpells) {
+        for (const name of sub.additionalSpells) {
+          if (allPrepared.has(name) || allCantrips.has(name)) continue;
+          const db = getSpell(name);
+          spells.push({
+            name,
+            level: db?.level ?? 1,
+            prepared: true,
+            alwaysPrepared: true,
+            spellSource: "class",
+            knownByClass: false,
+            sourceClass: cls.name,
+            school: db?.school,
+            castingTime: db?.castingTime,
+            range: db?.range,
+            components: db?.components,
+            duration: db?.duration,
+            description: db?.description,
+            ritual: db?.ritual,
+            concentration: db?.concentration,
+          });
+        }
+      }
+    }
+  }
+
+  return spells;
+}
+
+/**
+ * Collect skill proficiencies from class selections + background DB skills.
+ */
+function assembleSkillProficienciesFromState(state: BuilderState): string[] {
+  const skills = new Set<string>();
+  for (const cls of state.classes) {
+    for (const s of cls.skills) skills.add(s);
+  }
+  if (state.background) {
+    const bg = getBackground(state.background);
+    if (bg) bg.skills.forEach((s) => skills.add(s.toLowerCase()));
+  }
+  for (const [choiceId, values] of Object.entries(state.speciesChoices)) {
+    if (choiceId.toLowerCase().includes("skill")) {
+      values.forEach((v) => skills.add(v.toLowerCase()));
+    }
+  }
+  for (const [_featName, choices] of Object.entries(state.featChoices)) {
+    for (const [choiceId, values] of Object.entries(choices)) {
+      if (
+        choiceId.toLowerCase().includes("skill") ||
+        choiceId.toLowerCase().includes("proficiency")
+      ) {
+        values.forEach((v) => skills.add(v.toLowerCase()));
+      }
+    }
+  }
+  return [...skills];
+}
+
+/**
+ * Collect skill expertise from class choices (Bard/Rogue Expertise) and feat choices.
+ */
+function assembleSkillExpertiseFromState(state: BuilderState): string[] {
+  const expertise = new Set<string>();
+  for (const cls of state.classes) {
+    for (const [choiceId, values] of Object.entries(cls.choices)) {
+      if (choiceId.toLowerCase().includes("expertise")) {
+        (values as string[]).forEach((v) => expertise.add(v));
+      }
+    }
+  }
+  for (const [_featName, choices] of Object.entries(state.featChoices)) {
+    for (const [choiceId, values] of Object.entries(choices)) {
+      if (choiceId.toLowerCase().includes("expertise")) {
+        values.forEach((v) => expertise.add(v));
+      }
+    }
+  }
+  return [...expertise];
+}
+
+/**
+ * Collect saving throw proficiencies from the primary class DB.
+ */
+function assembleSaveProficienciesFromState(state: BuilderState): (keyof AbilityScores)[] {
+  const primaryClassName = state.classes[0]?.name;
+  if (!primaryClassName) return [];
+  const cls = getClass(primaryClassName);
+  if (!cls) return [];
+  return cls.savingThrows as (keyof AbilityScores)[];
+}
+
+/**
+ * Map BuilderState.classes to CharacterClass[] (dropping builder-only fields).
+ */
+function assembleCharacterClasses(state: BuilderState): CharacterClass[] {
+  return state.classes.map((c) => ({
+    name: c.name,
+    level: c.level,
+    subclass: c.subclass ?? undefined,
+  }));
+}
+
+/**
+ * Collect additional features (feat grants) from feat selections.
+ * Looks up feat description from the DB; falls back to empty string.
+ */
+function assembleAdditionalFeatures(state: BuilderState): CharacterFeature[] {
+  const features: CharacterFeature[] = [];
+  for (const selection of state.featSelections) {
+    if (selection.type === "feat" && selection.featName) {
+      const dbFeat = getFeat(selection.featName);
+      features.push({
+        name: selection.featName,
+        description: dbFeat?.description ?? "",
+        source: "feat",
+        sourceLabel: "Feat",
+      });
+    }
+  }
+  return features;
+}
+
 // ─── Effect Collection ───────────────────────────────────
 
 /**
  * Collect all build-time EffectBundles from the character's sources:
  * species, class features, subclass features, and feats.
  */
-function collectBuildEffects(ids: CharacterIdentifiers): EffectBundle[] {
+function collectBuildEffects(
+  race: string,
+  classes: CharacterClass[],
+  additionalFeatures: CharacterFeature[],
+): EffectBundle[] {
   const bundles: EffectBundle[] = [];
 
   // Species effects
-  const species = getSpecies(ids.race);
+  const species = getSpecies(race);
   if (species?.effects) {
     bundles.push({
-      id: `species:${ids.race}`,
-      source: { type: "species", name: ids.race },
+      id: `species:${race}`,
+      source: { type: "species", name: race },
       lifetime: { type: "permanent" },
       effects: species.effects,
     });
   }
 
   // Class and subclass feature effects
-  for (const cls of ids.classes) {
+  for (const cls of classes) {
     const classDb = getClass(cls.name);
     if (!classDb) continue;
 
@@ -121,18 +407,16 @@ function collectBuildEffects(ids: CharacterIdentifiers): EffectBundle[] {
   }
 
   // Feat effects (from additional features)
-  if (ids.additionalFeatures) {
-    for (const feat of ids.additionalFeatures) {
-      if (feat.source === "feat") {
-        const dbFeat = getFeat(feat.name);
-        if (dbFeat?.effects) {
-          bundles.push({
-            id: `feat:${feat.name}`,
-            source: { type: "feat", name: feat.name },
-            lifetime: { type: "permanent" },
-            effects: dbFeat.effects,
-          });
-        }
+  for (const feat of additionalFeatures) {
+    if (feat.source === "feat") {
+      const dbFeat = getFeat(feat.name);
+      if (dbFeat?.effects) {
+        bundles.push({
+          id: `feat:${feat.name}`,
+          source: { type: "feat", name: feat.name },
+          lifetime: { type: "permanent" },
+          effects: dbFeat.effects,
+        });
       }
     }
   }
@@ -192,40 +476,53 @@ function computeWeaponAttackBonus(
 
 // ─── Main Builder ────────────────────────────────────────
 
-export function buildCharacter(ids: CharacterIdentifiers): {
+export function buildCharacter(state: BuilderState): {
   character: CharacterData;
   warnings: string[];
 } {
   const warnings: string[] = [];
-  const totalLevel = ids.classes.reduce((sum, c) => sum + c.level, 0);
+
+  // ── Derive fields from BuilderState ───────────────────
+  const abilities = computeFinalAbilities(state);
+  const classes = assembleCharacterClasses(state);
+  const race = state.species ?? "";
+  const baseMaxHP = computeMaxHPFromState(classes, abilities.constitution);
+  const skillProficiencies = assembleSkillProficienciesFromState(state);
+  const skillExpertise = assembleSkillExpertiseFromState(state);
+  const saveProficiencies = assembleSaveProficienciesFromState(state);
+  const spellsRaw = assembleSpellsFromState(state);
+  const languages = collectLanguagesFromState(state);
+  const toolProficiencies = collectToolProficienciesFromState(state);
+  const additionalFeatures = assembleAdditionalFeatures(state);
+
+  const totalLevel = classes.reduce((sum, c) => sum + c.level, 0);
   const proficiencyBonus = Math.floor((totalLevel - 1) / 4) + 2;
-  const species = getSpecies(ids.race);
+  const species = getSpecies(race);
 
   // Collect all effects from species, class features, subclass features, feats
-  const bundles = collectBuildEffects(ids);
+  const bundles = collectBuildEffects(race, classes, additionalFeatures);
 
   // Build resolve context for expression evaluation
   const ctx: ResolveContext = {
-    abilities: ids.abilities,
+    abilities,
     totalLevel,
-    classLevel: ids.classes[0]?.level ?? 1,
+    classLevel: classes[0]?.level ?? 1,
     proficiencyBonus,
   };
 
   // ── HP ──────────────────────────────────────────────────
-  // Base HP from identifiers + bonus from effects (Tough = "2 * lvl", Dwarf Toughness = "lvl")
+  // Base HP from derived value + bonus from effects (Tough = "2 * lvl", Dwarf Toughness = "lvl")
   const hpBonus = resolveStat(bundles, "hp", 0, ctx);
-  const maxHP = Math.max(1, ids.maxHP + hpBonus);
+  const maxHP = Math.max(1, baseMaxHP + hpBonus);
 
   // ── AC ──────────────────────────────────────────────────
   // Start with equipment AC, then apply effects
-  const equipmentAC = computeEquipmentAC(ids);
-  const ac =
-    ids.armorClass ?? resolveStat(bundles, "ac", equipmentAC.base, ctx) + equipmentAC.shieldBonus;
+  const equipmentAC = computeEquipmentAC(state.equipment, abilities);
+  const ac = resolveStat(bundles, "ac", equipmentAC.base, ctx) + equipmentAC.shieldBonus;
 
   // ── Speed ───────────────────────────────────────────────
   const baseWalkSpeed = species?.speed ?? 30;
-  const walkSpeed = ids.speed ?? resolveStat(bundles, "speed", baseWalkSpeed, ctx);
+  const walkSpeed = resolveStat(bundles, "speed", baseWalkSpeed, ctx);
   const flySpeed = resolveStat(bundles, "speed_fly", 0, ctx);
   const swimSpeed = resolveStat(bundles, "speed_swim", 0, ctx);
   const climbSpeed = resolveStat(bundles, "speed_climb", 0, ctx);
@@ -241,26 +538,20 @@ export function buildCharacter(ids: CharacterIdentifiers): {
 
   // ── Skills ──────────────────────────────────────────────
   const effectSkillProfs = getProficiencies(bundles, "skill");
-  const allSkillProfs = [...new Set([...ids.skillProficiencies, ...effectSkillProfs])];
-  const skills = computeSkills(
-    allSkillProfs,
-    ids.skillExpertise,
-    ids.abilities,
-    proficiencyBonus,
-    ids.skillBonuses,
-  );
+  const allSkillProfs = [...new Set([...skillProficiencies, ...effectSkillProfs])];
+  const skills = computeSkills(allSkillProfs, skillExpertise, abilities, proficiencyBonus);
 
   // ── Saving Throws ───────────────────────────────────────
-  const savingThrows = computeSavingThrows(ids);
+  const savingThrows = computeSavingThrows(saveProficiencies);
 
   // ── Spellcasting ────────────────────────────────────────
-  const spellcasting = computeSpellcasting(ids, proficiencyBonus, bundles, ctx);
+  const spellcasting = computeSpellcasting(classes, abilities, proficiencyBonus, bundles, ctx);
 
   // ── Spell Slots ─────────────────────────────────────────
-  const { regularSlots, pactSlots } = computeSpellSlots(ids);
+  const { regularSlots, pactSlots } = computeSpellSlots(classes);
 
   // ── Spells (enriched from DB) ───────────────────────────
-  const spells = ids.spells.map((spell) => {
+  const spells = spellsRaw.map((spell) => {
     const db = getSpell(spell.name);
     if (!db) return spell;
     return {
@@ -277,31 +568,31 @@ export function buildCharacter(ids: CharacterIdentifiers): {
   });
 
   // ── Features (from DB) ──────────────────────────────────
-  const features = computeFeatures(ids);
+  const features = computeFeatures(race, classes, additionalFeatures);
 
   // ── Class Resources (from effects) ──────────────────────
   const classResources = computeResources(bundles, ctx);
 
   // ── Proficiencies (class flat arrays + effects) ─────────
-  const proficiencies = computeProficiencies(ids, bundles);
+  const proficiencies = computeProficiencies(classes, toolProficiencies, bundles);
 
   // ── Senses (from effects + species.darkvision) ──────────
-  const senses = computeSenses(bundles, species, ids, proficiencyBonus, skills);
+  const senses = computeSenses(bundles, species, abilities, proficiencyBonus, skills);
 
   // ── Combat Bonuses (from effects) ───────────────────────
   const combatBonuses = computeCombatBonuses(bundles, ctx);
 
   // ── Advantages (from effects) ───────────────────────────
-  const advantages = computeAdvantages(bundles, ids);
+  const advantages = computeAdvantages(bundles);
 
   // ── Assemble ────────────────────────────────────────────
 
   const staticData: CharacterStaticData = {
-    name: ids.name,
-    species: ids.race,
-    race: ids.race,
-    classes: ids.classes,
-    abilities: ids.abilities,
+    name: state.name.trim() || "Unnamed",
+    species: race,
+    race,
+    classes,
+    abilities,
     maxHP,
     armorClass: ac,
     proficiencyBonus,
@@ -312,25 +603,28 @@ export function buildCharacter(ids: CharacterIdentifiers): {
     skills,
     savingThrows,
     senses,
-    languages: ids.languages,
+    languages,
     spells,
     spellcasting: Object.keys(spellcasting).length > 0 ? spellcasting : undefined,
     combatBonuses,
     advantages,
-    traits: ids.traits ?? {},
-    appearance: ids.appearance,
-    backstory: ids.backstory || undefined,
-    alignment: ids.builderState.alignment || undefined,
+    traits: state.traits ?? {},
+    appearance:
+      Object.keys(state.appearance).length > 0
+        ? (state.appearance as NonNullable<CharacterStaticData["appearance"]>)
+        : undefined,
+    backstory: state.backstory || undefined,
+    alignment: state.alignment || undefined,
     importedAt: Date.now(),
-    source: ids.source,
+    source: "builder",
   };
 
   // ── Inventory (with computed weapon attack bonuses) ─────
-  const inventory = ids.equipment.map((item) => {
+  const inventory = state.equipment.map((item) => {
     if (item.type !== "Weapon") return item;
     const bonus = computeWeaponAttackBonus(
       item,
-      ids.abilities,
+      abilities,
       proficiencyBonus,
       proficiencies.weapons,
     );
@@ -347,13 +641,13 @@ export function buildCharacter(ids: CharacterIdentifiers): {
     conditions: [],
     deathSaves: { successes: 0, failures: 0 },
     inventory,
-    currency: ids.currency ?? { cp: 0, sp: 0, gp: 0, pp: 0 },
+    currency: state.currency ?? { cp: 0, sp: 0, gp: 0, pp: 0 },
     heroicInspiration: false,
     activeEffects: [],
   };
 
   return {
-    character: { builder: ids.builderState, static: staticData, dynamic: dynamicData },
+    character: { builder: state, static: staticData, dynamic: dynamicData },
     warnings,
   };
 }
@@ -364,12 +658,15 @@ export function buildCharacter(ids: CharacterIdentifiers): {
 // The resolver picks the highest "set" value (equipment base vs unarmored defense)
 // and then stacks all "add" modifiers on top.
 
-function computeEquipmentAC(ids: CharacterIdentifiers): { base: number; shieldBonus: number } {
-  const dexMod = abilityMod(ids.abilities.dexterity);
+function computeEquipmentAC(
+  equipment: import("../types/character").InventoryItem[],
+  abilities: AbilityScores,
+): { base: number; shieldBonus: number } {
+  const dexMod = abilityMod(abilities.dexterity);
   let base = 10 + dexMod; // unarmored default
   let shieldBonus = 0;
 
-  for (const item of ids.equipment) {
+  for (const item of equipment) {
     if (!item.equipped) continue;
 
     if (item.type === "Shield") {
@@ -380,10 +677,11 @@ function computeEquipmentAC(ids: CharacterIdentifiers): { base: number; shieldBo
     if (item.type === "Armor" && item.name) {
       const baseItem = getBaseItem(item.name);
       if (baseItem?.armor && baseItem.ac != null) {
-        const typeCode = baseItem.type;
-        if (typeCode === "LA") base = baseItem.ac + dexMod;
-        else if (typeCode === "MA") base = baseItem.ac + Math.min(dexMod, 2);
-        else if (typeCode === "HA") base = baseItem.ac;
+        // type codes may have source suffix (e.g. "HA|XPHB") — check the prefix only
+        const typePrefix = baseItem.type.split("|")[0];
+        if (typePrefix === "LA") base = baseItem.ac + dexMod;
+        else if (typePrefix === "MA") base = baseItem.ac + Math.min(dexMod, 2);
+        else if (typePrefix === "HA") base = baseItem.ac;
       } else if (item.armorClass) {
         base = item.armorClass + dexMod;
       }
@@ -416,8 +714,8 @@ function computeSkills(
 
 // ─── Saving Throws ───────────────────────────────────────
 
-function computeSavingThrows(ids: CharacterIdentifiers): SavingThrowProficiency[] {
-  const profSet = new Set(ids.saveProficiencies);
+function computeSavingThrows(saveProficiencies: (keyof AbilityScores)[]): SavingThrowProficiency[] {
+  const profSet = new Set(saveProficiencies);
   const allAbilities: (keyof AbilityScores)[] = [
     "strength",
     "dexterity",
@@ -429,14 +727,14 @@ function computeSavingThrows(ids: CharacterIdentifiers): SavingThrowProficiency[
   return allAbilities.map((ability) => ({
     ability,
     proficient: profSet.has(ability),
-    bonus: ids.saveBonuses?.get(ability) || undefined,
   }));
 }
 
 // ─── Spellcasting ────────────────────────────────────────
 
 function computeSpellcasting(
-  ids: CharacterIdentifiers,
+  classes: CharacterClass[],
+  abilities: AbilityScores,
   profBonus: number,
   bundles: EffectBundle[],
   ctx: ResolveContext,
@@ -444,13 +742,13 @@ function computeSpellcasting(
   const result: Record<string, { ability: keyof AbilityScores; dc: number; attackBonus: number }> =
     {};
 
-  for (const cls of ids.classes) {
+  for (const cls of classes) {
     const classDb = getClass(cls.name);
 
     // Class-level spellcasting ability (full/half/pact casters)
     const classAbility = classDb?.spellcastingAbility as keyof AbilityScores | undefined;
     if (classAbility) {
-      const mod = abilityMod(ids.abilities[classAbility]);
+      const mod = abilityMod(abilities[classAbility]);
       const baseDC = 8 + profBonus + mod;
       const baseAttack = profBonus + mod;
       result[cls.name] = {
@@ -470,7 +768,7 @@ function computeSpellcasting(
       );
       const subAbility = sub?.spellcastingAbility as keyof AbilityScores | undefined;
       if (subAbility && sub?.casterProgression != null) {
-        const mod = abilityMod(ids.abilities[subAbility]);
+        const mod = abilityMod(abilities[subAbility]);
         const baseDC = 8 + profBonus + mod;
         const baseAttack = profBonus + mod;
         result[cls.name] = {
@@ -487,17 +785,17 @@ function computeSpellcasting(
 
 // ─── Spell Slots ─────────────────────────────────────────
 
-function computeSpellSlots(ids: CharacterIdentifiers): {
+function computeSpellSlots(classes: CharacterClass[]): {
   regularSlots: SpellSlotLevel[];
   pactSlots: SpellSlotLevel[];
 } {
   const regularSlots: SpellSlotLevel[] = [];
   const pactSlots: SpellSlotLevel[] = [];
 
-  const casterClasses: { name: string; level: number; subclass?: string }[] = [];
+  const casterClasses: CharacterClass[] = [];
   let warlockLevel = 0;
 
-  for (const cls of ids.classes) {
+  for (const cls of classes) {
     if (cls.name.toLowerCase() === "warlock") {
       warlockLevel = cls.level;
       continue;
@@ -592,7 +890,11 @@ function computeSpellSlots(ids: CharacterIdentifiers): {
 
 // ─── Features ────────────────────────────────────────────
 
-function computeFeatures(ids: CharacterIdentifiers): CharacterFeature[] {
+function computeFeatures(
+  race: string,
+  classes: CharacterClass[],
+  additionalFeatures: CharacterFeature[],
+): CharacterFeature[] {
   const features: CharacterFeature[] = [];
   const seen = new Set<string>();
 
@@ -604,10 +906,10 @@ function computeFeatures(ids: CharacterIdentifiers): CharacterFeature[] {
   };
 
   // Caller-provided features first (may have richer data)
-  for (const f of ids.additionalFeatures ?? []) add(f);
+  for (const f of additionalFeatures) add(f);
 
   // Class features from DB
-  for (const cls of ids.classes) {
+  for (const cls of classes) {
     const classDb = getClass(cls.name);
     if (!classDb) continue;
 
@@ -658,18 +960,18 @@ function computeFeatures(ids: CharacterIdentifiers): CharacterFeature[] {
   }
 
   // Species description as a feature
-  const species = getSpecies(ids.race);
+  const species = getSpecies(race);
   if (species) {
     add({
-      name: ids.race,
+      name: race,
       description: species.description,
       source: "race",
-      sourceLabel: ids.race,
+      sourceLabel: race,
     });
   }
 
   // Enrich feat descriptions
-  for (const feat of ids.additionalFeatures?.filter((f) => f.source === "feat") ?? []) {
+  for (const feat of additionalFeatures.filter((f) => f.source === "feat")) {
     const dbFeat = getFeat(feat.name);
     if (dbFeat) {
       const idx = features.findIndex((f) => f.name === feat.name);
@@ -728,25 +1030,16 @@ function computeResources(bundles: EffectBundle[], ctx: ResolveContext): ClassRe
 // ─── Proficiencies ───────────────────────────────────────
 
 function computeProficiencies(
-  ids: CharacterIdentifiers,
+  classes: CharacterClass[],
+  toolProficiencies: string[],
   bundles: EffectBundle[],
 ): ProficiencyGroup {
-  // Start with explicit overrides from identifiers
-  if (ids.armorProficiencies || ids.weaponProficiencies) {
-    return {
-      armor: ids.armorProficiencies ?? [],
-      weapons: ids.weaponProficiencies ?? [],
-      tools: ids.toolProficiencies ?? [],
-      other: ids.otherProficiencies ?? [],
-    };
-  }
-
   // Combine class DB fields + effect properties
   const armorSet = new Set<string>();
   const weaponSet = new Set<string>();
-  const toolSet = new Set<string>(ids.toolProficiencies ?? []);
+  const toolSet = new Set<string>(toolProficiencies);
 
-  for (const cls of ids.classes) {
+  for (const cls of classes) {
     const classDb = getClass(cls.name);
     if (!classDb) continue;
     for (const a of classDb.armorProficiencies) armorSet.add(a);
@@ -763,7 +1056,7 @@ function computeProficiencies(
     armor: [...armorSet],
     weapons: [...weaponSet],
     tools: [...toolSet],
-    other: ids.otherProficiencies ?? [],
+    other: [],
   };
 }
 
@@ -772,12 +1065,10 @@ function computeProficiencies(
 function computeSenses(
   bundles: EffectBundle[],
   species: { darkvision?: number } | undefined,
-  ids: CharacterIdentifiers,
+  abilities: AbilityScores,
   profBonus: number,
   skills: SkillProficiency[],
 ): string[] {
-  if (ids.senses) return ids.senses;
-
   const senses: string[] = [];
 
   // Senses from effects (darkvision, blindsight, etc.)
@@ -791,12 +1082,13 @@ function computeSenses(
   }
 
   // Passive Perception
-  const wisMod = abilityMod(ids.abilities.wisdom);
+  const wisMod = abilityMod(abilities.wisdom);
   const perception = skills.find((s) => s.name === "perception");
   let passive = 10 + wisMod;
   if (perception?.proficient) passive += profBonus;
   if (perception?.expertise) passive += profBonus;
   if (perception?.bonus) passive += perception.bonus;
+
   senses.push(`Passive Perception ${passive}`);
 
   return senses;
@@ -868,8 +1160,8 @@ function computeCombatBonuses(bundles: EffectBundle[], ctx: ResolveContext): Com
 
 // ─── Advantages (from effects) ───────────────────────────
 
-function computeAdvantages(bundles: EffectBundle[], ids: CharacterIdentifiers): AdvantageEntry[] {
-  const advantages: AdvantageEntry[] = [...(ids.advantages ?? [])];
+function computeAdvantages(bundles: EffectBundle[]): AdvantageEntry[] {
+  const advantages: AdvantageEntry[] = [];
 
   for (const adv of collectProperties(bundles, "advantage")) {
     const advSrc = bundles.find((b) =>

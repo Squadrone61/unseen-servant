@@ -1,79 +1,21 @@
 import { describe, it, expect } from "vitest";
 import { buildCharacter } from "../builders/character-builder.js";
-import type { CharacterIdentifiers } from "../builders/types.js";
 import type { AbilityScores } from "../types/character.js";
-import type { BuilderState } from "../types/builder.js";
+import { makeBuilderState } from "./helpers/makeBuilderState.js";
 
 // ---------------------------------------------------------------------------
-// Fixture helper
+// Fixture helper (local — wraps makeBuilderState with test-friendly API)
 // ---------------------------------------------------------------------------
-
-const defaultAbilities: AbilityScores = {
-  strength: 16,
-  dexterity: 14,
-  constitution: 14,
-  intelligence: 10,
-  wisdom: 12,
-  charisma: 8,
-};
-
-function stubBuilderState(partial?: Partial<BuilderState>): BuilderState {
-  return {
-    currentStep: "details",
-    completedSteps: [],
-    species: "Human",
-    speciesChoices: {},
-    background: null,
-    backgroundChoices: {},
-    abilityScoreMode: "two-one",
-    abilityScoreAssignments: {},
-    classes: [{ name: "Fighter", level: 1, subclass: null, skills: [], choices: {} }],
-    activeClassIndex: 0,
-    abilityMethod: "manual",
-    baseAbilities: defaultAbilities,
-    featSelections: [],
-    featChoices: {},
-    cantrips: {},
-    preparedSpells: {},
-    name: "Test Character",
-    appearance: {},
-    backstory: "",
-    alignment: "",
-    traits: {},
-    equipment: [],
-    currency: { cp: 0, sp: 0, gp: 0, pp: 0 },
-    ...partial,
-  };
-}
-
-function makeIdentifiers(overrides: Partial<CharacterIdentifiers> = {}): CharacterIdentifiers {
-  const base: CharacterIdentifiers = {
-    name: "Test Character",
-    race: "Human",
-    classes: [{ name: "Fighter", level: 1 }],
-    abilities: defaultAbilities,
-    maxHP: 12,
-    skillProficiencies: ["athletics", "perception"],
-    skillExpertise: [],
-    saveProficiencies: ["strength", "constitution"],
-    spells: [],
-    equipment: [],
-    languages: ["Common"],
-    source: "builder",
-    builderState: stubBuilderState(),
-    ...overrides,
-  };
-  return base;
-}
 
 // ---------------------------------------------------------------------------
 // 1. Basic builds
 // ---------------------------------------------------------------------------
 
 describe("Fighter 5 — non-caster build", () => {
-  const ids = makeIdentifiers({
-    classes: [{ name: "Fighter", level: 5 }],
-    abilities: {
+  const state = makeBuilderState({
+    species: "Human",
+    classes: [{ name: "Fighter", level: 5, subclass: "Champion", skills: [], choices: {} }],
+    baseAbilities: {
       strength: 17,
       dexterity: 14,
       constitution: 14,
@@ -81,24 +23,22 @@ describe("Fighter 5 — non-caster build", () => {
       wisdom: 12,
       charisma: 8,
     },
-    maxHP: 44, // 10 + 4*7 (avg d10) + 5 CON mods
-    saveProficiencies: ["strength", "constitution"],
   });
 
   it("builds without errors", () => {
-    const { character, warnings } = buildCharacter(ids);
+    const { character, warnings } = buildCharacter(state);
     expect(character).toBeDefined();
     expect(warnings).toBeInstanceOf(Array);
   });
 
   it("has Extra Attack feature", () => {
-    const { character } = buildCharacter(ids);
+    const { character } = buildCharacter(state);
     const featureNames = character.static.features.map((f) => f.name);
     expect(featureNames).toContain("Extra Attack");
   });
 
   it("has Second Wind class resource", () => {
-    const { character } = buildCharacter(ids);
+    const { character } = buildCharacter(state);
     const resources = character.static.classResources ?? [];
     const secondWind = resources.find((r) => r.name === "Second Wind");
     expect(secondWind).toBeDefined();
@@ -107,7 +47,7 @@ describe("Fighter 5 — non-caster build", () => {
   });
 
   it("has Action Surge class resource at level 5", () => {
-    const { character } = buildCharacter(ids);
+    const { character } = buildCharacter(state);
     const resources = character.static.classResources ?? [];
     const surge = resources.find((r) => r.name === "Action Surge");
     expect(surge).toBeDefined();
@@ -116,46 +56,47 @@ describe("Fighter 5 — non-caster build", () => {
   });
 
   it("proficiency bonus is +3 at level 5", () => {
-    const { character } = buildCharacter(ids);
+    const { character } = buildCharacter(state);
     expect(character.static.proficiencyBonus).toBe(3);
   });
 
   it("has no spell slots", () => {
-    const { character } = buildCharacter(ids);
+    const { character } = buildCharacter(state);
     expect(character.dynamic.spellSlotsUsed).toHaveLength(0);
   });
 
   it("has no spellcasting ability", () => {
-    const { character } = buildCharacter(ids);
+    const { character } = buildCharacter(state);
     expect(character.static.spellcasting).toBeUndefined();
   });
 
-  it("HP reflects maxHP from identifiers", () => {
-    const { character } = buildCharacter(ids);
+  it("HP is computed correctly from Fighter 5 CON 14", () => {
+    // Fighter d10: level 1 → 10+2=12, levels 2-5 → 4×(6+2)=32, total=44
+    const { character } = buildCharacter(state);
     expect(character.static.maxHP).toBe(44);
     expect(character.dynamic.currentHP).toBe(44);
   });
 
   it("starts with 0 tempHP", () => {
-    const { character } = buildCharacter(ids);
+    const { character } = buildCharacter(state);
     expect(character.dynamic.tempHP).toBe(0);
   });
 
   it("starts with no conditions", () => {
-    const { character } = buildCharacter(ids);
+    const { character } = buildCharacter(state);
     expect(character.dynamic.conditions).toHaveLength(0);
   });
 
   it("classes array is preserved", () => {
-    const { character } = buildCharacter(ids);
-    expect(character.static.classes).toEqual([{ name: "Fighter", level: 5 }]);
+    const { character } = buildCharacter(state);
+    expect(character.static.classes).toEqual([{ name: "Fighter", level: 5, subclass: "Champion" }]);
   });
 });
 
 describe("Wizard 3 — full caster build", () => {
-  const ids = makeIdentifiers({
-    classes: [{ name: "Wizard", level: 3 }],
-    abilities: {
+  const state = makeBuilderState({
+    classes: [{ name: "Wizard", level: 3, subclass: null, skills: [], choices: {} }],
+    baseAbilities: {
       strength: 8,
       dexterity: 14,
       constitution: 12,
@@ -163,39 +104,36 @@ describe("Wizard 3 — full caster build", () => {
       wisdom: 12,
       charisma: 10,
     },
-    maxHP: 16, // 6 + 2*4 (avg d6) + 3 CON mods
-    saveProficiencies: ["intelligence", "wisdom"],
-    spells: [],
   });
 
   it("builds without errors", () => {
-    const { character } = buildCharacter(ids);
+    const { character } = buildCharacter(state);
     expect(character).toBeDefined();
   });
 
   it("has Arcane Recovery class resource", () => {
-    const { character } = buildCharacter(ids);
+    const { character } = buildCharacter(state);
     const resources = character.static.classResources ?? [];
     expect(resources.find((r) => r.name === "Arcane Recovery")).toBeDefined();
   });
 
   it("spellcasting ability is Intelligence", () => {
-    const { character } = buildCharacter(ids);
+    const { character } = buildCharacter(state);
     expect(character.static.spellcasting?.["Wizard"]?.ability).toBe("intelligence");
   });
 
   it("spell save DC = 8 + profBonus(2) + INT mod(+3) = 13", () => {
-    const { character } = buildCharacter(ids);
+    const { character } = buildCharacter(state);
     expect(character.static.spellcasting?.["Wizard"]?.dc).toBe(13);
   });
 
   it("spell attack bonus = profBonus(2) + INT mod(+3) = 5", () => {
-    const { character } = buildCharacter(ids);
+    const { character } = buildCharacter(state);
     expect(character.static.spellcasting?.["Wizard"]?.attackBonus).toBe(5);
   });
 
   it("has first and second level spell slots at level 3", () => {
-    const { character } = buildCharacter(ids);
+    const { character } = buildCharacter(state);
     const slots = character.dynamic.spellSlotsUsed;
     const lvl1 = slots.find((s) => s.level === 1);
     const lvl2 = slots.find((s) => s.level === 2);
@@ -206,14 +144,14 @@ describe("Wizard 3 — full caster build", () => {
   });
 
   it("all spell slots start unused (used: 0)", () => {
-    const { character } = buildCharacter(ids);
+    const { character } = buildCharacter(state);
     for (const slot of character.dynamic.spellSlotsUsed) {
       expect(slot.used).toBe(0);
     }
   });
 
   it("INT save proficiency is set", () => {
-    const { character } = buildCharacter(ids);
+    const { character } = buildCharacter(state);
     const saves = character.static.savingThrows;
     const intSave = saves.find((s) => s.ability === "intelligence");
     expect(intSave?.proficient).toBe(true);
@@ -221,9 +159,17 @@ describe("Wizard 3 — full caster build", () => {
 });
 
 describe("Rogue 1 — martial build", () => {
-  const ids = makeIdentifiers({
-    classes: [{ name: "Rogue", level: 1 }],
-    abilities: {
+  const state = makeBuilderState({
+    classes: [
+      {
+        name: "Rogue",
+        level: 1,
+        subclass: null,
+        skills: ["stealth", "perception"],
+        choices: { expertise_1: ["stealth", "perception"] },
+      },
+    ],
+    baseAbilities: {
       strength: 10,
       dexterity: 17,
       constitution: 12,
@@ -231,38 +177,33 @@ describe("Rogue 1 — martial build", () => {
       wisdom: 12,
       charisma: 10,
     },
-    maxHP: 9,
-    saveProficiencies: ["dexterity", "intelligence"],
-    skillProficiencies: ["stealth", "perception"],
-    skillExpertise: ["stealth", "perception"],
-    spells: [],
   });
 
   it("builds without errors", () => {
-    const { character } = buildCharacter(ids);
+    const { character } = buildCharacter(state);
     expect(character).toBeDefined();
   });
 
   it("has Sneak Attack feature", () => {
-    const { character } = buildCharacter(ids);
+    const { character } = buildCharacter(state);
     const featureNames = character.static.features.map((f) => f.name);
     expect(featureNames).toContain("Sneak Attack");
   });
 
   it("has Expertise feature", () => {
-    const { character } = buildCharacter(ids);
+    const { character } = buildCharacter(state);
     const featureNames = character.static.features.map((f) => f.name);
     expect(featureNames).toContain("Expertise");
   });
 
   it("has Thieves' Cant feature", () => {
-    const { character } = buildCharacter(ids);
+    const { character } = buildCharacter(state);
     const featureNames = character.static.features.map((f) => f.name);
     expect(featureNames).toContain("Thieves' Cant");
   });
 
   it("expertise skills have expertise=true in skills array", () => {
-    const { character } = buildCharacter(ids);
+    const { character } = buildCharacter(state);
     const stealth = character.static.skills.find((s) => s.name === "stealth");
     const perception = character.static.skills.find((s) => s.name === "perception");
     expect(stealth?.expertise).toBe(true);
@@ -270,7 +211,7 @@ describe("Rogue 1 — martial build", () => {
   });
 
   it("proficiency bonus is +2 at level 1", () => {
-    const { character } = buildCharacter(ids);
+    const { character } = buildCharacter(state);
     expect(character.static.proficiencyBonus).toBe(2);
   });
 });
@@ -281,10 +222,10 @@ describe("Rogue 1 — martial build", () => {
 
 describe("Ability score computation", () => {
   it("CON modifier (+2) is reflected in correct starting HP", () => {
-    // maxHP is provided by identifiers — CON mod is already baked in
-    const ids = makeIdentifiers({
-      classes: [{ name: "Fighter", level: 1 }],
-      abilities: {
+    // Fighter d10, CON 14 (mod +2): level 1 → 10+2=12
+    const state = makeBuilderState({
+      classes: [{ name: "Fighter", level: 1, subclass: null, skills: [], choices: {} }],
+      baseAbilities: {
         strength: 16,
         dexterity: 14,
         constitution: 14, // mod +2
@@ -292,17 +233,16 @@ describe("Ability score computation", () => {
         wisdom: 12,
         charisma: 8,
       },
-      maxHP: 12, // 10 + 2 CON mod
     });
-    const { character } = buildCharacter(ids);
+    const { character } = buildCharacter(state);
     expect(character.static.maxHP).toBe(12);
     expect(character.dynamic.currentHP).toBe(12);
   });
 
   it("negative CON modifier reduces HP but maxHP is at least 1", () => {
-    const ids = makeIdentifiers({
-      classes: [{ name: "Fighter", level: 1 }],
-      abilities: {
+    const state = makeBuilderState({
+      classes: [{ name: "Fighter", level: 1, subclass: null, skills: [], choices: {} }],
+      baseAbilities: {
         strength: 8,
         dexterity: 8,
         constitution: 1, // mod -5 — extreme edge case
@@ -310,18 +250,17 @@ describe("Ability score computation", () => {
         wisdom: 8,
         charisma: 8,
       },
-      maxHP: 0, // could theoretically be 0 or negative with extreme CON
     });
-    const { character } = buildCharacter(ids);
+    const { character } = buildCharacter(state);
     // Builder guarantees maxHP >= 1
     expect(character.static.maxHP).toBeGreaterThanOrEqual(1);
   });
 
   it("INT modifier drives Wizard spell save DC", () => {
     // INT 20 → mod +5, profBonus 2, DC = 8+2+5 = 15
-    const ids = makeIdentifiers({
-      classes: [{ name: "Wizard", level: 1 }],
-      abilities: {
+    const state = makeBuilderState({
+      classes: [{ name: "Wizard", level: 1, subclass: null, skills: [], choices: {} }],
+      baseAbilities: {
         strength: 8,
         dexterity: 14,
         constitution: 12,
@@ -329,11 +268,9 @@ describe("Ability score computation", () => {
         wisdom: 12,
         charisma: 10,
       },
-      maxHP: 7,
-      saveProficiencies: ["intelligence", "wisdom"],
     });
-    const { character } = buildCharacter(ids);
-    // profBonus at level 1 = Math.ceil(1/4)+1 = 2, INT mod = 5, DC = 8+2+5 = 15
+    const { character } = buildCharacter(state);
+    // profBonus at level 1 = 2, INT mod = 5, DC = 8+2+5 = 15
     expect(character.static.spellcasting?.["Wizard"]?.dc).toBe(15);
   });
 
@@ -351,11 +288,10 @@ describe("Ability score computation", () => {
       [20, 6],
     ];
     for (const [level, expectedPB] of cases) {
-      const ids = makeIdentifiers({
-        classes: [{ name: "Fighter", level }],
-        maxHP: level * 7, // rough HP value
+      const state = makeBuilderState({
+        classes: [{ name: "Fighter", level, subclass: null, skills: [], choices: {} }],
       });
-      const { character } = buildCharacter(ids);
+      const { character } = buildCharacter(state);
       expect(character.static.proficiencyBonus).toBe(expectedPB);
     }
   });
@@ -366,89 +302,96 @@ describe("Ability score computation", () => {
 // ---------------------------------------------------------------------------
 
 describe("Fighter proficiencies", () => {
-  const ids = makeIdentifiers({
-    classes: [{ name: "Fighter", level: 1 }],
+  const state = makeBuilderState({
+    classes: [{ name: "Fighter", level: 1, subclass: null, skills: [], choices: {} }],
   });
 
   it("has heavy armor proficiency", () => {
-    const { character } = buildCharacter(ids);
+    const { character } = buildCharacter(state);
     expect(character.static.proficiencies.armor).toContain("Heavy Armor");
   });
 
   it("has shield proficiency", () => {
-    const { character } = buildCharacter(ids);
+    const { character } = buildCharacter(state);
     expect(character.static.proficiencies.armor).toContain("Shield");
   });
 
   it("has martial weapons proficiency", () => {
-    const { character } = buildCharacter(ids);
+    const { character } = buildCharacter(state);
     expect(character.static.proficiencies.weapons).toContain("Martial Weapons");
   });
 
   it("has simple weapons proficiency", () => {
-    const { character } = buildCharacter(ids);
+    const { character } = buildCharacter(state);
     expect(character.static.proficiencies.weapons).toContain("Simple Weapons");
   });
 
   it("STR save is proficient", () => {
-    const { character } = buildCharacter(ids);
+    const { character } = buildCharacter(state);
     const strSave = character.static.savingThrows.find((s) => s.ability === "strength");
     expect(strSave?.proficient).toBe(true);
   });
 
   it("CON save is proficient", () => {
-    const { character } = buildCharacter(ids);
+    const { character } = buildCharacter(state);
     const conSave = character.static.savingThrows.find((s) => s.ability === "constitution");
     expect(conSave?.proficient).toBe(true);
   });
 
   it("DEX save is NOT proficient", () => {
-    const { character } = buildCharacter(ids);
+    const { character } = buildCharacter(state);
     const dexSave = character.static.savingThrows.find((s) => s.ability === "dexterity");
     expect(dexSave?.proficient).toBe(false);
   });
 });
 
 describe("Wizard proficiencies", () => {
-  const ids = makeIdentifiers({
-    classes: [{ name: "Wizard", level: 1 }],
-    saveProficiencies: ["intelligence", "wisdom"],
+  const state = makeBuilderState({
+    classes: [{ name: "Wizard", level: 1, subclass: null, skills: [], choices: {} }],
   });
 
   it("has no armor proficiencies", () => {
-    const { character } = buildCharacter(ids);
+    const { character } = buildCharacter(state);
     expect(character.static.proficiencies.armor).toHaveLength(0);
   });
 
   it("has Simple Weapons proficiency", () => {
-    const { character } = buildCharacter(ids);
+    const { character } = buildCharacter(state);
     expect(character.static.proficiencies.weapons).toContain("Simple Weapons");
   });
 
   it("does NOT have Martial Weapons proficiency", () => {
-    const { character } = buildCharacter(ids);
+    const { character } = buildCharacter(state);
     expect(character.static.proficiencies.weapons).not.toContain("Martial Weapons");
   });
 
   it("INT save is proficient", () => {
-    const { character } = buildCharacter(ids);
+    const { character } = buildCharacter(state);
     const intSave = character.static.savingThrows.find((s) => s.ability === "intelligence");
     expect(intSave?.proficient).toBe(true);
   });
 
   it("WIS save is proficient", () => {
-    const { character } = buildCharacter(ids);
+    const { character } = buildCharacter(state);
     const wisSave = character.static.savingThrows.find((s) => s.ability === "wisdom");
     expect(wisSave?.proficient).toBe(true);
   });
 });
 
-describe("Skill proficiencies from identifiers", () => {
-  it("listed skills are marked proficient", () => {
-    const ids = makeIdentifiers({
-      skillProficiencies: ["athletics", "perception", "stealth"],
+describe("Skill proficiencies from BuilderState", () => {
+  it("listed class skills are marked proficient", () => {
+    const state = makeBuilderState({
+      classes: [
+        {
+          name: "Fighter",
+          level: 1,
+          subclass: null,
+          skills: ["athletics", "perception", "stealth"],
+          choices: {},
+        },
+      ],
     });
-    const { character } = buildCharacter(ids);
+    const { character } = buildCharacter(state);
     const athletics = character.static.skills.find((s) => s.name === "athletics");
     const perception = character.static.skills.find((s) => s.name === "perception");
     const stealth = character.static.skills.find((s) => s.name === "stealth");
@@ -458,21 +401,12 @@ describe("Skill proficiencies from identifiers", () => {
   });
 
   it("unlisted skills are NOT proficient", () => {
-    const ids = makeIdentifiers({ skillProficiencies: ["athletics"] });
-    const { character } = buildCharacter(ids);
+    const state = makeBuilderState({
+      classes: [{ name: "Fighter", level: 1, subclass: null, skills: ["athletics"], choices: {} }],
+    });
+    const { character } = buildCharacter(state);
     const arcana = character.static.skills.find((s) => s.name === "arcana");
     expect(arcana?.proficient).toBe(false);
-  });
-
-  it("explicit proficiency overrides are used when provided", () => {
-    const ids = makeIdentifiers({
-      armorProficiencies: ["Light Armor"],
-      weaponProficiencies: ["Simple Weapons", "Hand Crossbows"],
-    });
-    const { character } = buildCharacter(ids);
-    // Explicit overrides bypass DB computation
-    expect(character.static.proficiencies.armor).toEqual(["Light Armor"]);
-    expect(character.static.proficiencies.weapons).toContain("Hand Crossbows");
   });
 });
 
@@ -481,9 +415,9 @@ describe("Skill proficiencies from identifiers", () => {
 // ---------------------------------------------------------------------------
 
 describe("Wizard spell integration", () => {
-  const wizardIds = makeIdentifiers({
-    classes: [{ name: "Wizard", level: 3 }],
-    abilities: {
+  const wizardState = makeBuilderState({
+    classes: [{ name: "Wizard", level: 3, subclass: null, skills: [], choices: {} }],
+    baseAbilities: {
       strength: 8,
       dexterity: 14,
       constitution: 12,
@@ -491,98 +425,85 @@ describe("Wizard spell integration", () => {
       wisdom: 12,
       charisma: 10,
     },
-    maxHP: 16,
-    saveProficiencies: ["intelligence", "wisdom"],
-    spells: [
-      {
-        name: "Fire Bolt",
-        level: 0,
-        prepared: true,
-        alwaysPrepared: false,
-        spellSource: "class",
-        knownByClass: true,
-      },
-      {
-        name: "Magic Missile",
-        level: 1,
-        prepared: true,
-        alwaysPrepared: false,
-        spellSource: "class",
-        knownByClass: true,
-      },
-      {
-        name: "Misty Step",
-        level: 2,
-        prepared: false,
-        alwaysPrepared: false,
-        spellSource: "class",
-        knownByClass: true,
-      },
-    ],
+    cantrips: { Wizard: ["Fire Bolt"] },
+    preparedSpells: {
+      Wizard: ["Magic Missile", "Misty Step"],
+    },
   });
 
   it("spells are present in output", () => {
-    const { character } = buildCharacter(wizardIds);
+    const { character } = buildCharacter(wizardState);
+    // Fire Bolt (cantrip) + Magic Missile + Misty Step = 3 spells
     expect(character.static.spells).toHaveLength(3);
   });
 
   it("cantrip has level 0", () => {
-    const { character } = buildCharacter(wizardIds);
+    const { character } = buildCharacter(wizardState);
     const fireBolt = character.static.spells.find((s) => s.name === "Fire Bolt");
     expect(fireBolt).toBeDefined();
     expect(fireBolt?.level).toBe(0);
   });
 
   it("cantrip has alwaysPrepared: false", () => {
-    const { character } = buildCharacter(wizardIds);
+    const { character } = buildCharacter(wizardState);
     const fireBolt = character.static.spells.find((s) => s.name === "Fire Bolt");
     expect(fireBolt?.alwaysPrepared).toBe(false);
   });
 
   it("spells are enriched with school from DB", () => {
-    const { character } = buildCharacter(wizardIds);
+    const { character } = buildCharacter(wizardState);
     const fireBolt = character.static.spells.find((s) => s.name === "Fire Bolt");
     // Fire Bolt should have school enriched from the DB
     expect(fireBolt?.school).toBeTruthy();
   });
 
   it("spells are enriched with castingTime from DB", () => {
-    const { character } = buildCharacter(wizardIds);
+    const { character } = buildCharacter(wizardState);
     const magicMissile = character.static.spells.find((s) => s.name === "Magic Missile");
     expect(magicMissile?.castingTime).toBeTruthy();
   });
 
   it("spells are enriched with range from DB", () => {
-    const { character } = buildCharacter(wizardIds);
+    const { character } = buildCharacter(wizardState);
     const magicMissile = character.static.spells.find((s) => s.name === "Magic Missile");
     expect(magicMissile?.range).toBeTruthy();
   });
 
-  it("prepared flag is preserved from identifiers", () => {
-    const { character } = buildCharacter(wizardIds);
-    const mistyStep = character.static.spells.find((s) => s.name === "Misty Step");
-    expect(mistyStep?.prepared).toBe(false);
+  it("prepared flag is true for spells in preparedSpells", () => {
+    const { character } = buildCharacter(wizardState);
     const magicMissile = character.static.spells.find((s) => s.name === "Magic Missile");
     expect(magicMissile?.prepared).toBe(true);
+  });
+
+  it("cantrips are always prepared", () => {
+    const { character } = buildCharacter(wizardState);
+    const fireBolt = character.static.spells.find((s) => s.name === "Fire Bolt");
+    expect(fireBolt?.prepared).toBe(true);
+  });
+
+  it("all assembleSpells output spells have prepared=true (builder always prepares selected spells)", () => {
+    const { character } = buildCharacter(wizardState);
+    for (const spell of character.static.spells) {
+      // All spells added via cantrips/preparedSpells are prepared by the builder
+      expect(spell.prepared).toBe(true);
+    }
   });
 });
 
 describe("Non-caster has empty spell list", () => {
   it("Fighter with no spells has empty spells array", () => {
-    const ids = makeIdentifiers({
-      classes: [{ name: "Fighter", level: 5 }],
-      spells: [],
+    const state = makeBuilderState({
+      classes: [{ name: "Fighter", level: 5, subclass: null, skills: [], choices: {} }],
     });
-    const { character } = buildCharacter(ids);
+    const { character } = buildCharacter(state);
     expect(character.static.spells).toHaveLength(0);
   });
 
   it("Fighter has no spell slots", () => {
-    const ids = makeIdentifiers({
-      classes: [{ name: "Fighter", level: 5 }],
-      spells: [],
+    const state = makeBuilderState({
+      classes: [{ name: "Fighter", level: 5, subclass: null, skills: [], choices: {} }],
     });
-    const { character } = buildCharacter(ids);
+    const { character } = buildCharacter(state);
     expect(character.dynamic.spellSlotsUsed).toHaveLength(0);
   });
 });
@@ -593,11 +514,10 @@ describe("Non-caster has empty spell list", () => {
 
 describe("Barbarian class resources", () => {
   it("Barbarian level 1 has 2 Rage uses", () => {
-    const ids = makeIdentifiers({
-      classes: [{ name: "Barbarian", level: 1 }],
-      saveProficiencies: ["strength", "constitution"],
+    const state = makeBuilderState({
+      classes: [{ name: "Barbarian", level: 1, subclass: null, skills: [], choices: {} }],
     });
-    const { character } = buildCharacter(ids);
+    const { character } = buildCharacter(state);
     const rage = character.static.classResources?.find((r) => r.name === "Rage");
     expect(rage).toBeDefined();
     expect(rage?.maxUses).toBe(2);
@@ -606,23 +526,19 @@ describe("Barbarian class resources", () => {
   });
 
   it("Barbarian level 3 has 3 Rage uses", () => {
-    const ids = makeIdentifiers({
-      classes: [{ name: "Barbarian", level: 3 }],
-      maxHP: 30,
-      saveProficiencies: ["strength", "constitution"],
+    const state = makeBuilderState({
+      classes: [{ name: "Barbarian", level: 3, subclass: null, skills: [], choices: {} }],
     });
-    const { character } = buildCharacter(ids);
+    const { character } = buildCharacter(state);
     const rage = character.static.classResources?.find((r) => r.name === "Rage");
     expect(rage?.maxUses).toBe(3);
   });
 
   it("Barbarian level 6 has 4 Rage uses", () => {
-    const ids = makeIdentifiers({
-      classes: [{ name: "Barbarian", level: 6 }],
-      maxHP: 60,
-      saveProficiencies: ["strength", "constitution"],
+    const state = makeBuilderState({
+      classes: [{ name: "Barbarian", level: 6, subclass: null, skills: [], choices: {} }],
     });
-    const { character } = buildCharacter(ids);
+    const { character } = buildCharacter(state);
     const rage = character.static.classResources?.find((r) => r.name === "Rage");
     expect(rage?.maxUses).toBe(4);
   });
@@ -630,8 +546,10 @@ describe("Barbarian class resources", () => {
 
 describe("Fighter class resources", () => {
   it("Fighter level 1 has Second Wind (2 uses, short rest) per 2024 rules", () => {
-    const ids = makeIdentifiers({ classes: [{ name: "Fighter", level: 1 }] });
-    const { character } = buildCharacter(ids);
+    const state = makeBuilderState({
+      classes: [{ name: "Fighter", level: 1, subclass: null, skills: [], choices: {} }],
+    });
+    const { character } = buildCharacter(state);
     const sw = character.static.classResources?.find((r) => r.name === "Second Wind");
     expect(sw).toBeDefined();
     expect(sw?.maxUses).toBe(2);
@@ -640,11 +558,10 @@ describe("Fighter class resources", () => {
   });
 
   it("Fighter level 2 gains Action Surge (1 use, short rest)", () => {
-    const ids = makeIdentifiers({
-      classes: [{ name: "Fighter", level: 2 }],
-      maxHP: 20,
+    const state = makeBuilderState({
+      classes: [{ name: "Fighter", level: 2, subclass: null, skills: [], choices: {} }],
     });
-    const { character } = buildCharacter(ids);
+    const { character } = buildCharacter(state);
     const surge = character.static.classResources?.find((r) => r.name === "Action Surge");
     expect(surge).toBeDefined();
     expect(surge?.maxUses).toBe(1);
@@ -653,18 +570,19 @@ describe("Fighter class resources", () => {
   });
 
   it("Fighter level 1 does NOT have Action Surge", () => {
-    const ids = makeIdentifiers({ classes: [{ name: "Fighter", level: 1 }] });
-    const { character } = buildCharacter(ids);
+    const state = makeBuilderState({
+      classes: [{ name: "Fighter", level: 1, subclass: null, skills: [], choices: {} }],
+    });
+    const { character } = buildCharacter(state);
     const surge = character.static.classResources?.find((r) => r.name === "Action Surge");
     expect(surge).toBeUndefined();
   });
 
   it("Fighter level 9 gains Indomitable (1 use, long rest)", () => {
-    const ids = makeIdentifiers({
-      classes: [{ name: "Fighter", level: 9 }],
-      maxHP: 90,
+    const state = makeBuilderState({
+      classes: [{ name: "Fighter", level: 9, subclass: null, skills: [], choices: {} }],
     });
-    const { character } = buildCharacter(ids);
+    const { character } = buildCharacter(state);
     const indom = character.static.classResources?.find((r) => r.name === "Indomitable");
     expect(indom).toBeDefined();
     expect(indom?.longRest).toBe("all");
@@ -674,48 +592,39 @@ describe("Fighter class resources", () => {
 
 describe("Monk Focus Points", () => {
   it("Monk level 2 has 2 Focus Points (equal to level)", () => {
-    const ids = makeIdentifiers({
-      classes: [{ name: "Monk", level: 2 }],
-      maxHP: 16,
-      saveProficiencies: ["strength", "dexterity"],
+    const state = makeBuilderState({
+      classes: [{ name: "Monk", level: 2, subclass: null, skills: [], choices: {} }],
     });
-    const { character } = buildCharacter(ids);
+    const { character } = buildCharacter(state);
     const fp = character.static.classResources?.find((r) => r.name === "Focus Points");
     expect(fp).toBeDefined();
     expect(fp?.maxUses).toBe(2);
   });
 
   it("Monk level 5 has 5 Focus Points", () => {
-    const ids = makeIdentifiers({
-      classes: [{ name: "Monk", level: 5 }],
-      maxHP: 40,
-      saveProficiencies: ["strength", "dexterity"],
+    const state = makeBuilderState({
+      classes: [{ name: "Monk", level: 5, subclass: null, skills: [], choices: {} }],
     });
-    const { character } = buildCharacter(ids);
+    const { character } = buildCharacter(state);
     const fp = character.static.classResources?.find((r) => r.name === "Focus Points");
     expect(fp?.maxUses).toBe(5);
   });
 
   it("Monk level 1 does NOT have Focus Points (available at level 2)", () => {
-    const ids = makeIdentifiers({
-      classes: [{ name: "Monk", level: 1 }],
-      saveProficiencies: ["strength", "dexterity"],
+    const state = makeBuilderState({
+      classes: [{ name: "Monk", level: 1, subclass: null, skills: [], choices: {} }],
     });
-    const { character } = buildCharacter(ids);
+    const { character } = buildCharacter(state);
     const fp = character.static.classResources?.find((r) => r.name === "Focus Points");
     expect(fp).toBeUndefined();
   });
 });
 
 describe("Bard Bardic Inspiration — ability-mod-based uses", () => {
-  // BUG: CLASS_RESOURCES template uses short-form "cha" as abilityMod key but AbilityScores
-  // uses "charisma". resolveResourceUses looks up abilities["cha"] which is undefined,
-  // falls back to score 10 (mod 0), then clamps to minimum 1. This means CHA is ignored.
-  // Correct D&D behaviour: uses = max(1, CHA mod). Tracking: source bug in character-builder.ts
   it("Bard Bardic Inspiration resource is defined", () => {
-    const ids = makeIdentifiers({
-      classes: [{ name: "Bard", level: 1 }],
-      abilities: {
+    const state = makeBuilderState({
+      classes: [{ name: "Bard", level: 1, subclass: null, skills: [], choices: {} }],
+      baseAbilities: {
         strength: 10,
         dexterity: 14,
         constitution: 12,
@@ -723,10 +632,8 @@ describe("Bard Bardic Inspiration — ability-mod-based uses", () => {
         wisdom: 12,
         charisma: 16,
       },
-      maxHP: 9,
-      saveProficiencies: ["dexterity", "charisma"],
     });
-    const { character } = buildCharacter(ids);
+    const { character } = buildCharacter(state);
     const bi = character.static.classResources?.find((r) => r.name === "Bardic Inspiration");
     expect(bi).toBeDefined();
     expect(bi?.longRest).toBe("all");
@@ -734,9 +641,9 @@ describe("Bard Bardic Inspiration — ability-mod-based uses", () => {
   });
 
   it("Bard with CHA 8 (-1) still gets minimum 1 Bardic Inspiration use", () => {
-    const ids = makeIdentifiers({
-      classes: [{ name: "Bard", level: 1 }],
-      abilities: {
+    const state = makeBuilderState({
+      classes: [{ name: "Bard", level: 1, subclass: null, skills: [], choices: {} }],
+      baseAbilities: {
         strength: 10,
         dexterity: 14,
         constitution: 12,
@@ -744,10 +651,8 @@ describe("Bard Bardic Inspiration — ability-mod-based uses", () => {
         wisdom: 12,
         charisma: 8, // mod -1
       },
-      maxHP: 9,
-      saveProficiencies: ["dexterity", "charisma"],
     });
-    const { character } = buildCharacter(ids);
+    const { character } = buildCharacter(state);
     const bi = character.static.classResources?.find((r) => r.name === "Bardic Inspiration");
     expect(bi?.maxUses).toBeGreaterThanOrEqual(1);
   });
@@ -758,10 +663,48 @@ describe("Bard Bardic Inspiration — ability-mod-based uses", () => {
 // ---------------------------------------------------------------------------
 
 describe("HP computation", () => {
-  it("level 1 Fighter: HP is maxHP from identifiers, currentHP matches", () => {
-    const ids = makeIdentifiers({
-      classes: [{ name: "Fighter", level: 1 }],
-      abilities: {
+  it("level 1 Fighter: HP is computed as maxHP from HD + CON, currentHP matches", () => {
+    const state = makeBuilderState({
+      classes: [{ name: "Fighter", level: 1, subclass: null, skills: [], choices: {} }],
+      baseAbilities: {
+        strength: 16,
+        dexterity: 14,
+        constitution: 14, // mod +2
+        intelligence: 10,
+        wisdom: 12,
+        charisma: 8,
+      },
+    });
+    const { character } = buildCharacter(state);
+    // Fighter d10 level 1: 10 + 2 (CON) = 12
+    expect(character.static.maxHP).toBe(12);
+    expect(character.dynamic.currentHP).toBe(12);
+  });
+
+  it("maxHP is never below 1, even with extreme negative CON", () => {
+    const state = makeBuilderState({
+      classes: [{ name: "Sorcerer", level: 1, subclass: null, skills: [], choices: {} }],
+      baseAbilities: {
+        strength: 8,
+        dexterity: 8,
+        constitution: 1, // mod -5 — extreme edge case
+        intelligence: 8,
+        wisdom: 8,
+        charisma: 8,
+      },
+    });
+    const { character } = buildCharacter(state);
+    // Builder guarantees maxHP >= 1
+    expect(character.static.maxHP).toBeGreaterThanOrEqual(1);
+  });
+
+  it("Tough feat adds 2 HP per level to maxHP", () => {
+    const level = 5;
+    // Fighter 5, CON 14: base HP = 10+2 + 4*(6+2) = 12+32 = 44
+    const state = makeBuilderState({
+      classes: [{ name: "Fighter", level, subclass: null, skills: [], choices: {} }],
+      featSelections: [{ level: 4, type: "feat", featName: "Tough" }],
+      baseAbilities: {
         strength: 16,
         dexterity: 14,
         constitution: 14,
@@ -769,45 +712,30 @@ describe("HP computation", () => {
         wisdom: 12,
         charisma: 8,
       },
-      maxHP: 12, // 10 + 2 CON mod
     });
-    const { character } = buildCharacter(ids);
-    expect(character.static.maxHP).toBe(12);
-    expect(character.dynamic.currentHP).toBe(12);
-  });
-
-  it("maxHP is never below 1, even when identifiers provide 0", () => {
-    const ids = makeIdentifiers({ maxHP: 0 });
-    const { character } = buildCharacter(ids);
-    expect(character.static.maxHP).toBeGreaterThanOrEqual(1);
-  });
-
-  it("Tough feat adds 2 HP per level to maxHP", () => {
-    const level = 5;
-    const baseHP = 44;
-    const ids = makeIdentifiers({
-      classes: [{ name: "Fighter", level }],
-      maxHP: baseHP,
-      additionalFeatures: [
-        { name: "Tough", description: "Tough feat", source: "feat", sourceLabel: "Tough" },
-      ],
-    });
-    const { character } = buildCharacter(ids);
-    // Tough adds 2 * totalLevel = 10
-    expect(character.static.maxHP).toBe(baseHP + 2 * level);
+    const { character } = buildCharacter(state);
+    // Tough adds 2 * totalLevel = 10; base = 44; total = 54
+    expect(character.static.maxHP).toBe(44 + 2 * level);
   });
 
   it("Dwarf species adds 1 HP per level via Dwarven Toughness", () => {
     const level = 3;
-    const baseHP = 24;
-    const ids = makeIdentifiers({
-      race: "Dwarf",
-      classes: [{ name: "Fighter", level }],
-      maxHP: baseHP,
+    // Fighter 3, CON 14, Dwarf: base HP = 10+2 + 2*(6+2) = 12+16 = 28; +3 Dwarven Toughness = 31
+    const state = makeBuilderState({
+      species: "Dwarf",
+      classes: [{ name: "Fighter", level, subclass: null, skills: [], choices: {} }],
+      baseAbilities: {
+        strength: 16,
+        dexterity: 14,
+        constitution: 14,
+        intelligence: 10,
+        wisdom: 12,
+        charisma: 8,
+      },
     });
-    const { character } = buildCharacter(ids);
-    // Dwarven Toughness adds totalLevel HP
-    expect(character.static.maxHP).toBe(baseHP + level);
+    const { character } = buildCharacter(state);
+    // Base HP (no toughness) = 28; +3 Dwarven Toughness = 31
+    expect(character.static.maxHP).toBe(28 + level);
   });
 });
 
@@ -815,13 +743,13 @@ describe("HP computation", () => {
 // 7. Edge cases
 // ---------------------------------------------------------------------------
 
-describe("Minimal identifiers — level 1 no subclass", () => {
+describe("Minimal state — level 1 no subclass", () => {
   it("minimal Fighter builds successfully", () => {
-    const ids = makeIdentifiers({
+    const state = makeBuilderState({
       name: "Minimal",
-      race: "Human",
-      classes: [{ name: "Fighter", level: 1 }],
-      abilities: {
+      species: "Human",
+      classes: [{ name: "Fighter", level: 1, subclass: null, skills: [], choices: {} }],
+      baseAbilities: {
         strength: 15,
         dexterity: 14,
         constitution: 13,
@@ -829,44 +757,48 @@ describe("Minimal identifiers — level 1 no subclass", () => {
         wisdom: 10,
         charisma: 8,
       },
-      maxHP: 11,
-      skillProficiencies: [],
-      skillExpertise: [],
-      saveProficiencies: ["strength", "constitution"],
-      spells: [],
-      equipment: [],
-      languages: ["Common"],
     });
-    const { character, warnings } = buildCharacter(ids);
+    const { character, warnings } = buildCharacter(state);
     expect(character).toBeDefined();
     expect(character.static.name).toBe("Minimal");
     expect(warnings).toBeInstanceOf(Array);
   });
 
   it("character name is preserved", () => {
-    const ids = makeIdentifiers({ name: "Aldric Stonehaven" });
-    const { character } = buildCharacter(ids);
+    const state = makeBuilderState({ name: "Aldric Stonehaven" });
+    const { character } = buildCharacter(state);
     expect(character.static.name).toBe("Aldric Stonehaven");
   });
 
   it("race is preserved in both species and race fields", () => {
-    const ids = makeIdentifiers({ race: "Elf" });
-    const { character } = buildCharacter(ids);
+    const state = makeBuilderState({ species: "Elf" });
+    const { character } = buildCharacter(state);
     expect(character.static.race).toBe("Elf");
     expect(character.static.species).toBe("Elf");
   });
 
-  it("languages are preserved", () => {
-    const ids = makeIdentifiers({ languages: ["Common", "Elvish", "Dwarvish"] });
-    const { character } = buildCharacter(ids);
+  it("languages include Common by default", () => {
+    const state = makeBuilderState({ species: "Human" });
+    const { character } = buildCharacter(state);
+    expect(character.static.languages).toContain("Common");
+  });
+
+  it("extra languages from speciesChoices are included", () => {
+    const state = makeBuilderState({
+      species: "Human",
+      speciesChoices: {
+        language_extra: ["Elvish", "Dwarvish"],
+      },
+    });
+    const { character } = buildCharacter(state);
     expect(character.static.languages).toContain("Common");
     expect(character.static.languages).toContain("Elvish");
     expect(character.static.languages).toContain("Dwarvish");
   });
 
   it("output has all required static fields", () => {
-    const ids = makeIdentifiers();
-    const { character } = buildCharacter(ids);
+    const state = makeBuilderState();
+    const { character } = buildCharacter(state);
     const s = character.static;
     expect(s.name).toBeDefined();
     expect(s.maxHP).toBeDefined();
@@ -883,8 +815,8 @@ describe("Minimal identifiers — level 1 no subclass", () => {
   });
 
   it("output has all required dynamic fields", () => {
-    const ids = makeIdentifiers();
-    const { character } = buildCharacter(ids);
+    const state = makeBuilderState();
+    const { character } = buildCharacter(state);
     const d = character.dynamic;
     expect(d.currentHP).toBeDefined();
     expect(d.tempHP).toBeDefined();
@@ -896,42 +828,42 @@ describe("Minimal identifiers — level 1 no subclass", () => {
   });
 
   it("default currency is all zeros when not provided", () => {
-    const ids = makeIdentifiers();
-    const { character } = buildCharacter(ids);
+    const state = makeBuilderState({ currency: { cp: 0, sp: 0, gp: 0, pp: 0 } });
+    const { character } = buildCharacter(state);
     expect(character.dynamic.currency).toEqual({ cp: 0, sp: 0, gp: 0, pp: 0 });
   });
 
   it("provided currency is preserved", () => {
-    const ids = makeIdentifiers({ currency: { cp: 5, sp: 10, gp: 50, pp: 2 } });
-    const { character } = buildCharacter(ids);
+    const state = makeBuilderState({ currency: { cp: 5, sp: 10, gp: 50, pp: 2 } });
+    const { character } = buildCharacter(state);
     expect(character.dynamic.currency).toEqual({ cp: 5, sp: 10, gp: 50, pp: 2 });
   });
 
   it("death saves start at 0 successes and 0 failures", () => {
-    const ids = makeIdentifiers();
-    const { character } = buildCharacter(ids);
+    const state = makeBuilderState();
+    const { character } = buildCharacter(state);
     expect(character.dynamic.deathSaves.successes).toBe(0);
     expect(character.dynamic.deathSaves.failures).toBe(0);
   });
 
   it("heroic inspiration defaults to false", () => {
-    const ids = makeIdentifiers();
-    const { character } = buildCharacter(ids);
+    const state = makeBuilderState();
+    const { character } = buildCharacter(state);
     expect(character.dynamic.heroicInspiration).toBe(false);
   });
 });
 
 describe("Skills array is always complete", () => {
   it("skills array is non-empty and covers all expected skills", () => {
-    const ids = makeIdentifiers();
-    const { character } = buildCharacter(ids);
+    const state = makeBuilderState();
+    const { character } = buildCharacter(state);
     // 5e has 18 skills
     expect(character.static.skills.length).toBeGreaterThanOrEqual(18);
   });
 
   it("every skill has a governing ability", () => {
-    const ids = makeIdentifiers();
-    const { character } = buildCharacter(ids);
+    const state = makeBuilderState();
+    const { character } = buildCharacter(state);
     const abilities: (keyof AbilityScores)[] = [
       "strength",
       "dexterity",
@@ -948,8 +880,8 @@ describe("Skills array is always complete", () => {
 
 describe("Senses computation", () => {
   it("Human has no Darkvision, includes Passive Perception", () => {
-    const ids = makeIdentifiers({ race: "Human" });
-    const { character } = buildCharacter(ids);
+    const state = makeBuilderState({ species: "Human" });
+    const { character } = buildCharacter(state);
     const senses = character.static.senses;
     const hasDarkvision = senses.some((s) => s.includes("Darkvision"));
     expect(hasDarkvision).toBe(false);
@@ -958,17 +890,17 @@ describe("Senses computation", () => {
   });
 
   it("Elf has Darkvision 60 ft.", () => {
-    const ids = makeIdentifiers({ race: "Elf" });
-    const { character } = buildCharacter(ids);
+    const state = makeBuilderState({ species: "Elf" });
+    const { character } = buildCharacter(state);
     const darkvision = character.static.senses.find((s) => s.includes("Darkvision"));
     expect(darkvision).toBeDefined();
     expect(darkvision).toContain("60");
   });
 
   it("Passive Perception is higher with Perception proficiency", () => {
-    const withPerc = makeIdentifiers({
-      race: "Human",
-      abilities: {
+    const withPerc = makeBuilderState({
+      species: "Human",
+      baseAbilities: {
         strength: 10,
         dexterity: 10,
         constitution: 10,
@@ -976,11 +908,11 @@ describe("Senses computation", () => {
         wisdom: 12, // mod +1
         charisma: 10,
       },
-      skillProficiencies: ["perception"],
+      classes: [{ name: "Fighter", level: 1, subclass: null, skills: ["perception"], choices: {} }],
     });
-    const withoutPerc = makeIdentifiers({
-      race: "Human",
-      abilities: {
+    const withoutPerc = makeBuilderState({
+      species: "Human",
+      baseAbilities: {
         strength: 10,
         dexterity: 10,
         constitution: 10,
@@ -988,7 +920,7 @@ describe("Senses computation", () => {
         wisdom: 12, // mod +1
         charisma: 10,
       },
-      skillProficiencies: [],
+      classes: [{ name: "Fighter", level: 1, subclass: null, skills: [], choices: {} }],
     });
 
     const { character: charWith } = buildCharacter(withPerc);
@@ -1003,25 +935,13 @@ describe("Senses computation", () => {
 
     expect(numWith).toBeGreaterThan(numWithout);
   });
-
-  it("custom senses override DB computation when provided", () => {
-    const ids = makeIdentifiers({
-      senses: ["Darkvision 120 ft.", "Tremorsense 30 ft.", "Passive Perception 18"],
-    });
-    const { character } = buildCharacter(ids);
-    expect(character.static.senses).toEqual([
-      "Darkvision 120 ft.",
-      "Tremorsense 30 ft.",
-      "Passive Perception 18",
-    ]);
-  });
 });
 
 describe("AC computation", () => {
   it("unarmored AC = 10 + DEX mod", () => {
-    const ids = makeIdentifiers({
-      classes: [{ name: "Fighter", level: 1 }],
-      abilities: {
+    const state = makeBuilderState({
+      classes: [{ name: "Fighter", level: 1, subclass: null, skills: [], choices: {} }],
+      baseAbilities: {
         strength: 16,
         dexterity: 14, // mod +2
         constitution: 14,
@@ -1031,14 +951,14 @@ describe("AC computation", () => {
       },
       equipment: [], // no armor
     });
-    const { character } = buildCharacter(ids);
+    const { character } = buildCharacter(state);
     expect(character.static.armorClass).toBe(12); // 10 + 2
   });
 
   it("Barbarian Unarmored Defense = 10 + DEX mod + CON mod", () => {
-    const ids = makeIdentifiers({
-      classes: [{ name: "Barbarian", level: 1 }],
-      abilities: {
+    const state = makeBuilderState({
+      classes: [{ name: "Barbarian", level: 1, subclass: null, skills: [], choices: {} }],
+      baseAbilities: {
         strength: 16,
         dexterity: 14, // mod +2
         constitution: 16, // mod +3
@@ -1047,41 +967,38 @@ describe("AC computation", () => {
         charisma: 8,
       },
       equipment: [], // no armor
-      saveProficiencies: ["strength", "constitution"],
     });
-    const { character } = buildCharacter(ids);
+    const { character } = buildCharacter(state);
     // 10 + 2 (DEX) + 3 (CON) = 15
     expect(character.static.armorClass).toBe(15);
   });
 
-  it("armorClass override is used when provided", () => {
-    const ids = makeIdentifiers({ armorClass: 18 });
-    const { character } = buildCharacter(ids);
+  it("chain mail + shield gives AC 18", () => {
+    const state = makeBuilderState({
+      classes: [{ name: "Fighter", level: 1, subclass: null, skills: [], choices: {} }],
+      equipment: [
+        { name: "Chain Mail", equipped: true, quantity: 1, type: "Armor", armorClass: 16 },
+        { name: "Shield", equipped: true, quantity: 1, type: "Shield", armorClass: 2 },
+      ],
+    });
+    const { character } = buildCharacter(state);
     expect(character.static.armorClass).toBe(18);
   });
 });
 
 describe("Speed computation", () => {
   it("Human base speed is 30", () => {
-    const ids = makeIdentifiers({ race: "Human" });
-    const { character } = buildCharacter(ids);
+    const state = makeBuilderState({ species: "Human" });
+    const { character } = buildCharacter(state);
     expect(character.static.speed.walk).toBe(30);
   });
 
-  it("speed override is used when provided", () => {
-    const ids = makeIdentifiers({ speed: 40 });
-    const { character } = buildCharacter(ids);
-    expect(character.static.speed.walk).toBe(40);
-  });
-
   it("Barbarian level 5 gets +10 Fast Movement bonus", () => {
-    const ids = makeIdentifiers({
-      race: "Human",
-      classes: [{ name: "Barbarian", level: 5 }],
-      maxHP: 50,
-      saveProficiencies: ["strength", "constitution"],
+    const state = makeBuilderState({
+      species: "Human",
+      classes: [{ name: "Barbarian", level: 5, subclass: null, skills: [], choices: {} }],
     });
-    const { character } = buildCharacter(ids);
+    const { character } = buildCharacter(state);
     // 30 (Human) + 10 (Fast Movement) = 40
     expect(character.static.speed.walk).toBe(40);
   });
@@ -1089,15 +1006,15 @@ describe("Speed computation", () => {
 
 describe("Source and import metadata", () => {
   it("source is set to 'builder'", () => {
-    const ids = makeIdentifiers();
-    const { character } = buildCharacter(ids);
+    const state = makeBuilderState();
+    const { character } = buildCharacter(state);
     expect(character.static.source).toBe("builder");
   });
 
   it("importedAt is a recent timestamp", () => {
     const before = Date.now();
-    const ids = makeIdentifiers();
-    const { character } = buildCharacter(ids);
+    const state = makeBuilderState();
+    const { character } = buildCharacter(state);
     const after = Date.now();
     expect(character.static.importedAt).toBeGreaterThanOrEqual(before);
     expect(character.static.importedAt).toBeLessThanOrEqual(after);
@@ -1110,12 +1027,12 @@ describe("Source and import metadata", () => {
 
 describe("Eldritch Knight — third-caster subclass", () => {
   it("Fighter 7 Eldritch Knight has 1st and 2nd level spell slots", () => {
-    const ids = makeIdentifiers({
-      classes: [{ name: "Fighter", level: 7, subclass: "Eldritch Knight" }],
-      maxHP: 70,
-      saveProficiencies: ["strength", "constitution"],
+    const state = makeBuilderState({
+      classes: [
+        { name: "Fighter", level: 7, subclass: "Eldritch Knight", skills: [], choices: {} },
+      ],
     });
-    const { character } = buildCharacter(ids);
+    const { character } = buildCharacter(state);
     const slots = character.dynamic.spellSlotsUsed;
     expect(slots.length).toBeGreaterThan(0);
     const lvl1 = slots.find((s) => s.level === 1);
@@ -1127,12 +1044,12 @@ describe("Eldritch Knight — third-caster subclass", () => {
   });
 
   it("Eldritch Knight spellcasting ability is Intelligence", () => {
-    const ids = makeIdentifiers({
-      classes: [{ name: "Fighter", level: 7, subclass: "Eldritch Knight" }],
-      maxHP: 70,
-      saveProficiencies: ["strength", "constitution"],
+    const state = makeBuilderState({
+      classes: [
+        { name: "Fighter", level: 7, subclass: "Eldritch Knight", skills: [], choices: {} },
+      ],
     });
-    const { character } = buildCharacter(ids);
+    const { character } = buildCharacter(state);
     expect(character.static.spellcasting?.["Fighter"]?.ability).toBe("intelligence");
   });
 });
@@ -1143,9 +1060,9 @@ describe("Eldritch Knight — third-caster subclass", () => {
 
 describe("Warlock pact magic", () => {
   it("Warlock level 3 has pact magic slots, no regular slots", () => {
-    const ids = makeIdentifiers({
-      classes: [{ name: "Warlock", level: 3 }],
-      abilities: {
+    const state = makeBuilderState({
+      classes: [{ name: "Warlock", level: 3, subclass: null, skills: [], choices: {} }],
+      baseAbilities: {
         strength: 10,
         dexterity: 14,
         constitution: 12,
@@ -1153,10 +1070,8 @@ describe("Warlock pact magic", () => {
         wisdom: 12,
         charisma: 16,
       },
-      maxHP: 24,
-      saveProficiencies: ["wisdom", "charisma"],
     });
-    const { character } = buildCharacter(ids);
+    const { character } = buildCharacter(state);
     const pactSlots = character.dynamic.pactMagicSlots ?? [];
     expect(pactSlots.length).toBeGreaterThan(0);
     // Regular spell slots should be empty for a pure Warlock
@@ -1164,9 +1079,9 @@ describe("Warlock pact magic", () => {
   });
 
   it("Warlock spellcasting ability is Charisma", () => {
-    const ids = makeIdentifiers({
-      classes: [{ name: "Warlock", level: 1 }],
-      abilities: {
+    const state = makeBuilderState({
+      classes: [{ name: "Warlock", level: 1, subclass: null, skills: [], choices: {} }],
+      baseAbilities: {
         strength: 10,
         dexterity: 14,
         constitution: 12,
@@ -1174,10 +1089,8 @@ describe("Warlock pact magic", () => {
         wisdom: 12,
         charisma: 16,
       },
-      maxHP: 9,
-      saveProficiencies: ["wisdom", "charisma"],
     });
-    const { character } = buildCharacter(ids);
+    const { character } = buildCharacter(state);
     expect(character.static.spellcasting?.["Warlock"]?.ability).toBe("charisma");
   });
 });
@@ -1188,18 +1101,11 @@ describe("Warlock pact magic", () => {
 
 describe("Combat bonuses", () => {
   it("Archery fighting style grants +2 ranged attack bonus", () => {
-    const ids = makeIdentifiers({
-      classes: [{ name: "Fighter", level: 1 }],
-      additionalFeatures: [
-        {
-          name: "Archery",
-          description: "Archery fighting style",
-          source: "feat",
-          sourceLabel: "Fighter",
-        },
-      ],
+    const state = makeBuilderState({
+      classes: [{ name: "Fighter", level: 1, subclass: null, skills: [], choices: {} }],
+      featSelections: [{ level: 1, type: "feat", featName: "Archery" }],
     });
-    const { character } = buildCharacter(ids);
+    const { character } = buildCharacter(state);
     const bonuses = character.static.combatBonuses ?? [];
     const archery = bonuses.find((b) => b.source === "Archery");
     expect(archery).toBeDefined();
@@ -1209,13 +1115,11 @@ describe("Combat bonuses", () => {
   });
 
   it("Alert feat grants initiative bonus equal to proficiency bonus", () => {
-    const ids = makeIdentifiers({
-      classes: [{ name: "Fighter", level: 1 }],
-      additionalFeatures: [
-        { name: "Alert", description: "Alert feat", source: "feat", sourceLabel: "Alert" },
-      ],
+    const state = makeBuilderState({
+      classes: [{ name: "Fighter", level: 1, subclass: null, skills: [], choices: {} }],
+      featSelections: [{ level: 1, type: "feat", featName: "Alert" }],
     });
-    const { character } = buildCharacter(ids);
+    const { character } = buildCharacter(state);
     const bonuses = character.static.combatBonuses ?? [];
     const alert = bonuses.find((b) => b.source === "Alert");
     expect(alert).toBeDefined();

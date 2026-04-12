@@ -8,9 +8,6 @@
 
 import { describe, it, expect } from "vitest";
 import { buildCharacter } from "../builders/character-builder.js";
-import type { CharacterIdentifiers } from "../builders/types.js";
-import type { AbilityScores } from "../types/character.js";
-import type { BuilderState } from "../types/builder.js";
 import {
   getAC,
   getHP,
@@ -27,77 +24,30 @@ import {
   getExtraAttacks,
 } from "../character/resolve.js";
 import { getProficiencies as getCharProficiencies } from "../character/resolve.js";
+import { makeBuilderState } from "./helpers/makeBuilderState.js";
 
 // ---------------------------------------------------------------------------
 // Shared fixtures
 // ---------------------------------------------------------------------------
 
-const defaultAbilities: AbilityScores = {
-  strength: 16,
-  dexterity: 14,
-  constitution: 14,
-  intelligence: 10,
-  wisdom: 12,
-  charisma: 8,
-};
-
-function stubBuilderState(partial?: Partial<BuilderState>): BuilderState {
-  return {
-    currentStep: "details",
-    completedSteps: [],
-    species: "Human",
-    speciesChoices: {},
-    background: null,
-    backgroundChoices: {},
-    abilityScoreMode: "two-one",
-    abilityScoreAssignments: {},
-    classes: [{ name: "Fighter", level: 1, subclass: null, skills: [], choices: {} }],
-    activeClassIndex: 0,
-    abilityMethod: "manual",
-    baseAbilities: defaultAbilities,
-    featSelections: [],
-    featChoices: {},
-    cantrips: {},
-    preparedSpells: {},
-    name: "Test Character",
-    appearance: {},
-    backstory: "",
-    alignment: "",
-    traits: {},
-    equipment: [],
-    currency: { cp: 0, sp: 0, gp: 0, pp: 0 },
-    ...partial,
-  };
-}
-
-function makeIdentifiers(overrides: Partial<CharacterIdentifiers> = {}): CharacterIdentifiers {
-  return {
-    name: "Resolvia Testsworth",
-    race: "Human",
-    classes: [{ name: "Fighter", level: 5 }],
-    abilities: defaultAbilities,
-    maxHP: 44,
-    skillProficiencies: ["athletics", "perception"],
-    skillExpertise: [],
-    saveProficiencies: ["strength", "constitution"],
-    spells: [],
-    equipment: [],
-    languages: ["Common"],
-    source: "builder",
-    builderState: stubBuilderState({
-      classes: [{ name: "Fighter", level: 5, subclass: null, skills: [], choices: {} }],
-    }),
-    ...overrides,
-  };
-}
+const fighterState = makeBuilderState({
+  classes: [
+    {
+      name: "Fighter",
+      level: 5,
+      subclass: "Champion",
+      skills: ["athletics", "perception"],
+      choices: {},
+    },
+  ],
+});
 
 // ---------------------------------------------------------------------------
 // Accessor snapshot tests — each asserts accessor === raw static field
 // ---------------------------------------------------------------------------
 
 describe("resolve.ts — snapshot invariant (Phase 2 fallback reads)", () => {
-  const ids = makeIdentifiers();
-  const { character } = buildCharacter(ids);
+  const { character } = buildCharacter(fighterState);
   const s = character.static;
 
   it("getAC returns char.static.armorClass", () => {
@@ -197,10 +147,10 @@ describe("resolve.ts — snapshot invariant (Phase 2 fallback reads)", () => {
 // ---------------------------------------------------------------------------
 
 describe("getSpellcasting — Wizard 3 caster", () => {
-  const wizardIds = makeIdentifiers({
+  const wizardState = makeBuilderState({
     name: "Arcanis Testsworth",
-    classes: [{ name: "Wizard", level: 3 }],
-    abilities: {
+    classes: [{ name: "Wizard", level: 3, subclass: null, skills: [], choices: {} }],
+    baseAbilities: {
       strength: 8,
       dexterity: 14,
       constitution: 12,
@@ -208,24 +158,10 @@ describe("getSpellcasting — Wizard 3 caster", () => {
       wisdom: 12,
       charisma: 10,
     },
-    maxHP: 16,
-    saveProficiencies: ["intelligence", "wisdom"],
-    spells: [],
-    builderState: stubBuilderState({
-      classes: [{ name: "Wizard", level: 3, subclass: null, skills: [], choices: {} }],
-      baseAbilities: {
-        strength: 8,
-        dexterity: 14,
-        constitution: 12,
-        intelligence: 16,
-        wisdom: 12,
-        charisma: 10,
-      },
-    }),
   });
 
   it("getSpellcasting returns static.spellcasting.Wizard", () => {
-    const { character } = buildCharacter(wizardIds);
+    const { character } = buildCharacter(wizardState);
     const fromAccessor = getSpellcasting(character, "Wizard");
     const fromStatic = character.static.spellcasting?.["Wizard"];
     expect(fromAccessor).toEqual(fromStatic);

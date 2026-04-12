@@ -15,53 +15,15 @@
  * | Selene  | Half-Elf Cleric3/Warlock2 | Multiclass hybrid    | Mixed hit dice, pact + regular slots, dual CHA   |
  */
 
-import type { CharacterData, BuilderState } from "@unseen-servant/shared/types";
+import type { CharacterData } from "@unseen-servant/shared/types";
 import { buildCharacter } from "@unseen-servant/shared/builders";
-import type { CharacterIdentifiers } from "@unseen-servant/shared/builders";
-
-/** Minimal BuilderState stub for test fixtures. */
-function stubBuilderState(ids: CharacterIdentifiers): BuilderState {
-  return {
-    currentStep: "details",
-    completedSteps: [
-      "species",
-      "background",
-      "class",
-      "abilities",
-      "feats",
-      "spells",
-      "equipment",
-      "details",
-    ],
-    species: ids.race,
-    speciesChoices: {},
-    background: ids.background ?? null,
-    backgroundChoices: {},
-    abilityScoreMode: "two-one",
-    abilityScoreAssignments: {},
-    classes: ids.classes.map((c) => ({
-      name: c.name,
-      level: c.level,
-      subclass: c.subclass ?? null,
-      skills: [],
-      choices: {},
-    })),
-    activeClassIndex: 0,
-    abilityMethod: "manual",
-    baseAbilities: ids.abilities,
-    featSelections: [],
-    featChoices: {},
-    cantrips: {},
-    preparedSpells: {},
-    name: ids.name,
-    appearance: {},
-    backstory: ids.backstory ?? "",
-    alignment: "",
-    traits: ids.traits ?? {},
-    equipment: ids.equipment,
-    currency: ids.currency ?? { cp: 0, sp: 0, gp: 0, pp: 0 },
-  };
-}
+import {
+  makeFighterBuilderState,
+  makeClericBuilderState,
+  makeWarlockBuilderState,
+  makeBarbarianBuilderState,
+  makeMulticlassBuilderState,
+} from "@unseen-servant/shared/test-helpers";
 
 // ---------------------------------------------------------------------------
 // Theron — Level 5 Human Fighter / Champion
@@ -73,60 +35,10 @@ function stubBuilderState(ids: CharacterIdentifiers): BuilderState {
  *
  * Stats: STR 16, DEX 14, CON 14, INT 10, WIS 12, CHA 8
  * Expected: maxHP=44 (10+4×6+5×2 CON), AC=18 (chain mail 16 + shield 2),
- *           proficiency +3, Second Wind ×3 + Action Surge ×1 (short rest resources)
+ *           proficiency +3, Second Wind ×2 + Action Surge ×1 (short rest resources)
  */
 export function createFighterCharacter(): CharacterData {
-  const ids: CharacterIdentifiers = {
-    name: "Theron",
-    race: "Human",
-    classes: [{ name: "Fighter", level: 5, subclass: "Champion" }],
-    abilities: {
-      strength: 16,
-      dexterity: 14,
-      constitution: 14,
-      intelligence: 10,
-      wisdom: 12,
-      charisma: 8,
-    },
-    maxHP: 44,
-    skillProficiencies: ["athletics", "perception"],
-    skillExpertise: [],
-    saveProficiencies: ["strength", "constitution"],
-    spells: [],
-    equipment: [
-      {
-        name: "Longsword",
-        equipped: true,
-        quantity: 1,
-        type: "Weapon",
-        damage: "1d8",
-        damageType: "slashing",
-        properties: ["Versatile"],
-      },
-      {
-        name: "Shield",
-        equipped: true,
-        quantity: 1,
-        type: "Shield",
-        armorClass: 2,
-      },
-      {
-        name: "Chain Mail",
-        equipped: true,
-        quantity: 1,
-        type: "Armor",
-        armorClass: 16,
-      },
-    ],
-    languages: ["Common"],
-    currency: { cp: 0, sp: 0, gp: 50, pp: 0 },
-    traits: { personalityTraits: "Brave and loyal" },
-    source: "builder",
-    builderState: undefined!,
-  };
-  ids.builderState = stubBuilderState(ids);
-
-  const { character } = buildCharacter(ids);
+  const { character } = buildCharacter(makeFighterBuilderState());
   return character;
 }
 
@@ -139,107 +51,12 @@ export function createFighterCharacter(): CharacterData {
  * Covers: spell slots, concentration, rest recovery, class resources.
  *
  * Stats: STR 14, DEX 10, CON 16, INT 12, WIS 18, CHA 8
- * Expected: maxHP=53 (8+4×5+5×3 CON=48, +5 Dwarven Toughness), AC=18 (chain mail + shield),
+ * Expected: maxHP=48+5 Dwarven Toughness, AC=18 (chain mail + shield),
  *           proficiency +3, Channel Divinity ×2 (short rest),
  *           spell slots 4/3/2, spellcasting WIS (DC 15, +7)
  */
 export function createClericCharacter(): CharacterData {
-  const ids: CharacterIdentifiers = {
-    name: "Brynn",
-    race: "Dwarf",
-    classes: [{ name: "Cleric", level: 5, subclass: "Life Domain" }],
-    abilities: {
-      strength: 14,
-      dexterity: 10,
-      constitution: 16,
-      intelligence: 12,
-      wisdom: 18,
-      charisma: 8,
-    },
-    maxHP: 48,
-    skillProficiencies: ["medicine", "religion"],
-    skillExpertise: [],
-    saveProficiencies: ["wisdom", "charisma"],
-    spells: [
-      {
-        name: "Sacred Flame",
-        level: 0,
-        prepared: true,
-        alwaysPrepared: false,
-        spellSource: "class",
-        knownByClass: true,
-        sourceClass: "Cleric",
-      },
-      {
-        name: "Cure Wounds",
-        level: 1,
-        prepared: true,
-        alwaysPrepared: false,
-        spellSource: "class",
-        knownByClass: true,
-        sourceClass: "Cleric",
-      },
-      {
-        name: "Bless",
-        level: 1,
-        prepared: true,
-        alwaysPrepared: false,
-        spellSource: "class",
-        knownByClass: true,
-        sourceClass: "Cleric",
-      },
-      {
-        name: "Spiritual Weapon",
-        level: 2,
-        prepared: true,
-        alwaysPrepared: false,
-        spellSource: "class",
-        knownByClass: true,
-        sourceClass: "Cleric",
-      },
-      {
-        name: "Spirit Guardians",
-        level: 3,
-        prepared: true,
-        alwaysPrepared: false,
-        spellSource: "class",
-        knownByClass: true,
-        sourceClass: "Cleric",
-      },
-    ],
-    equipment: [
-      {
-        name: "Mace",
-        equipped: true,
-        quantity: 1,
-        type: "Weapon",
-        damage: "1d6",
-        damageType: "bludgeoning",
-      },
-      {
-        name: "Shield",
-        equipped: true,
-        quantity: 1,
-        type: "Shield",
-        armorClass: 2,
-      },
-      {
-        name: "Chain Mail",
-        equipped: true,
-        quantity: 1,
-        type: "Armor",
-        armorClass: 16,
-      },
-    ],
-    languages: ["Common", "Dwarvish"],
-    currency: { cp: 0, sp: 0, gp: 75, pp: 0 },
-    traits: { personalityTraits: "Compassionate healer" },
-    source: "builder",
-    builderState: undefined!,
-  };
-  ids.builderState = stubBuilderState(ids);
-
-  const { character } = buildCharacter(ids);
+  const { character } = buildCharacter(makeClericBuilderState());
   return character;
 }
 
@@ -252,109 +69,11 @@ export function createClericCharacter(): CharacterData {
  * Covers: pact magic slots, short-rest pact slot recovery, CHA-based casting.
  *
  * Stats: STR 8, DEX 14, CON 14, INT 10, WIS 12, CHA 18
- * Expected: maxHP=38 (8+4×5+5×2 CON), AC=14 (leather 11 + DEX 2 + shield? no shield for warlock feel),
- *           proficiency +3, NO class resources (warlock: []),
+ * Expected: maxHP=38, AC=13 (leather 11 + DEX 2),
  *           pact magic: 2 slots at level 3, spellcasting CHA (DC 15, +7)
  */
 export function createWarlockCharacter(): CharacterData {
-  const ids: CharacterIdentifiers = {
-    name: "Zara",
-    race: "Tiefling",
-    classes: [{ name: "Warlock", level: 5, subclass: "Fiend" }],
-    abilities: {
-      strength: 8,
-      dexterity: 14,
-      constitution: 14,
-      intelligence: 10,
-      wisdom: 12,
-      charisma: 18,
-    },
-    // Warlock HP: 8 (level 1) + 4×5 (levels 2-5, d8 fixed) + 5×2 (CON) = 38
-    maxHP: 38,
-    skillProficiencies: ["arcana", "deception"],
-    skillExpertise: [],
-    saveProficiencies: ["wisdom", "charisma"],
-    spells: [
-      {
-        name: "Eldritch Blast",
-        level: 0,
-        prepared: true,
-        alwaysPrepared: false,
-        spellSource: "class",
-        knownByClass: true,
-        sourceClass: "Warlock",
-      },
-      {
-        name: "Minor Illusion",
-        level: 0,
-        prepared: true,
-        alwaysPrepared: false,
-        spellSource: "class",
-        knownByClass: true,
-        sourceClass: "Warlock",
-      },
-      {
-        name: "Hex",
-        level: 1,
-        prepared: true,
-        alwaysPrepared: false,
-        spellSource: "class",
-        knownByClass: true,
-        sourceClass: "Warlock",
-      },
-      {
-        name: "Armor of Agathys",
-        level: 1,
-        prepared: true,
-        alwaysPrepared: false,
-        spellSource: "class",
-        knownByClass: true,
-        sourceClass: "Warlock",
-      },
-      {
-        name: "Counterspell",
-        level: 3,
-        prepared: true,
-        alwaysPrepared: false,
-        spellSource: "class",
-        knownByClass: true,
-        sourceClass: "Warlock",
-      },
-    ],
-    equipment: [
-      {
-        name: "Light Crossbow",
-        equipped: true,
-        quantity: 1,
-        type: "Weapon",
-        damage: "1d8",
-        damageType: "piercing",
-        properties: ["Ammunition", "Loading"],
-        range: "80/320",
-      },
-      {
-        name: "Leather Armor",
-        equipped: true,
-        quantity: 1,
-        type: "Armor",
-        armorClass: 11,
-      },
-      {
-        name: "Component Pouch",
-        equipped: true,
-        quantity: 1,
-        type: "Gear",
-      },
-    ],
-    languages: ["Common", "Infernal"],
-    currency: { cp: 0, sp: 0, gp: 30, pp: 0 },
-    traits: { personalityTraits: "Haunted by the pact she made" },
-    source: "builder",
-    builderState: undefined!,
-  };
-  ids.builderState = stubBuilderState(ids);
-
-  const { character } = buildCharacter(ids);
+  const { character } = buildCharacter(makeWarlockBuilderState());
   return character;
 }
 
@@ -367,60 +86,11 @@ export function createWarlockCharacter(): CharacterData {
  * Covers: Rage (long-rest resource), Unarmored Defense (10+DEX+CON), no spells.
  *
  * Stats: STR 18, DEX 14, CON 16, INT 8, WIS 10, CHA 10
- * Expected: maxHP=55 (12+4×7+5×3 CON), AC=14 (10 + DEX 2 + CON 3 = 15 unarmored),
+ * Expected: maxHP=55, AC=15 (10 + DEX 2 + CON 3 unarmored),
  *           proficiency +3, Rage ×3 (long rest)
- *
- * NOTE: No body armor equipped — triggers Unarmored Defense path in builder.
  */
 export function createBarbarianCharacter(): CharacterData {
-  const ids: CharacterIdentifiers = {
-    name: "Gruk",
-    race: "Half-Orc",
-    classes: [{ name: "Barbarian", level: 5, subclass: "Berserker" }],
-    abilities: {
-      strength: 18,
-      dexterity: 14,
-      constitution: 16,
-      intelligence: 8,
-      wisdom: 10,
-      charisma: 10,
-    },
-    // Barbarian HP: 12 (level 1) + 4×7 (levels 2-5, d12 fixed) + 5×3 (CON) = 55
-    maxHP: 55,
-    skillProficiencies: ["athletics", "intimidation"],
-    skillExpertise: [],
-    saveProficiencies: ["strength", "constitution"],
-    spells: [],
-    equipment: [
-      {
-        name: "Greataxe",
-        equipped: true,
-        quantity: 1,
-        type: "Weapon",
-        damage: "1d12",
-        damageType: "slashing",
-        properties: ["Heavy", "Two-Handed"],
-      },
-      {
-        name: "Javelin",
-        equipped: false,
-        quantity: 4,
-        type: "Weapon",
-        damage: "1d6",
-        damageType: "piercing",
-        properties: ["Thrown"],
-        range: "30/120",
-      },
-    ],
-    languages: ["Common", "Orc"],
-    currency: { cp: 0, sp: 5, gp: 10, pp: 0 },
-    traits: { personalityTraits: "Fierce but protective of allies" },
-    source: "builder",
-    builderState: undefined!,
-  };
-  ids.builderState = stubBuilderState(ids);
-
-  const { character } = buildCharacter(ids);
+  const { character } = buildCharacter(makeBarbarianBuilderState());
   return character;
 }
 
@@ -430,130 +100,12 @@ export function createBarbarianCharacter(): CharacterData {
 
 /**
  * Level 5 Half-Elf Cleric 3 (Life Domain) / Warlock 2 (Archfey) multiclass.
- * Covers: multiclass hit dice (d8 Cleric + d8 Warlock), pact + regular slots,
- *         mixed short/long rest resources, CHA-based pact + WIS-based divine.
+ * Covers: multiclass hit dice, pact + regular slots, mixed rest resources.
  *
  * Stats: STR 10, DEX 12, CON 14, INT 10, WIS 16, CHA 16
- * Expected: maxHP=38 (8+4×5+5×2 CON), proficiency +3,
- *           regular slots from Cleric 3: 4 L1 + 2 L2,
- *           pact slots from Warlock 2: 2 L1,
- *           Channel Divinity ×2 (short rest),
- *           hit dice: "5d8" (both classes use d8)
+ * Expected: proficiency +3, regular slots from Cleric 3, pact slots from Warlock 2
  */
 export function createMulticlassCharacter(): CharacterData {
-  const ids: CharacterIdentifiers = {
-    name: "Selene",
-    race: "Half-Elf",
-    classes: [
-      { name: "Cleric", level: 3, subclass: "Life Domain" },
-      { name: "Warlock", level: 2, subclass: "Archfey" },
-    ],
-    abilities: {
-      strength: 10,
-      dexterity: 12,
-      constitution: 14,
-      intelligence: 10,
-      wisdom: 16,
-      charisma: 16,
-    },
-    // Mixed HP: Cleric L1 (8) + Cleric L2-3 (2×5) + Warlock L4-5 (2×5) + 5×2 (CON) = 38
-    maxHP: 38,
-    skillProficiencies: ["medicine", "religion", "deception"],
-    skillExpertise: [],
-    saveProficiencies: ["wisdom", "charisma"],
-    spells: [
-      // Cleric cantrip
-      {
-        name: "Sacred Flame",
-        level: 0,
-        prepared: true,
-        alwaysPrepared: false,
-        spellSource: "class",
-        knownByClass: true,
-        sourceClass: "Cleric",
-      },
-      // Cleric L1
-      {
-        name: "Cure Wounds",
-        level: 1,
-        prepared: true,
-        alwaysPrepared: false,
-        spellSource: "class",
-        knownByClass: true,
-        sourceClass: "Cleric",
-      },
-      {
-        name: "Bless",
-        level: 1,
-        prepared: true,
-        alwaysPrepared: false,
-        spellSource: "class",
-        knownByClass: true,
-        sourceClass: "Cleric",
-      },
-      // Cleric L2
-      {
-        name: "Spiritual Weapon",
-        level: 2,
-        prepared: true,
-        alwaysPrepared: false,
-        spellSource: "class",
-        knownByClass: true,
-        sourceClass: "Cleric",
-      },
-      // Warlock cantrip
-      {
-        name: "Eldritch Blast",
-        level: 0,
-        prepared: true,
-        alwaysPrepared: false,
-        spellSource: "class",
-        knownByClass: true,
-        sourceClass: "Warlock",
-      },
-      // Warlock L1
-      {
-        name: "Hex",
-        level: 1,
-        prepared: true,
-        alwaysPrepared: false,
-        spellSource: "class",
-        knownByClass: true,
-        sourceClass: "Warlock",
-      },
-    ],
-    equipment: [
-      {
-        name: "Mace",
-        equipped: true,
-        quantity: 1,
-        type: "Weapon",
-        damage: "1d6",
-        damageType: "bludgeoning",
-      },
-      {
-        name: "Shield",
-        equipped: true,
-        quantity: 1,
-        type: "Shield",
-        armorClass: 2,
-      },
-      {
-        name: "Scale Mail",
-        equipped: true,
-        quantity: 1,
-        type: "Armor",
-        armorClass: 14,
-      },
-    ],
-    languages: ["Common", "Elvish", "Sylvan"],
-    currency: { cp: 0, sp: 0, gp: 40, pp: 0 },
-    traits: { personalityTraits: "Torn between divine duty and fey bargain" },
-    source: "builder",
-    builderState: undefined!,
-  };
-  ids.builderState = stubBuilderState(ids);
-
-  const { character } = buildCharacter(ids);
+  const { character } = buildCharacter(makeMulticlassBuilderState());
   return character;
 }

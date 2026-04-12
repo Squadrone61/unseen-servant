@@ -453,7 +453,7 @@ describe("long rest after combat — full recovery for all archetypes", () => {
 
     // HP fully restored
     expect(fighter.dynamic.currentHP).toBe(44);
-    expect(cleric.dynamic.currentHP).toBe(53);
+    expect(cleric.dynamic.currentHP).toBe(48);
     expect(warlock.dynamic.currentHP).toBe(38);
     expect(barbarian.dynamic.currentHP).toBe(55);
 
