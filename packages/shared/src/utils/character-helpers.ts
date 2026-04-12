@@ -3,12 +3,34 @@ import type {
   CharacterClass,
   CharacterData,
   CharacterDynamicData,
+  CharacterSpeed,
   CharacterSpell,
   CharacterStaticData,
   SkillProficiency,
   SavingThrowProficiency,
   SpellSlotLevel,
 } from "../types/character";
+
+/**
+ * Extract the walk speed from a speed value that may be a plain number (legacy)
+ * or a CharacterSpeed object.
+ */
+export function getWalkSpeed(speed: number | CharacterSpeed): number {
+  return typeof speed === "number" ? speed : speed.walk;
+}
+
+/**
+ * Format a CharacterSpeed object as a human-readable string.
+ * e.g. { walk: 30, fly: 60 } → "Walk 30 ft, Fly 60 ft"
+ */
+export function formatSpeed(speed: CharacterSpeed): string {
+  const parts = [`Walk ${speed.walk} ft`];
+  if (speed.fly) parts.push(`Fly ${speed.fly} ft`);
+  if (speed.swim) parts.push(`Swim ${speed.swim} ft`);
+  if (speed.climb) parts.push(`Climb ${speed.climb} ft`);
+  if (speed.burrow) parts.push(`Burrow ${speed.burrow} ft`);
+  return parts.join(", ");
+}
 
 /**
  * Get total character level across all classes.
@@ -66,7 +88,7 @@ export function buildCharacterContextBlock(playerName: string, char: CharacterDa
   const lines: string[] = [
     `### ${playerName} plays ${s.name}`,
     `**Race:** ${s.race} | **Class:** ${classStr} | **Level:** ${totalLevel}`,
-    `**HP:** ${d.currentHP}/${s.maxHP}${d.tempHP > 0 ? ` (+${d.tempHP} temp)` : ""} | **AC:** ${s.armorClass} | **Speed:** ${s.speed} ft`,
+    `**HP:** ${d.currentHP}/${s.maxHP}${d.tempHP > 0 ? ` (+${d.tempHP} temp)` : ""} | **AC:** ${s.armorClass} | **Speed:** ${formatSpeed(s.speed)}`,
     `**Abilities:** STR ${formatModifier(s.abilities.strength)}, DEX ${formatModifier(s.abilities.dexterity)}, CON ${formatModifier(s.abilities.constitution)}, INT ${formatModifier(s.abilities.intelligence)}, WIS ${formatModifier(s.abilities.wisdom)}, CHA ${formatModifier(s.abilities.charisma)}`,
   ];
 

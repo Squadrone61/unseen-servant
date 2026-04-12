@@ -376,7 +376,7 @@ const mockChar: CharacterData = {
     classes: [{ name: "Fighter", level: 5 }],
     maxHP: 44,
     armorClass: 18,
-    speed: 30,
+    speed: { walk: 30 },
     abilities: {
       strength: 16,
       dexterity: 14,

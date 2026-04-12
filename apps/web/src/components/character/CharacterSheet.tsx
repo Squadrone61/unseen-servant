@@ -134,7 +134,7 @@ function CharacterSheetInner({ character }: CharacterSheetProps) {
           </div>
           <div className="bg-gray-900/60 border border-gray-700/50 rounded py-1">
             <div className="text-xs text-gray-500 uppercase">Speed</div>
-            <div className="text-base font-bold text-gray-200">{s.speed} ft</div>
+            <div className="text-base font-bold text-gray-200">{s.speed.walk} ft</div>
           </div>
           <div className="bg-gray-900/60 border border-gray-700/50 rounded py-1">
             <div className="text-xs text-gray-500 uppercase">Prof</div>

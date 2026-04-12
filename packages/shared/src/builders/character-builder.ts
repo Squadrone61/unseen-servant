@@ -10,6 +10,7 @@
 
 import type {
   CharacterData,
+  CharacterSpeed,
   CharacterStaticData,
   CharacterDynamicData,
   CharacterFeature,
@@ -223,8 +224,20 @@ export function buildCharacter(ids: CharacterIdentifiers): {
     ids.armorClass ?? resolveStat(bundles, "ac", equipmentAC.base, ctx) + equipmentAC.shieldBonus;
 
   // ── Speed ───────────────────────────────────────────────
-  const baseSpeed = species?.speed ?? 30;
-  const speed = ids.speed ?? resolveStat(bundles, "speed", baseSpeed, ctx);
+  const baseWalkSpeed = species?.speed ?? 30;
+  const walkSpeed = ids.speed ?? resolveStat(bundles, "speed", baseWalkSpeed, ctx);
+  const flySpeed = resolveStat(bundles, "speed_fly", 0, ctx);
+  const swimSpeed = resolveStat(bundles, "speed_swim", 0, ctx);
+  const climbSpeed = resolveStat(bundles, "speed_climb", 0, ctx);
+  const burrowSpeed = resolveStat(bundles, "speed_burrow", 0, ctx);
+
+  const speed: CharacterSpeed = {
+    walk: walkSpeed,
+    ...(flySpeed > 0 ? { fly: flySpeed } : {}),
+    ...(swimSpeed > 0 ? { swim: swimSpeed } : {}),
+    ...(climbSpeed > 0 ? { climb: climbSpeed } : {}),
+    ...(burrowSpeed > 0 ? { burrow: burrowSpeed } : {}),
+  };
 
   // ── Skills ──────────────────────────────────────────────
   const effectSkillProfs = getProficiencies(bundles, "skill");

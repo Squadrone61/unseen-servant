@@ -62,7 +62,7 @@ export function CharacterPopover({ character, playerName, online }: CharacterPop
         </div>
         <div className="bg-gray-900/50 rounded px-2 py-1 text-center">
           <div className="text-xs text-gray-500">Speed</div>
-          <div className="text-xs font-bold text-gray-200">{s.speed} ft</div>
+          <div className="text-xs font-bold text-gray-200">{s.speed.walk} ft</div>
         </div>
       </div>
 

@@ -122,7 +122,7 @@ function setupNpcCombat(name: string, maxHP: number, currentHP?: number) {
           type: "enemy",
           initiative: 10,
           initiativeModifier: 0,
-          speed: 30,
+          speed: { walk: 30 },
           movementUsed: 0,
           size: "medium",
           maxHP,

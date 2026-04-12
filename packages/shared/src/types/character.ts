@@ -154,6 +154,14 @@ export interface SavingThrowProficiency {
   bonus?: number; // flat bonus from items/features
 }
 
+export interface CharacterSpeed {
+  walk: number;
+  fly?: number;
+  swim?: number;
+  climb?: number;
+  burrow?: number;
+}
+
 /**
  * Static data from the character builder.
  * Only changes when the character is re-imported.
@@ -167,7 +175,7 @@ export interface CharacterStaticData {
   maxHP: number;
   armorClass: number;
   proficiencyBonus: number;
-  speed: number;
+  speed: CharacterSpeed;
   features: CharacterFeature[];
   classResources?: ClassResource[];
   proficiencies: ProficiencyGroup;

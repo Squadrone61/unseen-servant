@@ -42,14 +42,16 @@ packages/shared/   → Shared types (Zod 4 schemas), constants, utils, dice, che
 
 - **Discriminated unions** for all message types (ClientMessage/ServerMessage)
 - **Event sourcing** for game state changes (GameEvent log)
-- **CharacterData split:** `static` (from character builder) + `dynamic` (HP, spell slots, conditions — owned by our system)
+- **CharacterData split:** `builder` (full BuilderState snapshot for lossless edit) + `static` (computed character sheet) + `dynamic` (HP, spell slots, conditions — owned by our system). Builder field stripped from DM tools via `get_character`.
 - **Bridge-owned game state:** GameStateManager in the MCP bridge owns all game logic — combat, dice, HP, conditions, conversation history, game state sync
 - **player_action/broadcast** WebSocket contract: worker forwards player actions to bridge as `server:player_action`, bridge processes and sends results back as `client:broadcast`
 - **MCP tool-use** for game state mutation (damage, combat, spell slots), D&D reference (spells, monsters, conditions), dice rolling, campaign persistence
 - **Dual-format tool results:** MCP tools return `"Human summary\n---\n{json}"` — human-readable text line + structured JSON after separator. GSM methods return `ToolResponse { text, data, error?, hints? }`
 - **Campaign configuration** flow: host configures campaign (name, pacing, encounter length) before starting story via CampaignConfigModal
 - **A1 coordinate notation** throughout: all tool inputs/outputs use A1 grid coordinates (formatGridPosition/parseGridPosition in shared/utils/grid.ts)
-- **Effect system:** structured EffectBundles (conditions, spells, items, features) with automatic resolution for stat modifiers, resistance/immunity/vulnerability, and advantage/disadvantage. Types in `shared/types/effects.ts`, resolver in `shared/utils/effect-resolver.ts`
+- **Effect system:** structured EffectBundles (conditions, spells, items, features) with automatic resolution for stat modifiers, resistance/immunity/vulnerability, and advantage/disadvantage. Types in `shared/types/effects.ts`, resolver in `shared/utils/effect-resolver.ts`. Concentration auto-breaks on incapacitating conditions. Equipped item bundles applied on character load. Initiative advantage/disadvantage checked from effects.
+- **Resource recovery model:** `longRest: number | "all"` + `shortRest?: number | "all"` on both effect `resource` properties and `ClassResource`. Supports partial recovery (e.g., Barbarian Rage recovers 1 use on short rest, all on long rest).
+- **Speed model:** `CharacterSpeed { walk, fly?, swim?, climb?, burrow? }` — supports multiple movement types. Resolved from effects via `speed`, `speed_fly`, `speed_swim`, `speed_climb`, `speed_burrow` modifier targets. Combatant speed normalized to `CharacterSpeed` at construction.
 - **Unified MCP tool arg naming:** `name` for character/combatant identity (singular), `names` for arrays, `item` for item identity, `player` only in roll_dice (interactive roll semantics)
 - **WebSocket Hibernation API** for Durable Objects (persistent connections survive hibernation)
 
@@ -326,10 +328,14 @@ All lookup tools accept `detail`: `"summary"` (default, ~30 tokens) or `"full"` 
 
 ## Testing
 
-- **Automated tests** (Playwright) live in `tests/` and `playwright.config.ts` at the repo root — these are committed to the repo.
 - **Temporary test artifacts** (snapshots, reports, screenshots) go in `.testing/` which is gitignored. Always place disposable/generated test-related files here so they stay out of git.
 - `pnpm test` — starts dev servers, runs all tests, then stops servers
 - `pnpm test:ui` — opens Playwright UI runner (servers must be running)
+
+## Development Rules
+
+- All Dnd rules related functionality should be confirmed against the 5etools raw data.
+- Whenever a functionality changes, Always update its related documentation. (tool description, generated DM files, etc.)
 
 ## Coding Conventions
 

@@ -202,7 +202,10 @@ function assembleSpells(state: BuilderState): CharacterSpell[] {
  * Collect skill proficiencies from class selections + background DB skills.
  */
 function assembleSkillProficiencies(state: BuilderState): string[] {
-  const skills = new Set<string>(state.classes[0]?.skills ?? []);
+  const skills = new Set<string>();
+  for (const cls of state.classes) {
+    for (const s of cls.skills) skills.add(s);
+  }
   if (state.background) {
     const bg = getBackground(state.background);
     if (bg) bg.skills.forEach((s) => skills.add(s.toLowerCase()));
@@ -233,10 +236,11 @@ function assembleSkillProficiencies(state: BuilderState): string[] {
  */
 function assembleSkillExpertise(state: BuilderState): string[] {
   const expertise = new Set<string>();
-  const classChoices = state.classes[0]?.choices ?? {};
-  for (const [choiceId, values] of Object.entries(classChoices)) {
-    if (choiceId.toLowerCase().includes("expertise")) {
-      (values as string[]).forEach((v) => expertise.add(v));
+  for (const cls of state.classes) {
+    for (const [choiceId, values] of Object.entries(cls.choices)) {
+      if (choiceId.toLowerCase().includes("expertise")) {
+        (values as string[]).forEach((v) => expertise.add(v));
+      }
     }
   }
   // Also check feat choices for expertise (e.g. Skill Expert feat)

@@ -1065,13 +1065,13 @@ describe("Speed computation", () => {
   it("Human base speed is 30", () => {
     const ids = makeIdentifiers({ race: "Human" });
     const { character } = buildCharacter(ids);
-    expect(character.static.speed).toBe(30);
+    expect(character.static.speed.walk).toBe(30);
   });
 
   it("speed override is used when provided", () => {
     const ids = makeIdentifiers({ speed: 40 });
     const { character } = buildCharacter(ids);
-    expect(character.static.speed).toBe(40);
+    expect(character.static.speed.walk).toBe(40);
   });
 
   it("Barbarian level 5 gets +10 Fast Movement bonus", () => {
@@ -1083,7 +1083,7 @@ describe("Speed computation", () => {
     });
     const { character } = buildCharacter(ids);
     // 30 (Human) + 10 (Fast Movement) = 40
-    expect(character.static.speed).toBe(40);
+    expect(character.static.speed.walk).toBe(40);
   });
 });
 

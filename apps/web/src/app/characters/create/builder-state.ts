@@ -107,6 +107,7 @@ function isStepComplete(step: BuilderStep, state: BuilderState): boolean {
       const totalLevel = state.classes.reduce((s, c) => s + c.level, 0);
       const asiCount = [4, 8, 12, 16, 19].filter((l) => l <= totalLevel).length;
       if (asiCount === 0) return true;
+      if (state.featSelections.length < asiCount) return false;
       return state.featSelections.every((s) =>
         s.type === "feat"
           ? Boolean(s.featName)

@@ -66,7 +66,7 @@ function buildCombat(turnIndex = 0) {
         playerId: "test-user-id",
         initiative: 18,
         initiativeModifier: 2,
-        speed: 30,
+        speed: { walk: 30 },
         movementUsed: 0,
         position: { x: 2, y: 3 },
         size: "medium",
@@ -77,7 +77,7 @@ function buildCombat(turnIndex = 0) {
         type: "enemy",
         initiative: 14,
         initiativeModifier: 2,
-        speed: 30,
+        speed: { walk: 30 },
         movementUsed: 0,
         position: { x: 5, y: 3 },
         size: "medium",
@@ -92,7 +92,7 @@ function buildCombat(turnIndex = 0) {
         type: "npc",
         initiative: 10,
         initiativeModifier: 1,
-        speed: 30,
+        speed: { walk: 30 },
         movementUsed: 0,
         position: { x: 2, y: 5 },
         size: "medium",
@@ -125,7 +125,7 @@ function buildCharacterUpdate(playerName: string, charName: string) {
         maxHP: 44,
         armorClass: 18,
         proficiencyBonus: 3,
-        speed: 25,
+        speed: { walk: 25 },
         features: [],
         classResources: [],
         proficiencies: { armor: [], weapons: [], tools: [], other: [] },
@@ -303,7 +303,7 @@ test.describe("End Turn", () => {
     // Player has 10ft of movement used (20ft remaining out of 30)
     const combat = buildCombat(0);
     (combat.combatants["player-1"] as any).movementUsed = 10;
-    (combat.combatants["player-1"] as any).speed = 30;
+    (combat.combatants["player-1"] as any).speed = { walk: 30 };
 
     bridge.broadcast(buildCombatUpdate(combat) as Record<string, unknown>);
 

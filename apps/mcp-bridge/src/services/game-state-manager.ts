@@ -8,6 +8,7 @@
 import type {
   CharacterData,
   CharacterDynamicData,
+  CharacterSpeed,
   CheckRequest,
   ClientMessage,
   CombatState,
@@ -784,9 +785,10 @@ export class GameStateManager {
     const distance = Math.max(dx, dy) * 5;
 
     // Compute effective speed (conditions like Grappled/Restrained set speed to 0)
+    const combatantWalkSpeed = combatant.speed.walk;
     let effectiveSpeed: number;
     if (char) {
-      effectiveSpeed = resolveEffectiveStat(char, "speed", combatant.speed);
+      effectiveSpeed = resolveEffectiveStat(char, "speed", combatantWalkSpeed);
     } else if (combatant.activeEffects && combatant.activeEffects.length > 0) {
       // NPC — resolve speed through effect bundles with a minimal context
       const npcCtx = {
@@ -801,9 +803,9 @@ export class GameStateManager {
         totalLevel: 0,
         proficiencyBonus: 0,
       };
-      effectiveSpeed = resolveStat(combatant.activeEffects, "speed", combatant.speed, npcCtx);
+      effectiveSpeed = resolveStat(combatant.activeEffects, "speed", combatantWalkSpeed, npcCtx);
     } else {
-      effectiveSpeed = combatant.speed;
+      effectiveSpeed = combatantWalkSpeed;
     }
     if (combatant.movementUsed + distance > effectiveSpeed) {
       this.broadcast(
@@ -1309,7 +1311,7 @@ export class GameStateManager {
     // Build NPC turn context and push to message queue
     const pos = activeCombatant.position;
     const posStr = pos ? ` at ${formatGridPosition(pos)}` : "";
-    const speed = activeCombatant.speed ?? 30;
+    const speed = activeCombatant.speed.walk;
     const ac = activeCombatant.armorClass ?? "?";
     const hp = `${activeCombatant.currentHP ?? "?"}/${activeCombatant.maxHP ?? "?"}`;
     const conditions = activeCombatant.conditions?.length
@@ -1448,7 +1450,7 @@ export class GameStateManager {
           e.distance = gridDistance(activeCombatant.position, cb.position) + "ft";
         }
       }
-      e.speed = (cb?.speed ?? 30) + "ft";
+      e.speed = (cb ? cb.speed.walk : 30) + "ft";
     }
 
     const data: Record<string, unknown> = {
@@ -1749,12 +1751,22 @@ export class GameStateManager {
         const prevHP = char.dynamic.currentHP;
         char.dynamic.currentHP = Math.min(char.static.maxHP, char.dynamic.currentHP + healing);
         const overheal = Math.max(0, prevHP + healing - char.static.maxHP);
-        // Reset death saves when healed from 0 HP
+        // Reset death saves and remove Unconscious/Stabilized when healed from 0 HP
+        // PHB 2024: regaining any HP ends the Unconscious condition
         if (
           char.dynamic.currentHP > 0 &&
           (char.dynamic.deathSaves.successes > 0 || char.dynamic.deathSaves.failures > 0)
         ) {
           char.dynamic.deathSaves = { successes: 0, failures: 0 };
+          char.dynamic.conditions = char.dynamic.conditions.filter(
+            (c) => c.name !== "Unconscious" && c.name !== "Stabilized",
+          );
+          if (char.dynamic.activeEffects) {
+            char.dynamic.activeEffects = this.syncConditionBundles(
+              char.dynamic.conditions,
+              char.dynamic.activeEffects,
+            );
+          }
         }
         this.syncPlayerCombatantHP(char.static.name);
         this.broadcast({
@@ -1818,11 +1830,21 @@ export class GameStateManager {
           { type: "hp_set", target: targetName, value },
         ]);
         char.dynamic.currentHP = Math.max(0, Math.min(char.static.maxHP, value));
+        // PHB 2024: regaining any HP ends the Unconscious condition
         if (
           char.dynamic.currentHP > 0 &&
           (char.dynamic.deathSaves.successes > 0 || char.dynamic.deathSaves.failures > 0)
         ) {
           char.dynamic.deathSaves = { successes: 0, failures: 0 };
+          char.dynamic.conditions = char.dynamic.conditions.filter(
+            (c) => c.name !== "Unconscious" && c.name !== "Stabilized",
+          );
+          if (char.dynamic.activeEffects) {
+            char.dynamic.activeEffects = this.syncConditionBundles(
+              char.dynamic.conditions,
+              char.dynamic.activeEffects,
+            );
+          }
         }
         this.syncPlayerCombatantHP(char.static.name);
         this.broadcast({
@@ -2260,13 +2282,23 @@ export class GameStateManager {
         surprisedCombatants !== undefined &&
         surprisedCombatants.some((n) => n.toLowerCase() === c.name.toLowerCase());
 
+      // Normalize speed to CharacterSpeed
+      let combatantSpeed: CharacterSpeed;
+      if (c.type === "player" && linkedPlayerId) {
+        // Use the player's character speed (already CharacterSpeed)
+        combatantSpeed = this.characters[linkedPlayerId]?.static.speed ?? { walk: 30 };
+      } else {
+        // NPC/enemy — tool input is a plain number, normalize to CharacterSpeed
+        combatantSpeed = { walk: c.speed ?? 30 };
+      }
+
       combatantMap[id] = {
         id,
         name: c.name,
         type: c.type,
         initiative,
         initiativeModifier: initMod,
-        speed: c.speed ?? 30,
+        speed: combatantSpeed,
         movementUsed: 0,
         position: c.position,
         size: c.size ?? "medium",
@@ -2570,13 +2602,24 @@ export class GameStateManager {
 
     this.createEvent("custom", `${c.name} joined combat`, []);
 
+    // Normalize speed to CharacterSpeed
+    let addCombatantSpeed: CharacterSpeed;
+    if (c.type === "player") {
+      const charEntry = Object.entries(this.characters).find(
+        ([, ch]) => ch.static.name.toLowerCase() === c.name.toLowerCase(),
+      );
+      addCombatantSpeed = charEntry ? charEntry[1].static.speed : { walk: 30 };
+    } else {
+      addCombatantSpeed = { walk: c.speed ?? 30 };
+    }
+
     combat.combatants[id] = {
       id,
       name: c.name,
       type: c.type,
       initiative,
       initiativeModifier: initMod,
-      speed: c.speed ?? 30,
+      speed: addCombatantSpeed,
       movementUsed: 0,
       position: c.position,
       size: c.size ?? "medium",
@@ -4375,7 +4418,7 @@ export class GameStateManager {
       // Determine HP and AC
       let hp: string;
       let ac: string;
-      let speed: number = c.speed ?? 30;
+      let speed: number = c.speed.walk;
       let conditions: string[] = [];
       let concentration: string | undefined;
 
@@ -4388,7 +4431,7 @@ export class GameStateManager {
           const [, ch] = charEntry;
           hp = `${ch.dynamic.currentHP}/${ch.static.maxHP} HP`;
           ac = `AC ${resolveEffectiveStat(ch, "ac", ch.static.armorClass)}`;
-          speed = c.speed ?? 30;
+          speed = c.speed.walk;
           conditions = ch.dynamic.conditions.map((cond) =>
             cond.duration !== undefined ? `${cond.name}(${cond.duration}rd)` : cond.name,
           );

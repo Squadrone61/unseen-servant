@@ -256,7 +256,7 @@ export function BattleMap({
     if (!showReachable || !myCombatant?.position) return new Set<string>();
     return getReachableTiles(
       myCombatant.position,
-      myCombatant.speed - myCombatant.movementUsed,
+      myCombatant.speed.walk - myCombatant.movementUsed,
       map,
     );
   }, [showReachable, myCombatant, map]);
@@ -564,7 +564,7 @@ export function BattleMap({
     return stacks;
   }, [tokens]);
 
-  const movementLeft = myCombatant ? myCombatant.speed - myCombatant.movementUsed : 0;
+  const movementLeft = myCombatant ? myCombatant.speed.walk - myCombatant.movementUsed : 0;
 
   // Column labels (A, B, C...)
   const colLabels = useMemo(
@@ -656,7 +656,7 @@ export function BattleMap({
 
       // Movement remaining (only during their turn)
       const isActiveTurn = c.id === activeId;
-      const moveRemaining = isActiveTurn ? c.speed - c.movementUsed : undefined;
+      const moveRemaining = isActiveTurn ? c.speed.walk - c.movementUsed : undefined;
 
       // Grid position in A1 notation
       const posLabel = c.position ? formatGridPosition(c.position) : undefined;

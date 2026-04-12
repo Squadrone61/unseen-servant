@@ -1,7 +1,7 @@
 // === Game State Types ===
 // Phase 3: Structured game mechanics — dice, checks, combat, events.
 
-import type { CharacterDynamicData } from "./character";
+import type { CharacterDynamicData, CharacterSpeed } from "./character";
 import type { EffectBundle } from "./effects";
 
 // ─── Dice ───
@@ -90,7 +90,7 @@ export interface Combatant {
   playerId?: string;
   initiative: number;
   initiativeModifier: number;
-  speed: number;
+  speed: CharacterSpeed;
   movementUsed: number;
   position?: GridPosition;
   size: CreatureSize;

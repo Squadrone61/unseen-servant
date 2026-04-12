@@ -109,6 +109,24 @@ Examples:
         }
       }
 
+      // ── Build damage bonus hints from combatBonuses + active effects ──
+      let damageBonusHints = "";
+      if (!checkType && player) {
+        const char = Object.values(wsClient.gameStateManager.characters).find(
+          (c) => c.static.name.toLowerCase() === player.toLowerCase(),
+        );
+        if (char?.static.combatBonuses) {
+          const dmgBonuses = char.static.combatBonuses.filter((b) => b.type === "damage");
+          if (dmgBonuses.length > 0) {
+            const parts = dmgBonuses.map(
+              (b) =>
+                `${b.value >= 0 ? "+" : ""}${b.value} ${b.attackType ?? ""} damage (${b.source})${b.condition ? ` [${b.condition}]` : ""}`,
+            );
+            damageBonusHints = "\n📋 Damage bonuses: " + parts.join(", ");
+          }
+        }
+      }
+
       // ── Interactive player roll ──
       if (player) {
         try {
@@ -130,7 +148,7 @@ Examples:
             checkLabel: result.roll.label,
           });
 
-          const fullResult = formatted + effectHints;
+          const fullResult = formatted + effectHints + damageBonusHints;
           gameLogger.toolCall("roll_dice", { notation, checkType, player, dc, reason }, fullResult);
           return { content: [{ type: "text" as const, text: fullResult }] };
         } catch (error) {
