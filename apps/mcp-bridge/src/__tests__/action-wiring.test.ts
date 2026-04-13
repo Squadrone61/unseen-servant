@@ -357,7 +357,7 @@ describe("get_character inventory weapon action enrichment (pure resolver)", () 
         name: "Longsword",
         quantity: 1,
         equipped: true,
-        weapon: { properties: [] },
+        weapon: { damage: "1d8", damageType: "slashing", properties: [] },
       };
       const bonus = getWeaponAttack(char, longswordItem);
       // STR mod +4 + proficiency +3 = +7
