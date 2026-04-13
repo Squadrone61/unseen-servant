@@ -19,7 +19,8 @@
     "test:web": "cd apps/web && pnpm test",
     "dead-code": "knip",
     "prepare": "husky",
-    "audit:actions": "npx tsx scripts/audit-spell-actions.ts && npx tsx scripts/audit-weapons-action.ts"
+    "audit:actions": "npx tsx scripts/audit-spell-actions.ts && npx tsx scripts/audit-weapons-action.ts && npx tsx scripts/audit-monsters-action.ts",
+    "migrate:monsters": "npx tsx scripts/migrate-monsters-action.ts"
   },
   "lint-staged": {
     "*.{ts,tsx}": [
