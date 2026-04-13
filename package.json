@@ -18,7 +18,8 @@
     "test:shared": "cd packages/shared && pnpm test",
     "test:web": "cd apps/web && pnpm test",
     "dead-code": "knip",
-    "prepare": "husky"
+    "prepare": "husky",
+    "audit:actions": "npx tsx scripts/audit-spell-actions.ts"
   },
   "lint-staged": {
     "*.{ts,tsx}": [
@@ -42,6 +43,7 @@
     "knip": "^5.85.0",
     "lint-staged": "^16.4.0",
     "prettier": "^3.8.1",
+    "tsx": "^4.19.4",
     "turbo": "^2",
     "typescript": "^5.9",
     "typescript-eslint": "^8.57.0",
