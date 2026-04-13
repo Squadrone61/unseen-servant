@@ -294,15 +294,31 @@ export function BuilderShell({ mode, editId, editName, editDynamicData }: Builde
     setFinishError(null);
 
     if (isEditMode && editId) {
-      // Merge: new static data from builder + preserved dynamic data from gameplay
+      // Builder is the source of truth for editable data (inventory, currency,
+      // spell slot shape, resource map). Only carry forward ephemeral gameplay
+      // state (damage taken, used counts, conditions) from the prior dynamic.
       const mergedCharacter = editDynamicData
         ? {
             builder: state,
             static: character.static,
             dynamic: {
-              ...editDynamicData,
-              // Clamp currentHP if maxHP decreased
+              ...character.dynamic,
               currentHP: Math.min(editDynamicData.currentHP, getHP(character)),
+              tempHP: editDynamicData.tempHP,
+              conditions: editDynamicData.conditions,
+              deathSaves: editDynamicData.deathSaves,
+              heroicInspiration: editDynamicData.heroicInspiration,
+              activeEffects: editDynamicData.activeEffects,
+              spellSlotsUsed: character.dynamic.spellSlotsUsed.map((s) => {
+                const prior = editDynamicData.spellSlotsUsed.find((p) => p.level === s.level);
+                return prior ? { ...s, used: Math.min(prior.used, s.total) } : s;
+              }),
+              resourcesUsed: Object.fromEntries(
+                Object.keys(character.dynamic.resourcesUsed ?? {}).map((key) => [
+                  key,
+                  editDynamicData.resourcesUsed?.[key] ?? 0,
+                ]),
+              ),
             },
           }
         : character;
