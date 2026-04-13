@@ -5,6 +5,9 @@ import type { GameLogger } from "../services/game-logger.js";
 import { rollNotation, buildOutputFromResult, formatRollOutput } from "../services/dice-engine.js";
 import { parseCheckType, getCheckAdvantageInfo } from "@unseen-servant/shared/utils";
 import { getCombatBonus } from "@unseen-servant/shared/character";
+import { resolveActionRef } from "@unseen-servant/shared/data";
+import type { ActionRef } from "@unseen-servant/shared/data";
+import { getAction } from "@unseen-servant/shared";
 
 export function registerDndTools(
   server: McpServer,
@@ -60,14 +63,50 @@ Examples:
         dc: z.coerce
           .number()
           .optional()
-          .describe("Difficulty Class — shows Success/Failure to players."),
+          .describe(
+            "Difficulty Class — shows Success/Failure to players. Overrides action_ref DC if provided.",
+          ),
         reason: z
           .string()
           .optional()
           .describe("Why: 'Goblin attack', 'Spot the trap', 'Fireball damage'"),
+        action_ref: z
+          .object({
+            source: z.enum(["spell", "weapon", "item", "monster"]),
+            name: z.string(),
+            monsterActionName: z.string().optional(),
+          })
+          .optional()
+          .describe(
+            "Auto-fill save DC from a DB entity's ActionEffect save.dc. Used with checkType ending in '_save'. Provide caster_spell_save_dc if the action uses 'spell_save_dc'.",
+          ),
+        caster_spell_save_dc: z.coerce
+          .number()
+          .optional()
+          .describe(
+            "Caster's spell save DC — substituted when action_ref resolves to 'spell_save_dc'.",
+          ),
       },
     },
-    async ({ notation, checkType, player, dc, reason }) => {
+    async ({ notation, checkType, player, dc, reason, action_ref, caster_spell_save_dc }) => {
+      // Auto-fill DC from action_ref if dc not explicitly provided
+      let resolvedDC = dc;
+      if (resolvedDC === undefined && action_ref && checkType?.endsWith("_save")) {
+        const ref: ActionRef = action_ref;
+        const resolved = resolveActionRef(ref);
+        const contextualAction = resolved.action
+          ? getAction(
+              { effects: { action: resolved.action } },
+              { spellSaveDC: caster_spell_save_dc },
+            )
+          : null;
+        if (contextualAction?.save) {
+          const saveDC = contextualAction.save.dc;
+          if (typeof saveDC === "number") {
+            resolvedDC = saveDC;
+          }
+        }
+      }
       // ── Validate checkType ──
       if (checkType) {
         const parsed = parseCheckType(checkType);
@@ -136,7 +175,7 @@ Examples:
             notation,
             checkType,
             targetCharacter: player,
-            dc,
+            dc: resolvedDC,
             reason: reason || "Roll",
           });
 
@@ -151,11 +190,19 @@ Examples:
           });
 
           const fullResult = formatted + effectHints + damageBonusHints;
-          gameLogger.toolCall("roll_dice", { notation, checkType, player, dc, reason }, fullResult);
+          gameLogger.toolCall(
+            "roll_dice",
+            { notation, checkType, player, dc: resolvedDC, reason },
+            fullResult,
+          );
           return { content: [{ type: "text" as const, text: fullResult }] };
         } catch (error) {
           const errMsg = `Check request failed: ${error instanceof Error ? error.message : String(error)}`;
-          gameLogger.toolCall("roll_dice", { notation, checkType, player, dc, reason }, errMsg);
+          gameLogger.toolCall(
+            "roll_dice",
+            { notation, checkType, player, dc: resolvedDC, reason },
+            errMsg,
+          );
           return {
             content: [
               {
@@ -174,16 +221,16 @@ Examples:
       wsClient.sendDiceRoll(roll, reason);
 
       // Check success against DC
-      const success = dc !== undefined ? roll.total >= dc : undefined;
+      const success = resolvedDC !== undefined ? roll.total >= resolvedDC : undefined;
 
       const formatted = formatRollOutput(output, {
-        dc,
+        dc: resolvedDC,
         success,
         criticalHit: roll.criticalHit,
         criticalFail: roll.criticalFail,
       });
 
-      gameLogger.toolCall("roll_dice", { notation, dc, reason }, formatted);
+      gameLogger.toolCall("roll_dice", { notation, dc: resolvedDC, reason }, formatted);
       return { content: [{ type: "text" as const, text: formatted }] };
     },
   );

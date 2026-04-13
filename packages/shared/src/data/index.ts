@@ -465,3 +465,8 @@ export type {
   EntryClassFeature,
   EntrySubclassFeature,
 } from "../types/entry-types";
+
+// ─── ActionRef resolver ────────────────────────────────
+
+export { resolveActionRef } from "./resolve-action";
+export type { ActionRef, ActionRefSource, ResolvedActionRef } from "./resolve-action";

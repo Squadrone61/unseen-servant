@@ -317,6 +317,8 @@ export interface MonsterDb {
 export interface MonsterActionEntry {
   name: string;
   entries: Entry[];
+  /** Structured outcome — populated by Phase 11 DB migration for supported action types. */
+  action?: import("./effects").ActionEffect;
 }
 
 export interface MonsterSpellcasting {

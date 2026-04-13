@@ -1,6 +1,11 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { formatGridPosition, parseGridPosition } from "@unseen-servant/shared/utils";
+import { resolveActionRef, getBaseItem } from "@unseen-servant/shared/data";
+import type { ActionRef } from "@unseen-servant/shared/data";
+import { getWeaponAttack } from "@unseen-servant/shared/character";
+import { getAction } from "@unseen-servant/shared";
+import { rollNotation } from "../services/dice-engine.js";
 import { log } from "../logger.js";
 import type { MessageQueue } from "../message-queue.js";
 import type { WSClient } from "../ws-client.js";
@@ -21,6 +26,28 @@ function formatPositionsForOutput(state: any): any {
   }
   return output;
 }
+
+/**
+ * Zod schema for an ActionRef — used by apply_damage, apply_area_effect, show_aoe, roll_dice.
+ * Callers provide either explicit damage/save/area args OR actionRef; actionRef auto-resolves
+ * damage dice, save ability, DC, and area shape from the DB entity's ActionEffect.
+ */
+const actionRefSchema = z
+  .object({
+    source: z
+      .enum(["spell", "weapon", "item", "monster"])
+      .describe("Which DB category the entity belongs to"),
+    name: z.string().describe("Entity name (e.g., 'Fireball', 'Longsword', 'Adult Red Dragon')"),
+    monsterActionName: z
+      .string()
+      .optional()
+      .describe(
+        "Required when source='monster': the specific action entry name within the monster stat block",
+      ),
+  })
+  .describe(
+    "Reference to a DB entity whose ActionEffect provides damage dice, save DC/ability, and area shape automatically",
+  );
 
 export function registerGameTools(
   server: McpServer,
@@ -257,6 +284,29 @@ export function registerGameTools(
       ) {
         output.combatant.position = formatGridPosition(output.combatant.position);
       }
+
+      // Enrich weapon inventory items with resolvedAction from the DB
+      const char = result.character;
+      const inventory: unknown[] = output.character?.dynamic?.inventory ?? [];
+      for (const rawItem of inventory) {
+        const item = rawItem as Record<string, unknown>;
+        if (item.weapon) {
+          // item.name is the weapon name — look up its DB action
+          const itemName = typeof item.name === "string" ? item.name : "";
+          const baseItem = getBaseItem(itemName);
+          if (baseItem?.effects?.action) {
+            const attackBonus = getWeaponAttack(
+              char,
+              item as unknown as import("@unseen-servant/shared/types").Item,
+            );
+            item.resolvedAction = {
+              attackBonus,
+              action: baseItem.effects.action,
+            };
+          }
+        }
+      }
+
       const text = JSON.stringify(output, null, 2);
       gameLogger.toolCall("get_character", { name }, text);
       return {
@@ -276,10 +326,13 @@ export function registerGameTools(
     "apply_damage",
     {
       description:
-        "Deal damage to a character or combatant. Handles temp HP absorption automatically. When damage_type is provided, resistance (half), immunity (zero), and vulnerability (double) are applied automatically from active effects. If the target was already at 0 HP, records a death save failure instead (2 failures if is_critical_hit is true).",
+        "Deal damage to a character or combatant. Handles temp HP absorption automatically. When damage_type is provided, resistance (half), immunity (zero), and vulnerability (double) are applied automatically from active effects. If the target was already at 0 HP, records a death save failure instead (2 failures if is_critical_hit is true).\n\nAlternative: provide actionRef instead of explicit amount/damage_type to auto-resolve damage dice and type from the DB entity's ActionEffect. Use outcomeBranch to pick which outcome (default: onHit for attack/auto, onFailedSave for save). For spells, provide upcast_level (extra levels above base) and caster_spell_save_dc if needed.",
       inputSchema: {
         name: z.string().describe("Character or combatant name"),
-        amount: z.coerce.number().describe("Amount of damage to deal"),
+        amount: z.coerce
+          .number()
+          .optional()
+          .describe("Amount of damage to deal (required unless actionRef is provided)"),
         damage_type: z
           .string()
           .optional()
@@ -290,13 +343,106 @@ export function registerGameTools(
           .describe(
             "Whether this is a critical hit — causes 2 death save failures if target is already at 0 HP",
           ),
+        action_ref: actionRefSchema
+          .optional()
+          .describe(
+            "Auto-resolve damage from a DB entity's ActionEffect instead of specifying explicit amount/type",
+          ),
+        outcome_branch: z
+          .enum(["onHit", "onMiss", "onFailedSave", "onSuccessfulSave"])
+          .optional()
+          .describe(
+            "Which outcome branch to use when resolving from actionRef. Defaults to onHit for attack/auto, onFailedSave for save.",
+          ),
+        upcast_level: z.coerce
+          .number()
+          .optional()
+          .describe(
+            "Number of spell levels above the base level (for upcast scaling via actionRef)",
+          ),
+        caster_spell_save_dc: z.coerce
+          .number()
+          .optional()
+          .describe(
+            "Caster's spell save DC (substituted for 'spell_save_dc' when using actionRef with spells)",
+          ),
       },
     },
-    async ({ name, amount, damage_type, is_critical_hit }) => {
+    async ({
+      name,
+      amount,
+      damage_type,
+      is_critical_hit,
+      action_ref,
+      outcome_branch,
+      upcast_level,
+      caster_spell_save_dc,
+    }) => {
+      // ── actionRef path ──
+      if (action_ref !== undefined && amount === undefined) {
+        const ref: ActionRef = action_ref;
+        const resolved = resolveActionRef(ref);
+        if (!resolved.action) {
+          return buildError(
+            `No structured ActionEffect found for ${resolved.displayName}. Use explicit amount/damage_type instead.`,
+          );
+        }
+        const contextualAction = getAction(
+          { effects: { action: resolved.action } },
+          {
+            spellSaveDC: caster_spell_save_dc,
+            upcastLevel: upcast_level,
+          },
+        );
+        if (!contextualAction) {
+          return buildError(`Failed to resolve action for ${resolved.displayName}.`);
+        }
+
+        // Pick the outcome branch
+        const branch =
+          outcome_branch ?? (contextualAction.kind === "save" ? "onFailedSave" : "onHit");
+        const outcome = contextualAction[branch];
+        if (!outcome?.damage || outcome.damage.length === 0) {
+          return buildError(
+            `No damage in branch "${branch}" for ${resolved.displayName}. Available note: ${outcome?.note ?? "(none)"}`,
+          );
+        }
+
+        // Roll and sum all damage entries
+        let totalDamage = 0;
+        let resolvedType = damage_type;
+        const rollDetails: string[] = [];
+        for (const dmgEntry of outcome.damage) {
+          const { result } = rollNotation(dmgEntry.dice, dmgEntry.dice);
+          totalDamage += result.total;
+          rollDetails.push(`${dmgEntry.dice} (${dmgEntry.type}) = ${result.total}`);
+          if (!resolvedType) resolvedType = dmgEntry.type;
+        }
+
+        const r = wsClient.gameStateManager.applyDamage(
+          name,
+          totalDamage,
+          resolvedType,
+          is_critical_hit,
+        );
+        // Prepend roll details to the response text
+        r.text = `${resolved.displayName} [${rollDetails.join(" + ")}] → ${r.text}`;
+        return fromToolResponse(r, "apply_damage", {
+          name,
+          actionRef: ref,
+          outcomeBranch: branch,
+          totalDamage,
+          damageType: resolvedType,
+          is_critical_hit,
+        });
+      }
+
+      // ── Explicit amount path (original) ──
+      const finalAmount = amount ?? 0;
       return fromToolResponse(
-        wsClient.gameStateManager.applyDamage(name, amount, damage_type, is_critical_hit),
+        wsClient.gameStateManager.applyDamage(name, finalAmount, damage_type, is_critical_hit),
         "apply_damage",
-        { name, amount, damage_type, is_critical_hit },
+        { name, amount: finalAmount, damage_type, is_critical_hit },
       );
     },
   );
@@ -790,9 +936,12 @@ export function registerGameTools(
     "show_aoe",
     {
       description:
-        "Display an AoE overlay on the battle map. Returns affected combatants. Sphere: center + size (radius). Cone: center (caster) + size (length) + direction. Rectangle: from + to (two corners in A1).",
+        "Display an AoE overlay on the battle map. Returns affected combatants. Sphere: center + size (radius). Cone: center (caster) + size (length) + direction. Rectangle: from + to (two corners in A1).\n\nAlternative: provide action_ref to auto-resolve shape and size from a DB entity's ActionEffect (e.g., Fireball → sphere 20ft). Explicit shape/size always override actionRef values.",
       inputSchema: {
-        shape: z.enum(["sphere", "cone", "rectangle"]).describe("AoE shape"),
+        shape: z
+          .enum(["sphere", "cone", "rectangle"])
+          .optional()
+          .describe("AoE shape (overrides actionRef if provided)"),
         center: z
           .string()
           .optional()
@@ -802,7 +951,9 @@ export function registerGameTools(
         size: z.coerce
           .number()
           .optional()
-          .describe("Size in feet: radius for sphere, length for cone"),
+          .describe(
+            "Size in feet: radius for sphere, length for cone (overrides actionRef if provided)",
+          ),
         direction: z.coerce
           .number()
           .optional()
@@ -816,13 +967,58 @@ export function registerGameTools(
           .optional()
           .describe("Whether this AoE stays on the map until dismissed (default false)"),
         name: z.string().optional().describe("Caster name"),
+        action_ref: actionRefSchema
+          .optional()
+          .describe("Auto-resolve area shape and size from DB entity's ActionEffect"),
       },
     },
-    async ({ shape, center, size, direction, from, to, color, label, persistent, name }) => {
+    async ({
+      shape,
+      center,
+      size,
+      direction,
+      from,
+      to,
+      color,
+      label,
+      persistent,
+      name,
+      action_ref,
+    }) => {
+      let resolvedShape = shape;
+      let resolvedSize = size;
+
+      // Auto-resolve area from actionRef if not explicitly provided
+      if (action_ref) {
+        const resolved = resolveActionRef(action_ref);
+        const contextualAction = resolved.action
+          ? getAction({ effects: { action: resolved.action } }, {})
+          : null;
+        if (contextualAction?.area) {
+          const areaShape = contextualAction.area.shape;
+          // Map ActionEffect area shapes to supported show_aoe shapes
+          if (!resolvedShape && (areaShape === "sphere" || areaShape === "cone")) {
+            resolvedShape = areaShape;
+          }
+          if (!resolvedSize) {
+            resolvedSize = contextualAction.area.size;
+          }
+        }
+      }
+
+      if (!resolvedShape) {
+        return buildError(
+          "show_aoe requires either an explicit shape or an action_ref with an area field.",
+          [
+            "Provide shape='sphere'/'cone'/'rectangle' or action_ref pointing to a spell/weapon with an area.",
+          ],
+        );
+      }
+
       const result = wsClient.gameStateManager.showAoE({
-        shape,
+        shape: resolvedShape,
         center,
-        size,
+        size: resolvedSize,
         direction,
         from,
         to,
@@ -832,9 +1028,9 @@ export function registerGameTools(
         casterName: name,
       });
       return fromToolResponse(result, "show_aoe", {
-        shape,
+        shape: resolvedShape,
         center,
-        size,
+        size: resolvedSize,
         direction,
         from,
         to,
@@ -842,6 +1038,7 @@ export function registerGameTools(
         label,
         persistent,
         name,
+        action_ref,
       });
     },
   );
@@ -850,9 +1047,12 @@ export function registerGameTools(
     "apply_area_effect",
     {
       description:
-        "Apply damage to all combatants in an area with saving throws. Sphere: center + size (radius). Cone: center (caster) + size (length) + direction. Rectangle: from + to (two corners in A1).",
+        "Apply damage to all combatants in an area with saving throws. Sphere: center + size (radius). Cone: center (caster) + size (length) + direction. Rectangle: from + to (two corners in A1).\n\nAlternative: provide action_ref to auto-resolve area shape, size, damage dice, damage type, save ability, and DC from a DB entity's ActionEffect (e.g., Fireball: sphere 20ft, 8d6 fire, DEX save). Explicit args override actionRef values. For spells, provide caster_spell_save_dc to substitute 'spell_save_dc'. For upcast spells, provide upcast_level (extra levels above base).",
       inputSchema: {
-        shape: z.enum(["sphere", "cone", "rectangle"]).describe("AoE shape"),
+        shape: z
+          .enum(["sphere", "cone", "rectangle"])
+          .optional()
+          .describe("AoE shape (overrides actionRef if provided)"),
         center: z
           .string()
           .optional()
@@ -860,21 +1060,52 @@ export function registerGameTools(
         size: z.coerce
           .number()
           .optional()
-          .describe("Size in feet: radius for sphere, length for cone"),
+          .describe(
+            "Size in feet: radius for sphere, length for cone (overrides actionRef if provided)",
+          ),
         direction: z.coerce
           .number()
           .optional()
           .describe("Direction in degrees (0=north, 90=east). Required for cone"),
         from: z.string().optional().describe("Starting corner in A1 notation (for rectangle)"),
         to: z.string().optional().describe("Opposite corner in A1 notation (for rectangle)"),
-        damage: z.string().describe("Damage dice notation (e.g., '8d6')"),
-        damage_type: z.string().describe("Damage type (e.g., 'fire', 'cold')"),
-        save_ability: z.string().describe("Saving throw ability (e.g., 'dexterity')"),
-        save_dc: z.coerce.number().describe("Save DC"),
+        damage: z
+          .string()
+          .optional()
+          .describe("Damage dice notation (e.g., '8d6') — required unless action_ref is provided"),
+        damage_type: z
+          .string()
+          .optional()
+          .describe("Damage type (e.g., 'fire', 'cold') — required unless action_ref is provided"),
+        save_ability: z
+          .string()
+          .optional()
+          .describe(
+            "Saving throw ability (e.g., 'dexterity') — required unless action_ref is provided",
+          ),
+        save_dc: z.coerce
+          .number()
+          .optional()
+          .describe("Save DC — required unless action_ref is provided"),
         half_on_save: z
           .boolean()
           .optional()
           .describe("Whether targets take half damage on a successful save (default true)"),
+        action_ref: actionRefSchema
+          .optional()
+          .describe(
+            "Auto-resolve area, damage, save from DB entity's ActionEffect. Explicit args take precedence.",
+          ),
+        upcast_level: z.coerce
+          .number()
+          .optional()
+          .describe("Extra spell levels above base (for upcast scaling when using action_ref)"),
+        caster_spell_save_dc: z.coerce
+          .number()
+          .optional()
+          .describe(
+            "Caster's spell save DC (substituted for 'spell_save_dc' when using action_ref)",
+          ),
       },
     },
     async ({
@@ -889,32 +1120,126 @@ export function registerGameTools(
       save_ability,
       save_dc,
       half_on_save,
+      action_ref,
+      upcast_level,
+      caster_spell_save_dc,
     }) => {
+      let resolvedShape = shape;
+      let resolvedSize = size;
+      let resolvedDamage = damage;
+      let resolvedDamageType = damage_type;
+      let resolvedSaveAbility = save_ability;
+      let resolvedSaveDC = save_dc;
+      let resolvedHalfOnSave = half_on_save ?? true;
+
+      // Auto-resolve from actionRef if provided
+      if (action_ref) {
+        const resolved = resolveActionRef(action_ref);
+        const contextualAction = resolved.action
+          ? getAction(
+              { effects: { action: resolved.action } },
+              {
+                spellSaveDC: caster_spell_save_dc,
+                upcastLevel: upcast_level,
+              },
+            )
+          : null;
+
+        if (contextualAction) {
+          // Area shape
+          if (!resolvedShape && contextualAction.area) {
+            const areaShape = contextualAction.area.shape;
+            if (areaShape === "sphere" || areaShape === "cone") {
+              resolvedShape = areaShape;
+            }
+          }
+          if (!resolvedSize && contextualAction.area) {
+            resolvedSize = contextualAction.area.size;
+          }
+
+          // Save
+          if (!resolvedSaveAbility && contextualAction.save) {
+            resolvedSaveAbility = contextualAction.save.ability;
+          }
+          if (resolvedSaveDC === undefined && contextualAction.save) {
+            const dc = contextualAction.save.dc;
+            if (typeof dc === "number") {
+              resolvedSaveDC = dc;
+            }
+            // If dc is still "spell_save_dc" (no caster_spell_save_dc provided), leave undefined
+          }
+          // onSuccess: "half" is the D&D default; override only if explicitly false
+          if (half_on_save === undefined && contextualAction.save) {
+            resolvedHalfOnSave = contextualAction.save.onSuccess !== "none";
+          }
+
+          // Damage: prefer onFailedSave branch for save-kind, onHit for attack/auto
+          const damageBranch =
+            contextualAction.kind === "save"
+              ? contextualAction.onFailedSave
+              : contextualAction.onHit;
+          if (!resolvedDamage && damageBranch?.damage && damageBranch.damage.length > 0) {
+            // Combine multiple damage dice entries into a single notation for applyAreaEffect
+            resolvedDamage = damageBranch.damage.map((d) => d.dice).join("+");
+            if (!resolvedDamageType) {
+              resolvedDamageType = damageBranch.damage[0].type;
+            }
+          }
+        }
+      }
+
+      if (!resolvedShape) {
+        return buildError(
+          "apply_area_effect requires either an explicit shape or an action_ref with an area field.",
+        );
+      }
+      if (!resolvedDamage) {
+        return buildError(
+          "apply_area_effect requires either explicit damage notation or an action_ref with damage in onFailedSave/onHit.",
+        );
+      }
+      if (!resolvedDamageType) {
+        return buildError(
+          "apply_area_effect requires either explicit damage_type or an action_ref with damage type.",
+        );
+      }
+      if (!resolvedSaveAbility) {
+        return buildError(
+          "apply_area_effect requires either explicit save_ability or an action_ref with a save block.",
+        );
+      }
+      if (resolvedSaveDC === undefined) {
+        return buildError(
+          "apply_area_effect requires either explicit save_dc or an action_ref with a numeric DC (provide caster_spell_save_dc if the action uses 'spell_save_dc').",
+        );
+      }
+
       const result = wsClient.gameStateManager.applyAreaEffect({
-        shape,
+        shape: resolvedShape,
         center,
-        size,
+        size: resolvedSize,
         direction,
         from,
         to,
-        damage,
-        damageType: damage_type,
-        saveAbility: save_ability,
-        saveDC: save_dc,
-        halfOnSave: half_on_save ?? true,
+        damage: resolvedDamage,
+        damageType: resolvedDamageType,
+        saveAbility: resolvedSaveAbility,
+        saveDC: resolvedSaveDC,
+        halfOnSave: resolvedHalfOnSave,
       });
       return fromToolResponse(result, "apply_area_effect", {
-        shape,
+        shape: resolvedShape,
         center,
-        size,
+        size: resolvedSize,
         direction,
         from,
         to,
-        damage,
-        damage_type,
-        save_ability,
-        save_dc,
-        half_on_save,
+        damage: resolvedDamage,
+        damage_type: resolvedDamageType,
+        save_ability: resolvedSaveAbility,
+        save_dc: resolvedSaveDC,
+        half_on_save: resolvedHalfOnSave,
+        action_ref,
       });
     },
   );
