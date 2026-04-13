@@ -15,7 +15,27 @@
       "Sap"
     ],
     "range": "120/360",
-    "weight": 10
+    "weight": 10,
+    "effects": {
+      "action": {
+        "kind": "attack",
+        "attack": {
+          "bonus": "weapon_ranged",
+          "range": {
+            "normal": 120,
+            "long": 360
+          }
+        },
+        "onHit": {
+          "damage": [
+            {
+              "dice": "6d8",
+              "type": "necrotic"
+            }
+          ]
+        }
+      }
+    }
   },
   {
     "name": "Automatic Rifle",
@@ -34,7 +54,27 @@
       "Slow"
     ],
     "range": "80/240",
-    "weight": 8
+    "weight": 8,
+    "effects": {
+      "action": {
+        "kind": "attack",
+        "attack": {
+          "bonus": "weapon_ranged",
+          "range": {
+            "normal": 80,
+            "long": 240
+          }
+        },
+        "onHit": {
+          "damage": [
+            {
+              "dice": "2d8",
+              "type": "piercing"
+            }
+          ]
+        }
+      }
+    }
   },
   {
     "name": "Battleaxe",
@@ -50,7 +90,24 @@
     "mastery": [
       "Topple"
     ],
-    "weight": 4
+    "weight": 4,
+    "effects": {
+      "action": {
+        "kind": "attack",
+        "attack": {
+          "bonus": "weapon_melee"
+        },
+        "onHit": {
+          "damage": [
+            {
+              "dice": "1d8",
+              "type": "slashing"
+            }
+          ],
+          "note": "Versatile: 1d10 two-handed"
+        }
+      }
+    }
   },
   {
     "name": "Blowgun",
@@ -67,7 +124,27 @@
       "Vex"
     ],
     "range": "25/100",
-    "weight": 1
+    "weight": 1,
+    "effects": {
+      "action": {
+        "kind": "attack",
+        "attack": {
+          "bonus": "weapon_ranged",
+          "range": {
+            "normal": 25,
+            "long": 100
+          }
+        },
+        "onHit": {
+          "damage": [
+            {
+              "dice": "1",
+              "type": "piercing"
+            }
+          ]
+        }
+      }
+    }
   },
   {
     "name": "Club",
@@ -82,7 +159,23 @@
     "mastery": [
       "Slow"
     ],
-    "weight": 2
+    "weight": 2,
+    "effects": {
+      "action": {
+        "kind": "attack",
+        "attack": {
+          "bonus": "weapon_melee"
+        },
+        "onHit": {
+          "damage": [
+            {
+              "dice": "1d4",
+              "type": "bludgeoning"
+            }
+          ]
+        }
+      }
+    }
   },
   {
     "name": "Dagger",
@@ -100,7 +193,27 @@
       "Nick"
     ],
     "range": "20/60",
-    "weight": 1
+    "weight": 1,
+    "effects": {
+      "action": {
+        "kind": "attack",
+        "attack": {
+          "bonus": "weapon_melee",
+          "range": {
+            "normal": 20,
+            "long": 60
+          }
+        },
+        "onHit": {
+          "damage": [
+            {
+              "dice": "1d4",
+              "type": "piercing"
+            }
+          ]
+        }
+      }
+    }
   },
   {
     "name": "Dart",
@@ -117,7 +230,27 @@
       "Vex"
     ],
     "range": "20/60",
-    "weight": 0.25
+    "weight": 0.25,
+    "effects": {
+      "action": {
+        "kind": "attack",
+        "attack": {
+          "bonus": "weapon_ranged",
+          "range": {
+            "normal": 20,
+            "long": 60
+          }
+        },
+        "onHit": {
+          "damage": [
+            {
+              "dice": "1d4",
+              "type": "piercing"
+            }
+          ]
+        }
+      }
+    }
   },
   {
     "name": "Flail",
@@ -129,7 +262,23 @@
     "mastery": [
       "Sap"
     ],
-    "weight": 2
+    "weight": 2,
+    "effects": {
+      "action": {
+        "kind": "attack",
+        "attack": {
+          "bonus": "weapon_melee"
+        },
+        "onHit": {
+          "damage": [
+            {
+              "dice": "1d8",
+              "type": "bludgeoning"
+            }
+          ]
+        }
+      }
+    }
   },
   {
     "name": "Glaive",
@@ -146,7 +295,24 @@
     "mastery": [
       "Graze"
     ],
-    "weight": 6
+    "weight": 6,
+    "effects": {
+      "action": {
+        "kind": "attack",
+        "attack": {
+          "bonus": "weapon_melee",
+          "reach": 10
+        },
+        "onHit": {
+          "damage": [
+            {
+              "dice": "1d10",
+              "type": "slashing"
+            }
+          ]
+        }
+      }
+    }
   },
   {
     "name": "Greataxe",
@@ -162,7 +328,23 @@
     "mastery": [
       "Cleave"
     ],
-    "weight": 7
+    "weight": 7,
+    "effects": {
+      "action": {
+        "kind": "attack",
+        "attack": {
+          "bonus": "weapon_melee"
+        },
+        "onHit": {
+          "damage": [
+            {
+              "dice": "1d12",
+              "type": "slashing"
+            }
+          ]
+        }
+      }
+    }
   },
   {
     "name": "Greatclub",
@@ -177,7 +359,23 @@
     "mastery": [
       "Push"
     ],
-    "weight": 10
+    "weight": 10,
+    "effects": {
+      "action": {
+        "kind": "attack",
+        "attack": {
+          "bonus": "weapon_melee"
+        },
+        "onHit": {
+          "damage": [
+            {
+              "dice": "1d8",
+              "type": "bludgeoning"
+            }
+          ]
+        }
+      }
+    }
   },
   {
     "name": "Greatsword",
@@ -193,7 +391,23 @@
     "mastery": [
       "Graze"
     ],
-    "weight": 6
+    "weight": 6,
+    "effects": {
+      "action": {
+        "kind": "attack",
+        "attack": {
+          "bonus": "weapon_melee"
+        },
+        "onHit": {
+          "damage": [
+            {
+              "dice": "2d6",
+              "type": "slashing"
+            }
+          ]
+        }
+      }
+    }
   },
   {
     "name": "Halberd",
@@ -210,7 +424,24 @@
     "mastery": [
       "Cleave"
     ],
-    "weight": 6
+    "weight": 6,
+    "effects": {
+      "action": {
+        "kind": "attack",
+        "attack": {
+          "bonus": "weapon_melee",
+          "reach": 10
+        },
+        "onHit": {
+          "damage": [
+            {
+              "dice": "1d10",
+              "type": "slashing"
+            }
+          ]
+        }
+      }
+    }
   },
   {
     "name": "Hand Crossbow",
@@ -228,7 +459,27 @@
       "Vex"
     ],
     "range": "30/120",
-    "weight": 3
+    "weight": 3,
+    "effects": {
+      "action": {
+        "kind": "attack",
+        "attack": {
+          "bonus": "weapon_ranged",
+          "range": {
+            "normal": 30,
+            "long": 120
+          }
+        },
+        "onHit": {
+          "damage": [
+            {
+              "dice": "1d6",
+              "type": "piercing"
+            }
+          ]
+        }
+      }
+    }
   },
   {
     "name": "Handaxe",
@@ -245,7 +496,27 @@
       "Vex"
     ],
     "range": "20/60",
-    "weight": 2
+    "weight": 2,
+    "effects": {
+      "action": {
+        "kind": "attack",
+        "attack": {
+          "bonus": "weapon_melee",
+          "range": {
+            "normal": 20,
+            "long": 60
+          }
+        },
+        "onHit": {
+          "damage": [
+            {
+              "dice": "1d6",
+              "type": "slashing"
+            }
+          ]
+        }
+      }
+    }
   },
   {
     "name": "Heavy Crossbow",
@@ -264,7 +535,27 @@
       "Push"
     ],
     "range": "100/400",
-    "weight": 18
+    "weight": 18,
+    "effects": {
+      "action": {
+        "kind": "attack",
+        "attack": {
+          "bonus": "weapon_ranged",
+          "range": {
+            "normal": 100,
+            "long": 400
+          }
+        },
+        "onHit": {
+          "damage": [
+            {
+              "dice": "1d10",
+              "type": "piercing"
+            }
+          ]
+        }
+      }
+    }
   },
   {
     "name": "Hunting Rifle",
@@ -282,7 +573,27 @@
       "Slow"
     ],
     "range": "80/240",
-    "weight": 8
+    "weight": 8,
+    "effects": {
+      "action": {
+        "kind": "attack",
+        "attack": {
+          "bonus": "weapon_ranged",
+          "range": {
+            "normal": 80,
+            "long": 240
+          }
+        },
+        "onHit": {
+          "damage": [
+            {
+              "dice": "2d10",
+              "type": "piercing"
+            }
+          ]
+        }
+      }
+    }
   },
   {
     "name": "Javelin",
@@ -298,7 +609,27 @@
       "Slow"
     ],
     "range": "30/120",
-    "weight": 2
+    "weight": 2,
+    "effects": {
+      "action": {
+        "kind": "attack",
+        "attack": {
+          "bonus": "weapon_melee",
+          "range": {
+            "normal": 30,
+            "long": 120
+          }
+        },
+        "onHit": {
+          "damage": [
+            {
+              "dice": "1d6",
+              "type": "piercing"
+            }
+          ]
+        }
+      }
+    }
   },
   {
     "name": "Lance",
@@ -313,7 +644,24 @@
     "mastery": [
       "Topple"
     ],
-    "weight": 6
+    "weight": 6,
+    "effects": {
+      "action": {
+        "kind": "attack",
+        "attack": {
+          "bonus": "weapon_melee",
+          "reach": 10
+        },
+        "onHit": {
+          "damage": [
+            {
+              "dice": "1d10",
+              "type": "piercing"
+            }
+          ]
+        }
+      }
+    }
   },
   {
     "name": "Laser Pistol",
@@ -330,7 +678,27 @@
       "Vex"
     ],
     "range": "40/120",
-    "weight": 2
+    "weight": 2,
+    "effects": {
+      "action": {
+        "kind": "attack",
+        "attack": {
+          "bonus": "weapon_ranged",
+          "range": {
+            "normal": 40,
+            "long": 120
+          }
+        },
+        "onHit": {
+          "damage": [
+            {
+              "dice": "3d6",
+              "type": "radiant"
+            }
+          ]
+        }
+      }
+    }
   },
   {
     "name": "Laser Rifle",
@@ -348,7 +716,27 @@
       "Slow"
     ],
     "range": "100/300",
-    "weight": 7
+    "weight": 7,
+    "effects": {
+      "action": {
+        "kind": "attack",
+        "attack": {
+          "bonus": "weapon_ranged",
+          "range": {
+            "normal": 100,
+            "long": 300
+          }
+        },
+        "onHit": {
+          "damage": [
+            {
+              "dice": "3d8",
+              "type": "radiant"
+            }
+          ]
+        }
+      }
+    }
   },
   {
     "name": "Light Crossbow",
@@ -366,7 +754,27 @@
       "Slow"
     ],
     "range": "80/320",
-    "weight": 5
+    "weight": 5,
+    "effects": {
+      "action": {
+        "kind": "attack",
+        "attack": {
+          "bonus": "weapon_ranged",
+          "range": {
+            "normal": 80,
+            "long": 320
+          }
+        },
+        "onHit": {
+          "damage": [
+            {
+              "dice": "1d8",
+              "type": "piercing"
+            }
+          ]
+        }
+      }
+    }
   },
   {
     "name": "Light Hammer",
@@ -383,7 +791,27 @@
       "Nick"
     ],
     "range": "20/60",
-    "weight": 2
+    "weight": 2,
+    "effects": {
+      "action": {
+        "kind": "attack",
+        "attack": {
+          "bonus": "weapon_melee",
+          "range": {
+            "normal": 20,
+            "long": 60
+          }
+        },
+        "onHit": {
+          "damage": [
+            {
+              "dice": "1d4",
+              "type": "bludgeoning"
+            }
+          ]
+        }
+      }
+    }
   },
   {
     "name": "Longbow",
@@ -401,7 +829,27 @@
       "Slow"
     ],
     "range": "150/600",
-    "weight": 2
+    "weight": 2,
+    "effects": {
+      "action": {
+        "kind": "attack",
+        "attack": {
+          "bonus": "weapon_ranged",
+          "range": {
+            "normal": 150,
+            "long": 600
+          }
+        },
+        "onHit": {
+          "damage": [
+            {
+              "dice": "1d8",
+              "type": "piercing"
+            }
+          ]
+        }
+      }
+    }
   },
   {
     "name": "Longsword",
@@ -417,7 +865,24 @@
     "mastery": [
       "Sap"
     ],
-    "weight": 3
+    "weight": 3,
+    "effects": {
+      "action": {
+        "kind": "attack",
+        "attack": {
+          "bonus": "weapon_melee"
+        },
+        "onHit": {
+          "damage": [
+            {
+              "dice": "1d8",
+              "type": "slashing"
+            }
+          ],
+          "note": "Versatile: 1d10 two-handed"
+        }
+      }
+    }
   },
   {
     "name": "Mace",
@@ -429,7 +894,23 @@
     "mastery": [
       "Sap"
     ],
-    "weight": 4
+    "weight": 4,
+    "effects": {
+      "action": {
+        "kind": "attack",
+        "attack": {
+          "bonus": "weapon_melee"
+        },
+        "onHit": {
+          "damage": [
+            {
+              "dice": "1d6",
+              "type": "bludgeoning"
+            }
+          ]
+        }
+      }
+    }
   },
   {
     "name": "Maul",
@@ -445,7 +926,23 @@
     "mastery": [
       "Topple"
     ],
-    "weight": 10
+    "weight": 10,
+    "effects": {
+      "action": {
+        "kind": "attack",
+        "attack": {
+          "bonus": "weapon_melee"
+        },
+        "onHit": {
+          "damage": [
+            {
+              "dice": "2d6",
+              "type": "bludgeoning"
+            }
+          ]
+        }
+      }
+    }
   },
   {
     "name": "Morningstar",
@@ -457,7 +954,23 @@
     "mastery": [
       "Sap"
     ],
-    "weight": 4
+    "weight": 4,
+    "effects": {
+      "action": {
+        "kind": "attack",
+        "attack": {
+          "bonus": "weapon_melee"
+        },
+        "onHit": {
+          "damage": [
+            {
+              "dice": "1d8",
+              "type": "piercing"
+            }
+          ]
+        }
+      }
+    }
   },
   {
     "name": "Musket",
@@ -475,7 +988,27 @@
       "Slow"
     ],
     "range": "40/120",
-    "weight": 10
+    "weight": 10,
+    "effects": {
+      "action": {
+        "kind": "attack",
+        "attack": {
+          "bonus": "weapon_ranged",
+          "range": {
+            "normal": 40,
+            "long": 120
+          }
+        },
+        "onHit": {
+          "damage": [
+            {
+              "dice": "1d12",
+              "type": "piercing"
+            }
+          ]
+        }
+      }
+    }
   },
   {
     "name": "Pike",
@@ -492,7 +1025,24 @@
     "mastery": [
       "Push"
     ],
-    "weight": 18
+    "weight": 18,
+    "effects": {
+      "action": {
+        "kind": "attack",
+        "attack": {
+          "bonus": "weapon_melee",
+          "reach": 10
+        },
+        "onHit": {
+          "damage": [
+            {
+              "dice": "1d10",
+              "type": "piercing"
+            }
+          ]
+        }
+      }
+    }
   },
   {
     "name": "Pistol",
@@ -509,7 +1059,27 @@
       "Vex"
     ],
     "range": "30/90",
-    "weight": 3
+    "weight": 3,
+    "effects": {
+      "action": {
+        "kind": "attack",
+        "attack": {
+          "bonus": "weapon_ranged",
+          "range": {
+            "normal": 30,
+            "long": 90
+          }
+        },
+        "onHit": {
+          "damage": [
+            {
+              "dice": "1d10",
+              "type": "piercing"
+            }
+          ]
+        }
+      }
+    }
   },
   {
     "name": "Quarterstaff",
@@ -525,7 +1095,24 @@
     "mastery": [
       "Topple"
     ],
-    "weight": 4
+    "weight": 4,
+    "effects": {
+      "action": {
+        "kind": "attack",
+        "attack": {
+          "bonus": "weapon_melee"
+        },
+        "onHit": {
+          "damage": [
+            {
+              "dice": "1d6",
+              "type": "bludgeoning"
+            }
+          ],
+          "note": "Versatile: 1d8 two-handed"
+        }
+      }
+    }
   },
   {
     "name": "Rapier",
@@ -540,7 +1127,23 @@
     "mastery": [
       "Vex"
     ],
-    "weight": 2
+    "weight": 2,
+    "effects": {
+      "action": {
+        "kind": "attack",
+        "attack": {
+          "bonus": "weapon_melee"
+        },
+        "onHit": {
+          "damage": [
+            {
+              "dice": "1d8",
+              "type": "piercing"
+            }
+          ]
+        }
+      }
+    }
   },
   {
     "name": "Revolver",
@@ -557,7 +1160,27 @@
       "Sap"
     ],
     "range": "40/120",
-    "weight": 3
+    "weight": 3,
+    "effects": {
+      "action": {
+        "kind": "attack",
+        "attack": {
+          "bonus": "weapon_ranged",
+          "range": {
+            "normal": 40,
+            "long": 120
+          }
+        },
+        "onHit": {
+          "damage": [
+            {
+              "dice": "2d8",
+              "type": "piercing"
+            }
+          ]
+        }
+      }
+    }
   },
   {
     "name": "Scimitar",
@@ -573,7 +1196,23 @@
     "mastery": [
       "Nick"
     ],
-    "weight": 3
+    "weight": 3,
+    "effects": {
+      "action": {
+        "kind": "attack",
+        "attack": {
+          "bonus": "weapon_melee"
+        },
+        "onHit": {
+          "damage": [
+            {
+              "dice": "1d6",
+              "type": "slashing"
+            }
+          ]
+        }
+      }
+    }
   },
   {
     "name": "Semiautomatic Pistol",
@@ -590,7 +1229,27 @@
       "Vex"
     ],
     "range": "50/150",
-    "weight": 3
+    "weight": 3,
+    "effects": {
+      "action": {
+        "kind": "attack",
+        "attack": {
+          "bonus": "weapon_ranged",
+          "range": {
+            "normal": 50,
+            "long": 150
+          }
+        },
+        "onHit": {
+          "damage": [
+            {
+              "dice": "2d6",
+              "type": "piercing"
+            }
+          ]
+        }
+      }
+    }
   },
   {
     "name": "Shortbow",
@@ -607,7 +1266,27 @@
       "Vex"
     ],
     "range": "80/320",
-    "weight": 2
+    "weight": 2,
+    "effects": {
+      "action": {
+        "kind": "attack",
+        "attack": {
+          "bonus": "weapon_ranged",
+          "range": {
+            "normal": 80,
+            "long": 320
+          }
+        },
+        "onHit": {
+          "damage": [
+            {
+              "dice": "1d6",
+              "type": "piercing"
+            }
+          ]
+        }
+      }
+    }
   },
   {
     "name": "Shortsword",
@@ -623,7 +1302,23 @@
     "mastery": [
       "Vex"
     ],
-    "weight": 2
+    "weight": 2,
+    "effects": {
+      "action": {
+        "kind": "attack",
+        "attack": {
+          "bonus": "weapon_melee"
+        },
+        "onHit": {
+          "damage": [
+            {
+              "dice": "1d6",
+              "type": "piercing"
+            }
+          ]
+        }
+      }
+    }
   },
   {
     "name": "Shotgun",
@@ -641,7 +1336,27 @@
       "Push"
     ],
     "range": "30/90",
-    "weight": 7
+    "weight": 7,
+    "effects": {
+      "action": {
+        "kind": "attack",
+        "attack": {
+          "bonus": "weapon_ranged",
+          "range": {
+            "normal": 30,
+            "long": 90
+          }
+        },
+        "onHit": {
+          "damage": [
+            {
+              "dice": "2d8",
+              "type": "piercing"
+            }
+          ]
+        }
+      }
+    }
   },
   {
     "name": "Sickle",
@@ -656,7 +1371,23 @@
     "mastery": [
       "Nick"
     ],
-    "weight": 2
+    "weight": 2,
+    "effects": {
+      "action": {
+        "kind": "attack",
+        "attack": {
+          "bonus": "weapon_melee"
+        },
+        "onHit": {
+          "damage": [
+            {
+              "dice": "1d4",
+              "type": "slashing"
+            }
+          ]
+        }
+      }
+    }
   },
   {
     "name": "Sling",
@@ -671,7 +1402,27 @@
     "mastery": [
       "Slow"
     ],
-    "range": "30/120"
+    "range": "30/120",
+    "effects": {
+      "action": {
+        "kind": "attack",
+        "attack": {
+          "bonus": "weapon_ranged",
+          "range": {
+            "normal": 30,
+            "long": 120
+          }
+        },
+        "onHit": {
+          "damage": [
+            {
+              "dice": "1d4",
+              "type": "bludgeoning"
+            }
+          ]
+        }
+      }
+    }
   },
   {
     "name": "Spear",
@@ -689,7 +1440,28 @@
       "Sap"
     ],
     "range": "20/60",
-    "weight": 3
+    "weight": 3,
+    "effects": {
+      "action": {
+        "kind": "attack",
+        "attack": {
+          "bonus": "weapon_melee",
+          "range": {
+            "normal": 20,
+            "long": 60
+          }
+        },
+        "onHit": {
+          "damage": [
+            {
+              "dice": "1d6",
+              "type": "piercing"
+            }
+          ],
+          "note": "Versatile: 1d8 two-handed"
+        }
+      }
+    }
   },
   {
     "name": "Trident",
@@ -707,7 +1479,28 @@
       "Topple"
     ],
     "range": "20/60",
-    "weight": 4
+    "weight": 4,
+    "effects": {
+      "action": {
+        "kind": "attack",
+        "attack": {
+          "bonus": "weapon_melee",
+          "range": {
+            "normal": 20,
+            "long": 60
+          }
+        },
+        "onHit": {
+          "damage": [
+            {
+              "dice": "1d8",
+              "type": "piercing"
+            }
+          ],
+          "note": "Versatile: 1d10 two-handed"
+        }
+      }
+    }
   },
   {
     "name": "War Pick",
@@ -723,7 +1516,24 @@
     "mastery": [
       "Sap"
     ],
-    "weight": 2
+    "weight": 2,
+    "effects": {
+      "action": {
+        "kind": "attack",
+        "attack": {
+          "bonus": "weapon_melee"
+        },
+        "onHit": {
+          "damage": [
+            {
+              "dice": "1d8",
+              "type": "piercing"
+            }
+          ],
+          "note": "Versatile: 1d10 two-handed"
+        }
+      }
+    }
   },
   {
     "name": "Warhammer",
@@ -739,7 +1549,24 @@
     "mastery": [
       "Push"
     ],
-    "weight": 5
+    "weight": 5,
+    "effects": {
+      "action": {
+        "kind": "attack",
+        "attack": {
+          "bonus": "weapon_melee"
+        },
+        "onHit": {
+          "damage": [
+            {
+              "dice": "1d8",
+              "type": "bludgeoning"
+            }
+          ],
+          "note": "Versatile: 1d10 two-handed"
+        }
+      }
+    }
   },
   {
     "name": "Whip",
@@ -755,6 +1582,23 @@
     "mastery": [
       "Slow"
     ],
-    "weight": 3
+    "weight": 3,
+    "effects": {
+      "action": {
+        "kind": "attack",
+        "attack": {
+          "bonus": "weapon_melee",
+          "reach": 10
+        },
+        "onHit": {
+          "damage": [
+            {
+              "dice": "1d4",
+              "type": "slashing"
+            }
+          ]
+        }
+      }
+    }
   }
 ]

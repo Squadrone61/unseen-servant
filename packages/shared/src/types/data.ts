@@ -228,7 +228,7 @@ export interface MagicItemDb extends DbEntity {
   attachedSpells?: string[];
 }
 
-// ─── Base Items (armor/weapon reference, no effects) ───────
+// ─── Base Items (weapons, armor, gear) ─────────────────────
 
 export interface BaseItemDb {
   name: string;
@@ -253,6 +253,12 @@ export interface BaseItemDb {
   stealth?: boolean;
   /** Strength requirement: "13" */
   strength?: string;
+  /**
+   * Structured mechanical effects. Phase 10: weapons carry
+   * effects.action (attack outcome). Other base items (armor, gear)
+   * carry effects.modifiers / effects.properties where applicable.
+   */
+  effects?: EntityEffects;
 }
 
 // ─── Equipment Packs ────────────────────────────────────
