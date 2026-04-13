@@ -3,6 +3,8 @@ import * as path from "path";
 import { log } from "../logger.js";
 import { campaignManifestSchema } from "../types.js";
 import type { CampaignManifest, CampaignSummary } from "../types.js";
+import { characterSnapshotSchema } from "@unseen-servant/shared/schemas";
+import type { CharacterStaticData, CharacterDynamicData } from "@unseen-servant/shared/types";
 
 const CAMPAIGNS_ROOT =
   process.env.UNSEEN_CAMPAIGNS_DIR || path.join(process.cwd(), ".unseen", "campaigns");
@@ -271,39 +273,63 @@ export class CampaignManager {
 
   /** Load character snapshots from campaign's characters/ folder.
    *  Returns a map of playerName → { static, dynamic } for restoring into game state. */
-  loadCharacterSnapshots(): Record<string, { static: unknown; dynamic: unknown }> {
+  loadCharacterSnapshots(): Record<
+    string,
+    { static: CharacterStaticData; dynamic: CharacterDynamicData }
+  > {
     return this.loadCharacterSnapshotsWithIds().characters;
   }
 
-  /** Load character snapshots with userId mappings for stable identity matching. */
+  /**
+   * Load character snapshots with userId mappings for stable identity matching.
+   *
+   * Each file is validated via characterSnapshotSchema.safeParse. Invalid files
+   * (corrupt JSON or structurally wrong) are logged and skipped — never silently
+   * coerced to unknown. Valid files return fully-typed CharacterStaticData and
+   * CharacterDynamicData so callers can rely on the type contract at runtime.
+   *
+   * Invariant: the write path (snapshotCharacters) is trusted to produce
+   * structurally valid files; validation here guards against manually-edited or
+   * migrated files that may be missing required fields.
+   */
   loadCharacterSnapshotsWithIds(): {
-    characters: Record<string, { static: unknown; dynamic: unknown }>;
+    characters: Record<string, { static: CharacterStaticData; dynamic: CharacterDynamicData }>;
     userIds: Record<string, string>;
   } {
     if (!this.activeDir) throw new Error("No campaign loaded");
     const charDir = path.join(this.activeDir, "characters");
     if (!fs.existsSync(charDir)) return { characters: {}, userIds: {} };
 
-    const characters: Record<string, { static: unknown; dynamic: unknown }> = {};
+    const characters: Record<
+      string,
+      { static: CharacterStaticData; dynamic: CharacterDynamicData }
+    > = {};
     const userIds: Record<string, string> = {};
     const charFiles = fs.readdirSync(charDir).filter((f) => f.endsWith(".json"));
 
     for (const file of charFiles) {
+      let raw: unknown;
       try {
-        const data = JSON.parse(fs.readFileSync(path.join(charDir, file), "utf-8"));
-        const playerName = data.playerName as string | undefined;
-        const charName = (data.static as { name?: string })?.name;
-        // Use saved playerName, fall back to character name
-        const key = playerName || charName || file.replace(".json", "");
-        if (data.static && data.dynamic) {
-          characters[key] = { static: data.static, dynamic: data.dynamic };
-        }
-        // Restore userId mapping if saved
-        if (data.userId && key) {
-          userIds[key] = data.userId as string;
-        }
-      } catch {
-        // skip corrupt files
+        raw = JSON.parse(fs.readFileSync(path.join(charDir, file), "utf-8"));
+      } catch (e) {
+        console.warn(
+          `[campaign] Invalid character snapshot '${file}': ${e instanceof Error ? e.message : String(e)}`,
+        );
+        continue;
+      }
+
+      const result = characterSnapshotSchema.safeParse(raw);
+      if (!result.success) {
+        console.warn(`[campaign] Invalid character snapshot '${file}': ${result.error.message}`);
+        continue;
+      }
+
+      const { playerName, userId, static: staticData, dynamic: dynamicData } = result.data;
+      // Use saved playerName, fall back to character name from static data
+      const key = playerName || staticData.name || file.replace(".json", "");
+      characters[key] = { static: staticData, dynamic: dynamicData };
+      if (userId && key) {
+        userIds[key] = userId;
       }
     }
     return { characters, userIds };

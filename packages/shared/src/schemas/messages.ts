@@ -196,8 +196,15 @@ export const characterAppearanceSchema = z.object({
 /**
  * EffectBundle schema — minimal structural validation of the permanent build-time
  * effect bundles stored on CharacterStaticData.effects. EffectBundle is deeply
- * nested; we validate the required identity fields and treat effects payload
- * as passthrough to avoid duplicating the full effects type system here.
+ * nested; we validate the required identity fields and treat the effects payload
+ * as a loose record to avoid duplicating the full effects type system here.
+ *
+ * NOTE: `effects` is kept as z.record(z.string(), z.unknown()) intentionally.
+ * Using a structural z.object({...}).passthrough() would cause the Zod-inferred
+ * type for modifiers/properties to be `unknown[]` rather than `Modifier[]`, which
+ * breaks the worker's type-check (EffectBundle assignability). Loose record
+ * validation is the acceptable tradeoff until a separate EffectBundle schema
+ * package is introduced.
  */
 export const effectBundleSchema = z.object({
   id: z.string(),
@@ -264,10 +271,24 @@ export const characterDynamicDataSchema = z.object({
   currency: currencySchema,
   heroicInspiration: z.boolean().optional().default(false),
   concentratingOn: z.object({ spellName: z.string(), since: z.number().optional() }).optional(),
+  /** Runtime effect bundles from conditions, spells, activatable features, etc. */
+  activeEffects: z.array(effectBundleSchema).optional(),
 });
 
 export const characterDataSchema = z.object({
   builder: z.any(),
+  static: characterStaticDataSchema,
+  dynamic: characterDynamicDataSchema,
+});
+
+/**
+ * Shape of a character snapshot file written by CampaignManager.snapshotCharacters.
+ * Used by loadCharacterSnapshotsWithIds to validate files on load — invalid files
+ * are logged and skipped rather than silently coerced to unknown.
+ */
+export const characterSnapshotSchema = z.object({
+  playerName: z.string(),
+  userId: z.string().optional(),
   static: characterStaticDataSchema,
   dynamic: characterDynamicDataSchema,
 });
