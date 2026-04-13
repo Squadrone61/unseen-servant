@@ -571,6 +571,7 @@ export interface EffectSource {
     | "subclass"
     | "feat"
     | "background"
+    | "ability"
     | "item"
     | "spell"
     | "condition"

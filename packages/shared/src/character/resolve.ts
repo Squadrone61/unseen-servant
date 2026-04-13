@@ -17,7 +17,7 @@
  */
 
 import type { CharacterData, AbilityScores, CharacterClass } from "../types/character";
-import type { EffectBundle, ResolveContext } from "../types/effects";
+import type { EffectBundle, ResolveContext, ModifierTarget } from "../types/effects";
 import type { Item } from "../types/item";
 import {
   resolveStat,
@@ -99,18 +99,67 @@ function deriveProficiencyBonus(classes: CharacterClass[]): number {
 }
 
 /**
- * Build a ResolveContext from a character's static data for expression evaluation.
- * Phase 7: proficiencyBonus derived from total level.
+ * Internal: base ResolveContext pieces (no abilities resolved).
+ * Only used for pass-1 ability resolution, where exposing resolved abilities
+ * would create a recursion loop.
  */
-function buildCtx(char: CharacterData): ResolveContext {
+function buildBaseCtx(char: CharacterData): Omit<ResolveContext, "abilities"> {
   const totalLevel = char.static.classes.reduce((sum, c) => sum + c.level, 0);
   const proficiencyBonus = Math.floor((totalLevel - 1) / 4) + 2;
   return {
-    abilities: char.static.abilities,
     totalLevel,
     classLevel: char.static.classes[0]?.level ?? 1,
     proficiencyBonus,
     stackCount: char.dynamic.exhaustionLevel ?? undefined,
+  };
+}
+
+/**
+ * Build a ResolveContext with fully resolved ability scores.
+ *
+ * Use for AC/HP/saves/skills/spell DC resolution — any modifier expression
+ * referencing `str`/`dex`/`con`/… sees the resolved ability, not the pure base.
+ *
+ * Invariant: ability-target modifiers (e.g. Belt of Giant Strength) must not
+ * reference other abilities in their `value` expressions. The pass-1 resolver
+ * uses a base-abilities context to avoid recursion.
+ */
+export function buildCtx(char: CharacterData): ResolveContext {
+  return { ...buildBaseCtx(char), abilities: getAbilities(char) };
+}
+
+/**
+ * Resolve a single ability score.
+ *
+ * Base = char.static.abilities[ability] (pure point-buy/rolled score).
+ * Bundles contribute background assignments, ASI, feats, equipped items,
+ * conditions, and concentration spell modifiers.
+ */
+export function getAbilityScore(
+  char: CharacterData,
+  ability: keyof AbilityScores,
+  bundles?: EffectBundle[],
+): number {
+  const bs = bundles ?? collectActiveBundles(char);
+  const baseCtx: ResolveContext = { ...buildBaseCtx(char), abilities: char.static.abilities };
+  return resolveStat(bs, ability as ModifierTarget, char.static.abilities[ability], baseCtx);
+}
+
+/**
+ * Resolve all six ability scores in one pass. Prefer this over calling
+ * getAbilityScore six times — it shares the bundle collection and context.
+ */
+export function getAbilities(char: CharacterData): AbilityScores {
+  const bundles = collectActiveBundles(char);
+  const baseCtx: ResolveContext = { ...buildBaseCtx(char), abilities: char.static.abilities };
+  const base = char.static.abilities;
+  return {
+    strength: resolveStat(bundles, "strength", base.strength, baseCtx),
+    dexterity: resolveStat(bundles, "dexterity", base.dexterity, baseCtx),
+    constitution: resolveStat(bundles, "constitution", base.constitution, baseCtx),
+    intelligence: resolveStat(bundles, "intelligence", base.intelligence, baseCtx),
+    wisdom: resolveStat(bundles, "wisdom", base.wisdom, baseCtx),
+    charisma: resolveStat(bundles, "charisma", base.charisma, baseCtx),
   };
 }
 
@@ -196,7 +245,7 @@ export function getAC(char: CharacterData): number {
   const bundles = collectActiveBundles(char);
   const ctx = buildCtx(char);
   const inventory = char.dynamic.inventory;
-  const equipAC = computeEquipmentAC(inventory, char.static.abilities);
+  const equipAC = computeEquipmentAC(inventory, ctx.abilities);
   return resolveStat(bundles, "ac", equipAC.base, ctx) + equipAC.shieldBonus;
 }
 
@@ -209,12 +258,12 @@ export function getAC(char: CharacterData): number {
  * Note: this is MAX HP. Current HP is char.dynamic.currentHP.
  */
 export function getHP(char: CharacterData): number {
-  const { classes, abilities } = char.static;
+  const { classes } = char.static;
   const bundles = collectActiveBundles(char);
   const ctx = buildCtx(char);
 
-  // Compute base max HP from hit dice
-  const conMod = abilityMod(abilities.constitution);
+  // Compute base max HP from hit dice (resolved CON, so CON-boosting items raise max HP)
+  const conMod = abilityMod(ctx.abilities.constitution);
   let baseHP = 0;
   let isFirst = true;
   for (const cls of classes) {
@@ -358,7 +407,8 @@ export function getSpellcasting(
   const bundles = collectActiveBundles(char);
   const ctx = buildCtx(char);
   const profBonus = deriveProficiencyBonus(char.static.classes);
-  const { abilities, classes } = char.static;
+  const { classes } = char.static;
+  const abilities = ctx.abilities;
 
   const cls = classes.find((c) => c.name.toLowerCase() === className.toLowerCase());
   if (!cls) return undefined;
@@ -568,8 +618,7 @@ export function getCombatBonus(char: CharacterData): import("../types/character"
 
 function computePassivePerceptionValue(char: CharacterData, bundles: EffectBundle[]): number {
   const profBonus = deriveProficiencyBonus(char.static.classes);
-  const { abilities } = char.static;
-  const wisMod = abilityMod(abilities.wisdom);
+  const wisMod = abilityMod(getAbilityScore(char, "wisdom", bundles));
 
   // Check proficiency/expertise in perception from bundles
   const profSkills = new Set(
@@ -621,10 +670,9 @@ export function getWeaponAttack(char: CharacterData, item: Item): number | undef
 
   const bundles = collectActiveBundles(char);
   const ctx = buildCtx(char);
-  const { abilities } = char.static;
   const profBonus = deriveProficiencyBonus(char.static.classes);
-  const strMod = abilityMod(abilities.strength);
-  const dexMod = abilityMod(abilities.dexterity);
+  const strMod = abilityMod(ctx.abilities.strength);
+  const dexMod = abilityMod(ctx.abilities.dexterity);
   const props = item.weapon.properties ?? [];
 
   let abilityBonus: number;

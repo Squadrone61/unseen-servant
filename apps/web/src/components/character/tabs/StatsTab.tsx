@@ -15,7 +15,9 @@ import {
   getAdvantages,
   getProficiencies,
   getSenses,
+  getAbilities,
 } from "@unseen-servant/shared/character";
+import { useMemo } from "react";
 
 // ─── Constants ───
 
@@ -87,6 +89,7 @@ interface StatsTabProps {
 
 export function StatsTab({ character }: StatsTabProps) {
   const s = character.static;
+  const abilities = useMemo(() => getAbilities(character), [character]);
   const profBonus = Math.floor((getTotalLevel(s.classes) - 1) / 4) + 2;
   const savingThrows = getSavingThrows(character);
   const skills = getSkills(character);
@@ -109,7 +112,7 @@ export function StatsTab({ character }: StatsTabProps) {
         </div>
         <div className="grid grid-cols-2 gap-x-2 gap-y-0.5">
           {savingThrows.map((save) => {
-            const mod = getSavingThrowModifier(save, s.abilities, profBonus);
+            const mod = getSavingThrowModifier(save, abilities, profBonus);
             const saveAdvs = findAdvantages(advantages, `${save.ability}-saving-throws`);
             return (
               <div key={save.ability} className="flex items-center gap-1.5 rounded px-2 py-1">
@@ -150,7 +153,7 @@ export function StatsTab({ character }: StatsTabProps) {
           </div>
           <div className="space-y-0.5">
             {skills.map((skill) => {
-              const mod = getSkillModifier(skill, s.abilities, profBonus);
+              const mod = getSkillModifier(skill, abilities, profBonus);
               const skillAdvs = findAdvantages(advantages, skill.name);
               return (
                 <div

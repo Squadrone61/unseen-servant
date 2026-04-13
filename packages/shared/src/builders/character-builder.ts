@@ -49,25 +49,12 @@ function abilityMod(score: number): number {
 // directly from a BuilderState.
 
 /**
- * Compute final ability scores by applying background bonuses from
- * state.abilityScoreAssignments on top of state.baseAbilities, then
- * applying ASI increases from feat selections.
+ * The pure base ability scores: what the player rolled/bought.
+ * Background, ASI, and feat bonuses are NOT applied here — they flow through
+ * the effect system as EffectBundles (see collectBuildEffects).
  */
-export function computeFinalAbilities(state: BuilderState): AbilityScores {
-  const base = { ...state.baseAbilities };
-  for (const [ability, bonus] of Object.entries(state.abilityScoreAssignments)) {
-    const key = ability as keyof AbilityScores;
-    base[key] = (base[key] ?? 8) + (bonus as number);
-  }
-  for (const selection of state.featSelections) {
-    if (selection.type === "asi" && selection.asiAbilities) {
-      for (const [ability, increase] of Object.entries(selection.asiAbilities)) {
-        const key = ability as keyof AbilityScores;
-        base[key] = (base[key] ?? 8) + (increase as number);
-      }
-    }
-  }
-  return base;
+export function computeBaseAbilities(state: BuilderState): AbilityScores {
+  return { ...state.baseAbilities };
 }
 
 /**
@@ -376,18 +363,77 @@ function collectBuildEffects(
     }
   }
 
-  // Feat effects (from additional features)
+  // Feat effects (from additional features) — top-level + selected sub-choice options
   for (const feat of additionalFeatures) {
-    if (feat.dbKind === "feat") {
-      const dbFeat = getFeat(feat.dbName);
-      if (dbFeat?.effects) {
+    if (feat.dbKind !== "feat") continue;
+    const dbFeat = getFeat(feat.dbName);
+    if (!dbFeat) continue;
+    if (dbFeat.effects) {
+      bundles.push({
+        id: `feat:${feat.dbName}`,
+        source: { type: "feat", name: feat.dbName },
+        lifetime: { type: "permanent" },
+        effects: dbFeat.effects,
+      });
+    }
+    // Sub-choice option effects (Athlete's "Strength +1", Resilient's chosen save, etc.)
+    const picks = state.featChoices[feat.dbName] ?? {};
+    for (const choice of dbFeat.choices ?? []) {
+      if (!("options" in choice) || !choice.options) continue;
+      const selectedLabels = picks[choice.id] ?? [];
+      for (const label of selectedLabels) {
+        const option = choice.options.find((o) => o.label === label);
+        if (!option?.effects) continue;
         bundles.push({
-          id: `feat:${feat.dbName}`,
-          source: { type: "feat", name: feat.dbName },
+          id: `feat-choice:${feat.dbName}:${choice.id}:${label}`,
+          source: { type: "feat", name: feat.dbName, featureName: choice.label },
           lifetime: { type: "permanent" },
-          effects: dbFeat.effects,
+          effects: option.effects,
         });
       }
+    }
+  }
+
+  // Background ability-score assignment (e.g. +2 STR / +1 CON)
+  if (state.background && Object.keys(state.abilityScoreAssignments).length > 0) {
+    const bgMods = Object.entries(state.abilityScoreAssignments).map(([ability, value]) => ({
+      target: ability as import("../types/effects").ModifierTarget,
+      value: value as number,
+      operation: "add" as const,
+    }));
+    if (bgMods.length > 0) {
+      bundles.push({
+        id: `background-abilities:${state.background}`,
+        source: {
+          type: "background",
+          name: state.background,
+          featureName: "Ability Score Assignment",
+        },
+        lifetime: { type: "permanent" },
+        effects: { modifiers: bgMods },
+      });
+    }
+  }
+
+  // ASI bundles (from feat selections of type "asi")
+  for (const selection of state.featSelections) {
+    if (selection.type !== "asi" || !selection.asiAbilities) continue;
+    const asiMods = Object.entries(selection.asiAbilities).map(([ability, value]) => ({
+      target: ability as import("../types/effects").ModifierTarget,
+      value: value as number,
+      operation: "add" as const,
+    }));
+    if (asiMods.length > 0) {
+      bundles.push({
+        id: `asi:level-${selection.level}`,
+        source: {
+          type: "ability",
+          name: `Level ${selection.level} ASI`,
+          level: selection.level,
+        },
+        lifetime: { type: "permanent" },
+        effects: { modifiers: asiMods },
+      });
     }
   }
 
@@ -643,10 +689,11 @@ export function buildCharacter(state: BuilderState): {
   const warnings: string[] = [];
 
   // ── Derive fields from BuilderState ───────────────────
-  const abilities = computeFinalAbilities(state);
+  // static.abilities holds the PURE base (point-buy/standard-array/rolled scores).
+  // Background, ASI, and feat bonuses flow through bundles (see collectBuildEffects).
+  const abilities = computeBaseAbilities(state);
   const classes = assembleCharacterClasses(state);
   const race = state.species ?? "";
-  const baseMaxHP = computeMaxHPFromState(classes, abilities.constitution);
   const spellsRaw = assembleSpellsFromState(state, warnings);
   const languages = collectLanguagesFromState(state);
   const additionalFeatures = assembleAdditionalFeatures(state);
@@ -655,19 +702,31 @@ export function buildCharacter(state: BuilderState): {
   const proficiencyBonus = Math.floor((totalLevel - 1) / 4) + 2;
 
   // Collect all effects from species, class features, subclass features, feats,
-  // and synthetic proficiency/skill bundles so the resolver has all the info needed.
+  // synthetic background/ASI ability bundles, and proficiency/skill bundles so the
+  // resolver has all the info needed.
   const bundles = collectBuildEffects(race, classes, additionalFeatures, state);
 
-  // Build resolve context for expression evaluation
-  const ctx: ResolveContext = {
+  // Two-pass context: resolve abilities first using base-ctx (no recursion),
+  // then build the full ctx with resolved abilities for all other stats.
+  const baseCtx: ResolveContext = {
     abilities,
     totalLevel,
     classLevel: classes[0]?.level ?? 1,
     proficiencyBonus,
   };
+  const resolvedAbilities: AbilityScores = {
+    strength: resolveStat(bundles, "strength", abilities.strength, baseCtx),
+    dexterity: resolveStat(bundles, "dexterity", abilities.dexterity, baseCtx),
+    constitution: resolveStat(bundles, "constitution", abilities.constitution, baseCtx),
+    intelligence: resolveStat(bundles, "intelligence", abilities.intelligence, baseCtx),
+    wisdom: resolveStat(bundles, "wisdom", abilities.wisdom, baseCtx),
+    charisma: resolveStat(bundles, "charisma", abilities.charisma, baseCtx),
+  };
+  const ctx: ResolveContext = { ...baseCtx, abilities: resolvedAbilities };
 
   // ── HP (needed for dynamic.currentHP seed) ──────────────
-  // Base HP from derived value + bonus from effects (Tough = "2 * lvl", Dwarf Toughness = "lvl")
+  // Base HP from derived CON + bonus from effects (Tough = "2 * lvl", Dwarf Toughness = "lvl")
+  const baseMaxHP = computeMaxHPFromState(classes, resolvedAbilities.constitution);
   const hpBonus = resolveStat(bundles, "hp", 0, ctx);
   const maxHP = Math.max(1, baseMaxHP + hpBonus);
 

@@ -8,15 +8,16 @@ import type { CheckRequest } from "../types/game-state";
 import type { CharacterData } from "../types/character";
 import type { ModifierTarget, AdvantageTarget } from "../types/effects";
 import { getModifier } from "./character-helpers";
+import { resolveStat, hasAdvantage, hasDisadvantage } from "./effect-resolver";
 import {
-  resolveEffectiveStat,
-  getActiveEffects,
-  buildResolveContext,
-  resolveStat,
-  hasAdvantage,
-  hasDisadvantage,
-} from "./effect-resolver";
-import { getSkills, getSavingThrows, getSpellcasting, getCombatBonus } from "../character/resolve";
+  getSkills,
+  getSavingThrows,
+  getSpellcasting,
+  getCombatBonus,
+  getAbilityScore,
+  collectActiveBundles,
+  buildCtx,
+} from "../character/resolve";
 
 // ─── Check type parsing ───
 
@@ -129,28 +130,25 @@ export function buildCheckLabel(check: CheckRequest): string {
 }
 
 /**
- * Resolve an ability score through activeEffects (e.g., Gauntlets of Ogre Power sets STR=19).
- * Falls back to the static score if no effects modify it.
+ * Resolve an ability score through the full effect pipeline (background, ASI,
+ * feats, equipped items, conditions, concentration spell).
  */
 function resolveAbilityScore(
   char: CharacterData,
   ability: keyof typeof char.static.abilities,
 ): number {
-  const bundles = getActiveEffects(char);
-  if (bundles.length === 0) return char.static.abilities[ability];
-  return resolveEffectiveStat(char, ability as ModifierTarget, char.static.abilities[ability]);
+  return getAbilityScore(char, ability);
 }
 
 /**
- * Get the flat bonus from activeEffects for a specific modifier target.
- * This captures bonuses like Bless (+1d4 to attacks/saves) — for constant-value
- * modifiers only (expression/dice values are skipped since we can't add them to
- * a flat modifier).
+ * Get the flat bonus from all active effect bundles for a specific modifier target.
+ * Captures bonuses like Bless (+1d4 to attacks/saves) — expression/dice values are
+ * evaluated numerically via the resolver.
  */
 function getEffectBonus(char: CharacterData, target: ModifierTarget): number {
-  const bundles = getActiveEffects(char);
+  const bundles = collectActiveBundles(char);
   if (bundles.length === 0) return 0;
-  const ctx = buildResolveContext(char);
+  const ctx = buildCtx(char);
   // resolveStat with base=0 gives us just the effect delta
   return resolveStat(bundles, target, 0, ctx);
 }
@@ -303,7 +301,7 @@ export function getCheckAdvantageInfo(
   const parsed = parseCheckType(checkType);
   if (!parsed) return { advantage: false, disadvantage: false, sources: [] };
 
-  const bundles = getActiveEffects(char);
+  const bundles = collectActiveBundles(char);
   if (bundles.length === 0) return { advantage: false, disadvantage: false, sources: [] };
 
   const targets = checkToAdvantageTargets(parsed);

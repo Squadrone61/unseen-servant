@@ -12,7 +12,7 @@ import type {
 import { RichText } from "@/components/ui/RichText";
 import { DetailPopover } from "@/components/character/DetailPopover";
 import { useBuilder } from "../BuilderContext";
-import { computeFinalAbilities } from "../useComputedCharacter";
+import { computeResolvedAbilities } from "../useComputedCharacter";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -624,10 +624,7 @@ function ClassSpellPanel({
 export function SpellsStep() {
   const { state, dispatch } = useBuilder();
 
-  const abilities = useMemo(
-    () => computeFinalAbilities(state),
-    [state.baseAbilities, state.abilityScoreAssignments, state.featSelections],
-  );
+  const abilities = useMemo(() => computeResolvedAbilities(state), [state]);
 
   const casterClasses = useMemo(() => getCasterClasses(state.classes), [state.classes]);
 

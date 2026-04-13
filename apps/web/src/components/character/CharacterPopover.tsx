@@ -7,7 +7,8 @@ import {
   formatModifier,
   ABILITY_NAMES,
 } from "@unseen-servant/shared/utils";
-import { getAC, getHP, getSpeed } from "@unseen-servant/shared/character";
+import { getAC, getHP, getSpeed, getAbilities } from "@unseen-servant/shared/character";
+import { useMemo } from "react";
 
 interface CharacterPopoverProps {
   character: CharacterData;
@@ -18,6 +19,7 @@ interface CharacterPopoverProps {
 export function CharacterPopover({ character, playerName, online }: CharacterPopoverProps) {
   const s = character.static;
   const d = character.dynamic;
+  const abilities = useMemo(() => getAbilities(character), [character]);
   const totalLevel = getTotalLevel(s.classes);
   const maxHP = getHP(character);
   const ac = getAC(character);
@@ -72,12 +74,12 @@ export function CharacterPopover({ character, playerName, online }: CharacterPop
 
       {/* Abilities */}
       <div className="grid grid-cols-6 gap-1">
-        {(Object.entries(ABILITY_NAMES) as [keyof typeof s.abilities, string][]).map(
+        {(Object.entries(ABILITY_NAMES) as [keyof typeof abilities, string][]).map(
           ([key, label]) => (
             <div key={key} className="text-center">
               <div className="text-xs text-gray-500">{label}</div>
               <div className="text-xs font-medium text-gray-300">
-                {formatModifier(s.abilities[key])}
+                {formatModifier(abilities[key])}
               </div>
             </div>
           ),

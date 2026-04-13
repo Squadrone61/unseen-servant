@@ -1,6 +1,6 @@
 export {
   buildCharacter,
-  computeFinalAbilities,
+  computeBaseAbilities,
   createConditionBundle,
   createSpellBundle,
   createActivationBundle,

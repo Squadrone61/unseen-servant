@@ -2,10 +2,29 @@
 
 import { useMemo } from "react";
 import type { BuilderState } from "./builder-state";
-import type { CharacterData } from "@unseen-servant/shared/types";
-import { buildCharacter, computeFinalAbilities, getClass } from "@unseen-servant/shared";
+import type { AbilityScores, CharacterData } from "@unseen-servant/shared/types";
+import { buildCharacter, getClass } from "@unseen-servant/shared";
+import { getAbilities } from "@unseen-servant/shared/character";
 
-export { computeFinalAbilities };
+/**
+ * Compute the resolved ability scores for a builder state (pure base + background
+ * + ASI + feat effects, flowing through the effect resolver).
+ *
+ * If the state can't be built yet (no class/species), returns the pure base
+ * abilities as a fallback preview.
+ */
+export function computeResolvedAbilities(state: BuilderState): AbilityScores {
+  const primaryClassName = state.classes[0]?.name;
+  if (!primaryClassName || !state.species || !getClass(primaryClassName)) {
+    return { ...state.baseAbilities };
+  }
+  try {
+    const { character } = buildCharacter(state);
+    return getAbilities(character);
+  } catch {
+    return { ...state.baseAbilities };
+  }
+}
 
 export function useComputedCharacter(state: BuilderState): {
   character: CharacterData | null;

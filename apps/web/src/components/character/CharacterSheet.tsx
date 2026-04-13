@@ -24,7 +24,9 @@ import {
   getSenses,
   getAdvantages,
   getSpellcasting,
+  getAbilities,
 } from "@unseen-servant/shared/character";
+import { useMemo } from "react";
 import { HPBar } from "./HPBar";
 import { AbilityDetailPopup } from "./AbilityDetailPopup";
 import { SpellDetailPopup } from "./SpellDetailPopup";
@@ -106,6 +108,7 @@ export function CharacterSheet({ character }: CharacterSheetProps) {
 function CharacterSheetInner({ character }: CharacterSheetProps) {
   const s = character.static;
   const d = character.dynamic;
+  const abilities = useMemo(() => getAbilities(character), [character]);
   const [activeTab, setActiveTab] = useState<TabId>("actions");
   const [popup, setPopup] = useState<PopupState>(null);
   const { stack } = useEntityPopover();
@@ -173,7 +176,7 @@ function CharacterSheetInner({ character }: CharacterSheetProps) {
               <div className="bg-gray-900/60 border border-gray-700/50 rounded py-1">
                 <div className="text-xs text-gray-500 uppercase">Init</div>
                 <div className="text-base font-bold text-gray-200">
-                  {formatBonus(getModifier(s.abilities.dexterity))}
+                  {formatBonus(getModifier(abilities.dexterity))}
                 </div>
               </div>
             </>
@@ -182,7 +185,7 @@ function CharacterSheetInner({ character }: CharacterSheetProps) {
               <div className="bg-gray-900/60 border border-gray-700/50 rounded py-1">
                 <div className="text-xs text-gray-500 uppercase">Init</div>
                 <div className="text-base font-bold text-gray-200">
-                  {formatBonus(getModifier(s.abilities.dexterity))}
+                  {formatBonus(getModifier(abilities.dexterity))}
                 </div>
               </div>
               <div className="bg-gray-900/60 border border-gray-700/50 rounded py-1">
@@ -196,7 +199,7 @@ function CharacterSheetInner({ character }: CharacterSheetProps) {
                     senses
                       .find((sense) => sense.startsWith("Passive Perception"))
                       ?.split(" ")
-                      .at(-1) ?? String(10 + getModifier(s.abilities.wisdom)),
+                      .at(-1) ?? String(10 + getModifier(abilities.wisdom)),
                     10,
                   )}
                 </div>
@@ -286,7 +289,7 @@ function CharacterSheetInner({ character }: CharacterSheetProps) {
         <div className="grid grid-cols-6 gap-1">
           {(Object.entries(ABILITY_NAMES) as [keyof AbilityScores, string][]).map(
             ([key, label]) => {
-              const score = s.abilities[key];
+              const score = abilities[key];
               const mod = getModifier(score);
               const modStr = formatModifier(score);
               const abilityAdvs = findAdvantages(advantages, `${key}-ability-checks`);

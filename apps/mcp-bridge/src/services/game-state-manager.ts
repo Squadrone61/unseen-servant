@@ -48,7 +48,6 @@ import {
 import {
   hasConditionImmunity,
   applyDamageWithEffects,
-  resolveEffectiveStat,
   resolveStat,
   hasAdvantage,
   hasDisadvantage,
@@ -60,6 +59,10 @@ import {
   getClassResources,
   getCombatBonus,
   getSavingThrows,
+  getAbilityScore,
+  getAbilities,
+  collectActiveBundles,
+  buildCtx,
 } from "@unseen-servant/shared/character";
 import { log } from "../logger.js";
 import type { MessageQueue } from "../message-queue.js";
@@ -238,6 +241,16 @@ export class GameStateManager {
   markCharacterDirty(playerName: string): void {
     this._dirtyCharacters.add(playerName);
     this.markDirty();
+  }
+
+  /**
+   * Clamp currentHP to the character's current max HP. Call after any mutation
+   * that could change CON or HP-bonus effects (item equip/unequip, condition
+   * add/remove, concentration change).
+   */
+  private clampCurrentHP(char: CharacterData): void {
+    const max = getHP(char);
+    if (char.dynamic.currentHP > max) char.dynamic.currentHP = max;
   }
 
   /** Schedule a debounced flush (resets timer on each call) */
@@ -797,7 +810,12 @@ export class GameStateManager {
     const combatantWalkSpeed = combatant.speed.walk;
     let effectiveSpeed: number;
     if (char) {
-      effectiveSpeed = resolveEffectiveStat(char, "speed", combatantWalkSpeed);
+      effectiveSpeed = resolveStat(
+        collectActiveBundles(char),
+        "speed",
+        combatantWalkSpeed,
+        buildCtx(char),
+      );
     } else if (combatant.activeEffects && combatant.activeEffects.length > 0) {
       // NPC — resolve speed through effect bundles with a minimal context
       const npcCtx = {
@@ -2012,6 +2030,7 @@ export class GameStateManager {
         if (INCAPACITATING_CONDITIONS.has(condition) && char.dynamic.concentratingOn) {
           this.breakConcentration(char.static.name);
         }
+        this.clampCurrentHP(char);
         this.broadcast({
           type: "server:character_updated",
           playerName: pName,
@@ -2074,6 +2093,7 @@ export class GameStateManager {
         if (char.dynamic.activeEffects) {
           char.dynamic.activeEffects = char.dynamic.activeEffects.filter((b) => b.id !== bundleId);
         }
+        this.clampCurrentHP(char);
         this.broadcast({
           type: "server:character_updated",
           playerName: pName,
@@ -2263,7 +2283,7 @@ export class GameStateManager {
         );
         if (charEntry) {
           linkedPlayerId = charEntry[0];
-          dexScore = charEntry[1].static.abilities.dexterity;
+          dexScore = getAbilityScore(charEntry[1], "dexterity");
           initMod = c.initiativeModifier ?? Math.floor((dexScore - 10) / 2);
           // Apply initiative bonuses from feats (e.g. Alert) — Phase 7: via getCombatBonus
           const initBonuses = getCombatBonus(charEntry[1]).filter(
@@ -2598,7 +2618,7 @@ export class GameStateManager {
         ([, ch]) => ch.static.name.toLowerCase() === c.name.toLowerCase(),
       );
       if (charEntry) {
-        dexScore = charEntry[1].static.abilities.dexterity;
+        dexScore = getAbilityScore(charEntry[1], "dexterity");
         initMod = c.initiativeModifier ?? Math.floor((dexScore - 10) / 2);
         // Apply initiative bonuses from feats (e.g. Alert) — Phase 7: via getCombatBonus
         const initBonuses = getCombatBonus(charEntry[1]).filter(
@@ -3369,6 +3389,8 @@ export class GameStateManager {
           }
         }
 
+        this.clampCurrentHP(char);
+
         this.broadcast({
           type: "server:character_updated",
           playerName: pName,
@@ -3662,7 +3684,7 @@ export class GameStateManager {
           hitDiceParts.push(`${cls.level}d${faces}`);
         }
         const hitDice = hitDiceParts.join(" + ");
-        const conMod = Math.floor((char.static.abilities.constitution - 10) / 2);
+        const conMod = Math.floor((getAbilityScore(char, "constitution") - 10) / 2);
         const conSign = conMod >= 0 ? `+${conMod}` : `${conMod}`;
         // Use first class's die for the per-die label (multiclass players choose which to spend)
         const firstClassData = getClass(char.static.classes[0]?.name ?? "");
@@ -4024,6 +4046,7 @@ export class GameStateManager {
           if (!char.dynamic.activeEffects) char.dynamic.activeEffects = [];
           char.dynamic.activeEffects.push(spellBundle);
         }
+        this.clampCurrentHP(char);
         this.broadcast({
           type: "server:character_updated",
           playerName: pName,
@@ -4100,6 +4123,7 @@ export class GameStateManager {
             (b) => b.id !== `spell:${spell.toLowerCase()}`,
           );
         }
+        this.clampCurrentHP(char);
         this.broadcast({
           type: "server:character_updated",
           playerName: pName,
@@ -4784,7 +4808,7 @@ export class GameStateManager {
         );
         if (charEntry) {
           const [, ch] = charEntry;
-          const abilities = ch.static.abilities;
+          const abilities = getAbilities(ch);
           const abilityScore = (abilities as unknown as Record<string, number>)[abilityKey] ?? 10;
           saveMod = Math.floor((abilityScore - 10) / 2);
           // Check for saving throw proficiency — Phase 7: via getSavingThrows()

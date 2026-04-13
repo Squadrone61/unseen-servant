@@ -8,7 +8,6 @@ import type {
   ActionOutcome,
   EntityEffects,
 } from "../types/effects";
-import type { CharacterData } from "../types/character";
 import { evaluateExpression } from "./expression-evaluator";
 
 // ---------------------------------------------------------------------------
@@ -251,54 +250,6 @@ export function getResources(bundles: EffectBundle[]): Extract<Property, { type:
 export function getNotes(bundles: EffectBundle[]): string[] {
   return collectProperties(bundles, "note").map((p) => p.text);
 }
-
-// ---------------------------------------------------------------------------
-// Runtime Bundle Helpers
-// ---------------------------------------------------------------------------
-
-/**
- * Get all active runtime effect bundles from a character's dynamic data.
- * Returns empty array if no activeEffects field (backward compatibility).
- */
-export function getActiveEffects(char: CharacterData): EffectBundle[] {
-  return char.dynamic.activeEffects ?? [];
-}
-
-/**
- * Build a ResolveContext from character data for expression evaluation.
- * Phase 7: proficiencyBonus derived from total level (no longer stored on static).
- */
-export function buildResolveContext(char: CharacterData): ResolveContext {
-  const s = char.static;
-  const totalLevel = s.classes.reduce((sum, c) => sum + c.level, 0);
-  // Proficiency bonus formula: floor((totalLevel - 1) / 4) + 2 (same as PHB table)
-  const proficiencyBonus = Math.floor((totalLevel - 1) / 4) + 2;
-  return {
-    abilities: s.abilities,
-    totalLevel,
-    proficiencyBonus,
-    stackCount: char.dynamic.exhaustionLevel ?? undefined,
-  };
-}
-
-/**
- * Resolve a stat by applying runtime effect bundles on top of a static base value.
- * Use this for query-time stat resolution (Phase 3 of the effects migration).
- */
-export function resolveEffectiveStat(
-  char: CharacterData,
-  target: ModifierTarget,
-  baseValue: number,
-): number {
-  const bundles = getActiveEffects(char);
-  if (bundles.length === 0) return baseValue;
-  const ctx = buildResolveContext(char);
-  return resolveStat(bundles, target, baseValue, ctx);
-}
-
-// ---------------------------------------------------------------------------
-// Damage Application Helper
-// ---------------------------------------------------------------------------
 
 // ---------------------------------------------------------------------------
 // Action Resolution
