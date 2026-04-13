@@ -28,6 +28,8 @@
 //   extra attacks) are typed as structured Properties. Mechanics too complex or rare to
 //   type get a { type: "note"; text: string } — the AI DM reads the text instead.
 
+import type { z } from "zod";
+import type { effectSourceSchema, effectLifetimeSchema } from "../schemas/effects";
 import type { AbilityScores } from "./character";
 
 // ---------------------------------------------------------------------------
@@ -564,29 +566,18 @@ export interface EntityEffects {
  * within the "Barbarian" class). level records the character level at the time the
  * effect was created, enabling level-scaling expressions to be re-evaluated.
  */
-export interface EffectSource {
-  type:
-    | "species"
-    | "class"
-    | "subclass"
-    | "feat"
-    | "background"
-    | "ability"
-    | "item"
-    | "spell"
-    | "condition"
-    | "environment";
-  /** Entity name: "Tiefling", "Barbarian", "Shield", "Poisoned", etc. */
-  name: string;
-  /** Sub-feature within the entity: "Unarmored Defense", "Rage", etc. */
-  featureName?: string;
-  /**
-   * Character level (totalLevel) at the time the bundle was created.
-   * Used as clvl when evaluating class feature expressions if classLevel
-   * is unavailable from the bundle context.
-   */
-  level?: number;
-}
+/**
+ * Where an EffectBundle came from. Derived from `effectSourceSchema` so the
+ * type and runtime validation can never drift. To add/change a source type,
+ * edit `packages/shared/src/schemas/effects.ts`.
+ *
+ *   name        — Entity name: "Tiefling", "Barbarian", "Shield", "Poisoned", etc.
+ *   featureName — Sub-feature within the entity: "Unarmored Defense", "Rage", etc.
+ *   level       — Character level (totalLevel) when the bundle was created;
+ *                 used as clvl when evaluating class feature expressions if
+ *                 classLevel is unavailable from the bundle context.
+ */
+export type EffectSource = z.infer<typeof effectSourceSchema>;
 
 // ---------------------------------------------------------------------------
 // EffectLifetime
@@ -601,12 +592,7 @@ export interface EffectSource {
  *   until_rest     — Removed by short or long rest.
  *   manual         — No automatic expiry; must be dismissed explicitly via dismiss/remove tools.
  */
-export type EffectLifetime =
-  | { type: "permanent" }
-  | { type: "concentration" }
-  | { type: "duration"; rounds: number }
-  | { type: "until_rest"; rest: "short" | "long" }
-  | { type: "manual" };
+export type EffectLifetime = z.infer<typeof effectLifetimeSchema>;
 
 // ---------------------------------------------------------------------------
 // EffectBundle

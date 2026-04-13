@@ -618,6 +618,7 @@ function GameContent({ roomCode, playerName }: { roomCode: string; playerName: s
     (character: CharacterData, libraryId: string) => {
       setMyCharacter(character);
       setMyCharacterLibraryId(libraryId);
+      setShowCharacterDrawer(true);
       send({ type: "client:set_character", character });
     },
     [send],
@@ -734,8 +735,8 @@ function GameContent({ roomCode, playerName }: { roomCode: string; playerName: s
           </div>
         )}
 
-        {/* Inline character sheet panel (all states) */}
-        {showCharacterDrawer && myCharacter && (
+        {/* Inline character sheet panel: always in lobby, togglable once story starts */}
+        {(showCharacterDrawer || !storyStarted) && myCharacter && (
           <div className="w-80 shrink-0 border-r border-gray-700/20 overflow-y-auto bg-gray-900">
             <CharacterSheet character={myCharacter} />
           </div>

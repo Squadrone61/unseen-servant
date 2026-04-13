@@ -12,6 +12,7 @@ import {
   encounterLengthSchema,
   conditionEntrySchema,
 } from "./game-state";
+import { effectSourceSchema, effectLifetimeSchema } from "./effects";
 
 // === Auth schemas ===
 
@@ -208,29 +209,8 @@ export const characterAppearanceSchema = z.object({
  */
 export const effectBundleSchema = z.object({
   id: z.string(),
-  source: z.object({
-    type: z.enum([
-      "species",
-      "class",
-      "subclass",
-      "feat",
-      "background",
-      "item",
-      "spell",
-      "condition",
-      "environment",
-    ]),
-    name: z.string(),
-    featureName: z.string().optional(),
-    level: z.number().optional(),
-  }),
-  lifetime: z.discriminatedUnion("type", [
-    z.object({ type: z.literal("permanent") }),
-    z.object({ type: z.literal("concentration") }),
-    z.object({ type: z.literal("duration"), rounds: z.number() }),
-    z.object({ type: z.literal("until_rest"), rest: z.enum(["short", "long"]) }),
-    z.object({ type: z.literal("manual") }),
-  ]),
+  source: effectSourceSchema,
+  lifetime: effectLifetimeSchema,
   effects: z.record(z.string(), z.unknown()),
 });
 

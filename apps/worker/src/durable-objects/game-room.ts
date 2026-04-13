@@ -183,9 +183,13 @@ export class GameRoom extends DurableObject<Env> {
 
     const result = clientMessageSchema.safeParse(parsed);
     if (!result.success) {
+      const parsedAny = parsed as { type?: string };
+      const issues = result.error.issues
+        .slice(0, 5)
+        .map((i) => `${i.path.join(".")}: ${i.message}`);
       this.sendTo(ws, {
         type: "server:error",
-        message: "Invalid message format",
+        message: `Invalid message format (type=${parsedAny?.type}): ${issues.join("; ")}`,
         code: "VALIDATION_FAILED",
       });
       return;
