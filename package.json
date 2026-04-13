@@ -18,9 +18,7 @@
     "test:shared": "cd packages/shared && pnpm test",
     "test:web": "cd apps/web && pnpm test",
     "dead-code": "knip",
-    "prepare": "husky",
-    "audit:actions": "npx tsx scripts/audit-spell-actions.ts && npx tsx scripts/audit-weapons-action.ts && npx tsx scripts/audit-monsters-action.ts",
-    "migrate:monsters": "npx tsx scripts/migrate-monsters-action.ts"
+    "prepare": "husky"
   },
   "lint-staged": {
     "*.{ts,tsx}": [

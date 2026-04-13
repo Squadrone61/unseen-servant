@@ -227,6 +227,7 @@ Advise the DM on monster tactics during combat:
    - Int 6-9: basic tactics, focuses wounded targets, avoids obvious danger
    - Int 10+: smart tactics, targets casters, uses terrain, coordinates with allies
 5. **Present to DM only** — output the tactical advice as regular text (it goes to the DM's terminal, not to players). **DO NOT call \`send_response\`**. After the DM decides, execute the chosen actions using combat tools (move_combatant, roll_dice, apply_damage, etc.) and THEN narrate the result via \`send_response\`.
+6. **Use \`action_ref\` for structured monster attacks.** Pass \`action_ref: { source: "monster", name: "<Monster Name>", monster_action_name: "<Action Name>" }\` to \`apply_damage\` / \`apply_area_effect\` / \`roll_dice\` (save DC). ~59% of monster actions have structured data — when the DB has them, you save a parsing pass. For prose-only entries, fall back to explicit args.
 `;
 
 export const NATIVE_SKILL_COMBAT_PREP = `---
@@ -313,7 +314,7 @@ See the **rules** skill for damage type handling, feature activation, concentrat
 - Use \`set_active_turn\` to jump to a specific combatant's turn (DM override — skips condition expiry for skipped turns).
 
 ### Attack Resolution
-- For monster attacks: roll attack with \`roll_dice({ checkType: "attack", notation: "1d20+X", reason: "Monster attack" })\` — if it hits, roll damage
+- For monster attacks: roll attack with \`roll_dice({ checkType: "attack", notation: "1d20+X", reason: "Monster attack" })\` — if it hits, apply damage via \`apply_damage({ target, action_ref: { source: "monster", name, monster_action_name }, outcome_branch: "onHit" })\` for structured entries, or explicit \`damage\`/\`damage_type\` for prose-only monsters.
 - For player attacks: the player describes the attack, you determine if it hits using the attack roll, then have the player roll damage with \`roll_dice({ player: "CharName", checkType: "damage", notation: "..." })\`
 - **Players ALWAYS roll their own damage.** When a player's attack/spell hits, use roll_dice with player + checkType="damage" so the player sees "Roll Damage". NEVER roll damage on behalf of a player.
 - **Always pass DC and checkType for attack rolls.** Use roll_dice with player, checkType="melee_attack"/"ranged_attack"/"spell_attack"/"finesse_attack", dc=TARGET_AC. "melee_attack" uses STR + prof. "ranged_attack" uses DEX + prof. "spell_attack" uses spell attack bonus. "finesse_attack" uses max(STR,DEX) + prof. Combat bonuses like Archery +2 are applied automatically.
@@ -354,9 +355,10 @@ See the **rules** skill for damage type handling, feature activation, concentrat
 - The system automatically notes cover when you target creatures on tiles with cover set
 
 ### Area of Effect Spells
-- **Targeting flow**: (1) player declares spell, (2) call \`show_aoe\` to visualize, (3) if friendlies are in the blast, ask "Are you sure?", (4) player confirms or adjusts, (5) call \`apply_area_effect\`.
+- **Targeting flow**: (1) player declares spell, (2) call \`show_aoe\` with \`action_ref: { source: "spell", name }\` to visualize (shape/size auto-filled from DB), (3) if friendlies are in the blast, ask "Are you sure?", (4) player confirms or adjusts, (5) call \`apply_area_effect\` with the same \`action_ref\` plus \`caster_spell_save_dc\` — save ability/DC/damage/onSuccess all resolved from DB \`ActionEffect\`.
 - Set \`persistent: true\` for ongoing spells (Wall of Fire, Spirit Guardians, Fog Cloud). Call \`dismiss_aoe\` when they end.
 - AoE colors should match the spell narratively (fire = "#FF6B35", ice = "#4FC3F7", necrotic = "#9C27B0").
+- \`action_ref\` supports \`upcast_level\` (levels above base) for auto-scaling damage dice. Prefer it over hand-editing dice.
 
 ### Stealth & Surprise
 - When a group wants to be stealthy, each member makes a Stealth check against the targets' Passive Perception.
@@ -503,7 +505,9 @@ NEVER guess spell effects, monster stats, or condition rules. ALWAYS look them u
 - Call for ability checks when outcomes are uncertain (describe the DC reasoning).
 
 ### Effect System
-- **Damage types matter.** Always include \`damage_type\` when calling \`apply_damage\` — resistance, immunity, and vulnerability are applied automatically from active effects. Don't manually halve or double damage.
+- **Prefer \`action_ref\` over explicit dice.** When a spell/weapon/monster action has structured DB data, pass \`action_ref: { source: "spell"|"weapon"|"item"|"monster", name, monster_action_name? }\` to \`apply_damage\`, \`apply_area_effect\`, \`show_aoe\`, and \`roll_dice\` (for \`*_save\` checks). The tool pulls damage dice, damage type, save ability, save DC, area shape/size, and onSuccess semantics from the DB. Explicit args still work as a fallback for prose-only monster entries.
+- **Outcome branches.** \`apply_damage\` with \`action_ref\` takes \`outcome_branch\`: \`"onHit"\` for attack-roll hits, \`"onFailedSave"\` for save-based on fails, \`"onSuccessfulSave"\` when the spell deals half on success. \`apply_area_effect\` handles branch selection internally per target.
+- **Damage types matter.** Always include \`damage_type\` when calling \`apply_damage\` without \`action_ref\` — resistance, immunity, and vulnerability are applied automatically from active effects. Don't manually halve or double damage.
 - **Feature activation.** When a class feature with mechanical effects is used (Rage, Bladesong, Wild Shape), call \`activate_feature\` to apply its bonuses. Pair with \`use_class_resource\` if it costs a resource. Call \`deactivate_feature\` when it ends.
 - **Concentration vs features.** \`set_concentration\` is for concentration spells (broken by damage/new spell). \`activate_feature\` is for class features (manual deactivation).
 - **Advantage/disadvantage hints.** When \`roll_dice\` is called with \`checkType\` + \`player\`, it checks active effects and returns hints (e.g., "Advantage on STR checks from Rage"). Use these to decide advantage/disadvantage.
