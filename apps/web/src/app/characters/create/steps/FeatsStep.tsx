@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { featsArray, getFeat, getBackground } from "@unseen-servant/shared/data";
+import { enumerateAsiSlots, type AsiSlot as AsiSlotMeta } from "@unseen-servant/shared/character";
 import type { FeatDb, Ability } from "@unseen-servant/shared/types";
 import { DetailPopover } from "@/components/character/DetailPopover";
 import { EffectSummary } from "@/components/builder/EffectSummary";
@@ -14,9 +15,6 @@ import type { FeatSelection } from "../builder-state";
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
-
-/** ASI levels for all classes in D&D 2024. */
-const STANDARD_ASI_LEVELS = [4, 8, 12, 16, 19];
 
 const ALL_ABILITIES: Ability[] = [
   "strength",
@@ -307,6 +305,7 @@ interface AsiSlotProps {
   level: number;
   selection: FeatSelection;
   classLevel: number;
+  isEpicBoon?: boolean;
   alreadySelectedFeats: string[];
   onUpdate: (sel: FeatSelection) => void;
   featChoices: Record<string, Record<string, string[]>>;
@@ -314,10 +313,11 @@ interface AsiSlotProps {
 }
 
 function AsiSlot({
-  slotIndex,
+  slotIndex: _slotIndex,
   level,
   selection,
   classLevel,
+  isEpicBoon,
   alreadySelectedFeats,
   onUpdate,
   featChoices,
@@ -398,7 +398,7 @@ function AsiSlot({
           className="text-sm font-semibold text-gray-200"
           style={{ fontFamily: "var(--font-cinzel)" }}
         >
-          Ability Score Improvement
+          {isEpicBoon ? "Epic Boon" : "Ability Score Improvement"}
         </h3>
       </div>
 
@@ -442,7 +442,7 @@ function AsiSlot({
       </div>
 
       {/* ASI panel */}
-      {isASI && <ASIPanel index={slotIndex} selection={selection} onUpdate={onUpdate} />}
+      {isASI && <ASIPanel index={_slotIndex} selection={selection} onUpdate={onUpdate} />}
 
       {/* Feat panel */}
       {isFeat && (
@@ -700,26 +700,35 @@ function OriginFeatDisplay({ featName }: OriginFeatDisplayProps) {
 export function FeatsStep() {
   const { state, dispatch } = useBuilder();
 
-  // Determine which ASI levels are unlocked for the current class level
-  const unlockedAsiLevels = useMemo(
-    () => STANDARD_ASI_LEVELS.filter((l) => l <= (state.classes[0]?.level ?? 1)),
-    [state.classes[0]?.level ?? 1],
-  );
+  // Per-class ASI / Epic Boon slots (RAW 2024: granted per class at that
+  // class's own level; Fighter/Rogue have extras — all encoded in class data).
+  const asiSlots = useMemo<AsiSlotMeta[]>(() => enumerateAsiSlots(state.classes), [state.classes]);
 
-  // Sync featSelections array length to match unlockedAsiLevels.
-  // The reducer trims from the top on level changes; we need to ensure slots exist.
-  const selections = useMemo<FeatSelection[]>(() => {
-    const base = state.featSelections;
-    return unlockedAsiLevels.map((level, i) => {
-      return base[i] ?? { level, type: "asi", asiAbilities: {} };
+  // For each slot, find or default a selection. Default type = "asi".
+  const selectionsBySlot = useMemo<FeatSelection[]>(() => {
+    return asiSlots.map((slot) => {
+      const match = state.featSelections.find(
+        (s) => s.classIndex === slot.classIndex && s.level === slot.classLevel,
+      );
+      return (
+        match ?? {
+          classIndex: slot.classIndex,
+          className: slot.className,
+          level: slot.classLevel,
+          type: "asi" as const,
+          asiAbilities: {},
+        }
+      );
     });
-  }, [state.featSelections, unlockedAsiLevels]);
+  }, [asiSlots, state.featSelections]);
 
   // Collect all feat names currently selected (for duplicate check)
   const selectedFeatNames = useMemo(
     () =>
-      selections.filter((s) => s.type === "feat" && s.featName).map((s) => s.featName as string),
-    [selections],
+      selectionsBySlot
+        .filter((s) => s.type === "feat" && s.featName)
+        .map((s) => s.featName as string),
+    [selectionsBySlot],
   );
 
   // Origin feat from background
@@ -729,15 +738,40 @@ export function FeatsStep() {
     return bg?.feat ?? null;
   }, [state.background]);
 
-  function handleSlotUpdate(index: number, sel: FeatSelection) {
-    dispatch({ type: "SET_FEAT_SELECTION", index, selection: sel });
+  function handleSlotUpdate(slot: AsiSlotMeta, sel: FeatSelection) {
+    dispatch({
+      type: "SET_FEAT_SELECTION",
+      index: -1,
+      selection: {
+        ...sel,
+        classIndex: slot.classIndex,
+        className: slot.className,
+        level: slot.classLevel,
+      },
+    });
   }
 
   function handleFeatChoice(featName: string, choiceId: string, values: string[]) {
     dispatch({ type: "SET_FEAT_CHOICE", featName, choiceId, values });
   }
 
-  const hasAsiSlots = unlockedAsiLevels.length > 0;
+  // Group slots by classIndex for display
+  const slotsByClass = useMemo(() => {
+    const groups = new Map<number, { className: string; entries: AsiSlotMeta[] }>();
+    asiSlots.forEach((slot) => {
+      const g = groups.get(slot.classIndex);
+      if (g) g.entries.push(slot);
+      else groups.set(slot.classIndex, { className: slot.className, entries: [slot] });
+    });
+    return Array.from(groups.entries()).map(([classIndex, v]) => ({
+      classIndex,
+      className: v.className,
+      entries: v.entries,
+    }));
+  }, [asiSlots]);
+
+  const hasAsiSlots = asiSlots.length > 0;
+  const noSlotsYet = !hasAsiSlots && state.classes.length > 0;
 
   return (
     <section aria-labelledby="feats-step-heading" className="flex flex-col gap-6">
@@ -750,12 +784,13 @@ export function FeatsStep() {
           Feats & Ability Improvements
         </h1>
         <p className="text-sm text-gray-400">
-          At certain levels your class grants an Ability Score Improvement. You may take the raw
-          bonus or spend the slot on a feat instead.
-          {(state.classes[0]?.level ?? 1) < 4 && (
+          Each class grants Ability Score Improvement slots at its own levels (4, 8, 12, 16).
+          Fighters gain extra slots at 6 and 14; Rogues gain an extra at 10; every class gains an
+          Epic Boon feat slot at 19. Each slot may be spent on a +2 (or +1/+1) ability bump or on a
+          feat.
+          {noSlotsYet && (
             <span className="block mt-1 text-gray-500">
-              You will unlock your first ASI at level 4. Increase your class level to access this
-              step.
+              No ASI slots unlocked yet. Raise a class to level 4 or higher to unlock them.
             </span>
           )}
         </p>
@@ -784,38 +819,40 @@ export function FeatsStep() {
         </>
       )}
 
-      {/* ASI / Feat slots */}
-      {hasAsiSlots ? (
-        <div>
-          <h2
-            className="text-xs font-medium text-amber-400/80 uppercase tracking-widest mb-4"
-            style={{ fontFamily: "var(--font-cinzel)" }}
-          >
-            Class ASI Slots
-          </h2>
-          {unlockedAsiLevels.map((level, i) => (
-            <AsiSlot
-              key={level}
-              slotIndex={i}
-              level={level}
-              selection={selections[i]}
-              classLevel={state.classes[0]?.level ?? 1}
-              alreadySelectedFeats={selectedFeatNames.filter((_, j) => j !== i)}
-              onUpdate={(sel) => handleSlotUpdate(i, sel)}
-              featChoices={state.featChoices}
-              onFeatChoice={handleFeatChoice}
-            />
+      {/* ASI / Feat slots, grouped by class */}
+      {hasAsiSlots && (
+        <div className="flex flex-col gap-6">
+          {slotsByClass.map((group) => (
+            <div key={group.classIndex}>
+              <h2
+                className="text-xs font-medium text-amber-400/80 uppercase tracking-widest mb-4"
+                style={{ fontFamily: "var(--font-cinzel)" }}
+              >
+                {group.className} — ASI Slots
+              </h2>
+              {group.entries.map((slot) => {
+                const selectionIndex = asiSlots.indexOf(slot);
+                const selection = selectionsBySlot[selectionIndex];
+                return (
+                  <AsiSlot
+                    key={`${slot.classIndex}-${slot.classLevel}`}
+                    slotIndex={selectionIndex}
+                    level={slot.classLevel}
+                    selection={selection}
+                    classLevel={state.classes[slot.classIndex]?.level ?? slot.classLevel}
+                    isEpicBoon={slot.isEpicBoon}
+                    alreadySelectedFeats={selectedFeatNames.filter(
+                      (name) => selection.featName !== name,
+                    )}
+                    onUpdate={(sel) => handleSlotUpdate(slot, sel)}
+                    featChoices={state.featChoices}
+                    onFeatChoice={handleFeatChoice}
+                  />
+                );
+              })}
+            </div>
           ))}
         </div>
-      ) : (
-        !originFeatName && (
-          <div className="bg-gray-800/60 border border-gray-700/40 rounded-lg p-8 text-center">
-            <p className="text-gray-500 text-sm">
-              No ASI slots yet. Increase your class level to 4 or above to unlock feat and ability
-              score improvement choices.
-            </p>
-          </div>
-        )
       )}
     </section>
   );

@@ -1,4 +1,5 @@
 import { getClass, getSpell } from "@unseen-servant/shared/data";
+import { enumerateAsiSlots } from "@unseen-servant/shared/character";
 
 // Re-export types from shared for backward compatibility with local imports
 export type {
@@ -102,17 +103,20 @@ function isStepComplete(step: BuilderStep, state: BuilderState): boolean {
       // Complete when all six scores have been assigned (no zeros)
       return (Object.values(state.baseAbilities) as number[]).every((v) => v > 0);
     case "feats": {
-      // Need a class first; then complete when no ASI slots exist or all are filled
+      // Need a class first; then complete when all unlocked ASI/Epic Boon slots
+      // (per-class, RAW 2024) have a valid selection.
       if (state.classes.length === 0) return false;
-      const totalLevel = state.classes.reduce((s, c) => s + c.level, 0);
-      const asiCount = [4, 8, 12, 16, 19].filter((l) => l <= totalLevel).length;
-      if (asiCount === 0) return true;
-      if (state.featSelections.length < asiCount) return false;
-      return state.featSelections.every((s) =>
-        s.type === "feat"
-          ? Boolean(s.featName)
-          : s.asiAbilities !== undefined && Object.keys(s.asiAbilities).length > 0,
-      );
+      const slots = enumerateAsiSlots(state.classes);
+      if (slots.length === 0) return true;
+      return slots.every((slot) => {
+        const sel = state.featSelections.find(
+          (s) => s.classIndex === slot.classIndex && s.level === slot.classLevel,
+        );
+        if (!sel) return false;
+        return sel.type === "feat"
+          ? Boolean(sel.featName)
+          : sel.asiAbilities !== undefined && Object.keys(sel.asiAbilities).length > 0;
+      });
     }
     case "spells":
       // Complete once a class is selected (non-casters have nothing to pick)
@@ -261,16 +265,22 @@ export function builderReducer(state: BuilderState, action: BuilderAction): Buil
       const removedName = state.classes[action.index].name;
       const remaining = state.classes.filter((_, i) => i !== action.index);
       const newIndex = Math.min(state.activeClassIndex, remaining.length - 1);
-      // Trim feat selections to total level of remaining classes
-      const newTotal = remaining.reduce((sum, c) => sum + c.level, 0);
-      // Remove spells for the removed class
+      // Drop feat selections that belonged to the removed class, and renumber
+      // classIndex for any selections that were from a later class.
+      const prunedFeatSelections = state.featSelections
+        .filter((s) => s.classIndex !== action.index)
+        .map((s) =>
+          s.classIndex !== undefined && s.classIndex > action.index
+            ? { ...s, classIndex: s.classIndex - 1 }
+            : s,
+        );
       const { [removedName]: _rc, ...keptCantrips } = state.cantrips;
       const { [removedName]: _rp, ...keptPrepared } = state.preparedSpells;
       next = {
         ...state,
         classes: remaining,
         activeClassIndex: newIndex,
-        featSelections: state.featSelections.filter((s) => s.level <= newTotal),
+        featSelections: prunedFeatSelections,
         cantrips: keptCantrips,
         preparedSpells: keptPrepared,
       };
@@ -296,7 +306,6 @@ export function builderReducer(state: BuilderState, action: BuilderAction): Buil
       const clampedLevel = Math.min(newLevel, Math.max(1, 20 - otherLevels));
       const updatedEntry: BuilderClassEntry = { ...entry, level: clampedLevel };
       const updatedClasses = state.classes.map((c, i) => (i === action.index ? updatedEntry : c));
-      const newTotal = updatedClasses.reduce((sum, c) => sum + c.level, 0);
       // Prune spells for the changed class that exceed the new max spell level.
       const changedClassName = updatedEntry.name;
       const classDb = getClass(changedClassName);
@@ -335,8 +344,11 @@ export function builderReducer(state: BuilderState, action: BuilderAction): Buil
       next = {
         ...state,
         classes: updatedClasses,
-        // Trim feat selections that fall beyond the new total level
-        featSelections: state.featSelections.filter((s) => s.level <= newTotal),
+        // Drop feat selections that belonged to this class at a level above
+        // the new clamped class level. Other classes' selections are untouched.
+        featSelections: state.featSelections.filter(
+          (s) => s.classIndex !== action.index || s.level <= clampedLevel,
+        ),
         cantrips: nextCantrips,
         preparedSpells: nextPreparedSpells,
       };
@@ -408,15 +420,23 @@ export function builderReducer(state: BuilderState, action: BuilderAction): Buil
 
     // ---- Feats & ASIs ------------------------------------------------------
     case "SET_FEAT_SELECTION": {
+      // Identify slot by {classIndex, level}. Fall back to positional `index`
+      // only when the selection does not carry per-class provenance (legacy).
+      const sel = action.selection;
+      const matchIdx = state.featSelections.findIndex((s) =>
+        sel.classIndex !== undefined
+          ? s.classIndex === sel.classIndex && s.level === sel.level
+          : s.classIndex === undefined && s.level === sel.level,
+      );
       const updated = [...state.featSelections];
-      updated[action.index] = action.selection;
-      // Remove feat choices for a slot that changed away from a feat
-      const prev = state.featSelections[action.index];
+      const prev = matchIdx >= 0 ? state.featSelections[matchIdx] : undefined;
+      if (matchIdx >= 0) updated[matchIdx] = sel;
+      else updated.push(sel);
       let featChoices = state.featChoices;
       if (
         prev?.type === "feat" &&
         prev.featName &&
-        (action.selection.type !== "feat" || action.selection.featName !== prev.featName)
+        (sel.type !== "feat" || sel.featName !== prev.featName)
       ) {
         featChoices = { ...featChoices };
         delete featChoices[prev.featName];

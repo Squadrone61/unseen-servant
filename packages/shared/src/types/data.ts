@@ -169,7 +169,8 @@ export interface SubclassDb {
   description: string;
   casterProgression?: CasterProgression;
   spellcastingAbility?: Ability;
-  additionalSpells?: string[];
+  /** Normalized to an array of {spell, minLevel}. Source JSON may be string[], array of objects, or level-keyed record — all forms are coerced in `normalizeClassData`. */
+  additionalSpells?: Array<{ spell: string; minLevel: number }>;
   /** Spell slot table: 20 rows (index 0 = level 1), same format as ClassDb.spellSlotTable */
   spellSlotTable?: number[][];
   features: SubclassFeatureDb[];

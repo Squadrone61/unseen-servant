@@ -179,7 +179,9 @@ function assembleSpellsFromState(state: BuilderState, warnings: string[]): Spell
         (s) => s.name.toLowerCase() === cls.subclass!.toLowerCase(),
       );
       if (sub?.additionalSpells) {
-        for (const name of sub.additionalSpells) {
+        for (const entry of sub.additionalSpells) {
+          if (entry.minLevel > cls.level) continue;
+          const name = entry.spell;
           if (allPrepared.has(name) || allCantrips.has(name)) continue;
           const db = getSpell(name);
           if (!db) {
@@ -424,11 +426,18 @@ function collectBuildEffects(
       operation: "add" as const,
     }));
     if (asiMods.length > 0) {
+      const classLabel = selection.className ?? state.classes[selection.classIndex ?? 0]?.name;
+      const scope = classLabel
+        ? `${classLabel.toLowerCase()}-${selection.level}`
+        : `level-${selection.level}`;
+      const sourceName = classLabel
+        ? `${classLabel} level ${selection.level} ASI`
+        : `Level ${selection.level} ASI`;
       bundles.push({
-        id: `asi:level-${selection.level}`,
+        id: `asi:${scope}`,
         source: {
           type: "ability",
-          name: `Level ${selection.level} ASI`,
+          name: sourceName,
           level: selection.level,
         },
         lifetime: { type: "permanent" },

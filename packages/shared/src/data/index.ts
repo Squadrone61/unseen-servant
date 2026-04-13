@@ -59,16 +59,37 @@ import wizardData from "./classes/wizard.json";
 
 // ─── Type assertions for JSON imports ──────────────────
 
-/** Normalize additionalSpells: JSON stores objects {spell,usage,minLevel} but consumers expect string[]. */
+/**
+ * Normalize additionalSpells into `Array<{ spell, minLevel }>`. Source JSON may be:
+ *   - `string[]`                                          (e.g. barbarian: always available)
+ *   - `Array<{ spell, minLevel?, ... }>`                  (e.g. ranger, cleric)
+ *   - `Record<string, string[]>` keyed by class level     (e.g. sorcerer, warlock)
+ */
 function normalizeClassData(raw: unknown): ClassDb {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const cls = raw as any;
   for (const sub of cls.subclasses ?? []) {
-    if (Array.isArray(sub.additionalSpells)) {
-      sub.additionalSpells = sub.additionalSpells.map((entry: unknown) =>
-        typeof entry === "string" ? entry : (entry as { spell: string }).spell,
-      );
+    const src = sub.additionalSpells;
+    if (!src) continue;
+    const out: Array<{ spell: string; minLevel: number }> = [];
+    if (Array.isArray(src)) {
+      for (const entry of src) {
+        if (typeof entry === "string") {
+          out.push({ spell: entry, minLevel: 1 });
+        } else {
+          const e = entry as { spell: string; minLevel?: number };
+          out.push({ spell: e.spell, minLevel: e.minLevel ?? 1 });
+        }
+      }
+    } else if (typeof src === "object") {
+      for (const [levelKey, spellNames] of Object.entries(src)) {
+        const minLevel = parseInt(levelKey, 10) || 1;
+        for (const name of spellNames as string[]) {
+          out.push({ spell: name, minLevel });
+        }
+      }
     }
+    sub.additionalSpells = out;
   }
   return cls as ClassDb;
 }

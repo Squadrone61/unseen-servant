@@ -277,12 +277,15 @@ function SubclassPopover({
               Additional Spells
             </span>
             <div className="flex flex-wrap gap-1.5">
-              {subclass.additionalSpells.map((spell) => (
+              {subclass.additionalSpells.map((entry) => (
                 <span
-                  key={spell}
+                  key={`${entry.spell}-${entry.minLevel}`}
                   className="inline-flex items-center px-2 py-0.5 rounded text-xs border bg-violet-900/20 text-violet-300 border-violet-700/30"
                 >
-                  {spell}
+                  {entry.spell}
+                  {entry.minLevel > 1 && (
+                    <span className="ml-1 text-violet-400/60">L{entry.minLevel}</span>
+                  )}
                 </span>
               ))}
             </div>

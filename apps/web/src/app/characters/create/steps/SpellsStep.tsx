@@ -391,12 +391,13 @@ function ClassSpellPanel({
     return `${abilityLabel} modifier (${modStr}) + ${levelLabel} (${levelScale === "full" ? classLevel : Math.floor(classLevel / 2)})`;
   }, [classDb.preparedSpellFormula, abilityScores, classLevel]);
 
-  // Always-prepared spells from subclass
+  // Always-prepared spells from subclass (gated by current class level)
   const alwaysPrepared = useMemo<string[]>(() => {
     if (!subclass) return [];
     const sub = classDb.subclasses.find((s) => s.name === subclass);
-    return sub?.additionalSpells ?? [];
-  }, [classDb, subclass]);
+    if (!sub?.additionalSpells) return [];
+    return sub.additionalSpells.filter((e) => e.minLevel <= classLevel).map((e) => e.spell);
+  }, [classDb, subclass, classLevel]);
 
   // Spell lists filtered by class
   const typedClassName = className as ClassName;
@@ -649,9 +650,11 @@ export function SpellsStep() {
             Spells
           </h1>
           <p className="text-sm text-gray-400">
-            {state.classes.length > 0
-              ? `${state.classes[0].name}s do not use spells. Continue to the next step.`
-              : "Choose a class first to see spell options."}
+            {state.classes.length === 0
+              ? "Choose a class first to see spell options."
+              : state.classes.length === 1
+                ? `${state.classes[0].name}s do not use spells. Continue to the next step.`
+                : "None of your classes cast spells. Continue to the next step."}
           </p>
         </div>
         <div className="bg-gray-800/30 border border-gray-700/20 rounded-lg p-8 text-center">

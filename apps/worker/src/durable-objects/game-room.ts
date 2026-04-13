@@ -2,6 +2,7 @@ import { DurableObject } from "cloudflare:workers";
 import { clientMessageSchema } from "@unseen-servant/shared/schemas";
 import type {
   AuthUser,
+  CharacterData,
   ClientChatMessage,
   ClientMessage,
   DMBridgeConfig,
@@ -44,6 +45,7 @@ export class GameRoom extends DurableObject<Env> {
   private campaignConfigured: boolean = false;
   private activeCampaignSlug: string | null = null;
   private activeCampaignName: string | null = null;
+  private characters: Map<string, CharacterData> = new Map();
 
   constructor(ctx: DurableObjectState, env: Env) {
     super(ctx, env);
@@ -72,6 +74,7 @@ export class GameRoom extends DurableObject<Env> {
         password,
         createdAt,
         approvedUserIds,
+        characters,
       ] = await Promise.all([
         this.ctx.storage.get<string>("roomCode"),
         this.ctx.storage.get<string>("hostPlayerName"),
@@ -80,6 +83,7 @@ export class GameRoom extends DurableObject<Env> {
         this.ctx.storage.get<string>("password"),
         this.ctx.storage.get<number>("createdAt"),
         this.ctx.storage.get<string[]>("approvedUserIds"),
+        this.ctx.storage.get<Record<string, CharacterData>>("characters"),
       ]);
       if (roomCode) this.roomCode = roomCode;
       if (hostPlayerName) this.hostPlayerName = hostPlayerName;
@@ -92,6 +96,9 @@ export class GameRoom extends DurableObject<Env> {
         for (const id of approvedUserIds) {
           this.approvedUserIds.add(id);
         }
+      }
+      if (characters) {
+        this.characters = new Map(Object.entries(characters));
       }
     });
   }
@@ -494,6 +501,14 @@ export class GameRoom extends DurableObject<Env> {
 
     const payload = msg.payload as ServerMessage;
 
+    // Keep the worker's character cache in sync with bridge-originated updates
+    // (HP changes, level-ups, item equips, etc.). This is what lets us seed a
+    // reconnecting bridge or a reconnecting client with the current sheet.
+    if (payload.type === "server:character_updated") {
+      this.characters.set(payload.playerName, payload.character);
+      void this.persistCharacters();
+    }
+
     if (msg.targets && msg.targets.length > 0) {
       // Send only to named players
       const json = JSON.stringify(payload);
@@ -683,6 +698,7 @@ export class GameRoom extends DurableObject<Env> {
       campaignConfigured: this.campaignConfigured || undefined,
       activeCampaignSlug: this.activeCampaignSlug ?? undefined,
       activeCampaignName: this.activeCampaignName ?? undefined,
+      characters: this.characters.size > 0 ? this.charactersAsRecord() : undefined,
     });
 
     // Replay chat log
@@ -701,6 +717,11 @@ export class GameRoom extends DurableObject<Env> {
         hostName: this.getHostName(),
         allPlayers: this.getAllPlayersWithStatus(),
       });
+    } else {
+      // Bridge just connected — flush every cached character so the
+      // GameStateManager is fully seeded, even for players who set their
+      // character before the bridge was online (e.g. the host).
+      this.flushCharactersToBridge();
     }
 
     this.broadcastToApproved(
@@ -834,6 +855,10 @@ export class GameRoom extends DurableObject<Env> {
     this.allPlayerRecords.delete(targetSession.userId);
     await this.persistAllPlayerRecords();
 
+    if (this.characters.delete(targetSession.playerName)) {
+      await this.persistCharacters();
+    }
+
     try {
       targetWs.close(4002, "Kicked by host");
     } catch {
@@ -894,13 +919,14 @@ export class GameRoom extends DurableObject<Env> {
     this.chatLog = [];
     this.roomCode = "";
     this.allPlayerRecords.clear();
+    this.characters.clear();
     this.storyStarted = false;
     this.created = false;
     this.password = null;
     this.createdAt = 0;
   }
 
-  // --- Character Handler (pure relay) ---
+  // --- Character Handler ---
 
   private async handleSetCharacter(
     ws: WebSocket,
@@ -916,9 +942,17 @@ export class GameRoom extends DurableObject<Env> {
       return;
     }
 
-    // Pure relay — forward to bridge. The bridge broadcasts server:character_updated
-    // via client:broadcast, which this worker then relays to all players.
-    this.forwardToBridge(ws, msg);
+    // Cache latest character for this player — used to seed the bridge on connect
+    // and to serve reconnecting clients in server:room_joined.
+    this.characters.set(session.playerName, msg.character);
+    await this.persistCharacters();
+
+    // Forward to bridge if connected; otherwise the flush on bridge connect
+    // will deliver it. No NO_DM error — this message is tolerated any time.
+    const dmWs = this.findDMBridgeWebSocket();
+    if (dmWs) {
+      this.sendCharacterToBridge(session.playerName, msg.character);
+    }
   }
 
   // --- Helpers ---
@@ -1015,6 +1049,44 @@ export class GameRoom extends DurableObject<Env> {
       );
     } catch (e) {
       console.error("Failed to persist allPlayerRecords:", e);
+    }
+  }
+
+  private async persistCharacters(): Promise<void> {
+    try {
+      await this.ctx.storage.put("characters", Object.fromEntries(this.characters.entries()));
+    } catch (e) {
+      console.error("Failed to persist characters:", e);
+    }
+  }
+
+  private charactersAsRecord(): Record<string, CharacterData> {
+    return Object.fromEntries(this.characters.entries());
+  }
+
+  private sendCharacterToBridge(playerName: string, character: CharacterData): void {
+    const dmWs = this.findDMBridgeWebSocket();
+    if (!dmWs) return;
+    const session = this.findSessionByName(playerName);
+    const userId = session?.[1].userId ?? "";
+    try {
+      dmWs.send(
+        JSON.stringify({
+          type: "server:player_action",
+          playerName,
+          userId,
+          action: { type: "client:set_character", character },
+          requestId: crypto.randomUUID(),
+        }),
+      );
+    } catch {
+      // bridge may have closed — cache still intact for next connect
+    }
+  }
+
+  private flushCharactersToBridge(): void {
+    for (const [playerName, character] of this.characters.entries()) {
+      this.sendCharacterToBridge(playerName, character);
     }
   }
 }

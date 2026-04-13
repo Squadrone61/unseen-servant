@@ -410,9 +410,31 @@ function PackCard({ pack, selected, onToggle }: PackCardProps) {
 interface EquipmentChipPanelProps {
   equipment: Item[];
   onRemove: (index: number) => void;
+  onToggleEquipped: (index: number) => void;
+  onAddCustom: (item: Item) => void;
 }
 
-function EquipmentChipPanel({ equipment, onRemove }: EquipmentChipPanelProps) {
+function EquipmentChipPanel({
+  equipment,
+  onRemove,
+  onToggleEquipped,
+  onAddCustom,
+}: EquipmentChipPanelProps) {
+  const [customName, setCustomName] = useState("");
+  const [customQty, setCustomQty] = useState(1);
+
+  function handleAddCustom() {
+    const name = customName.trim();
+    if (!name) return;
+    onAddCustom({
+      name,
+      quantity: Math.max(1, customQty),
+      equipped: false,
+    });
+    setCustomName("");
+    setCustomQty(1);
+  }
+
   return (
     <div className="rounded-lg border border-gray-700/30 bg-gray-900/40 p-4">
       <div className="flex items-center justify-between gap-2 mb-3">
@@ -423,31 +445,88 @@ function EquipmentChipPanel({ equipment, onRemove }: EquipmentChipPanelProps) {
           Your Equipment
         </h3>
       </div>
+
       {equipment.length === 0 ? (
-        <p className="text-sm text-gray-600 italic">No equipment selected yet.</p>
+        <p className="text-sm text-gray-600 italic mb-3">No equipment selected yet.</p>
       ) : (
-        <div className="flex flex-wrap gap-2">
+        <ul className="flex flex-col gap-1.5 mb-3">
           {equipment.map((item, i) => (
-            <span
+            <li
               key={`${item.name}-${i}`}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-amber-500/30 bg-amber-900/15 text-amber-200 text-xs font-medium"
+              className="flex items-center gap-2 px-2.5 py-1.5 rounded-md border border-gray-700/40 bg-gray-800/50"
             >
-              {item.name}
-              {item.quantity > 1 && (
-                <span className="text-amber-400/60">&times;{item.quantity}</span>
-              )}
+              <span className="flex-1 text-sm text-gray-200 truncate">
+                {item.name}
+                {item.quantity > 1 && (
+                  <span className="ml-1 text-gray-500">&times;{item.quantity}</span>
+                )}
+              </span>
+              <button
+                type="button"
+                onClick={() => onToggleEquipped(i)}
+                aria-pressed={item.equipped}
+                aria-label={item.equipped ? `Unequip ${item.name}` : `Equip ${item.name}`}
+                className={[
+                  "text-[11px] px-2 py-0.5 rounded-full border transition-colors",
+                  item.equipped
+                    ? "border-emerald-500/40 bg-emerald-900/20 text-emerald-300 hover:bg-emerald-900/30"
+                    : "border-gray-600/40 bg-gray-800/60 text-gray-400 hover:text-gray-200",
+                ].join(" ")}
+              >
+                {item.equipped ? "Equipped" : "Unequipped"}
+              </button>
               <button
                 type="button"
                 onClick={() => onRemove(i)}
                 aria-label={`Remove ${item.name}`}
-                className="text-amber-500/60 hover:text-red-400 transition-colors leading-none focus:outline-none"
+                className="text-gray-500 hover:text-red-400 transition-colors leading-none focus:outline-none px-1"
               >
                 &times;
               </button>
-            </span>
+            </li>
           ))}
-        </div>
+        </ul>
       )}
+
+      {/* Custom item input */}
+      <div className="flex items-end gap-2 pt-2 border-t border-gray-700/30">
+        <label className="flex-1">
+          <span className="block text-[10px] uppercase tracking-wider text-gray-500 mb-1">
+            Add custom item
+          </span>
+          <input
+            type="text"
+            value={customName}
+            onChange={(e) => setCustomName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                handleAddCustom();
+              }
+            }}
+            placeholder="e.g. Journal, Lucky coin..."
+            className="w-full bg-gray-800/60 border border-gray-700/40 rounded px-2 py-1 text-sm text-gray-200 placeholder-gray-600 focus:border-amber-500/50 focus:outline-none"
+          />
+        </label>
+        <label className="w-16">
+          <span className="block text-[10px] uppercase tracking-wider text-gray-500 mb-1">Qty</span>
+          <input
+            type="number"
+            min={1}
+            value={customQty}
+            onChange={(e) => setCustomQty(parseInt(e.target.value || "1", 10))}
+            className="w-full bg-gray-800/60 border border-gray-700/40 rounded px-2 py-1 text-sm text-gray-200 focus:border-amber-500/50 focus:outline-none"
+          />
+        </label>
+        <button
+          type="button"
+          onClick={handleAddCustom}
+          disabled={!customName.trim()}
+          className="px-3 py-1 rounded text-sm font-medium border border-amber-500/40 bg-amber-900/20 text-amber-200 hover:bg-amber-900/30 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+        >
+          Add
+        </button>
+      </div>
     </div>
   );
 }
@@ -582,6 +661,8 @@ function StartingEquipmentPanel() {
           }
           dispatch({ type: "REMOVE_EQUIPMENT", index: i });
         }}
+        onToggleEquipped={(i) => dispatch({ type: "TOGGLE_EQUIPPED", index: i })}
+        onAddCustom={(item) => dispatch({ type: "ADD_EQUIPMENT", item })}
       />
 
       {/* Tab bar */}

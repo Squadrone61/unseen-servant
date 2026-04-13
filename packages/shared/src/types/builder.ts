@@ -25,8 +25,20 @@ export type BuilderStep =
 // Supporting types
 // ---------------------------------------------------------------------------
 
+/**
+ * One ASI/feat slot. Slots are granted per-class at that class's own level
+ * (per D&D 2024 PHB). `level` is the CLASS level at which this slot unlocks
+ * (not the character's total level); `classIndex` / `className` identify
+ * which class entry in `BuilderState.classes` granted it.
+ *
+ * `classIndex` / `className` are optional for back-compat with older saved
+ * snapshots; when missing, the builder treats the selection as belonging to
+ * `classes[0]` at `level`.
+ */
 export interface FeatSelection {
   level: number;
+  classIndex?: number;
+  className?: string;
   type: "feat" | "asi";
   featName?: string;
   asiAbilities?: Partial<Record<Ability, number>>;
