@@ -20,6 +20,7 @@ import { CharacterPopover } from "@/components/character/CharacterPopover";
 import { usePlayerNotes } from "@/hooks/usePlayerNotes";
 import { useCharacterLibrary } from "@/hooks/useCharacterLibrary";
 import { mergeReimport, formatClassString } from "@unseen-servant/shared/utils";
+import { getHP } from "@unseen-servant/shared/character";
 import type {
   BattleMapState,
   CharacterData,
@@ -289,7 +290,7 @@ function GameContent({ roomCode, playerName }: { roomCode: string; playerName: s
               ...prev,
               {
                 type: "server:system",
-                content: `${msg.playerName} updated character "${msg.character.static.name}" (Lvl ${lvl}, HP ${msg.character.dynamic.currentHP}/${msg.character.static.maxHP}).`,
+                content: `${msg.playerName} updated character "${msg.character.static.name}" (Lvl ${lvl}, HP ${msg.character.dynamic.currentHP}/${getHP(msg.character)}).`,
                 timestamp: Date.now(),
               } as ServerMessage,
             ]);

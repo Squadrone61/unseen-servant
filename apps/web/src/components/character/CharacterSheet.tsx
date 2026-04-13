@@ -17,6 +17,14 @@ import {
   getModifier,
   formatModifier,
 } from "@unseen-servant/shared/utils";
+import {
+  getHP,
+  getAC,
+  getSpeed,
+  getSenses,
+  getAdvantages,
+  getSpellcasting,
+} from "@unseen-servant/shared/character";
 import { HPBar } from "./HPBar";
 import { AbilityDetailPopup } from "./AbilityDetailPopup";
 import { SpellDetailPopup } from "./SpellDetailPopup";
@@ -102,8 +110,18 @@ function CharacterSheetInner({ character }: CharacterSheetProps) {
   const [popup, setPopup] = useState<PopupState>(null);
   const { stack } = useEntityPopover();
 
-  const primarySpellcasting = s.spellcasting ? Object.values(s.spellcasting)[0] : undefined;
-  const isCaster = primarySpellcasting != null;
+  // Find first class with spellcasting ability for primary spellcasting stats
+  const primarySpellcasting = (() => {
+    for (const cls of s.classes) {
+      const sc = getSpellcasting(character, cls.name);
+      if (sc) return sc;
+    }
+    return undefined;
+  })();
+  const isCaster = primarySpellcasting != null || s.spells.length > 0;
+  const senses = getSenses(character);
+  const advantages = getAdvantages(character);
+  const profBonus = Math.floor((getTotalLevel(s.classes) - 1) / 4) + 2;
 
   return (
     <div className="flex flex-col h-full text-sm">
@@ -124,21 +142,21 @@ function CharacterSheetInner({ character }: CharacterSheetProps) {
         </div>
 
         {/* HP Bar — full width */}
-        <HPBar current={d.currentHP} max={s.maxHP} temp={d.tempHP} />
+        <HPBar current={d.currentHP} max={getHP(character)} temp={d.tempHP} />
 
         {/* Stat Boxes — 3-column grid, 2 rows */}
         <div className="grid grid-cols-3 gap-1.5 text-center">
           <div className="bg-gray-900/60 border border-gray-700/50 rounded py-1">
             <div className="text-xs text-gray-500 uppercase">AC</div>
-            <div className="text-base font-bold text-gray-200">{s.armorClass}</div>
+            <div className="text-base font-bold text-gray-200">{getAC(character)}</div>
           </div>
           <div className="bg-gray-900/60 border border-gray-700/50 rounded py-1">
             <div className="text-xs text-gray-500 uppercase">Speed</div>
-            <div className="text-base font-bold text-gray-200">{s.speed.walk} ft</div>
+            <div className="text-base font-bold text-gray-200">{getSpeed(character).walk} ft</div>
           </div>
           <div className="bg-gray-900/60 border border-gray-700/50 rounded py-1">
             <div className="text-xs text-gray-500 uppercase">Prof</div>
-            <div className="text-base font-bold text-gray-200">+{s.proficiencyBonus}</div>
+            <div className="text-base font-bold text-gray-200">+{profBonus}</div>
           </div>
           {isCaster ? (
             <>
@@ -175,7 +193,7 @@ function CharacterSheetInner({ character }: CharacterSheetProps) {
                 <div className="text-xs text-gray-500 uppercase">Passive</div>
                 <div className="text-base font-bold text-gray-200">
                   {parseInt(
-                    s.senses
+                    senses
                       .find((sense) => sense.startsWith("Passive Perception"))
                       ?.split(" ")
                       .at(-1) ?? String(10 + getModifier(s.abilities.wisdom)),
@@ -271,7 +289,7 @@ function CharacterSheetInner({ character }: CharacterSheetProps) {
               const score = s.abilities[key];
               const mod = getModifier(score);
               const modStr = formatModifier(score);
-              const abilityAdvs = findAdvantages(s.advantages, `${key}-ability-checks`);
+              const abilityAdvs = findAdvantages(advantages, `${key}-ability-checks`);
               const hasAdv = abilityAdvs.some((a) => a.type === "advantage");
               const hasDisadv = abilityAdvs.some((a) => a.type === "disadvantage");
               const advTooltip = abilityAdvs
@@ -313,11 +331,7 @@ function CharacterSheetInner({ character }: CharacterSheetProps) {
       </div>
 
       {/* ═══ TAB BAR ═══ */}
-      <SheetTabBar
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-        showSpells={isCaster || s.spells.length > 0}
-      />
+      <SheetTabBar activeTab={activeTab} onTabChange={setActiveTab} showSpells={isCaster} />
 
       {/* ═══ TAB CONTENT (scrollable, fills remaining space) ═══ */}
       <div className="flex-1 overflow-y-auto p-3">

@@ -16,6 +16,7 @@ import type {
   MapTile,
 } from "@unseen-servant/shared/types";
 import { formatGridPosition, gridDistance, computeAoETiles } from "@unseen-servant/shared/utils";
+import { getHP, getAC } from "@unseen-servant/shared/character";
 
 // ─── Constants ───
 
@@ -639,8 +640,8 @@ export function BattleMap({
         );
         if (char) {
           currentHP = char.dynamic.currentHP;
-          maxHP = char.static.maxHP;
-          ac = char.static.armorClass;
+          maxHP = getHP(char);
+          ac = getAC(char);
           concentration = char.dynamic.concentratingOn;
           conditionEntries = char.dynamic.conditions ?? [];
         }

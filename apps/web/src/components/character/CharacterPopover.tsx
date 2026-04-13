@@ -7,6 +7,7 @@ import {
   formatModifier,
   ABILITY_NAMES,
 } from "@unseen-servant/shared/utils";
+import { getAC, getHP, getSpeed } from "@unseen-servant/shared/character";
 
 interface CharacterPopoverProps {
   character: CharacterData;
@@ -18,7 +19,10 @@ export function CharacterPopover({ character, playerName, online }: CharacterPop
   const s = character.static;
   const d = character.dynamic;
   const totalLevel = getTotalLevel(s.classes);
-  const hpPercent = s.maxHP > 0 ? Math.round((d.currentHP / s.maxHP) * 100) : 0;
+  const maxHP = getHP(character);
+  const ac = getAC(character);
+  const speed = getSpeed(character);
+  const hpPercent = maxHP > 0 ? Math.round((d.currentHP / maxHP) * 100) : 0;
 
   return (
     <div className="bg-gray-800/60 border border-gray-700/40 rounded-lg p-3 shadow-xl w-64 z-50 backdrop-blur-sm">
@@ -53,16 +57,16 @@ export function CharacterPopover({ character, playerName, online }: CharacterPop
                   : "text-red-400"
             }`}
           >
-            {d.currentHP}/{s.maxHP}
+            {d.currentHP}/{maxHP}
           </div>
         </div>
         <div className="bg-gray-900/50 rounded px-2 py-1 text-center">
           <div className="text-xs text-gray-500">AC</div>
-          <div className="text-xs font-bold text-gray-200">{s.armorClass}</div>
+          <div className="text-xs font-bold text-gray-200">{ac}</div>
         </div>
         <div className="bg-gray-900/50 rounded px-2 py-1 text-center">
           <div className="text-xs text-gray-500">Speed</div>
-          <div className="text-xs font-bold text-gray-200">{s.speed.walk} ft</div>
+          <div className="text-xs font-bold text-gray-200">{speed.walk} ft</div>
         </div>
       </div>
 

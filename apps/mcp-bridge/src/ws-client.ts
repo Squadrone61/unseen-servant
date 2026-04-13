@@ -4,6 +4,7 @@ import type { MessageQueue } from "./message-queue.js";
 import type { CampaignManager } from "./services/campaign-manager.js";
 import type { GameLogger } from "./services/game-logger.js";
 import { GameStateManager, type SessionStateSnapshot } from "./services/game-state-manager.js";
+import { getHP, getAC } from "@unseen-servant/shared/character";
 import type { PlayerSummary } from "./types.js";
 import type {
   ClientMessage,
@@ -672,8 +673,8 @@ export class WSClient {
             race: char.static.species || char.static.race,
             classes: char.static.classes.map((c) => `${c.name} ${c.level}`).join("/"),
             level: totalLevel,
-            hp: `${char.dynamic.currentHP}/${char.static.maxHP}`,
-            ac: char.static.armorClass,
+            hp: `${char.dynamic.currentHP}/${getHP(char)}`,
+            ac: getAC(char),
             conditions: char.dynamic.conditions.map((c) => c.name),
           };
         }

@@ -10,6 +10,16 @@ import type {
   SpellSlotLevel,
 } from "../types/character";
 import type { Spell } from "../types/spell";
+import {
+  getAC,
+  getHP,
+  getSpeed,
+  getSkills,
+  getSavingThrows,
+  getSenses,
+  getSpellcasting,
+  getClassResources,
+} from "../character/resolve";
 
 /**
  * Extract the walk speed from a speed value that may be a plain number (legacy)
@@ -83,12 +93,16 @@ export function buildCharacterContextBlock(playerName: string, char: CharacterDa
   const s = char.static;
   const d = char.dynamic;
   const totalLevel = getTotalLevel(s.classes);
+  const profBonus = getProficiencyBonus(totalLevel);
   const classStr = formatClassString(s.classes);
+  const maxHP = getHP(char);
+  const ac = getAC(char);
+  const speed = getSpeed(char);
 
   const lines: string[] = [
     `### ${playerName} plays ${s.name}`,
     `**Race:** ${s.race} | **Class:** ${classStr} | **Level:** ${totalLevel}`,
-    `**HP:** ${d.currentHP}/${s.maxHP}${d.tempHP > 0 ? ` (+${d.tempHP} temp)` : ""} | **AC:** ${s.armorClass} | **Speed:** ${formatSpeed(s.speed)}`,
+    `**HP:** ${d.currentHP}/${maxHP}${d.tempHP > 0 ? ` (+${d.tempHP} temp)` : ""} | **AC:** ${ac} | **Speed:** ${formatSpeed(speed)}`,
     `**Abilities:** STR ${formatModifier(s.abilities.strength)}, DEX ${formatModifier(s.abilities.dexterity)}, CON ${formatModifier(s.abilities.constitution)}, INT ${formatModifier(s.abilities.intelligence)}, WIS ${formatModifier(s.abilities.wisdom)}, CHA ${formatModifier(s.abilities.charisma)}`,
   ];
 
@@ -121,10 +135,10 @@ export function buildCharacterContextBlock(playerName: string, char: CharacterDa
   }
 
   // Proficient skills
-  const proficientSkills = s.skills
+  const proficientSkills = getSkills(char)
     .filter((sk) => sk.proficient || sk.expertise)
     .map((sk) => {
-      const mod = getSkillModifier(sk, s.abilities, s.proficiencyBonus);
+      const mod = getSkillModifier(sk, s.abilities, profBonus);
       const tag = sk.expertise ? " (E)" : "";
       return `${SKILL_DISPLAY_NAMES[sk.name] || sk.name} ${formatBonus(mod)}${tag}`;
     });
@@ -133,28 +147,26 @@ export function buildCharacterContextBlock(playerName: string, char: CharacterDa
   }
 
   // Proficient saving throws
-  const proficientSaves = s.savingThrows
+  const proficientSaves = getSavingThrows(char)
     .filter((sv) => sv.proficient)
     .map((sv) => {
-      const mod = getSavingThrowModifier(sv, s.abilities, s.proficiencyBonus);
+      const mod = getSavingThrowModifier(sv, s.abilities, profBonus);
       return `${ABILITY_NAMES[sv.ability]} ${formatBonus(mod)}`;
     });
   if (proficientSaves.length > 0) {
     lines.push(`**Saving Throw Proficiencies:** ${proficientSaves.join(", ")}`);
   }
 
-  // Spellcasting stats
-  if (s.spellcasting && Object.keys(s.spellcasting).length > 0) {
-    const entries = Object.entries(s.spellcasting);
-    if (entries.length === 1) {
-      const [, sc] = entries[0];
+  // Spellcasting stats — one line per spellcasting class
+  for (const cls of s.classes) {
+    const sc = getSpellcasting(char, cls.name);
+    if (!sc) continue;
+    if (s.classes.length === 1) {
       lines.push(`**Spell Save DC:** ${sc.dc} | **Spell Attack:** ${formatBonus(sc.attackBonus)}`);
     } else {
-      for (const [className, sc] of entries) {
-        lines.push(
-          `**${className} Spell Save DC:** ${sc.dc} | **Spell Attack:** ${formatBonus(sc.attackBonus)}`,
-        );
-      }
+      lines.push(
+        `**${cls.name} Spell Save DC:** ${sc.dc} | **Spell Attack:** ${formatBonus(sc.attackBonus)}`,
+      );
     }
   }
 
@@ -175,8 +187,9 @@ export function buildCharacterContextBlock(playerName: string, char: CharacterDa
   }
 
   // Class resources (Channel Divinity, Ki, Rage, etc.)
-  if (s.classResources && s.classResources.length > 0) {
-    const resLines = s.classResources.map((r) => {
+  const resources = getClassResources(char);
+  if (resources.length > 0) {
+    const resLines = resources.map((r) => {
       const used = (d.resourcesUsed || {})[r.name] ?? 0;
       const parts: string[] = [];
       if (r.shortRest) parts.push(`${r.shortRest === "all" ? "all" : r.shortRest} SR`);
@@ -195,8 +208,9 @@ export function buildCharacterContextBlock(playerName: string, char: CharacterDa
   if (s.languages.length > 0) {
     lines.push(`**Languages:** ${s.languages.join(", ")}`);
   }
-  if (s.senses.length > 0) {
-    lines.push(`**Senses:** ${s.senses.join(", ")}`);
+  const senses = getSenses(char);
+  if (senses.length > 0) {
+    lines.push(`**Senses:** ${senses.join(", ")}`);
   }
 
   const equippedItems = d.inventory.filter((item) => item.equipped);
@@ -208,8 +222,8 @@ export function buildCharacterContextBlock(playerName: string, char: CharacterDa
   const warnings: string[] = [];
   if (d.currentHP === 0) {
     warnings.push("UNCONSCIOUS at 0 HP — needs death saves");
-  } else if (s.maxHP > 0 && d.currentHP / s.maxHP <= 0.25) {
-    warnings.push(`LOW HP (${d.currentHP}/${s.maxHP})`);
+  } else if (maxHP > 0 && d.currentHP / maxHP <= 0.25) {
+    warnings.push(`LOW HP (${d.currentHP}/${maxHP})`);
   }
   for (const sl of d.spellSlotsUsed) {
     if (sl.total > 0 && sl.used >= sl.total) {
@@ -229,14 +243,14 @@ export function buildCharacterContextBlock(playerName: string, char: CharacterDa
 }
 
 /**
- * Create initial dynamic data from static import data.
+ * Create initial dynamic data. Phase 7: maxHP is derived at resolver time, so
+ * callers must seed currentHP externally (e.g., via buildCharacter which
+ * already computes maxHP via effects).
  */
-export function createInitialDynamicData(staticData: CharacterStaticData): CharacterDynamicData {
-  // Build spell slot levels from class data
+export function createInitialDynamicData(initialHP: number): CharacterDynamicData {
   const spellSlotsUsed: SpellSlotLevel[] = [];
-  // We'll let the DDB parser compute actual spell slots; default to empty
   return {
-    currentHP: staticData.maxHP,
+    currentHP: initialHP,
     tempHP: 0,
     spellSlotsUsed,
     pactMagicSlots: [],
@@ -258,8 +272,10 @@ export function mergeReimport(
   newStaticData: CharacterStaticData,
   newDynamic: CharacterDynamicData,
 ): CharacterData {
-  const oldMax = existing.static.maxHP;
-  const newMax = newStaticData.maxHP;
+  // Phase 7: maxHP is no longer stored on static; getHP(existing) derives it from
+  // effects at accessor time. newDynamic.currentHP is seeded to newMax by buildCharacter.
+  const oldMax = getHP(existing);
+  const newMax = newDynamic.currentHP; // buildCharacter seeds currentHP to maxHP
   const dynamic = { ...existing.dynamic };
 
   // If maxHP changed, scale current HP proportionally
@@ -285,8 +301,10 @@ export function mergeReimport(
   // Preserve resource usage, clamp to new maxUses
   const oldResources = dynamic.resourcesUsed || {};
   dynamic.resourcesUsed = {};
-  for (const r of newStaticData.classResources || []) {
-    dynamic.resourcesUsed[r.name] = Math.min(oldResources[r.name] ?? 0, r.maxUses);
+  const newChar: CharacterData = { builder: existing.builder, static: newStaticData, dynamic };
+  for (const r of getClassResources(newChar)) {
+    const maxUses = typeof r.maxUses === "number" ? r.maxUses : 0;
+    dynamic.resourcesUsed[r.name] = Math.min(oldResources[r.name] ?? 0, maxUses);
   }
 
   return {

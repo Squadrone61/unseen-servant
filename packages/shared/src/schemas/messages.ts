@@ -193,55 +193,62 @@ export const characterAppearanceSchema = z.object({
   skin: z.string().optional(),
 });
 
+/**
+ * EffectBundle schema — minimal structural validation of the permanent build-time
+ * effect bundles stored on CharacterStaticData.effects. EffectBundle is deeply
+ * nested; we validate the required identity fields and treat effects payload
+ * as passthrough to avoid duplicating the full effects type system here.
+ */
+export const effectBundleSchema = z.object({
+  id: z.string(),
+  source: z.object({
+    type: z.enum([
+      "species",
+      "class",
+      "subclass",
+      "feat",
+      "background",
+      "item",
+      "spell",
+      "condition",
+      "environment",
+    ]),
+    name: z.string(),
+    featureName: z.string().optional(),
+    level: z.number().optional(),
+  }),
+  lifetime: z.discriminatedUnion("type", [
+    z.object({ type: z.literal("permanent") }),
+    z.object({ type: z.literal("concentration") }),
+    z.object({ type: z.literal("duration"), rounds: z.number() }),
+    z.object({ type: z.literal("until_rest"), rest: z.enum(["short", "long"]) }),
+    z.object({ type: z.literal("manual") }),
+  ]),
+  effects: z.record(z.string(), z.unknown()),
+});
+
+/**
+ * CharacterStaticData schema — Phase 7.
+ * Derivable fields (AC, maxHP, speed, skills, savingThrows, senses, spellcasting,
+ * combatBonuses, advantages, classResources, proficiencies, proficiencyBonus)
+ * removed. Added: effects[] — permanent build-time effect bundles.
+ */
 export const characterStaticDataSchema = z.object({
   name: z.string(),
   species: z.string().optional(),
   race: z.string(),
   classes: z.array(characterClassSchema),
   abilities: abilityScoresSchema,
-  maxHP: z.number(),
-  armorClass: z.number(),
-  proficiencyBonus: z.number(),
-  speed: z.object({
-    walk: z.number(),
-    fly: z.number().optional(),
-    swim: z.number().optional(),
-    climb: z.number().optional(),
-    burrow: z.number().optional(),
-  }),
-  features: z.array(characterFeatureRefSchema),
-  classResources: z.array(classResourceSchema).optional().default([]),
-  proficiencies: proficiencyGroupSchema,
-  skills: z.array(skillProficiencySchema),
-  savingThrows: z.array(savingThrowProficiencySchema),
-  senses: z.array(z.string()),
   languages: z.array(z.string()),
   spells: z.array(spellSchema),
-  spellcasting: z
-    .record(
-      z.string(),
-      z.object({
-        ability: z.enum([
-          "strength",
-          "dexterity",
-          "constitution",
-          "intelligence",
-          "wisdom",
-          "charisma",
-        ]),
-        dc: z.number(),
-        attackBonus: z.number(),
-      }),
-    )
-    .optional(),
-  advantages: z.array(advantageEntrySchema),
-  combatBonuses: z.array(combatBonusSchema).optional(),
+  features: z.array(characterFeatureRefSchema),
   traits: characterTraitsSchema,
   appearance: characterAppearanceSchema.optional(),
   backstory: z.string().optional(),
   alignment: z.string().optional(),
   importedAt: z.number(),
   source: z.enum(["builder"]).optional(),
+  effects: z.array(effectBundleSchema),
 });
 
 export const characterDynamicDataSchema = z.object({

@@ -53,6 +53,14 @@ import {
   hasAdvantage,
   hasDisadvantage,
 } from "@unseen-servant/shared/utils";
+import {
+  getHP,
+  getAC,
+  getSpeed,
+  getClassResources,
+  getCombatBonus,
+  getSavingThrows,
+} from "@unseen-servant/shared/character";
 import { log } from "../logger.js";
 import type { MessageQueue } from "../message-queue.js";
 import type { CampaignManager } from "./campaign-manager.js";
@@ -1046,12 +1054,12 @@ export class GameStateManager {
             }
             case "healing":
               char.dynamic.currentHP = Math.min(
-                char.static.maxHP,
+                getHP(char),
                 char.dynamic.currentHP + Math.max(0, change.amount),
               );
               break;
             case "hp_set":
-              char.dynamic.currentHP = Math.max(0, Math.min(char.static.maxHP, change.value));
+              char.dynamic.currentHP = Math.max(0, Math.min(getHP(char), change.value));
               break;
             case "temp_hp":
               char.dynamic.tempHP = Math.max(char.dynamic.tempHP, change.amount);
@@ -1363,8 +1371,8 @@ export class GameStateManager {
     const characters = Object.values(this.characters).map((char) => {
       const c: Record<string, unknown> = {
         name: char.static.name,
-        hp: `${char.dynamic.currentHP}/${char.static.maxHP}`,
-        ac: resolveEffectiveStat(char, "ac", char.static.armorClass),
+        hp: `${char.dynamic.currentHP}/${getHP(char)}`,
+        ac: getAC(char),
         classes: char.static.classes.map((cl) => `${cl.name} ${cl.level}`).join("/"),
       };
       if (char.dynamic.tempHP > 0) c.tempHP = char.dynamic.tempHP;
@@ -1398,7 +1406,7 @@ export class GameStateManager {
                     (c) => c.static.name.toLowerCase() === cb.name.toLowerCase(),
                   );
                   return ch
-                    ? `${ch.dynamic.currentHP}/${ch.static.maxHP}`
+                    ? `${ch.dynamic.currentHP}/${getHP(ch)}`
                     : `${cb.currentHP ?? "?"}/${cb.maxHP ?? "?"}`;
                 })()
               : `${cb.currentHP ?? 0}/${cb.maxHP ?? "?"}`,
@@ -1408,7 +1416,7 @@ export class GameStateManager {
                   const ch = Object.values(this.characters).find(
                     (c) => c.static.name.toLowerCase() === cb.name.toLowerCase(),
                   );
-                  return ch ? resolveEffectiveStat(ch, "ac", ch.static.armorClass) : cb.armorClass;
+                  return ch ? getAC(ch) : cb.armorClass;
                 })()
               : cb.armorClass,
         };
@@ -1644,8 +1652,9 @@ export class GameStateManager {
         // Fix 2 (RULES-CRIT-4): Massive damage / instant death
         // PHB 2024 p.219: "If damage reduces you to 0 HP and there is damage remaining, you
         // die if the remaining damage equals or exceeds your Hit Point Maximum."
+        const charMaxHP = getHP(char);
         const overshoot = remaining - char.dynamic.currentHP;
-        if (overshoot > 0 && overshoot >= char.static.maxHP) {
+        if (overshoot > 0 && overshoot >= charMaxHP) {
           char.dynamic.currentHP = 0;
           if (!char.dynamic.conditions.some((c) => c.name === "Dead")) {
             char.dynamic.conditions.push({ name: "Dead" });
@@ -1654,13 +1663,13 @@ export class GameStateManager {
           this.broadcast({ type: "server:character_updated", playerName: pName, character: char });
           this.markCharacterDirty(pName);
           return toResponse(
-            `${char.static.name} takes ${effectiveDmg} ${damageType ?? ""} damage${damageApplied !== "normal" ? ` (${damageApplied})` : ""} — MASSIVE DAMAGE, instant death! (overshoot ${overshoot} >= max HP ${char.static.maxHP})`,
+            `${char.static.name} takes ${effectiveDmg} ${damageType ?? ""} damage${damageApplied !== "normal" ? ` (${damageApplied})` : ""} — MASSIVE DAMAGE, instant death! (overshoot ${overshoot} >= max HP ${charMaxHP})`,
             {
               target: char.static.name,
               damageDealt: effectiveDmg,
               tempHpAbsorbed: tempAbsorbed,
               currentHP: 0,
-              maxHP: char.static.maxHP,
+              maxHP: charMaxHP,
               damageType,
               applied: damageApplied,
               status: "dead",
@@ -1678,13 +1687,13 @@ export class GameStateManager {
           character: char,
         });
 
-        let text = `${char.static.name} takes ${effectiveDmg} ${damageType ?? ""} damage${damageApplied !== "normal" ? ` (${damageApplied})` : ""} → ${char.dynamic.currentHP}/${char.static.maxHP} HP`;
+        let text = `${char.static.name} takes ${effectiveDmg} ${damageType ?? ""} damage${damageApplied !== "normal" ? ` (${damageApplied})` : ""} → ${char.dynamic.currentHP}/${charMaxHP} HP`;
         const data: Record<string, unknown> = {
           target: char.static.name,
           damageDealt: effectiveDmg,
           tempHpAbsorbed: tempAbsorbed,
           currentHP: char.dynamic.currentHP,
-          maxHP: char.static.maxHP,
+          maxHP: charMaxHP,
           damageType,
           applied: damageApplied,
         };
@@ -1752,8 +1761,9 @@ export class GameStateManager {
           { type: "healing", target: targetName, amount: healing },
         ]);
         const prevHP = char.dynamic.currentHP;
-        char.dynamic.currentHP = Math.min(char.static.maxHP, char.dynamic.currentHP + healing);
-        const overheal = Math.max(0, prevHP + healing - char.static.maxHP);
+        const healMaxHP = getHP(char);
+        char.dynamic.currentHP = Math.min(healMaxHP, char.dynamic.currentHP + healing);
+        const overheal = Math.max(0, prevHP + healing - healMaxHP);
         // Reset death saves and remove Unconscious/Stabilized when healed from 0 HP
         // PHB 2024: regaining any HP ends the Unconscious condition
         if (
@@ -1779,12 +1789,12 @@ export class GameStateManager {
         });
         this.markCharacterDirty(pName);
         return toResponse(
-          `${char.static.name} healed ${healing} → ${char.dynamic.currentHP}/${char.static.maxHP} HP`,
+          `${char.static.name} healed ${healing} → ${char.dynamic.currentHP}/${healMaxHP} HP`,
           {
             target: char.static.name,
             healed: healing,
             currentHP: char.dynamic.currentHP,
-            maxHP: char.static.maxHP,
+            maxHP: healMaxHP,
             overheal,
           },
         );
@@ -1832,7 +1842,8 @@ export class GameStateManager {
         this.createEvent("hp_set", `${char.static.name} HP set to ${value}`, [
           { type: "hp_set", target: targetName, value },
         ]);
-        char.dynamic.currentHP = Math.max(0, Math.min(char.static.maxHP, value));
+        const setMaxHP = getHP(char);
+        char.dynamic.currentHP = Math.max(0, Math.min(setMaxHP, value));
         // PHB 2024: regaining any HP ends the Unconscious condition
         if (
           char.dynamic.currentHP > 0 &&
@@ -1856,15 +1867,12 @@ export class GameStateManager {
           character: char,
         });
         this.markCharacterDirty(pName);
-        return toResponse(
-          `${char.static.name} HP set to ${char.dynamic.currentHP}/${char.static.maxHP}`,
-          {
-            target: char.static.name,
-            previousHP: prevHP,
-            newHP: char.dynamic.currentHP,
-            maxHP: char.static.maxHP,
-          },
-        );
+        return toResponse(`${char.static.name} HP set to ${char.dynamic.currentHP}/${setMaxHP}`, {
+          target: char.static.name,
+          previousHP: prevHP,
+          newHP: char.dynamic.currentHP,
+          maxHP: setMaxHP,
+        });
       }
     }
 
@@ -2257,11 +2265,10 @@ export class GameStateManager {
           linkedPlayerId = charEntry[0];
           dexScore = charEntry[1].static.abilities.dexterity;
           initMod = c.initiativeModifier ?? Math.floor((dexScore - 10) / 2);
-          // Apply initiative bonuses from feats (e.g. Alert)
-          const initBonuses =
-            charEntry[1].static.combatBonuses?.filter(
-              (b) => b.type === "initiative" && !b.condition,
-            ) ?? [];
+          // Apply initiative bonuses from feats (e.g. Alert) — Phase 7: via getCombatBonus
+          const initBonuses = getCombatBonus(charEntry[1]).filter(
+            (b) => b.type === "initiative" && !b.condition,
+          );
           for (const b of initBonuses) {
             initMod += b.value;
           }
@@ -2288,8 +2295,9 @@ export class GameStateManager {
       // Normalize speed to CharacterSpeed
       let combatantSpeed: CharacterSpeed;
       if (c.type === "player" && linkedPlayerId) {
-        // Use the player's character speed (already CharacterSpeed)
-        combatantSpeed = this.characters[linkedPlayerId]?.static.speed ?? { walk: 30 };
+        // Use the player's character speed — Phase 7: derived via getSpeed()
+        const linkedChar = this.characters[linkedPlayerId];
+        combatantSpeed = linkedChar ? getSpeed(linkedChar) : { walk: 30 };
       } else {
         // NPC/enemy — tool input is a plain number, normalize to CharacterSpeed
         combatantSpeed = { walk: c.speed ?? 30 };
@@ -2592,11 +2600,10 @@ export class GameStateManager {
       if (charEntry) {
         dexScore = charEntry[1].static.abilities.dexterity;
         initMod = c.initiativeModifier ?? Math.floor((dexScore - 10) / 2);
-        // Apply initiative bonuses from feats (e.g. Alert)
-        const initBonuses =
-          charEntry[1].static.combatBonuses?.filter(
-            (b) => b.type === "initiative" && !b.condition,
-          ) ?? [];
+        // Apply initiative bonuses from feats (e.g. Alert) — Phase 7: via getCombatBonus
+        const initBonuses = getCombatBonus(charEntry[1]).filter(
+          (b) => b.type === "initiative" && !b.condition,
+        );
         for (const b of initBonuses) {
           initMod += b.value;
         }
@@ -2613,7 +2620,7 @@ export class GameStateManager {
       const charEntry = Object.entries(this.characters).find(
         ([, ch]) => ch.static.name.toLowerCase() === c.name.toLowerCase(),
       );
-      addCombatantSpeed = charEntry ? charEntry[1].static.speed : { walk: 30 };
+      addCombatantSpeed = charEntry ? getSpeed(charEntry[1]) : { walk: 30 };
     } else {
       addCombatantSpeed = { walk: c.speed ?? 30 };
     }
@@ -3019,7 +3026,8 @@ export class GameStateManager {
   useClassResource(characterName: string, resourceName: string): ToolResponse {
     for (const [pName, char] of Object.entries(this.characters)) {
       if (char.static.name.toLowerCase() === characterName.toLowerCase()) {
-        const resource = (char.static.classResources ?? []).find(
+        const classResources = getClassResources(char);
+        const resource = classResources.find(
           (r) => r.name.toLowerCase() === resourceName.toLowerCase(),
         );
         if (!resource) {
@@ -3027,9 +3035,7 @@ export class GameStateManager {
             `Resource "${resourceName}" not found on ${char.static.name}`,
             { character: char.static.name, resource: resourceName },
             true,
-            [
-              `Available resources: ${(char.static.classResources ?? []).map((r) => r.name).join(", ") || "none"}`,
-            ],
+            [`Available resources: ${classResources.map((r) => r.name).join(", ") || "none"}`],
           );
         }
 
@@ -3099,7 +3105,8 @@ export class GameStateManager {
   restoreClassResource(characterName: string, resourceName: string, amount = 1): ToolResponse {
     for (const [pName, char] of Object.entries(this.characters)) {
       if (char.static.name.toLowerCase() === characterName.toLowerCase()) {
-        const resource = (char.static.classResources ?? []).find(
+        const classResourcesRestore = getClassResources(char);
+        const resource = classResourcesRestore.find(
           (r) => r.name.toLowerCase() === resourceName.toLowerCase(),
         );
         if (!resource) {
@@ -3108,7 +3115,7 @@ export class GameStateManager {
             { character: char.static.name, resource: resourceName },
             true,
             [
-              `Available resources: ${(char.static.classResources ?? []).map((r) => r.name).join(", ") || "none"}`,
+              `Available resources: ${classResourcesRestore.map((r) => r.name).join(", ") || "none"}`,
             ],
           );
         }
@@ -3598,9 +3605,9 @@ export class GameStateManager {
 
         const restored: string[] = [];
 
-        // Restore class resources with shortRest defined
+        // Restore class resources with shortRest defined — Phase 7: via getClassResources
         char.dynamic.resourcesUsed = char.dynamic.resourcesUsed ?? {};
-        for (const resource of char.static.classResources ?? []) {
+        for (const resource of getClassResources(char)) {
           if (resource.shortRest !== undefined) {
             const used = char.dynamic.resourcesUsed[resource.name] ?? 0;
             if (used > 0) {
@@ -3662,7 +3669,7 @@ export class GameStateManager {
         const firstFaces = firstClassData?.hitDiceFaces ?? 8;
         const healingPerDie = `1d${firstFaces}${conSign}`;
         const { currentHP } = char.dynamic;
-        const { maxHP } = char.static;
+        const maxHP = getHP(char);
         const hpLabel =
           currentHP >= maxHP ? `${currentHP}/${maxHP} HP, full` : `${currentHP}/${maxHP} HP`;
 
@@ -3714,10 +3721,11 @@ export class GameStateManager {
 
         const restored: string[] = [];
 
-        // Restore HP to max
-        if (char.dynamic.currentHP < char.static.maxHP) {
-          restored.push(`HP ${char.dynamic.currentHP} → ${char.static.maxHP}`);
-          char.dynamic.currentHP = char.static.maxHP;
+        // Restore HP to max — Phase 7: getHP derives from effects
+        const longRestMaxHP = getHP(char);
+        if (char.dynamic.currentHP < longRestMaxHP) {
+          restored.push(`HP ${char.dynamic.currentHP} → ${longRestMaxHP}`);
+          char.dynamic.currentHP = longRestMaxHP;
         }
 
         // Reset ALL spell slots
@@ -3736,9 +3744,9 @@ export class GameStateManager {
           }
         }
 
-        // Reset class resources according to longRest field
+        // Reset class resources according to longRest field — Phase 7: via getClassResources
         char.dynamic.resourcesUsed = char.dynamic.resourcesUsed ?? {};
-        for (const resource of char.static.classResources ?? []) {
+        for (const resource of getClassResources(char)) {
           if (resource.longRest !== undefined) {
             const used = char.dynamic.resourcesUsed[resource.name] ?? 0;
             if (used > 0) {
@@ -4422,8 +4430,8 @@ export class GameStateManager {
         );
         if (charEntry) {
           const [, ch] = charEntry;
-          hp = `${ch.dynamic.currentHP}/${ch.static.maxHP} HP`;
-          ac = `AC ${resolveEffectiveStat(ch, "ac", ch.static.armorClass)}`;
+          hp = `${ch.dynamic.currentHP}/${getHP(ch)} HP`;
+          ac = `AC ${getAC(ch)}`;
           speed = c.speed.walk;
           conditions = ch.dynamic.conditions.map((cond) =>
             cond.duration !== undefined ? `${cond.name}(${cond.duration}rd)` : cond.name,
@@ -4779,12 +4787,14 @@ export class GameStateManager {
           const abilities = ch.static.abilities;
           const abilityScore = (abilities as unknown as Record<string, number>)[abilityKey] ?? 10;
           saveMod = Math.floor((abilityScore - 10) / 2);
-          // Check for saving throw proficiency
-          const saveProf = ch.static.savingThrows.find(
+          // Check for saving throw proficiency — Phase 7: via getSavingThrows()
+          const totalLevel = ch.static.classes.reduce((sum, c) => sum + c.level, 0);
+          const profBonusDerived = Math.floor((totalLevel - 1) / 4) + 2;
+          const saveProf = getSavingThrows(ch).find(
             (st) => st.ability === abilityKey && st.proficient,
           );
           if (saveProf) {
-            saveMod += ch.static.proficiencyBonus ?? 2;
+            saveMod += profBonusDerived;
             if (saveProf.bonus) saveMod += saveProf.bonus;
           }
         }

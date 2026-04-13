@@ -141,6 +141,14 @@ export interface CharacterSpeed {
 /**
  * Static data from the character builder.
  * Only changes when the character is re-imported.
+ *
+ * Phase 7: derivable fields (AC, maxHP, speed, skills, savingThrows, senses,
+ * spellcasting, combatBonuses, advantages, classResources, proficiencies,
+ * proficiencyBonus) have been removed. All mechanical derivation happens at
+ * accessor call time via the resolver in `character/resolve.ts`.
+ * The `effects` field stores all permanent build-time effect bundles
+ * (species, class features, subclass features, feats) so the resolver has
+ * the information it needs without hitting the DB on every call.
  */
 export interface CharacterStaticData {
   name: string;
@@ -148,34 +156,23 @@ export interface CharacterStaticData {
   race: string; // primary species/race field
   classes: CharacterClass[];
   abilities: AbilityScores;
-  maxHP: number;
-  armorClass: number;
-  proficiencyBonus: number;
-  speed: CharacterSpeed;
-  features: CharacterFeatureRef[];
-  classResources?: ClassResource[];
-  proficiencies: ProficiencyGroup;
-  skills: SkillProficiency[];
-  savingThrows: SavingThrowProficiency[];
-  senses: string[]; // "Darkvision 60 ft.", "Passive Perception 14"
   languages: string[]; // "Common", "Elvish"
   spells: Spell[];
-  spellcasting?: Record<
-    string,
-    {
-      ability: keyof AbilityScores;
-      dc: number;
-      attackBonus: number;
-    }
-  >;
-  advantages: AdvantageEntry[];
-  combatBonuses?: CombatBonus[];
+  features: CharacterFeatureRef[];
   traits: CharacterTraits;
   appearance?: CharacterAppearance;
   backstory?: string;
   alignment?: string;
   importedAt: number; // timestamp
   source?: "builder"; // import source
+  /**
+   * All permanent build-time effect bundles: species traits, class features,
+   * subclass features, feats, background features. Resolver accessors in
+   * `character/resolve.ts` combine these with `dynamic.activeEffects` and
+   * implicit equipped-item/condition/concentration bundles to derive all stats
+   * on demand.
+   */
+  effects: EffectBundle[];
 }
 
 /**

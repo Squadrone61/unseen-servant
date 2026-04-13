@@ -7,7 +7,15 @@ import {
   formatBonus,
   getSkillModifier,
   getSavingThrowModifier,
+  getTotalLevel,
 } from "@unseen-servant/shared/utils";
+import {
+  getSkills,
+  getSavingThrows,
+  getAdvantages,
+  getProficiencies,
+  getSenses,
+} from "@unseen-servant/shared/character";
 
 // ─── Constants ───
 
@@ -79,6 +87,15 @@ interface StatsTabProps {
 
 export function StatsTab({ character }: StatsTabProps) {
   const s = character.static;
+  const profBonus = Math.floor((getTotalLevel(s.classes) - 1) / 4) + 2;
+  const savingThrows = getSavingThrows(character);
+  const skills = getSkills(character);
+  const advantages = getAdvantages(character);
+  const armorProfs = getProficiencies(character, "armor");
+  const weaponProfs = getProficiencies(character, "weapons");
+  const toolProfs = getProficiencies(character, "tools");
+  const otherProfs = getProficiencies(character, "other");
+  const senses = getSenses(character);
 
   return (
     <div className="space-y-4">
@@ -91,9 +108,9 @@ export function StatsTab({ character }: StatsTabProps) {
           Saving Throws
         </div>
         <div className="grid grid-cols-2 gap-x-2 gap-y-0.5">
-          {s.savingThrows.map((save) => {
-            const mod = getSavingThrowModifier(save, s.abilities, s.proficiencyBonus);
-            const saveAdvs = findAdvantages(s.advantages, `${save.ability}-saving-throws`);
+          {savingThrows.map((save) => {
+            const mod = getSavingThrowModifier(save, s.abilities, profBonus);
+            const saveAdvs = findAdvantages(advantages, `${save.ability}-saving-throws`);
             return (
               <div key={save.ability} className="flex items-center gap-1.5 rounded px-2 py-1">
                 <span
@@ -123,18 +140,18 @@ export function StatsTab({ character }: StatsTabProps) {
       </div>
 
       {/* Skills — always expanded */}
-      {s.skills.length > 0 && (
+      {skills.length > 0 && (
         <div>
           <div
             className="text-sm text-gray-500 uppercase tracking-wider font-medium mb-1.5"
             style={{ fontFamily: "var(--font-cinzel)" }}
           >
-            Skills ({s.skills.filter((sk) => sk.proficient || sk.expertise).length} proficient)
+            Skills ({skills.filter((sk) => sk.proficient || sk.expertise).length} proficient)
           </div>
           <div className="space-y-0.5">
-            {s.skills.map((skill) => {
-              const mod = getSkillModifier(skill, s.abilities, s.proficiencyBonus);
-              const skillAdvs = findAdvantages(s.advantages, skill.name);
+            {skills.map((skill) => {
+              const mod = getSkillModifier(skill, s.abilities, profBonus);
+              const skillAdvs = findAdvantages(advantages, skill.name);
               return (
                 <div
                   key={skill.name}
@@ -182,7 +199,7 @@ export function StatsTab({ character }: StatsTabProps) {
 
       {/* Advantages & Disadvantages — global, non-ability-specific */}
       {(() => {
-        const globalAdvs = s.advantages.filter(
+        const globalAdvs = advantages.filter(
           (a) => a.restriction && !ABILITY_SPECIFIC_SUBTYPES.has(a.subType),
         );
         if (globalAdvs.length === 0) return null;
@@ -220,10 +237,10 @@ export function StatsTab({ character }: StatsTabProps) {
       })()}
 
       {/* Proficiencies — always expanded */}
-      {(s.proficiencies.armor.length > 0 ||
-        s.proficiencies.weapons.length > 0 ||
-        s.proficiencies.tools.length > 0 ||
-        s.proficiencies.other.length > 0) && (
+      {(armorProfs.length > 0 ||
+        weaponProfs.length > 0 ||
+        toolProfs.length > 0 ||
+        otherProfs.length > 0) && (
         <div>
           <div
             className="text-sm text-gray-500 uppercase tracking-wider font-medium mb-1.5"
@@ -232,28 +249,28 @@ export function StatsTab({ character }: StatsTabProps) {
             Proficiencies
           </div>
           <div className="space-y-1.5">
-            {s.proficiencies.armor.length > 0 && (
+            {armorProfs.length > 0 && (
               <div>
                 <div className="text-sm text-gray-500 font-medium">Armor</div>
-                <div className="text-xs text-gray-300">{s.proficiencies.armor.join(", ")}</div>
+                <div className="text-xs text-gray-300">{armorProfs.join(", ")}</div>
               </div>
             )}
-            {s.proficiencies.weapons.length > 0 && (
+            {weaponProfs.length > 0 && (
               <div>
                 <div className="text-sm text-gray-500 font-medium">Weapons</div>
-                <div className="text-xs text-gray-300">{s.proficiencies.weapons.join(", ")}</div>
+                <div className="text-xs text-gray-300">{weaponProfs.join(", ")}</div>
               </div>
             )}
-            {s.proficiencies.tools.length > 0 && (
+            {toolProfs.length > 0 && (
               <div>
                 <div className="text-sm text-gray-500 font-medium">Tools</div>
-                <div className="text-xs text-gray-300">{s.proficiencies.tools.join(", ")}</div>
+                <div className="text-xs text-gray-300">{toolProfs.join(", ")}</div>
               </div>
             )}
-            {s.proficiencies.other.length > 0 && (
+            {otherProfs.length > 0 && (
               <div>
                 <div className="text-sm text-gray-500 font-medium">Other</div>
-                <div className="text-xs text-gray-300">{s.proficiencies.other.join(", ")}</div>
+                <div className="text-xs text-gray-300">{otherProfs.join(", ")}</div>
               </div>
             )}
           </div>
@@ -261,7 +278,7 @@ export function StatsTab({ character }: StatsTabProps) {
       )}
 
       {/* Languages & Senses */}
-      {(s.languages.length > 0 || s.senses.length > 0) && (
+      {(s.languages.length > 0 || senses.length > 0) && (
         <div className="space-y-1.5">
           {s.languages.length > 0 && (
             <div>
@@ -274,7 +291,7 @@ export function StatsTab({ character }: StatsTabProps) {
               <div className="text-xs text-gray-300">{s.languages.join(", ")}</div>
             </div>
           )}
-          {s.senses.length > 0 && (
+          {senses.length > 0 && (
             <div>
               <div
                 className="text-sm text-gray-500 uppercase tracking-wider font-medium mb-0.5"
@@ -282,7 +299,7 @@ export function StatsTab({ character }: StatsTabProps) {
               >
                 Senses
               </div>
-              <div className="text-xs text-gray-300">{s.senses.join(", ")}</div>
+              <div className="text-xs text-gray-300">{senses.join(", ")}</div>
             </div>
           )}
         </div>

@@ -367,57 +367,47 @@ describe("buildCheckLabel — missing or invalid checkType", () => {
 // WIS 8 (-1), CHA 13 (+1). Proficiency bonus +3.
 // Skills: athletics (STR, proficient), perception (WIS, not proficient),
 //         stealth (DEX, expertise).
-// Saves: strength (proficient), constitution (proficient), dexterity (not proficient).
-const mockChar: CharacterData = {
-  builder: {} as CharacterData["builder"],
-  static: {
-    name: "Tester",
-    race: "Human",
-    classes: [{ name: "Fighter", level: 5 }],
-    maxHP: 44,
-    armorClass: 18,
-    speed: { walk: 30 },
-    abilities: {
-      strength: 16,
-      dexterity: 14,
-      constitution: 12,
-      intelligence: 10,
-      wisdom: 8,
-      charisma: 13,
+// Phase 7: mock char built through the real builder so resolver accessors work.
+import { buildCharacter } from "../builders/character-builder.js";
+import { makeBuilderState } from "./helpers/makeBuilderState.js";
+import type { EffectBundle } from "../types/effects.js";
+
+const mockCharState = makeBuilderState({
+  name: "Tester",
+  classes: [
+    {
+      name: "Fighter",
+      level: 5,
+      subclass: "Champion",
+      skills: ["athletics"],
+      choices: {},
     },
-    proficiencyBonus: 3,
-    skills: [
-      { name: "athletics", ability: "strength", proficient: true, expertise: false },
-      { name: "perception", ability: "wisdom", proficient: false, expertise: false },
-      { name: "stealth", ability: "dexterity", proficient: true, expertise: true },
-    ],
-    savingThrows: [
-      { ability: "strength", proficient: true },
-      { ability: "constitution", proficient: true },
-      { ability: "dexterity", proficient: false },
-    ],
-    features: [],
-    proficiencies: { armor: [], weapons: [], tools: [], other: [] },
-    senses: [],
-    languages: [],
-    spells: [],
-    advantages: [],
-    combatBonuses: [],
-    traits: {},
-    importedAt: 0,
-    spellcasting: undefined,
+  ],
+  baseAbilities: {
+    strength: 16,
+    dexterity: 14,
+    constitution: 12,
+    intelligence: 10,
+    wisdom: 8,
+    charisma: 13,
   },
-  dynamic: {
-    currentHP: 44,
-    tempHP: 0,
-    conditions: [],
-    spellSlotsUsed: [],
-    deathSaves: { successes: 0, failures: 0 },
-    heroicInspiration: false,
-    inventory: [],
-    currency: { cp: 0, sp: 0, gp: 0, pp: 0 },
-  },
-};
+});
+const mockChar: CharacterData = buildCharacter(mockCharState).character;
+// Ensure Stealth expertise for the expertise test by injecting a build-time effect.
+{
+  const expertiseBundle: EffectBundle = {
+    id: "test:stealth-expertise",
+    source: { type: "feat", name: "TestStealth" },
+    lifetime: { type: "permanent" },
+    effects: {
+      properties: [
+        { type: "proficiency", category: "skill", value: "stealth" },
+        { type: "expertise", skill: "Stealth" },
+      ],
+    },
+  };
+  mockChar.static.effects.push(expertiseBundle);
+}
 
 describe("computeCheckModifier — skill checks", () => {
   it("proficient skill (athletics): STR mod +3 + prof +3 = 6", () => {
@@ -516,17 +506,23 @@ describe("computeCheckModifier — attack rolls", () => {
     ).toBe(6);
   });
 
-  it("spell_attack with spellcasting map: returns attackBonus from first entry", () => {
-    const caster: CharacterData = {
-      ...mockChar,
-      static: {
-        ...mockChar.static,
-        spellcasting: { Wizard: { ability: "intelligence", dc: 15, attackBonus: 7 } },
+  it("spell_attack with spellcasting: returns caster's spell attack bonus", () => {
+    // Wizard 5 INT 16: prof 3 + INT mod 3 = 6 spell attack
+    const casterState = makeBuilderState({
+      classes: [{ name: "Wizard", level: 5, subclass: null, skills: [], choices: {} }],
+      baseAbilities: {
+        strength: 8,
+        dexterity: 14,
+        constitution: 12,
+        intelligence: 16,
+        wisdom: 10,
+        charisma: 10,
       },
-    };
+    });
+    const caster = buildCharacter(casterState).character;
     expect(
       computeCheckModifier(caster, makeCheck({ checkType: "spell_attack", reason: "fire bolt" })),
-    ).toBe(7);
+    ).toBe(6);
   });
 
   it("spell_attack without spellcasting map: STR mod +3 + prof +3 = 6", () => {

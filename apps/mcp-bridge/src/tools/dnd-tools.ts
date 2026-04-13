@@ -4,6 +4,7 @@ import type { WSClient } from "../ws-client.js";
 import type { GameLogger } from "../services/game-logger.js";
 import { rollNotation, buildOutputFromResult, formatRollOutput } from "../services/dice-engine.js";
 import { parseCheckType, getCheckAdvantageInfo } from "@unseen-servant/shared/utils";
+import { getCombatBonus } from "@unseen-servant/shared/character";
 
 export function registerDndTools(
   server: McpServer,
@@ -115,8 +116,9 @@ Examples:
         const char = Object.values(wsClient.gameStateManager.characters).find(
           (c) => c.static.name.toLowerCase() === player.toLowerCase(),
         );
-        if (char?.static.combatBonuses) {
-          const dmgBonuses = char.static.combatBonuses.filter((b) => b.type === "damage");
+        if (char) {
+          // Phase 7: getCombatBonus() derives from effects
+          const dmgBonuses = getCombatBonus(char).filter((b) => b.type === "damage");
           if (dmgBonuses.length > 0) {
             const parts = dmgBonuses.map(
               (b) =>

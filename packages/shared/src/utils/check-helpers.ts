@@ -16,6 +16,7 @@ import {
   hasAdvantage,
   hasDisadvantage,
 } from "./effect-resolver";
+import { getSkills, getSavingThrows, getSpellcasting, getCombatBonus } from "../character/resolve";
 
 // ─── Check type parsing ───
 
@@ -154,56 +155,70 @@ function getEffectBonus(char: CharacterData, target: ModifierTarget): number {
   return resolveStat(bundles, target, 0, ctx);
 }
 
+/**
+ * Derive proficiency bonus from total level (Phase 7: no longer stored on static).
+ */
+function deriveProfBonus(char: CharacterData): number {
+  const totalLevel = char.static.classes.reduce((sum, c) => sum + c.level, 0);
+  return Math.floor((totalLevel - 1) / 4) + 2;
+}
+
 /** Compute the modifier for a check based on the character's stats and activeEffects. */
 export function computeCheckModifier(char: CharacterData, check: CheckRequest): number {
-  const s = char.static;
-
   if (!check.checkType) return 0;
 
   const parsed = parseCheckType(check.checkType);
   if (!parsed) return 0;
 
+  const profBonus = deriveProfBonus(char);
+
   if (parsed.category === "skill") {
-    const skill = s.skills.find((sk) => sk.name.toLowerCase() === parsed.skill);
+    // Phase 7: getSkills() derives from effects
+    const skills = getSkills(char);
+    const skill = skills.find((sk) => sk.name.toLowerCase() === parsed.skill);
     if (skill) {
-      // Resolve the ability score through effects before computing the skill modifier
       const effectiveAbilityScore = resolveAbilityScore(
         char,
-        SKILL_ABILITY_MAP[parsed.skill] as keyof typeof s.abilities,
+        SKILL_ABILITY_MAP[parsed.skill] as keyof typeof char.static.abilities,
       );
       const abilityMod = getModifier(effectiveAbilityScore);
-      const profBonus = skill.proficient ? s.proficiencyBonus * (skill.expertise ? 2 : 1) : 0;
-      return abilityMod + profBonus + (skill.bonus ?? 0) + getEffectBonus(char, "d20");
+      const skillProfBonus = skill.proficient ? profBonus * (skill.expertise ? 2 : 1) : 0;
+      return abilityMod + skillProfBonus + (skill.bonus ?? 0) + getEffectBonus(char, "d20");
     }
   }
 
   if (parsed.category === "saving_throw") {
     const effectiveAbilityScore = resolveAbilityScore(
       char,
-      parsed.ability as keyof typeof s.abilities,
+      parsed.ability as keyof typeof char.static.abilities,
     );
     const abilityMod = getModifier(effectiveAbilityScore);
-    const save = s.savingThrows.find((sv) => sv.ability === parsed.ability);
-    const profBonus = save?.proficient ? s.proficiencyBonus : 0;
+    // Phase 7: getSavingThrows() derives from effects
+    const savingThrows = getSavingThrows(char);
+    const save = savingThrows.find((sv) => sv.ability === parsed.ability);
+    const saveProfBonus = save?.proficient ? profBonus : 0;
     const target = `save_${parsed.ability}` as ModifierTarget;
     const flatBonus = save?.bonus ?? 0;
-    return abilityMod + profBonus + flatBonus + getEffectBonus(char, target);
+    return abilityMod + saveProfBonus + flatBonus + getEffectBonus(char, target);
   }
 
   if (parsed.category === "ability") {
     const effectiveAbilityScore = resolveAbilityScore(
       char,
-      parsed.ability as keyof typeof s.abilities,
+      parsed.ability as keyof typeof char.static.abilities,
     );
     return getModifier(effectiveAbilityScore) + getEffectBonus(char, "d20");
   }
 
   if (parsed.category === "attack") {
     // Spell attacks use the first (or only) spellcasting entry + effect bonuses
-    if (parsed.attackType === "spell" && s.spellcasting) {
-      const entries = Object.values(s.spellcasting);
-      if (entries.length > 0) {
-        return entries[0].attackBonus + getEffectBonus(char, "attack_spell");
+    // Phase 7: getSpellcasting() derives from effects
+    if (parsed.attackType === "spell") {
+      for (const cls of char.static.classes) {
+        const sc = getSpellcasting(char, cls.name);
+        if (sc) {
+          return sc.attackBonus + getEffectBonus(char, "attack_spell");
+        }
       }
     }
 
@@ -211,14 +226,14 @@ export function computeCheckModifier(char: CharacterData, check: CheckRequest): 
     if (parsed.attackType === "finesse") {
       const strMod = getModifier(resolveAbilityScore(char, "strength"));
       const dexMod = getModifier(resolveAbilityScore(char, "dexterity"));
-      let modifier = Math.max(strMod, dexMod) + s.proficiencyBonus;
+      let modifier = Math.max(strMod, dexMod) + profBonus;
 
-      if (s.combatBonuses) {
-        for (const bonus of s.combatBonuses) {
-          if (bonus.type === "attack" && !bonus.condition) {
-            if (!bonus.attackType || bonus.attackType === "melee") {
-              modifier += bonus.value;
-            }
+      // Phase 7: getCombatBonus() derives from effects
+      const combatBonuses = getCombatBonus(char);
+      for (const bonus of combatBonuses) {
+        if (bonus.type === "attack" && !bonus.condition) {
+          if (!bonus.attackType || bonus.attackType === "melee") {
+            modifier += bonus.value;
           }
         }
       }
@@ -232,16 +247,15 @@ export function computeCheckModifier(char: CharacterData, check: CheckRequest): 
         ? getModifier(resolveAbilityScore(char, "dexterity"))
         : getModifier(resolveAbilityScore(char, "strength"));
 
-    let modifier = abilityMod + s.proficiencyBonus;
+    let modifier = abilityMod + profBonus;
 
-    // Apply unconditional combat bonuses matching the attack type
+    // Phase 7: getCombatBonus() derives from effects
     const bonusAttackType = parsed.attackType as "melee" | "ranged" | "spell";
-    if (s.combatBonuses) {
-      for (const bonus of s.combatBonuses) {
-        if (bonus.type === "attack" && !bonus.condition) {
-          if (!bonus.attackType || bonus.attackType === bonusAttackType) {
-            modifier += bonus.value;
-          }
+    const combatBonuses = getCombatBonus(char);
+    for (const bonus of combatBonuses) {
+      if (bonus.type === "attack" && !bonus.condition) {
+        if (!bonus.attackType || bonus.attackType === bonusAttackType) {
+          modifier += bonus.value;
         }
       }
     }

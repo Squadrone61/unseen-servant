@@ -8,6 +8,7 @@ import {
   type TestGSM,
 } from "./setup.js";
 import { createBarbarianCharacter } from "./fixtures.js";
+import { getAC, getHP, getClassResources } from "@unseen-servant/shared/character";
 
 /**
  * Behavioral contracts for HP and condition methods on GameStateManager.
@@ -746,17 +747,17 @@ describe("Barbarian character data integrity — Gruk (Barbarian 5)", () => {
 
   it("static.armorClass equals 15 (Unarmored Defense: 10 + DEX 2 + CON 3)", () => {
     const char = gsm.characters["Player4"];
-    expect(char.static.armorClass).toBe(15);
+    expect(getAC(char)).toBe(15);
   });
 
   it("static.maxHP equals 55", () => {
     const char = gsm.characters["Player4"];
-    expect(char.static.maxHP).toBe(55);
+    expect(getHP(char)).toBe(55);
   });
 
   it("static.classResources contains Rage with maxUses=3, longRest=all, shortRest=1", () => {
     const char = gsm.characters["Player4"];
-    const rage = char.static.classResources?.find((r) => r.name === "Rage");
+    const rage = getClassResources(char).find((r) => r.name === "Rage");
     expect(rage).toBeDefined();
     expect(rage!.maxUses).toBe(3);
     expect(rage!.longRest).toBe("all");

@@ -1,6 +1,8 @@
 import { useState, useMemo } from "react";
 import type { CharacterData, CharacterFeatureRef, Item } from "@unseen-servant/shared/types";
 import { actionsArray, resolveFeatureActivation } from "@unseen-servant/shared/data";
+import { getTotalLevel } from "@unseen-servant/shared/utils";
+import { getClassResources, getProficiencies } from "@unseen-servant/shared/character";
 import { FilterChipBar } from "../FilterChipBar";
 
 interface ActionEntry {
@@ -73,11 +75,13 @@ export function ActionsTab({ character, onItemClick, onFeatureClick }: ActionsTa
   const [filter, setFilter] = useState<string>("all");
   const s = character.static;
   const d = character.dynamic;
+  const profBonus = Math.floor((getTotalLevel(s.classes) - 1) / 4) + 2;
+  const weaponProfsList = getProficiencies(character, "weapons");
+  const classResources = getClassResources(character);
 
   // Equipped weapons with damage
   const weapons: ActionEntry[] = useMemo(() => {
     const result: ActionEntry[] = [];
-    const profBonus = s.proficiencyBonus;
     for (const item of d.inventory) {
       if (item.equipped && item.weapon) {
         const parts: string[] = [];
@@ -96,7 +100,7 @@ export function ActionsTab({ character, onItemClick, onFeatureClick }: ActionsTa
         } else {
           abilityMod = strMod;
         }
-        const weaponProfs = s.proficiencies.weapons.map((p) => p.toLowerCase());
+        const weaponProfs = weaponProfsList.map((p) => p.toLowerCase());
         const isProficient =
           weaponProfs.some((p) => p.includes("simple") || p.includes("martial")) ||
           weaponProfs.includes(item.name.toLowerCase());
@@ -111,7 +115,7 @@ export function ActionsTab({ character, onItemClick, onFeatureClick }: ActionsTa
       }
     }
     return result;
-  }, [d.inventory, s.abilities, s.proficiencyBonus, s.proficiencies.weapons]);
+  }, [d.inventory, s.abilities, profBonus, weaponProfsList]);
 
   // Feature-based actions grouped by type
   const featureGroups: FeatureGroup[] = useMemo(() => {
@@ -154,8 +158,6 @@ export function ActionsTab({ character, onItemClick, onFeatureClick }: ActionsTa
   const showWeapons = filter === "all" || filter === "weapons";
   const visibleGroups =
     filter === "all" ? featureGroups : featureGroups.filter((g) => g.id === filter);
-
-  const classResources = s.classResources || [];
 
   return (
     <div className="space-y-2">

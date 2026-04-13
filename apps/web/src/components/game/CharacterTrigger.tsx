@@ -1,4 +1,5 @@
 import type { CharacterData } from "@unseen-servant/shared/types";
+import { getHP } from "@unseen-servant/shared/character";
 
 interface CharacterTriggerProps {
   character: CharacterData;
@@ -8,8 +9,8 @@ interface CharacterTriggerProps {
 }
 
 export function CharacterTrigger({ character, onClick, compact }: CharacterTriggerProps) {
-  const hp = character.dynamic?.currentHP ?? character.static.maxHP;
-  const maxHP = character.static.maxHP;
+  const maxHP = getHP(character);
+  const hp = character.dynamic?.currentHP ?? maxHP;
 
   return (
     <button

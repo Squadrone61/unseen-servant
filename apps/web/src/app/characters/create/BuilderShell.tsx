@@ -17,6 +17,7 @@ import { SpellsStep } from "./steps/SpellsStep";
 import { EquipmentStep } from "./steps/EquipmentStep";
 import { DetailsStep } from "./steps/DetailsStep";
 import type { BuilderState } from "./builder-state";
+import { getHP } from "@unseen-servant/shared/character";
 
 // ─── Step definitions ────────────────────────────────────────────────────────
 
@@ -301,7 +302,7 @@ export function BuilderShell({ mode, editId, editName, editDynamicData }: Builde
             dynamic: {
               ...editDynamicData,
               // Clamp currentHP if maxHP decreased
-              currentHP: Math.min(editDynamicData.currentHP, character.static.maxHP),
+              currentHP: Math.min(editDynamicData.currentHP, getHP(character)),
             },
           }
         : character;

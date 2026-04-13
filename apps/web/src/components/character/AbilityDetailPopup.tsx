@@ -10,7 +10,10 @@ import {
   formatBonus,
   getSkillModifier,
   getSavingThrowModifier,
+  getProficiencyBonus,
+  getTotalLevel,
 } from "@unseen-servant/shared/utils";
+import { getSkills, getSavingThrows } from "@unseen-servant/shared/character";
 import { DetailPopover } from "./DetailPopover";
 
 interface AbilityDetailPopupProps {
@@ -31,14 +34,15 @@ export function AbilityDetailPopup({
   const mod = getModifier(score);
   const modStr = formatModifier(score);
   const fullName = ABILITY_FULL_NAMES[abilityKey];
+  const profBonus = getProficiencyBonus(getTotalLevel(s.classes));
 
   // Related saving throw
-  const save = s.savingThrows.find((sv) => sv.ability === abilityKey);
-  const saveMod = save ? getSavingThrowModifier(save, s.abilities, s.proficiencyBonus) : mod;
+  const save = getSavingThrows(character).find((sv) => sv.ability === abilityKey);
+  const saveMod = save ? getSavingThrowModifier(save, s.abilities, profBonus) : mod;
   const saveProficient = save?.proficient ?? false;
 
   // Related skills
-  const relatedSkills = s.skills.filter((sk) => sk.ability === abilityKey);
+  const relatedSkills = getSkills(character).filter((sk) => sk.ability === abilityKey);
 
   return (
     <DetailPopover title={fullName} onClose={onClose} position={position}>
@@ -97,7 +101,7 @@ export function AbilityDetailPopup({
             </div>
             <div className="space-y-1">
               {relatedSkills.map((skill) => {
-                const skillMod = getSkillModifier(skill, s.abilities, s.proficiencyBonus);
+                const skillMod = getSkillModifier(skill, s.abilities, profBonus);
                 return (
                   <div
                     key={skill.name}

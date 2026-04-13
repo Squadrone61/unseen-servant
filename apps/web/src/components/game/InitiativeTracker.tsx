@@ -1,4 +1,5 @@
 import type { CharacterData, CombatState } from "@unseen-servant/shared/types";
+import { getHP } from "@unseen-servant/shared/character";
 
 interface InitiativeTrackerProps {
   combat: CombatState;
@@ -36,7 +37,7 @@ export function InitiativeTracker({
           );
           if (char) {
             currentHP = char.dynamic.currentHP;
-            maxHP = char.static.maxHP;
+            maxHP = getHP(char);
             concentratingOn = char.dynamic.concentratingOn;
           }
         } else {
