@@ -121,7 +121,10 @@ export class GameRoom extends DurableObject<Env> {
         expirationTtl: ttl,
       });
     } catch (e) {
-      console.error("Failed to update room meta:", e);
+      this.reportError(
+        "ROOM_META_WRITE_FAILED",
+        `Failed to update room metadata: ${e instanceof Error ? e.message : String(e)}`,
+      );
     }
   }
 
@@ -197,107 +200,113 @@ export class GameRoom extends DurableObject<Env> {
 
     const msg: ClientMessage = result.data;
 
-    switch (msg.type) {
-      case "client:join":
-        await this.handleJoin(ws, msg);
-        break;
-      case "client:dm_config": {
-        this.dmBridgeConfig = { provider: msg.provider, supportsTools: msg.supportsTools };
-        const campaignInfo = this.activeCampaignName
-          ? ` Campaign: ${this.activeCampaignName}.`
-          : "";
-        this.broadcast({
-          type: "server:system",
-          content: `DM connected (${msg.provider}). The Unseen Servant is ready!${campaignInfo}`,
-          timestamp: Date.now(),
-        });
-        this.broadcast({
-          type: "server:dm_config_update",
-          provider: msg.provider,
-          supportsTools: msg.supportsTools,
-          campaigns: msg.campaigns,
-        });
-        break;
-      }
-      case "client:campaign_loaded": {
-        this.activeCampaignSlug = msg.campaignSlug;
-        this.activeCampaignName = msg.campaignName;
-        this.broadcast({
-          type: "server:campaign_loaded",
-          campaignSlug: msg.campaignSlug,
-          campaignName: msg.campaignName,
-          sessionCount: msg.sessionCount,
-        });
-        break;
-      }
-      case "client:campaign_configured_ack":
-        await this.handleCampaignConfiguredAck(ws, msg);
-        break;
-      case "client:story_started":
-        this.storyStarted = true;
-        break;
-      case "client:set_password":
-        await this.handleSetPassword(ws, msg);
-        break;
-      case "client:kick_player":
-        await this.handleKickPlayer(ws, msg);
-        break;
-      case "client:destroy_room":
-        await this.handleDestroyRoom(ws);
-        break;
-      case "client:broadcast":
-        await this.handleBroadcast(ws, msg);
-        break;
-      case "client:action_result":
-        // Bridge acknowledges a forwarded action — currently no-op
-        break;
-
-      // --- Forwarded to bridge ---
-      case "client:set_character":
-        await this.handleSetCharacter(ws, msg);
-        break;
-      case "client:typing": {
-        const session = this.sessions.get(ws);
-        if (session?.playerName) {
-          this.broadcastToApproved(
-            {
-              type: "server:typing",
-              playerName: session.playerName,
-              isTyping: msg.isTyping,
-            },
-            ws,
-          );
+    try {
+      switch (msg.type) {
+        case "client:join":
+          await this.handleJoin(ws, msg);
+          break;
+        case "client:dm_config": {
+          this.dmBridgeConfig = { provider: msg.provider, supportsTools: msg.supportsTools };
+          const campaignInfo = this.activeCampaignName
+            ? ` Campaign: ${this.activeCampaignName}.`
+            : "";
+          this.broadcast({
+            type: "server:system",
+            content: `DM connected (${msg.provider}). The Unseen Servant is ready!${campaignInfo}`,
+            timestamp: Date.now(),
+          });
+          this.broadcast({
+            type: "server:dm_config_update",
+            provider: msg.provider,
+            supportsTools: msg.supportsTools,
+            campaigns: msg.campaigns,
+          });
+          break;
         }
-        break;
-      }
-      case "client:chat":
-        // Broadcast chat to all players immediately (no bridge needed)
-        await this.handleChat(ws, msg);
-        // Also forward to bridge for AI processing (if connected)
-        this.forwardToBridgeIfAvailable(ws, msg);
-        break;
-      case "client:start_story":
-      case "client:roll_dice":
-      case "client:combat_action":
-      case "client:move_token":
-      case "client:end_turn":
-      case "client:rollback":
-      case "client:set_system_prompt":
-      case "client:set_pacing":
-      case "client:dm_override":
-      case "client:set_campaign":
-      case "client:configure_campaign":
-      case "client:save_notes":
-        this.forwardToBridge(ws, msg);
-        break;
+        case "client:campaign_loaded": {
+          this.activeCampaignSlug = msg.campaignSlug;
+          this.activeCampaignName = msg.campaignName;
+          this.broadcast({
+            type: "server:campaign_loaded",
+            campaignSlug: msg.campaignSlug,
+            campaignName: msg.campaignName,
+            sessionCount: msg.sessionCount,
+          });
+          break;
+        }
+        case "client:campaign_configured_ack":
+          await this.handleCampaignConfiguredAck(ws, msg);
+          break;
+        case "client:story_started":
+          this.storyStarted = true;
+          break;
+        case "client:set_password":
+          await this.handleSetPassword(ws, msg);
+          break;
+        case "client:kick_player":
+          await this.handleKickPlayer(ws, msg);
+          break;
+        case "client:destroy_room":
+          await this.handleDestroyRoom(ws);
+          break;
+        case "client:broadcast":
+          await this.handleBroadcast(ws, msg);
+          break;
+        case "client:action_result":
+          // Bridge acknowledges a forwarded action — currently no-op
+          break;
 
-      // These are bridge→server messages handled directly by bridge now
-      case "client:dm_response":
-      case "client:dm_dice_roll":
-      case "client:dm_check_request":
-      case "client:dm_check_result":
-        // Legacy: no longer processed by worker — bridge handles internally
-        break;
+        // --- Forwarded to bridge ---
+        case "client:set_character":
+          await this.handleSetCharacter(ws, msg);
+          break;
+        case "client:typing": {
+          const session = this.sessions.get(ws);
+          if (session?.playerName) {
+            this.broadcastToApproved(
+              {
+                type: "server:typing",
+                playerName: session.playerName,
+                isTyping: msg.isTyping,
+              },
+              ws,
+            );
+          }
+          break;
+        }
+        case "client:chat":
+          // Broadcast chat to all players immediately (no bridge needed)
+          await this.handleChat(ws, msg);
+          // Also forward to bridge for AI processing (if connected)
+          this.forwardToBridgeIfAvailable(ws, msg);
+          break;
+        case "client:start_story":
+        case "client:roll_dice":
+        case "client:combat_action":
+        case "client:move_token":
+        case "client:end_turn":
+        case "client:rollback":
+        case "client:set_system_prompt":
+        case "client:set_pacing":
+        case "client:dm_override":
+        case "client:set_campaign":
+        case "client:configure_campaign":
+        case "client:save_notes":
+          this.forwardToBridge(ws, msg);
+          break;
+
+        // These are bridge→server messages handled directly by bridge now
+        case "client:dm_response":
+        case "client:dm_dice_roll":
+        case "client:dm_check_request":
+        case "client:dm_check_result":
+          // Legacy: no longer processed by worker — bridge handles internally
+          break;
+      }
+    } catch (e) {
+      const errMsg = e instanceof Error ? e.message : String(e);
+      console.error(`Handler exception (${msg.type}):`, e);
+      this.reportError("HANDLER_EXCEPTION", `Server error handling ${msg.type}: ${errMsg}`);
     }
   }
 
@@ -996,6 +1005,20 @@ export class GameRoom extends DurableObject<Env> {
     ws.send(JSON.stringify(message));
   }
 
+  private reportError(code: string, message: string, target?: WebSocket): void {
+    const payload: ServerMessage = { type: "server:error", message, code };
+    if (target) {
+      try {
+        this.sendTo(target, payload);
+      } catch {
+        // fall back to broadcast
+        this.broadcast(payload);
+      }
+    } else {
+      this.broadcast(payload);
+    }
+  }
+
   private broadcast(message: ServerMessage): void {
     // Ensure system messages have an id for client-side deduplication
     if (message.type === "server:system" && !message.id) {
@@ -1052,7 +1075,10 @@ export class GameRoom extends DurableObject<Env> {
         Object.fromEntries(this.allPlayerRecords.entries()),
       );
     } catch (e) {
-      console.error("Failed to persist allPlayerRecords:", e);
+      this.reportError(
+        "PERSIST_PLAYERS_FAILED",
+        `Failed to persist player records: ${e instanceof Error ? e.message : String(e)}`,
+      );
     }
   }
 
@@ -1060,7 +1086,10 @@ export class GameRoom extends DurableObject<Env> {
     try {
       await this.ctx.storage.put("characters", Object.fromEntries(this.characters.entries()));
     } catch (e) {
-      console.error("Failed to persist characters:", e);
+      this.reportError(
+        "PERSIST_CHARACTERS_FAILED",
+        `Failed to persist characters: ${e instanceof Error ? e.message : String(e)}`,
+      );
     }
   }
 

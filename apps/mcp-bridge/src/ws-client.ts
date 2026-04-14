@@ -141,7 +141,9 @@ export class WSClient {
       } catch (e) {
         // Only ignore JSON parse errors (non-JSON messages like "pong")
         if (e instanceof SyntaxError) return;
-        log("ws-client", `Message handler error: ${e instanceof Error ? e.message : String(e)}`);
+        const errMsg = e instanceof Error ? e.message : String(e);
+        log("ws-client", `Message handler error: ${errMsg}`);
+        this.broadcastError("BRIDGE_HANDLER_EXCEPTION", `DM bridge error: ${errMsg}`);
       }
     });
 
@@ -329,6 +331,11 @@ export class WSClient {
     });
   }
 
+  /** Broadcast a server:error to all players — surfaces bridge failures in the UI. */
+  private broadcastError(code: string, message: string): void {
+    this.broadcastViaWorker({ type: "server:error", message, code });
+  }
+
   /** Handle set_campaign relayed from worker. */
   private handleSetCampaign(msg: { campaignSlug?: string; newCampaignName?: string }): void {
     const cm = this.options.campaignManager;
@@ -364,7 +371,9 @@ export class WSClient {
         campaigns: campaigns.length > 0 ? campaigns : undefined,
       });
     } catch (e) {
-      log("ws-client", `Campaign error: ${e instanceof Error ? e.message : String(e)}`);
+      const errMsg = e instanceof Error ? e.message : String(e);
+      log("ws-client", `Campaign error: ${errMsg}`);
+      this.broadcastError("CAMPAIGN_LOAD_FAILED", `Campaign load failed: ${errMsg}`);
     }
   }
 
@@ -392,7 +401,9 @@ export class WSClient {
 
       log("ws-client", `Restored ${count} character(s) from campaign snapshots`);
     } catch (e) {
-      log("ws-client", `Character restore error: ${e instanceof Error ? e.message : String(e)}`);
+      const errMsg = e instanceof Error ? e.message : String(e);
+      log("ws-client", `Character restore error: ${errMsg}`);
+      this.broadcastError("CHARACTER_RESTORE_FAILED", `Character restore failed: ${errMsg}`);
     }
   }
 
@@ -484,11 +495,7 @@ export class WSClient {
     } catch (e) {
       const errMsg = e instanceof Error ? e.message : String(e);
       log("ws-client", `Campaign configure error: ${errMsg}`);
-      this.broadcastViaWorker({
-        type: "server:error",
-        message: `Campaign configuration failed: ${errMsg}`,
-        code: "CAMPAIGN_CONFIG_FAILED",
-      });
+      this.broadcastError("CAMPAIGN_CONFIG_FAILED", `Campaign configuration failed: ${errMsg}`);
     }
   }
 
@@ -515,7 +522,9 @@ export class WSClient {
       );
       log("ws-client", `Saved character "${msg.character.static.name}" for ${msg.playerName}`);
     } catch (e) {
-      log("ws-client", `Character save error: ${e instanceof Error ? e.message : String(e)}`);
+      const errMsg = e instanceof Error ? e.message : String(e);
+      log("ws-client", `Character save error: ${errMsg}`);
+      this.broadcastError("CHARACTER_SAVE_FAILED", `Character save failed: ${errMsg}`);
     }
   }
 
@@ -537,7 +546,9 @@ export class WSClient {
       cm.touchManifest();
       cm.flushManifest();
     } catch (e) {
-      log("ws-client", `Auto-snapshot error: ${e instanceof Error ? e.message : String(e)}`);
+      const errMsg = e instanceof Error ? e.message : String(e);
+      log("ws-client", `Auto-snapshot error: ${errMsg}`);
+      this.broadcastError("AUTO_SNAPSHOT_FAILED", `Auto-snapshot failed: ${errMsg}`);
     }
   }
 
@@ -615,7 +626,9 @@ export class WSClient {
           `saved at ${snapshot.savedAt}`,
       );
     } catch (e) {
-      log("ws-client", `Session restore error: ${e instanceof Error ? e.message : String(e)}`);
+      const errMsg = e instanceof Error ? e.message : String(e);
+      log("ws-client", `Session restore error: ${errMsg}`);
+      this.broadcastError("SESSION_RESTORE_FAILED", `Session restore failed: ${errMsg}`);
     }
   }
 
@@ -627,7 +640,9 @@ export class WSClient {
     try {
       cm.savePlayerNotes(playerName, content, userId);
     } catch (e) {
-      log("ws-client", `Save notes error: ${e instanceof Error ? e.message : String(e)}`);
+      const errMsg = e instanceof Error ? e.message : String(e);
+      log("ws-client", `Save notes error: ${errMsg}`);
+      this.broadcastError("SAVE_NOTES_FAILED", `Save notes failed: ${errMsg}`);
     }
   }
 
@@ -645,7 +660,9 @@ export class WSClient {
         ]);
       }
     } catch (e) {
-      log("ws-client", `Load notes error: ${e instanceof Error ? e.message : String(e)}`);
+      const errMsg = e instanceof Error ? e.message : String(e);
+      log("ws-client", `Load notes error: ${errMsg}`);
+      this.broadcastError("LOAD_NOTES_FAILED", `Load notes failed: ${errMsg}`);
     }
   }
 
