@@ -8,6 +8,7 @@
     "type-check": "turbo type-check",
     "dev:all": "turbo dev --filter=@unseen-servant/web --filter=@unseen-servant/worker",
     "dev:dm": "cd apps/dm-launcher && node build.mjs --dev",
+    "dev:fake-dm": "pnpm --filter @unseen-servant/fake-dm dev",
     "build:web": "cd apps/web && npx @opennextjs/cloudflare build",
     "build:dm": "cd apps/dm-launcher && node build.mjs",
     "deploy": "turbo deploy",

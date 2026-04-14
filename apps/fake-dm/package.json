@@ -1,0 +1,19 @@
+{
+  "name": "@unseen-servant/fake-dm",
+  "version": "0.43.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@unseen-servant/shared": "workspace:*",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/ws": "^8.18.1",
+    "tsx": "^4.19.4",
+    "typescript": "^5.9"
+  }
+}
