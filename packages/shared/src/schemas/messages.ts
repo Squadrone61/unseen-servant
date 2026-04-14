@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { ClientMessage, ServerMessage } from "../types/messages";
 import {
   gridPositionSchema,
   checkRequestSchema,
@@ -10,9 +11,10 @@ import {
   gameEventSchema,
   pacingProfileSchema,
   encounterLengthSchema,
-  conditionEntrySchema,
+  stateChangeSchema,
 } from "./game-state";
-import { effectSourceSchema, effectLifetimeSchema } from "./effects";
+import { effectBundleSchema } from "./effects";
+import { characterDynamicDataSchema } from "./character";
 
 // === Auth schemas ===
 
@@ -60,76 +62,23 @@ export const spellSchema = z.object({
   sourceClass: z.string(),
 });
 
-export const spellSlotLevelSchema = z.object({
-  level: z.number(),
-  total: z.number(),
-  used: z.number(),
-});
-
-const DAMAGE_TYPES = [
-  "acid",
-  "bludgeoning",
-  "cold",
-  "fire",
-  "force",
-  "lightning",
-  "necrotic",
-  "piercing",
-  "poison",
-  "psychic",
-  "radiant",
-  "slashing",
-  "thunder",
-] as const;
-
-export const itemWeaponSchema = z.object({
-  damage: z.string(),
-  damageType: z.enum(DAMAGE_TYPES),
-  properties: z.array(z.string()).optional(),
-  mastery: z.string().optional(),
-  range: z.string().optional(),
-  versatile: z.string().optional(),
-});
-
-export const itemArmorSchema = z.object({
-  type: z.enum(["light", "medium", "heavy", "shield"]),
-  baseAc: z.number(),
-  dexCap: z.number().optional(),
-  strReq: z.number().optional(),
-  stealthDisadvantage: z.boolean().optional(),
-});
-
-export const itemSchema = z.object({
-  name: z.string(),
-  quantity: z.number(),
-  equipped: z.boolean(),
-  attuned: z.boolean().optional(),
-  weight: z.number().optional(),
-  rarity: z.string().optional(),
-  attunement: z.boolean().optional(),
-  description: z.string().optional(),
-  fromPack: z.string().optional(),
-  weapon: itemWeaponSchema.optional(),
-  armor: itemArmorSchema.optional(),
-});
-
-export const currencySchema = z.object({
-  cp: z.number(),
-  sp: z.number(),
-  gp: z.number(),
-  pp: z.number(),
-});
+// spellSlotLevelSchema, itemSchema (+weapon/armor), currencySchema,
+// deathSavesSchema all live in ./character.ts (shared with game-state.ts
+// to break a circular import). Re-exported here for backwards compat.
+export {
+  spellSlotLevelSchema,
+  itemSchema,
+  itemWeaponSchema,
+  itemArmorSchema,
+  currencySchema,
+  deathSavesSchema,
+} from "./character";
 
 export const characterTraitsSchema = z.object({
   personalityTraits: z.string().optional(),
   ideals: z.string().optional(),
   bonds: z.string().optional(),
   flaws: z.string().optional(),
-});
-
-export const deathSavesSchema = z.object({
-  successes: z.number(),
-  failures: z.number(),
 });
 
 export const skillProficiencySchema = z.object({
@@ -195,26 +144,6 @@ export const characterAppearanceSchema = z.object({
 });
 
 /**
- * EffectBundle schema — minimal structural validation of the permanent build-time
- * effect bundles stored on CharacterStaticData.effects. EffectBundle is deeply
- * nested; we validate the required identity fields and treat the effects payload
- * as a loose record to avoid duplicating the full effects type system here.
- *
- * NOTE: `effects` is kept as z.record(z.string(), z.unknown()) intentionally.
- * Using a structural z.object({...}).passthrough() would cause the Zod-inferred
- * type for modifiers/properties to be `unknown[]` rather than `Modifier[]`, which
- * breaks the worker's type-check (EffectBundle assignability). Loose record
- * validation is the acceptable tradeoff until a separate EffectBundle schema
- * package is introduced.
- */
-export const effectBundleSchema = z.object({
-  id: z.string(),
-  source: effectSourceSchema,
-  lifetime: effectLifetimeSchema,
-  effects: z.record(z.string(), z.unknown()),
-});
-
-/**
  * CharacterStaticData schema — Phase 7.
  * Derivable fields (AC, maxHP, speed, skills, savingThrows, senses, spellcasting,
  * combatBonuses, advantages, classResources, proficiencies, proficiencyBonus)
@@ -238,25 +167,22 @@ export const characterStaticDataSchema = z.object({
   effects: z.array(effectBundleSchema),
 });
 
-export const characterDynamicDataSchema = z.object({
-  currentHP: z.number(),
-  tempHP: z.number(),
-  spellSlotsUsed: z.array(spellSlotLevelSchema),
-  pactMagicSlots: z.array(spellSlotLevelSchema).optional().default([]),
-  resourcesUsed: z.record(z.string(), z.number()).optional().default({}),
-  conditions: z.array(conditionEntrySchema),
-  exhaustionLevel: z.number().optional(),
-  deathSaves: deathSavesSchema,
-  inventory: z.array(itemSchema),
-  currency: currencySchema,
-  heroicInspiration: z.boolean().optional().default(false),
-  concentratingOn: z.object({ spellName: z.string(), since: z.number().optional() }).optional(),
-  /** Runtime effect bundles from conditions, spells, activatable features, etc. */
-  activeEffects: z.array(effectBundleSchema).optional(),
-});
+// characterDynamicDataSchema lives in ./character.ts — re-exported here.
+export { characterDynamicDataSchema } from "./character";
+
+/**
+ * `builder` is the full BuilderState snapshot from the web app. It's opaque to
+ * the wire (worker never reads it; bridge strips it from DM tool payloads).
+ * We use `z.custom<BuilderState>` instead of `z.any()` so the inferred type
+ * stays `BuilderState` (matching the hand-written `CharacterData.builder`).
+ * Runtime validation is intentionally permissive — any shape is accepted —
+ * because writing a structural schema for BuilderState isn't worth the
+ * maintenance cost for a field that's never validated against server logic.
+ */
+const builderStateOpaqueSchema = z.custom<import("../types/builder").BuilderState>(() => true);
 
 export const characterDataSchema = z.object({
-  builder: z.any(),
+  builder: builderStateOpaqueSchema,
   static: characterStaticDataSchema,
   dynamic: characterDynamicDataSchema,
 });
@@ -414,7 +340,7 @@ export const clientSetPacingSchema = z.object({
 export const clientDMOverrideSchema = z.object({
   type: z.literal("client:dm_override"),
   characterName: z.string(),
-  changes: z.array(z.any()), // StateChange is a union, validated at runtime
+  changes: z.array(stateChangeSchema),
 });
 
 export const clientDMDiceRollSchema = z.object({
@@ -462,7 +388,12 @@ export const clientSaveNotesSchema = z.object({
 
 export const clientBroadcastSchema = z.object({
   type: z.literal("client:broadcast"),
-  payload: z.any(), // ServerMessage validated at runtime
+  // Circular: payload is a ServerMessage which itself can contain
+  // ServerPlayerActionMessage.action: ClientMessage. The return annotation
+  // on the `z.lazy` callback gives TS the final inferred type without
+  // tracing the recursion, letting the outer discriminatedUnion still see
+  // this schema as a proper ZodObject for discriminant narrowing.
+  payload: z.lazy((): z.ZodType<ServerMessage> => serverMessageSchema),
   targets: z.array(z.string()).optional(),
 });
 
@@ -695,7 +626,10 @@ export const serverPlayerActionSchema = z.object({
   type: z.literal("server:player_action"),
   playerName: z.string(),
   userId: z.string().optional(),
-  action: z.any(), // ClientMessage validated at runtime
+  // Circular: action is a ClientMessage which itself can contain
+  // ClientBroadcastMessage.payload: ServerMessage. See clientBroadcastSchema
+  // for the mirror-image annotation.
+  action: z.lazy((): z.ZodType<ClientMessage> => clientMessageSchema),
   requestId: z.string(),
 });
 

@@ -1,4 +1,9 @@
 import { z } from "zod";
+import { effectBundleSchema } from "./effects";
+import { conditionEntrySchema, characterDynamicDataSchema } from "./character";
+
+// Re-export the moved schema so external importers (index) still see it here.
+export { conditionEntrySchema };
 
 // ─── Dice schemas ───
 
@@ -65,16 +70,6 @@ export const creatureSizeSchema = z.enum([
   "gargantuan",
 ]);
 
-// ─── Conditions ───
-
-export const conditionEntrySchema = z.object({
-  name: z.string(),
-  duration: z.number().optional(),
-  startRound: z.number().optional(),
-  endsOnLongRest: z.boolean().optional(),
-  expiresAt: z.enum(["start-of-turn", "end-of-turn"]).optional(),
-});
-
 // ─── Combatant ───
 
 export const combatantSchema = z.object({
@@ -107,6 +102,7 @@ export const combatantSchema = z.object({
   conditions: z.array(conditionEntrySchema).optional(),
   concentratingOn: z.object({ spellName: z.string(), since: z.number().optional() }).optional(),
   saveBonuses: z.record(z.string(), z.number()).optional(),
+  activeEffects: z.array(effectBundleSchema).optional(),
 });
 
 // ─── Battle Map ───
@@ -286,16 +282,13 @@ export const gameEventTypeSchema = z.enum([
   "custom",
 ]);
 
-// Note: We use z.any() for the stateBefore snapshot since it contains
-// CharacterDynamicData records which are defined in messages.ts schemas.
-// Full validation happens at the application layer.
 export const gameEventSchema = z.object({
   id: z.string(),
   type: gameEventTypeSchema,
   timestamp: z.number(),
   description: z.string(),
   stateBefore: z.object({
-    characters: z.record(z.string(), z.any()),
+    characters: z.record(z.string(), characterDynamicDataSchema),
     combatants: z.record(z.string(), combatantSchema).optional(),
     encounterPhase: encounterPhaseSchema.optional(),
     pendingCheck: checkRequestSchema.optional(),

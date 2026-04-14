@@ -131,7 +131,7 @@ export interface Combatant {
    * Keys are lowercase ability names (e.g. "dexterity", "wisdom").
    * The AI DM populates this from lookup_monster data when adding combatants.
    */
-  saveBonuses?: Partial<Record<string, number>>;
+  saveBonuses?: Record<string, number>;
 }
 
 // ─── Combat ───
