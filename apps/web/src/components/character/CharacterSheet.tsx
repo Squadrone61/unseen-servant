@@ -40,6 +40,7 @@ import { StatsTab } from "./tabs/StatsTab";
 import { TabBar } from "@/components/ui/TabBar";
 import { EntityPopoverProvider, useEntityPopover } from "./EntityPopoverContext";
 import { EntityDetailPopover } from "./EntityDetailPopover";
+import type { StartPlacementParams } from "@/hooks/useAoEPlacement";
 
 // ─── Helpers ───
 
@@ -62,6 +63,8 @@ type TabId = "stats" | "actions" | "spells" | "inventory" | "features";
 
 interface CharacterSheetProps {
   character: CharacterData;
+  /** If provided, shows "Place on map" CTA for AoE spells */
+  onCastAoE?: (params: StartPlacementParams) => void;
 }
 
 // ─── Tab Bar Helper ───
@@ -97,15 +100,15 @@ function SheetTabBar({
 
 // ─── Main Component ───
 
-export function CharacterSheet({ character }: CharacterSheetProps) {
+export function CharacterSheet({ character, onCastAoE }: CharacterSheetProps) {
   return (
     <EntityPopoverProvider>
-      <CharacterSheetInner character={character} />
+      <CharacterSheetInner character={character} onCastAoE={onCastAoE} />
     </EntityPopoverProvider>
   );
 }
 
-function CharacterSheetInner({ character }: CharacterSheetProps) {
+function CharacterSheetInner({ character, onCastAoE }: CharacterSheetProps) {
   const s = character.static;
   const d = character.dynamic;
   const abilities = useMemo(() => getAbilities(character), [character]);
@@ -390,6 +393,7 @@ function CharacterSheetInner({ character }: CharacterSheetProps) {
           spell={popup.spell}
           onClose={() => setPopup(null)}
           position={popup.position}
+          onCastAoE={onCastAoE}
         />
       )}
       {popup?.type === "item" && (

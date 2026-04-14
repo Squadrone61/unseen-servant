@@ -10,6 +10,7 @@ import type {
   RollResult,
 } from "@unseen-servant/shared/types";
 import type { ConnectionState } from "@/hooks/useWebSocket";
+import type { StagedAoE, AoECounts } from "@/hooks/useAoEPlacement";
 
 // Merged check: check_request + check_result resolved into a single display card
 export interface MergedCheckMessage {
@@ -66,6 +67,12 @@ interface ChatPanelProps {
   onTypingChange?: (isTyping: boolean) => void;
   /** Optional element rendered left of the input (e.g. character trigger button) */
   characterTrigger?: React.ReactNode;
+  /** If present, the staged AoE will be shown as a badge and attached on send */
+  stagedAoE?: StagedAoE | null;
+  stagedAoECounts?: AoECounts;
+  onCancelAoE?: () => void;
+  /** Called when a message is sent with a pending AoE — receives the staged AoE */
+  onSendWithAoE?: (content: string, staged: StagedAoE) => void;
 }
 
 export function ChatPanel({
@@ -79,6 +86,10 @@ export function ChatPanel({
   typingPlayers,
   onTypingChange,
   characterTrigger,
+  stagedAoE,
+  stagedAoECounts,
+  onCancelAoE,
+  onSendWithAoE,
 }: ChatPanelProps) {
   const [input, setInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -107,7 +118,11 @@ export function ChatPanel({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (input.trim() && connectionState === "connected") {
-      onSend(input.trim());
+      if (stagedAoE && onSendWithAoE) {
+        onSendWithAoE(input.trim(), stagedAoE);
+      } else {
+        onSend(input.trim());
+      }
       setInput("");
       if (onTypingChange) {
         if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
@@ -147,6 +162,38 @@ export function ChatPanel({
       {typingPlayers && typingPlayers.length > 0 && (
         <div className="px-4 py-1.5 text-sm text-gray-400 italic shrink-0">
           {formatTypingText(typingPlayers)}
+        </div>
+      )}
+
+      {/* AoE staged badge */}
+      {stagedAoE && (
+        <div className="px-4 py-2 shrink-0 border-t border-amber-800/30 bg-amber-950/20">
+          <div className="flex items-center gap-2 text-xs">
+            <span className="text-amber-400/70">AoE</span>
+            <span className="text-amber-300 font-medium truncate flex-1">
+              {stagedAoE.spellName ?? stagedAoE.label ?? "Template"} &middot; {stagedAoE.size}ft{" "}
+              {stagedAoE.shape === "rectangle"
+                ? (stagedAoE.rectanglePreset ?? "rectangle")
+                : stagedAoE.shape}
+              {stagedAoECounts && (
+                <span className="text-amber-500/70 ml-1">
+                  &middot;{" "}
+                  {stagedAoECounts.enemies.length +
+                    stagedAoECounts.allies.length +
+                    stagedAoECounts.self.length}{" "}
+                  targets
+                </span>
+              )}
+            </span>
+            <button
+              type="button"
+              onClick={onCancelAoE}
+              className="text-gray-500 hover:text-gray-300 transition-colors ml-1 text-base leading-none"
+              title="Cancel AoE placement"
+            >
+              &times;
+            </button>
+          </div>
         </div>
       )}
 

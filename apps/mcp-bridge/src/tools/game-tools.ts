@@ -1047,8 +1047,14 @@ export function registerGameTools(
     "apply_area_effect",
     {
       description:
-        "Apply damage to all combatants in an area with saving throws. Sphere: center + size (radius). Cone: center (caster) + size (length) + direction. Rectangle: from + to (two corners in A1).\n\nAlternative: provide action_ref to auto-resolve area shape, size, damage dice, damage type, save ability, and DC from a DB entity's ActionEffect (e.g., Fireball: sphere 20ft, 8d6 fire, DEX save). Explicit args override actionRef values. For spells, provide caster_spell_save_dc to substitute 'spell_save_dc'. For upcast spells, provide upcast_level (extra levels above base).",
+        "Apply damage to all combatants in an area with saving throws. Sphere: center + size (radius). Cone: center (caster) + size (length) + direction. Rectangle: from + to (two corners in A1).\n\nAlternative: provide action_ref to auto-resolve area shape, size, damage dice, damage type, save ability, and DC from a DB entity's ActionEffect (e.g., Fireball: sphere 20ft, 8d6 fire, DEX save). Explicit args override actionRef values. For spells, provide caster_spell_save_dc to substitute 'spell_save_dc'. For upcast spells, provide upcast_level (extra levels above base).\n\nProvide aoe_id to reuse the geometry of a committed player AoE overlay (shape, center, size, direction, from, to) without re-specifying position args.",
       inputSchema: {
+        aoe_id: z
+          .string()
+          .optional()
+          .describe(
+            "ID of an existing AoE overlay — reuses its geometry (shape, center, size, direction, from/to). Explicit shape/center/size/etc. args still override the stored values.",
+          ),
         shape: z
           .enum(["sphere", "cone", "rectangle"])
           .optional()
@@ -1109,6 +1115,7 @@ export function registerGameTools(
       },
     },
     async ({
+      aoe_id,
       shape,
       center,
       size,
@@ -1125,12 +1132,32 @@ export function registerGameTools(
       caster_spell_save_dc,
     }) => {
       let resolvedShape = shape;
+      let resolvedCenter = center;
       let resolvedSize = size;
+      let resolvedDirection = direction;
+      let resolvedFrom = from;
+      let resolvedTo = to;
       let resolvedDamage = damage;
       let resolvedDamageType = damage_type;
       let resolvedSaveAbility = save_ability;
       let resolvedSaveDC = save_dc;
       let resolvedHalfOnSave = half_on_save ?? true;
+
+      // Resolve geometry from a stored AoE overlay if aoe_id provided
+      if (aoe_id) {
+        const combat = wsClient.gameStateManager.gameState.encounter?.combat;
+        const stored = combat?.activeAoE?.find((a) => a.id === aoe_id);
+        if (stored) {
+          if (!resolvedShape) resolvedShape = stored.shape;
+          if (!resolvedCenter && stored.shape !== "rectangle")
+            resolvedCenter = formatGridPosition(stored.center);
+          if (resolvedSize === undefined && stored.size !== undefined) resolvedSize = stored.size;
+          if (resolvedDirection === undefined && stored.direction !== undefined)
+            resolvedDirection = stored.direction;
+          if (!resolvedFrom && stored.from) resolvedFrom = formatGridPosition(stored.from);
+          if (!resolvedTo && stored.to) resolvedTo = formatGridPosition(stored.to);
+        }
+      }
 
       // Auto-resolve from actionRef if provided
       if (action_ref) {
@@ -1216,11 +1243,11 @@ export function registerGameTools(
 
       const result = wsClient.gameStateManager.applyAreaEffect({
         shape: resolvedShape,
-        center,
+        center: resolvedCenter,
         size: resolvedSize,
-        direction,
-        from,
-        to,
+        direction: resolvedDirection,
+        from: resolvedFrom,
+        to: resolvedTo,
         damage: resolvedDamage,
         damageType: resolvedDamageType,
         saveAbility: resolvedSaveAbility,
@@ -1228,12 +1255,13 @@ export function registerGameTools(
         halfOnSave: resolvedHalfOnSave,
       });
       return fromToolResponse(result, "apply_area_effect", {
+        aoe_id,
         shape: resolvedShape,
-        center,
+        center: resolvedCenter,
         size: resolvedSize,
-        direction,
-        from,
-        to,
+        direction: resolvedDirection,
+        from: resolvedFrom,
+        to: resolvedTo,
         damage: resolvedDamage,
         damage_type: resolvedDamageType,
         save_ability: resolvedSaveAbility,
@@ -1256,6 +1284,58 @@ export function registerGameTools(
     async ({ aoe_id }) => {
       const result = wsClient.gameStateManager.dismissAoE(aoe_id);
       return fromToolResponse(result, "dismiss_aoe", { aoe_id });
+    },
+  );
+
+  server.registerTool(
+    "update_aoe",
+    {
+      description:
+        "Update an existing AoE overlay — reposition, relabel, resize, or change color. Use after a player moves their AoE (you receive aoe_placed/aoe_moved events in wait_for_message) to adjudicate: revert, confirm, or relocate. Also broadcasts the updated overlay to all clients.",
+      inputSchema: {
+        aoe_id: z.string().describe("The ID of the AoE overlay to update"),
+        center: z
+          .object({ x: z.coerce.number(), y: z.coerce.number() })
+          .optional()
+          .describe("New center/origin as {x, y} grid coordinates"),
+        direction: z.coerce
+          .number()
+          .optional()
+          .describe("New direction in degrees (0=north, 90=east) — cone only"),
+        size: z.coerce.number().optional().describe("New size in feet"),
+        shape: z
+          .enum(["sphere", "cone", "rectangle"])
+          .optional()
+          .describe("Change the shape of the overlay"),
+        from: z
+          .object({ x: z.coerce.number(), y: z.coerce.number() })
+          .optional()
+          .describe("New starting corner {x, y} — rectangle only"),
+        to: z
+          .object({ x: z.coerce.number(), y: z.coerce.number() })
+          .optional()
+          .describe("New opposite corner {x, y} — rectangle only"),
+        color: z.string().optional().describe("New color hex string (e.g. '#FF6B35')"),
+        label: z.string().optional().describe("New label text"),
+        persistent: z
+          .boolean()
+          .optional()
+          .describe("Whether the overlay stays until explicitly dismissed"),
+      },
+    },
+    async ({ aoe_id, center, direction, size, shape, from, to, color, label, persistent }) => {
+      const result = wsClient.gameStateManager.updateAoE(aoe_id, {
+        ...(center !== undefined ? { center } : {}),
+        ...(direction !== undefined ? { direction } : {}),
+        ...(size !== undefined ? { size } : {}),
+        ...(shape !== undefined ? { shape } : {}),
+        ...(from !== undefined ? { from } : {}),
+        ...(to !== undefined ? { to } : {}),
+        ...(color !== undefined ? { color } : {}),
+        ...(label !== undefined ? { label } : {}),
+        ...(persistent !== undefined ? { persistent } : {}),
+      });
+      return fromToolResponse(result, "update_aoe", { aoe_id });
     },
   );
 

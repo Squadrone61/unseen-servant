@@ -33,10 +33,33 @@ export interface DMBridgeConfig {
 
 // === Client → Server messages ===
 
+/** AoE placement payload attached to a player chat message. */
+export interface PendingAoEPayload {
+  shape: "sphere" | "cone" | "rectangle";
+  origin: GridPosition;
+  size?: number;
+  direction?: number;
+  endpoint?: GridPosition;
+  spellName?: string;
+  concentration?: boolean;
+  color?: string;
+  label?: string;
+  rectanglePreset?: "free" | "line" | "cube";
+  /** When present, this commit moves an existing AoE instead of creating a new one. */
+  targetAoeId?: string;
+}
+
 export interface ClientChatMessage {
   type: "client:chat";
   content: string;
   playerName: string;
+  /** Optional AoE placement/move committed atomically with this chat message. */
+  pendingAoE?: PendingAoEPayload;
+}
+
+export interface ClientDismissAoEMessage {
+  type: "client:dismiss_aoe";
+  aoeId: string;
 }
 
 export interface ClientJoinMessage {
@@ -267,6 +290,7 @@ export type ClientMessage =
   | ClientDMCheckResultMessage
   | ClientBroadcastMessage
   | ClientActionResultMessage
+  | ClientDismissAoEMessage
   | ClientTypingMessage
   | ClientSaveNotesMessage;
 

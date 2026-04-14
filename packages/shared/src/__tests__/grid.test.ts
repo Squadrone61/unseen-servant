@@ -180,14 +180,30 @@ describe("computeAoETiles (cone)", () => {
     expect(tiles.find((t) => t.x === center.x && t.y === center.y)).toBeUndefined();
   });
 
-  it("all tiles are within lengthTiles Euclidean distance of center", () => {
+  it("all tiles are within cone length of origin corner (corner-origin geometry)", () => {
     const size = 15;
-    const lengthTiles = Math.floor(size / 5); // 3
+    const lengthTiles = size / 5; // 3
     const tiles = computeAoETiles("cone", center, { size, direction: 0 }, mapW, mapH);
+    // Corner origin may sit on any caster-tile corner (worst-case diagonal = L*sqrt(2)).
+    const maxDistFromCenter = lengthTiles * Math.SQRT2 + 1; // +1 tile slack for tile centers
     for (const tile of tiles) {
-      const dist = Math.sqrt(Math.pow(tile.x - center.x, 2) + Math.pow(tile.y - center.y, 2));
-      expect(dist).toBeLessThanOrEqual(lengthTiles + 0.001);
+      const dist = Math.sqrt(
+        Math.pow(tile.x + 0.5 - (center.x + 0.5), 2) + Math.pow(tile.y + 0.5 - (center.y + 0.5), 2),
+      );
+      expect(dist).toBeLessThanOrEqual(maxDistFromCenter);
     }
+  });
+
+  it("cone 15ft (3 tiles) east produces roughly 6 affected tiles (D&D template rule)", () => {
+    const tiles = computeAoETiles("cone", center, { size: 15, direction: 90 }, mapW, mapH);
+    // D&D 15ft cone: 1+2+3 = 6 cardinal tiles
+    expect(tiles.length).toBeGreaterThanOrEqual(3);
+    expect(tiles.length).toBeLessThanOrEqual(9);
+  });
+
+  it("cone with arbitrary direction (37°) does not crash and returns non-empty tiles", () => {
+    const tiles = computeAoETiles("cone", center, { size: 30, direction: 37 }, mapW, mapH);
+    expect(tiles.length).toBeGreaterThan(0);
   });
 });
 

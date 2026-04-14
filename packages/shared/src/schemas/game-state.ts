@@ -154,6 +154,9 @@ export const aoeOverlaySchema = z.object({
   label: z.string(),
   persistent: z.boolean(),
   casterName: z.string().optional(),
+  ownerId: z.string().optional(),
+  ownerName: z.string().optional(),
+  rectanglePreset: z.enum(["free", "line", "cube"]).optional(),
 });
 
 export const battleMapStateSchema = z.object({

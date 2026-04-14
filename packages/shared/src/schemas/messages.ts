@@ -208,10 +208,30 @@ export const playerInfoSchema = z.object({
 
 // === Client → Server schemas ===
 
+export const pendingAoESchema = z.object({
+  shape: z.enum(["sphere", "cone", "rectangle"]),
+  origin: gridPositionSchema,
+  size: z.number().optional(),
+  direction: z.number().optional(),
+  endpoint: gridPositionSchema.optional(),
+  spellName: z.string().optional(),
+  concentration: z.boolean().optional(),
+  color: z.string().optional(),
+  label: z.string().optional(),
+  rectanglePreset: z.enum(["free", "line", "cube"]).optional(),
+  targetAoeId: z.string().optional(),
+});
+
 export const clientChatSchema = z.object({
   type: z.literal("client:chat"),
   content: z.string().min(1).max(2000),
   playerName: z.string().min(1).max(30),
+  pendingAoE: pendingAoESchema.optional(),
+});
+
+export const clientDismissAoESchema = z.object({
+  type: z.literal("client:dismiss_aoe"),
+  aoeId: z.string(),
 });
 
 export const clientJoinSchema = z.object({
@@ -433,6 +453,7 @@ export const clientMessageSchema = z.discriminatedUnion("type", [
   clientActionResultSchema,
   clientTypingSchema,
   clientSaveNotesSchema,
+  clientDismissAoESchema,
 ]);
 
 // === Server → Client schemas ===

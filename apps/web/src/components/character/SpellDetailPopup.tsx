@@ -4,15 +4,62 @@ import type { Spell } from "@unseen-servant/shared/types";
 import { DetailPopover } from "./DetailPopover";
 import { RichText } from "../ui/RichText";
 import { useEntityClick } from "./EntityPopoverContext";
+import { getSpell } from "@unseen-servant/shared/data";
+import { damageTypeColor } from "@unseen-servant/shared/utils";
+import type { StartPlacementParams } from "@/hooks/useAoEPlacement";
 
 interface SpellDetailPopupProps {
   spell: Spell;
   onClose: () => void;
   position: { x: number; y: number };
+  /** If provided, shows "Place on map" CTA for AoE spells */
+  onCastAoE?: (params: StartPlacementParams) => void;
 }
 
-export function SpellDetailPopup({ spell, onClose, position }: SpellDetailPopupProps) {
+export function SpellDetailPopup({ spell, onClose, position, onCastAoE }: SpellDetailPopupProps) {
   const onEntityClick = useEntityClick();
+
+  // Look up DB spell to get AoE info
+  const dbSpell = getSpell(spell.name);
+  const action = dbSpell?.effects?.action;
+  const area = action?.area;
+
+  // Map DB area shape to PendingAoEPayload shape
+  function mapShape(dbShape: string): "sphere" | "cone" | "rectangle" {
+    if (dbShape === "cone") return "cone";
+    if (dbShape === "sphere" || dbShape === "cylinder") return "sphere";
+    // line, cube → rectangle
+    return "rectangle";
+  }
+
+  function mapRectPreset(dbShape: string): "free" | "line" | "cube" | undefined {
+    if (dbShape === "line") return "line";
+    if (dbShape === "cube") return "cube";
+    return undefined;
+  }
+
+  const handlePlaceOnMap = () => {
+    if (!area || !onCastAoE) return;
+    // Determine color from primary damage type
+    const primaryDamage =
+      action?.onFailedSave?.damage?.[0]?.type ?? action?.onHit?.damage?.[0]?.type;
+    const color = damageTypeColor(primaryDamage);
+    const shape = mapShape(area.shape);
+    const rectanglePreset = mapRectPreset(area.shape);
+    const save = action?.save ? { ability: action.save.ability, dc: action.save.dc } : undefined;
+
+    onCastAoE({
+      shape,
+      size: area.size,
+      spellName: spell.name,
+      label: spell.name,
+      color,
+      concentration: spell.concentration,
+      rectanglePreset,
+      save,
+    });
+    onClose();
+  };
   const levelStr =
     spell.level === 0 ? "Cantrip" : `Level ${spell.level}${spell.school ? ` ${spell.school}` : ""}`;
 
@@ -82,6 +129,19 @@ export function SpellDetailPopup({ spell, onClose, position }: SpellDetailPopupP
               onEntityClick={onEntityClick}
             />
           </div>
+        )}
+
+        {/* Place on map CTA — only for AoE spells when handler is provided */}
+        {area && onCastAoE && (
+          <button
+            onClick={handlePlaceOnMap}
+            className="w-full mt-1 bg-amber-600/80 hover:bg-amber-500/80 text-amber-100 text-sm font-medium rounded-lg py-2 transition-colors flex items-center justify-center gap-2"
+          >
+            <span>Place on Map</span>
+            <span className="text-xs text-amber-300/70">
+              {area.size}ft {area.shape}
+            </span>
+          </button>
         )}
       </div>
     </DetailPopover>

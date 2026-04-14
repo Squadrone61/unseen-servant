@@ -209,6 +209,12 @@ export interface AoEOverlay {
   label: string; // "Fireball", "Wall of Fire"
   persistent: boolean; // stays on map until dismissed?
   casterName?: string;
+  /** Player userId or "DM" — who owns this overlay and can move/dismiss it. */
+  ownerId?: string;
+  /** Display name of the owner. */
+  ownerName?: string;
+  /** Rectangle preset hint: geometry is stored as from/to, this tells the UI which editor to show. */
+  rectanglePreset?: "free" | "line" | "cube";
 }
 
 // ─── State Changes (atomic operations) ───

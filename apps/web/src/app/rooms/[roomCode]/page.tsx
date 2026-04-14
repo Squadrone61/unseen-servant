@@ -19,6 +19,7 @@ import { CharacterSheet } from "@/components/character/CharacterSheet";
 import { CharacterPopover } from "@/components/character/CharacterPopover";
 import { usePlayerNotes } from "@/hooks/usePlayerNotes";
 import { useCharacterLibrary } from "@/hooks/useCharacterLibrary";
+import { useAoEPlacement } from "@/hooks/useAoEPlacement";
 import { mergeReimport, formatClassString } from "@unseen-servant/shared/utils";
 import { getHP } from "@unseen-servant/shared/character";
 import type {
@@ -32,6 +33,7 @@ import type {
   ServerMessage,
 } from "@unseen-servant/shared/types";
 import type { DisplayMessage } from "@/components/chat/ChatPanel";
+import type { StagedAoE } from "@/hooks/useAoEPlacement";
 
 /** Messages that belong in the main story chat */
 function isStoryMessage(msg: ServerMessage): boolean {
@@ -233,6 +235,7 @@ function GameContent({ roomCode, playerName }: { roomCode: string; playerName: s
           setIsHost(msg.isHost ?? false);
           setPasswordRequired(false);
           setPasswordError("");
+          if (msg.user?.userId) setMyUserId(msg.user.userId);
           // Clear chat/log on reconnect — server replays the full chat log
           if (msg.isReconnect) {
             setStoryMessages([]);
@@ -524,6 +527,12 @@ function GameContent({ roomCode, playerName }: { roomCode: string; playerName: s
   } = usePlayerNotes({ send });
   playerNotesLoadedRef.current = handleNotesLoaded;
 
+  // AoE placement hook — owns local staging state for player-placed templates
+  const aoePlacement = useAoEPlacement(combatState, battleMap, myCharacter?.static.name);
+
+  // Read my userId from auth state (set during room_joined)
+  const [myUserId, setMyUserId] = useState<string | undefined>(undefined);
+
   // Expose message handler for Playwright tests (zero cost, no-op in production)
   useEffect(() => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -556,6 +565,30 @@ function GameContent({ roomCode, playerName }: { roomCode: string; playerName: s
       playerName,
     });
   };
+
+  const handleSendWithAoE = useCallback(
+    (content: string, staged: StagedAoE) => {
+      send({
+        type: "client:chat",
+        content,
+        playerName,
+        pendingAoE: {
+          shape: staged.shape,
+          origin: staged.origin,
+          size: staged.size,
+          direction: staged.direction,
+          spellName: staged.spellName,
+          concentration: staged.concentration,
+          color: staged.color,
+          label: staged.label,
+          rectanglePreset: staged.rectanglePreset,
+          targetAoeId: staged.targetAoeId,
+        },
+      });
+      aoePlacement.clearStaged();
+    },
+    [send, playerName, aoePlacement],
+  );
 
   const handleKick = (name: string) => {
     send({ type: "client:kick_player", playerName: name });
@@ -738,7 +771,18 @@ function GameContent({ roomCode, playerName }: { roomCode: string; playerName: s
         {/* Inline character sheet panel: always in lobby, togglable once story starts */}
         {(showCharacterDrawer || !storyStarted) && myCharacter && (
           <div className="w-80 shrink-0 border-r border-gray-700/20 overflow-y-auto bg-gray-900">
-            <CharacterSheet character={myCharacter} />
+            <CharacterSheet
+              character={myCharacter}
+              onCastAoE={
+                storyStarted && combatState?.phase === "active"
+                  ? (params) => {
+                      aoePlacement.startPlacement(params);
+                      // Collapse the character sheet drawer after entering placement mode
+                      setShowCharacterDrawer(false);
+                    }
+                  : undefined
+              }
+            />
           </div>
         )}
 
@@ -800,11 +844,14 @@ function GameContent({ roomCode, playerName }: { roomCode: string; playerName: s
                   onBattleMapWidthChange={setBattleMapWidth}
                   storyMessages={storyMessages}
                   onSend={handleSend}
+                  onSendWithAoE={handleSendWithAoE}
                   connectionState={connectionState}
                   onRollDice={handleRollDice}
                   isMyTurn={isMyTurn}
                   typingPlayers={Array.from(typingPlayers.keys())}
                   onTypingChange={handleTypingChange}
+                  aoePlacement={aoePlacement}
+                  myUserId={myUserId}
                   characterTrigger={
                     myCharacter ? (
                       <CharacterTrigger
@@ -1061,12 +1108,15 @@ function CombatLayout({
   onBattleMapWidthChange,
   storyMessages,
   onSend,
+  onSendWithAoE,
   connectionState,
   onRollDice,
   isMyTurn,
   typingPlayers,
   onTypingChange,
   characterTrigger,
+  aoePlacement,
+  myUserId,
 }: {
   battleMap: import("@unseen-servant/shared/types").BattleMapState;
   combatState: import("@unseen-servant/shared/types").CombatState;
@@ -1080,12 +1130,15 @@ function CombatLayout({
   onBattleMapWidthChange: (w: number) => void;
   storyMessages: DisplayMessage[];
   onSend: (content: string) => void;
+  onSendWithAoE: (content: string, staged: StagedAoE) => void;
   connectionState: import("@/hooks/useWebSocket").ConnectionState;
   onRollDice: (id: string) => void;
   isMyTurn: boolean;
   typingPlayers: string[];
   onTypingChange: (isTyping: boolean) => void;
   characterTrigger?: React.ReactNode;
+  aoePlacement: import("@/hooks/useAoEPlacement").UseAoEPlacementResult;
+  myUserId?: string;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const draggingRef = useRef(false);
@@ -1119,6 +1172,8 @@ function CombatLayout({
         onCombatantClick={onCombatantClick}
         highlightedCombatantId={highlightedCombatantId}
         style={{ width: `${battleMapWidth}%` }}
+        aoePlacement={aoePlacement}
+        myUserId={myUserId}
       />
       {/* Resize handle */}
       <div
@@ -1138,6 +1193,10 @@ function CombatLayout({
         typingPlayers={typingPlayers}
         onTypingChange={onTypingChange}
         characterTrigger={characterTrigger}
+        stagedAoE={aoePlacement.stagedAoE}
+        stagedAoECounts={aoePlacement.affectedCombatants}
+        onCancelAoE={aoePlacement.cancel}
+        onSendWithAoE={onSendWithAoE}
       />
     </div>
   );

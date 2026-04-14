@@ -314,7 +314,7 @@ export class WSClient {
     }
 
     const wasStoryStarted = this.gameStateManager.storyStarted;
-    this.gameStateManager.handlePlayerAction(raw.playerName, raw.action, raw.requestId);
+    this.gameStateManager.handlePlayerAction(raw.playerName, raw.action, raw.requestId, raw.userId);
 
     // Signal worker that story has started (replaces string-sniffing)
     if (!wasStoryStarted && this.gameStateManager.storyStarted) {

@@ -2,6 +2,8 @@
 
 import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { InitiativeTracker } from "./InitiativeTracker";
+import { AoEToolbarPopover } from "./AoEToolbarPopover";
+import { AoEControlChip } from "./AoEControlChip";
 import type {
   BattleMapState,
   CombatState,
@@ -17,6 +19,7 @@ import type {
 } from "@unseen-servant/shared/types";
 import { formatGridPosition, gridDistance, computeAoETiles } from "@unseen-servant/shared/utils";
 import { getHP, getAC } from "@unseen-servant/shared/character";
+import type { UseAoEPlacementResult } from "@/hooks/useAoEPlacement";
 
 // ─── Constants ───
 
@@ -175,6 +178,10 @@ interface BattleMapProps {
   highlightedCombatantId?: string | null;
   style?: React.CSSProperties;
   className?: string;
+  /** AoE placement hook output — when provided, enables the placement UI. */
+  aoePlacement?: UseAoEPlacementResult;
+  /** User id for AoE ownership checks */
+  myUserId?: string;
 }
 
 // Drag state stored in ref to avoid re-renders during drag
@@ -205,6 +212,8 @@ export function BattleMap({
   highlightedCombatantId,
   style,
   className,
+  aoePlacement,
+  myUserId,
 }: BattleMapProps) {
   const [hoveredTile, setHoveredTile] = useState<string | null>(null);
   const [zoom, setZoom] = useState(1);
@@ -217,6 +226,14 @@ export function BattleMap({
   const [hoveredAoeId, setHoveredAoeId] = useState<string | null>(null);
   const [isPanning, setIsPanning] = useState(false);
   const [tooltipMouse, setTooltipMouse] = useState<{ x: number; y: number } | null>(null);
+  // AoE toolbar popover
+  const [showAoePopover, setShowAoePopover] = useState(false);
+  const aoeToolbarBtnRef = useRef<HTMLButtonElement>(null);
+  // AoE aim drag state ref (separate from token drag to avoid conflicts)
+  const aoeDragRef = useRef<{ active: boolean; originTile: GridPosition | null }>({
+    active: false,
+    originTile: null,
+  });
 
   const gridContainerRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -313,8 +330,25 @@ export function BattleMap({
     [map.width, map.height, zoom],
   );
 
+  /**
+   * Convert client pixel coordinates to fractional tile-unit world coordinates.
+   * Used for computing AoE aim direction from cursor position.
+   */
+  const pixelToWorld = useCallback(
+    (clientX: number, clientY: number): { x: number; y: number } => {
+      if (!gridContainerRef.current) return { x: 0, y: 0 };
+      const rect = gridContainerRef.current.getBoundingClientRect();
+      const x = (clientX - rect.left) / ((TILE_SIZE + TILE_GAP) * zoom);
+      const y = (clientY - rect.top) / ((TILE_SIZE + TILE_GAP) * zoom);
+      return { x, y };
+    },
+    [zoom],
+  );
+
   const handleDragStart = useCallback(
     (e: React.MouseEvent | React.TouchEvent, combatant: Combatant) => {
+      // Suppress token drag when AoE placement is active
+      if (aoePlacement && aoePlacement.mode !== "idle") return;
       if (!isMyTurn || !myCombatant || combatant.id !== myCombatant.id) return;
       if (!combatant.position) return;
 
@@ -441,6 +475,8 @@ export function BattleMap({
   const handlePanStart = useCallback((e: React.MouseEvent) => {
     // Middle button (1) or right button (2) for pan — left-click reserved for tokens
     if (e.button !== 1 && e.button !== 2) return;
+    // Suppress pan when AoE placement is active (left-click/drag is for aiming)
+    if (aoePlacement && aoePlacement.mode !== "idle") return;
     e.preventDefault();
 
     const ps = panStateRef.current;
@@ -474,6 +510,47 @@ export function BattleMap({
       window.removeEventListener("mouseup", handlePanEnd);
     };
   }, []);
+
+  // ─── AoE placement aim drag + Escape ───
+
+  // Keep a ref to aoePlacement for use in effects (avoids stale closure)
+  const aoePlacementRef = useRef(aoePlacement);
+  aoePlacementRef.current = aoePlacement;
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && aoePlacementRef.current?.mode !== "idle") {
+        aoePlacementRef.current?.cancel();
+      }
+    };
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const ap = aoePlacementRef.current;
+      if (!ap || ap.mode === "idle") return;
+      if (!aoeDragRef.current.active) return;
+      const world = pixelToWorld(e.clientX, e.clientY);
+      const origin = aoeDragRef.current.originTile;
+      if (origin) {
+        ap.setAim(origin, world);
+      }
+    };
+
+    const handleMouseUp = () => {
+      if (aoeDragRef.current.active) {
+        aoeDragRef.current.active = false;
+        // On release: aim is considered "locked" — the staged AoE stays visible
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [pixelToWorld]);
 
   // ─── Initial centering ───
 
@@ -624,6 +701,15 @@ export function BattleMap({
     return result;
   }, [aoeTileMap]);
 
+  // Preview tile set from the staged AoE (local only, not committed)
+  const previewTileSet = useMemo(() => {
+    if (!aoePlacement?.stagedAoE || !aoePlacement.affectedTiles) return new Set<string>();
+    return new Set(aoePlacement.affectedTiles.map((t) => `${t.x},${t.y}`));
+  }, [aoePlacement?.stagedAoE, aoePlacement?.affectedTiles]);
+
+  // Tile set for "moving" mode — the AoE being moved shows dashed outline
+  const movingAoeId = aoePlacement?.stagedAoE?.targetAoeId ?? null;
+
   // Token tooltip data resolver
   const getTokenTooltipData = useCallback(
     (c: Combatant) => {
@@ -728,6 +814,22 @@ export function BattleMap({
   // Suppress the dragRender lint warning -- it is intentionally used for side-effect re-render
   void dragRender;
 
+  // Compute screen position for AoEControlChip anchored to the staged template origin.
+  // gridContainerRef is inside the zoom transform div so getBoundingClientRect() already
+  // reflects the zoom scaling. The tile pixel offset must also be scaled.
+  const chipScreenPos = useMemo((): { x: number; y: number } | null => {
+    const staged = aoePlacement?.stagedAoE;
+    if (!staged || !gridContainerRef.current) return null;
+    const gridRect = gridContainerRef.current.getBoundingClientRect();
+    // Tile center in unscaled grid coords → multiply by zoom for screen offset from grid origin
+    const tileUnscaledX = staged.origin.x * (TILE_SIZE + TILE_GAP) + TILE_SIZE / 2;
+    const tileUnscaledY = staged.origin.y * (TILE_SIZE + TILE_GAP);
+    const screenX = gridRect.left + tileUnscaledX * zoom;
+    const screenY = gridRect.top + tileUnscaledY * zoom;
+    return { x: screenX, y: screenY };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [aoePlacement?.stagedAoE, panX, panY, zoom]);
+
   return (
     <div className={`flex flex-col bg-[#111114] shrink-0 ${className ?? ""}`} style={style}>
       {/* AoE pulse animation */}
@@ -759,29 +861,68 @@ export function BattleMap({
         onMouseDown={handlePanStart}
         onContextMenu={(e) => e.preventDefault()}
       >
-        {/* Zoom Controls */}
-        <div className="absolute top-2 right-2 z-10 bg-gray-800/80 rounded flex gap-1 p-1">
-          <button
-            onClick={() => zoomTo(Math.max(0.25, zoom / 1.25))}
-            className="w-6 h-6 flex items-center justify-center text-xs text-gray-400 hover:text-gray-200 rounded hover:bg-gray-700/60 transition-colors"
-            title="Zoom out"
-          >
-            -
-          </button>
-          <button
-            onClick={() => zoomTo(1)}
-            className="px-1.5 h-6 flex items-center justify-center text-xs text-gray-400 hover:text-gray-200 rounded hover:bg-gray-700/60 transition-colors font-mono"
-            title="Reset zoom"
-          >
-            {Math.round(zoom * 100)}%
-          </button>
-          <button
-            onClick={() => zoomTo(Math.min(3, zoom * 1.25))}
-            className="w-6 h-6 flex items-center justify-center text-xs text-gray-400 hover:text-gray-200 rounded hover:bg-gray-700/60 transition-colors"
-            title="Zoom in"
-          >
-            +
-          </button>
+        {/* Zoom Controls + AoE Toolbar */}
+        <div className="absolute top-2 right-2 z-10 flex gap-1.5">
+          {/* AoE placement toolbar (only when placement hook is provided) */}
+          {aoePlacement && (
+            <div className="relative">
+              <button
+                ref={aoeToolbarBtnRef}
+                onClick={() => {
+                  if (aoePlacement.mode !== "idle") {
+                    aoePlacement.cancel();
+                  } else {
+                    setShowAoePopover((v) => !v);
+                  }
+                }}
+                className={`h-6 px-2 flex items-center justify-center text-xs rounded transition-colors ${
+                  aoePlacement.mode !== "idle"
+                    ? "bg-amber-600/80 text-amber-100 hover:bg-amber-500/80"
+                    : "bg-gray-800/80 text-gray-400 hover:text-gray-200 hover:bg-gray-700/60"
+                }`}
+                title={
+                  aoePlacement.mode !== "idle" ? "Cancel AoE placement (Esc)" : "Place AoE template"
+                }
+              >
+                {aoePlacement.mode !== "idle" ? "Cancel AoE" : "Place AoE"}
+              </button>
+              {showAoePopover && aoePlacement.mode === "idle" && (
+                <AoEToolbarPopover
+                  anchorRef={aoeToolbarBtnRef}
+                  onStartPlacement={(params) => {
+                    aoePlacement.startPlacement(params);
+                    setShowAoePopover(false);
+                  }}
+                  onClose={() => setShowAoePopover(false)}
+                />
+              )}
+            </div>
+          )}
+
+          {/* Zoom buttons */}
+          <div className="bg-gray-800/80 rounded flex gap-1 p-1">
+            <button
+              onClick={() => zoomTo(Math.max(0.25, zoom / 1.25))}
+              className="w-6 h-6 flex items-center justify-center text-xs text-gray-400 hover:text-gray-200 rounded hover:bg-gray-700/60 transition-colors"
+              title="Zoom out"
+            >
+              -
+            </button>
+            <button
+              onClick={() => zoomTo(1)}
+              className="px-1.5 h-6 flex items-center justify-center text-xs text-gray-400 hover:text-gray-200 rounded hover:bg-gray-700/60 transition-colors font-mono"
+              title="Reset zoom"
+            >
+              {Math.round(zoom * 100)}%
+            </button>
+            <button
+              onClick={() => zoomTo(Math.min(3, zoom * 1.25))}
+              className="w-6 h-6 flex items-center justify-center text-xs text-gray-400 hover:text-gray-200 rounded hover:bg-gray-700/60 transition-colors"
+              title="Zoom in"
+            >
+              +
+            </button>
+          </div>
         </div>
 
         {/* Pan layer (translate only — not affected by zoom) */}
@@ -842,6 +983,35 @@ export function BattleMap({
                 style={{
                   width: gridWidthPx,
                   height: gridHeightPx,
+                  cursor: aoePlacement && aoePlacement.mode !== "idle" ? "crosshair" : undefined,
+                }}
+                onMouseDown={(e) => {
+                  // Only handle left-click in AoE mode
+                  if (!aoePlacement || aoePlacement.mode === "idle" || e.button !== 0) return;
+                  const tile = pixelToTile(e.clientX, e.clientY);
+                  if (!tile) return;
+                  e.stopPropagation();
+                  aoeDragRef.current.active = true;
+                  aoeDragRef.current.originTile = tile;
+                  const world = pixelToWorld(e.clientX, e.clientY);
+                  aoePlacement.setAim(tile, world);
+                }}
+                onClick={(e) => {
+                  // Click on own committed AoE in idle mode → enter move mode
+                  if (!aoePlacement || aoePlacement.mode !== "idle") return;
+                  if (!myUserId) return;
+                  const tile = pixelToTile(e.clientX, e.clientY);
+                  if (!tile) return;
+                  const tileKey = `${tile.x},${tile.y}`;
+                  // Find any AoE owned by this player that covers this tile
+                  const myAoe = combat.activeAoE?.find(
+                    (aoe) =>
+                      aoe.ownerId === myUserId &&
+                      aoeTileMap.get(tileKey)?.some((a) => a.id === aoe.id),
+                  );
+                  if (myAoe) {
+                    aoePlacement.startMove(myAoe);
+                  }
                 }}
               >
                 {/* ─── Layer 1: Tile Grid ─── */}
@@ -861,6 +1031,11 @@ export function BattleMap({
                       const isReach = reachable.has(key);
                       const isHoveredHere = hoveredTile === key;
                       const aoeOverlays = aoeTileMap.get(key);
+                      // Preview tile: local staged AoE not yet committed
+                      const isPreviewTile = previewTileSet.has(key);
+                      // Dashed outline when this tile belongs to the AoE being moved
+                      const isMovingAoeTile =
+                        movingAoeId != null && aoeOverlays?.some((a) => a.id === movingAoeId);
                       const ds = dragStateRef.current;
                       const isDragTarget =
                         ds.active &&
@@ -977,13 +1152,35 @@ export function BattleMap({
                             </div>
                           )}
 
-                          {/* AoE overlay */}
+                          {/* Committed AoE overlay */}
                           {aoeOverlays && aoeOverlays.length > 0 && (
                             <div
                               className="absolute inset-0 pointer-events-none"
                               style={{
                                 backgroundColor: aoeOverlays[0].color,
                                 animation: "aoePulse 3s ease-in-out infinite",
+                              }}
+                            />
+                          )}
+
+                          {/* Move-mode dashed outline on committed AoE tiles */}
+                          {isMovingAoeTile && (
+                            <div
+                              className="absolute inset-0 pointer-events-none"
+                              style={{
+                                border: "1.5px dashed rgba(251,191,36,0.7)",
+                                boxSizing: "border-box",
+                              }}
+                            />
+                          )}
+
+                          {/* Local preview overlay (staged, not yet committed) */}
+                          {isPreviewTile && aoePlacement?.stagedAoE && (
+                            <div
+                              className="absolute inset-0 pointer-events-none"
+                              style={{
+                                backgroundColor: aoePlacement.stagedAoE.color,
+                                opacity: 0.45,
                               }}
                             />
                           )}
@@ -1405,6 +1602,17 @@ export function BattleMap({
 
           return null;
         })()}
+
+      {/* ─── AoE Control Chip (rendered in fixed space, anchored to origin tile) ─── */}
+      {aoePlacement?.stagedAoE && chipScreenPos && (
+        <AoEControlChip
+          stagedAoE={aoePlacement.stagedAoE}
+          counts={aoePlacement.affectedCombatants}
+          onCancel={aoePlacement.cancel}
+          screenX={chipScreenPos.x}
+          screenY={chipScreenPos.y}
+        />
+      )}
     </div>
   );
 }

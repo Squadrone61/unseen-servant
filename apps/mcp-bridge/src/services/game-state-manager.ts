@@ -26,6 +26,7 @@ import type {
   AoEOverlay,
   DieRoll,
   EffectBundle,
+  PendingAoEPayload,
 } from "@unseen-servant/shared/types";
 import {
   rollInitiative,
@@ -37,7 +38,8 @@ import {
   computeAoETiles,
 } from "@unseen-servant/shared/utils";
 import { rollNotation } from "./dice-engine.js";
-import { getClass, getMagicItem } from "@unseen-servant/shared/data";
+import { getClass, getMagicItem, getSpell } from "@unseen-servant/shared/data";
+import { damageTypeColor } from "@unseen-servant/shared/utils";
 import {
   createConditionBundle,
   createActivationBundle,
@@ -367,10 +369,18 @@ export class GameStateManager {
 
   // ─── Player Action Dispatch ───
 
-  handlePlayerAction(playerName: string, action: ClientMessage, _requestId: string): void {
+  handlePlayerAction(
+    playerName: string,
+    action: ClientMessage,
+    _requestId: string,
+    userId?: string,
+  ): void {
     switch (action.type) {
       case "client:chat":
-        this.handleChat(playerName, action.content);
+        this.handleChat(playerName, action.content, action.pendingAoE, userId);
+        break;
+      case "client:dismiss_aoe":
+        this.handlePlayerDismissAoE(playerName, action.aoeId, userId);
         break;
       case "client:start_story":
         this.handleStartStory(playerName);
@@ -415,20 +425,258 @@ export class GameStateManager {
 
   // ─── Chat ───
 
-  handleChat(playerName: string, content: string): void {
+  handleChat(
+    playerName: string,
+    content: string,
+    pendingAoE?: PendingAoEPayload,
+    userId?: string,
+  ): void {
     // Chat is already broadcast by the worker — no need to re-broadcast here.
 
     // Build dm_request for AI
     const character = this.findCharacterByPlayerName(playerName);
     const speakerName = character?.static.name || playerName;
 
+    // Handle committed AoE placement atomically with the chat message
+    let aoeEventNote = "";
+    if (pendingAoE) {
+      const aoeResult = this.commitAoEFromChat(playerName, speakerName, pendingAoE, userId);
+      if (aoeResult) aoeEventNote = aoeResult;
+    }
+
     const sanitizedContent = content.replace(/\[([^\]]+)\]\s*:/g, "($1):");
-    const userMessage = `[${speakerName}]: ${sanitizedContent}`;
+    let userMessage = `[${speakerName}]: ${sanitizedContent}`;
+    if (aoeEventNote) userMessage += `\n${aoeEventNote}`;
+
     this.conversationHistory.push({ role: "user", content: userMessage });
     this.gameLogger?.playerMessage(playerName, speakerName, content);
 
     // Batch chat messages — waits BATCH_DELAY_MS for more messages before pushing
     this.schedulePushDMRequest();
+  }
+
+  /**
+   * Process a `pendingAoE` committed with a player chat message.
+   * Returns a short event note to embed in the DM-facing message, or null on failure.
+   */
+  private commitAoEFromChat(
+    playerName: string,
+    speakerName: string,
+    pendingAoE: PendingAoEPayload,
+    userId?: string,
+  ): string | null {
+    const combat = this.gameState.encounter?.combat;
+    if (!combat || combat.phase !== "active") return null;
+
+    const map = this.gameState.encounter?.map;
+    const mapWidth = map?.width ?? 20;
+    const mapHeight = map?.height ?? 20;
+
+    // Move existing AoE
+    if (pendingAoE.targetAoeId) {
+      const existing = combat.activeAoE?.find((a) => a.id === pendingAoE.targetAoeId);
+      if (!existing) return null;
+
+      // Patch geometry
+      existing.center = pendingAoE.origin;
+      if (pendingAoE.size !== undefined) existing.size = pendingAoE.size;
+      if (pendingAoE.direction !== undefined) existing.direction = pendingAoE.direction;
+      if (pendingAoE.endpoint !== undefined) {
+        existing.to = pendingAoE.endpoint;
+      }
+
+      // Recompute affected
+      const affectedTiles = computeAoETiles(
+        existing.shape,
+        existing.center,
+        {
+          size: existing.size,
+          direction: existing.direction,
+          from: existing.from,
+          to: existing.to,
+        },
+        mapWidth,
+        mapHeight,
+      );
+      const affected = this.combatantsOnTiles(combat, affectedTiles);
+
+      this.broadcast({
+        type: "server:combat_update",
+        combat,
+        map: this.gameState.encounter?.map ?? null,
+        timestamp: Date.now(),
+      });
+      this.markDirty();
+
+      const affectedStr = affected.length > 0 ? affected.join(", ") : "none";
+      return `[AoE moved: ${existing.label} relocated by ${speakerName} → ${formatGridPosition(existing.center)}. Affected: ${affectedStr}]`;
+    }
+
+    // New AoE placement
+    const color = this.resolveAoEColor(pendingAoE);
+
+    const aoe: AoEOverlay = {
+      id: crypto.randomUUID(),
+      shape: pendingAoE.shape,
+      center: pendingAoE.origin,
+      size: pendingAoE.size,
+      direction: pendingAoE.direction,
+      from: pendingAoE.shape === "rectangle" ? pendingAoE.origin : undefined,
+      to: pendingAoE.shape === "rectangle" ? pendingAoE.endpoint : undefined,
+      color,
+      label: pendingAoE.spellName ?? pendingAoE.label ?? "AoE",
+      persistent: pendingAoE.concentration ?? false,
+      casterName: speakerName,
+      ownerId: userId ?? playerName,
+      ownerName: speakerName,
+      rectanglePreset: pendingAoE.rectanglePreset,
+    };
+
+    if (!combat.activeAoE) combat.activeAoE = [];
+    combat.activeAoE.push(aoe);
+
+    const affectedTiles = computeAoETiles(
+      aoe.shape,
+      aoe.center,
+      { size: aoe.size, direction: aoe.direction, from: aoe.from, to: aoe.to },
+      mapWidth,
+      mapHeight,
+    );
+    const affected = this.combatantsOnTiles(combat, affectedTiles);
+
+    this.broadcast({
+      type: "server:combat_update",
+      combat,
+      map: this.gameState.encounter?.map ?? null,
+      timestamp: Date.now(),
+    });
+    this.markDirty();
+
+    const affectedStr = affected.length > 0 ? affected.join(", ") : "none";
+    const posLabel = formatGridPosition(aoe.center);
+    return `[AoE placed: ${aoe.label} (${aoe.shape}, size=${aoe.size ?? "?"}ft) at ${posLabel} by ${speakerName}. aoeId=${aoe.id}. Affected: ${affectedStr}]`;
+  }
+
+  /** Resolve AoE color from spell DB or explicit color field. */
+  private resolveAoEColor(pendingAoE: PendingAoEPayload): string {
+    if (pendingAoE.color) return pendingAoE.color;
+    if (pendingAoE.spellName) {
+      const spell = getSpell(pendingAoE.spellName);
+      // Try to pull primary damage type from the spell's ActionEffect
+      const action = spell?.effects?.action;
+      const damageBranch = action?.onFailedSave ?? action?.onHit;
+      const dmgType = damageBranch?.damage?.[0]?.type;
+      if (dmgType) return damageTypeColor(dmgType);
+    }
+    return "#BDBDBD"; // neutral fallback
+  }
+
+  /** Return names of combatants whose position falls on any of the given tiles. */
+  private combatantsOnTiles(combat: CombatState, tiles: { x: number; y: number }[]): string[] {
+    const affected: string[] = [];
+    for (const c of Object.values(combat.combatants)) {
+      if (!c.position) continue;
+      if (c.type !== "player" && (c.currentHP ?? 0) <= 0) continue;
+      if (tiles.some((t) => t.x === c.position!.x && t.y === c.position!.y)) {
+        affected.push(c.name);
+      }
+    }
+    return affected;
+  }
+
+  /** Handle owner-initiated AoE dismiss (client:dismiss_aoe). */
+  private handlePlayerDismissAoE(playerName: string, aoeId: string, userId?: string): void {
+    const combat = this.gameState.encounter?.combat;
+    if (!combat?.activeAoE) return;
+
+    const idx = combat.activeAoE.findIndex((a) => a.id === aoeId);
+    if (idx === -1) return;
+
+    const overlay = combat.activeAoE[idx];
+    // Only allow dismiss if the owner matches (by userId or playerName fallback)
+    const requesterId = userId ?? playerName;
+    if (overlay.ownerId && overlay.ownerId !== requesterId) {
+      log("game-state", `dismiss_aoe denied: ${playerName} does not own AoE ${aoeId}`);
+      return;
+    }
+
+    combat.activeAoE.splice(idx, 1);
+
+    this.broadcast({
+      type: "server:combat_update",
+      combat,
+      map: this.gameState.encounter?.map ?? null,
+      timestamp: Date.now(),
+    });
+    this.markDirty();
+  }
+
+  /** Update an existing AoE overlay by patching arbitrary fields. Recomputes affected combatants and broadcasts. */
+  updateAoE(
+    aoeId: string,
+    patch: Partial<
+      Pick<
+        AoEOverlay,
+        "center" | "direction" | "size" | "shape" | "from" | "to" | "color" | "label" | "persistent"
+      >
+    >,
+  ): ToolResponse {
+    const combat = this.gameState.encounter?.combat;
+    if (!combat) {
+      return toResponse("No active combat", {}, true, ["Start combat first."]);
+    }
+    if (!combat.activeAoE || combat.activeAoE.length === 0) {
+      return toResponse("No active AoE overlays", {}, true, ["Place an AoE first with show_aoe."]);
+    }
+
+    const overlay = combat.activeAoE.find((a) => a.id === aoeId);
+    if (!overlay) {
+      return toResponse(`AoE with ID "${aoeId}" not found`, { aoeId }, true, [
+        `Active AoE IDs: ${combat.activeAoE.map((a) => `${a.id} (${a.label})`).join(", ")}`,
+      ]);
+    }
+
+    // Apply patch
+    if (patch.center !== undefined) overlay.center = patch.center;
+    if (patch.direction !== undefined) overlay.direction = patch.direction;
+    if (patch.size !== undefined) overlay.size = patch.size;
+    if (patch.shape !== undefined) overlay.shape = patch.shape;
+    if (patch.from !== undefined) overlay.from = patch.from;
+    if (patch.to !== undefined) overlay.to = patch.to;
+    if (patch.color !== undefined) overlay.color = patch.color;
+    if (patch.label !== undefined) overlay.label = patch.label;
+    if (patch.persistent !== undefined) overlay.persistent = patch.persistent;
+
+    const map = this.gameState.encounter?.map;
+    const mapWidth = map?.width ?? 20;
+    const mapHeight = map?.height ?? 20;
+
+    const affectedTiles = computeAoETiles(
+      overlay.shape,
+      overlay.center,
+      {
+        size: overlay.size,
+        direction: overlay.direction,
+        from: overlay.from,
+        to: overlay.to,
+      },
+      mapWidth,
+      mapHeight,
+    );
+    const affected = this.combatantsOnTiles(combat, affectedTiles);
+
+    this.broadcast({
+      type: "server:combat_update",
+      combat,
+      map: this.gameState.encounter?.map ?? null,
+      timestamp: Date.now(),
+    });
+    this.markDirty();
+
+    return toResponse(
+      `AoE '${overlay.label}' updated. Affected: ${affected.length > 0 ? affected.join(", ") : "none"}`,
+      { aoeId: overlay.id, label: overlay.label, affected },
+    );
   }
 
   // ─── Start Story ───

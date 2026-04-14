@@ -5,3 +5,4 @@ export * from "./grid";
 export * from "./encounter";
 export * from "./fuzzy-lookup";
 export * from "./effect-resolver";
+export * from "./damage-color";
