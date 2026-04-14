@@ -7,30 +7,25 @@ interface AoEControlChipProps {
   stagedAoE: StagedAoE;
   counts: AoECounts;
   onCancel: () => void;
-  /** Position in screen coordinates to anchor the chip (near origin tile) */
-  screenX: number;
-  screenY: number;
 }
 
 function shapeSummary(aoe: StagedAoE): string {
-  const shapeStr =
-    aoe.shape === "rectangle"
-      ? aoe.rectanglePreset === "line"
-        ? "line"
-        : aoe.rectanglePreset === "cube"
-          ? "cube"
-          : "rectangle"
-      : aoe.shape;
-  return `${aoe.size}ft ${shapeStr}`;
+  if (aoe.shape === "rectangle") {
+    const preset = aoe.rectanglePreset ?? "free";
+    if (preset === "cube") return `${aoe.size}ft cube`;
+    if (preset === "line") return `${aoe.length ?? aoe.size}ft line`;
+    // free: derive dimensions from rectFrom/rectTo
+    if (aoe.rectFrom && aoe.rectTo) {
+      const w = Math.abs(aoe.rectTo.x - aoe.rectFrom.x) + 1;
+      const h = Math.abs(aoe.rectTo.y - aoe.rectFrom.y) + 1;
+      return `${w * 5}×${h * 5}ft rectangle`;
+    }
+    return `${aoe.size}ft rectangle`;
+  }
+  return `${aoe.size}ft ${aoe.shape}`;
 }
 
-export function AoEControlChip({
-  stagedAoE,
-  counts,
-  onCancel,
-  screenX,
-  screenY,
-}: AoEControlChipProps) {
+export function AoEControlChip({ stagedAoE, counts, onCancel }: AoEControlChipProps) {
   const [showNames, setShowNames] = useState(false);
 
   const totalTargets = counts.enemies.length + counts.allies.length + counts.self.length;
@@ -56,17 +51,13 @@ export function AoEControlChip({
   const allNames = [...counts.enemies, ...counts.allies, ...counts.self];
 
   return (
-    <div
-      className="fixed z-50 pointer-events-auto select-none"
-      style={{ left: screenX, top: screenY - 12, transform: "translate(-50%, -100%)" }}
-    >
+    <div className="pointer-events-auto select-none">
       <div
         className="bg-gray-900/95 border rounded-lg shadow-xl text-xs backdrop-blur-sm"
-        style={{ borderColor: stagedAoE.color + "80", minWidth: 170 }}
+        style={{ borderColor: stagedAoE.color + "80", minWidth: 180 }}
       >
-        {/* Header: spell name + shape */}
         <div className="px-3 pt-2 pb-1">
-          <div className="font-semibold text-gray-100" style={{ color: stagedAoE.color }}>
+          <div className="font-semibold" style={{ color: stagedAoE.color }}>
             {stagedAoE.spellName ?? stagedAoE.label ?? "AoE Template"}
           </div>
           <div className="text-gray-400 mt-0.5">
@@ -75,7 +66,6 @@ export function AoEControlChip({
           </div>
         </div>
 
-        {/* Targets line (hover to expand) */}
         <div
           className="px-3 py-1 border-t border-gray-700/40 cursor-pointer hover:bg-gray-800/40 transition-colors"
           onMouseEnter={() => setShowNames(true)}
@@ -103,7 +93,6 @@ export function AoEControlChip({
           )}
         </div>
 
-        {/* Cancel button */}
         <div className="px-3 py-1.5 border-t border-gray-700/40">
           <button
             onClick={onCancel}

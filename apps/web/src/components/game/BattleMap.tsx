@@ -4,6 +4,7 @@ import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { InitiativeTracker } from "./InitiativeTracker";
 import { AoEToolbarPopover } from "./AoEToolbarPopover";
 import { AoEControlChip } from "./AoEControlChip";
+import { AoEShapeOverlay, overlayToShape } from "./AoEShapeOverlay";
 import type {
   BattleMapState,
   CombatState,
@@ -17,7 +18,12 @@ import type {
   ConditionEntry,
   MapTile,
 } from "@unseen-servant/shared/types";
-import { formatGridPosition, gridDistance, computeAoETiles } from "@unseen-servant/shared/utils";
+import {
+  formatGridPosition,
+  gridDistance,
+  computeAoETiles,
+  type AoEShape,
+} from "@unseen-servant/shared/utils";
 import { getHP, getAC } from "@unseen-servant/shared/character";
 import type { UseAoEPlacementResult } from "@/hooks/useAoEPlacement";
 
@@ -529,13 +535,15 @@ export function BattleMap({
 
     const handleMouseMove = (e: MouseEvent) => {
       const ap = aoePlacementRef.current;
-      if (!ap || ap.mode === "idle") return;
+      if (!ap || ap.mode === "idle" || !ap.stagedAoE) return;
       if (!aoeDragRef.current.active) return;
+      const anchor = aoeDragRef.current.originTile;
+      if (!anchor) return;
+      // Cube uses single-click semantics — no drag update needed.
+      if (ap.stagedAoE.shape === "rectangle" && ap.stagedAoE.rectanglePreset === "cube") return;
       const world = pixelToWorld(e.clientX, e.clientY);
-      const origin = aoeDragRef.current.originTile;
-      if (origin) {
-        ap.setAim(origin, world);
-      }
+      const tile = { x: Math.floor(world.x), y: Math.floor(world.y) };
+      ap.updateAim({ tile, world, anchorTile: anchor });
     };
 
     const handleMouseUp = () => {
@@ -668,6 +676,9 @@ export function BattleMap({
           direction: aoe.direction,
           from: aoe.from,
           to: aoe.to,
+          length: aoe.length,
+          width: aoe.width,
+          cornerOrigin: aoe.cornerOrigin,
         },
         map.width,
         map.height,
@@ -684,6 +695,18 @@ export function BattleMap({
     }
     return tileMap;
   }, [combat.activeAoE, map.width, map.height]);
+
+  // Build AoEShape objects for SVG rendering of committed overlays.
+  const committedAoEShapes = useMemo(() => {
+    const list = combat.activeAoE;
+    if (!list || list.length === 0) return [] as Array<{ aoe: AoEOverlay; shape: AoEShape }>;
+    const out: Array<{ aoe: AoEOverlay; shape: AoEShape }> = [];
+    for (const aoe of list) {
+      const shape = overlayToShape(aoe);
+      if (shape) out.push({ aoe, shape });
+    }
+    return out;
+  }, [combat.activeAoE]);
 
   // AoE center labels
   const aoeCenters = useMemo(() => {
@@ -817,22 +840,6 @@ export function BattleMap({
   // Suppress the dragRender lint warning -- it is intentionally used for side-effect re-render
   void dragRender;
 
-  // Compute screen position for AoEControlChip anchored to the staged template origin.
-  // gridContainerRef is inside the zoom transform div so getBoundingClientRect() already
-  // reflects the zoom scaling. The tile pixel offset must also be scaled.
-  const chipScreenPos = useMemo((): { x: number; y: number } | null => {
-    const staged = aoePlacement?.stagedAoE;
-    if (!staged || !gridContainerRef.current) return null;
-    const gridRect = gridContainerRef.current.getBoundingClientRect();
-    // Tile center in unscaled grid coords → multiply by zoom for screen offset from grid origin
-    const tileUnscaledX = staged.origin.x * (TILE_SIZE + TILE_GAP) + TILE_SIZE / 2;
-    const tileUnscaledY = staged.origin.y * (TILE_SIZE + TILE_GAP);
-    const screenX = gridRect.left + tileUnscaledX * zoom;
-    const screenY = gridRect.top + tileUnscaledY * zoom;
-    return { x: screenX, y: screenY };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [aoePlacement?.stagedAoE, panX, panY, zoom]);
-
   return (
     <div className={`flex flex-col bg-[#111114] shrink-0 ${className ?? ""}`} style={style}>
       {/* AoE pulse animation */}
@@ -865,7 +872,15 @@ export function BattleMap({
         onContextMenu={(e) => e.preventDefault()}
       >
         {/* Zoom Controls + AoE Toolbar */}
-        <div className="absolute top-2 right-2 z-10 flex gap-1.5">
+        <div className="absolute top-2 right-2 z-10 flex gap-1.5 items-start">
+          {/* AoE control chip (appears to the left of the Place AoE button during placement) */}
+          {aoePlacement?.stagedAoE && (
+            <AoEControlChip
+              stagedAoE={aoePlacement.stagedAoE}
+              counts={aoePlacement.affectedCombatants}
+              onCancel={aoePlacement.cancel}
+            />
+          )}
           {/* AoE placement toolbar (only when placement hook is provided) */}
           {aoePlacement && (
             <div className="relative">
@@ -989,15 +1004,15 @@ export function BattleMap({
                   cursor: aoePlacement && aoePlacement.mode !== "idle" ? "crosshair" : undefined,
                 }}
                 onMouseDown={(e) => {
-                  // Only handle left-click in AoE mode
                   if (!aoePlacement || aoePlacement.mode === "idle" || e.button !== 0) return;
+                  if (!aoePlacement.stagedAoE) return;
                   const tile = pixelToTile(e.clientX, e.clientY);
                   if (!tile) return;
                   e.stopPropagation();
                   aoeDragRef.current.active = true;
                   aoeDragRef.current.originTile = tile;
                   const world = pixelToWorld(e.clientX, e.clientY);
-                  aoePlacement.setAim(tile, world);
+                  aoePlacement.updateAim({ tile, world, anchorTile: tile });
                 }}
                 onClick={(e) => {
                   // Click on own committed AoE in idle mode → enter move mode
@@ -1270,6 +1285,16 @@ export function BattleMap({
                     </div>
                   );
                 })}
+
+                {/* ─── Layer 2.5: AoE Shape SVG overlay ─── */}
+                <AoEShapeOverlay
+                  committed={committedAoEShapes}
+                  staged={aoePlacement?.stagedAoE ?? null}
+                  stagedShape={aoePlacement?.shape ?? null}
+                  width={gridWidthPx}
+                  height={gridHeightPx}
+                  tileUnit={TILE_SIZE + TILE_GAP}
+                />
 
                 {/* ─── Layer 3: Measurement SVG overlay ─── */}
                 {measureLine && (
@@ -1605,17 +1630,6 @@ export function BattleMap({
 
           return null;
         })()}
-
-      {/* ─── AoE Control Chip (rendered in fixed space, anchored to origin tile) ─── */}
-      {aoePlacement?.stagedAoE && chipScreenPos && (
-        <AoEControlChip
-          stagedAoE={aoePlacement.stagedAoE}
-          counts={aoePlacement.affectedCombatants}
-          onCancel={aoePlacement.cancel}
-          screenX={chipScreenPos.x}
-          screenY={chipScreenPos.y}
-        />
-      )}
     </div>
   );
 }

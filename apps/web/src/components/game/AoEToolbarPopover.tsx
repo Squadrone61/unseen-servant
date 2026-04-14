@@ -54,6 +54,15 @@ export function AoEToolbarPopover({
     return () => document.removeEventListener("keydown", handleKey);
   }, [onClose]);
 
+  const sizeLabel =
+    selectedShape === "rect-free"
+      ? "Size (ft) — drag sets both axes"
+      : selectedShape === "rect-line"
+        ? "Size (ft) — drag sets length"
+        : selectedShape === "rect-cube"
+          ? "Size (ft) — click to place"
+          : "Size (ft)";
+
   const handleStart = () => {
     const sizeFt = Math.max(5, parseInt(sizeInput, 10) || 20);
     let shape: "sphere" | "cone" | "rectangle" = "sphere";
@@ -121,7 +130,7 @@ export function AoEToolbarPopover({
 
       {/* Size input */}
       <div className="mb-3">
-        <label className="text-xs text-gray-500 block mb-1">Size (ft)</label>
+        <label className="text-xs text-gray-500 block mb-1">{sizeLabel}</label>
         <input
           type="number"
           min={5}

@@ -201,10 +201,16 @@ export interface AoEOverlay {
   size?: number;
   /** Direction in degrees, 0=north, 90=east — cone only. */
   direction?: number;
-  /** Starting corner of the rectangle — rectangle only. */
+  /** Starting corner of the rectangle — legacy axis-aligned rectangles only. */
   from?: GridPosition;
-  /** Opposite corner of the rectangle — rectangle only. */
+  /** Opposite corner of the rectangle — legacy axis-aligned rectangles only. */
   to?: GridPosition;
+  /** Rectangle length in feet along `direction` (oriented rectangle). */
+  length?: number;
+  /** Rectangle width in feet across `direction` (oriented rectangle). */
+  width?: number;
+  /** If true, `center` is a grid intersection (corner) rather than a tile position. */
+  cornerOrigin?: boolean;
   color: string; // direct RGB hex
   label: string; // "Fireball", "Wall of Fire"
   persistent: boolean; // stays on map until dismissed?

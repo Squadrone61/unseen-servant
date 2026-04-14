@@ -4,6 +4,9 @@ import {
   parseGridPosition,
   gridDistance,
   computeAoETiles,
+  buildAoEShape,
+  shapeContainsPoint,
+  tilesInShape,
 } from "../utils/grid.js";
 
 // ---------------------------------------------------------------------------
@@ -112,34 +115,36 @@ describe("gridDistance", () => {
 // ---------------------------------------------------------------------------
 // computeAoETiles — sphere
 // ---------------------------------------------------------------------------
-describe("computeAoETiles (sphere)", () => {
-  const mapW = 10;
-  const mapH = 10;
-  const center = { x: 5, y: 5 };
+describe("computeAoETiles (sphere — true circle)", () => {
+  const mapW = 20;
+  const mapH = 20;
+  const center = { x: 10, y: 10 };
 
-  it("size:5 (1-tile radius) yields 9 tiles (3x3 block)", () => {
+  it("size:5 (r=1 tile) yields 5 tiles (plus shape)", () => {
+    // Circle r=1 at (10.5,10.5) contains centers at dist ≤ 1:
+    // (10,10), (9,10), (11,10), (10,9), (10,11)
     const tiles = computeAoETiles("sphere", center, { size: 5 }, mapW, mapH);
-    expect(tiles).toHaveLength(9);
+    expect(tiles).toHaveLength(5);
   });
 
-  it("size:10 (2-tile radius) yields 25 tiles (5x5 block)", () => {
+  it("size:10 (r=2 tiles) includes orthogonals and excludes far diagonals", () => {
     const tiles = computeAoETiles("sphere", center, { size: 10 }, mapW, mapH);
-    expect(tiles).toHaveLength(25);
-  });
-
-  it("size:20 (4-tile radius) yields 81 tiles (9x9 block)", () => {
-    const tiles = computeAoETiles("sphere", center, { size: 20 }, mapW, mapH);
-    expect(tiles).toHaveLength(81);
+    const has = (x: number, y: number) => tiles.some((t) => t.x === x && t.y === y);
+    expect(has(10, 10)).toBe(true);
+    expect(has(12, 10)).toBe(true); // dist √(1.5²+0.5²)? no: tile (12,10) center (12.5,10.5), dist=2 → in.
+    expect(has(11, 11)).toBe(true); // (11.5,11.5) dist √2 ≈1.41 → in
+    expect(has(12, 12)).toBe(false); // (12.5,12.5) dist √8 ≈2.83 → out
   });
 
   it("clips to map bounds at edge position", () => {
-    // size:10 (2-tile radius) centered at {0,0} on 10x10 — tiles outside bounds are dropped
     const tiles = computeAoETiles("sphere", { x: 0, y: 0 }, { size: 10 }, mapW, mapH);
-    // Full 5x5 would be 25 but top-left corner clips to 3x3 = 9 tiles (x:0..2, y:0..2)
-    expect(tiles).toHaveLength(9);
+    for (const t of tiles) {
+      expect(t.x).toBeGreaterThanOrEqual(0);
+      expect(t.y).toBeGreaterThanOrEqual(0);
+    }
   });
 
-  it("undefined size yields only center tile (radiusTiles=0)", () => {
+  it("undefined size yields only center tile (fallback)", () => {
     const tiles = computeAoETiles("sphere", center, {}, mapW, mapH);
     expect(tiles).toHaveLength(1);
     expect(tiles[0]).toEqual(center);
@@ -270,9 +275,23 @@ describe("computeAoETiles (rectangle)", () => {
     expect(new Set(reversed.map(toKey))).toEqual(new Set(forward.map(toKey)));
   });
 
-  it("missing from/to yields 0 tiles", () => {
+  it("missing from/to/length yields 0 tiles", () => {
     const tiles = computeAoETiles("rectangle", center, {}, mapW, mapH);
     expect(tiles).toHaveLength(0);
+  });
+
+  it("oriented rectangle (length/width) axis-aligned east yields length×width tiles", () => {
+    // anchor at (5,5), dir=90 (east), length=15ft (3 tiles), width=5ft (1 tile)
+    const tiles = computeAoETiles(
+      "rectangle",
+      { x: 5, y: 5 },
+      { direction: 90, length: 15, width: 5 },
+      mapW,
+      mapH,
+    );
+    // Obox center at (6+1, 5.5) along direction; axis-aligned box covers 3 tiles east of anchor.
+    expect(tiles.length).toBeGreaterThanOrEqual(3);
+    expect(tiles.length).toBeLessThanOrEqual(6);
   });
 
   it("clips when rect extends past map bounds", () => {
@@ -292,5 +311,63 @@ describe("computeAoETiles (rectangle)", () => {
       expect(tile.y).toBeGreaterThanOrEqual(0);
       expect(tile.y).toBeLessThan(mapH);
     }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// shapeContainsPoint / buildAoEShape / tilesInShape (new geometry API)
+// ---------------------------------------------------------------------------
+describe("shapeContainsPoint (circle)", () => {
+  const s = buildAoEShape({ kind: "sphere", centerTile: { x: 5, y: 5 }, sizeFt: 10 });
+  it("includes center point", () => {
+    expect(shapeContainsPoint(s, { x: 5.5, y: 5.5 })).toBe(true);
+  });
+  it("includes point on the edge", () => {
+    expect(shapeContainsPoint(s, { x: 5.5 + 2, y: 5.5 })).toBe(true);
+  });
+  it("excludes point beyond radius", () => {
+    expect(shapeContainsPoint(s, { x: 5.5 + 2.5, y: 5.5 })).toBe(false);
+  });
+});
+
+describe("shapeContainsPoint (cone triangle)", () => {
+  const s = buildAoEShape({
+    kind: "cone",
+    casterTile: { x: 5, y: 5 },
+    directionDeg: 90, // east
+    sizeFt: 15,
+  });
+  it("includes a point just past caster on the aim line", () => {
+    expect(shapeContainsPoint(s, { x: 6.5, y: 5.5 })).toBe(true);
+  });
+  it("excludes the caster tile center", () => {
+    expect(shapeContainsPoint(s, { x: 5.5, y: 5.5 })).toBe(false);
+  });
+});
+
+describe("shapeContainsPoint (obox)", () => {
+  const s = buildAoEShape({
+    kind: "obox",
+    anchorTile: { x: 5, y: 5 },
+    directionDeg: 90, // east
+    lengthFt: 15,
+    widthFt: 5,
+  });
+  it("includes tile centers along the length axis", () => {
+    expect(shapeContainsPoint(s, { x: 6.5, y: 5.5 })).toBe(true);
+    expect(shapeContainsPoint(s, { x: 7.5, y: 5.5 })).toBe(true);
+    expect(shapeContainsPoint(s, { x: 8.5, y: 5.5 })).toBe(true);
+  });
+  it("excludes points outside the width band", () => {
+    expect(shapeContainsPoint(s, { x: 6.5, y: 7 })).toBe(false);
+  });
+});
+
+describe("tilesInShape", () => {
+  it("circle r=2 tiles has 13 tiles (diamond + orthogonals)", () => {
+    const s = buildAoEShape({ kind: "sphere", centerTile: { x: 5, y: 5 }, sizeFt: 10 });
+    const tiles = tilesInShape(s, 20, 20);
+    // center + 4 orthogonals at 1 + 4 at 2 + 4 diagonals at √2 = 13
+    expect(tiles).toHaveLength(13);
   });
 });

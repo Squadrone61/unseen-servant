@@ -40,6 +40,12 @@ export interface PendingAoEPayload {
   size?: number;
   direction?: number;
   endpoint?: GridPosition;
+  /** Oriented rectangle length in feet along `direction`. */
+  length?: number;
+  /** Oriented rectangle width in feet across `direction`. */
+  width?: number;
+  /** If true, `origin` is a grid intersection (corner) rather than a tile center. Used by sphere/cube player placements. */
+  cornerOrigin?: boolean;
   spellName?: string;
   concentration?: boolean;
   color?: string;

@@ -34,6 +34,53 @@ import type {
 } from "@unseen-servant/shared/types";
 import type { DisplayMessage } from "@/components/chat/ChatPanel";
 import type { StagedAoE } from "@/hooks/useAoEPlacement";
+import type { PendingAoEPayload } from "@unseen-servant/shared/types";
+
+function buildPendingAoEPayload(staged: StagedAoE): PendingAoEPayload {
+  const base = {
+    shape: staged.shape,
+    spellName: staged.spellName,
+    concentration: staged.concentration,
+    color: staged.color,
+    label: staged.label,
+    rectanglePreset: staged.rectanglePreset,
+    targetAoeId: staged.targetAoeId,
+    size: staged.size,
+  };
+  if (staged.shape === "sphere") {
+    // origin is a grid corner (world-integer tile-units).
+    return { ...base, origin: staged.origin, cornerOrigin: true };
+  }
+  if (staged.shape === "cone") {
+    return { ...base, origin: staged.origin, direction: staged.direction };
+  }
+  // rectangle
+  const preset = staged.rectanglePreset ?? "free";
+  if (preset === "free") {
+    return {
+      ...base,
+      origin: staged.rectFrom ?? staged.origin,
+      endpoint: staged.rectTo ?? staged.origin,
+    };
+  }
+  if (preset === "cube") {
+    return {
+      ...base,
+      origin: staged.origin,
+      cornerOrigin: true,
+      length: staged.size,
+      width: staged.size,
+    };
+  }
+  // line
+  return {
+    ...base,
+    origin: staged.origin,
+    direction: staged.direction,
+    length: staged.length,
+    width: staged.width ?? 5,
+  };
+}
 
 /** Messages that belong in the main story chat */
 function isStoryMessage(msg: ServerMessage): boolean {
@@ -574,18 +621,7 @@ function GameContent({ roomCode, playerName }: { roomCode: string; playerName: s
         type: "client:chat",
         content,
         playerName,
-        pendingAoE: {
-          shape: staged.shape,
-          origin: staged.origin,
-          size: staged.size,
-          direction: staged.direction,
-          spellName: staged.spellName,
-          concentration: staged.concentration,
-          color: staged.color,
-          label: staged.label,
-          rectanglePreset: staged.rectanglePreset,
-          targetAoeId: staged.targetAoeId,
-        },
+        pendingAoE: buildPendingAoEPayload(staged),
       });
       aoePlacement.clearStaged();
     },
@@ -779,8 +815,6 @@ function GameContent({ roomCode, playerName }: { roomCode: string; playerName: s
                 storyStarted && combatState?.phase === "active"
                   ? (params) => {
                       aoePlacement.startPlacement(params);
-                      // Collapse the character sheet drawer after entering placement mode
-                      setShowCharacterDrawer(false);
                     }
                   : undefined
               }

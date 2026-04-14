@@ -481,6 +481,8 @@ export class GameStateManager {
       existing.center = pendingAoE.origin;
       if (pendingAoE.size !== undefined) existing.size = pendingAoE.size;
       if (pendingAoE.direction !== undefined) existing.direction = pendingAoE.direction;
+      if (pendingAoE.length !== undefined) existing.length = pendingAoE.length;
+      if (pendingAoE.width !== undefined) existing.width = pendingAoE.width;
       if (pendingAoE.endpoint !== undefined) {
         existing.to = pendingAoE.endpoint;
       }
@@ -494,6 +496,9 @@ export class GameStateManager {
           direction: existing.direction,
           from: existing.from,
           to: existing.to,
+          length: existing.length,
+          width: existing.width,
+          cornerOrigin: existing.cornerOrigin,
         },
         mapWidth,
         mapHeight,
@@ -521,8 +526,11 @@ export class GameStateManager {
       center: pendingAoE.origin,
       size: pendingAoE.size,
       direction: pendingAoE.direction,
-      from: pendingAoE.shape === "rectangle" ? pendingAoE.origin : undefined,
+      from: pendingAoE.shape === "rectangle" && pendingAoE.endpoint ? pendingAoE.origin : undefined,
       to: pendingAoE.shape === "rectangle" ? pendingAoE.endpoint : undefined,
+      length: pendingAoE.shape === "rectangle" ? pendingAoE.length : undefined,
+      width: pendingAoE.shape === "rectangle" ? pendingAoE.width : undefined,
+      cornerOrigin: pendingAoE.cornerOrigin,
       color,
       label: pendingAoE.spellName ?? pendingAoE.label ?? "AoE",
       persistent: pendingAoE.concentration ?? false,
@@ -538,7 +546,15 @@ export class GameStateManager {
     const affectedTiles = computeAoETiles(
       aoe.shape,
       aoe.center,
-      { size: aoe.size, direction: aoe.direction, from: aoe.from, to: aoe.to },
+      {
+        size: aoe.size,
+        direction: aoe.direction,
+        from: aoe.from,
+        to: aoe.to,
+        length: aoe.length,
+        width: aoe.width,
+        cornerOrigin: aoe.cornerOrigin,
+      },
       mapWidth,
       mapHeight,
     );
@@ -660,6 +676,9 @@ export class GameStateManager {
         direction: overlay.direction,
         from: overlay.from,
         to: overlay.to,
+        length: overlay.length,
+        width: overlay.width,
+        cornerOrigin: overlay.cornerOrigin,
       },
       mapWidth,
       mapHeight,
