@@ -12,9 +12,9 @@ import { log } from "./logger.js";
 const logPath = path.join(process.env.UNSEEN_CAMPAIGNS_DIR || ".", "..", "bridge.log");
 const logStream = fs.createWriteStream(logPath, { flags: "a" });
 const origStderrWrite = process.stderr.write.bind(process.stderr);
-process.stderr.write = ((chunk: any, ...args: any[]) => {
-  logStream.write(chunk);
-  return origStderrWrite(chunk, ...args);
+process.stderr.write = ((chunk: unknown, ...args: unknown[]) => {
+  logStream.write(chunk as string | Uint8Array);
+  return (origStderrWrite as (...a: unknown[]) => boolean)(chunk, ...args);
 }) as typeof process.stderr.write;
 
 log("mcp-bridge", `=== Bridge started at ${new Date().toISOString()} ===`);

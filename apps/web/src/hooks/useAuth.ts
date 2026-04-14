@@ -36,6 +36,7 @@ export function useAuth(): UseAuthReturn {
     }
 
     if (authError) {
+      // eslint-disable-next-line no-console -- surface OAuth errors in browser console
       console.error("Auth error:", authError);
       const cleanUrl = window.location.pathname;
       window.history.replaceState({}, "", cleanUrl);

@@ -83,9 +83,11 @@ export function useWebSocket({
           if (result.success) {
             onMessageRef.current(result.data);
           } else {
+            // eslint-disable-next-line no-console -- surface protocol drift in dev
             console.warn("Invalid server message:", data);
           }
         } catch {
+          // eslint-disable-next-line no-console -- surface malformed frames
           console.warn("Failed to parse message:", event.data);
         }
       };
@@ -119,6 +121,7 @@ export function useWebSocket({
       };
 
       ws.onerror = (error) => {
+        // eslint-disable-next-line no-console -- surface WS transport errors
         console.error("WebSocket error:", error);
       };
     }

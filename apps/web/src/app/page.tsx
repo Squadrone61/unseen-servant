@@ -3,6 +3,7 @@
 import { Suspense, useState, useEffect, useRef, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 
 import { useAuth } from "@/hooks/useAuth";
 import { useCharacterLibrary } from "@/hooks/useCharacterLibrary";
@@ -154,7 +155,7 @@ function HomePageInner() {
       {/* ── Nav Bar ── */}
       <nav className="flex items-center justify-between h-11 px-7 bg-gray-950 border-b border-gray-700/25 shrink-0">
         <div className="flex items-center gap-2">
-          <img src="/icon.svg" alt="Unseen Servant" className="w-5 h-5" />
+          <Image src="/icon.svg" alt="Unseen Servant" width={20} height={20} className="w-5 h-5" />
         </div>
 
         <div className="flex items-center gap-2.5">
@@ -168,6 +169,7 @@ function HomePageInner() {
             <>
               <div className="flex items-center gap-2">
                 {user.avatarUrl && (
+                  // eslint-disable-next-line @next/next/no-img-element -- external Google avatar URL, no remote host config
                   <img src={user.avatarUrl} alt="" className="w-6 h-6 rounded-full" />
                 )}
                 <span className="text-xs text-gray-400">{user.displayName}</span>
@@ -216,7 +218,7 @@ function HomePageInner() {
           background: "radial-gradient(ellipse at center, #1a1610 0%, #111318 70%)",
         }}
       >
-        <img src="/icon.svg" alt="" className="w-24 h-24" />
+        <Image src="/icon.svg" alt="" width={96} height={96} className="w-24 h-24" />
         <h1
           className="text-4xl font-bold text-amber-200/90"
           style={{

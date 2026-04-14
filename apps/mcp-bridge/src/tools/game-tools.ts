@@ -14,13 +14,22 @@ import type { ToolResponse } from "../services/game-state-manager.js";
 import type { GameLogger } from "../services/game-logger.js";
 
 // Format positions in combat state for AI readability
-function formatPositionsForOutput(state: any): any {
+function formatPositionsForOutput(state: unknown): unknown {
   // Deep clone to avoid mutating game state
-  const output = JSON.parse(JSON.stringify(state));
-  if (output.gameState?.encounter?.combat?.combatants) {
-    for (const c of Object.values(output.gameState.encounter.combat.combatants) as any[]) {
+  const output = JSON.parse(JSON.stringify(state)) as {
+    gameState?: {
+      encounter?: {
+        combat?: { combatants?: Record<string, { position?: { x: number; y: number } }> };
+      };
+    };
+  };
+  const combatants = output.gameState?.encounter?.combat?.combatants;
+  if (combatants) {
+    for (const c of Object.values(combatants)) {
       if (c.position) {
-        c.position = formatGridPosition(c.position);
+        (c as { position: string | { x: number; y: number } }).position = formatGridPosition(
+          c.position,
+        );
       }
     }
   }

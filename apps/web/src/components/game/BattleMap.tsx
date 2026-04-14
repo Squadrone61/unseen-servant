@@ -372,7 +372,7 @@ export function BattleMap({
       setShowReachable(true);
       setDragRender((prev) => prev + 1);
     },
-    [isMyTurn, myCombatant],
+    [isMyTurn, myCombatant, aoePlacement],
   );
 
   useEffect(() => {
@@ -472,21 +472,24 @@ export function BattleMap({
   const panYRef = useRef(panY);
   panYRef.current = panY;
 
-  const handlePanStart = useCallback((e: React.MouseEvent) => {
-    // Middle button (1) or right button (2) for pan — left-click reserved for tokens
-    if (e.button !== 1 && e.button !== 2) return;
-    // Suppress pan when AoE placement is active (left-click/drag is for aiming)
-    if (aoePlacement && aoePlacement.mode !== "idle") return;
-    e.preventDefault();
+  const handlePanStart = useCallback(
+    (e: React.MouseEvent) => {
+      // Middle button (1) or right button (2) for pan — left-click reserved for tokens
+      if (e.button !== 1 && e.button !== 2) return;
+      // Suppress pan when AoE placement is active (left-click/drag is for aiming)
+      if (aoePlacement && aoePlacement.mode !== "idle") return;
+      e.preventDefault();
 
-    const ps = panStateRef.current;
-    ps.active = true;
-    ps.startX = e.clientX;
-    ps.startY = e.clientY;
-    ps.startPanX = panXRef.current;
-    ps.startPanY = panYRef.current;
-    setIsPanning(true);
-  }, []);
+      const ps = panStateRef.current;
+      ps.active = true;
+      ps.startX = e.clientX;
+      ps.startY = e.clientY;
+      ps.startPanX = panXRef.current;
+      ps.startPanY = panYRef.current;
+      setIsPanning(true);
+    },
+    [aoePlacement],
+  );
 
   useEffect(() => {
     const handlePanMove = (e: MouseEvent) => {

@@ -20,9 +20,9 @@ export async function startServer(): Promise<void> {
   const logPath = path.join(campaignsDir, "..", "bridge.log");
   const logStream = fs.createWriteStream(logPath, { flags: "a" });
   const origWrite = process.stderr.write.bind(process.stderr);
-  process.stderr.write = ((chunk: any, ...args: any[]) => {
-    logStream.write(chunk);
-    return origWrite(chunk, ...args);
+  process.stderr.write = ((chunk: unknown, ...args: unknown[]) => {
+    logStream.write(chunk as string | Uint8Array);
+    return (origWrite as (...a: unknown[]) => boolean)(chunk, ...args);
   }) as typeof process.stderr.write;
   console.error(`\n[bridge] === Started at ${new Date().toISOString()} ===`);
 

@@ -1,3 +1,4 @@
+/* global process, console, setTimeout */
 // Start dev servers, run Playwright tests, then clean up.
 // Usage: node scripts/test.mjs [playwright args...]
 
@@ -16,7 +17,9 @@ function cleanup() {
   for (const p of procs) {
     try {
       p.kill();
-    } catch {}
+    } catch {
+      /* ignore */
+    }
   }
 }
 process.on("exit", cleanup);

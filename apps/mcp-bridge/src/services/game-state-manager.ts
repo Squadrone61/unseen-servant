@@ -575,9 +575,10 @@ export class GameStateManager {
   private combatantsOnTiles(combat: CombatState, tiles: { x: number; y: number }[]): string[] {
     const affected: string[] = [];
     for (const c of Object.values(combat.combatants)) {
-      if (!c.position) continue;
+      const pos = c.position;
+      if (!pos) continue;
       if (c.type !== "player" && (c.currentHP ?? 0) <= 0) continue;
-      if (tiles.some((t) => t.x === c.position!.x && t.y === c.position!.y)) {
+      if (tiles.some((t) => t.x === pos.x && t.y === pos.y)) {
         affected.push(c.name);
       }
     }
@@ -1649,17 +1650,17 @@ export class GameStateManager {
       return c;
     });
 
-    if (!inCombat) {
+    if (!inCombat || !combat) {
       // Exploration mode — characters only
       const text = `[${mode.toUpperCase()}] ${characters.length} characters`;
       return toResponse(text, { mode, characters });
     }
 
     // Combat mode — turn order + HP/conditions
-    const activeId = combat!.turnOrder[combat!.turnIndex];
-    const turnOrder = combat!.turnOrder
+    const activeId = combat.turnOrder[combat.turnIndex];
+    const turnOrder = combat.turnOrder
       .map((id) => {
-        const cb = combat!.combatants[id];
+        const cb = combat.combatants[id];
         if (!cb) return null;
         const entry: Record<string, unknown> = {
           name: cb.name,
@@ -1706,21 +1707,21 @@ export class GameStateManager {
       })
       .filter(Boolean);
 
-    const activeName = combat!.combatants[activeId]?.name ?? "unknown";
+    const activeName = combat.combatants[activeId]?.name ?? "unknown";
 
     if (detail === "compact") {
       return toResponse(
-        `[COMBAT] Round ${combat!.round} | ${activeName}'s turn | ${turnOrder.length} combatants`,
-        { mode, round: combat!.round, currentTurn: activeName, turnOrder },
+        `[COMBAT] Round ${combat.round} | ${activeName}'s turn | ${turnOrder.length} combatants`,
+        { mode, round: combat.round, currentTurn: activeName, turnOrder },
       );
     }
 
     // Tactical — add positions, distances, terrain, AoE
-    const activeCombatant = combat!.combatants[activeId];
+    const activeCombatant = combat.combatants[activeId];
     for (const entry of turnOrder) {
       if (!entry) continue;
       const e = entry as Record<string, unknown>;
-      const cb = Object.values(combat!.combatants).find((c) => c.name === e.name);
+      const cb = Object.values(combat.combatants).find((c) => c.name === e.name);
       if (cb?.position) {
         e.position = formatGridPosition(cb.position);
         if (activeCombatant?.position && cb.name !== activeCombatant.name) {
@@ -1732,7 +1733,7 @@ export class GameStateManager {
 
     const data: Record<string, unknown> = {
       mode,
-      round: combat!.round,
+      round: combat.round,
       currentTurn: activeName,
       turnOrder,
     };
@@ -1745,8 +1746,8 @@ export class GameStateManager {
     }
 
     // Active AoE
-    if (combat!.activeAoE && combat!.activeAoE.length > 0) {
-      data.activeAoE = combat!.activeAoE.map((a) => ({
+    if (combat.activeAoE && combat.activeAoE.length > 0) {
+      data.activeAoE = combat.activeAoE.map((a) => ({
         id: a.id,
         label: a.label,
         shape: a.shape,
@@ -1756,7 +1757,7 @@ export class GameStateManager {
     }
 
     return toResponse(
-      `[COMBAT TACTICAL] Round ${combat!.round} | ${activeName}'s turn | ${turnOrder.length} combatants`,
+      `[COMBAT TACTICAL] Round ${combat.round} | ${activeName}'s turn | ${turnOrder.length} combatants`,
       data,
     );
   }
@@ -1807,8 +1808,8 @@ export class GameStateManager {
         let remaining = npcDmg;
         let tempAbsorbed = 0;
         if ((combatant.tempHP ?? 0) > 0) {
-          tempAbsorbed = Math.min(combatant.tempHP!, remaining);
-          combatant.tempHP! -= tempAbsorbed;
+          tempAbsorbed = Math.min(combatant.tempHP ?? 0, remaining);
+          combatant.tempHP = (combatant.tempHP ?? 0) - tempAbsorbed;
           remaining -= tempAbsorbed;
         }
         combatant.currentHP = Math.max(0, (combatant.currentHP ?? 0) - remaining);
@@ -4613,7 +4614,7 @@ export class GameStateManager {
 
     for (let i = 0; i < effects.length; i++) {
       const effect = effects[i];
-      let r: ToolResponse;
+      let r: ToolResponse = toResponse("", {}, true);
       switch (effect.type) {
         case "damage":
           r = this.applyDamage(effect.name, effect.amount, effect.damage_type);
@@ -4640,18 +4641,18 @@ export class GameStateManager {
           break;
         }
       }
-      if (r!.error) {
+      if (r.error) {
         failed++;
         results.push({
           index: i,
           type: effect.type,
           target: effect.name,
-          result: r!.text,
+          result: r.text,
           error: true,
         });
       } else {
         applied++;
-        results.push({ index: i, type: effect.type, target: effect.name, result: r!.text });
+        results.push({ index: i, type: effect.type, target: effect.name, result: r.text });
       }
     }
 
@@ -4805,17 +4806,18 @@ export class GameStateManager {
         if (!isNonFloor && !hasObject && !hasElevation && !hasCover) continue;
 
         const parts: string[] = [tile.type];
-        if (hasObject) {
-          let objStr = `${tile.object!.name} (${tile.object!.category}`;
+        if (tile.object) {
+          const obj = tile.object;
+          let objStr = `${obj.name} (${obj.category}`;
           if (tile.cover) objStr += `, ${tile.cover} cover`;
-          if (tile.object!.height) objStr += `, ${tile.object!.height}ft high`;
+          if (obj.height) objStr += `, ${obj.height}ft high`;
           objStr += ")";
           parts.push(objStr);
         } else if (hasCover) {
           parts.push(`${tile.cover} cover`);
         }
-        if (hasElevation) {
-          parts.push(`elevation ${tile.elevation! > 0 ? "+" : ""}${tile.elevation}`);
+        if (hasElevation && tile.elevation !== undefined) {
+          parts.push(`elevation ${tile.elevation > 0 ? "+" : ""}${tile.elevation}`);
         }
 
         entries.push(`${formatGridPosition({ x, y })}: ${parts.join(", ")}`);
@@ -4860,7 +4862,8 @@ export class GameStateManager {
     }
 
     // Parse positions
-    const centerPos = params.shape === "rectangle" ? null : parseGridPosition(params.center!);
+    const centerPos =
+      params.shape === "rectangle" || !params.center ? null : parseGridPosition(params.center);
     const fromPos = params.from ? parseGridPosition(params.from) : null;
     const toPos = params.to ? parseGridPosition(params.to) : null;
 
@@ -4923,9 +4926,10 @@ export class GameStateManager {
     // Find combatants on affected tiles
     const affected: string[] = [];
     for (const c of Object.values(combat.combatants)) {
-      if (!c.position) continue;
+      const pos = c.position;
+      if (!pos) continue;
       if (c.type !== "player" && (c.currentHP ?? 0) <= 0) continue;
-      if (affectedTiles.some((t) => t.x === c.position!.x && t.y === c.position!.y)) {
+      if (affectedTiles.some((t) => t.x === pos.x && t.y === pos.y)) {
         affected.push(c.name);
       }
     }
@@ -5024,9 +5028,10 @@ export class GameStateManager {
     // Find combatants on affected tiles
     const targets: Combatant[] = [];
     for (const c of Object.values(combat.combatants)) {
-      if (!c.position) continue;
+      const pos = c.position;
+      if (!pos) continue;
       if (c.type !== "player" && (c.currentHP ?? 0) <= 0) continue;
-      if (affectedTiles.some((t) => t.x === c.position!.x && t.y === c.position!.y)) {
+      if (affectedTiles.some((t) => t.x === pos.x && t.y === pos.y)) {
         targets.push(c);
       }
     }

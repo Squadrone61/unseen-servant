@@ -471,7 +471,7 @@ function GameContent({ roomCode, playerName }: { roomCode: string; playerName: s
           break;
       }
     },
-    [router, playerName],
+    [router, playerName, libUpdateCharacter, reconcileWithLibrary],
   );
 
   const { send, connectionState } = useWebSocket({
@@ -492,11 +492,12 @@ function GameContent({ roomCode, playerName }: { roomCode: string; playerName: s
       try {
         const lib = e.newValue ? JSON.parse(e.newValue) : [];
         const libId = myCharacterLibraryIdRef.current;
+        const currentChar = myCharacterRef.current;
+        if (!currentChar) return;
         const entry = lib.find((c: { id: string; character: CharacterData }) =>
           libId
             ? c.id === libId
-            : c.character.static.name.toLowerCase() ===
-              myCharacterRef.current!.static.name.toLowerCase(),
+            : c.character.static.name.toLowerCase() === currentChar.static.name.toLowerCase(),
         );
         if (!entry) return;
         const libImportedAt = entry.character.static.importedAt ?? 0;
@@ -535,10 +536,11 @@ function GameContent({ roomCode, playerName }: { roomCode: string; playerName: s
 
   // Expose message handler for Playwright tests (zero cost, no-op in production)
   useEffect(() => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (window as any).__testInjectMessage = handleMessage;
+    (window as Window & { __testInjectMessage?: typeof handleMessage }).__testInjectMessage =
+      handleMessage;
     return () => {
-      delete (window as any).__testInjectMessage;
+      delete (window as Window & { __testInjectMessage?: typeof handleMessage })
+        .__testInjectMessage;
     };
   }, [handleMessage]);
 
@@ -546,7 +548,7 @@ function GameContent({ roomCode, playerName }: { roomCode: string; playerName: s
   const [gameStateSynced, setGameStateSynced] = useState(false);
   useEffect(() => {
     if (gameStateSynced) {
-      (window as any).__testGameStateSynced = true;
+      (window as Window & { __testGameStateSynced?: boolean }).__testGameStateSynced = true;
     }
   }, [gameStateSynced]);
 

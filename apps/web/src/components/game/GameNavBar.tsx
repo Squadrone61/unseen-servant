@@ -1,4 +1,5 @@
 import { useState } from "react";
+import Image from "next/image";
 import { Button } from "@/components/ui/Button";
 
 interface GameNavBarProps {
@@ -55,7 +56,7 @@ export function GameNavBar({
       {/* Left: Logo + Room Code + Host */}
       <div className="flex items-center gap-2.5">
         <Button variant="icon" href="/" title="Home">
-          <img src="/icon.svg" alt="Home" className="w-4 h-4" />
+          <Image src="/icon.svg" alt="Home" width={16} height={16} className="w-4 h-4" />
         </Button>
 
         <Button
