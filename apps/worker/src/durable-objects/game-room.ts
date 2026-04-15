@@ -75,6 +75,11 @@ export class GameRoom extends DurableObject<Env> {
         createdAt,
         approvedUserIds,
         characters,
+        chatLog,
+        storyStarted,
+        campaignConfigured,
+        activeCampaignSlug,
+        activeCampaignName,
       ] = await Promise.all([
         this.ctx.storage.get<string>("roomCode"),
         this.ctx.storage.get<string>("hostPlayerName"),
@@ -84,6 +89,11 @@ export class GameRoom extends DurableObject<Env> {
         this.ctx.storage.get<number>("createdAt"),
         this.ctx.storage.get<string[]>("approvedUserIds"),
         this.ctx.storage.get<Record<string, CharacterData>>("characters"),
+        this.ctx.storage.get<ServerMessage[]>("chatLog"),
+        this.ctx.storage.get<boolean>("storyStarted"),
+        this.ctx.storage.get<boolean>("campaignConfigured"),
+        this.ctx.storage.get<string>("activeCampaignSlug"),
+        this.ctx.storage.get<string>("activeCampaignName"),
       ]);
       if (roomCode) this.roomCode = roomCode;
       if (hostPlayerName) this.hostPlayerName = hostPlayerName;
@@ -100,6 +110,11 @@ export class GameRoom extends DurableObject<Env> {
       if (characters) {
         this.characters = new Map(Object.entries(characters));
       }
+      if (chatLog) this.chatLog = chatLog;
+      if (storyStarted) this.storyStarted = storyStarted;
+      if (campaignConfigured) this.campaignConfigured = campaignConfigured;
+      if (activeCampaignSlug) this.activeCampaignSlug = activeCampaignSlug;
+      if (activeCampaignName) this.activeCampaignName = activeCampaignName;
     });
   }
 
@@ -130,6 +145,12 @@ export class GameRoom extends DurableObject<Env> {
 
   private appendToChatLog(message: ServerMessage): void {
     this.chatLog.push(message);
+    if (this.chatLog.length > 100) {
+      this.chatLog.splice(0, this.chatLog.length - 100);
+    }
+    this.ctx.storage.put("chatLog", this.chatLog).catch(() => {
+      // best-effort persistence; next append will retry
+    });
   }
 
   // --- HTTP & WebSocket Entry ---
@@ -226,6 +247,8 @@ export class GameRoom extends DurableObject<Env> {
         case "client:campaign_loaded": {
           this.activeCampaignSlug = msg.campaignSlug;
           this.activeCampaignName = msg.campaignName;
+          await this.ctx.storage.put("activeCampaignSlug", msg.campaignSlug);
+          await this.ctx.storage.put("activeCampaignName", msg.campaignName);
           this.broadcast({
             type: "server:campaign_loaded",
             campaignSlug: msg.campaignSlug,
@@ -239,6 +262,7 @@ export class GameRoom extends DurableObject<Env> {
           break;
         case "client:story_started":
           this.storyStarted = true;
+          await this.ctx.storage.put("storyStarted", true);
           break;
         case "client:set_password":
           await this.handleSetPassword(ws, msg);
@@ -776,6 +800,9 @@ export class GameRoom extends DurableObject<Env> {
     this.campaignConfigured = true;
     this.activeCampaignSlug = msg.campaignSlug;
     this.activeCampaignName = msg.campaignName;
+    await this.ctx.storage.put("campaignConfigured", true);
+    await this.ctx.storage.put("activeCampaignSlug", msg.campaignSlug);
+    await this.ctx.storage.put("activeCampaignName", msg.campaignName);
 
     this.broadcast({
       type: "server:campaign_configured",
@@ -938,6 +965,9 @@ export class GameRoom extends DurableObject<Env> {
     this.created = false;
     this.password = null;
     this.createdAt = 0;
+    this.campaignConfigured = false;
+    this.activeCampaignSlug = null;
+    this.activeCampaignName = null;
   }
 
   // --- Character Handler ---
