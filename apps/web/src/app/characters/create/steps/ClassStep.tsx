@@ -34,38 +34,71 @@ function abilityAbbr(a: string): string {
   return ABILITY_ABBR[a.toLowerCase()] ?? a.toUpperCase().slice(0, 3);
 }
 
+/** Extract proficiencies from the L1 Proficiencies feature or class-level effects. */
+function getClassProfs(cls: ClassDb): {
+  saves: string[];
+  armor: string[];
+  weapons: string[];
+  tools: string[];
+} {
+  const l1Feat = cls.features.find((f) => f.name === "Proficiencies" && f.level === 1);
+  const props = l1Feat?.effects?.properties ?? cls.effects?.properties ?? [];
+  const saves: string[] = [];
+  const armor: string[] = [];
+  const weapons: string[] = [];
+  const tools: string[] = [];
+  for (const p of props) {
+    if (p.type !== "proficiency") continue;
+    switch (p.category) {
+      case "save":
+        saves.push(p.value);
+        break;
+      case "armor":
+        armor.push(p.value);
+        break;
+      case "weapon":
+        weapons.push(p.value);
+        break;
+      case "tool":
+        tools.push(p.value);
+        break;
+    }
+  }
+  return { saves, armor, weapons, tools };
+}
+
 /** Build the compact stat line: "d10 · STR/CON saves" */
 function buildStatLine(cls: ClassDb): string {
   const parts: string[] = [`d${cls.hitDiceFaces}`];
-  if (cls.savingThrows.length > 0) {
-    parts.push(cls.savingThrows.map(abilityAbbr).join("/") + " saves");
+  const { saves } = getClassProfs(cls);
+  if (saves.length > 0) {
+    parts.push(saves.map(abilityAbbr).join("/") + " saves");
   }
   return parts.join(" · ");
 }
 
 /** Build proficiency summary line: "All Armor · All Weapons" */
 function buildProficiencyLine(cls: ClassDb): string {
+  const { armor, weapons, tools } = getClassProfs(cls);
   const parts: string[] = [];
 
-  if (cls.armorProficiencies.length > 0) {
-    const armors = cls.armorProficiencies;
+  if (armor.length > 0) {
     const hasAllArmor =
-      armors.includes("Light Armor") &&
-      armors.includes("Medium Armor") &&
-      armors.includes("Heavy Armor");
-    parts.push(hasAllArmor ? "All Armor" : armors.join(", "));
+      armor.includes("Light Armor") &&
+      armor.includes("Medium Armor") &&
+      armor.includes("Heavy Armor");
+    parts.push(hasAllArmor ? "All Armor" : armor.join(", "));
   } else {
     parts.push("No Armor");
   }
 
-  if (cls.weaponProficiencies.length > 0) {
-    const weapons = cls.weaponProficiencies;
+  if (weapons.length > 0) {
     const hasAllWeapons = weapons.includes("Simple Weapons") && weapons.includes("Martial Weapons");
     parts.push(hasAllWeapons ? "All Weapons" : weapons.join(", "));
   }
 
-  if (cls.toolProficiencies.length > 0) {
-    parts.push(cls.toolProficiencies.join(", "));
+  if (tools.length > 0) {
+    parts.push(tools.join(", "));
   }
 
   return parts.join(" · ");
@@ -139,9 +172,9 @@ function ClassPopover({
           <span className="text-xs px-2 py-0.5 rounded-full bg-red-900/30 text-red-300 border border-red-700/30">
             d{cls.hitDiceFaces} Hit Die
           </span>
-          {cls.savingThrows.length > 0 && (
+          {getClassProfs(cls).saves.length > 0 && (
             <span className="text-xs px-2 py-0.5 rounded-full bg-gray-700/50 text-gray-300 border border-gray-600/30">
-              {cls.savingThrows.map(abilityAbbr).join("/")} saves
+              {getClassProfs(cls).saves.map(abilityAbbr).join("/")} saves
             </span>
           )}
           {casterBadge && (

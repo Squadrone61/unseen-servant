@@ -41,20 +41,6 @@
     ]
   },
   "hitDiceFaces": 12,
-  "savingThrows": [
-    "strength",
-    "constitution"
-  ],
-  "armorProficiencies": [
-    "Light Armor",
-    "Medium Armor",
-    "Shield"
-  ],
-  "weaponProficiencies": [
-    "Simple Weapons",
-    "Martial Weapons"
-  ],
-  "toolProficiencies": [],
   "skillChoices": {
     "from": [
       "Animal Handling",
@@ -67,6 +53,51 @@
     "count": 2
   },
   "features": [
+    {
+      "name": "Proficiencies",
+      "level": 1,
+      "className": "Barbarian",
+      "description": "Your Barbarian training grants the following proficiencies.",
+      "effects": {
+        "properties": [
+          {
+            "type": "proficiency",
+            "category": "save",
+            "value": "Strength"
+          },
+          {
+            "type": "proficiency",
+            "category": "save",
+            "value": "Constitution"
+          },
+          {
+            "type": "proficiency",
+            "category": "armor",
+            "value": "Light Armor"
+          },
+          {
+            "type": "proficiency",
+            "category": "armor",
+            "value": "Medium Armor"
+          },
+          {
+            "type": "proficiency",
+            "category": "armor",
+            "value": "Shield"
+          },
+          {
+            "type": "proficiency",
+            "category": "weapon",
+            "value": "Simple Weapons"
+          },
+          {
+            "type": "proficiency",
+            "category": "weapon",
+            "value": "Martial Weapons"
+          }
+        ]
+      }
+    },
     {
       "name": "Rage",
       "level": 1,
@@ -445,6 +476,14 @@
           "className": "Barbarian",
           "subclassName": "Path of the Berserker",
           "description": "You have {rule:Immunity|immunity} to the {condition:Charmed} and {condition:Frightened} conditions while your Rage is active. If you're {condition:Charmed} or {condition:Frightened} when you enter your Rage, the condition ends on you.",
+          "effects": {
+            "properties": [
+              {
+                "type": "note",
+                "text": "While Rage is active, you have immunity to the Charmed and Frightened conditions. If you are Charmed or Frightened when you activate Rage, those conditions immediately end on you. (Immunity is listed in the activation block; the immunity applies only during Rage.)"
+              }
+            ]
+          },
           "activation": {
             "properties": [
               {

@@ -98,7 +98,15 @@
       "Sorcerer",
       "Warlock",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "self" },
+        "onHit": { "note": "Subtract 1d4 from all attack rolls made against you (concentration, 1 min)." },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Booming Blade",
@@ -248,7 +256,14 @@
       "Druid",
       "Sorcerer",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "point" },
+        "onHit": { "note": "Manipulate a nonmagical flame in a 5-ft cube: expand, extinguish, change color/brightness (1 hr), or create animated shapes (1 hr). Up to 3 non-instantaneous effects active at once." }
+      }
+    }
   },
   {
     "name": "Create Bonfire",
@@ -346,7 +361,15 @@
       "Bard",
       "Sorcerer",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "point" },
+        "onHit": { "note": "Create up to 4 lights (dim light 10-ft radius each) within 120 ft (concentration, 1 min). Bonus Action: move lights up to 60 ft. Can form them into a humanoid shape." },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Druidcraft",
@@ -361,7 +384,14 @@
     "concentration": false,
     "classes": [
       "Druid"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "self" },
+        "onHit": { "note": "Minor nature effects: weather sensor (24-hr forecast), bloom a plant, harmless sensory effect (5-ft cube), or light/snuff small fire." }
+      }
+    }
   },
   {
     "name": "Eldritch Blast",
@@ -419,7 +449,14 @@
       "Druid",
       "Sorcerer",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "point" },
+        "onHit": { "note": "Minor elemental effects: stir air/close doors (5-ft cube), spread dust/write in dirt, create harmless embers/smoke (lingers 1 min), create cool mist or 1 cup of water, or sculpt a 1-ft cube of elemental material into a shape (1 hr)." }
+      }
+    }
   },
   {
     "name": "Fire Bolt",
@@ -517,7 +554,19 @@
     ],
     "savingThrow": [
       "wisdom"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "save",
+        "save": { "ability": "wisdom", "dc": "spell_save_dc", "onSuccess": "negates" },
+        "targeting": { "type": "creature" },
+        "onFailedSave": {
+          "applyConditions": [{ "name": "Charmed", "duration": { "type": "concentration" } }],
+          "note": "Target is Charmed (concentration, 1 min). Only Humanoids. Ends early if target takes damage or you attack/deal damage/force saves. Target knows it was Charmed when spell ends."
+        },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Frostbite",
@@ -634,7 +683,15 @@
     "classes": [
       "Cleric",
       "Druid"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "creature" },
+        "onHit": { "note": "Target adds 1d4 to ability checks using one chosen skill (concentration, 1 min)." },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Gust",
@@ -654,7 +711,15 @@
     ],
     "savingThrow": [
       "strength"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "save",
+        "save": { "ability": "strength", "dc": "spell_save_dc", "onSuccess": "negates" },
+        "targeting": { "type": "creature" },
+        "onFailedSave": { "note": "Push one Medium or smaller creature up to 5 ft away. Alternatively, push an uncarried object ≤5 lbs up to 10 ft, or create a harmless air effect." }
+      }
+    }
   },
   {
     "name": "Infestation",
@@ -753,7 +818,14 @@
       "Cleric",
       "Sorcerer",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "point" },
+        "onHit": { "note": "Touched object sheds Bright Light (20-ft radius) and Dim Light (additional 20 ft) for 1 hour. Blocked by opaque covering. Spell ends if cast again." }
+      }
+    }
   },
   {
     "name": "Lightning Lure",
@@ -851,7 +923,14 @@
       "Sorcerer",
       "Warlock",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "point" },
+        "onHit": { "note": "Spectral hand (1 min) within 30 ft. Use Magic action to manipulate objects, open unlocked doors/containers, stow/retrieve items, or pour vials. Cannot attack or carry more than 10 lbs." }
+      }
+    }
   },
   {
     "name": "Magic Stone",
@@ -870,7 +949,15 @@
     ],
     "damageType": [
       "bludgeoning"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "attack",
+        "attack": { "bonus": "spell_attack", "range": { "normal": 60 } },
+        "targeting": { "type": "creature" },
+        "onHit": { "damage": [{ "dice": "1d6", "type": "bludgeoning", "bonus": "spell_mod" }], "note": "Imbue 1-3 pebbles (1 min). Ranged spell attack using your spellcasting mod. Usable by others (they use your modifier)." }
+      }
+    }
   },
   {
     "name": "Mending",
@@ -889,7 +976,14 @@
       "Druid",
       "Sorcerer",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "creature" },
+        "onHit": { "note": "Repair a single break or tear up to 1 foot in any dimension in an object. Cannot restore magic to a magic item." }
+      }
+    }
   },
   {
     "name": "Message",
@@ -907,7 +1001,14 @@
       "Druid",
       "Sorcerer",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "creature" },
+        "onHit": { "note": "Whisper a message to one creature within 120 ft (1 round). Only the target hears it and can reply in a whisper only you hear. Works through solid objects if familiar with target." }
+      }
+    }
   },
   {
     "name": "Mind Sliver",
@@ -1006,7 +1107,14 @@
       "Sorcerer",
       "Warlock",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "point" },
+        "onHit": { "note": "Create a sound (whisper to scream) or an image (up to 5-ft cube) that lasts 1 minute. INT (Investigation) vs spell save DC to identify as illusion." }
+      }
+    }
   },
   {
     "name": "Mold Earth",
@@ -1023,7 +1131,14 @@
       "Druid",
       "Sorcerer",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "point" },
+        "onHit": { "note": "Manipulate a 5-ft cube of dirt or stone: excavate/move loose earth, create shapes/words/images (1 hr), or create/remove difficult terrain (1 hr). Up to 2 non-instantaneous effects at once." }
+      }
+    }
   },
   {
     "name": "Poison Spray",
@@ -1120,7 +1235,14 @@
       "Sorcerer",
       "Warlock",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "self" },
+        "onHit": { "note": "Minor magical effects (up to 3 non-instantaneous at once): harmless sensory effect, light/snuff a fire, clean or soil 1 cu ft object, chill/warm/flavor material (1 hr), create color mark or symbol (1 hr), or create a hand-sized trinket or illusory image (1 round)." }
+      }
+    }
   },
   {
     "name": "Primal Savagery",
@@ -1363,7 +1485,15 @@
     "classes": [
       "Cleric",
       "Druid"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "creature" },
+        "onHit": { "note": "Target reduces total damage taken from one chosen damage type by 1d4 (concentration, 1 min). Once per turn." },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Sacred Flame",
@@ -1458,7 +1588,14 @@
       "Druid",
       "Sorcerer",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "point" },
+        "onHit": { "note": "Manipulate a 5-ft cube of water: move/redirect flow, animate into simple shapes (1 hr), change color/opacity (1 hr), or freeze (1 hr). Up to 2 non-instantaneous effects at once." }
+      }
+    }
   },
   {
     "name": "Shillelagh",
@@ -1477,7 +1614,14 @@
     "damageType": [
       "force"
     ],
-    "higherLevels": "**Cantrip Upgrade.**\nThe damage die changes when you reach levels 5 (d10), 11 (d12), and 17 (2d6)."
+    "higherLevels": "**Cantrip Upgrade.**\nThe damage die changes when you reach levels 5 (d10), 11 (d12), and 17 (2d6).",
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "self" },
+        "onHit": { "note": "Imbue a Club or Quarterstaff for 1 min. Use spellcasting ability for attack/damage rolls, damage die becomes d8 (d10 at 5, d12 at 11, 2d6 at 17). Damage can be Force or weapon's normal type." }
+      }
+    }
   },
   {
     "name": "Shocking Grasp",
@@ -1646,7 +1790,14 @@
       "Cleric",
       "Druid"
     ],
-    "higherLevels": "**Cantrip Upgrade.**\nThe range doubles when you reach levels 5 (30 feet), 11 (60 feet), and 17 (120 feet)."
+    "higherLevels": "**Cantrip Upgrade.**\nThe range doubles when you reach levels 5 (30 feet), 11 (60 feet), and 17 (120 feet).",
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "creature" },
+        "onHit": { "note": "Stabilize a creature at 0 HP within 15 ft. Range doubles at levels 5 (30), 11 (60), 17 (120)." }
+      }
+    }
   },
   {
     "name": "Starry Wisp",
@@ -1830,7 +1981,14 @@
     "concentration": false,
     "classes": [
       "Cleric"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "self" },
+        "onHit": { "note": "Minor divine effects (up to 3 simultaneous 1-min effects): alter eye appearance, voice 3x louder with Advantage on Intimidation, flicker flames, open/slam a door, create phantom sound, or cause harmless tremors." }
+      }
+    }
   },
   {
     "name": "Thorn Whip",
@@ -2096,7 +2254,15 @@
     "damageType": [
       "radiant"
     ],
-    "higherLevels": "**Cantrip Upgrade.**\nWhether you deal Radiant damage or the weapon's normal damage type, the attack deals extra Radiant damage when you reach levels 5 (1d6), 11 (2d6), and 17 (3d6)."
+    "higherLevels": "**Cantrip Upgrade.**\nWhether you deal Radiant damage or the weapon's normal damage type, the attack deals extra Radiant damage when you reach levels 5 (1d6), 11 (2d6), and 17 (3d6).",
+    "effects": {
+      "action": {
+        "kind": "attack",
+        "attack": { "bonus": "spell_attack", "range": "touch", "reach": 5 },
+        "targeting": { "type": "creature" },
+        "onHit": { "note": "Melee weapon attack using spellcasting ability. Damage can be Radiant or weapon's normal type. Cantrip upgrade: +1d6 Radiant at level 5, +2d6 at level 11, +3d6 at level 17." }
+      }
+    }
   },
   {
     "name": "Vicious Mockery",
@@ -2276,7 +2442,34 @@
       "Sorcerer",
       "Wizard"
     ],
-    "higherLevels": "**At Higher Levels.**\nWhen you cast this spell using a spell slot of 2nd level or higher, the extra damage increases by 1d6 for each slot level above 1st."
+    "higherLevels": "**At Higher Levels.**\nWhen you cast this spell using a spell slot of 2nd level or higher, the extra damage increases by 1d6 for each slot level above 1st.",
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": {
+          "type": "self"
+        },
+        "onHit": {
+          "damage": [
+            {
+              "dice": "1d6",
+              "type": "acid"
+            }
+          ],
+          "note": "You gain resistance to the triggering damage type until start of your next turn. Your first melee attack next turn deals 1d6 extra damage of that type."
+        },
+        "upcast": {
+          "perLevel": {
+            "damage": [
+              {
+                "dice": "1d6",
+                "type": "acid"
+              }
+            ]
+          }
+        }
+      }
+    }
   },
   {
     "name": "Alarm",
@@ -2292,7 +2485,14 @@
     "classes": [
       "Ranger",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "point" },
+        "onHit": { "note": "Ward a door, window, or 20-ft cube area for 8 hours (ritual). Alarm triggers on creature entry/contact. Audible (handbell 10 sec, 60 ft) or mental ping (within 1 mile, wakes from sleep)." }
+      }
+    }
   },
   {
     "name": "Animal Friendship",
@@ -2479,7 +2679,21 @@
     "classes": [
       "Druid",
       "Ranger"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": {
+          "type": "creature"
+        },
+        "onHit": {
+          "note": "Telepathic link with a touched beast (INT 4 or lower). Beast gains advantage on attacks against creatures within 5 ft of you. Concentration up to 10 minutes."
+        },
+        "meta": {
+          "concentration": true
+        }
+      }
+    }
   },
   {
     "name": "Bless",
@@ -2694,7 +2908,14 @@
     "classes": [
       "Cleric",
       "Paladin"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "creature" },
+        "onHit": { "note": "Religious ritual (1 hr, ritual): Atonement (restore alignment, DC 20 WIS check), Bless Water (create Holy Water), Coming of Age (d4 bonus to ability checks for 24 hr), Dedication (d4 to saving throws for 24 hr), Funeral Rite (prevent undead for 7 days), or Wedding (+2 AC when within 30 ft of each other for 7 days)." }
+      }
+    }
   },
   {
     "name": "Chaos Bolt",
@@ -2961,7 +3182,26 @@
     ],
     "savingThrow": [
       "wisdom"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "save",
+        "save": {
+          "ability": "wisdom",
+          "dc": "spell_save_dc",
+          "onSuccess": "negates"
+        },
+        "targeting": {
+          "type": "creature"
+        },
+        "onFailedSave": {
+          "note": "Target has disadvantage on attack rolls against creatures other than you, and can't willingly move more than 30 ft from you. Concentration up to 1 minute."
+        },
+        "meta": {
+          "concentration": true
+        }
+      }
+    }
   },
   {
     "name": "Comprehend Languages",
@@ -2979,7 +3219,14 @@
       "Sorcerer",
       "Warlock",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "self" },
+        "onHit": { "note": "Understand any language spoken, signed, or written (by touch) for 1 hour (ritual). ~1 min to read one page. Does not decode secret messages." }
+      }
+    }
   },
   {
     "name": "Create or Destroy Water",
@@ -2996,7 +3243,14 @@
       "Cleric",
       "Druid"
     ],
-    "higherLevels": "**Using a Higher-Level Spell Slot.**\nYou create or destroy 10 additional gallons of water, or the size of the {rule:Cube [Area of Effect]} increases by 5 feet, for each spell slot level above 1."
+    "higherLevels": "**Using a Higher-Level Spell Slot.**\nYou create or destroy 10 additional gallons of water, or the size of the {rule:Cube [Area of Effect]} increases by 5 feet, for each spell slot level above 1.",
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "point" },
+        "onHit": { "note": "Create up to 10 gallons of water (in container or rain in 30-ft cube) or destroy up to 10 gallons of water or fog in a 30-ft cube. Upcast: +10 gallons or +5 ft cube per slot above 1." }
+      }
+    }
   },
   {
     "name": "Cure Wounds",
@@ -3052,7 +3306,15 @@
     "classes": [
       "Cleric",
       "Paladin"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "self" },
+        "onHit": { "note": "Sense location of Aberrations/Celestials/Elementals/Fey/Fiends/Undead within 30 ft (concentration, 10 min). Also detect active Hallow spell. Blocked by 1 ft stone/dirt/wood, 1 in metal, or lead sheet." },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Detect Magic",
@@ -3074,7 +3336,15 @@
       "Sorcerer",
       "Warlock",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "self" },
+        "onHit": { "note": "Sense presence of magical effects within 30 ft (concentration, 10 min, ritual). Magic action to see auras and learn spell schools. Blocked by 1 ft stone/dirt/wood, 1 in metal, or lead." },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Detect Poison and Disease",
@@ -3092,7 +3362,15 @@
       "Druid",
       "Paladin",
       "Ranger"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "self" },
+        "onHit": { "note": "Sense location and type of poisons, venomous creatures, and magical contagions within 30 ft (concentration, 10 min, ritual). Blocked by 1 ft stone/dirt/wood, 1 in metal, or lead." },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Disguise Self",
@@ -3109,7 +3387,14 @@
       "Bard",
       "Sorcerer",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "self" },
+        "onHit": { "note": "Change your appearance (including gear) for 1 hour. Can appear up to 1 ft shorter/taller. Same basic limb arrangement required. INT (Investigation) vs spell save DC to see through illusion." }
+      }
+    }
   },
   {
     "name": "Dissonant Whispers",
@@ -3434,7 +3719,15 @@
       "Sorcerer",
       "Warlock",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "self" },
+        "onHit": { "note": "Immediately Dash and can Dash as a Bonus Action each turn (concentration, 10 min)." },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Faerie Fire",
@@ -3497,7 +3790,27 @@
       "Sorcerer",
       "Wizard"
     ],
-    "higherLevels": "**Using a Higher-Level Spell Slot.**\nYou gain 5 additional {rule:Temporary Hit Points} for each spell slot level above 1."
+    "higherLevels": "**Using a Higher-Level Spell Slot.**\nYou gain 5 additional {rule:Temporary Hit Points} for each spell slot level above 1.",
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": {
+          "type": "self"
+        },
+        "onHit": {
+          "tempHp": {
+            "dice": "2d4+4"
+          }
+        },
+        "upcast": {
+          "perLevel": {
+            "tempHp": {
+              "dice": "5"
+            }
+          }
+        }
+      }
+    }
   },
   {
     "name": "Feather Fall",
@@ -3514,7 +3827,14 @@
       "Bard",
       "Sorcerer",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "creature" },
+        "onHit": { "note": "Reaction (when a creature falls within 60 ft): slow fall rate to 60 ft/round for up to 5 falling creatures (1 min). No fall damage upon landing." }
+      }
+    }
   },
   {
     "name": "Find Familiar",
@@ -3529,7 +3849,14 @@
     "concentration": false,
     "classes": [
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "self" },
+        "onHit": { "note": "Gain a familiar (CR 0 Beast form, 1 hr, ritual). Telepathic communication within 100 ft, share senses (Bonus Action). Familiar can deliver touch spells (Reaction). Cannot attack. Dismissible to pocket dimension. Only one at a time. Requires 10 GP incense." }
+      }
+    }
   },
   {
     "name": "Fog Cloud",
@@ -3548,7 +3875,15 @@
       "Sorcerer",
       "Wizard"
     ],
-    "higherLevels": "**Using a Higher-Level Spell Slot.**\nThe fog's radius increases by 20 feet for each spell slot level above 1."
+    "higherLevels": "**Using a Higher-Level Spell Slot.**\nThe fog's radius increases by 20 feet for each spell slot level above 1.",
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "point" },
+        "onHit": { "note": "20-ft radius sphere of heavily obscured fog (concentration, 1 hr). Dispersed by strong wind. Upcast: radius increases by 20 ft per slot level above 1." },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Goodberry",
@@ -3564,7 +3899,21 @@
     "classes": [
       "Druid",
       "Ranger"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": {
+          "type": "creature"
+        },
+        "onHit": {
+          "healing": {
+            "dice": "1"
+          },
+          "note": "Creates 10 berries. Each berry heals 1 HP when eaten (bonus action). Berries last 24 hours."
+        }
+      }
+    }
   },
   {
     "name": "Grease",
@@ -4013,7 +4362,14 @@
     "classes": [
       "Bard",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "creature" },
+        "onHit": { "note": "Learn a magic item's properties, attunement requirement, charges, and any affecting spells (1 min, ritual). Or learn which spells are currently affecting a creature. Requires 100 GP pearl." }
+      }
+    }
   },
   {
     "name": "Illusory Script",
@@ -4030,7 +4386,14 @@
       "Bard",
       "Warlock",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "creature" },
+        "onHit": { "note": "Imbue writing with illusion (10 days, ritual). You and designated creatures see true text; others see unintelligible script. Can also alter meaning/language. Truesight reveals hidden message. Requires 10 GP ink." }
+      }
+    }
   },
   {
     "name": "Inflict Wounds",
@@ -4111,7 +4474,14 @@
       "Sorcerer",
       "Wizard"
     ],
-    "higherLevels": "**Using a Higher-Level Spell Slot.**\nYou can target one additional creature for each spell slot level above 1."
+    "higherLevels": "**Using a Higher-Level Spell Slot.**\nYou can target one additional creature for each spell slot level above 1.",
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "creature" },
+        "onHit": { "note": "Target can jump 30 ft by spending only 10 ft of movement, once per turn (1 min). Upcast: +1 target per slot level above 1." }
+      }
+    }
   },
   {
     "name": "Longstrider",
@@ -4130,7 +4500,15 @@
       "Ranger",
       "Wizard"
     ],
-    "higherLevels": "**Using a Higher-Level Spell Slot.**\nYou can target one additional creature for each spell slot level above 1."
+    "higherLevels": "**Using a Higher-Level Spell Slot.**\nYou can target one additional creature for each spell slot level above 1.",
+    "effects": {
+      "modifiers": [
+        {
+          "target": "speed",
+          "value": 10
+        }
+      ]
+    }
   },
   {
     "name": "Mage Armor",
@@ -4242,7 +4620,14 @@
       "Cleric",
       "Druid",
       "Paladin"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "point" },
+        "onHit": { "note": "Remove all poison and rot from nonmagical food and drink in a 5-ft radius sphere (ritual)." }
+      }
+    }
   },
   {
     "name": "Ray of Sickness",
@@ -4321,7 +4706,18 @@
     ],
     "savingThrow": [
       "wisdom"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": {
+          "type": "creature"
+        },
+        "onHit": {
+          "note": "Warded creature: attackers must succeed on WIS save or lose attack/spell. Ends if warded creature attacks, casts a spell, or deals damage."
+        }
+      }
+    }
   },
   {
     "name": "Searing Smite",
@@ -4447,7 +4843,15 @@
       "Bard",
       "Sorcerer",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "point" },
+        "onHit": { "note": "Visual-only illusion up to 15-ft cube (concentration, 10 min). Magic action to move it within range. INT (Investigation) vs spell save DC to identify as illusion." },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Sleep",
@@ -4569,7 +4973,14 @@
       "Druid",
       "Ranger",
       "Warlock"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "self" },
+        "onHit": { "note": "Comprehend and verbally communicate with Beasts for 10 min (ritual). Can use Influence action skills with them. Beasts can share info about nearby locations and monsters from the past day." }
+      }
+    }
   },
   {
     "name": "Tasha's Caustic Brew",
@@ -4700,7 +5111,14 @@
     "concentration": false,
     "classes": [
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "self" },
+        "onHit": { "note": "Creates a 3-ft diameter floating disk (1 hr, ritual). Holds up to 500 lbs. Follows you within 20 ft. Spell ends if weight exceeded or you move >100 ft from disk." }
+      }
+    }
   },
   {
     "name": "Thunderous Smite",
@@ -4845,7 +5263,14 @@
       "Bard",
       "Warlock",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "self" },
+        "onHit": { "note": "Creates invisible mindless servant (AC 10, 1 HP, STR 2) for 1 hr (ritual). Bonus Action: command it to move 15 ft and perform a simple task. Cannot move more than 60 ft from you." }
+      }
+    }
   },
   {
     "name": "Witch Bolt",
@@ -5118,7 +5543,15 @@
       "bludgeoning",
       "piercing",
       "slashing"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "self" },
+        "onHit": { "note": "Alter physical form (concentration, 1 hr). Choose: Aquatic Adaptation (breathe underwater, swim speed = walk speed), Change Appearance (any humanoid look, different species), or Natural Weapons (1d6 Slashing/Piercing/Bludgeoning, use spell mod). Switch option with Magic action." },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Animal Messenger",
@@ -5139,7 +5572,14 @@
     "savingThrow": [
       "charisma"
     ],
-    "higherLevels": "**Using a Higher-Level Spell Slot.**\nThe spell's duration increases by 48 hours for each spell slot level above 2."
+    "higherLevels": "**Using a Higher-Level Spell Slot.**\nThe spell's duration increases by 48 hours for each spell slot level above 2.",
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "creature" },
+        "onHit": { "note": "Send a Tiny Beast with a 25-word message to a described recipient at a known location (24 hr, ritual). Beast travels 25 miles/day (50 if flying). CHA save (CR 0 beasts auto-fail). Upcast: +48 hr per slot above 2." }
+      }
+    }
   },
   {
     "name": "Arcane Lock",
@@ -5154,7 +5594,14 @@
     "concentration": false,
     "classes": [
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "creature" },
+        "onHit": { "note": "Magically lock a door, window, gate, container, or hatch permanently (until dispel). Cannot be unlocked by nonmagical means. Optional password unlocks for 1 min. Requires 25 GP gold dust." }
+      }
+    }
   },
   {
     "name": "Arcane Vigor",
@@ -5171,7 +5618,15 @@
       "Sorcerer",
       "Wizard"
     ],
-    "higherLevels": "**Using a Higher-Level Spell Slot.**\nThe number of unexpended Hit Dice you can roll increases by one for each spell slot level above 2."
+    "higherLevels": "**Using a Higher-Level Spell Slot.**\nThe number of unexpended Hit Dice you can roll increases by one for each spell slot level above 2.",
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "self" },
+        "onHit": { "note": "Spend Bonus Action to roll 1-2 unexpended Hit Dice, regain HP equal to result + spellcasting modifier. Upcast: roll 1 extra die per slot above 2." },
+        "upcast": { "perLevel": { "note": "+1 Hit Die per slot above 2." } }
+      }
+    }
   },
   {
     "name": "Augury",
@@ -5188,7 +5643,14 @@
       "Cleric",
       "Druid",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "self" },
+        "onHit": { "note": "Receive an omen (Weal/Woe/Both/Indifference) about a planned action within the next 30 min (ritual). Cumulative 25% chance of no answer after the first casting per Long Rest." }
+      }
+    }
   },
   {
     "name": "Barkskin",
@@ -5229,7 +5691,15 @@
     "classes": [
       "Druid",
       "Ranger"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "creature" },
+        "onHit": { "note": "Perceive through a willing Beast's senses (concentration, 1 hr, ritual). Gain benefit of its special senses." },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Blindness/Deafness",
@@ -5420,7 +5890,14 @@
       "Cleric",
       "Druid",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "creature" },
+        "onHit": { "note": "Create a permanent (until dispel) heatless flame on an object. Bright light 20 ft, dim light 20 ft. Cannot be smothered or quenched, only covered. Requires 50 GP ruby dust." }
+      }
+    }
   },
   {
     "name": "Cordon of Arrows",
@@ -5525,7 +6002,15 @@
       "Sorcerer",
       "Warlock",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "point" },
+        "onHit": { "note": "15-ft radius magical darkness sphere (concentration, 10 min). Blocks darkvision and nonmagical light. Can attach to an object. Dispels level ≤2 light spells that overlap." },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Darkvision",
@@ -5543,7 +6028,14 @@
       "Ranger",
       "Sorcerer",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "creature" },
+        "onHit": { "note": "Grant a willing creature Darkvision with 150-ft range for 8 hours." }
+      }
+    }
   },
   {
     "name": "Detect Thoughts",
@@ -5563,7 +6055,16 @@
     ],
     "savingThrow": [
       "wisdom"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "save",
+        "save": { "ability": "wisdom", "dc": "spell_save_dc", "onSuccess": "negates" },
+        "targeting": { "type": "creature" },
+        "onFailedSave": { "note": "Read creature's surface thoughts. Magic action on next turn: probe deeper (WIS save — fail: emotions/reasoning revealed; success: spell ends). Target knows you're probing. INT (Arcana) vs DC to end spell." },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Dragon's Breath",
@@ -5717,7 +6218,26 @@
     ],
     "savingThrow": [
       "strength"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "save",
+        "save": {
+          "ability": "strength",
+          "dc": "spell_save_dc",
+          "onSuccess": "negates"
+        },
+        "targeting": {
+          "type": "creature"
+        },
+        "onFailedSave": {
+          "note": "Target's fly speed is reduced to 0. Airborne targets descend safely at 60 ft/round. Concentration up to 1 minute."
+        },
+        "meta": {
+          "concentration": true
+        }
+      }
+    }
   },
   {
     "name": "Enhance Ability",
@@ -5738,7 +6258,15 @@
       "Sorcerer",
       "Wizard"
     ],
-    "higherLevels": "**Using a Higher-Level Spell Slot.**\nYou can target one additional creature for each spell slot level above 2. You can choose a different ability for each target."
+    "higherLevels": "**Using a Higher-Level Spell Slot.**\nYou can target one additional creature for each spell slot level above 2. You can choose a different ability for each target.",
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "creature" },
+        "onHit": { "note": "Grant Advantage on all ability checks using one chosen ability score (concentration, 1 hr). Upcast: +1 target per slot above 2, each with different ability choice." },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Enlarge/Reduce",
@@ -5759,7 +6287,16 @@
     ],
     "savingThrow": [
       "constitution"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "save",
+        "save": { "ability": "constitution", "dc": "spell_save_dc", "onSuccess": "negates" },
+        "targeting": { "type": "creature" },
+        "onFailedSave": { "note": "Enlarge (size +1 category, Advantage on STR checks/saves, +1d4 damage) or Reduce (size -1 category, Disadvantage on STR checks/saves, -1d4 damage). Concentration 1 min. Unwilling creatures make CON save." },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Enthrall",
@@ -5810,7 +6347,14 @@
     "classes": [
       "Paladin"
     ],
-    "higherLevels": "**Using a Higher-Level Spell Slot.**\nUse the spell slot's level for the spell's level in the stat block."
+    "higherLevels": "**Using a Higher-Level Spell Slot.**\nUse the spell slot's level for the spell's level in the stat block.",
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "self" },
+        "onHit": { "note": "Summons an Otherworldly Steed (Celestial, Fey, or Fiend type). Shares initiative. Functions as a controlled mount. Disappears at 0 HP or on your death. Upcast: use slot level for stat block level." }
+      }
+    }
   },
   {
     "name": "Find Traps",
@@ -5827,7 +6371,14 @@
       "Cleric",
       "Druid",
       "Ranger"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "self" },
+        "onHit": { "note": "Sense whether any traps exist within 120-ft line of sight. Reveals presence and general danger type only — not exact location. Includes magical traps (Alarm, Glyph of Warding) and mechanical traps." }
+      }
+    }
   },
   {
     "name": "Flame Blade",
@@ -5959,7 +6510,14 @@
       "Cleric",
       "Paladin",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "creature" },
+        "onHit": { "note": "Protect a corpse from decay and undead transformation for 10 days (ritual). Days under this spell don't count toward time limits for resurrection spells." }
+      }
+    }
   },
   {
     "name": "Gust of Wind",
@@ -5980,7 +6538,17 @@
     ],
     "savingThrow": [
       "strength"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "save",
+        "save": { "ability": "strength", "dc": "spell_save_dc", "onSuccess": "negates" },
+        "area": { "shape": "line", "size": 60 },
+        "targeting": { "type": "area" },
+        "onFailedSave": { "note": "Pushed 15 ft away. Moving toward caster costs 2 ft per ft. Disperses gas/vapor, extinguishes unprotected flames. Bonus Action to redirect each turn. Concentration, 1 min." },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Healing Spirit",
@@ -5997,7 +6565,31 @@
       "Druid",
       "Ranger"
     ],
-    "higherLevels": "**At Higher Levels.**\nWhen you cast this spell using a spell slot of 3rd level or higher, the healing increases by 1d6 for each slot level above 2nd."
+    "higherLevels": "**At Higher Levels.**\nWhen you cast this spell using a spell slot of 3rd level or higher, the healing increases by 1d6 for each slot level above 2nd.",
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": {
+          "type": "creature"
+        },
+        "onHit": {
+          "healing": {
+            "dice": "1d6"
+          },
+          "note": "Summoned spirit heals 1d6 HP to creatures that start turn or enter its space (no action). Heals 1+spellcasting mod times total. Concentration."
+        },
+        "upcast": {
+          "perLevel": {
+            "healing": {
+              "dice": "1d6"
+            }
+          }
+        },
+        "meta": {
+          "concentration": true
+        }
+      }
+    }
   },
   {
     "name": "Heat Metal",
@@ -6123,7 +6715,28 @@
       "Warlock",
       "Wizard"
     ],
-    "higherLevels": "**Using a Higher-Level Spell Slot.**\nYou can target one additional creature for each spell slot level above 2."
+    "higherLevels": "**Using a Higher-Level Spell Slot.**\nYou can target one additional creature for each spell slot level above 2.",
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": {
+          "type": "creature"
+        },
+        "onHit": {
+          "applyConditions": [
+            {
+              "name": "Invisible",
+              "duration": {
+                "type": "concentration"
+              }
+            }
+          ]
+        },
+        "meta": {
+          "concentration": true
+        }
+      }
+    }
   },
   {
     "name": "Knock",
@@ -6140,7 +6753,14 @@
       "Bard",
       "Sorcerer",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "creature" },
+        "onHit": { "note": "Open one locked, stuck, or barred object (door, chest, lock). Locks: DC 15 Thieves' Tools check required for magic locks. Audible knock sound 300 ft. Suppresses Arcane Lock for 10 min." }
+      }
+    }
   },
   {
     "name": "Lesser Restoration",
@@ -6159,7 +6779,14 @@
       "Druid",
       "Paladin",
       "Ranger"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "creature" },
+        "onHit": { "note": "End one condition on a touched creature: Blinded, Deafened, Paralyzed, or Poisoned." }
+      }
+    }
   },
   {
     "name": "Levitate",
@@ -6178,7 +6805,26 @@
     ],
     "savingThrow": [
       "constitution"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "save",
+        "save": {
+          "ability": "constitution",
+          "dc": "spell_save_dc",
+          "onSuccess": "negates"
+        },
+        "targeting": {
+          "type": "creature"
+        },
+        "onFailedSave": {
+          "note": "Target rises up to 20 ft vertically and remains suspended. You can alter altitude by 20 ft per turn. Concentration up to 10 min."
+        },
+        "meta": {
+          "concentration": true
+        }
+      }
+    }
   },
   {
     "name": "Locate Animals or Plants",
@@ -6195,7 +6841,14 @@
       "Bard",
       "Druid",
       "Ranger"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "self" },
+        "onHit": { "note": "Learn direction and distance to closest creature or plant of a named/described type within 5 miles (ritual)." }
+      }
+    }
   },
   {
     "name": "Locate Object",
@@ -6215,7 +6868,15 @@
       "Paladin",
       "Ranger",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "self" },
+        "onHit": { "note": "Sense direction of a specific known object or nearest of a type within 1,000 ft (concentration, 10 min). Blocked by lead. Moving objects: know direction of movement." },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Magic Mouth",
@@ -6231,7 +6892,14 @@
     "classes": [
       "Bard",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "creature" },
+        "onHit": { "note": "Implant a triggered message (≤25 words) in an object (permanent until dispel, ritual). Trigger is visual/audible within 30 ft. Can repeat or deliver once. Requires 10 GP jade dust." }
+      }
+    }
   },
   {
     "name": "Magic Weapon",
@@ -6250,7 +6918,15 @@
       "Sorcerer",
       "Wizard"
     ],
-    "higherLevels": "**Using a Higher-Level Spell Slot.**\nThe bonus increases to +2 with a level 3-5 spell slot. The bonus increases to +3 with a level 6+ spell slot."
+    "higherLevels": "**Using a Higher-Level Spell Slot.**\nThe bonus increases to +2 with a level 3-5 spell slot. The bonus increases to +3 with a level 6+ spell slot.",
+    "effects": {
+      "modifiers": [{ "target": "attack", "value": 1 }, { "target": "damage", "value": 1 }],
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "creature" },
+        "onHit": { "note": "Nonmagical weapon becomes +1 magic weapon for 1 hr. Upcast: +2 at levels 3-5, +3 at level 6+." }
+      }
+    }
   },
   {
     "name": "Maximilian's Earthen Grasp",
@@ -6476,7 +7152,14 @@
       "Sorcerer",
       "Warlock",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "self" },
+        "onHit": { "note": "Teleport up to 30 ft to a visible unoccupied space (Bonus Action)." }
+      }
+    }
   },
   {
     "name": "Moonbeam",
@@ -6560,7 +7243,14 @@
     "concentration": false,
     "classes": [
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "creature" },
+        "onHit": { "note": "Make a creature appear as a different creature type to magic detection, or change an object's magical aura (24 hr). Permanent if cast 30 consecutive days." }
+      }
+    }
   },
   {
     "name": "Pass without Trace",
@@ -6576,7 +7266,16 @@
     "classes": [
       "Druid",
       "Ranger"
-    ]
+    ],
+    "effects": {
+      "properties": [{ "type": "note", "text": "+10 bonus to Dexterity (Stealth) checks for you and chosen creatures in a 30-ft Emanation aura." }],
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "self" },
+        "onHit": { "note": "+10 bonus to Stealth checks and no tracks left for you and chosen creatures in 30-ft aura (concentration, 1 hr)." },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Phantasmal Force",
@@ -6599,7 +7298,32 @@
     ],
     "savingThrow": [
       "intelligence"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "save",
+        "save": {
+          "ability": "intelligence",
+          "dc": "spell_save_dc",
+          "onSuccess": "negates"
+        },
+        "targeting": {
+          "type": "creature"
+        },
+        "onFailedSave": {
+          "damage": [
+            {
+              "dice": "2d8",
+              "type": "psychic"
+            }
+          ],
+          "note": "Target believes phantasm is real. Phantasm deals 2d8 psychic damage per turn if it represents a threat. Target can study (INT Investigation vs. spell save DC) to disbelieve."
+        },
+        "meta": {
+          "concentration": true
+        }
+      }
+    }
   },
   {
     "name": "Prayer of Healing",
@@ -6616,7 +7340,29 @@
       "Cleric",
       "Paladin"
     ],
-    "higherLevels": "**Using a Higher-Level Spell Slot.**\nThe healing increases by 2d8 for each spell slot level above 2."
+    "higherLevels": "**Using a Higher-Level Spell Slot.**\nThe healing increases by 2d8 for each spell slot level above 2.",
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": {
+          "type": "creatures",
+          "count": 5
+        },
+        "onHit": {
+          "healing": {
+            "dice": "2d8"
+          },
+          "note": "Up to 5 targets also gain the benefits of a Short Rest."
+        },
+        "upcast": {
+          "perLevel": {
+            "healing": {
+              "dice": "2d8"
+            }
+          }
+        }
+      }
+    }
   },
   {
     "name": "Protection from Poison",
@@ -6634,7 +7380,28 @@
       "Druid",
       "Paladin",
       "Ranger"
-    ]
+    ],
+    "effects": {
+      "properties": [
+        {
+          "type": "resistance",
+          "damageType": "poison"
+        },
+        {
+          "type": "advantage",
+          "on": "save"
+        }
+      ],
+      "action": {
+        "kind": "auto",
+        "targeting": {
+          "type": "creature"
+        },
+        "onHit": {
+          "note": "Ends Poisoned condition on touch. Grants resistance to poison damage and advantage on saves vs. Poisoned for 1 hour."
+        }
+      }
+    }
   },
   {
     "name": "Pyrotechnics",
@@ -6701,7 +7468,26 @@
     ],
     "savingThrow": [
       "constitution"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "save",
+        "save": {
+          "ability": "constitution",
+          "dc": "spell_save_dc",
+          "onSuccess": "negates"
+        },
+        "targeting": {
+          "type": "creature"
+        },
+        "onFailedSave": {
+          "note": "Target has disadvantage on Strength-based D20 tests and subtracts 1d8 from all damage rolls. Repeats save at end of each turn. Concentration up to 1 min."
+        },
+        "meta": {
+          "concentration": true
+        }
+      }
+    }
   },
   {
     "name": "Rope Trick",
@@ -6716,7 +7502,14 @@
     "concentration": false,
     "classes": [
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "self" },
+        "onHit": { "note": "Create an extradimensional space (1 hr) at top of a touched rope. Up to 8 Medium creatures can climb up and hide inside. Attacks/spells can't enter/exit but creatures can see out. Creatures drop out when spell ends." }
+      }
+    }
   },
   {
     "name": "Scorching Ray",
@@ -6775,7 +7568,14 @@
       "Bard",
       "Sorcerer",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "self" },
+        "onHit": { "note": "See invisible creatures/objects as if visible and perceive the Ethereal Plane (1 hr)." }
+      }
+    }
   },
   {
     "name": "Shadow Blade",
@@ -6943,7 +7743,15 @@
       "Bard",
       "Cleric",
       "Ranger"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "point" },
+        "onHit": { "note": "20-ft radius sphere of total silence (concentration, 10 min, ritual). Immunity to thunder damage inside, creatures are Deafened, verbal spell components impossible." },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Skywrite",
@@ -6960,7 +7768,15 @@
       "Bard",
       "Druid",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "point" },
+        "onHit": { "note": "Write up to 10 words in clouds in visible sky (concentration, 1 hr, ritual). Dispersed by strong wind." },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Snilloc's Snowball Swarm",
@@ -7045,7 +7861,15 @@
       "Warlock",
       "Wizard"
     ],
-    "higherLevels": "**Using a Higher-Level Spell Slot.**\nYou can target one additional creature for each spell slot level above 2."
+    "higherLevels": "**Using a Higher-Level Spell Slot.**\nYou can target one additional creature for each spell slot level above 2.",
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "creature" },
+        "onHit": { "note": "Target gains Climb Speed equal to its Speed for concentration up to 1 hour. Can move on vertical surfaces and ceilings freely. Upcast: one additional target per slot level above 2." },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Spike Growth",
@@ -7197,7 +8021,15 @@
       "Druid",
       "Ranger"
     ],
-    "higherLevels": "**Using a Higher-Level Spell Slot.**\nUse the spell slot's level for the spell's level in the stat block."
+    "higherLevels": "**Using a Higher-Level Spell Slot.**\nUse the spell slot's level for the spell's level in the stat block.",
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "self" },
+        "onHit": { "note": "Summons a Bestial Spirit (Air/Land/Water form) as an ally (concentration, 1 hr). Shares initiative, acts after you. Obeys verbal commands. Upcast: use slot level for stat block level." },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Tasha's Mind Whip",
@@ -7263,7 +8095,29 @@
     "classes": [
       "Cleric",
       "Paladin"
-    ]
+    ],
+    "effects": {
+      "modifiers": [
+        {
+          "target": "ac",
+          "value": 1
+        },
+        {
+          "target": "save",
+          "value": 1
+        }
+      ],
+      "properties": [
+        {
+          "type": "resistance",
+          "damageType": "all"
+        },
+        {
+          "type": "note",
+          "text": "Caster takes the same damage as target whenever target is damaged."
+        }
+      ]
+    }
   },
   {
     "name": "Warding Wind",
@@ -7281,7 +8135,15 @@
       "Druid",
       "Sorcerer",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "self" },
+        "onHit": { "note": "10-ft radius wind aura (concentration, 10 min). Deafens you and creatures in area, extinguishes torch-sized flames, disperses gas/fog/vapor, creates difficult terrain for others, ranged weapon attacks through it have disadvantage." },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Web",
@@ -7354,7 +8216,16 @@
     ],
     "savingThrow": [
       "charisma"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "save",
+        "save": { "ability": "charisma", "dc": "spell_save_dc", "onSuccess": "negates" },
+        "area": { "shape": "sphere", "size": 15 },
+        "targeting": { "type": "area" },
+        "onFailedSave": { "note": "Creatures can't speak deliberate lies for 10 min. You know who failed the save. Creatures are aware of the effect and can stay silent or be evasive." }
+      }
+    }
   },
   {
     "name": "Animate Dead",
@@ -7371,7 +8242,14 @@
       "Cleric",
       "Wizard"
     ],
-    "higherLevels": "**Using a Higher-Level Spell Slot.**\nYou animate or reassert control over two additional Undead creatures for each spell slot level above 3. Each of the creatures must come from a different corpse or pile of bones."
+    "higherLevels": "**Using a Higher-Level Spell Slot.**\nYou animate or reassert control over two additional Undead creatures for each spell slot level above 3. Each of the creatures must come from a different corpse or pile of bones.",
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "point" },
+        "onHit": { "note": "Creates Skeleton or Zombie under your control for 24 hr. Bonus action to command up to 4 at once. Upcast: +2 undead per slot level above 3." }
+      }
+    }
   },
   {
     "name": "Aura of Vitality",
@@ -7388,7 +8266,24 @@
       "Cleric",
       "Druid",
       "Paladin"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": {
+          "type": "creature"
+        },
+        "onHit": {
+          "healing": {
+            "dice": "2d6"
+          },
+          "note": "30 ft aura. Restore 2d6 HP to one creature in aura as a bonus action each turn. Concentration up to 1 minute."
+        },
+        "meta": {
+          "concentration": true
+        }
+      }
+    }
   },
   {
     "name": "Beacon of Hope",
@@ -7403,7 +8298,15 @@
     "concentration": true,
     "classes": [
       "Cleric"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "creatures" },
+        "onHit": { "note": "Targets have advantage on WIS saves and death saving throws, and regain maximum possible HP from any healing for concentration up to 1 min." },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Bestow Curse",
@@ -7526,7 +8429,14 @@
     "classes": [
       "Sorcerer",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "self" },
+        "onHit": { "note": "At end of each turn, roll 1d6. On 4-6, vanish to Ethereal Plane until start of next turn. While ethereal: fly 10 ft, resistance to B/P/S damage, immune to Prone, can't attack or cast spells. 1 minute duration." }
+      }
+    }
   },
   {
     "name": "Call Lightning",
@@ -7609,7 +8519,14 @@
       "Sorcerer",
       "Wizard"
     ],
-    "higherLevels": "**At Higher Levels.**\nWhen you cast this spell using a spell slot of 4th level or higher, you can target one additional willing creature for each slot level above 3rd."
+    "higherLevels": "**At Higher Levels.**\nWhen you cast this spell using a spell slot of 4th level or higher, you can target one additional willing creature for each slot level above 3rd.",
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "creatures", "count": 3 },
+        "onHit": { "applyConditions": [{ "name": "Unconscious", "duration": { "type": "duration", "rounds": 100 } }], "note": "Targets fall unconscious for 10 minutes; on waking gain benefit of a short rest. Ends early if target takes damage or is shaken awake." }
+      }
+    }
   },
   {
     "name": "Clairvoyance",
@@ -7627,7 +8544,15 @@
       "Cleric",
       "Sorcerer",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "point" },
+        "onHit": { "note": "Creates invisible sensor at familiar location or obvious unfamiliar location up to 1 mile. Grants remote seeing or hearing (bonus action to switch) for concentration up to 10 min." },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Conjure Animals",
@@ -7650,7 +8575,41 @@
     "savingThrow": [
       "dexterity"
     ],
-    "higherLevels": "**Using a Higher-Level Spell Slot.**\nThe damage increases by 3d10 for each spell slot level above 3."
+    "higherLevels": "**Using a Higher-Level Spell Slot.**\nThe damage increases by 3d10 for each spell slot level above 3.",
+    "effects": {
+      "action": {
+        "kind": "save",
+        "save": {
+          "ability": "dexterity",
+          "dc": "spell_save_dc",
+          "onSuccess": "negates"
+        },
+        "targeting": {
+          "type": "creature"
+        },
+        "onFailedSave": {
+          "damage": [
+            {
+              "dice": "3d10",
+              "type": "slashing"
+            }
+          ]
+        },
+        "upcast": {
+          "perLevel": {
+            "damage": [
+              {
+                "dice": "3d10",
+                "type": "slashing"
+              }
+            ]
+          }
+        },
+        "meta": {
+          "concentration": true
+        }
+      }
+    }
   },
   {
     "name": "Conjure Barrage",
@@ -7736,7 +8695,15 @@
     ],
     "savingThrow": [
       "constitution"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "save",
+        "save": { "ability": "constitution", "dc": "spell_save_dc", "onSuccess": "negates" },
+        "targeting": { "type": "creature" },
+        "onFailedSave": { "note": "Interrupts spellcasting. If target fails CON save, spell being cast is lost with no effect and the action/bonus action/reaction used is wasted (slot not expended)." }
+      }
+    }
   },
   {
     "name": "Create Food and Water",
@@ -7752,7 +8719,14 @@
     "classes": [
       "Cleric",
       "Paladin"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "point" },
+        "onHit": { "note": "Creates 45 lb food and 30 gallons water within 30 ft. Food spoils after 24 hours if uneaten." }
+      }
+    }
   },
   {
     "name": "Crusader's Mantle",
@@ -7805,7 +8779,14 @@
       "Paladin",
       "Ranger",
       "Sorcerer"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "point" },
+        "onHit": { "note": "Sunlight fills 60-ft-radius sphere. Dispels darkness spells of level 3 or lower in overlap. Lasts 1 hour." }
+      }
+    }
   },
   {
     "name": "Dispel Magic",
@@ -7828,7 +8809,14 @@
       "Warlock",
       "Wizard"
     ],
-    "higherLevels": "**Using a Higher-Level Spell Slot.**\nYou automatically end a spell on the target if the spell's level is equal to or less than the level of the spell slot you use."
+    "higherLevels": "**Using a Higher-Level Spell Slot.**\nYou automatically end a spell on the target if the spell's level is equal to or less than the level of the spell slot you use.",
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "creature" },
+        "onHit": { "note": "Ends all spells level 3 or lower on target. For higher-level spells, make a spellcasting ability check (DC 10 + spell level) to end each one. Upcast: auto-ends spells up to slot level used." }
+      }
+    }
   },
   {
     "name": "Elemental Weapon",
@@ -8047,7 +9035,34 @@
       "Cleric",
       "Druid",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "properties": [
+        { "type": "resistance", "damageType": "bludgeoning" },
+        { "type": "resistance", "damageType": "piercing" },
+        { "type": "resistance", "damageType": "slashing" },
+        { "type": "resistance", "damageType": "fire" },
+        { "type": "resistance", "damageType": "cold" },
+        { "type": "resistance", "damageType": "lightning" },
+        { "type": "resistance", "damageType": "acid" },
+        { "type": "resistance", "damageType": "necrotic" },
+        { "type": "resistance", "damageType": "radiant" },
+        { "type": "resistance", "damageType": "force" },
+        { "type": "resistance", "damageType": "thunder" },
+        { "type": "immunity", "damageType": "poison" }
+      ],
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "creature" },
+        "onHit": {
+          "applyConditions": [
+            { "name": "Blinded", "duration": { "type": "duration", "rounds": 600 } },
+            { "name": "Incapacitated", "duration": { "type": "duration", "rounds": 600 } }
+          ],
+          "note": "Target appears dead (indistinguishable by inspection or magic). Blinded, Incapacitated, Speed 0. Resistance to all damage except Psychic; Immunity to Poisoned. Ritual. 1 hour."
+        }
+      }
+    }
   },
   {
     "name": "Fireball",
@@ -8168,7 +9183,21 @@
       "Warlock",
       "Wizard"
     ],
-    "higherLevels": "**Using a Higher-Level Spell Slot.**\nYou can target one additional creature for each spell slot level above 3."
+    "higherLevels": "**Using a Higher-Level Spell Slot.**\nYou can target one additional creature for each spell slot level above 3.",
+    "effects": {
+      "modifiers": [
+        { "target": "speed_fly", "value": 60, "operation": "set" }
+      ],
+      "properties": [
+        { "type": "note", "text": "Grants 60-ft fly speed with hover for concentration up to 10 min. +1 target per slot above 3." }
+      ],
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "creature" },
+        "onHit": { "note": "Target gains 60-ft fly speed with hover. Concentration up to 10 min. Upcast: +1 creature per slot above 3." },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Gaseous Form",
@@ -8186,7 +9215,15 @@
       "Warlock",
       "Wizard"
     ],
-    "higherLevels": "**Using a Higher-Level Spell Slot.**\nYou can target one additional creature for each spell slot level above 3."
+    "higherLevels": "**Using a Higher-Level Spell Slot.**\nYou can target one additional creature for each spell slot level above 3.",
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "creature" },
+        "onHit": { "note": "Target becomes a misty cloud: fly 10 ft (hover), resistance to B/P/S, immune Prone, advantage on STR/DEX/CON saves. Can pass through openings, but can't attack, cast spells, or manipulate objects. Concentration up to 1 hr." },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Glyph of Warding",
@@ -8214,7 +9251,24 @@
     "savingThrow": [
       "dexterity"
     ],
-    "higherLevels": "**Using a Higher-Level Spell Slot.**\nThe damage of an explosive rune increases by 5d8 for each spell slot level above 3. If you create a spell glyph, you can store any spell of up to the same level as the spell slot you use for the Glyph of Warding."
+    "higherLevels": "**Using a Higher-Level Spell Slot.**\nThe damage of an explosive rune increases by 5d8 for each spell slot level above 3. If you create a spell glyph, you can store any spell of up to the same level as the spell slot you use for the Glyph of Warding.",
+    "effects": {
+      "action": {
+        "kind": "save",
+        "save": { "ability": "dexterity", "dc": "spell_save_dc", "onSuccess": "half" },
+        "area": { "shape": "sphere", "size": 20 },
+        "targeting": { "type": "area" },
+        "onFailedSave": {
+          "damage": [{ "dice": "5d8", "type": "acid" }],
+          "note": "Explosive rune: 5d8 acid/cold/fire/lightning/thunder (your choice) in 20-ft sphere, DEX save half. Or stores a spell up to level 3 (spell glyph) that activates on trigger. Upcast: +5d8 / store higher-level spell."
+        },
+        "onSuccessfulSave": {
+          "damage": [{ "dice": "5d8", "type": "acid" }],
+          "note": "Half damage on success."
+        },
+        "upcast": { "perLevel": { "damage": [{ "dice": "5d8", "type": "acid" }] } }
+      }
+    }
   },
   {
     "name": "Haste",
@@ -8393,7 +9447,21 @@
       "Warlock",
       "Wizard"
     ],
-    "higherLevels": "**At Higher Levels.**\nWhen you cast this spell using a spell slot of 4th level or higher, you can target one additional creature for each slot level above 3rd. The creatures must be within 30 feet of each other when you target them."
+    "higherLevels": "**At Higher Levels.**\nWhen you cast this spell using a spell slot of 4th level or higher, you can target one additional creature for each slot level above 3rd. The creatures must be within 30 feet of each other when you target them.",
+    "effects": {
+      "properties": [
+        { "type": "resistance", "damageType": "psychic" },
+        { "type": "advantage", "on": "save_intelligence" },
+        { "type": "advantage", "on": "save_wisdom" },
+        { "type": "advantage", "on": "save_charisma" }
+      ],
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "creature" },
+        "onHit": { "note": "For concentration up to 1 hr: resistance to psychic damage, advantage on INT/WIS/CHA saves. Upcast: +1 creature per slot above 3." },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Leomund's Tiny Hut",
@@ -8409,7 +9477,14 @@
     "classes": [
       "Bard",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "self" },
+        "onHit": { "note": "Creates 10-ft-radius dome shelter for 8 hr (ritual). Comfortable interior; opaque outside, transparent inside. Spells level 3 or lower can't pass through. Ends early if you leave or recast." }
+      }
+    }
   },
   {
     "name": "Life Transference",
@@ -8610,7 +9685,18 @@
     "savingThrow": [
       "charisma"
     ],
-    "higherLevels": "**Using a Higher-Level Spell Slot.**\nThe duration increases by 1 hour for each spell slot level above 3."
+    "higherLevels": "**Using a Higher-Level Spell Slot.**\nThe duration increases by 1 hour for each spell slot level above 3.",
+    "effects": {
+      "action": {
+        "kind": "save",
+        "save": { "ability": "charisma", "dc": "spell_save_dc", "onSuccess": "negates" },
+        "area": { "shape": "sphere", "size": 10 },
+        "targeting": { "type": "area" },
+        "onFailedSave": {
+          "note": "Creates 10-ft-radius, 20-ft-tall Cylinder for 1 hour. Chosen creature types (Celestials, Elementals, Fey, Fiends, or Undead) can't willingly enter without passing CHA save (teleport/plane travel), have Disadvantage on attacks against creatures inside, and can't possess/Charm/Frighten creatures inside. Can reverse to trap chosen type inside. Upcast: +1 hour per slot level above 3."
+        }
+      }
+    }
   },
   {
     "name": "Major Image",
@@ -8629,7 +9715,15 @@
       "Warlock",
       "Wizard"
     ],
-    "higherLevels": "**Using a Higher-Level Spell Slot.**\nThe spell lasts until dispelled, without requiring {status:Concentration}, if cast with a level 4+ spell slot."
+    "higherLevels": "**Using a Higher-Level Spell Slot.**\nThe spell lasts until dispelled, without requiring {status:Concentration}, if cast with a level 4+ spell slot.",
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "point" },
+        "onHit": { "note": "Creates realistic multisensory illusion up to 20-ft cube for concentration up to 10 min. Move as magic action within range. Physical interaction reveals it; INT (Investigation) vs spell save DC to disbelieve. Upcast to level 4+: no concentration." },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Mass Healing Word",
@@ -8646,7 +9740,28 @@
       "Bard",
       "Cleric"
     ],
-    "higherLevels": "**Using a Higher-Level Spell Slot.**\nThe healing increases by 2d4 for each spell slot level above 3."
+    "higherLevels": "**Using a Higher-Level Spell Slot.**\nThe healing increases by 2d4 for each spell slot level above 3.",
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": {
+          "type": "creatures",
+          "count": 6
+        },
+        "onHit": {
+          "healing": {
+            "dice": "2d4"
+          }
+        },
+        "upcast": {
+          "perLevel": {
+            "healing": {
+              "dice": "2d4"
+            }
+          }
+        }
+      }
+    }
   },
   {
     "name": "Meld into Stone",
@@ -8752,7 +9867,14 @@
       "Bard",
       "Ranger",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "creature" },
+        "onHit": { "note": "Target can't be targeted by Divination spells or perceived via magical scrying for 8 hours." }
+      }
+    }
   },
   {
     "name": "Phantom Steed",
@@ -8767,7 +9889,14 @@
     "concentration": false,
     "classes": [
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "point" },
+        "onHit": { "note": "Summons quasi-real riding horse with 100 ft speed for 1 hr (ritual). Spell ends if steed takes any damage." }
+      }
+    }
   },
   {
     "name": "Plant Growth",
@@ -8784,7 +9913,14 @@
       "Bard",
       "Druid",
       "Ranger"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "point" },
+        "onHit": { "note": "Overgrowth: 100-ft-radius sphere of difficult terrain (costs 4 ft per 1 ft moved) instantly. Or Enrichment (8 hrs casting): plants in half-mile radius yield double food for 365 days." }
+      }
+    }
   },
   {
     "name": "Protection from Energy",
@@ -8803,7 +9939,18 @@
       "Ranger",
       "Sorcerer",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "properties": [
+        { "type": "resistance", "damageType": "acid" }
+      ],
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "creature" },
+        "onHit": { "note": "Grants resistance to one damage type (acid, cold, fire, lightning, or thunder) chosen at casting for concentration up to 1 hr." },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Remove Curse",
@@ -8821,7 +9968,14 @@
       "Paladin",
       "Warlock",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "creature" },
+        "onHit": { "note": "Ends all curses on one creature or object. For cursed magic items, breaks attunement without removing the item's curse." }
+      }
+    }
   },
   {
     "name": "Revivify",
@@ -8839,7 +9993,14 @@
       "Druid",
       "Paladin",
       "Ranger"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "creature" },
+        "onHit": { "healing": { "dice": "1" }, "note": "Revives creature dead within 1 minute with 1 HP. Requires 300+ GP diamond (consumed). Can't restore missing body parts or reverse death by old age." }
+      }
+    }
   },
   {
     "name": "Sending",
@@ -8856,7 +10017,14 @@
       "Bard",
       "Cleric",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "creature" },
+        "onHit": { "note": "Sends 25-word message to any creature on any plane. Target can reply immediately. 5% failure chance if on different plane. Target can block future sending for 8 hours." }
+      }
+    }
   },
   {
     "name": "Sleet Storm",
@@ -8923,7 +10091,30 @@
     ],
     "savingThrow": [
       "wisdom"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "save",
+        "save": {
+          "ability": "wisdom",
+          "dc": "spell_save_dc",
+          "onSuccess": "negates"
+        },
+        "area": {
+          "shape": "cube",
+          "size": 40
+        },
+        "targeting": {
+          "type": "area"
+        },
+        "onFailedSave": {
+          "note": "Speed halved; -2 penalty to AC and DEX saves; can't take Reactions; only action or bonus action per turn (not both); one attack max per Attack action. Repeats save at end of each turn."
+        },
+        "meta": {
+          "concentration": true
+        }
+      }
+    }
   },
   {
     "name": "Speak with Dead",
@@ -8940,7 +10131,14 @@
       "Bard",
       "Cleric",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "creature" },
+        "onHit": { "note": "Grants semblance of life to corpse for 10 min. Can ask up to 5 questions. Corpse knows only what it knew in life; answers may be cryptic. Corpse is not compelled to be truthful." }
+      }
+    }
   },
   {
     "name": "Speak with Plants",
@@ -8957,7 +10155,14 @@
       "Bard",
       "Druid",
       "Ranger"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "self" },
+        "onHit": { "note": "Imbues plants in 30-ft emanation with limited sentience for 10 min. Can question them about past-day events, change plant terrain (difficult ↔ ordinary), and communicate with Plant creatures." }
+      }
+    }
   },
   {
     "name": "Spirit Guardians",
@@ -9133,7 +10338,15 @@
       "Warlock",
       "Wizard"
     ],
-    "higherLevels": "**Using a Higher-Level Spell Slot.**\nUse the spell slot's level for the spell's level in the stat block."
+    "higherLevels": "**Using a Higher-Level Spell Slot.**\nUse the spell slot's level for the spell's level in the stat block.",
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "point" },
+        "onHit": { "note": "Summons Fey Spirit (Fuming/Mirthful/Tricksy) under your command for concentration up to 1 hr. Shares your initiative, acts after your turn. Obeys verbal commands." },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Summon Lesser Demons",
@@ -9150,7 +10363,15 @@
       "Warlock",
       "Wizard"
     ],
-    "higherLevels": "**At Higher Levels.**\nWhen you cast this spell using a spell slot of 6th or 7th level, you summon twice as many demons. If you cast it using a spell slot of 8th or 9th level, you summon three times as many demons."
+    "higherLevels": "**At Higher Levels.**\nWhen you cast this spell using a spell slot of 6th or 7th level, you summon twice as many demons. If you cast it using a spell slot of 8th or 9th level, you summon three times as many demons.",
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "point" },
+        "onHit": { "note": "Summons 2/4/8 demons (CR 1/1/2/1/4) hostile to all creatures including you, concentration up to 1 hr. Optional blood circle keeps them out. Upcast (6-7): double demons; (8-9): triple demons." },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Summon Shadowspawn",
@@ -9167,7 +10388,15 @@
       "Warlock",
       "Wizard"
     ],
-    "higherLevels": "**At Higher Levels.**\nWhen you cast this spell using a spell slot of 4th level or higher, use the higher level wherever the spell's level appears in the stat block."
+    "higherLevels": "**At Higher Levels.**\nWhen you cast this spell using a spell slot of 4th level or higher, use the higher level wherever the spell's level appears in the stat block.",
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "point" },
+        "onHit": { "note": "Summons Shadow Spirit (Fury/Despair/Fear) allied to you, concentration up to 1 hr. Shares initiative, acts after you. Obeys verbal commands. Upcast: use slot level in stat block." },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Summon Undead",
@@ -9184,7 +10413,15 @@
       "Warlock",
       "Wizard"
     ],
-    "higherLevels": "**Using a Higher-Level Spell Slot.**\nUse the spell slot's level for the spell's level in the stat block."
+    "higherLevels": "**Using a Higher-Level Spell Slot.**\nUse the spell slot's level for the spell's level in the stat block.",
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "point" },
+        "onHit": { "note": "Summons Undead Spirit (Ghostly/Putrid/Skeletal) allied to you, concentration up to 1 hr. Shares initiative, acts after you. Obeys verbal commands. Upcast: use slot level in stat block." },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Thunder Step",
@@ -9317,7 +10554,14 @@
     "classes": [
       "Wizard"
     ],
-    "higherLevels": "**At Higher Levels.**\nWhen you cast this spell using a spell slot of 4th level or higher, you can animate two additional objects for each slot level above 3rd."
+    "higherLevels": "**At Higher Levels.**\nWhen you cast this spell using a spell slot of 4th level or higher, you can animate two additional objects for each slot level above 3rd.",
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "creature" },
+        "onHit": { "note": "Animates one Tiny nonmagical object as a servant for 8 hours. Commands via bonus action within 120 ft. Upcast: +2 servants per slot above 3." }
+      }
+    }
   },
   {
     "name": "Tongues",
@@ -9336,7 +10580,14 @@
       "Sorcerer",
       "Warlock",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "creature" },
+        "onHit": { "note": "For 1 hour: target understands any spoken or signed language it hears/sees. Any creature that knows at least one language can understand the target when it speaks or signs." }
+      }
+    }
   },
   {
     "name": "Vampiric Touch",
@@ -9403,7 +10654,15 @@
     "concentration": true,
     "classes": [
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "point" },
+        "onHit": { "applyConditions": [{ "name": "Blinded", "duration": { "type": "concentration" } }], "note": "Creates 30×10×10-ft wall of swirling sand for concentration up to 10 min. Blocks line of sight. Creatures in wall are blinded and must spend 3 ft of movement per 1 ft traveled." },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Wall of Water",
@@ -9420,7 +10679,15 @@
       "Druid",
       "Sorcerer",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "point" },
+        "onHit": { "note": "Creates 30×10×1-ft wall (or 20-ft-diameter ring) of water for concentration up to 10 min. Difficult terrain. Ranged attacks through wall have disadvantage; fire damage halved. Cold effects can freeze sections (AC 5, 15 HP each)." },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Water Breathing",
@@ -9438,7 +10705,14 @@
       "Ranger",
       "Sorcerer",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "creatures", "count": 10 },
+        "onHit": { "note": "Up to 10 creatures can breathe underwater for 24 hours while retaining their normal respiration. Ritual: cast without expending spell slot." }
+      }
+    }
   },
   {
     "name": "Water Walk",
@@ -9456,7 +10730,14 @@
       "Druid",
       "Ranger",
       "Sorcerer"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "creatures", "count": 10 },
+        "onHit": { "note": "Up to 10 creatures can walk across liquid surfaces as solid ground for 1 hour (ritual). Still requires bonus action to submerge intentionally." }
+      }
+    }
   },
   {
     "name": "Wind Wall",
@@ -9478,7 +10759,44 @@
     ],
     "savingThrow": [
       "strength"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "save",
+        "save": {
+          "ability": "strength",
+          "dc": "spell_save_dc",
+          "onSuccess": "half"
+        },
+        "area": {
+          "shape": "line",
+          "size": 50
+        },
+        "targeting": {
+          "type": "area"
+        },
+        "onFailedSave": {
+          "damage": [
+            {
+              "dice": "4d8",
+              "type": "bludgeoning"
+            }
+          ]
+        },
+        "onSuccessfulSave": {
+          "damage": [
+            {
+              "dice": "4d8",
+              "type": "bludgeoning"
+            }
+          ],
+          "note": "Half damage on success."
+        },
+        "meta": {
+          "concentration": true
+        }
+      }
+    }
   },
   {
     "name": "Arcane Eye",
@@ -9493,7 +10811,15 @@
     "concentration": true,
     "classes": [
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "self" },
+        "onHit": { "note": "Creates invisible invulnerable sensor within 30 ft (concentration). Provides 360-degree vision and 30-ft darkvision. Move up to 30 ft as bonus action. Can squeeze through 1-inch openings." },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Aura of Life",
@@ -9509,7 +10835,18 @@
     "classes": [
       "Cleric",
       "Paladin"
-    ]
+    ],
+    "effects": {
+      "properties": [
+        { "type": "resistance", "damageType": "necrotic" }
+      ],
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "self" },
+        "onHit": { "note": "30-ft aura (concentration). You and allies resist necrotic damage, HP max can't be reduced. Allies at 0 HP regain 1 HP at start of their turn." },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Aura of Purity",
@@ -9525,7 +10862,19 @@
     "classes": [
       "Cleric",
       "Paladin"
-    ]
+    ],
+    "effects": {
+      "properties": [
+        { "type": "resistance", "damageType": "poison" },
+        { "type": "advantage", "on": "save" }
+      ],
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "self" },
+        "onHit": { "note": "30-ft aura (concentration). You and allies resist poison damage; advantage on saves vs. Blinded, Charmed, Deafened, Frightened, Paralyzed, Poisoned, and Stunned." },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Banishment",
@@ -9759,7 +11108,18 @@
     "savingThrow": [
       "wisdom"
     ],
-    "higherLevels": "**Using a Higher-Level Spell Slot.**\nThe {rule:Sphere [Area of Effect]}'s radius increases by 5 feet for each spell slot level above 4."
+    "higherLevels": "**Using a Higher-Level Spell Slot.**\nThe {rule:Sphere [Area of Effect]}'s radius increases by 5 feet for each spell slot level above 4.",
+    "effects": {
+      "action": {
+        "kind": "save",
+        "save": { "ability": "wisdom", "dc": "spell_save_dc", "onSuccess": "negates" },
+        "area": { "shape": "sphere", "size": 10 },
+        "targeting": { "type": "area" },
+        "onFailedSave": { "note": "Creatures can't take Bonus Actions or Reactions; roll 1d10 at start of each turn for random behavior. Concentration up to 1 minute. Repeat save at end of each turn." },
+        "upcast": { "perLevel": { "note": "Area radius increases by 5 feet per slot level above 4th." } },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Conjure Minor Elementals",
@@ -9782,7 +11142,19 @@
       "fire",
       "lightning"
     ],
-    "higherLevels": "**Using a Higher-Level Spell Slot.**\nThe damage increases by 2d8 for each spell slot level above 4."
+    "higherLevels": "**Using a Higher-Level Spell Slot.**\nThe damage increases by 2d8 for each spell slot level above 4.",
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "self" },
+        "onHit": {
+          "damage": [{ "dice": "2d8", "type": "acid" }],
+          "note": "15-ft aura (concentration). Your attacks deal extra 2d8 acid/cold/fire/lightning damage to creatures in aura. Ground in aura is difficult terrain for enemies."
+        },
+        "upcast": { "perLevel": { "damage": [{ "dice": "2d8", "type": "acid" }] } },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Conjure Woodland Beings",
@@ -9805,7 +11177,19 @@
     "savingThrow": [
       "wisdom"
     ],
-    "higherLevels": "**Using a Higher-Level Spell Slot.**\nThe damage increases by 5d8 for each spell slot level above 4."
+    "higherLevels": "**Using a Higher-Level Spell Slot.**\nThe damage increases by 5d8 for each spell slot level above 4.",
+    "effects": {
+      "action": {
+        "kind": "save",
+        "save": { "ability": "wisdom", "dc": "spell_save_dc", "onSuccess": "half" },
+        "area": { "shape": "sphere", "size": 10 },
+        "targeting": { "type": "area" },
+        "onFailedSave": { "damage": [{ "dice": "5d8", "type": "force" }] },
+        "onSuccessfulSave": { "damage": [{ "dice": "5d8", "type": "force" }], "note": "Half damage on success." },
+        "upcast": { "perLevel": { "damage": [{ "dice": "5d8", "type": "force" }] } },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Control Water",
@@ -9828,7 +11212,18 @@
     ],
     "savingThrow": [
       "strength"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "save",
+        "save": { "ability": "strength", "dc": "spell_save_dc", "onSuccess": "negates" },
+        "targeting": { "type": "area" },
+        "onFailedSave": {
+          "damage": [{ "dice": "2d8", "type": "bludgeoning" }],
+          "note": "Controls water in 100-ft cube. Effects: Flood (raise water 20 ft, create wave), Part Water (create trench), Redirect Flow, or Whirlpool (2d8 bludgeoning, STR save). Concentration up to 10 min."
+        }
+      }
+    }
   },
   {
     "name": "Death Ward",
@@ -9844,7 +11239,14 @@
     "classes": [
       "Cleric",
       "Paladin"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "creature" },
+        "onHit": { "note": "The first time the target would drop to 0 HP, it drops to 1 HP instead and the spell ends. Also negates instant-kill effects once." }
+      }
+    }
   },
   {
     "name": "Dimension Door",
@@ -9898,7 +11300,14 @@
       "Cleric",
       "Druid",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "self" },
+        "onHit": { "note": "Ask one question about events within 7 days; receive truthful answer. Each casting after the first on the same long rest has +25% cumulative chance to receive no answer. Ritual." }
+      }
+    }
   },
   {
     "name": "Dominate Beast",
@@ -10061,7 +11470,14 @@
     "concentration": false,
     "classes": [
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "point" },
+        "onHit": { "note": "Convert raw materials within range into a fabricated object (Large or smaller for most materials; Medium or smaller for metal/stone). Cannot create creatures, magic items, or high-skill items without tool proficiency." }
+      }
+    }
   },
   {
     "name": "Find Greater Steed",
@@ -10076,7 +11492,14 @@
     "concentration": false,
     "classes": [
       "Paladin"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "self" },
+        "onHit": { "note": "Summons bonded celestial/fey/fiend mount (griffon, pegasus, peryton, dire wolf, rhinoceros, or saber-toothed tiger). Telepathic link within 1 mile. Spells targeting only you can also target mount. Recast to resummon at full HP." }
+      }
+    }
   },
   {
     "name": "Fire Shield",
@@ -10178,7 +11601,14 @@
       "Druid",
       "Ranger"
     ],
-    "higherLevels": "**Using a Higher-Level Spell Slot.**\nYou can target one additional creature for each spell slot level above 4."
+    "higherLevels": "**Using a Higher-Level Spell Slot.**\nYou can target one additional creature for each spell slot level above 4.",
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "creature" },
+        "onHit": { "note": "For 1 hour: target ignores difficult terrain, magic can't reduce speed or apply Paralyzed/Restrained, gains swim speed equal to speed, can escape nonmagical restraints with 5 ft of movement." }
+      }
+    }
   },
   {
     "name": "Giant Insect",
@@ -10194,7 +11624,15 @@
     "classes": [
       "Druid"
     ],
-    "higherLevels": "**Using a Higher-Level Spell Slot.**\nUse the spell slot's level for the spell's level in the stat block."
+    "higherLevels": "**Using a Higher-Level Spell Slot.**\nUse the spell slot's level for the spell's level in the stat block.",
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "self" },
+        "onHit": { "note": "Summons a Giant Insect (centipede, spider, or wasp) as an ally for up to 10 minutes (concentration). Shares your initiative, takes turn after yours. Obeys verbal commands (no action required). Upcast: use slot level for stat block level." },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Grasping Vine",
@@ -10263,7 +11701,17 @@
       "Bard",
       "Sorcerer",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "creature" },
+        "onHit": {
+          "applyConditions": [{ "name": "Invisible", "duration": { "type": "concentration" } }]
+        },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Guardian of Faith",
@@ -10284,7 +11732,22 @@
     ],
     "savingThrow": [
       "dexterity"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "save",
+        "save": { "ability": "dexterity", "dc": "spell_save_dc", "onSuccess": "half" },
+        "targeting": { "type": "creature" },
+        "onFailedSave": {
+          "damage": [{ "dice": "20", "type": "radiant" }],
+          "note": "Spectral guardian lasts 8 hours. Enemies entering or starting turn within 10 ft make DEX save: 20 radiant on fail, half on success. Guardian vanishes after dealing 60 total damage."
+        },
+        "onSuccessfulSave": {
+          "damage": [{ "dice": "20", "type": "radiant" }],
+          "note": "Half damage on success."
+        }
+      }
+    }
   },
   {
     "name": "Guardian of Nature",
@@ -10337,7 +11800,14 @@
       "Druid",
       "Warlock",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "point" },
+        "onHit": { "note": "Disguise 150-ft cube of natural terrain as different terrain for 24 hours. Tactile feel unchanged. INT (Investigation) vs spell save DC to disbelieve. Does not affect structures, equipment, or creatures." }
+      }
+    }
   },
   {
     "name": "Ice Storm",
@@ -10421,7 +11891,14 @@
     "concentration": false,
     "classes": [
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "self" },
+        "onHit": { "note": "Hide chest on Ethereal Plane until dispelled or 60+ days (5%/day chance to fail). Recall/send with Magic action + replica touch. Holds up to 12 cu ft of nonliving material." }
+      }
+    }
   },
   {
     "name": "Locate Creature",
@@ -10441,7 +11918,15 @@
       "Paladin",
       "Ranger",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "self" },
+        "onHit": { "note": "Sense direction to named/described familiar creature within 1,000 ft (concentration, 1 hour). Blocked by lead. Doesn't work if creature is polymorphed or in different form." },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Mordenkainen's Faithful Hound",
@@ -10462,7 +11947,18 @@
     ],
     "savingThrow": [
       "dexterity"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "save",
+        "save": { "ability": "dexterity", "dc": "spell_save_dc", "onSuccess": "negates" },
+        "targeting": { "type": "creature" },
+        "onFailedSave": {
+          "damage": [{ "dice": "4d8", "type": "force" }],
+          "note": "Invisible hound lasts 8 hours, bites enemies within 5 ft at start of each caster turn. Barks when intruders come within 30 ft without password."
+        }
+      }
+    }
   },
   {
     "name": "Mordenkainen's Private Sanctum",
@@ -10478,7 +11974,14 @@
     "classes": [
       "Wizard"
     ],
-    "higherLevels": "**Using a Higher-Level Spell Slot.**\nYou can increase the size of the {rule:Cube [Area of Effect]} by 100 feet for each spell slot level above 4."
+    "higherLevels": "**Using a Higher-Level Spell Slot.**\nYou can increase the size of the {rule:Cube [Area of Effect]} by 100 feet for each spell slot level above 4.",
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "point" },
+        "onHit": { "note": "Secure area up to 100-ft cube for 24 hours. Choose any combination: soundproof, opaque to vision, block divination sensors/targeting, block teleportation, block planar travel. Permanent if cast daily for 1 year." }
+      }
+    }
   },
   {
     "name": "Otiluke's Resilient Sphere",
@@ -10496,7 +11999,19 @@
     ],
     "savingThrow": [
       "dexterity"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "save",
+        "save": { "ability": "dexterity", "dc": "spell_save_dc", "onSuccess": "negates" },
+        "targeting": { "type": "creature" },
+        "onFailedSave": {
+          "applyConditions": [{ "name": "Restrained", "duration": { "type": "concentration" } }],
+          "note": "Target enclosed in indestructible sphere (concentration). Creature inside can't be damaged from outside, and can't damage anything outside. Sphere can be moved."
+        },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Phantasmal Killer",
@@ -10571,7 +12086,18 @@
     ],
     "savingThrow": [
       "wisdom"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "save",
+        "save": { "ability": "wisdom", "dc": "spell_save_dc", "onSuccess": "negates" },
+        "targeting": { "type": "creature" },
+        "onFailedSave": {
+          "note": "Target transforms into a Beast of CR ≤ target's CR (concentration, up to 1 hour). Target gains temp HP equal to beast form HP; spell ends if temp HP reach 0. Target can't speak or cast spells."
+        },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Shadow of Moil",
@@ -10589,7 +12115,21 @@
     ],
     "damageType": [
       "necrotic"
-    ]
+    ],
+    "effects": {
+      "properties": [
+        { "type": "resistance", "damageType": "radiant" }
+      ],
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "self" },
+        "onHit": {
+          "damage": [{ "dice": "2d8", "type": "necrotic" }],
+          "note": "Concentration. You become heavily obscured. Dim light within 10 ft becomes darkness, bright light becomes dim. Creatures that hit you with melee attacks take 2d8 necrotic. Resistance to radiant damage."
+        },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Sickening Radiance",
@@ -10730,7 +12270,14 @@
       "Cleric",
       "Druid",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "point" },
+        "onHit": { "note": "Shape a touched stone object (Medium or smaller) or up to 5-ft section of stone into any desired form. Can create passages, seal doors, make hinges and latches. Fine mechanical detail not possible." }
+      }
+    }
   },
   {
     "name": "Stoneskin",
@@ -10844,7 +12391,15 @@
       "Warlock",
       "Wizard"
     ],
-    "higherLevels": "**Using a Higher-Level Spell Slot.**\nUse the spell slot's level for the spell's level in the stat block."
+    "higherLevels": "**Using a Higher-Level Spell Slot.**\nUse the spell slot's level for the spell's level in the stat block.",
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "self" },
+        "onHit": { "note": "Summons an Aberrant Spirit (Beholderkin, Mind Flayer, or Slaad form) as an ally (concentration, 1 hour). Shares initiative, acts after you. Obeys verbal commands. Upcast: use slot level for stat block level." },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Summon Construct",
@@ -10860,7 +12415,15 @@
     "classes": [
       "Wizard"
     ],
-    "higherLevels": "**Using a Higher-Level Spell Slot.**\nUse the spell slot's level for the spell's level in the stat block."
+    "higherLevels": "**Using a Higher-Level Spell Slot.**\nUse the spell slot's level for the spell's level in the stat block.",
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "self" },
+        "onHit": { "note": "Summons a Construct Spirit (Clay, Metal, or Stone form) as an ally (concentration, 1 hour). Shares initiative, acts after you. Obeys verbal commands. Upcast: use slot level for stat block level." },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Summon Elemental",
@@ -10878,7 +12441,15 @@
       "Ranger",
       "Wizard"
     ],
-    "higherLevels": "**Using a Higher-Level Spell Slot.**\nUse the spell slot's level for the spell's level in the stat block."
+    "higherLevels": "**Using a Higher-Level Spell Slot.**\nUse the spell slot's level for the spell's level in the stat block.",
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "self" },
+        "onHit": { "note": "Summons an Elemental Spirit (Air/Earth/Fire/Water form) as an ally (concentration, 1 hour). Shares initiative, acts after you. Obeys verbal commands. Upcast: use slot level for stat block level." },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Summon Greater Demon",
@@ -10898,7 +12469,18 @@
     "savingThrow": [
       "charisma"
     ],
-    "higherLevels": "**At Higher Levels.**\nWhen you cast this spell using a spell slot of 5th level or higher, the challenge rating increases by 1 for each slot level above 4th."
+    "higherLevels": "**At Higher Levels.**\nWhen you cast this spell using a spell slot of 5th level or higher, the challenge rating increases by 1 for each slot level above 4th.",
+    "effects": {
+      "action": {
+        "kind": "save",
+        "save": { "ability": "charisma", "dc": "spell_save_dc", "onSuccess": "negates" },
+        "targeting": { "type": "creature" },
+        "onFailedSave": {
+          "note": "Summons demon (CR 5 or lower) you choose. Rolls own initiative. CHA save at end of each demon turn (disadvantage if you know its true name) — fail: obeys you; success: no longer under your control. If concentration ends early, uncontrolled demon lingers 1d6 rounds. Upcast: CR increases by 1 per slot level above 4."
+        },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Vitriolic Sphere",
@@ -11142,7 +12724,15 @@
     "concentration": true,
     "classes": [
       "Druid"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "self" },
+        "onHit": { "note": "10-ft aura (concentration). Non-Construct, non-Undead creatures cannot enter or reach through the aura. They can still cast spells or make ranged attacks through it." },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Awaken",
@@ -11158,7 +12748,14 @@
     "classes": [
       "Bard",
       "Druid"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "creature" },
+        "onHit": { "note": "Transform a Beast or Plant creature (INT 3 or lower) or natural plant into sentient creature with INT 10, able to speak one language you know. Charmed by you for 30 days. Requires 8-hour casting and 1,000 GP agate consumed." }
+      }
+    }
   },
   {
     "name": "Banishing Smite",
@@ -11217,7 +12814,17 @@
       "dexterity",
       "strength"
     ],
-    "higherLevels": "**Using a Higher-Level Spell Slot.**\nThe damage of the Clenched Fist increases by 5d8 and the damage of the Grasping Hand increases by 4d6 for each spell slot level above 5."
+    "higherLevels": "**Using a Higher-Level Spell Slot.**\nThe damage of the Clenched Fist increases by 5d8 and the damage of the Grasping Hand increases by 4d6 for each spell slot level above 5.",
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "creature" },
+        "onHit": {
+          "note": "Summons Large magical hand (AC 20, HP = caster max HP). As Bonus Action each turn move up to 60 ft and choose: Clenched Fist (melee spell attack, 5d8 force); Forceful Hand (STR save or push up to 5×spell mod ft); Grasping Hand (DEX save or Grappled, can crush for 4d6+mod bludgeoning); Interposing Hand (half cover vs originating attacks). Concentration up to 1 min."
+        },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Circle of Power",
@@ -11234,7 +12841,18 @@
       "Cleric",
       "Paladin",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "properties": [
+        { "type": "advantage", "on": "save" }
+      ],
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "self" },
+        "onHit": { "note": "30-ft aura (concentration). You and allies have advantage on saves vs. spells and magical effects. On a success against a half-damage effect, you take no damage instead." },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Cloudkill",
@@ -11316,7 +12934,14 @@
     "concentration": false,
     "classes": [
       "Cleric"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "self" },
+        "onHit": { "note": "Ask deity up to 3 yes/no questions. Answers are correct but may be 'unclear'. Multiple casts per long rest: cumulative 25% chance of no answer per cast after the first." }
+      }
+    }
   },
   {
     "name": "Commune with Nature",
@@ -11332,7 +12957,14 @@
     "classes": [
       "Druid",
       "Ranger"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "self" },
+        "onHit": { "note": "Learn 3 facts about area within 3 miles (outdoors) or 300 ft (underground) from: settlements, planar portals, CR 10+ Celestial/Elemental/Fey/Fiend/Undead location, prevalent plants/minerals/beasts, or bodies of water." }
+      }
+    }
   },
   {
     "name": "Cone of Cold",
@@ -11426,7 +13058,21 @@
     "savingThrow": [
       "dexterity"
     ],
-    "higherLevels": "**Using a Higher-Level Spell Slot.**\nThe damage increases by 8d8;4d8 for each spell slot level above 5."
+    "higherLevels": "**Using a Higher-Level Spell Slot.**\nThe damage increases by 8d8;4d8 for each spell slot level above 5.",
+    "effects": {
+      "action": {
+        "kind": "save",
+        "save": { "ability": "dexterity", "dc": "spell_save_dc", "onSuccess": "negates" },
+        "targeting": { "type": "creature" },
+        "onFailedSave": {
+          "damage": [{ "dice": "8d8", "type": "lightning" }],
+          "applyConditions": [{ "name": "Restrained", "duration": { "type": "concentration" }, "repeatSave": "start" }],
+          "note": "Damage type depends on element chosen (lightning/thunder/fire/cold). Restrained target takes 4d8 of same type at start of each turn until it succeeds on repeat save."
+        },
+        "upcast": { "perLevel": { "damage": [{ "dice": "8d8", "type": "lightning" }] } },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Conjure Volley",
@@ -11503,7 +13149,19 @@
     ],
     "savingThrow": [
       "intelligence"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "save",
+        "save": { "ability": "intelligence", "dc": 15, "onSuccess": "negates" },
+        "targeting": { "type": "self" },
+        "onFailedSave": {
+          "damage": [{ "dice": "6d6", "type": "psychic" }],
+          "applyConditions": [{ "name": "Incapacitated", "duration": { "type": "duration", "rounds": 999 } }],
+          "note": "Caster makes DC 15 INT save (fixed DC, not spell save DC). Failed: 6d6 psychic, Incapacitated until long rest. Passed: ask planar entity up to 5 one-word questions."
+        }
+      }
+    }
   },
   {
     "name": "Contagion",
@@ -11575,7 +13233,20 @@
     ],
     "savingThrow": [
       "strength"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "save",
+        "save": { "ability": "strength", "dc": "spell_save_dc", "onSuccess": "negates" },
+        "area": { "shape": "cube", "size": 100 },
+        "targeting": { "type": "area" },
+        "onFailedSave": {
+          "applyConditions": [{ "name": "Prone", "duration": { "type": "duration", "rounds": 1 } }],
+          "note": "Choose Gusts (disadvantage on ranged attacks, slow movement), Downdraft (disadvantage on ranged attacks, flying creatures knocked prone on failed STR save), or Updraft (halved fall damage, boosted jumps). Concentration up to 1 hour."
+        },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Creation",
@@ -11592,7 +13263,14 @@
       "Sorcerer",
       "Wizard"
     ],
-    "higherLevels": "**Using a Higher-Level Spell Slot.**\nThe {rule:Cube [Area of Effect]} increases by 5 feet for each spell slot level above 5."
+    "higherLevels": "**Using a Higher-Level Spell Slot.**\nThe {rule:Cube [Area of Effect]} increases by 5 feet for each spell slot level above 5.",
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "point" },
+        "onHit": { "note": "Create nonmagical object (up to 5-ft cube) from shadow material. Duration by material: vegetable 24h, stone/crystal 12h, precious metals 1h, gems 10 min, adamantine/mithral 1 min. Can't use as spell component. Upcast: cube size +5 ft per slot level above 5." }
+      }
+    }
   },
   {
     "name": "Danse Macabre",
@@ -11858,7 +13536,18 @@
     ],
     "savingThrow": [
       "wisdom"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "save",
+        "save": { "ability": "wisdom", "dc": "spell_save_dc", "onSuccess": "negates" },
+        "targeting": { "type": "creature" },
+        "onFailedSave": {
+          "damage": [{ "dice": "3d6", "type": "psychic" }],
+          "note": "Messenger enters target's dreams while sleeping. If used as nightmare: target makes WIS save; on fail they gain no benefit from rest and take 3d6 psychic on waking."
+        }
+      }
+    }
   },
   {
     "name": "Enervation",
@@ -11930,7 +13619,15 @@
       "Sorcerer",
       "Warlock",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "self" },
+        "onHit": { "note": "Teleport up to 60 ft to a visible unoccupied space. For concentration (up to 1 min), can teleport again as a bonus action each turn." },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Flame Strike",
@@ -12062,7 +13759,14 @@
       "Druid",
       "Paladin",
       "Ranger"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "creature" },
+        "onHit": { "note": "Remove one of: 1 exhaustion level, Charmed or Petrified condition, a curse or cursed attunement, any ability score reduction, or HP maximum reduction." }
+      }
+    }
   },
   {
     "name": "Hallow",
@@ -12077,7 +13781,14 @@
     "concentration": false,
     "classes": [
       "Cleric"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "point" },
+        "onHit": { "note": "Consecrate up to 60-ft-radius area permanently. Bars chosen creature type (Aberration/Celestial/Elemental/Fey/Fiend/Undead) entry. Adds one extra effect: Courage, Darkness, Daylight, Peaceful Rest, Extradimensional Interference, Fear, Resistance, Silence, Tongues, or Vulnerability. Requires 24-hr casting and 1,000 GP incense." }
+      }
+    }
   },
   {
     "name": "Hold Monster",
@@ -12251,7 +13962,15 @@
       "Warlock",
       "Wizard"
     ],
-    "higherLevels": "**At Higher Levels.**\nWhen you cast this spell using a spell slot of 6th level or higher, the challenge rating increases by 1 for each slot level above 5th."
+    "higherLevels": "**At Higher Levels.**\nWhen you cast this spell using a spell slot of 6th level or higher, the challenge rating increases by 1 for each slot level above 5th.",
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "self" },
+        "onHit": { "note": "Summons a CR 6 or lower devil of your choice (concentration, 1 hour). Rolls own initiative, under DM control. Issue verbal commands (no action); CHA check vs WIS contested if it resists. If concentration ends early, uncontrolled devil acts 3d6 minutes. Upcast: CR increases by 1 per slot level above 5." },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Insect Plague",
@@ -12408,7 +14127,14 @@
       "Bard",
       "Cleric",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "self" },
+        "onHit": { "note": "Learn lore about a famous person, place, or object as determined by the DM. More prior knowledge yields more precise detail. Fails if subject is not truly famous. Requires 10-min casting and 250 GP incense consumed." }
+      }
+    }
   },
   {
     "name": "Maelstrom",
@@ -12471,7 +14197,15 @@
       "Cleric",
       "Druid"
     ],
-    "higherLevels": "**Using a Higher-Level Spell Slot.**\nThe healing increases by 5d8 for each spell slot level above 5."
+    "higherLevels": "**Using a Higher-Level Spell Slot.**\nThe healing increases by 5d8 for each spell slot level above 5.",
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "creatures", "count": 6 },
+        "onHit": { "healing": { "dice": "5d8" } },
+        "upcast": { "perLevel": { "healing": { "dice": "5d8" } } }
+      }
+    }
   },
   {
     "name": "Mislead",
@@ -12488,7 +14222,18 @@
       "Bard",
       "Warlock",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "self" },
+        "onHit": {
+          "applyConditions": [{ "name": "Invisible", "duration": { "type": "concentration" } }],
+          "note": "You become invisible and an illusory double appears in your place (concentration). Invisibility ends when you attack, deal damage, or cast a spell. You can see/hear through the double."
+        },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Modify Memory",
@@ -12603,7 +14348,14 @@
     "concentration": false,
     "classes": [
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "point" },
+        "onHit": { "note": "Creates passage (up to 5 ft wide, 8 ft tall, 20 ft deep) through wooden, plaster, or stone surface for 1 hour. Creatures/objects inside are safely ejected when passage closes." }
+      }
+    }
   },
   {
     "name": "Planar Binding",
@@ -12626,7 +14378,15 @@
     "savingThrow": [
       "charisma"
     ],
-    "higherLevels": "**Using a Higher-Level Spell Slot.**\nThe duration increases with a spell slot of level 6 (10 days), 7 (30 days), 8 (180 days), and 9 (366 days)."
+    "higherLevels": "**Using a Higher-Level Spell Slot.**\nThe duration increases with a spell slot of level 6 (10 days), 7 (30 days), 8 (180 days), and 9 (366 days).",
+    "effects": {
+      "action": {
+        "kind": "save",
+        "save": { "ability": "charisma", "dc": "spell_save_dc", "onSuccess": "negates" },
+        "targeting": { "type": "creature" },
+        "onFailedSave": { "note": "Binds a Celestial/Elemental/Fey/Fiend to serve you for 24 hours (no concentration). It must follow your commands. Upcast: duration increases to 10/30/180/366 days at slots 6/7/8/9. Requires 1,000 GP jewel consumed." }
+      }
+    }
   },
   {
     "name": "Raise Dead",
@@ -12643,7 +14403,14 @@
       "Bard",
       "Cleric",
       "Paladin"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "creature" },
+        "onHit": { "note": "Revives creature dead no more than 10 days (not undead) with 1 HP. Neutralizes poisons. Target suffers -4 to all D20 Tests, reduced by 1 per Long Rest until gone. Requires 500 GP diamond consumed." }
+      }
+    }
   },
   {
     "name": "Rary's Telepathic Bond",
@@ -12659,7 +14426,14 @@
     "classes": [
       "Bard",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "creature" },
+        "onHit": { "note": "Links up to 8 willing creatures with telepathic bond for 1 hour (ritual). They can communicate telepathically regardless of language over any distance (same plane only)." }
+      }
+    }
   },
   {
     "name": "Reincarnate",
@@ -12674,7 +14448,14 @@
     "concentration": false,
     "classes": [
       "Druid"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "creature" },
+        "onHit": { "note": "Returns dead Humanoid (dead ≤10 days) to life in a new body of a random or chosen species (roll 1d10). Creature retains prior capabilities but gains new species traits. Requires 1,000 GP rare oils consumed." }
+      }
+    }
   },
   {
     "name": "Scrying",
@@ -12696,7 +14477,16 @@
     ],
     "savingThrow": [
       "wisdom"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "save",
+        "save": { "ability": "wisdom", "dc": "spell_save_dc", "onSuccess": "negates" },
+        "targeting": { "type": "creature" },
+        "onFailedSave": { "note": "Invisible sensor appears near target (concentration 10 min). You see/hear through it. WIS save modified by familiarity (+5 secondhand, +0 firsthand, -5 extensive) and physical connection (-2 likeness, -4 possession, -10 body part). On success: immune for 24 hours." },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Seeming",
@@ -12716,7 +14506,15 @@
     ],
     "savingThrow": [
       "charisma"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "save",
+        "save": { "ability": "charisma", "dc": "spell_save_dc", "onSuccess": "negates" },
+        "targeting": { "type": "creature" },
+        "onFailedSave": { "note": "Target receives illusory appearance for 8 hours (unwilling creatures make CHA save). Changes body and equipment appearance (same limb arrangement). INT (Investigation) vs spell save DC to see through illusion." }
+      }
+    }
   },
   {
     "name": "Skill Empowerment",
@@ -12733,7 +14531,15 @@
       "Bard",
       "Sorcerer",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "creature" },
+        "onHit": { "note": "Target gains Expertise (double proficiency) in one skill they are already proficient in (concentration, up to 1 hour)." },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Steel Wind Strike",
@@ -12792,7 +14598,15 @@
       "Cleric",
       "Paladin"
     ],
-    "higherLevels": "**Using a Higher-Level Spell Slot.**\nUse the spell slot's level for the spell's level in the stat block."
+    "higherLevels": "**Using a Higher-Level Spell Slot.**\nUse the spell slot's level for the spell's level in the stat block.",
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "self" },
+        "onHit": { "note": "Summons a Celestial Spirit (Avenger or Defender form) as an ally (concentration, 1 hour). Shares initiative, acts after you. Obeys verbal commands. Upcast: use slot level for stat block level. Requires 500 GP reliquary." },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Summon Dragon",
@@ -12808,7 +14622,15 @@
     "classes": [
       "Wizard"
     ],
-    "higherLevels": "**Using a Higher-Level Spell Slot.**\nUse the spell slot's level for the spell's level in the stat block."
+    "higherLevels": "**Using a Higher-Level Spell Slot.**\nUse the spell slot's level for the spell's level in the stat block.",
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "self" },
+        "onHit": { "note": "Summons a Draconic Spirit as an ally (concentration, 1 hour). Shares initiative, acts after you. Obeys verbal commands. Upcast: use slot level for stat block level." },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Swift Quiver",
@@ -12823,7 +14645,15 @@
     "concentration": true,
     "classes": [
       "Ranger"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "self" },
+        "onHit": { "note": "Each turn on cast and as a Bonus Action, make two attacks with a bow or crossbow. Creates its own magical ammunition (disintegrates after use). Concentration, up to 1 minute." },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Synaptic Static",
@@ -12942,7 +14772,14 @@
       "Sorcerer",
       "Warlock",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "point" },
+        "onHit": { "note": "Opens a shimmering portal (1 round) linked to a known permanent teleportation circle. Any creature entering it instantly appears near the destination circle. Requires 50 GP rare inks consumed." }
+      }
+    }
   },
   {
     "name": "Transmute Rock",
@@ -12965,7 +14802,19 @@
     "savingThrow": [
       "strength",
       "dexterity"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "save",
+        "save": { "ability": "strength", "dc": "spell_save_dc", "onSuccess": "negates" },
+        "area": { "shape": "cube", "size": 40 },
+        "targeting": { "type": "area" },
+        "onFailedSave": {
+          "applyConditions": [{ "name": "Restrained" }],
+          "note": "Rock to Mud: STR save or Restrained in mud (costs 4 ft per ft to move). Ceiling mud falls: DEX save or 4d8 bludgeoning (half on success). Mud to Rock: DEX save or Restrained in stone (DC 20 STR or deal damage to break, AC 15, 25 HP). Permanent (until dispel)."
+        }
+      }
+    }
   },
   {
     "name": "Tree Stride",
@@ -12981,7 +14830,15 @@
     "classes": [
       "Druid",
       "Ranger"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "self" },
+        "onHit": { "note": "Move through living trees of the same species within 500 ft using only 5 ft movement per tree entered/exited. Concentration, up to 1 minute. Once per turn only; must end turn outside a tree." },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Wall of Force",
@@ -12996,7 +14853,15 @@
     "concentration": true,
     "classes": [
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "point" },
+        "onHit": { "note": "Invisible wall (concentration). Can be shaped as flat panels, dome, or globe (radius 10 ft). Immune to all damage. Only Disintegrate can destroy it. Blocks Ethereal Plane travel." },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Wall of Light",
@@ -13079,7 +14944,16 @@
     ],
     "savingThrow": [
       "dexterity"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "save",
+        "save": { "ability": "dexterity", "dc": "spell_save_dc", "onSuccess": "negates" },
+        "targeting": { "type": "creature" },
+        "onFailedSave": { "note": "Creature surrounded by wall fails DEX save, is enclosed. Creates 10 panels of stone (AC 15, 30 HP/inch thick). Maintained for full duration becomes permanent." },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Wrath of Nature",
@@ -13210,7 +15084,15 @@
       "Sorcerer",
       "Warlock",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "point" },
+        "onHit": { "note": "Creates two linked teleportation portals (concentration, 10 min). One within 500 ft, one within 10 ft. Entering one exits the other. Bonus Action to flip facing of open sides." },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Blade Barrier",
@@ -13283,7 +15165,20 @@
     "savingThrow": [
       "dexterity"
     ],
-    "higherLevels": "**At Higher Levels.**\nWhen you cast this spell using a spell slot of 7th level or higher, you can create two additional pillars for each slot level above 6th."
+    "higherLevels": "**At Higher Levels.**\nWhen you cast this spell using a spell slot of 7th level or higher, you can create two additional pillars for each slot level above 6th.",
+    "effects": {
+      "action": {
+        "kind": "save",
+        "save": { "ability": "dexterity", "dc": "spell_save_dc", "onSuccess": "negates" },
+        "targeting": { "type": "creatures", "count": 6 },
+        "onFailedSave": {
+          "damage": [{ "dice": "6d6", "type": "bludgeoning" }],
+          "applyConditions": [{ "name": "Restrained", "duration": { "type": "duration", "rounds": 1 } }],
+          "note": "Create up to 6 stone pillars (5 ft diam, 30 ft tall). Creatures under pillars make DEX save or be raised. Creatures pinned to ceiling take 6d6 bludgeoning and are Restrained."
+        },
+        "upcast": { "perLevel": { "note": "Create 2 additional pillars per slot level above 6th." } }
+      }
+    }
   },
   {
     "name": "Chain Lightning",
@@ -13424,7 +15319,20 @@
     "damageType": [
       "psychic"
     ],
-    "higherLevels": "**Using a Higher-Level Spell Slot.**\nThe damage increases by 3d12 for each spell slot level above 6."
+    "higherLevels": "**Using a Higher-Level Spell Slot.**\nThe damage increases by 3d12 for each spell slot level above 6.",
+    "effects": {
+      "action": {
+        "kind": "attack",
+        "attack": { "bonus": "spell_attack", "range": { "normal": 5 }, "reach": 5 },
+        "targeting": { "type": "creature" },
+        "onHit": {
+          "damage": [{ "dice": "3d12", "type": "psychic" }],
+          "applyConditions": [{ "name": "Frightened", "duration": { "type": "duration", "rounds": 1 } }]
+        },
+        "upcast": { "perLevel": { "damage": [{ "dice": "3d12", "type": "psychic" }] } },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Contingency",
@@ -13439,7 +15347,14 @@
     "concentration": false,
     "classes": [
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "self" },
+        "onHit": { "note": "Stores a level 5 or lower spell that targets only you, set to trigger on a specific condition (10-day duration). Ends when triggered or a new Contingency is cast. Requires 1,500 GP gem-encrusted statuette of yourself." }
+      }
+    }
   },
   {
     "name": "Create Homunculus",
@@ -13454,7 +15369,14 @@
     "concentration": false,
     "classes": [
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "self" },
+        "onHit": { "note": "Creates a homunculus companion. Take 2d4 piercing damage (unblockable). On Long Rests, spend up to half your Hit Dice — rolls reduce your max HP and increase homunculus's max HP by the same amount (until next Long Rest). Only one at a time. Requires 1,000 GP jeweled dagger + consumed components." }
+      }
+    }
   },
   {
     "name": "Create Undead",
@@ -13472,7 +15394,14 @@
       "Warlock",
       "Wizard"
     ],
-    "higherLevels": "**Using a Higher-Level Spell Slot.**\nIf you use a level 7 spell slot, you can animate or reassert control over four Ghoul. If you use a level 8 spell slot, you can animate or reassert control over five Ghoul or two Ghast or Wight. If you use a level 9 spell slot, you can animate or reassert control over six Ghoul, three Ghast or Wight, or two Mummy. See the Monster Manual for these stat blocks."
+    "higherLevels": "**Using a Higher-Level Spell Slot.**\nIf you use a level 7 spell slot, you can animate or reassert control over four Ghoul. If you use a level 8 spell slot, you can animate or reassert control over five Ghoul or two Ghast or Wight. If you use a level 9 spell slot, you can animate or reassert control over six Ghoul, three Ghast or Wight, or two Mummy. See the Monster Manual for these stat blocks.",
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "creatures", "count": 3 },
+        "onHit": { "note": "Night only. Animate up to 3 Humanoid corpses as Ghouls under your command (24 hours). Recast to maintain control or reanimate. Upcast: more powerful and numerous undead at higher levels." }
+      }
+    }
   },
   {
     "name": "Disintegrate",
@@ -13541,7 +15470,14 @@
     "concentration": false,
     "classes": [
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "self" },
+        "onHit": { "note": "Mark one object (≤10 lbs, ≤6 ft) with a linked sapphire. As a Magic action, crush the sapphire to summon the object to your hand instantly regardless of distance or plane. If held by another, learn who has it and where instead. Ritual. Requires 1,000 GP sapphire." }
+      }
+    }
   },
   {
     "name": "Druid Grove",
@@ -13556,7 +15492,14 @@
     "concentration": false,
     "classes": [
       "Druid"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "point" },
+        "onHit": { "note": "Wards up to 90-ft cube (24 hours). Effects: Solid Fog (heavily obscured), Grasping Undergrowth (Entangle), Grove Guardians (4 animated awakened trees), plus one spell effect (Gust of Wind, Spike Growth, or Wind Wall). Cast daily for 1 year to make permanent. Requires consumed mistletoe." }
+      }
+    }
   },
   {
     "name": "Eyebite",
@@ -13629,7 +15572,15 @@
       "Bard",
       "Cleric",
       "Druid"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "self" },
+        "onHit": { "note": "Know the most direct physical route to a familiar, fixed location on the same plane (concentration, 1 day). Knows direction and distance at all times; knows which path is most direct at every choice." },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Flesh to Stone",
@@ -13650,7 +15601,19 @@
     ],
     "savingThrow": [
       "constitution"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "save",
+        "save": { "ability": "constitution", "dc": "spell_save_dc", "onSuccess": "negates" },
+        "targeting": { "type": "creature" },
+        "onFailedSave": {
+          "applyConditions": [{ "name": "Restrained", "duration": { "type": "concentration" }, "repeatSave": "end" }],
+          "note": "On 3 failed saves: target is Petrified for the concentration duration. On 3 successes: spell ends. If full duration maintained, Petrification lasts until Greater Restoration."
+        },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Forbiddance",
@@ -13669,7 +15632,14 @@
     "damageType": [
       "necrotic",
       "radiant"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "point" },
+        "onHit": { "note": "Wards up to 40,000 sq ft (1 day, ritual). Blocks teleportation/portals/planar travel into area. Chosen creature types (Aberrations/Celestials/Elementals/Fey/Fiends/Undead) take 5d10 radiant or necrotic on entry/end of turn. Cast 30 days to make permanent. Requires 1,000 GP ruby dust." }
+      }
+    }
   },
   {
     "name": "Globe of Invulnerability",
@@ -13686,7 +15656,15 @@
       "Sorcerer",
       "Wizard"
     ],
-    "higherLevels": "**Using a Higher-Level Spell Slot.**\nThe barrier blocks spells of 1 level higher for each spell slot level above 6."
+    "higherLevels": "**Using a Higher-Level Spell Slot.**\nThe barrier blocks spells of 1 level higher for each spell slot level above 6.",
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "self" },
+        "onHit": { "note": "10-ft aura (concentration). Spells of level 5 or lower cast from outside the barrier cannot affect anything within it. At higher levels: blocks 1 level higher per slot level above 6th." },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Guards and Wards",
@@ -13702,7 +15680,14 @@
     "classes": [
       "Bard",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "point" },
+        "onHit": { "note": "Wards 2,500 sq ft (24 hours). Fog makes corridors heavily obscured (50% chance wrong direction at junctions), doors magically locked + up to 10 illusory walls, webs on stairs, plus one extra effect (Dancing Lights, Magic Mouth, Stinking Cloud, Gust of Wind, or Suggestion). Cast 365 days to make permanent." }
+      }
+    }
   },
   {
     "name": "Harm",
@@ -13761,7 +15746,18 @@
       "Cleric",
       "Druid"
     ],
-    "higherLevels": "**Using a Higher-Level Spell Slot.**\nThe healing increases by 70 for each spell slot level above 6."
+    "higherLevels": "**Using a Higher-Level Spell Slot.**\nThe healing increases by 70 for each spell slot level above 6.",
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "creature" },
+        "onHit": {
+          "healing": { "dice": "70" },
+          "note": "Also ends Blinded, Deafened, and Poisoned conditions on target."
+        },
+        "upcast": { "perLevel": { "healing": { "dice": "70" } } }
+      }
+    }
   },
   {
     "name": "Heroes' Feast",
@@ -13778,7 +15774,20 @@
       "Bard",
       "Cleric",
       "Druid"
-    ]
+    ],
+    "effects": {
+      "properties": [
+        { "type": "resistance", "damageType": "poison" }
+      ],
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "creatures", "count": 12 },
+        "onHit": {
+          "tempHp": { "dice": "2d10" },
+          "note": "After 1-hour feast: partakers gain resistance to poison damage, immunity to Frightened and Poisoned conditions, and HP max increases by 2d10 (also gains that many HP). Benefits last 24 hours."
+        }
+      }
+    }
   },
   {
     "name": "Investiture of Flame",
@@ -13802,7 +15811,21 @@
     ],
     "savingThrow": [
       "dexterity"
-    ]
+    ],
+    "effects": {
+      "properties": [
+        { "type": "resistance", "damageType": "cold" }
+      ],
+      "action": {
+        "kind": "save",
+        "save": { "ability": "dexterity", "dc": "spell_save_dc", "onSuccess": "half" },
+        "area": { "shape": "line", "size": 15 },
+        "targeting": { "type": "area" },
+        "onFailedSave": { "damage": [{ "dice": "4d8", "type": "fire" }] },
+        "onSuccessfulSave": { "damage": [{ "dice": "4d8", "type": "fire" }], "note": "Half damage on success." },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Investiture of Ice",
@@ -13826,7 +15849,24 @@
     ],
     "savingThrow": [
       "constitution"
-    ]
+    ],
+    "effects": {
+      "properties": [
+        { "type": "resistance", "damageType": "fire" }
+      ],
+      "action": {
+        "kind": "save",
+        "save": { "ability": "constitution", "dc": "spell_save_dc", "onSuccess": "half" },
+        "area": { "shape": "cone", "size": 15 },
+        "targeting": { "type": "area" },
+        "onFailedSave": {
+          "damage": [{ "dice": "4d6", "type": "cold" }],
+          "note": "Speed halved until start of your next turn on failed save."
+        },
+        "onSuccessfulSave": { "damage": [{ "dice": "4d6", "type": "cold" }], "note": "Half damage on success." },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Investiture of Stone",
@@ -13847,7 +15887,25 @@
     ],
     "savingThrow": [
       "dexterity"
-    ]
+    ],
+    "effects": {
+      "properties": [
+        { "type": "resistance", "damageType": "bludgeoning" },
+        { "type": "resistance", "damageType": "piercing" },
+        { "type": "resistance", "damageType": "slashing" }
+      ],
+      "action": {
+        "kind": "save",
+        "save": { "ability": "dexterity", "dc": "spell_save_dc", "onSuccess": "negates" },
+        "area": { "shape": "sphere", "size": 15 },
+        "targeting": { "type": "area" },
+        "onFailedSave": {
+          "applyConditions": [{ "name": "Prone", "duration": { "type": "duration", "rounds": 1 } }],
+          "note": "Resistance to nonmagical B/P/S damage. Can move through earth/stone. Action: 15-ft earthquake, creatures make DEX save or fall Prone."
+        },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Investiture of Wind",
@@ -13871,7 +15929,24 @@
     ],
     "savingThrow": [
       "constitution"
-    ]
+    ],
+    "effects": {
+      "modifiers": [
+        { "target": "speed_fly", "value": 60 }
+      ],
+      "action": {
+        "kind": "save",
+        "save": { "ability": "constitution", "dc": "spell_save_dc", "onSuccess": "half" },
+        "area": { "shape": "cube", "size": 15 },
+        "targeting": { "type": "area" },
+        "onFailedSave": {
+          "damage": [{ "dice": "2d10", "type": "bludgeoning" }],
+          "forcedMovement": { "push": 10 }
+        },
+        "onSuccessfulSave": { "damage": [{ "dice": "2d10", "type": "bludgeoning" }], "note": "Half damage on success." },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Magic Jar",
@@ -14027,7 +16102,15 @@
       "Druid",
       "Sorcerer",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "point" },
+        "onHit": { "note": "Reshape up to 40-ft cube of dirt/sand/clay (concentration, 2 hours). Raise/lower elevation, create walls/trenches/pillars up to half the cube's dimension. Changes take 10 minutes. Every 10 min can choose a new area. Cannot affect stone." },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Otiluke's Freezing Sphere",
@@ -14050,7 +16133,18 @@
     "savingThrow": [
       "constitution"
     ],
-    "higherLevels": "**Using a Higher-Level Spell Slot.**\nThe damage increases by 10d6 for each spell slot level above 6."
+    "higherLevels": "**Using a Higher-Level Spell Slot.**\nThe damage increases by 10d6 for each spell slot level above 6.",
+    "effects": {
+      "action": {
+        "kind": "save",
+        "save": { "ability": "constitution", "dc": "spell_save_dc", "onSuccess": "half" },
+        "area": { "shape": "sphere", "size": 60 },
+        "targeting": { "type": "area" },
+        "onFailedSave": { "damage": [{ "dice": "10d6", "type": "cold" }] },
+        "onSuccessfulSave": { "damage": [{ "dice": "10d6", "type": "cold" }], "note": "Half damage on success." },
+        "upcast": { "perLevel": { "damage": [{ "dice": "10d6", "type": "cold" }] } }
+      }
+    }
   },
   {
     "name": "Otto's Irresistible Dance",
@@ -14107,7 +16201,14 @@
     "concentration": false,
     "classes": [
       "Cleric"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "self" },
+        "onHit": { "note": "Calls a Celestial/Elemental/Fiend to negotiate a service. Not compelled — must bargain. Costs: 100 GP/min, 1,000 GP/hr, 10,000 GP/day (up to 10 days). Returns to home plane after task or failed negotiation." }
+      }
+    }
   },
   {
     "name": "Primordial Ward",
@@ -14122,7 +16223,22 @@
     "concentration": true,
     "classes": [
       "Druid"
-    ]
+    ],
+    "effects": {
+      "properties": [
+        { "type": "resistance", "damageType": "acid" },
+        { "type": "resistance", "damageType": "cold" },
+        { "type": "resistance", "damageType": "fire" },
+        { "type": "resistance", "damageType": "lightning" },
+        { "type": "resistance", "damageType": "thunder" }
+      ],
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "self" },
+        "onHit": { "note": "Resistance to acid, cold, fire, lightning, thunder. Reaction: convert resistance to immunity for the triggering damage type until end of your next turn; spell ends afterward." },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Programmed Illusion",
@@ -14138,7 +16254,14 @@
     "classes": [
       "Bard",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "point" },
+        "onHit": { "note": "Creates a trigger-activated illusion (up to 30-ft cube, permanent until dispel) that performs a scripted scene (up to 5 min) when the set trigger occurs. Resets after 10 min. INT (Investigation) vs spell save DC to identify as illusion. Requires 25 GP jade dust." }
+      }
+    }
   },
   {
     "name": "Scatter",
@@ -14158,7 +16281,15 @@
     ],
     "savingThrow": [
       "wisdom"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "save",
+        "save": { "ability": "wisdom", "dc": "spell_save_dc", "onSuccess": "negates" },
+        "targeting": { "type": "creature" },
+        "onFailedSave": { "note": "Unwilling creatures make WIS save or are teleported to an unoccupied space you can see within 120 ft. Willing creatures are teleported automatically. Up to 5 targets." }
+      }
+    }
   },
   {
     "name": "Soul Cage",
@@ -14174,7 +16305,14 @@
     "classes": [
       "Warlock",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "creature" },
+        "onHit": { "note": "Reaction (when humanoid dies within 60 ft): trap soul for 8 hours. Up to 6 uses: Steal Life (Bonus Action, regain 2d8 HP), Query Soul (one honest answer), Borrow Experience (Bonus Action, advantage on next d20), Eyes of the Dead (Action, invisible sensor at known place, 10 min). Prevents target's resurrection while caged." }
+      }
+    }
   },
   {
     "name": "Summon Fiend",
@@ -14191,7 +16329,15 @@
       "Warlock",
       "Wizard"
     ],
-    "higherLevels": "**Using a Higher-Level Spell Slot.**\nUse the spell slot's level for the spell's level in the stat block."
+    "higherLevels": "**Using a Higher-Level Spell Slot.**\nUse the spell slot's level for the spell's level in the stat block.",
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "self" },
+        "onHit": { "note": "Summons a Fiendish Spirit (Demon, Devil, or Yugoloth form) as an ally (concentration, 1 hour). Shares initiative, acts after you. Obeys verbal commands. Upcast: use slot level for stat block level." },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Sunbeam",
@@ -14264,7 +16410,14 @@
     "classes": [
       "Warlock",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "self" },
+        "onHit": { "note": "Conjures a cauldron (10 min) that produces Common or Uncommon potions (your choice). Allies can draw one per Bonus Action. Total potions = your spellcasting ability modifier (minimum 1). Cauldron disappears when all potions withdrawn. Requires 500 GP gilded ladle." }
+      }
+    }
   },
   {
     "name": "Tasha's Otherworldly Guise",
@@ -14281,7 +16434,16 @@
       "Sorcerer",
       "Warlock",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "modifiers": [{ "target": "speed_fly", "value": 40 }],
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "self" },
+        "onHit": { "note": "Lower Planes: immune to fire/poison damage and Poisoned condition. Upper Planes: immune to radiant/necrotic damage and Charmed condition. Both: +2 AC, fly 40 ft, use spell mod for weapon attacks, attack twice (concentration, 1 min)." },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Tenser's Transformation",
@@ -14346,7 +16508,14 @@
     "concentration": false,
     "classes": [
       "Druid"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "point" },
+        "onHit": { "note": "Create teleportation link between two Large+ plants on same plane for 10 minutes. Any creature can pass through one plant and emerge from the other using 5 ft of movement." }
+      }
+    }
   },
   {
     "name": "True Seeing",
@@ -14365,7 +16534,14 @@
       "Sorcerer",
       "Warlock",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "creature" },
+        "onHit": { "note": "Target gains Truesight (120-ft range) for 1 hour. Sees through illusions, invisibility, magical darkness, shapechangers in true form, and into the Ethereal Plane." }
+      }
+    }
   },
   {
     "name": "Wall of Ice",
@@ -14388,7 +16564,21 @@
       "dexterity",
       "constitution"
     ],
-    "higherLevels": "**Using a Higher-Level Spell Slot.**\nThe damage the wall deals when it appears increases by 10d6 and the damage from passing through the sheet of frigid air increases by 5d6 for each spell slot level above 6."
+    "higherLevels": "**Using a Higher-Level Spell Slot.**\nThe damage the wall deals when it appears increases by 10d6 and the damage from passing through the sheet of frigid air increases by 5d6 for each spell slot level above 6.",
+    "effects": {
+      "action": {
+        "kind": "save",
+        "save": { "ability": "dexterity", "dc": "spell_save_dc", "onSuccess": "half" },
+        "targeting": { "type": "creature" },
+        "onFailedSave": {
+          "damage": [{ "dice": "10d6", "type": "cold" }],
+          "note": "Creatures in wall on appearance take 10d6 cold (DEX save half). Wall sections: AC 12, 30 HP each; immune to cold/poison/psychic; vulnerable to fire. Destroyed sections leave frigid air dealing 5d6 cold (CON save half) to those passing through."
+        },
+        "onSuccessfulSave": { "damage": [{ "dice": "10d6", "type": "cold" }], "note": "Half damage on success." },
+        "upcast": { "perLevel": { "damage": [{ "dice": "10d6", "type": "cold" }] } },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Wall of Thorns",
@@ -14456,7 +16646,20 @@
     "concentration": false,
     "classes": [
       "Druid"
-    ]
+    ],
+    "effects": {
+      "modifiers": [{ "target": "speed_fly", "value": 300 }],
+      "properties": [
+        { "type": "resistance", "damageType": "bludgeoning" },
+        { "type": "resistance", "damageType": "piercing" },
+        { "type": "resistance", "damageType": "slashing" }
+      ],
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "creatures", "count": 11 },
+        "onHit": { "note": "Gaseous cloud form for 8 hours: fly speed 300 ft, hover, immune to Prone, resistance to B/P/S damage. Can only Dash or use Magic action to begin reverting (1-min transition during which Stunned)." }
+      }
+    }
   },
   {
     "name": "Word of Recall",
@@ -14471,7 +16674,14 @@
     "concentration": false,
     "classes": [
       "Cleric"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "creatures", "count": 6 },
+        "onHit": { "note": "Instantly teleport up to 6 willing creatures to a previously designated sanctuary on the same plane. No effect if no sanctuary designated. Designate sanctuary by casting there." }
+      }
+    }
   },
   {
     "name": "Conjure Celestial",
@@ -14493,7 +16703,34 @@
     "savingThrow": [
       "dexterity"
     ],
-    "higherLevels": "**Using a Higher-Level Spell Slot.**\nThe healing and damage increase by 6d12 for each spell slot level above 7."
+    "higherLevels": "**Using a Higher-Level Spell Slot.**\nThe healing and damage increase by 6d12 for each spell slot level above 7.",
+    "effects": {
+      "action": {
+        "kind": "save",
+        "save": {
+          "ability": "dexterity",
+          "dc": "spell_save_dc",
+          "onSuccess": "half"
+        },
+        "area": {
+          "shape": "cylinder",
+          "size": 10
+        },
+        "targeting": {
+          "type": "area"
+        },
+        "onFailedSave": {
+          "damage": [{ "dice": "6d12", "type": "radiant" }],
+          "note": "Or choose Healing Light: target regains 4d12 HP instead of taking damage."
+        },
+        "onSuccessfulSave": {
+          "damage": [{ "dice": "6d12", "type": "radiant" }],
+          "note": "Half damage on success."
+        },
+        "upcast": { "perLevel": { "damage": [{ "dice": "6d12", "type": "radiant" }] } },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Crown of Stars",
@@ -14675,7 +16912,17 @@
       "Sorcerer",
       "Warlock",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "creatures", "count": 9 },
+        "onHit": {
+          "applyConditions": [{ "name": "Unconscious", "duration": { "type": "duration", "rounds": 60 } }],
+          "note": "Targets fall unconscious for 6 hours; if spell completes uninterrupted, all are transported to another Material Plane world. Ends early if any target takes damage."
+        }
+      }
+    }
   },
   {
     "name": "Etherealness",
@@ -14698,7 +16945,14 @@
     "damageType": [
       "force"
     ],
-    "higherLevels": "**Using a Higher-Level Spell Slot.**\nYou can target up to three willing creatures (including yourself) for each spell slot level above 7. The creatures must be within 10 feet of you when you cast the spell."
+    "higherLevels": "**Using a Higher-Level Spell Slot.**\nYou can target up to three willing creatures (including yourself) for each spell slot level above 7. The creatures must be within 10 feet of you when you cast the spell.",
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "self" },
+        "onHit": { "note": "Caster enters the Ethereal Plane for 8 hours. Undetectable by creatures on material plane; can move freely. Takes force damage if reappearing in occupied space. Upcast: target up to 3 willing creatures per slot level above 7th." }
+      }
+    }
   },
   {
     "name": "Finger of Death",
@@ -14829,7 +17083,20 @@
     ],
     "savingThrow": [
       "charisma"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "save",
+        "save": { "ability": "charisma", "dc": "spell_save_dc", "onSuccess": "negates" },
+        "area": { "shape": "cube", "size": 20 },
+        "targeting": { "type": "area" },
+        "onFailedSave": {
+          "applyConditions": [{ "name": "Restrained", "duration": { "type": "concentration" } }],
+          "note": "Creatures inside cage can't leave by nonmagical means. CHA save only triggers if creature attempts teleportation or interplanar travel."
+        },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Mirage Arcane",
@@ -14846,7 +17113,14 @@
       "Bard",
       "Druid",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "point" },
+        "onHit": { "note": "Transforms up to 1 sq-mile of terrain appearance, sound, smell, and feel for 10 days. Can create difficult terrain or remove it. Creatures with Truesight see through illusion." }
+      }
+    }
   },
   {
     "name": "Mordenkainen's Magnificent Mansion",
@@ -14862,7 +17136,14 @@
     "classes": [
       "Bard",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "point" },
+        "onHit": { "note": "Creates extradimensional mansion (50 10-ft cubes) for 24 hours. Servants obey designated creatures. Furnishings crumble if removed. Creatures inside are expelled when spell ends." }
+      }
+    }
   },
   {
     "name": "Mordenkainen's Sword",
@@ -14923,7 +17204,14 @@
       "Sorcerer",
       "Warlock",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "creatures", "count": 9 },
+        "onHit": { "note": "Transports caster and up to 8 willing creatures to another plane of existence. Destination is general (DM determines exact arrival). Can also banish an unwilling creature (they make a CHA save vs. your spell save DC)." }
+      }
+    }
   },
   {
     "name": "Power Word Fortify",
@@ -14939,7 +17227,14 @@
     "classes": [
       "Bard",
       "Cleric"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "creatures", "count": 6 },
+        "onHit": { "tempHp": { "dice": "120" }, "note": "120 temporary HP divided among up to 6 targets (non-stacking per target)." }
+      }
+    }
   },
   {
     "name": "Power Word Pain",
@@ -15077,7 +17372,15 @@
     "classes": [
       "Bard",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "self" },
+        "onHit": { "note": "Creates illusory double at any previously-seen location within 500 miles. You perceive through its senses. Ends if illusion takes damage. INT (Investigation) vs your spell save DC to identify as illusion." },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Regenerate",
@@ -15094,7 +17397,17 @@
       "Bard",
       "Cleric",
       "Druid"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "creature" },
+        "onHit": {
+          "healing": { "dice": "4d8+15" },
+          "note": "Also regains 1 HP at start of each turn for 1 hour. Severed body parts regrow after 2 minutes."
+        }
+      }
+    }
   },
   {
     "name": "Resurrection",
@@ -15110,7 +17423,14 @@
     "classes": [
       "Bard",
       "Cleric"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "creature" },
+        "onHit": { "note": "Revives creature dead up to 100 years (not old age, not undead). Returns with full HP. Target suffers -4 penalty to d20 tests, reduced by 1 per long rest. Caster taxed if target was dead 365+ days." }
+      }
+    }
   },
   {
     "name": "Reverse Gravity",
@@ -15130,7 +17450,19 @@
     ],
     "savingThrow": [
       "dexterity"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "save",
+        "save": { "ability": "dexterity", "dc": "spell_save_dc", "onSuccess": "negates" },
+        "area": { "shape": "cylinder", "size": 50 },
+        "targeting": { "type": "area" },
+        "onFailedSave": {
+          "note": "Creatures and objects fall upward to top of 100-ft cylinder (concentration). Creatures that hit ceiling take falling damage. When spell ends, everything falls back down."
+        },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Sequester",
@@ -15145,7 +17477,20 @@
     "concentration": false,
     "classes": [
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "creature" },
+        "onHit": {
+          "applyConditions": [
+            { "name": "Invisible", "duration": { "type": "duration", "rounds": 999 } },
+            { "name": "Unconscious", "duration": { "type": "duration", "rounds": 999 } }
+          ],
+          "note": "Target is Invisible and Unconscious indefinitely (suspended animation). Cannot be located by magic. Ends when caster-set condition occurs, target takes damage, or spell is dispelled."
+        }
+      }
+    }
   },
   {
     "name": "Simulacrum",
@@ -15160,7 +17505,14 @@
     "concentration": false,
     "classes": [
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "creature" },
+        "onHit": { "note": "Creates Construct duplicate of target with half max HP. Obeys caster, can't rest or gain levels. Destroyed if it reaches 0 HP. Only one simulacrum can exist at a time." }
+      }
+    }
   },
   {
     "name": "Symbol",
@@ -15186,7 +17538,29 @@
       "constitution",
       "wisdom",
       "intelligence"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "save",
+        "save": { "ability": "constitution", "dc": "spell_save_dc", "onSuccess": "half" },
+        "area": { "shape": "sphere", "size": 60 },
+        "targeting": { "type": "area" },
+        "onFailedSave": {
+          "damage": [{ "dice": "10d10", "type": "necrotic" }],
+          "applyConditions": [
+            { "name": "Frightened", "duration": { "type": "duration", "rounds": 10 } },
+            { "name": "Incapacitated", "duration": { "type": "duration", "rounds": 10 } },
+            { "name": "Unconscious", "duration": { "type": "duration", "rounds": 100 } },
+            { "name": "Stunned", "duration": { "type": "duration", "rounds": 10 } }
+          ],
+          "note": "On trigger: choose one effect — Death (10d10 necrotic, CON save half), Discord (WIS save, disadvantage on attacks/checks), Fear (WIS save, Frightened 1 min), Pain (CON save, Incapacitated 1 min), Sleep (WIS save, Unconscious 10 min), or Stunning (WIS save, Stunned 1 min)."
+        },
+        "onSuccessfulSave": {
+          "damage": [{ "dice": "10d10", "type": "necrotic" }],
+          "note": "Half damage on success (Death effect only)."
+        }
+      }
+    }
   },
   {
     "name": "Teleport",
@@ -15206,7 +17580,14 @@
     ],
     "damageType": [
       "force"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "creatures", "count": 9 },
+        "onHit": { "note": "Transports caster and up to 8 willing creatures to same-plane destination. Familiarity determines success (DM rolls 1d100). Mishap: 3d10 force damage to all travelers and DM rerolls destination." }
+      }
+    }
   },
   {
     "name": "Temple of the Gods",
@@ -15224,7 +17605,17 @@
     ],
     "savingThrow": [
       "charisma"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "save",
+        "save": { "ability": "charisma", "dc": "spell_save_dc", "onSuccess": "negates" },
+        "targeting": { "type": "creature" },
+        "onFailedSave": {
+          "note": "Chosen creature type (celestials/elementals/fey/fiends/undead) fails CHA save: barred from entering for 24 hours; if inside, subtract d4 from all d20 rolls. Healing spells in temple restore extra HP equal to caster's WIS modifier."
+        }
+      }
+    }
   },
   {
     "name": "Whirlwind",
@@ -15364,7 +17755,14 @@
     "concentration": false,
     "classes": [
       "Druid"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "creatures" },
+        "onHit": { "note": "Willing creatures transform into Large or smaller Beast (CR 4 or lower) for 24 hours. Each gains temp HP equal to beast form HP. Targets retain their own HP and mental stats. Can revert as bonus action." }
+      }
+    }
   },
   {
     "name": "Antimagic Field",
@@ -15380,7 +17778,15 @@
     "classes": [
       "Cleric",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "self" },
+        "onHit": { "note": "10-ft aura (concentration). No spells, magic actions, or magical effects inside. Magic items suppressed. Can't teleport in or out. Ongoing spells suppressed (time still counts). Dispel Magic has no effect." },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Antipathy/Sympathy",
@@ -15491,7 +17897,14 @@
     "concentration": false,
     "classes": [
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "creature" },
+        "onHit": { "note": "Creates a duplicate body of touched creature in a vessel. Grows over 120 days. If original dies, soul transfers to clone (full stats, no equipment). A true resurrection insurance." }
+      }
+    }
   },
   {
     "name": "Control Weather",
@@ -15508,7 +17921,15 @@
       "Cleric",
       "Druid",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "self" },
+        "onHit": { "note": "Control weather within 5 miles (concentration, 8 hours). Adjust precipitation, temperature, and wind stage by 1 per change. New conditions take 1d4×10 min. Requires being outdoors." },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Demiplane",
@@ -15525,7 +17946,14 @@
       "Sorcerer",
       "Warlock",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "point" },
+        "onHit": { "note": "Creates door to 30-ft-cube extradimensional room for 1 hour. Door vanishes when spell ends; creatures inside remain (or fall Prone outside). Can link to previously created demiplanes." }
+      }
+    }
   },
   {
     "name": "Dominate Monster",
@@ -15599,7 +18027,20 @@
     "savingThrow": [
       "constitution",
       "dexterity"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "save",
+        "save": { "ability": "dexterity", "dc": "spell_save_dc", "onSuccess": "negates" },
+        "area": { "shape": "sphere", "size": 100 },
+        "targeting": { "type": "area" },
+        "onFailedSave": {
+          "applyConditions": [{ "name": "Prone", "duration": { "type": "duration", "rounds": 1 } }],
+          "note": "Failed DEX save: Prone and concentration broken. Difficult terrain throughout. Fissures (1d6) may open. Structure collapse: 12d6 bludgeoning + Prone + buried (DC 20 STR to escape) on failed DEX save."
+        },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Glibness",
@@ -15615,7 +18056,14 @@
     "classes": [
       "Bard",
       "Warlock"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "self" },
+        "onHit": { "note": "For 1 hour: replace any Charisma check roll with 15. Truth-detection magic always registers you as truthful." }
+      }
+    }
   },
   {
     "name": "Holy Aura",
@@ -15853,7 +18301,17 @@
     "concentration": true,
     "classes": [
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "creature" },
+        "onHit": {
+          "note": "Banishes target into extradimensional maze (concentration). Target can take Study action (DC 20 INT Investigation) to escape. Returns to original space when it escapes or spell ends. Minotaurs/Mazed creatures auto-succeed."
+        },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Mighty Fortress",
@@ -15868,7 +18326,14 @@
     "concentration": false,
     "classes": [
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "point" },
+        "onHit": { "note": "Creates stone fortress (120-ft square with keep, turrets, walls) lasting 7 days. Has 100 invisible servants. Stone sections: AC 15, 30 HP/inch. Permanent after casting weekly for 1 year." }
+      }
+    }
   },
   {
     "name": "Mind Blank",
@@ -15884,7 +18349,17 @@
     "classes": [
       "Bard",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "properties": [
+        { "type": "immunity", "damageType": "psychic" }
+      ],
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "creature" },
+        "onHit": { "note": "For 24 hours: target immune to psychic damage and Charmed condition; can't be detected, observed, or have mind read/controlled by any means including Wish." }
+      }
+    }
   },
   {
     "name": "Power Word Stun",
@@ -16003,7 +18478,14 @@
     "concentration": false,
     "classes": [
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "creature" },
+        "onHit": { "note": "Telepathic link with one willing familiar creature for 24 hours. Share words, images, sounds, and senses. Both understand each other regardless of language. Ends if either leaves the plane." }
+      }
+    }
   },
   {
     "name": "Tsunami",
@@ -16024,7 +18506,23 @@
     ],
     "savingThrow": [
       "strength"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "save",
+        "save": { "ability": "strength", "dc": "spell_save_dc", "onSuccess": "half" },
+        "targeting": { "type": "area" },
+        "onFailedSave": {
+          "damage": [{ "dice": "6d10", "type": "bludgeoning" }],
+          "note": "Initial: 6d10 bludgeoning. Each subsequent turn: 5d10 (decreases by 1d10/turn). Wall moves 50 ft/turn, lasts 6 rounds. Creatures inside must make STR (Athletics) vs spell save DC to move."
+        },
+        "onSuccessfulSave": {
+          "damage": [{ "dice": "6d10", "type": "bludgeoning" }],
+          "note": "Half damage on success."
+        },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Astral Projection",
@@ -16042,7 +18540,17 @@
       "Monk",
       "Warlock",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "creatures", "count": 9 },
+        "onHit": {
+          "applyConditions": [{ "name": "Unconscious", "duration": { "type": "duration", "rounds": 999 } }],
+          "note": "Bodies left in suspended animation (Unconscious). Astral forms travel the Astral Plane. Cutting the silvery cord kills both body and astral form. Spell ends if dismissed or astral form reaches 0 HP."
+        }
+      }
+    }
   },
   {
     "name": "Blade of Disaster",
@@ -16096,7 +18604,18 @@
       "Druid",
       "Warlock",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "properties": [
+        { "type": "advantage", "on": "attack" },
+        { "type": "advantage", "on": "save" }
+      ],
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "creature" },
+        "onHit": { "note": "For 8 hours: target has advantage on all D20 tests. Other creatures have disadvantage on attack rolls against target. Ends if caster casts it again." }
+      }
+    }
   },
   {
     "name": "Gate",
@@ -16114,7 +18633,15 @@
       "Sorcerer",
       "Warlock",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "point" },
+        "onHit": { "note": "Opens portal to another plane (concentration). Anything moving through is transported. Optionally: speak creature's name to summon it from another plane (no control granted). Deities can block portals." },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Imprisonment",
@@ -16133,7 +18660,18 @@
     ],
     "savingThrow": [
       "wisdom"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "save",
+        "save": { "ability": "wisdom", "dc": "spell_save_dc", "onSuccess": "negates" },
+        "targeting": { "type": "creature" },
+        "onFailedSave": {
+          "applyConditions": [{ "name": "Restrained", "duration": { "type": "duration", "rounds": 999 } }],
+          "note": "Target is imprisoned indefinitely (choose: Burial, Chaining, Hedged Prison, Minimus Containment, or Slumber). Can't be located by divination. Only ends when specified trigger occurs or 9th-level Dispel Magic used. Immune if saves."
+        }
+      }
+    }
   },
   {
     "name": "Invulnerability",
@@ -16148,7 +18686,30 @@
     "concentration": true,
     "classes": [
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "properties": [
+        { "type": "immunity", "damageType": "bludgeoning" },
+        { "type": "immunity", "damageType": "piercing" },
+        { "type": "immunity", "damageType": "slashing" },
+        { "type": "immunity", "damageType": "fire" },
+        { "type": "immunity", "damageType": "cold" },
+        { "type": "immunity", "damageType": "lightning" },
+        { "type": "immunity", "damageType": "acid" },
+        { "type": "immunity", "damageType": "poison" },
+        { "type": "immunity", "damageType": "necrotic" },
+        { "type": "immunity", "damageType": "radiant" },
+        { "type": "immunity", "damageType": "force" },
+        { "type": "immunity", "damageType": "psychic" },
+        { "type": "immunity", "damageType": "thunder" }
+      ],
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "self" },
+        "onHit": { "note": "Immune to all damage types (concentration, up to 10 minutes)." },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Mass Heal",
@@ -16163,7 +18724,17 @@
     "concentration": false,
     "classes": [
       "Cleric"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "creatures" },
+        "onHit": {
+          "healing": { "dice": "700" },
+          "note": "700 total HP distributed as chosen across any number of visible creatures within 60 ft. Also removes Blinded, Deafened, and Poisoned conditions from each healed creature."
+        }
+      }
+    }
   },
   {
     "name": "Mass Polymorph",
@@ -16183,7 +18754,18 @@
     ],
     "savingThrow": [
       "wisdom"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "save",
+        "save": { "ability": "wisdom", "dc": "spell_save_dc", "onSuccess": "negates" },
+        "targeting": { "type": "creatures", "count": 10 },
+        "onFailedSave": {
+          "note": "Unwilling targets transform into Beast (CR ≤ target CR or half level). Gains temp HP = beast form HP; reverts when temp HP depleted. Retains own HP, alignment, personality. Can't cast spells. Concentration up to 1 hour."
+        },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Meteor Swarm",
@@ -16256,7 +18838,17 @@
     "classes": [
       "Bard",
       "Cleric"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "creature" },
+        "onHit": {
+          "healing": { "dice": "999" },
+          "note": "Target regains ALL hit points. Ends Charmed, Frightened, Paralyzed, Poisoned, and Stunned conditions. Target can use Reaction to stand up if Prone."
+        }
+      }
+    }
   },
   {
     "name": "Power Word Kill",
@@ -16436,7 +19028,17 @@
     "classes": [
       "Druid",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "self" },
+        "onHit": {
+          "note": "Transform into any non-Construct, non-Undead creature (CR ≤ your level). Gain temp HP equal to form's HP. Retain own HP, mental stats, proficiencies, and Spellcasting. Can change form as Magic action. Concentration up to 1 hour."
+        },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "Storm of Vengeance",
@@ -16516,7 +19118,14 @@
     "classes": [
       "Sorcerer",
       "Wizard"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "self" },
+        "onHit": { "note": "Take 1d4+1 extra turns in a row. No other creatures act during this time. Ends early if any action affects another creature or object. Also ends if you move more than 1,000 ft from cast location." }
+      }
+    }
   },
   {
     "name": "True Polymorph",
@@ -16536,7 +19145,18 @@
     ],
     "savingThrow": [
       "wisdom"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "save",
+        "save": { "ability": "wisdom", "dc": "spell_save_dc", "onSuccess": "negates" },
+        "targeting": { "type": "creature" },
+        "onFailedSave": {
+          "note": "Transform creature into creature (CR ≤ target), creature into object, or object into creature (CR ≤ 9). If concentration maintained for full hour, transformation becomes permanent until dispelled. Unwilling creatures make WIS save."
+        },
+        "meta": { "concentration": true }
+      }
+    }
   },
   {
     "name": "True Resurrection",
@@ -16552,7 +19172,14 @@
     "classes": [
       "Cleric",
       "Druid"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "creature" },
+        "onHit": { "note": "Revives creature dead up to 200 years (not old age). Returns with full HP; all wounds, poisons, contagions, and curses cleared. Replaces organs/limbs. Restores Undead to living form. Can create new body if original is gone." }
+      }
+    }
   },
   {
     "name": "Weird",
@@ -16626,6 +19253,13 @@
     ],
     "damageType": [
       "necrotic"
-    ]
+    ],
+    "effects": {
+      "action": {
+        "kind": "auto",
+        "targeting": { "type": "self" },
+        "onHit": { "note": "Duplicate any spell of level 8 or lower (no components), OR: create 25,000 GP object, fully heal 20 creatures, grant permanent damage resistance, grant spell immunity, replace a feat, undo a recent die roll, or reshape reality (DM discretion). Non-duplication uses: 1d10 necrotic per spell level cast until long rest, STR 3 for 2d4 days, 33% chance to never cast Wish again." }
+      }
+    }
   }
 ]

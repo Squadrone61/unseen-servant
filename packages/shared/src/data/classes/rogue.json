@@ -36,20 +36,6 @@
     ]
   },
   "hitDiceFaces": 8,
-  "savingThrows": [
-    "dexterity",
-    "intelligence"
-  ],
-  "armorProficiencies": [
-    "Light Armor"
-  ],
-  "weaponProficiencies": [
-    "Simple Weapons",
-    "Martial Weapons with the Finesse or Light property"
-  ],
-  "toolProficiencies": [
-    "Thieves' Tools"
-  ],
   "skillChoices": {
     "from": [
       "Acrobatics",
@@ -66,6 +52,46 @@
     "count": 4
   },
   "features": [
+    {
+      "name": "Proficiencies",
+      "level": 1,
+      "className": "Rogue",
+      "description": "Your Rogue training grants the following proficiencies.",
+      "effects": {
+        "properties": [
+          {
+            "type": "proficiency",
+            "category": "save",
+            "value": "Dexterity"
+          },
+          {
+            "type": "proficiency",
+            "category": "save",
+            "value": "Intelligence"
+          },
+          {
+            "type": "proficiency",
+            "category": "armor",
+            "value": "Light Armor"
+          },
+          {
+            "type": "proficiency",
+            "category": "weapon",
+            "value": "Simple Weapons"
+          },
+          {
+            "type": "proficiency",
+            "category": "weapon",
+            "value": "Martial Weapons with the Finesse or Light property"
+          },
+          {
+            "type": "proficiency",
+            "category": "tool",
+            "value": "Thieves' Tools"
+          }
+        ]
+      }
+    },
     {
       "name": "Expertise",
       "level": 1,

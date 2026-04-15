@@ -1,5 +1,77 @@
 [
   {
+    "name": "Acid",
+    "description": "When you take the {action:Attack} action, you can replace one of your attacks with throwing a vial of Acid. Target one creature or object you can see within 20 feet of yourself. The target must succeed on a Dexterity saving throw (DC 8 plus your Dexterity modifier and Proficiency Bonus) or take 2d6 Acid damage.",
+    "type": "G|XPHB"
+  },
+  {
+    "name": "Airship",
+    "description": "",
+    "type": "AIR|XPHB",
+    "effects": {
+      "properties": [
+        {
+          "type": "note",
+          "text": "Large aerial vehicle; carries crew and passengers through the air."
+        }
+      ]
+    }
+  },
+  {
+    "name": "Alchemist's Fire",
+    "description": "When you take the {action:Attack} action, you can replace one of your attacks with throwing a flask of Alchemist's Fire. Target one creature or object you can see within 20 feet of yourself. The target must succeed on a Dexterity saving throw (DC 8 plus your Dexterity modifier and Proficiency Bonus) or take 1d4 Fire damage and start burning.",
+    "type": "G|XPHB",
+    "effects": {
+      "properties": [
+        {
+          "type": "note",
+          "text": "Replace an attack: throw 20 ft, DC 8+Dex+Prof Dex save or 1d4 Fire damage and burning."
+        }
+      ]
+    }
+  },
+  {
+    "name": "Ale (mug)",
+    "description": "",
+    "type": "FD|XPHB"
+  },
+  {
+    "name": "Alexandrite",
+    "description": "A dark green gemstone.",
+    "type": "$G|XDMG"
+  },
+  {
+    "name": "Alms Box",
+    "type": "G|XPHB",
+    "weight": 1,
+    "description": "A small box used to collect offerings and tithes for religious purposes."
+  },
+  {
+    "name": "Amber",
+    "description": "A watery gold to rich gold gemstone.",
+    "type": "$G|XDMG"
+  },
+  {
+    "name": "Amethyst",
+    "description": "A deep purple gemstone.",
+    "type": "$G|XDMG"
+  },
+  {
+    "name": "Amulet",
+    "description": "For an Amulet to be an effective Holy Symbol, it must be worn or held.",
+    "type": "SCF|XPHB"
+  },
+  {
+    "name": "Antitoxin",
+    "description": "As a Bonus Action, you can drink a vial of Antitoxin to gain Advantage on saving throws to avoid or end the {condition:Poisoned} condition for 1 hour.",
+    "type": "G|XPHB"
+  },
+  {
+    "name": "Aquamarine",
+    "description": "A pale blue green gemstone.",
+    "type": "$G|XDMG"
+  },
+  {
     "name": "Arrow",
     "type": "A|XPHB",
     "weight": 0.05
@@ -8,6 +80,126 @@
     "name": "Arrows (20)",
     "type": "A|XPHB",
     "weight": 1
+  },
+  {
+    "name": "Assassin's Blood",
+    "description": "A creature subjected to Assassin's Blood makes a DC 10 Constitution saving throw. On a failed save, the creature takes 6 (1d12) Poison damage and has the {condition:Poisoned} condition for 24 hours. On a successful save, the creature takes half as much damage only.",
+    "type": "G|XPHB"
+  },
+  {
+    "name": "Azurite",
+    "description": "A mottled deep blue gemstone.",
+    "type": "$G|XDMG"
+  },
+  {
+    "name": "Backpack",
+    "type": "G|XPHB",
+    "weight": 5,
+    "description": "A Backpack can hold up to 30 pounds of gear, not exceeding a volume of 1 cubic foot."
+  },
+  {
+    "name": "Ball Bearings",
+    "description": "As a {action:Utilize} action, you can spill Ball Bearings from their pouch. They spread to cover a level, 10-foot-square area within 10 feet of yourself. A creature that enters this area for the first time on a turn must succeed on a DC 10 Dexterity saving throw or have the {condition:Prone} condition. It takes 10 minutes to recover the Ball Bearings.",
+    "type": "G|XPHB"
+  },
+  {
+    "name": "Ball Bearings (bag of 1,000)",
+    "type": "G|XPHB",
+    "weight": 2,
+    "description": "As a Utilize action, you can spread these across a 10-foot square. Any creature entering the area must succeed on a DC 10 Dexterity saving throw or have the Prone condition. Picking up all the ball bearings takes 1 minute."
+  },
+  {
+    "name": "Banded Agate",
+    "description": "A striped brown, blue, white, or red gemstone.",
+    "type": "$G|XDMG"
+  },
+  {
+    "name": "Barrel",
+    "description": "A Barrel holds up to 40 gallons of liquid or up to 4 cubic feet of dry goods.",
+    "type": "G|XPHB"
+  },
+  {
+    "name": "Basic Poison",
+    "description": "As a Bonus Action, you can use a vial of Basic Poison to coat one weapon or up to three pieces of ammunition. A creature that takes Piercing or Slashing damage from the poisoned weapon or ammunition takes an extra 1d4 Poison damage. Once applied, the poison retains potency for 1 minute or until its damage is dealt, whichever comes first.",
+    "type": "G|XPHB"
+  },
+  {
+    "name": "Basket",
+    "description": "A Basket holds up to 40 pounds within 2 cubic feet.",
+    "type": "G|XPHB"
+  },
+  {
+    "name": "Bedroll",
+    "type": "G|XPHB",
+    "weight": 7,
+    "description": "A bedroll consists of bedding and a blanket thin enough to be rolled up and tied. It provides a comfortable place to sleep outdoors."
+  },
+  {
+    "name": "Bejeweled gold bracelet",
+    "description": "",
+    "type": "$A|XDMG"
+  },
+  {
+    "name": "Bejeweled ivory drinking horn with gold filigree",
+    "description": "",
+    "type": "$A|XDMG"
+  },
+  {
+    "name": "Bell",
+    "type": "G|XPHB",
+    "weight": 0,
+    "description": "A small brass bell that produces a clear ringing tone when struck."
+  },
+  {
+    "name": "Black Opal",
+    "description": "A dark green with black mottling and golden flecks gemstone.",
+    "type": "$G|XDMG"
+  },
+  {
+    "name": "Black Pearl",
+    "description": "A pure black gemstone.",
+    "type": "$G|XDMG"
+  },
+  {
+    "name": "Black Sapphire",
+    "description": "A lustrous black with glowing highlights gemstone.",
+    "type": "$G|XDMG"
+  },
+  {
+    "name": "Black velvet mask stitched with silver thread",
+    "description": "",
+    "type": "$A|XDMG"
+  },
+  {
+    "name": "Blanket",
+    "type": "G|XPHB",
+    "weight": 3,
+    "description": "A thick, woven blanket suitable for warmth during a rest or travel."
+  },
+  {
+    "name": "Block and Tackle",
+    "description": "A Block and Tackle allows you to hoist up to four times the weight you can normally lift.",
+    "type": "G|XPHB"
+  },
+  {
+    "name": "Bloodstone",
+    "description": "A dark gray with red flecks gemstone.",
+    "type": "$G|XDMG"
+  },
+  {
+    "name": "Blue Quartz",
+    "description": "A pale blue gemstone.",
+    "type": "$G|XDMG"
+  },
+  {
+    "name": "Blue Sapphire",
+    "description": "A medium blue gemstone.",
+    "type": "$G|XDMG"
+  },
+  {
+    "name": "Blue Spinel",
+    "description": "A deep blue gemstone.",
+    "type": "$G|XDMG"
   },
   {
     "name": "Bolt",
@@ -20,14 +212,416 @@
     "weight": 1.5
   },
   {
+    "name": "Bomb",
+    "description": "As an action, you can light a Bomb and throw it at a point up to 60 feet away, where it explodes. Each creature in a 5-foot-radius Sphere centered on that point makes a DC 12 Dexterity saving throw, taking 3d6 Fire damage on a failed save or half as much damage on a successful one.",
+    "type": "EXP|XDMG",
+    "effects": {
+      "properties": [
+        {
+          "type": "note",
+          "text": "Action: throw 60 ft, 5-ft Sphere. DC 12 Dex save or 3d6 Fire (half on success)."
+        }
+      ]
+    }
+  },
+  {
+    "name": "Book",
+    "type": "G|XPHB",
+    "weight": 5,
+    "description": "A book contains blank pages suitable for recording text, spells, maps, or other information. A wizard can use it as a spellbook."
+  },
+  {
+    "name": "Bottle stopper cork embossed with gold leaf and set with amethysts",
+    "description": "",
+    "type": "$A|XDMG"
+  },
+  {
+    "name": "Box of turquoise animal figurines",
+    "description": "",
+    "type": "$A|XDMG"
+  },
+  {
+    "name": "Brass mug with jade inlay",
+    "description": "",
+    "type": "$A|XDMG"
+  },
+  {
+    "name": "Bread (loaf)",
+    "description": "",
+    "type": "FD|XPHB"
+  },
+  {
+    "name": "Bronze crown",
+    "description": "",
+    "type": "$A|XDMG"
+  },
+  {
+    "name": "Bucket",
+    "description": "A Bucket holds up to half a cubic foot of contents.",
+    "type": "G|XPHB"
+  },
+  {
+    "name": "Bullseye Lantern",
+    "description": "A Bullseye Lantern burns Oil as fuel to cast Bright Light in a 60-foot Cone and Dim Light for an additional 60 feet.",
+    "type": "G|XPHB"
+  },
+  {
+    "name": "Bundle of sheet music representing the lost dirges of a famous composer",
+    "description": "",
+    "type": "$A|XDMG"
+  },
+  {
+    "name": "Burglar's Pack",
+    "description": "A Burglar's Pack contains the following items: Backpack, Ball Bearings, Bell, 10 Candles, Crowbar, Hooded Lantern, 7 flasks of Oil, 5 days of Rations, Rope, Tinderbox, and Waterskin.",
+    "type": "G|XPHB"
+  },
+  {
+    "name": "Burnt Othur Fumes",
+    "description": "A creature subjected to Burnt Othur Fumes must succeed on a DC 13 Constitution saving throw or take 10 (3d6) Poison damage, and it must repeat the save at the start of each of its turns. On each successive failed save, the creature takes 3 (1d6) Poison damage. After three successful saves, the poison ends.",
+    "type": "G|XPHB"
+  },
+  {
+    "name": "Caltrops",
+    "description": "As a {action:Utilize} action, you can spread Caltrops from their bag to cover a 5-foot-square area within 5 feet of yourself. A creature that enters this area for the first time on a turn must succeed on a DC 15 Dexterity saving throw or take 1 Piercing damage and have its Speed reduced to 0 until the start of its next turn. It takes 10 minutes to recover the Caltrops.",
+    "type": "G|XPHB"
+  },
+  {
+    "name": "Camel",
+    "description": "",
+    "type": "MNT|XPHB"
+  },
+  {
+    "name": "Candle",
+    "type": "G|XPHB",
+    "weight": 0,
+    "description": "A candle illuminates a 5-foot radius with bright light and a 10-foot radius with dim light. It burns for 1 hour."
+  },
+  {
+    "name": "Canvas (1 sq. yd.)",
+    "description": "",
+    "type": "TG|XDMG"
+  },
+  {
+    "name": "Carnelian",
+    "description": "A orange to red brown gemstone.",
+    "type": "$G|XDMG"
+  },
+  {
+    "name": "Carriage",
+    "description": "",
+    "type": "VEH|XPHB"
+  },
+  {
+    "name": "Carrion Crawler Mucus",
+    "description": "A creature subjected to Carrion Crawler Mucus must succeed on a DC 13 Constitution saving throw or have the {condition:Poisoned} condition for 1 minute. The creature also has the {condition:Paralyzed} condition while {condition:Poisoned} in this way. The creature repeats the save at the end of each of its turns, ending the effect on itself on a success.",
+    "type": "G|XPHB"
+  },
+  {
+    "name": "Cart",
+    "description": "",
+    "type": "VEH|XPHB"
+  },
+  {
+    "name": "Carved bone statuette",
+    "description": "",
+    "type": "$A|XDMG"
+  },
+  {
+    "name": "Carved ivory statuette",
+    "description": "",
+    "type": "$A|XDMG"
+  },
+  {
+    "name": "Carved wooden harp with ivory inlay and zircon gems",
+    "description": "",
+    "type": "$A|XDMG"
+  },
+  {
+    "name": "Censer",
+    "type": "G|XPHB",
+    "weight": 1,
+    "description": "A metal vessel on a chain used for burning incense during religious ceremonies. It can be used as a holy symbol by clerics or paladins."
+  },
+  {
+    "name": "Ceremonial gold armor with black pearls",
+    "description": "",
+    "type": "$A|XDMG"
+  },
+  {
+    "name": "Chain",
+    "description": "As a {action:Utilize} action, you can wrap a Chain around an unwilling creature within 5 feet of yourself that has the {condition:Grappled}, {condition:Incapacitated}, or {condition:Restrained} condition if you succeed on a DC 13 Strength (Athletics) check. If the creature's legs are bound, the creature has the {condition:Restrained} condition until it escapes. Escaping the Chain requires the creature to make a successful DC 18 Dexterity (Acrobatics) check as an action. Bursting the Chain requires a successful DC 20 Strength (Athletics) check as an action.",
+    "type": "G|XPHB"
+  },
+  {
+    "name": "Chain (10 ft)",
+    "type": "G|XPHB",
+    "weight": 10,
+    "description": "A 10-foot length of iron chain has AC 19, 10 Hit Points, and immunity to Poison and Psychic damage. It can be used to bind a creature with a DC 20 Strength check to break free."
+  },
+  {
+    "name": "Chalcedony",
+    "description": "A white gemstone.",
+    "type": "$G|XDMG"
+  },
+  {
+    "name": "Chariot",
+    "description": "",
+    "type": "VEH|XPHB"
+  },
+  {
+    "name": "Cheese (wedge)",
+    "description": "",
+    "type": "FD|XPHB"
+  },
+  {
+    "name": "Chest",
+    "type": "G|XPHB",
+    "weight": 25,
+    "description": "A chest can hold up to 300 pounds of gear, not exceeding a volume of 12 cubic feet."
+  },
+  {
+    "name": "Chicken",
+    "description": "",
+    "type": "TG|XDMG"
+  },
+  {
+    "name": "Chrysoberyl",
+    "description": "A yellow green to pale green gemstone.",
+    "type": "$G|XDMG"
+  },
+  {
+    "name": "Chrysoprase",
+    "description": "A green gemstone.",
+    "type": "$G|XDMG"
+  },
+  {
+    "name": "Cinnamon",
+    "description": "",
+    "type": "TG|XDMG"
+  },
+  {
+    "name": "Citrine",
+    "description": "A pale yellow brown gemstone.",
+    "type": "$G|XDMG"
+  },
+  {
+    "name": "Climber's Kit",
+    "type": "G|XPHB",
+    "weight": 12,
+    "description": "A climber's kit includes special pitons, boot tips, gloves, and a harness. As a Utilize action, you can anchor yourself so you can't fall more than 25 feet from the point where you anchored."
+  },
+  {
+    "name": "Cloth-of-gold vestments",
+    "description": "",
+    "type": "$A|XDMG"
+  },
+  {
+    "name": "Cloves",
+    "description": "",
+    "type": "TG|XDMG"
+  },
+  {
+    "name": "Common Wine (bottle)",
+    "description": "",
+    "type": "FD|XPHB"
+  },
+  {
+    "name": "Component Pouch",
+    "type": "G|XPHB",
+    "weight": 2,
+    "description": "A small, watertight leather belt pouch with compartments for storing material components needed for spellcasting, except those that have a specified cost."
+  },
+  {
+    "name": "Copper",
+    "description": "",
+    "type": "TG|XDMG"
+  },
+  {
+    "name": "Copper chalice with silver filigree",
+    "description": "",
+    "type": "$A|XDMG"
+  },
+  {
+    "name": "Coral",
+    "description": "A crimson gemstone.",
+    "type": "$G|XDMG"
+  },
+  {
+    "name": "Costume",
+    "type": "G|XPHB",
+    "weight": 4,
+    "description": "An outfit or disguise suitable for a theatrical performance or masquerade."
+  },
+  {
+    "name": "Cotton Cloth (1 sq. yd.)",
+    "description": "",
+    "type": "TG|XDMG"
+  },
+  {
+    "name": "Cow",
+    "description": "",
+    "type": "TG|XDMG"
+  },
+  {
+    "name": "Crossbow Bolt Case",
+    "description": "A Crossbow Bolt Case holds up to 20 Bolts.",
+    "type": "G|XPHB"
+  },
+  {
+    "name": "Crowbar",
+    "type": "G|XPHB",
+    "weight": 5,
+    "description": "Using a crowbar grants Advantage on Strength checks where the crowbar's leverage can be applied."
+  },
+  {
     "name": "Crystal",
     "type": "SCF|XPHB",
     "weight": 1
   },
   {
+    "name": "Detailed, life-sized dragonborn skull cast in electrum",
+    "description": "",
+    "type": "$A|XDMG"
+  },
+  {
+    "name": "Diamond",
+    "description": "A blue white, canary, pink, brown, or blue gemstone.",
+    "type": "$G|XDMG"
+  },
+  {
+    "name": "Dice Set",
+    "description": "• **Ability:.** Wisdom\n• **Utilize:.** Discern whether someone is cheating (DC 10), or win the game (DC 20)",
+    "type": "GS|XPHB"
+  },
+  {
+    "name": "Diplomat's Pack",
+    "description": "A Diplomat's Pack contains the following items: Chest, Fine Clothes, Ink, 5 Ink Pens, Lamp, 2 Map or Scroll Cases, 4 flasks of Oil, 5 sheets of Paper, 5 sheets of Parchment, Perfume, and Tinderbox.",
+    "type": "G|XPHB"
+  },
+  {
+    "name": "Disguise Kit",
+    "type": "T|XPHB",
+    "weight": 3,
+    "description": "This pouch of cosmetics, hair dye, and small props lets you create disguises that change your physical appearance. Proficiency with this kit lets you add your Proficiency Bonus to Charisma (Deception) checks made to pass off a disguise."
+  },
+  {
+    "name": "Draft Horse",
+    "description": "",
+    "type": "MNT|XPHB"
+  },
+  {
+    "name": "Dragonchess Set",
+    "description": "• **Ability:.** Wisdom\n• **Utilize:.** Discern whether someone is cheating (DC 10), or win the game (DC 20)",
+    "type": "GS|XPHB"
+  },
+  {
+    "name": "Dungeoneer's Pack",
+    "description": "A Dungeoneer's Pack contains the following items: Backpack, Caltrops, Crowbar, 2 flasks of Oil, 10 days of Rations, Rope, Tinderbox, 10 Torches, and Waterskin.",
+    "type": "G|XPHB"
+  },
+  {
+    "name": "Dynamite Stick",
+    "description": "An an action, you can light a Dynamite Stick and throw it at a point up to 60 feet away, where it explodes. Each creature in a 5-foot-radius Sphere centered on that point makes a DC 12 Dexterity saving throw, taking 3d6 Force damage on a failed save or half as much damage on a successful one.\nIt takes 1 minute to bind two or more Dynamite Sticks together so they explode at the same time. Each stick after the first increases the damage by 1d6 (to a maximum of 10d6) and the effect's radius by 5 feet (to a maximum of 20 feet).\nIt takes 1 minute to rig dynamite with a longer fuse so it explodes after a longer period of time, such as 1 minute or 10 minutes.",
+    "type": "EXP|XDMG",
+    "effects": {
+      "properties": [
+        {
+          "type": "note",
+          "text": "Action: throw 60 ft, 5-ft Sphere. DC 12 Dex or 3d6 Force (half on success). Bundle multiple sticks: +1d6/+5-ft radius per extra stick (max 10d6, 20-ft radius)."
+        }
+      ]
+    }
+  },
+  {
+    "name": "Elephant",
+    "description": "",
+    "type": "MNT|XPHB"
+  },
+  {
+    "name": "Emblem",
+    "description": "For an Emblem to be an effective Holy Symbol, it must be borne on fabric (such as a tabard or banner) or a Shield.",
+    "type": "SCF|XPHB"
+  },
+  {
+    "name": "Embroidered glove set with jewel chips",
+    "description": "",
+    "type": "$A|XDMG"
+  },
+  {
+    "name": "Embroidered silk and velvet mantle set with numerous moonstones",
+    "description": "",
+    "type": "$A|XDMG"
+  },
+  {
+    "name": "Embroidered silk handkerchief",
+    "description": "",
+    "type": "$A|XDMG"
+  },
+  {
+    "name": "Emerald",
+    "description": "A deep bright green gemstone.",
+    "type": "$G|XDMG"
+  },
+  {
     "name": "Energy Cell",
     "type": "AF|XDMG",
     "weight": 0.5
+  },
+  {
+    "name": "Entertainer's Pack",
+    "description": "An Entertainer's Pack contains the following items: Backpack, Bedroll, Bell, Bullseye Lantern, 3 Costumes, Mirror, 8 flasks of Oil, 9 days of Rations, Tinderbox, and Waterskin.",
+    "type": "G|XPHB"
+  },
+  {
+    "name": "Essence of Ether",
+    "description": "A creature subjected to Essence of Ether must succeed on a DC 15 Constitution saving throw or have the {condition:Poisoned} condition for 8 hours. The creature also has the {condition:Unconscious} condition while {condition:Poisoned} in this way. The creature wakes up if it takes damage or if another creature takes an action to shake it awake.",
+    "type": "G|XPHB"
+  },
+  {
+    "name": "Exotic Saddle",
+    "description": "A saddle comes with a bit, a bridle, reins, and any other equipment needed to use the saddle. An Exotic Saddle is required for riding an aquatic or a flying mount.",
+    "type": "TAH|XPHB"
+  },
+  {
+    "name": "Explorer's Pack",
+    "description": "An Explorer's Pack contains the following items: Backpack, Bedroll, 2 flasks of Oil, 10 days of Rations, Rope, Tinderbox, 10 Torches, and Waterskin.",
+    "type": "G|XPHB"
+  },
+  {
+    "name": "Eye Agate",
+    "description": "A circles of gray, white, brown, blue, or green gemstone.",
+    "type": "$G|XDMG"
+  },
+  {
+    "name": "Eye patch decorated with tiny blue sapphires and moonstones",
+    "description": "",
+    "type": "$A|XDMG"
+  },
+  {
+    "name": "Feed (per day)",
+    "description": "",
+    "type": "TAH|XPHB"
+  },
+  {
+    "name": "Fine Clothes",
+    "type": "G|XPHB",
+    "weight": 6,
+    "description": "Fine clothes are made from high-quality materials and are required when attending formal social events or impersonating nobility."
+  },
+  {
+    "name": "Fine gold chain set with a fire opal",
+    "description": "",
+    "type": "$A|XDMG"
+  },
+  {
+    "name": "Fine Wine (bottle)",
+    "description": "",
+    "type": "FD|XPHB"
+  },
+  {
+    "name": "Fire Opal",
+    "description": "A fiery red gemstone.",
+    "type": "$G|XDMG"
   },
   {
     "name": "Firearm Bullet",
@@ -40,177 +634,120 @@
     "weight": 2
   },
   {
-    "name": "Needle",
-    "type": "A|XPHB",
-    "weight": 0.02
-  },
-  {
-    "name": "Needles (50)",
-    "type": "A|XPHB",
-    "weight": 1
-  },
-  {
-    "name": "Orb",
-    "type": "SCF|XPHB",
-    "weight": 3
-  },
-  {
-    "name": "Rod",
-    "type": "SCF|XPHB",
-    "weight": 2
-  },
-  {
-    "name": "Sling Bullet",
-    "type": "A|XPHB",
-    "weight": 0.075
-  },
-  {
-    "name": "Sling Bullets (20)",
-    "type": "A|XPHB",
-    "weight": 1.5
-  },
-  {
-    "name": "Staff",
-    "type": "SCF|XPHB",
-    "weaponCategory": "simple",
-    "damage": "1d6",
-    "damageType": "bludgeoning",
-    "versatileDamage": "1d8",
-    "properties": [
-      "V"
-    ],
-    "mastery": [
-      "Topple"
-    ],
-    "weight": 4
-  },
-  {
-    "name": "Wand",
-    "type": "SCF|XPHB",
-    "weight": 1
-  },
-  {
-    "name": "Wooden Staff",
-    "type": "SCF|XPHB",
-    "weaponCategory": "simple",
-    "damage": "1d6",
-    "damageType": "bludgeoning",
-    "versatileDamage": "1d8",
-    "properties": [
-      "V"
-    ],
-    "mastery": [
-      "Topple"
-    ],
-    "weight": 4
-  },
-  {
-    "name": "Alms Box",
-    "type": "G|XPHB",
-    "weight": 1,
-    "description": "A small box used to collect offerings and tithes for religious purposes."
-  },
-  {
-    "name": "Backpack",
-    "type": "G|XPHB",
-    "weight": 5,
-    "description": "A Backpack can hold up to 30 pounds of gear, not exceeding a volume of 1 cubic foot."
-  },
-  {
-    "name": "Ball Bearings (bag of 1,000)",
-    "type": "G|XPHB",
-    "weight": 2,
-    "description": "As a Utilize action, you can spread these across a 10-foot square. Any creature entering the area must succeed on a DC 10 Dexterity saving throw or have the Prone condition. Picking up all the ball bearings takes 1 minute."
-  },
-  {
-    "name": "Bedroll",
-    "type": "G|XPHB",
-    "weight": 7,
-    "description": "A bedroll consists of bedding and a blanket thin enough to be rolled up and tied. It provides a comfortable place to sleep outdoors."
-  },
-  {
-    "name": "Bell",
-    "type": "G|XPHB",
-    "weight": 0,
-    "description": "A small brass bell that produces a clear ringing tone when struck."
-  },
-  {
-    "name": "Blanket",
-    "type": "G|XPHB",
-    "weight": 3,
-    "description": "A thick, woven blanket suitable for warmth during a rest or travel."
-  },
-  {
-    "name": "Book",
-    "type": "G|XPHB",
-    "weight": 5,
-    "description": "A book contains blank pages suitable for recording text, spells, maps, or other information. A wizard can use it as a spellbook."
-  },
-  {
-    "name": "Candle",
-    "type": "G|XPHB",
-    "weight": 0,
-    "description": "A candle illuminates a 5-foot radius with bright light and a 10-foot radius with dim light. It burns for 1 hour."
-  },
-  {
-    "name": "Censer",
-    "type": "G|XPHB",
-    "weight": 1,
-    "description": "A metal vessel on a chain used for burning incense during religious ceremonies. It can be used as a holy symbol by clerics or paladins."
-  },
-  {
-    "name": "Chain (10 ft)",
-    "type": "G|XPHB",
-    "weight": 10,
-    "description": "A 10-foot length of iron chain has AC 19, 10 Hit Points, and immunity to Poison and Psychic damage. It can be used to bind a creature with a DC 20 Strength check to break free."
-  },
-  {
-    "name": "Chest",
-    "type": "G|XPHB",
-    "weight": 25,
-    "description": "A chest can hold up to 300 pounds of gear, not exceeding a volume of 12 cubic feet."
-  },
-  {
-    "name": "Climber's Kit",
-    "type": "G|XPHB",
-    "weight": 12,
-    "description": "A climber's kit includes special pitons, boot tips, gloves, and a harness. As a Utilize action, you can anchor yourself so you can't fall more than 25 feet from the point where you anchored."
-  },
-  {
-    "name": "Component Pouch",
-    "type": "G|XPHB",
-    "weight": 2,
-    "description": "A small, watertight leather belt pouch with compartments for storing material components needed for spellcasting, except those that have a specified cost."
-  },
-  {
-    "name": "Costume",
-    "type": "G|XPHB",
-    "weight": 4,
-    "description": "An outfit or disguise suitable for a theatrical performance or masquerade."
-  },
-  {
-    "name": "Crowbar",
-    "type": "G|XPHB",
-    "weight": 5,
-    "description": "Using a crowbar grants Advantage on Strength checks where the crowbar's leverage can be applied."
-  },
-  {
-    "name": "Disguise Kit",
-    "type": "T|XPHB",
-    "weight": 3,
-    "description": "This pouch of cosmetics, hair dye, and small props lets you create disguises that change your physical appearance. Proficiency with this kit lets you add your Proficiency Bonus to Charisma (Deception) checks made to pass off a disguise."
-  },
-  {
-    "name": "Fine Clothes",
-    "type": "G|XPHB",
-    "weight": 6,
-    "description": "Fine clothes are made from high-quality materials and are required when attending formal social events or impersonating nobility."
-  },
-  {
     "name": "Flask",
     "type": "G|XPHB",
     "weight": 1,
     "description": "A glass or metal flask holds 1 pint of liquid."
+  },
+  {
+    "name": "Flour",
+    "description": "",
+    "type": "TG|XDMG"
+  },
+  {
+    "name": "Forgery Kit",
+    "description": "• **Ability:.** Dexterity\n• **Utilize:.** Mimic 10 or fewer words of someone else's handwriting (DC 15), or duplicate a wax seal (DC 20)",
+    "type": "T|XPHB"
+  },
+  {
+    "name": "Fragmentation Grenade",
+    "description": "{#itemEntry Grenade|XDMG}\nEach creature in the Sphere makes a DC 15 Dexterity saving throw, taking 17 (5d6) Piercing damage on a failed save or half as much damage on a successful one.",
+    "type": "EXP|XDMG"
+  },
+  {
+    "name": "Galley",
+    "description": "",
+    "type": "SHP|XPHB"
+  },
+  {
+    "name": "Garnet",
+    "description": "A red, brown green, or violet gemstone.",
+    "type": "$G|XDMG"
+  },
+  {
+    "name": "Gilded royal coach or funeral barge",
+    "description": "",
+    "type": "$A|XDMG"
+  },
+  {
+    "name": "Ginger",
+    "description": "",
+    "type": "TG|XDMG"
+  },
+  {
+    "name": "Glass Bottle",
+    "description": "A Glass Bottle holds up to 1½ pints.",
+    "type": "G|XPHB"
+  },
+  {
+    "name": "Goat",
+    "description": "",
+    "type": "TG|XDMG"
+  },
+  {
+    "name": "Gold",
+    "description": "",
+    "type": "TG|XDMG"
+  },
+  {
+    "name": "Gold Bar (5-pound)",
+    "description": "",
+    "type": "TB|XDMG"
+  },
+  {
+    "name": "Gold birdcage with electrum filigree",
+    "description": "",
+    "type": "$A|XDMG"
+  },
+  {
+    "name": "Gold bracelet",
+    "description": "",
+    "type": "$A|XDMG"
+  },
+  {
+    "name": "Gold circlet set with four aquamarines",
+    "description": "",
+    "type": "$A|XDMG"
+  },
+  {
+    "name": "Gold comb shaped like a dragon with red garnets as eyes",
+    "description": "",
+    "type": "$A|XDMG"
+  },
+  {
+    "name": "Gold cup set with emeralds",
+    "description": "",
+    "type": "$A|XDMG"
+  },
+  {
+    "name": "Gold idol",
+    "description": "",
+    "type": "$A|XDMG"
+  },
+  {
+    "name": "Gold jewelry box with platinum filigree",
+    "description": "",
+    "type": "$A|XDMG"
+  },
+  {
+    "name": "Gold locket with a painted portrait inside",
+    "description": "",
+    "type": "$A|XDMG"
+  },
+  {
+    "name": "Gold music box",
+    "description": "",
+    "type": "$A|XDMG"
+  },
+  {
+    "name": "Gold ring set with bloodstones",
+    "description": "",
+    "type": "$A|XDMG"
+  },
+  {
+    "name": "Gold statuette set with rubies",
+    "description": "",
+    "type": "$A|XDMG"
   },
   {
     "name": "Grappling Hook",
@@ -219,10 +756,30 @@
     "description": "When attached to a rope, a grappling hook can be thrown to anchor the rope to a battlement, ledge, or other fixed object."
   },
   {
+    "name": "Grenade Launcher",
+    "description": "{#itemEntry Grenade|XDMG}",
+    "type": "G|XPHB"
+  },
+  {
+    "name": "Gunpowder (keg)",
+    "description": "Setting fire to a keg full of Gunpowder causes it to explode. When a keg explodes, each creature in a 10-foot-radius Sphere centered on the keg makes a DC 12 Dexterity saving throw, taking 24 (7d6) Fire damage on a failed save or half as much damage on a successful one.",
+    "type": "EXP|XDMG"
+  },
+  {
+    "name": "Gunpowder (powder horn)",
+    "description": "Setting fire to a powder horn full of Gunpowder causes it to explode. When a powder horn explodes, each creature in a 10-foot-radius Sphere centered on the powder horn makes a DC 12 Dexterity saving throw, taking 10 (3d6) Fire damage on a failed save or half as much damage on a successful one.",
+    "type": "EXP|XDMG"
+  },
+  {
     "name": "Hammer",
     "type": "G|XPHB",
     "weight": 3,
     "description": "A hammer can be used to drive spikes, pitons, or stakes into hard surfaces."
+  },
+  {
+    "name": "Handheld mirror set in a painted wooden frame",
+    "description": "",
+    "type": "$A|XDMG"
   },
   {
     "name": "Healer's Kit",
@@ -231,10 +788,20 @@
     "description": "This kit contains bandages, salves, and splints. As a Utilize action, you can expend one use (10 uses total) to stabilize a creature at 0 Hit Points without a Wisdom (Medicine) check."
   },
   {
+    "name": "Hematite",
+    "description": "A gray black gemstone.",
+    "type": "$G|XDMG"
+  },
+  {
     "name": "Hempen Rope (50 ft)",
     "type": "G|XPHB",
     "weight": 10,
     "description": "Hemp rope has AC 11, 2 Hit Points, and can hold up to 3 Medium or smaller creatures. It can be burst with a DC 17 Strength check."
+  },
+  {
+    "name": "Herbalism Kit",
+    "description": "• **Ability:.** Intelligence\n• **Utilize:.** Identify a plant (DC 10)\n• **Craft:.** Antitoxin, Candle, Healer's Kit, Potion of Healing",
+    "type": "T|XPHB"
   },
   {
     "name": "Holy Water",
@@ -273,10 +840,95 @@
     "description": "A slender quill or metal-tipped pen for writing with ink."
   },
   {
+    "name": "Iron",
+    "description": "",
+    "type": "TG|XDMG"
+  },
+  {
+    "name": "Iron Pot",
+    "description": "An Iron Pot holds up to 1 gallon.",
+    "type": "G|XPHB"
+  },
+  {
+    "name": "Iron Spike",
+    "description": "Iron Spikes come in bundles of ten. As a {action:Utilize} action, you can use a blunt object, such as a Light Hammer, to hammer a spike into wood, earth, or a similar material. You can do so to jam a door shut or to then tie a Rope or Chain to the Spike.",
+    "type": "G|XPHB"
+  },
+  {
+    "name": "Iron Spikes",
+    "description": "Iron Spikes come in bundles of ten. As a {action:Utilize} action, you can use a blunt object, such as a Light Hammer, to hammer a spike into wood, earth, or a similar material. You can do so to jam a door shut or to then tie a Rope or Chain to the Spike.",
+    "type": "G|XPHB"
+  },
+  {
+    "name": "Jacinth",
+    "description": "A fiery orange gemstone.",
+    "type": "$G|XDMG"
+  },
+  {
+    "name": "Jade",
+    "description": "A light green, deep green, or white gemstone.",
+    "type": "$G|XDMG"
+  },
+  {
+    "name": "Jade game board with gold playing pieces",
+    "description": "",
+    "type": "$A|XDMG"
+  },
+  {
+    "name": "Jasper",
+    "description": "A blue, black, or brown gemstone.",
+    "type": "$G|XDMG"
+  },
+  {
+    "name": "Jet",
+    "description": "A deep black gemstone.",
+    "type": "$G|XDMG"
+  },
+  {
+    "name": "Jeweled anklet",
+    "description": "",
+    "type": "$A|XDMG"
+  },
+  {
+    "name": "Jeweled gold crown",
+    "description": "",
+    "type": "$A|XDMG"
+  },
+  {
+    "name": "Jeweled platinum ring",
+    "description": "",
+    "type": "$A|XDMG"
+  },
+  {
+    "name": "Jug",
+    "description": "A Jug holds up to 1 gallon.",
+    "type": "G|XPHB"
+  },
+  {
+    "name": "Keelboat",
+    "description": "",
+    "type": "SHP|XPHB"
+  },
+  {
+    "name": "Ladder",
+    "description": "A Ladder is 10 feet tall. You must climb to move up or down it.",
+    "type": "G|XPHB"
+  },
+  {
     "name": "Lamp",
     "type": "G|XPHB",
     "weight": 1,
     "description": "A lamp casts bright light in a 15-foot radius and dim light for an additional 30 feet. Using 1 pint of oil as fuel, it burns for 6 hours."
+  },
+  {
+    "name": "Lapis Lazuli",
+    "description": "A light and dark blue with yellow flecks gemstone.",
+    "type": "$G|XDMG"
+  },
+  {
+    "name": "Linen (1 sq. yd.)",
+    "description": "",
+    "type": "TG|XDMG"
   },
   {
     "name": "Lock",
@@ -285,10 +937,40 @@
     "description": "A lock comes with a key. A creature proficient with Thieves' Tools can pick the lock with a DC 15 Dexterity (Thieves' Tools) check."
   },
   {
+    "name": "Lolth's Sting",
+    "description": "A creature subjected to Lolth's Sting must succeed on a DC 13 Constitution saving throw or have the {condition:Poisoned} condition for 1 hour. If the creature fails the save by 5 or more, the creature also has the {condition:Unconscious} condition while {condition:Poisoned} in this way. The creature wakes up if it takes damage or if another creature takes an action to shake it awake.",
+    "type": "G|XPHB"
+  },
+  {
+    "name": "Longship",
+    "description": "",
+    "type": "SHP|XPHB"
+  },
+  {
     "name": "Magnifying Glass",
     "type": "G|XPHB",
     "weight": 0,
     "description": "A magnifying glass grants Advantage on Wisdom (Perception) checks that rely on sight when examining objects smaller than 1 foot. It can also be used to start a fire given bright sunlight."
+  },
+  {
+    "name": "Malachite",
+    "description": "A striated light and dark green gemstone.",
+    "type": "$G|XDMG"
+  },
+  {
+    "name": "Malice",
+    "description": "A creature subjected to Malice must succeed on a DC 15 Constitution saving throw or have the {condition:Poisoned} condition for 1 hour. The creature also has the {condition:Blinded} condition while {condition:Poisoned} in this way.",
+    "type": "G|XPHB"
+  },
+  {
+    "name": "Manacles",
+    "description": "As a {action:Utilize} action, you can use Manacles to bind an unwilling Small or Medium creature within 5 feet of yourself that has the {condition:Grappled}, {condition:Incapacitated}, or {condition:Restrained} condition if you succeed on a DC 13 Dexterity (Sleight of Hand) check. While bound, a creature has Disadvantage on attack rolls, and the creature is {condition:Restrained} if the Manacles are attached to a chain or hook that is fixed in place. Escaping the Manacles requires a successful DC 20 Dexterity (Sleight of Hand) check as an action. Bursting them requires a successful DC 25 Strength (Athletics) check as an action.\nEach set of Manacles comes with a key. Without the key, a creature can use Thieves' Tools to pick the Manacles' lock with a successful DC 15 Dexterity (Sleight of Hand) check.",
+    "type": "G|XPHB"
+  },
+  {
+    "name": "Map",
+    "description": "If you consult an accurate Map, you gain a +5 bonus to Wisdom (Survival) checks you make to find your way in the place represented on it.",
+    "type": "G|XPHB"
   },
   {
     "name": "Map or Scroll Case",
@@ -297,10 +979,25 @@
     "description": "A cylindrical leather case used to store and protect rolled maps or scrolls. It holds up to 10 sheets of rolled paper."
   },
   {
+    "name": "Mastiff",
+    "description": "",
+    "type": "MNT|XPHB"
+  },
+  {
     "name": "Mess Kit",
     "type": "G|XPHB",
     "weight": 1,
     "description": "A tin box containing a cup, a small skillet, and utensils for eating and cooking. It clamps together for easy storage."
+  },
+  {
+    "name": "Midnight Tears",
+    "description": "A creature that ingests Midnight Tears suffers no effect until the stroke of midnight. Any effect that ends the {condition:Poisoned} condition neutralizes this poison. If the poison hasn't been neutralized before midnight, the creature makes a DC 17 Constitution saving throw, taking 31 (9d6) Poison damage on a failed save or half as much damage on a successful one.",
+    "type": "G|XPHB"
+  },
+  {
+    "name": "Military Saddle",
+    "description": "A saddle comes with a bit, a bridle, reins, and any other equipment needed to use the saddle. A Military Saddle gives Advantage on any ability check you make to remain mounted.",
+    "type": "TAH|XPHB"
   },
   {
     "name": "Mirror",
@@ -309,10 +1006,110 @@
     "description": "A small steel mirror used for signaling or viewing around corners."
   },
   {
+    "name": "Moonstone",
+    "description": "A white with pale-blue glow gemstone.",
+    "type": "$G|XDMG"
+  },
+  {
+    "name": "Moss Agate",
+    "description": "A pink or yellow white with mossy gray or green markings gemstone.",
+    "type": "$G|XDMG"
+  },
+  {
+    "name": "Mule",
+    "description": "",
+    "type": "MNT|XPHB"
+  },
+  {
+    "name": "Navigator's Tools",
+    "description": "• **Ability:.** Wisdom\n• **Utilize:.** Plot a course (DC 10), or determine position by stargazing (DC 15)",
+    "type": "T|XPHB"
+  },
+  {
+    "name": "Necklace string of small pink pearls",
+    "description": "",
+    "type": "$A|XDMG"
+  },
+  {
+    "name": "Needle",
+    "type": "A|XPHB",
+    "weight": 0.02
+  },
+  {
+    "name": "Needles (50)",
+    "type": "A|XPHB",
+    "weight": 1
+  },
+  {
+    "name": "Net",
+    "description": "When you take the {action:Attack} action, you can replace one of your attacks with throwing a Net. Target a creature you can see within 15 feet of yourself. The target must succeed on a Dexterity saving throw (DC 8 plus your Dexterity modifier and Proficiency Bonus) or have the {condition:Restrained} condition until it escapes. The target succeeds automatically if it is Huge or larger.\nTo escape, the target or a creature within 5 feet of it must take an action to make a DC 10 Strength (Athletics) check, freeing the {condition:Restrained} creature on a success. Destroying the Net (AC 10; 5 HP; Immunity to Bludgeoning, Poison, and Psychic damage) also frees the target, ending the effect.",
+    "type": "G|XPHB"
+  },
+  {
+    "name": "Obsidian",
+    "description": "A black gemstone.",
+    "type": "$G|XDMG"
+  },
+  {
+    "name": "Obsidian statuette with gold fittings and inlay",
+    "description": "",
+    "type": "$A|XDMG"
+  },
+  {
+    "name": "Oil",
+    "description": "You can douse a creature, object, or space with Oil or use it as fuel, as detailed below.\n**Dousing a Creature or an Object.** \nWhen you take the {action:Attack} action, you can replace one of your attacks with throwing an Oil flask. Target one creature or object within 20 feet of yourself. The target must succeed on a Dexterity saving throw (DC 8 plus your Dexterity modifier and Proficiency Bonus) or be covered in oil. If the target takes Fire damage before the oil dries (after 1 minute), the target takes an extra 5 Fire damage from burning oil.\n**Dousing a Space.** \nYou can take the {action:Utilize} action to pour an Oil flask on level ground to cover a 5-foot-square area within 5 feet of yourself. If lit, the oil burns until the end of the turn 2 rounds from when the oil was lit (or 12 seconds) and deals 5 Fire damage to any creature that enters the area or ends its turn there. A creature can take this damage only once per turn.\n**Fuel.** \nOil serves as fuel for Lamps and Lanterns. Once lit, a flask of Oil burns for 6 hours in a Lamp or Lantern. That duration doesn't need to be consecutive; you can extinguish the burning Oil (as a {action:Utilize} action) and rekindle it again until it has burned for a total of 6 hours.",
+    "type": "G|XPHB"
+  },
+  {
     "name": "Oil (flask)",
     "type": "G|XPHB",
     "weight": 1,
     "description": "Oil can be used as fuel for lamps or spread on a 5-foot square as a Utilize action. If lit, it burns for 2 rounds dealing 5 Fire damage to any creature that enters the area or starts its turn there."
+  },
+  {
+    "name": "Oil of Taggit",
+    "description": "A creature subjected to Oil of Taggit must succeed on a DC 13 Constitution saving throw or have the {condition:Poisoned} condition for 24 hours. The creature also has the {condition:Unconscious} condition while {condition:Poisoned} in this way. It wakes up if it takes damage.",
+    "type": "G|XPHB"
+  },
+  {
+    "name": "Old masterpiece painting",
+    "description": "",
+    "type": "$A|XDMG"
+  },
+  {
+    "name": "Onyx",
+    "description": "A bands of black and white, or pure black or white gemstone.",
+    "type": "$G|XDMG"
+  },
+  {
+    "name": "Opal",
+    "description": "A pale blue with green and golden mottling gemstone.",
+    "type": "$G|XDMG"
+  },
+  {
+    "name": "Orb",
+    "type": "SCF|XPHB",
+    "weight": 3
+  },
+  {
+    "name": "Ox",
+    "description": "",
+    "type": "TG|XDMG"
+  },
+  {
+    "name": "Painted gold war mask",
+    "description": "",
+    "type": "$A|XDMG"
+  },
+  {
+    "name": "Pair of engraved bone dice",
+    "description": "",
+    "type": "$A|XDMG"
+  },
+  {
+    "name": "Pale Tincture",
+    "description": "A creature subjected to Pale Tincture must succeed on a DC 16 Constitution saving throw or take 3 (1d6) Poison damage and have the {condition:Poisoned} condition. The {condition:Poisoned} creature repeats the save every 24 hours, taking 3 (1d6) Poison damage on a failed save. The damage the poison deals can't be healed by any means while the creature remains {condition:Poisoned}. After seven successful saves against the poison, the creature is no longer {condition:Poisoned}.",
+    "type": "G|XPHB"
   },
   {
     "name": "Paper",
@@ -327,10 +1124,30 @@
     "description": "A single sheet of treated animal skin suitable for writing."
   },
   {
+    "name": "Pearl",
+    "description": "A lustrous white, yellow, or pink gemstone.",
+    "type": "$G|XDMG"
+  },
+  {
+    "name": "Pepper",
+    "description": "",
+    "type": "TG|XDMG"
+  },
+  {
     "name": "Perfume",
     "type": "G|XPHB",
     "weight": 0,
     "description": "A small vial of scented perfume."
+  },
+  {
+    "name": "Peridot",
+    "description": "A rich olive green gemstone.",
+    "type": "$G|XDMG"
+  },
+  {
+    "name": "Pig",
+    "description": "",
+    "type": "TG|XDMG"
   },
   {
     "name": "Piton",
@@ -339,10 +1156,45 @@
     "description": "A metal spike driven into stone or ice to serve as an anchor point for climbing."
   },
   {
+    "name": "Platinum",
+    "description": "",
+    "type": "TG|XDMG"
+  },
+  {
+    "name": "Platinum bracelet set with an emerald",
+    "description": "",
+    "type": "$A|XDMG"
+  },
+  {
+    "name": "Playing Cards",
+    "description": "• **Ability:.** Wisdom\n• **Utilize:.** Discern whether someone is cheating (DC 10), or win the game (DC 20)",
+    "type": "GS|XPHB"
+  },
+  {
+    "name": "Poisoner's Kit",
+    "description": "• **Ability:.** Intelligence\n• **Utilize:.** Detect a poisoned object (DC 10)\n• **Craft:.** Basic Poison",
+    "type": "T|XPHB"
+  },
+  {
+    "name": "Pole",
+    "description": "A Pole is 10 feet long. You can use it to touch something up to 10 feet away. If you must make a Strength (Athletics) check as part of a High or Long Jump, you can use the Pole to vault, giving yourself Advantage on the check.",
+    "type": "G|XPHB"
+  },
+  {
     "name": "Pole (10 ft)",
     "type": "G|XPHB",
     "weight": 7,
     "description": "A 10-foot wooden pole used for probing, carrying, or vaulting. Too unwieldy to use as a weapon."
+  },
+  {
+    "name": "Pony",
+    "description": "",
+    "type": "MNT|XPHB"
+  },
+  {
+    "name": "Portable Ram",
+    "description": "You can use a Portable Ram to break down doors. When doing so, you gain a +4 bonus to the Strength check. One other character can help you use the ram, giving you Advantage on this check.",
+    "type": "G|XPHB"
   },
   {
     "name": "Pouch",
@@ -351,16 +1203,136 @@
     "description": "A cloth or leather pouch can hold up to 6 pounds of gear, not exceeding a volume of 1/5 cubic foot. It is the default container for carrying coins."
   },
   {
+    "name": "Priest's Pack",
+    "description": "A Priest's Pack contains the following items: Backpack, Blanket, Holy Water, Lamp, 7 days of Rations, Robe, and Tinderbox.",
+    "type": "G|XPHB"
+  },
+  {
+    "name": "Psychic Blade",
+    "description": "",
+    "type": "Melee Weapon"
+  },
+  {
+    "name": "Purple Worm Poison",
+    "description": "A creature subjected to Purple Worm Poison makes a DC 21 Constitution saving throw, taking 35 (10d6) Poison damage on a failed save or half as much damage on a successful one.",
+    "type": "G|XPHB"
+  },
+  {
+    "name": "Quartz",
+    "description": "A white, smoky gray, or yellow gemstone.",
+    "type": "$G|XDMG"
+  },
+  {
+    "name": "Quiver",
+    "description": "A Quiver holds up to 20 Arrows.",
+    "type": "G|XPHB"
+  },
+  {
+    "name": "Rations",
+    "description": "Rations consist of travel-ready food, including jerky, dried fruit, hardtack, and nuts. See \"Malnutrition\" for the risks of not eating.",
+    "type": "G|XPHB"
+  },
+  {
     "name": "Rations (1 day)",
     "type": "G|XPHB",
     "weight": 2,
     "description": "Rations consist of dry foods suitable for extended travel, including jerky, dried fruit, hardtack, and nuts."
   },
   {
+    "name": "Reliquary",
+    "description": "For a Reliquary to be an effective Holy Symbol, it must be held.",
+    "type": "SCF|XPHB"
+  },
+  {
+    "name": "Rhodochrosite",
+    "description": "A light pink gemstone.",
+    "type": "$G|XDMG"
+  },
+  {
+    "name": "Riding Horse",
+    "description": "",
+    "type": "MNT|XPHB"
+  },
+  {
+    "name": "Riding Saddle",
+    "description": "A saddle comes with a bit, a bridle, reins, and any other equipment needed to use the saddle.",
+    "type": "TAH|XPHB"
+  },
+  {
+    "name": "Robe",
+    "description": "A Robe has vocational or ceremonial significance. Some events and locations admit only people wearing a Robe bearing certain colors or symbols.",
+    "type": "G|XPHB"
+  },
+  {
+    "name": "Rod",
+    "type": "SCF|XPHB",
+    "weight": 2
+  },
+  {
+    "name": "Rope",
+    "description": "As a {action:Utilize} action, you can tie a knot with Rope if you succeed on a DC 10 Dexterity (Sleight of Hand) check. The Rope can be burst with a successful DC 20 Strength (Athletics) check.\nYou can bind an unwilling creature with the Rope only if the creature has the {condition:Grappled}, {condition:Incapacitated}, or {condition:Restrained} condition. If the creature's legs are bound, the creature has the {condition:Restrained} condition until it escapes. Escaping the Rope requires the creature to make a successful DC 15 Dexterity (Acrobatics) check as an action.",
+    "type": "G|XPHB"
+  },
+  {
+    "name": "Rowboat",
+    "description": "",
+    "type": "SHP|XPHB"
+  },
+  {
+    "name": "Ruby",
+    "description": "A clear red to deep crimson gemstone.",
+    "type": "$G|XDMG"
+  },
+  {
+    "name": "Sack",
+    "description": "A Sack holds up to 30 pounds within 1 cubic foot.",
+    "type": "G|XPHB"
+  },
+  {
+    "name": "Saffron",
+    "description": "",
+    "type": "TG|XDMG"
+  },
+  {
+    "name": "Sailing Ship",
+    "description": "",
+    "type": "SHP|XPHB"
+  },
+  {
+    "name": "Salt",
+    "description": "",
+    "type": "TG|XDMG"
+  },
+  {
+    "name": "Sardonyx",
+    "description": "A bands of red and white gemstone.",
+    "type": "$G|XDMG"
+  },
+  {
+    "name": "Scholar's Pack",
+    "description": "A Scholar's Pack contains the following items: Backpack, Book, Ink, Ink Pen, Lamp, 10 flasks of Oil, 10 sheets of Parchment, and Tinderbox.",
+    "type": "G|XPHB"
+  },
+  {
     "name": "Sealing Wax",
     "type": "G|XPHB",
     "weight": 0,
     "description": "Wax used with a signet ring to seal letters and documents."
+  },
+  {
+    "name": "Serpent Venom",
+    "description": "A creature subjected to Serpent Venom must succeed on a DC 11 Constitution saving throw, taking 10 (3d6) Poison damage on a failed save or half as much damage on a successful one.",
+    "type": "G|XPHB"
+  },
+  {
+    "name": "Set of gold nesting dolls",
+    "description": "",
+    "type": "$A|XDMG"
+  },
+  {
+    "name": "Sheep",
+    "description": "",
+    "type": "TG|XDMG"
   },
   {
     "name": "Shovel",
@@ -375,10 +1347,60 @@
     "description": "A small metal whistle used for signaling across distances."
   },
   {
+    "name": "Silk",
+    "description": "",
+    "type": "TG|XDMG"
+  },
+  {
     "name": "Silk Rope (50 ft)",
     "type": "G|XPHB",
     "weight": 5,
     "description": "Silk rope has AC 13, 4 Hit Points, and can hold up to 3 Medium or smaller creatures. It can be burst with a DC 17 Strength check."
+  },
+  {
+    "name": "Silk vestments with gold embroidery",
+    "description": "",
+    "type": "$A|XDMG"
+  },
+  {
+    "name": "Silver",
+    "description": "",
+    "type": "TG|XDMG"
+  },
+  {
+    "name": "Silver and gold brooch",
+    "description": "",
+    "type": "$A|XDMG"
+  },
+  {
+    "name": "Silver Bar (2-pound)",
+    "description": "",
+    "type": "TB|XDMG"
+  },
+  {
+    "name": "Silver Bar (5-pound)",
+    "description": "",
+    "type": "TB|XDMG"
+  },
+  {
+    "name": "Silver chalice set with moonstones",
+    "description": "",
+    "type": "$A|XDMG"
+  },
+  {
+    "name": "Silver ewer",
+    "description": "",
+    "type": "$A|XDMG"
+  },
+  {
+    "name": "Silver necklace with a gemstone pendant",
+    "description": "",
+    "type": "$A|XDMG"
+  },
+  {
+    "name": "Sled",
+    "description": "",
+    "type": "VEH|XPHB"
   },
   {
     "name": "Sledgehammer",
@@ -387,10 +1409,25 @@
     "description": "A heavy hammer used for breaking down doors, walls, and other obstacles."
   },
   {
+    "name": "Sling Bullet",
+    "type": "A|XPHB",
+    "weight": 0.075
+  },
+  {
+    "name": "Sling Bullets (20)",
+    "type": "A|XPHB",
+    "weight": 1.5
+  },
+  {
     "name": "Small Knife",
     "type": "G|XPHB",
     "weight": 0.25,
     "description": "A small blade useful for cutting rope, preparing food, and other mundane tasks. Not suited for use as a weapon in combat."
+  },
+  {
+    "name": "Smoke Grenade",
+    "description": "{#itemEntry Grenade|XDMG}\nThe area of the Sphere is Heavily Obscured by smoke for 1 minute. A strong wind (such as the {spell:Gust of Wind} spell) disperses the smoke.",
+    "type": "EXP|XDMG"
   },
   {
     "name": "Soap",
@@ -399,10 +1436,60 @@
     "description": "A bar of soap used for washing."
   },
   {
+    "name": "Spinel",
+    "description": "A red, red brown, or deep green gemstone.",
+    "type": "$G|XDMG"
+  },
+  {
+    "name": "Sprig of Mistletoe",
+    "description": "",
+    "type": "SCF|XPHB"
+  },
+  {
     "name": "Spyglass",
     "type": "G|XPHB",
     "weight": 1,
     "description": "Objects viewed through a spyglass are magnified to twice their size. This extends the range of sight-based Perception checks."
+  },
+  {
+    "name": "Stabling (per day)",
+    "description": "",
+    "type": "TAH|XPHB"
+  },
+  {
+    "name": "Staff",
+    "type": "SCF|XPHB",
+    "weaponCategory": "simple",
+    "damage": "1d6",
+    "damageType": "bludgeoning",
+    "versatileDamage": "1d8",
+    "properties": [
+      "V"
+    ],
+    "mastery": [
+      "Topple"
+    ],
+    "weight": 4
+  },
+  {
+    "name": "Star rose quartz",
+    "description": "A rosy stone with white star-shaped center gemstone.",
+    "type": "$G|XDMG"
+  },
+  {
+    "name": "Star Ruby",
+    "description": "A ruby with white star-shaped center gemstone.",
+    "type": "$G|XDMG"
+  },
+  {
+    "name": "Star Sapphire",
+    "description": "A blue sapphire with white star-shaped center gemstone.",
+    "type": "$G|XDMG"
+  },
+  {
+    "name": "String",
+    "description": "String is 10 feet long. You can tie a knot in it as a {action:Utilize} action.",
+    "type": "G|XPHB"
   },
   {
     "name": "String (10 ft)",
@@ -423,10 +1510,25 @@
     "description": "This set of tools includes a small file, a set of lock picks, a small mirror on a metal handle, a set of narrow-bladed scissors, and a pair of pliers. Proficiency with these tools lets you add your Proficiency Bonus to checks made to disarm traps or open locks."
   },
   {
+    "name": "Three-Dragon Ante Set",
+    "description": "• **Ability:.** Wisdom\n• **Utilize:.** Discern whether someone is cheating (DC 10), or win the game (DC 20)",
+    "type": "GS|XPHB"
+  },
+  {
+    "name": "Tiger Eye",
+    "description": "A brown with golden center gemstone.",
+    "type": "$G|XDMG"
+  },
+  {
     "name": "Tinderbox",
     "type": "G|XPHB",
     "weight": 1,
     "description": "A tinderbox contains flint, fire steel, and tinder. Using it as a Utilize action allows you to start a fire for a torch or campfire."
+  },
+  {
+    "name": "Topaz",
+    "description": "A golden yellow gemstone.",
+    "type": "$G|XDMG"
   },
   {
     "name": "Torch",
@@ -435,10 +1537,35 @@
     "description": "A torch burns for 1 hour, casting bright light in a 20-foot radius and dim light for an additional 20 feet. As an improvised weapon, a torch deals 1 Fire damage on a hit."
   },
   {
+    "name": "Torpor",
+    "description": "A creature subjected to Torpor poison must succeed on a DC 15 Constitution saving throw or have the {condition:Poisoned} condition for 4d6 hours. The creature's Speed is halved while the creature is {condition:Poisoned} in this way.",
+    "type": "G|XPHB"
+  },
+  {
+    "name": "Tourmaline",
+    "description": "A pale green, blue, brown, or red gemstone.",
+    "type": "$G|XDMG"
+  },
+  {
     "name": "Traveler's Clothes",
     "type": "G|XPHB",
     "weight": 4,
     "description": "Sturdy, practical clothing suitable for long journeys."
+  },
+  {
+    "name": "Trinket",
+    "description": "When you make your character, you can roll once on the Trinkets table to gain a Tiny trinket, a simple item lightly touched by mystery. The DM might also use this table. It can help stock a room in a dungeon or fill a creature's pockets.\n| 1d100 | Trinket |\n|---|---|\n| 01 | A mummified goblin hand |\n| 02 | A crystal that faintly glows in moonlight |\n| 03 | A gold coin minted in an unknown land |\n| 04 | A diary written in a language you don't know |\n| 05 | A brass ring that never tarnishes |\n| 06 | An old chess piece made from glass |\n| 07 | A pair of knucklebone dice, each with a skull symbol on the side that would normally show six pips |\n| 08 | A small idol depicting a nightmarish creature that gives you unsettling dreams when you sleep near it |\n| 09 | A lock of someone's hair |\n| 10 | The deed for a parcel of land in a realm unknown to you |\n| 11 | A 1-ounce block made from an unknown material |\n| 12 | A small cloth doll skewered with needles |\n| 13 | A tooth from an unknown beast |\n| 14 | An enormous scale, perhaps from a dragon |\n| 15 | A bright-green feather |\n| 16 | An old divination card bearing your likeness |\n| 17 | A glass orb filled with moving smoke |\n| 18 | A 1-pound egg with a bright-red shell |\n| 19 | A pipe that blows bubbles |\n| 20 | A glass jar containing a bit of flesh floating in pickling fluid |\n| 21 | A gnome-crafted music box that plays a song you dimly remember from your childhood |\n| 22 | A wooden statuette of a smug halfling |\n| 23 | A brass orb etched with strange runes |\n| 24 | A multicolored stone disk |\n| 25 | A silver icon of a raven |\n| 26 | A bag containing forty-seven teeth, one of which is rotten |\n| 27 | A shard of obsidian that always feels warm to the touch |\n| 28 | A dragon's talon strung on a leather necklace |\n| 29 | A pair of old socks |\n| 30 | A blank book whose pages refuse to hold ink, chalk, graphite, or any other marking |\n| 31 | A silver badge that is a five-pointed star |\n| 32 | A knife that belonged to a relative |\n| 33 | A glass vial filled with nail clippings |\n| 34 | A rectangular metal device with two tiny metal cups on one end that throws sparks when wet |\n| 35 | A white, sequined glove sized for a human |\n| 36 | A vest with one hundred tiny pockets |\n| 37 | A weightless stone |\n| 38 | A sketch of a goblin |\n| 39 | An empty glass vial that smells of perfume |\n| 40 | A gemstone that looks like a lump of coal when examined by anyone but you |\n| 41 | A scrap of cloth from an old banner |\n| 42 | A rank insignia from a lost legionnaire |\n| 43 | A silver bell without a clapper |\n| 44 | A mechanical canary inside a lamp |\n| 45 | A miniature chest carved to look like it has numerous feet on the bottom |\n| 46 | A dead sprite inside a clear glass bottle |\n| 47 | A metal can that has no opening but sounds as if it is filled with liquid, sand, spiders, or broken glass (your choice) |\n| 48 | A glass orb filled with water, in which swims a clockwork goldfish |\n| 49 | A silver spoon with an M engraved on the handle |\n| 50 | A whistle made from gold-colored wood |\n| 51 | A dead scarab beetle the size of your hand |\n| 52 | Two toy soldiers, one missing a head |\n| 53 | A small box filled with different-sized buttons |\n| 54 | A candle that can't be lit |\n| 55 | A miniature cage with no door |\n| 56 | An old key |\n| 57 | An indecipherable treasure map |\n| 58 | A hilt from a broken sword |\n| 59 | A rabbit's foot |\n| 60 | A glass eye |\n| 61 | A cameo of a hideous person |\n| 62 | A silver skull the size of a coin |\n| 63 | An alabaster mask |\n| 64 | A cone of sticky black incense that stinks |\n| 65 | A nightcap that gives you pleasant dreams when you wear it |\n| 66 | A single caltrop made from bone |\n| 67 | A gold monocle frame without the lens |\n| 68 | A 1-inch cube, each side a different color |\n| 69 | A crystal doorknob |\n| 70 | A packet filled with pink dust |\n| 71 | A fragment of a beautiful song, written as musical notes on two pieces of parchment |\n| 72 | A silver teardrop earring containing a real teardrop |\n| 73 | An eggshell painted with scenes of misery in disturbing detail |\n| 74 | A fan that, when unfolded, shows a sleepy cat |\n| 75 | A set of bone pipes |\n| 76 | A four-leaf clover pressed inside a book discussing manners and etiquette |\n| 77 | A sheet of parchment upon which is drawn a mechanical contraption |\n| 78 | An ornate scabbard that fits no blade you have found |\n| 79 | An invitation to a party where a murder happened |\n| 80 | A bronze pentacle with an etching of a rat's head in its center |\n| 81 | A purple handkerchief embroidered with the name of an archmage |\n| 82 | Half a floor plan for a temple, a castle, or another structure |\n| 83 | A bit of folded cloth that, when unfolded, turns into a stylish cap |\n| 84 | A receipt of deposit at a bank in a far-off city |\n| 85 | A diary with seven missing pages |\n| 86 | An empty silver snuffbox bearing the inscription \"dreams\" on its lid |\n| 87 | An iron holy symbol devoted to an unknown god |\n| 88 | A book about a legendary hero's rise and fall, with the last chapter missing |\n| 89 | A vial of dragon blood |\n| 90 | An ancient arrow of elven design |\n| 91 | A needle that never bends |\n| 92 | An ornate brooch of dwarven design |\n| 93 | An empty wine bottle bearing a pretty label that says, \"The Wizard of Wines Winery, Red Dragon Crush, 331422-W\" |\n| 94 | A mosaic tile with a multicolored, glazed surface |\n| 95 | A petrified mouse |\n| 96 | A black pirate flag adorned with a dragon's skull and crossbones |\n| 97 | A tiny mechanical crab or spider that moves about when it's not being observed |\n| 98 | A glass jar containing lard with a label that reads, \"Griffon Grease\" |\n| 99 | A wooden box with a ceramic bottom that holds a living worm with a head on each end of its body |\n| 00 | A metal urn containing the ashes of a hero |",
+    "type": "G|XPHB"
+  },
+  {
+    "name": "Truth Serum",
+    "description": "A creature subjected to Truth Serum must succeed on a DC 11 Constitution saving throw or have the {condition:Poisoned} condition for 1 hour. The {condition:Poisoned} creature can't knowingly communicate a lie.",
+    "type": "G|XPHB"
+  },
+  {
+    "name": "Turquoise",
+    "description": "A light blue green gemstone.",
+    "type": "$G|XDMG"
   },
   {
     "name": "Vestments",
@@ -453,9 +1580,74 @@
     "description": "A small glass vial holds up to 4 ounces of liquid."
   },
   {
+    "name": "Wagon",
+    "description": "",
+    "type": "VEH|XPHB"
+  },
+  {
+    "name": "Wand",
+    "type": "SCF|XPHB",
+    "weight": 1
+  },
+  {
+    "name": "Warhorse",
+    "description": "",
+    "type": "MNT|XPHB"
+  },
+  {
+    "name": "Warship",
+    "description": "",
+    "type": "SHP|XPHB"
+  },
+  {
     "name": "Waterskin",
     "type": "G|XPHB",
     "weight": 5,
     "description": "A waterskin can hold up to 4 pints of liquid. It weighs 5 pounds when full."
+  },
+  {
+    "name": "Well-made tapestry that is 10 feet by 10 feet",
+    "description": "",
+    "type": "$A|XDMG"
+  },
+  {
+    "name": "Wheat",
+    "description": "",
+    "type": "TG|XDMG"
+  },
+  {
+    "name": "Wooden Staff",
+    "type": "SCF|XPHB",
+    "weaponCategory": "simple",
+    "damage": "1d6",
+    "damageType": "bludgeoning",
+    "versatileDamage": "1d8",
+    "properties": [
+      "V"
+    ],
+    "mastery": [
+      "Topple"
+    ],
+    "weight": 4
+  },
+  {
+    "name": "Wyvern Poison",
+    "description": "A creature subjected to Wyvern Poison makes a DC 14 Constitution saving throw, taking 24 (7d6) Poison damage on a failed save or half as much damage on a successful one.",
+    "type": "G|XPHB"
+  },
+  {
+    "name": "Yellow Sapphire",
+    "description": "A fiery yellow or yellow green gemstone.",
+    "type": "$G|XDMG"
+  },
+  {
+    "name": "Yew Wand",
+    "description": "",
+    "type": "SCF|XPHB"
+  },
+  {
+    "name": "Zircon",
+    "description": "A pale blue green gemstone.",
+    "type": "$G|XDMG"
   }
 ]

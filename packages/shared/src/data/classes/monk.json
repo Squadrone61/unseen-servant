@@ -26,18 +26,6 @@
     ]
   },
   "hitDiceFaces": 8,
-  "savingThrows": [
-    "strength",
-    "dexterity"
-  ],
-  "armorProficiencies": [],
-  "weaponProficiencies": [
-    "Simple Weapons",
-    "Martial Weapons with the Light property"
-  ],
-  "toolProficiencies": [
-    "Artisan's Tools or Musical Instrument (one of your choice)"
-  ],
   "skillChoices": {
     "from": [
       "Acrobatics",
@@ -50,6 +38,41 @@
     "count": 2
   },
   "features": [
+    {
+      "name": "Proficiencies",
+      "level": 1,
+      "className": "Monk",
+      "description": "Your Monk training grants the following proficiencies.",
+      "effects": {
+        "properties": [
+          {
+            "type": "proficiency",
+            "category": "save",
+            "value": "Strength"
+          },
+          {
+            "type": "proficiency",
+            "category": "save",
+            "value": "Dexterity"
+          },
+          {
+            "type": "proficiency",
+            "category": "weapon",
+            "value": "Simple Weapons"
+          },
+          {
+            "type": "proficiency",
+            "category": "weapon",
+            "value": "Martial Weapons that have the Light property"
+          },
+          {
+            "type": "proficiency",
+            "category": "tool",
+            "value": "Artisan's Tools or Musical Instrument (one of your choice)"
+          }
+        ]
+      }
+    },
     {
       "name": "Martial Arts",
       "level": 1,

@@ -7,7 +7,7 @@
 // See .testing/EFFECT_FORMAT_SPEC.md for the full specification.
 
 import type { Entry } from "./entry-types";
-import type { EntityEffects, FeatureChoice, Ability, DamageType } from "./effects";
+import type { EntityEffects, FeatureChoice, Ability, DamageType, Prerequisite } from "./effects";
 
 // Re-export shared enums defined in effects.ts so data consumers can import from here
 export type { Ability, DamageType } from "./effects";
@@ -133,10 +133,6 @@ export interface ClassMulticlassing {
 export interface ClassDb extends DbEntity {
   hitDiceFaces: number;
   casterProgression?: CasterProgression;
-  savingThrows: Ability[];
-  armorProficiencies: string[];
-  weaponProficiencies: string[];
-  toolProficiencies: string[];
   skillChoices: { from: string[]; count: number };
   /** 20 rows × 9 columns, casters only */
   spellSlotTable?: number[][];
@@ -187,8 +183,15 @@ export interface SubclassFeatureDb extends DbEntity {
 
 export interface FeatDb extends DbEntity {
   category: FeatCategory;
-  /** Pre-formatted: "Level 4+", "Strength 13+" */
-  prerequisite?: string;
+  /**
+   * Structured prerequisite for programmatic enforcement.
+   * Use `prerequisiteText` for display.
+   */
+  prerequisite?: Prerequisite;
+  /**
+   * Human-readable prerequisite string for display: "Level 4+", "Strength 13+".
+   */
+  prerequisiteText?: string;
   repeatable?: boolean;
   activationType?: FeatureActivation;
 }
@@ -199,15 +202,11 @@ export interface SpeciesDb extends DbEntity {
   size: CreatureSize[];
   /** Base walking speed in feet */
   speed: number;
-  /** Darkvision range in feet */
-  darkvision?: number;
 }
 
 // ─── Backgrounds ───────────────────────────────────────────
 
 export interface BackgroundDb extends DbEntity {
-  skills: string[];
-  tools: string[];
   feat?: string;
   abilityScores: { from: Ability[]; weights: number[] };
 }

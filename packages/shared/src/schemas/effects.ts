@@ -1,5 +1,11 @@
 import { z } from "zod";
-import type { EntityEffects, ActionEffect, ActionOutcome, Property } from "../types/effects";
+import type {
+  EntityEffects,
+  ActionEffect,
+  ActionOutcome,
+  Property,
+  Prerequisite,
+} from "../types/effects";
 
 /**
  * Source-of-truth schemas for the effect system.
@@ -133,6 +139,12 @@ export const modifierTargetSchema = z.enum([
   "intelligence",
   "wisdom",
   "charisma",
+  "strength_check",
+  "dexterity_check",
+  "constitution_check",
+  "intelligence_check",
+  "wisdom_check",
+  "charisma_check",
 ]);
 
 export const advantageTargetSchema = z.enum([
@@ -176,6 +188,31 @@ export const advantageTargetSchema = z.enum([
   "concentration",
   "death_save",
 ]);
+
+// ---------------------------------------------------------------------------
+// Prerequisite (recursive — anyOf/allOf can nest Prerequisite[])
+// ---------------------------------------------------------------------------
+
+/**
+ * Structured prerequisite for feats and optional features.
+ * Uses z.lazy for the recursive anyOf/allOf branches following the
+ * same pattern as actionOutcomeSchema above.
+ */
+export const prerequisiteSchema: z.ZodType<Prerequisite> = z.lazy(() =>
+  z.discriminatedUnion("type", [
+    z.object({ type: z.literal("level"), value: z.number() }),
+    z.object({
+      type: z.literal("ability"),
+      ability: abilitySchema,
+      min: z.number(),
+    }),
+    z.object({ type: z.literal("species"), species: z.string() }),
+    z.object({ type: z.literal("feature"), featureName: z.string() }),
+    z.object({ type: z.literal("spellcasting") }),
+    z.object({ type: z.literal("anyOf"), of: z.array(prerequisiteSchema) }),
+    z.object({ type: z.literal("allOf"), of: z.array(prerequisiteSchema) }),
+  ]),
+);
 
 // ---------------------------------------------------------------------------
 // EffectSource / EffectLifetime (the originals from v0.41.0)

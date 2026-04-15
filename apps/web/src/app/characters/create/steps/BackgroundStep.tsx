@@ -42,22 +42,26 @@ function BackgroundPopover({
       <div className="space-y-3">
         {/* Stat badges */}
         <div className="flex items-center gap-2 flex-wrap">
-          {background.skills.map((skill) => (
-            <span
-              key={skill}
-              className="text-xs px-2 py-0.5 rounded-full bg-emerald-900/30 text-emerald-300 border border-emerald-700/30"
-            >
-              {skill}
-            </span>
-          ))}
-          {background.tools.map((tool) => (
-            <span
-              key={tool}
-              className="text-xs px-2 py-0.5 rounded-full bg-blue-900/30 text-blue-300 border border-blue-700/30"
-            >
-              {tool}
-            </span>
-          ))}
+          {(background.effects?.properties ?? [])
+            .filter((p) => p.type === "proficiency" && p.category === "skill")
+            .map((p) => (
+              <span
+                key={(p as { value: string }).value}
+                className="text-xs px-2 py-0.5 rounded-full bg-emerald-900/30 text-emerald-300 border border-emerald-700/30"
+              >
+                {(p as { value: string }).value}
+              </span>
+            ))}
+          {(background.effects?.properties ?? [])
+            .filter((p) => p.type === "proficiency" && p.category === "tool")
+            .map((p) => (
+              <span
+                key={(p as { value: string }).value}
+                className="text-xs px-2 py-0.5 rounded-full bg-blue-900/30 text-blue-300 border border-blue-700/30"
+              >
+                {(p as { value: string }).value}
+              </span>
+            ))}
           {background.feat && (
             <span className="text-xs px-2 py-0.5 rounded-full bg-violet-900/30 text-violet-300 border border-violet-700/30">
               {background.feat}
@@ -119,8 +123,14 @@ function BackgroundCard({
   onClick: () => void;
   onDetailsClick: (e: React.MouseEvent) => void;
 }) {
-  const skillsText = background.skills.join(", ");
-  const toolsText = background.tools.join(", ");
+  const skillsText = (background.effects?.properties ?? [])
+    .filter((p) => p.type === "proficiency" && p.category === "skill")
+    .map((p) => (p as { value: string }).value)
+    .join(", ");
+  const toolsText = (background.effects?.properties ?? [])
+    .filter((p) => p.type === "proficiency" && p.category === "tool")
+    .map((p) => (p as { value: string }).value)
+    .join(", ");
 
   return (
     <button
@@ -430,13 +440,16 @@ export function BackgroundStep() {
   const filteredBackgrounds = useMemo(() => {
     if (!searchQuery.trim()) return sortedBackgrounds;
     const q = searchQuery.toLowerCase();
-    return sortedBackgrounds.filter(
-      (b) =>
-        b.name.toLowerCase().includes(q) ||
-        b.skills.some((s) => s.toLowerCase().includes(q)) ||
-        b.tools.some((t) => t.toLowerCase().includes(q)) ||
-        (b.feat && b.feat.toLowerCase().includes(q)),
-    );
+    return sortedBackgrounds.filter((b) => {
+      if (b.name.toLowerCase().includes(q)) return true;
+      if (b.feat && b.feat.toLowerCase().includes(q)) return true;
+      const props = b.effects?.properties ?? [];
+      return props.some((p) => {
+        if (p.type !== "proficiency") return false;
+        if (p.category !== "skill" && p.category !== "tool") return false;
+        return p.value.toLowerCase().includes(q);
+      });
+    });
   }, [sortedBackgrounds, searchQuery]);
 
   const selectedBg = useMemo<BackgroundDb | null>(() => {
@@ -500,8 +513,16 @@ export function BackgroundStep() {
         <div className="flex items-center gap-3 px-4 py-3 rounded-lg border border-amber-500/30 bg-amber-950/15">
           <span className="text-sm text-amber-200 font-medium">✓ {selectedBg.name}</span>
           <span className="text-xs text-gray-500">
-            {selectedBg.skills.join(", ")}
-            {selectedBg.tools.length > 0 ? ` · ${selectedBg.tools.join(", ")}` : ""}
+            {(selectedBg.effects?.properties ?? [])
+              .filter((p) => p.type === "proficiency" && p.category === "skill")
+              .map((p) => (p as { value: string }).value)
+              .join(", ")}
+            {(() => {
+              const tools = (selectedBg.effects?.properties ?? [])
+                .filter((p) => p.type === "proficiency" && p.category === "tool")
+                .map((p) => (p as { value: string }).value);
+              return tools.length > 0 ? ` · ${tools.join(", ")}` : "";
+            })()}
           </span>
           <div className="flex-1" />
           <button

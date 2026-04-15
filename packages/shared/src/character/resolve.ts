@@ -370,22 +370,16 @@ export function getSavingThrows(
 /**
  * Sensory capabilities as display strings (e.g. "Darkvision 60 ft.", "Passive Perception 14").
  *
- * Phase 7: derived from sense-type properties in effect bundles + species darkvision.
+ * Phase 7: derived from sense-type properties in effect bundles.
  * Passive Perception computed from Perception skill.
  */
 export function getSenses(char: CharacterData): string[] {
   const bundles = collectActiveBundles(char);
-  const species = getSpecies(char.static.race);
   const senses: string[] = [];
 
   // Senses from effects (darkvision, blindsight, etc.)
   for (const s of getSensesFromBundles(bundles)) {
     senses.push(`${s.sense.charAt(0).toUpperCase() + s.sense.slice(1)} ${s.range} ft.`);
-  }
-
-  // Species darkvision (if not already from effects)
-  if (species?.darkvision && !senses.some((s) => s.toLowerCase().includes("darkvision"))) {
-    senses.push(`Darkvision ${species.darkvision} ft.`);
   }
 
   // Passive Perception

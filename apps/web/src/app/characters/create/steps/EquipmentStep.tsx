@@ -83,14 +83,36 @@ function expandProps(props: string[] | undefined): string {
  * Compute the highest weapon proficiency level across all classes.
  * "martial" > "simple" > "none"
  */
+/** Extract weapon and armor proficiency strings from class effects (L1 feature or class-level). */
+function getClassWeaponArmorProfs(cls: {
+  features: {
+    name: string;
+    level: number;
+    effects?: { properties?: Array<{ type: string; category?: string; value?: string }> };
+  }[];
+  effects?: { properties?: Array<{ type: string; category?: string; value?: string }> };
+}): { weapons: string[]; armor: string[] } {
+  const l1Feat = cls.features.find((f) => f.name === "Proficiencies" && f.level === 1);
+  const props = l1Feat?.effects?.properties ?? cls.effects?.properties ?? [];
+  const weapons: string[] = [];
+  const armor: string[] = [];
+  for (const p of props) {
+    if (p.type !== "proficiency") continue;
+    if (p.category === "weapon" && p.value) weapons.push(p.value);
+    if (p.category === "armor" && p.value) armor.push(p.value);
+  }
+  return { weapons, armor };
+}
+
 function weaponProficiencyLevelForClasses(classNames: string[]): "none" | "simple" | "martial" {
   let best: "none" | "simple" | "martial" = "none";
   for (const className of classNames) {
     if (best === "martial") break; // can't go higher
     const cls = classesArray.find((c) => c.name === className);
     if (!cls) continue;
-    const hasMartial = cls.weaponProficiencies.some((p) => p.toLowerCase().includes("martial"));
-    const hasSimple = cls.weaponProficiencies.some((p) => p.toLowerCase().includes("simple"));
+    const { weapons } = getClassWeaponArmorProfs(cls);
+    const hasMartial = weapons.some((p) => p.toLowerCase().includes("martial"));
+    const hasSimple = weapons.some((p) => p.toLowerCase().includes("simple"));
     if (hasMartial) {
       best = "martial";
     } else if (hasSimple && best === "none") {
@@ -108,7 +130,8 @@ function classArmorTypesForClasses(classNames: string[]): Set<string> {
   for (const className of classNames) {
     const cls = classesArray.find((c) => c.name === className);
     if (!cls) continue;
-    for (const p of cls.armorProficiencies) {
+    const { armor } = getClassWeaponArmorProfs(cls);
+    for (const p of armor) {
       const lower = p.toLowerCase();
       if (lower.includes("light")) allowed.add("LA");
       if (lower.includes("medium")) allowed.add("MA");
@@ -125,7 +148,8 @@ function classHasShieldProfForClasses(classNames: string[]): boolean {
   for (const className of classNames) {
     const cls = classesArray.find((c) => c.name === className);
     if (!cls) continue;
-    if (cls.armorProficiencies.some((p) => p.toLowerCase().includes("shield"))) return true;
+    const { armor } = getClassWeaponArmorProfs(cls);
+    if (armor.some((p) => p.toLowerCase().includes("shield"))) return true;
   }
   return false;
 }

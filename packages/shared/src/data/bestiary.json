@@ -14526,7 +14526,17 @@
         "name": "Force-Empowered Slam",
         "entries": [
           "{@atk mw} {@hitYourSpellAttack} to hit, reach 5 ft., one target you can see. {@h}{@damage 1d10 + PB} force damage."
-        ]
+        ],
+        "action": {
+          "kind": "attack",
+          "attack": {
+            "bonus": "monster",
+            "reach": 5
+          },
+          "onHit": {
+            "note": "1d10 + PB Force damage."
+          }
+        }
       }
     ],
     "cr": "—"
@@ -18890,7 +18900,20 @@
         "name": "Otherworldly Strike",
         "entries": [
           "{@atkr m,r} {@hit 5}, reach 5 ft. or range 30 ft. {@h}7 ({@damage 1d8 + 3}) Necrotic or Radiant damage (empyrean's choice)."
-        ]
+        ],
+        "action": {
+          "kind": "attack",
+          "attack": {
+            "bonus": "monster",
+            "reach": 5,
+            "range": {
+              "normal": 30
+            }
+          },
+          "onHit": {
+            "note": "7 (1d8 + 3) Necrotic or Radiant damage (empyrean's choice)."
+          }
+        }
       }
     ],
     "spellcasting": [
@@ -22752,6 +22775,24 @@
     ],
     "senses": [
       "Darkvision 60 ft."
+    ],
+    "action": [
+      {
+        "name": "Bite",
+        "entries": [
+          "{@atkr m} {@hit 4}, reach 5 ft. {@h}4 ({@damage 1d4 + 2}) Piercing damage."
+        ],
+        "action": {
+          "kind": "attack",
+          "attack": {
+            "bonus": "monster",
+            "reach": 5
+          },
+          "onHit": {
+            "note": "4 (1d4 + 2) Piercing damage."
+          }
+        }
+      }
     ]
   },
   {
@@ -26078,7 +26119,21 @@
         "name": "Dagger",
         "entries": [
           "{@atkr m,r} {@hit 4}, reach 5 ft. or range 20/60 ft. {@h}4 ({@damage 1d4 + 2}) Piercing damage."
-        ]
+        ],
+        "action": {
+          "kind": "attack",
+          "attack": {
+            "bonus": "monster",
+            "reach": 5,
+            "range": {
+              "normal": 20,
+              "long": 60
+            }
+          },
+          "onHit": {
+            "note": "4 (1d4 + 2) Piercing damage."
+          }
+        }
       }
     ],
     "bonus": [
@@ -27771,7 +27826,21 @@
         "name": "Spear",
         "entries": [
           "{@atkr m,r} {@hit 3}, reach 5 ft. or range 20/60 ft. {@h}4 ({@damage 1d6 + 1}) Piercing damage."
-        ]
+        ],
+        "action": {
+          "kind": "attack",
+          "attack": {
+            "bonus": "monster",
+            "reach": 5,
+            "range": {
+              "normal": 20,
+              "long": 60
+            }
+          },
+          "onHit": {
+            "note": "4 (1d6 + 1) Piercing damage."
+          }
+        }
       }
     ],
     "environment": [
@@ -29549,7 +29618,19 @@
         "name": "Force Strike",
         "entries": [
           "{@atk rw} {@hitYourSpellAttack} to hit, range 30 ft., one target you can see. {@h}{@damage 1d4 + PB} force damage."
-        ]
+        ],
+        "action": {
+          "kind": "attack",
+          "attack": {
+            "bonus": "monster",
+            "range": {
+              "normal": 30
+            }
+          },
+          "onHit": {
+            "note": "1d4 + PB Force damage."
+          }
+        }
       }
     ],
     "reaction": [
@@ -29557,7 +29638,13 @@
         "name": "Channel Magic",
         "entries": [
           "The homunculus delivers a spell you cast that has a range of touch. The homunculus must be within 120 feet of you."
-        ]
+        ],
+        "action": {
+          "kind": "auto",
+          "onHit": {
+            "note": "The homunculus delivers a spell you cast that has a range of touch."
+          }
+        }
       }
     ],
     "cr": "—"
@@ -31144,13 +31231,29 @@
         "name": "Bite",
         "entries": [
           "{@atk mw} {@hit 3} to hit, reach 5 ft., one target. {@h}1 piercing damage plus 2 ({@damage 1d4}) acid damage."
-        ]
+        ],
+        "action": {
+          "kind": "attack",
+          "attack": {
+            "bonus": "monster",
+            "reach": 5
+          },
+          "onHit": {
+            "note": "1 Piercing damage plus 2 (1d4) Acid damage."
+          }
+        }
       },
       {
         "name": "Shape-Shift",
         "entries": [
           "The mimic polymorphs into an object or back into its true, amorphous form. Its statistics are the same in each form. Any equipment it is wearing or carrying isn't transformed. It reverts to its true form if it dies."
-        ]
+        ],
+        "action": {
+          "kind": "auto",
+          "onHit": {
+            "note": "The mimic polymorphs into an object or back into its true, amorphous form."
+          }
+        }
       }
     ]
   },
@@ -31333,7 +31436,20 @@
         "name": "Shadow Blade",
         "entries": [
           "{@atkr m,r} {@hit 5}, reach 5 ft. or range 60 ft. {@h}6 ({@damage 1d6 + 3}) Necrotic damage. {@hom}The blade magically returns to the kenku's hand immediately after a ranged attack."
-        ]
+        ],
+        "action": {
+          "kind": "attack",
+          "attack": {
+            "bonus": "monster",
+            "reach": 5,
+            "range": {
+              "normal": 60
+            }
+          },
+          "onHit": {
+            "note": "6 (1d6 + 3) Necrotic damage."
+          }
+        }
       }
     ],
     "spellcasting": [
@@ -31578,7 +31694,21 @@
         "name": "Dagger",
         "entries": [
           "{@atkr m,r} {@hit 4}, reach 5 ft. or range 20/60 ft. {@h}4 ({@damage 1d4 + 2}) Piercing damage."
-        ]
+        ],
+        "action": {
+          "kind": "attack",
+          "attack": {
+            "bonus": "monster",
+            "reach": 5,
+            "range": {
+              "normal": 20,
+              "long": 60
+            }
+          },
+          "onHit": {
+            "note": "4 (1d4 + 2) Piercing damage."
+          }
+        }
       }
     ],
     "environment": [
@@ -33416,7 +33546,20 @@
         "name": "Arcane Burst",
         "entries": [
           "{@atkr m,r} {@hit 5}, reach 5 ft. or range 120 ft. {@h}14 ({@damage 2d10 + 3}) Force damage."
-        ]
+        ],
+        "action": {
+          "kind": "attack",
+          "attack": {
+            "bonus": "monster",
+            "reach": 5,
+            "range": {
+              "normal": 120
+            }
+          },
+          "onHit": {
+            "note": "14 (2d10 + 3) Force damage."
+          }
+        }
       }
     ],
     "spellcasting": [
@@ -34564,7 +34707,21 @@
         "name": "Ocean Spear",
         "entries": [
           "{@atkr m,r} {@hit 2}, reach 5 ft. or range 20/60 ft. {@h}3 ({@damage 1d6}) Piercing damage plus 2 ({@damage 1d4}) Cold damage. If the target is a creature, its {@variantrule Speed|XPHB} decreases by 10 feet until the end of its next turn. {@hom}The spear magically returns to the merfolk's hand immediately after a ranged attack."
-        ]
+        ],
+        "action": {
+          "kind": "attack",
+          "attack": {
+            "bonus": "monster",
+            "reach": 5,
+            "range": {
+              "normal": 20,
+              "long": 60
+            }
+          },
+          "onHit": {
+            "note": "3 (1d6) Piercing damage plus 2 (1d4) Cold damage. The target's Speed decreases by 10 feet until the end of its next turn."
+          }
+        }
       }
     ],
     "environment": [
@@ -35048,13 +35205,42 @@
         "name": "Destructive Fist",
         "entries": [
           "{@atk mw} {@hit 17} to hit, reach 10 ft., one target. {@h}36 ({@damage 4d12 + 10}) force damage. Or Ranged Weapon Attack: {@hit 17} to hit, range 120 ft., one target. {@h}36 ({@damage 4d12 + 10}) force damage. If the target is an object, it takes triple damage."
-        ]
+        ],
+        "action": {
+          "kind": "attack",
+          "attack": {
+            "bonus": "monster",
+            "reach": 10,
+            "range": {
+              "normal": 120
+            }
+          },
+          "onHit": {
+            "note": "36 (4d12 + 10) Force damage. If the target is an object, it takes triple damage."
+          }
+        }
       },
       {
         "name": "Crushing Leap",
         "entries": [
           "If the servant jumps at least 25 feet as part of its movement, it can then use this action to land on its feet in a space that contains one or more other creatures. Each of those creatures is pushed to an unoccupied space within 5 feet of the servant and must make a {@dc 25} Dexterity saving throw. On a failed save, a creature takes 26 ({@damage 4d12}) bludgeoning damage and is knocked {@condition prone}. On a successful save, a creature takes half as much damage and isn't knocked {@condition prone}."
-        ]
+        ],
+        "action": {
+          "kind": "save",
+          "save": {
+            "ability": "dexterity",
+            "dc": 25,
+            "onSuccess": "half"
+          },
+          "onFailedSave": {
+            "applyConditions": [
+              {
+                "name": "Prone"
+              }
+            ],
+            "note": "26 (4d12) Bludgeoning damage and knocked Prone."
+          }
+        }
       }
     ],
     "cr": "—"
@@ -40058,7 +40244,20 @@
         "name": "Faerie Dust",
         "entries": [
           "{@atkr m,r} {@hit 4}, reach 5 ft. or range 60 ft. {@h}1 Radiant damage, and the target has the {@condition Charmed|XPHB} or {@condition Poisoned|XPHB} condition (pixie's choice) until the start of the pixie's next turn."
-        ]
+        ],
+        "action": {
+          "kind": "attack",
+          "attack": {
+            "bonus": "monster",
+            "reach": 5,
+            "range": {
+              "normal": 60
+            }
+          },
+          "onHit": {
+            "note": "1 Radiant damage, and the target has the Charmed or Poisoned condition (pixie's choice) until the start of the pixie's next turn."
+          }
+        }
       }
     ],
     "spellcasting": [
@@ -44620,7 +44819,13 @@
         "name": "Bubble Dash",
         "entries": [
           "While underwater, the seahorse moves up to its {@variantrule Swim Speed|XPHB} without provoking {@action Opportunity Attack|XPHB|Opportunity Attacks}."
-        ]
+        ],
+        "action": {
+          "kind": "auto",
+          "onHit": {
+            "note": "While underwater, the seahorse moves up to its Swim Speed without provoking Opportunity Attacks."
+          }
+        }
       }
     ],
     "environment": [
@@ -45365,7 +45570,13 @@
         "name": "Shriek",
         "entries": [
           "{@actTrigger} A creature or a source of {@variantrule Bright Light|XPHB} moves within 30 feet of the shrieker. {@actResponse} The shrieker emits a shriek audible within 300 feet of itself for 1 minute or until the shrieker dies."
-        ]
+        ],
+        "action": {
+          "kind": "auto",
+          "onHit": {
+            "note": "The shrieker emits a shriek audible within 300 feet of itself for 1 minute or until the shrieker dies."
+          }
+        }
       }
     ],
     "environment": [
@@ -47652,13 +47863,29 @@
         "name": "Force-Empowered Rend",
         "entries": [
           "{@atk mw} {@hitYourSpellAttack} to hit, reach 5 ft., one target you can see. {@h}{@damage 1d8 + PB} force damage."
-        ]
+        ],
+        "action": {
+          "kind": "attack",
+          "attack": {
+            "bonus": "monster",
+            "reach": 5
+          },
+          "onHit": {
+            "note": "1d8 + PB Force damage."
+          }
+        }
       },
       {
         "name": "Repair (3/Day)",
         "entries": [
           "The magical mechanisms inside the defender restore {@dice 2d8 + PB} hit points to itself or to one construct or object within 5 feet of it."
-        ]
+        ],
+        "action": {
+          "kind": "auto",
+          "onHit": {
+            "note": "The magical mechanisms restore 2d8 + PB hit points to itself or to one construct or object within 5 feet of it."
+          }
+        }
       }
     ],
     "reaction": [
@@ -47666,7 +47893,13 @@
         "name": "Deflect Attack",
         "entries": [
           "The defender imposes disadvantage on the attack roll of one creature it can see that is within 5 feet of it, provided the attack roll is against a creature other than the defender."
-        ]
+        ],
+        "action": {
+          "kind": "auto",
+          "onHit": {
+            "note": "The defender imposes disadvantage on the attack roll of one creature it can see that is within 5 feet of it."
+          }
+        }
       }
     ],
     "cr": "—"
@@ -49861,7 +50094,17 @@
         "name": "Slam",
         "entries": [
           "{@atk mw} {@hit 5} to hit, reach 5 ft., one target. {@h}5 ({@damage 1d4 + 3}) bludgeoning damage."
-        ]
+        ],
+        "action": {
+          "kind": "attack",
+          "attack": {
+            "bonus": "monster",
+            "reach": 5
+          },
+          "onHit": {
+            "note": "5 (1d4 + 3) Bludgeoning damage."
+          }
+        }
       }
     ],
     "cr": "—"
@@ -53049,7 +53292,21 @@
         "name": "Spear",
         "entries": [
           "{@atkr m,r} {@hit 3}, reach 5 ft. or range 20/60 ft. {@h}4 ({@damage 1d6 + 1}) Piercing damage."
-        ]
+        ],
+        "action": {
+          "kind": "attack",
+          "attack": {
+            "bonus": "monster",
+            "reach": 5,
+            "range": {
+              "normal": 20,
+              "long": 60
+            }
+          },
+          "onHit": {
+            "note": "4 (1d6 + 1) Piercing damage."
+          }
+        }
       }
     ],
     "environment": [
@@ -54372,13 +54629,31 @@
         "name": "Flame Seed",
         "entries": [
           "{@atk rw} {@hitYourSpellAttack} to hit, range 60 ft., one target you can see. {@h}{@damage 1d6 + PB} fire damage."
-        ]
+        ],
+        "action": {
+          "kind": "attack",
+          "attack": {
+            "bonus": "monster",
+            "range": {
+              "normal": 60
+            }
+          },
+          "onHit": {
+            "note": "1d6 + PB Fire damage."
+          }
+        }
       },
       {
         "name": "Fiery Teleportation",
         "entries": [
           "The spirit and each willing creature of your choice within 5 feet of it teleport up to 15 feet to unoccupied spaces you can see. Then each creature within 5 feet of the space that the spirit left must succeed on a Dexterity saving throw against your spell save DC or take {@damage 1d6 + PB} fire damage."
-        ]
+        ],
+        "action": {
+          "kind": "auto",
+          "onHit": {
+            "note": "The spirit and each willing creature of your choice within 5 feet of it teleport up to 15 feet. Then each creature within 5 feet of the space left must succeed on a Dexterity saving throw (spell save DC) or take 1d6 + PB Fire damage."
+          }
+        }
       }
     ],
     "cr": "—"

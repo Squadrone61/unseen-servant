@@ -50,21 +50,6 @@
     "Strength",
     "Charisma"
   ],
-  "savingThrows": [
-    "wisdom",
-    "charisma"
-  ],
-  "armorProficiencies": [
-    "Light Armor",
-    "Medium Armor",
-    "Heavy Armor",
-    "Shield"
-  ],
-  "weaponProficiencies": [
-    "Simple Weapons",
-    "Martial Weapons"
-  ],
-  "toolProficiencies": [],
   "skillChoices": {
     "from": [
       "Athletics",
@@ -226,6 +211,56 @@
   },
   "features": [
     {
+      "name": "Proficiencies",
+      "level": 1,
+      "className": "Paladin",
+      "description": "Your Paladin training grants the following proficiencies.",
+      "effects": {
+        "properties": [
+          {
+            "type": "proficiency",
+            "category": "save",
+            "value": "Wisdom"
+          },
+          {
+            "type": "proficiency",
+            "category": "save",
+            "value": "Charisma"
+          },
+          {
+            "type": "proficiency",
+            "category": "armor",
+            "value": "Light Armor"
+          },
+          {
+            "type": "proficiency",
+            "category": "armor",
+            "value": "Medium Armor"
+          },
+          {
+            "type": "proficiency",
+            "category": "armor",
+            "value": "Heavy Armor"
+          },
+          {
+            "type": "proficiency",
+            "category": "armor",
+            "value": "Shield"
+          },
+          {
+            "type": "proficiency",
+            "category": "weapon",
+            "value": "Simple Weapons"
+          },
+          {
+            "type": "proficiency",
+            "category": "weapon",
+            "value": "Martial Weapons"
+          }
+        ]
+      }
+    },
+    {
       "name": "Lay on Hands",
       "level": 1,
       "className": "Paladin",
@@ -246,6 +281,20 @@
       "name": "Spellcasting",
       "level": 1,
       "className": "Paladin",
+      "effects": {
+        "modifiers": [
+          {
+            "target": "spell_save_dc",
+            "value": "8 + prof + cha",
+            "operation": "set"
+          },
+          {
+            "target": "spell_attack",
+            "value": "prof + cha",
+            "operation": "set"
+          }
+        ]
+      },
       "description": "You have learned to cast spells through prayer and meditation. Charisma is your spellcasting ability for your Paladin spells.\n\n**Spell Slots.** The Paladin Features table shows how many spell slots you have to cast your level 1+ spells. You regain all expended slots when you finish a {rule:Long Rest}.\n\n**Prepared Spells of Level 1+.** You prepare the list of level 1+ spells that are available for you to cast with this feature. The number of spells on your list increases as you gain Paladin levels, as shown in the Prepared Spells column of the Paladin Features table. The chosen spells must be of a level for which you have spell slots. If another Paladin feature gives you spells that you always have prepared, those spells don't count against the number of spells you can prepare with this feature, but those spells otherwise count as Paladin spells for you.\n\n**Changing Your Prepared Spells.** Whenever you finish a {rule:Long Rest}, you can replace one spell on your list with another Paladin spell for which you have spell slots.\n\n**Spellcasting Focus.** You can use a {item:Holy Symbol} as a spellcasting focus for your Paladin spells."
     },
     {

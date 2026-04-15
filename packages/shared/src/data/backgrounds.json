@@ -2,134 +2,655 @@
   {
     "name": "Acolyte",
     "description": "You devoted yourself to service in a temple, either as a priest or as an assistant to one. You performed religious ceremonies, cared for sacred spaces, and ministered to worshippers. Your life revolved around devotion to a deity, studying scripture, and mediating between the divine and mortal realms.\n\n**Feat:** {feat:Magic Initiate} (Cleric)\n\n**Skill Proficiencies:** Insight, Religion\n\n**Tool Proficiency:** Calligrapher's Supplies\n\n**Equipment:** Choose A or B: (A) Calligrapher's Supplies, Book (prayers), Holy Symbol, Parchment (10 sheets), Robe, 8 GP; or (B) 50 GP",
-    "skills": ["Insight", "Religion"],
-    "tools": ["Calligrapher's Supplies"],
     "feat": "Magic Initiate (Cleric)",
-    "abilityScores": { "from": ["intelligence", "wisdom", "charisma"], "weights": [2, 1] }
+    "effects": {
+      "properties": [
+        {
+          "type": "proficiency",
+          "category": "skill",
+          "value": "Insight"
+        },
+        {
+          "type": "proficiency",
+          "category": "skill",
+          "value": "Religion"
+        },
+        {
+          "type": "proficiency",
+          "category": "tool",
+          "value": "Calligrapher's Supplies"
+        }
+      ]
+    },
+    "abilityScores": {
+      "from": [
+        "intelligence",
+        "wisdom",
+        "charisma"
+      ],
+      "weights": [
+        2,
+        1
+      ]
+    }
   },
   {
     "name": "Artisan",
     "description": "You began your career as an apprentice to a master artisan — a blacksmith, a cobbler, a glassblower, a jeweler, or any other trade. You learned to work with your hands, to take pride in craftsmanship, and to turn raw materials into finished goods. Your background in trade and skilled work has given you an eye for quality and a knack for negotiation.\n\n**Feat:** {feat:Crafter}\n\n**Skill Proficiencies:** Investigation, Persuasion\n\n**Tool Proficiency:** One kind of Artisan's Tools (your choice)\n\n**Equipment:** Choose A or B: (A) Artisan's Tools (same as above), 2 Pouches, Traveler's Clothes, 32 GP; or (B) 50 GP",
-    "skills": ["Investigation", "Persuasion"],
-    "tools": ["Artisan's Tools"],
     "feat": "Crafter",
-    "abilityScores": { "from": ["strength", "dexterity", "intelligence"], "weights": [2, 1] },
-    "choices": [{ "id": "artisan-tool", "label": "Artisan's Tool", "count": 1, "timing": "permanent", "pool": "tool", "from": ["Alchemist's Supplies", "Brewer's Supplies", "Calligrapher's Supplies", "Carpenter's Tools", "Cartographer's Tools", "Cobbler's Tools", "Cook's Utensils", "Glassblower's Tools", "Jeweler's Tools", "Leatherworker's Tools", "Mason's Tools", "Painter's Supplies", "Potter's Tools", "Smith's Tools", "Tinker's Tools", "Weaver's Tools", "Woodcarver's Tools"] }]
+    "effects": {
+      "properties": [
+        {
+          "type": "proficiency",
+          "category": "skill",
+          "value": "Investigation"
+        },
+        {
+          "type": "proficiency",
+          "category": "skill",
+          "value": "Persuasion"
+        },
+        {
+          "type": "proficiency",
+          "category": "tool",
+          "value": "Artisan's Tools"
+        }
+      ]
+    },
+    "abilityScores": {
+      "from": [
+        "strength",
+        "dexterity",
+        "intelligence"
+      ],
+      "weights": [
+        2,
+        1
+      ]
+    },
+    "choices": [
+      {
+        "id": "artisan-tool",
+        "label": "Artisan's Tool",
+        "count": 1,
+        "timing": "permanent",
+        "pool": "tool",
+        "from": [
+          "Alchemist's Supplies",
+          "Brewer's Supplies",
+          "Calligrapher's Supplies",
+          "Carpenter's Tools",
+          "Cartographer's Tools",
+          "Cobbler's Tools",
+          "Cook's Utensils",
+          "Glassblower's Tools",
+          "Jeweler's Tools",
+          "Leatherworker's Tools",
+          "Mason's Tools",
+          "Painter's Supplies",
+          "Potter's Tools",
+          "Smith's Tools",
+          "Tinker's Tools",
+          "Weaver's Tools",
+          "Woodcarver's Tools"
+        ]
+      }
+    ]
   },
   {
     "name": "Charlatan",
     "description": "You have always had a way with people. You know what they want, and you know how to make them believe they're getting it. Whether through elaborate schemes, swindling merchants, or crafting false identities, you have plied your trade across many towns and cities. The art of the con runs deep in your veins.\n\n**Feat:** {feat:Skilled}\n\n**Skill Proficiencies:** Deception, Sleight of Hand\n\n**Tool Proficiency:** Forgery Kit\n\n**Equipment:** Choose A or B: (A) Forgery Kit, Costume, Fine Clothes, 15 GP; or (B) 50 GP",
-    "skills": ["Deception", "Sleight of Hand"],
-    "tools": ["Forgery Kit"],
     "feat": "Skilled",
-    "abilityScores": { "from": ["dexterity", "constitution", "charisma"], "weights": [2, 1] }
+    "effects": {
+      "properties": [
+        {
+          "type": "proficiency",
+          "category": "skill",
+          "value": "Deception"
+        },
+        {
+          "type": "proficiency",
+          "category": "skill",
+          "value": "Sleight of Hand"
+        },
+        {
+          "type": "proficiency",
+          "category": "tool",
+          "value": "Forgery Kit"
+        }
+      ]
+    },
+    "abilityScores": {
+      "from": [
+        "dexterity",
+        "constitution",
+        "charisma"
+      ],
+      "weights": [
+        2,
+        1
+      ]
+    }
   },
   {
     "name": "Criminal",
     "description": "You have a history of breaking the law and surviving outside its protection. Whether you were a burglar, a smuggler, a hired thug, or a gang member, you lived by your wits and the willingness to do what others would not. The criminal underworld was your home — you know its codes, contacts, and dangers intimately.\n\n**Feat:** {feat:Alert}\n\n**Skill Proficiencies:** Sleight of Hand, Stealth\n\n**Tool Proficiency:** Thieves' Tools\n\n**Equipment:** Choose A or B: (A) 2 Daggers, Thieves' Tools, Crowbar, 2 Pouches, Traveler's Clothes, 16 GP; or (B) 50 GP",
-    "skills": ["Sleight of Hand", "Stealth"],
-    "tools": ["Thieves' Tools"],
     "feat": "Alert",
-    "abilityScores": { "from": ["dexterity", "constitution", "intelligence"], "weights": [2, 1] }
+    "effects": {
+      "properties": [
+        {
+          "type": "proficiency",
+          "category": "skill",
+          "value": "Sleight of Hand"
+        },
+        {
+          "type": "proficiency",
+          "category": "skill",
+          "value": "Stealth"
+        },
+        {
+          "type": "proficiency",
+          "category": "tool",
+          "value": "Thieves' Tools"
+        }
+      ]
+    },
+    "abilityScores": {
+      "from": [
+        "dexterity",
+        "constitution",
+        "intelligence"
+      ],
+      "weights": [
+        2,
+        1
+      ]
+    }
   },
   {
     "name": "Entertainer",
     "description": "You thrive in front of an audience. You know how to entrance people, make them laugh, move them to tears, and inspire them to cheer. Your life as an entertainer — whether as a dancer, acrobat, bard, or tumbler — has taken you across many lands, earning coin and applause wherever you perform.\n\n**Feat:** {feat:Musician}\n\n**Skill Proficiencies:** Acrobatics, Performance\n\n**Tool Proficiency:** One kind of Musical Instrument (your choice)\n\n**Equipment:** Choose A or B: (A) Musical Instrument (same as above), 2 Costumes, Mirror, Perfume, Traveler's Clothes, 11 GP; or (B) 50 GP",
-    "skills": ["Acrobatics", "Performance"],
-    "tools": ["Musical Instrument"],
     "feat": "Musician",
-    "abilityScores": { "from": ["strength", "dexterity", "charisma"], "weights": [2, 1] },
-    "choices": [{ "id": "instrument", "label": "Musical Instrument", "count": 1, "timing": "permanent", "pool": "tool", "from": ["Bagpipes", "Drum", "Dulcimer", "Flute", "Lute", "Lyre", "Horn", "Pan Flute", "Shawm", "Viol"] }]
+    "effects": {
+      "properties": [
+        {
+          "type": "proficiency",
+          "category": "skill",
+          "value": "Acrobatics"
+        },
+        {
+          "type": "proficiency",
+          "category": "skill",
+          "value": "Performance"
+        },
+        {
+          "type": "proficiency",
+          "category": "tool",
+          "value": "Musical Instrument"
+        }
+      ]
+    },
+    "abilityScores": {
+      "from": [
+        "strength",
+        "dexterity",
+        "charisma"
+      ],
+      "weights": [
+        2,
+        1
+      ]
+    },
+    "choices": [
+      {
+        "id": "instrument",
+        "label": "Musical Instrument",
+        "count": 1,
+        "timing": "permanent",
+        "pool": "tool",
+        "from": [
+          "Bagpipes",
+          "Drum",
+          "Dulcimer",
+          "Flute",
+          "Lute",
+          "Lyre",
+          "Horn",
+          "Pan Flute",
+          "Shawm",
+          "Viol"
+        ]
+      }
+    ]
   },
   {
     "name": "Farmer",
     "description": "You grew up working the land, tending livestock, and learning the rhythms of the seasons. Farm life is hard but grounding — it teaches patience, endurance, and self-reliance. You know how to tend to the sick, build what you need, and find what the earth provides. That rugged upbringing made you tougher than most.\n\n**Feat:** {feat:Tough}\n\n**Skill Proficiencies:** Animal Handling, Nature\n\n**Tool Proficiency:** Carpenter's Tools\n\n**Equipment:** Choose A or B: (A) Sickle, Carpenter's Tools, Healer's Kit, Iron Pot, Shovel, Traveler's Clothes, 30 GP; or (B) 50 GP",
-    "skills": ["Animal Handling", "Nature"],
-    "tools": ["Carpenter's Tools"],
     "feat": "Tough",
-    "abilityScores": { "from": ["strength", "constitution", "wisdom"], "weights": [2, 1] }
+    "effects": {
+      "properties": [
+        {
+          "type": "proficiency",
+          "category": "skill",
+          "value": "Animal Handling"
+        },
+        {
+          "type": "proficiency",
+          "category": "skill",
+          "value": "Nature"
+        },
+        {
+          "type": "proficiency",
+          "category": "tool",
+          "value": "Carpenter's Tools"
+        }
+      ]
+    },
+    "abilityScores": {
+      "from": [
+        "strength",
+        "constitution",
+        "wisdom"
+      ],
+      "weights": [
+        2,
+        1
+      ]
+    }
   },
   {
     "name": "Guard",
     "description": "Your feet ached from long hours standing watch, but your eyes were always sharp. You served as a guard — protecting city gates, merchant caravans, noble estates, or dungeon cells. Whether the threat came from outside the walls or inside, you were the first line of defense. That vigilant life honed your senses and your readiness for trouble.\n\n**Feat:** {feat:Alert}\n\n**Skill Proficiencies:** Athletics, Perception\n\n**Tool Proficiency:** One kind of Gaming Set (your choice)\n\n**Equipment:** Choose A or B: (A) Spear, Light Crossbow, 20 Bolts, Gaming Set (same as above), Hooded Lantern, Manacles, Quiver, Traveler's Clothes, 12 GP; or (B) 50 GP",
-    "skills": ["Athletics", "Perception"],
-    "tools": ["Gaming Set"],
     "feat": "Alert",
-    "abilityScores": { "from": ["strength", "intelligence", "wisdom"], "weights": [2, 1] },
-    "choices": [{ "id": "gaming-set", "label": "Gaming Set", "count": 1, "timing": "permanent", "pool": "tool", "from": ["Dice Set", "Dragonchess Set", "Playing Card Set", "Three-Dragon Ante Set"] }]
+    "effects": {
+      "properties": [
+        {
+          "type": "proficiency",
+          "category": "skill",
+          "value": "Athletics"
+        },
+        {
+          "type": "proficiency",
+          "category": "skill",
+          "value": "Perception"
+        },
+        {
+          "type": "proficiency",
+          "category": "tool",
+          "value": "Gaming Set"
+        }
+      ]
+    },
+    "abilityScores": {
+      "from": [
+        "strength",
+        "intelligence",
+        "wisdom"
+      ],
+      "weights": [
+        2,
+        1
+      ]
+    },
+    "choices": [
+      {
+        "id": "gaming-set",
+        "label": "Gaming Set",
+        "count": 1,
+        "timing": "permanent",
+        "pool": "tool",
+        "from": [
+          "Dice Set",
+          "Dragonchess Set",
+          "Playing Card Set",
+          "Three-Dragon Ante Set"
+        ]
+      }
+    ]
   },
   {
     "name": "Guide",
     "description": "You spent your formative years ranging the wilderness — mapping uncharted territories, leading travelers through dangerous passes, and surviving where civilized folk could not. You know how to read the stars, find game, and avoid predators both natural and monstrous. Your skill in the wild makes you an invaluable companion for any expedition.\n\n**Feat:** {feat:Magic Initiate} (Druid)\n\n**Skill Proficiencies:** Stealth, Survival\n\n**Tool Proficiency:** Cartographer's Tools\n\n**Equipment:** Choose A or B: (A) Shortbow, 20 Arrows, Cartographer's Tools, Bedroll, Quiver, Tent, Traveler's Clothes, 3 GP; or (B) 50 GP",
-    "skills": ["Stealth", "Survival"],
-    "tools": ["Cartographer's Tools"],
     "feat": "Magic Initiate (Druid)",
-    "abilityScores": { "from": ["dexterity", "constitution", "wisdom"], "weights": [2, 1] }
+    "effects": {
+      "properties": [
+        {
+          "type": "proficiency",
+          "category": "skill",
+          "value": "Stealth"
+        },
+        {
+          "type": "proficiency",
+          "category": "skill",
+          "value": "Survival"
+        },
+        {
+          "type": "proficiency",
+          "category": "tool",
+          "value": "Cartographer's Tools"
+        }
+      ]
+    },
+    "abilityScores": {
+      "from": [
+        "dexterity",
+        "constitution",
+        "wisdom"
+      ],
+      "weights": [
+        2,
+        1
+      ]
+    }
   },
   {
     "name": "Hermit",
     "description": "You lived in seclusion — either in a sheltered community such as a monastery, or entirely alone — for a formative part of your life. In your time apart from the clamor of society, you found quiet, solitude, and perhaps some of the answers you were looking for. You know the healing properties of herbs, the importance of silence, and the value of careful observation.\n\n**Feat:** {feat:Healer}\n\n**Skill Proficiencies:** Medicine, Religion\n\n**Tool Proficiency:** Herbalism Kit\n\n**Equipment:** Choose A or B: (A) Quarterstaff, Herbalism Kit, Bedroll, Book (philosophy), Lamp, Oil (3 flasks), Traveler's Clothes, 16 GP; or (B) 50 GP",
-    "skills": ["Medicine", "Religion"],
-    "tools": ["Herbalism Kit"],
     "feat": "Healer",
-    "abilityScores": { "from": ["constitution", "wisdom", "charisma"], "weights": [2, 1] }
+    "effects": {
+      "properties": [
+        {
+          "type": "proficiency",
+          "category": "skill",
+          "value": "Medicine"
+        },
+        {
+          "type": "proficiency",
+          "category": "skill",
+          "value": "Religion"
+        },
+        {
+          "type": "proficiency",
+          "category": "tool",
+          "value": "Herbalism Kit"
+        }
+      ]
+    },
+    "abilityScores": {
+      "from": [
+        "constitution",
+        "wisdom",
+        "charisma"
+      ],
+      "weights": [
+        2,
+        1
+      ]
+    }
   },
   {
     "name": "Merchant",
     "description": "You grew up in a mercantile family or found your way into trade early in life. Buying low and selling high, managing caravans, and navigating trade routes gave you a worldly perspective and sharp instincts for opportunity. You know how to read people, assess risk, and find profit where others see only trouble.\n\n**Feat:** {feat:Lucky}\n\n**Skill Proficiencies:** Animal Handling, Persuasion\n\n**Tool Proficiency:** Navigator's Tools\n\n**Equipment:** Choose A or B: (A) Navigator's Tools, 2 Pouches, Traveler's Clothes, 22 GP; or (B) 50 GP",
-    "skills": ["Animal Handling", "Persuasion"],
-    "tools": ["Navigator's Tools"],
     "feat": "Lucky",
-    "abilityScores": { "from": ["constitution", "intelligence", "charisma"], "weights": [2, 1] }
+    "effects": {
+      "properties": [
+        {
+          "type": "proficiency",
+          "category": "skill",
+          "value": "Animal Handling"
+        },
+        {
+          "type": "proficiency",
+          "category": "skill",
+          "value": "Persuasion"
+        },
+        {
+          "type": "proficiency",
+          "category": "tool",
+          "value": "Navigator's Tools"
+        }
+      ]
+    },
+    "abilityScores": {
+      "from": [
+        "constitution",
+        "intelligence",
+        "charisma"
+      ],
+      "weights": [
+        2,
+        1
+      ]
+    }
   },
   {
     "name": "Noble",
     "description": "You understand wealth, power, and privilege. You carry a noble title and the social standing that comes with it. Your family has lands, servants, and a coat of arms. You have been raised to understand that noblesse oblige — with privilege comes responsibility. Yet you have also seen the corruption and pettiness that wealth can bring.\n\n**Feat:** {feat:Skilled}\n\n**Skill Proficiencies:** History, Persuasion\n\n**Tool Proficiency:** One kind of Gaming Set (your choice)\n\n**Equipment:** Choose A or B: (A) Gaming Set (same as above), Fine Clothes, Perfume, 29 GP; or (B) 50 GP",
-    "skills": ["History", "Persuasion"],
-    "tools": ["Gaming Set"],
     "feat": "Skilled",
-    "abilityScores": { "from": ["strength", "intelligence", "charisma"], "weights": [2, 1] },
-    "choices": [{ "id": "gaming-set", "label": "Gaming Set", "count": 1, "timing": "permanent", "pool": "tool", "from": ["Dice Set", "Dragonchess Set", "Playing Card Set", "Three-Dragon Ante Set"] }]
+    "effects": {
+      "properties": [
+        {
+          "type": "proficiency",
+          "category": "skill",
+          "value": "History"
+        },
+        {
+          "type": "proficiency",
+          "category": "skill",
+          "value": "Persuasion"
+        },
+        {
+          "type": "proficiency",
+          "category": "tool",
+          "value": "Gaming Set"
+        }
+      ]
+    },
+    "abilityScores": {
+      "from": [
+        "strength",
+        "intelligence",
+        "charisma"
+      ],
+      "weights": [
+        2,
+        1
+      ]
+    },
+    "choices": [
+      {
+        "id": "gaming-set",
+        "label": "Gaming Set",
+        "count": 1,
+        "timing": "permanent",
+        "pool": "tool",
+        "from": [
+          "Dice Set",
+          "Dragonchess Set",
+          "Playing Card Set",
+          "Three-Dragon Ante Set"
+        ]
+      }
+    ]
   },
   {
     "name": "Sage",
     "description": "You spent years learning the lore of the multiverse. You scoured manuscripts, studied under great sages, and practiced your magic or philosophy until it became second nature. Libraries, academies, and wizard towers were your haunts. The pursuit of knowledge is its own reward — and a sharp mind is the most powerful weapon you know.\n\n**Feat:** {feat:Magic Initiate} (Wizard)\n\n**Skill Proficiencies:** Arcana, History\n\n**Tool Proficiency:** Calligrapher's Supplies\n\n**Equipment:** Choose A or B: (A) Quarterstaff, Calligrapher's Supplies, Book (history), Parchment (8 sheets), Robe, 8 GP; or (B) 50 GP",
-    "skills": ["Arcana", "History"],
-    "tools": ["Calligrapher's Supplies"],
     "feat": "Magic Initiate (Wizard)",
-    "abilityScores": { "from": ["constitution", "intelligence", "wisdom"], "weights": [2, 1] }
+    "effects": {
+      "properties": [
+        {
+          "type": "proficiency",
+          "category": "skill",
+          "value": "Arcana"
+        },
+        {
+          "type": "proficiency",
+          "category": "skill",
+          "value": "History"
+        },
+        {
+          "type": "proficiency",
+          "category": "tool",
+          "value": "Calligrapher's Supplies"
+        }
+      ]
+    },
+    "abilityScores": {
+      "from": [
+        "constitution",
+        "intelligence",
+        "wisdom"
+      ],
+      "weights": [
+        2,
+        1
+      ]
+    }
   },
   {
     "name": "Sailor",
     "description": "You sailed the seas for years, weathering storms, navigating by stars, and learning the hard lessons of life aboard a ship. Whether you served on a merchant vessel, a privateer, or a navy warship, the sea made you tough, resourceful, and quick on your feet. You know the rhythms of ocean travel and can handle yourself in a brawl.\n\n**Feat:** {feat:Tavern Brawler}\n\n**Skill Proficiencies:** Acrobatics, Perception\n\n**Tool Proficiency:** Navigator's Tools\n\n**Equipment:** Choose A or B: (A) Dagger, Navigator's Tools, Rope, Traveler's Clothes, 20 GP; or (B) 50 GP",
-    "skills": ["Acrobatics", "Perception"],
-    "tools": ["Navigator's Tools"],
     "feat": "Tavern Brawler",
-    "abilityScores": { "from": ["strength", "dexterity", "wisdom"], "weights": [2, 1] }
+    "effects": {
+      "properties": [
+        {
+          "type": "proficiency",
+          "category": "skill",
+          "value": "Acrobatics"
+        },
+        {
+          "type": "proficiency",
+          "category": "skill",
+          "value": "Perception"
+        },
+        {
+          "type": "proficiency",
+          "category": "tool",
+          "value": "Navigator's Tools"
+        }
+      ]
+    },
+    "abilityScores": {
+      "from": [
+        "strength",
+        "dexterity",
+        "wisdom"
+      ],
+      "weights": [
+        2,
+        1
+      ]
+    }
   },
   {
     "name": "Scribe",
     "description": "You spent formative years in a scriptorium, a government office, or the service of a powerful noble, copying documents and keeping meticulous records. You developed keen attention to detail, the ability to notice when something is out of place, and the skill to produce precise written work. Your training taught you to observe carefully and think critically about what you read.\n\n**Feat:** {feat:Skilled}\n\n**Skill Proficiencies:** Investigation, Perception\n\n**Tool Proficiency:** Calligrapher's Supplies\n\n**Equipment:** Choose A or B: (A) Calligrapher's Supplies, Fine Clothes, Lamp, Oil (3 flasks), Parchment (12 sheets), 23 GP; or (B) 50 GP",
-    "skills": ["Investigation", "Perception"],
-    "tools": ["Calligrapher's Supplies"],
     "feat": "Skilled",
-    "abilityScores": { "from": ["dexterity", "intelligence", "wisdom"], "weights": [2, 1] }
+    "effects": {
+      "properties": [
+        {
+          "type": "proficiency",
+          "category": "skill",
+          "value": "Investigation"
+        },
+        {
+          "type": "proficiency",
+          "category": "skill",
+          "value": "Perception"
+        },
+        {
+          "type": "proficiency",
+          "category": "tool",
+          "value": "Calligrapher's Supplies"
+        }
+      ]
+    },
+    "abilityScores": {
+      "from": [
+        "dexterity",
+        "intelligence",
+        "wisdom"
+      ],
+      "weights": [
+        2,
+        1
+      ]
+    }
   },
   {
     "name": "Soldier",
     "description": "War has been your life for as long as you care to remember. You trained as a youth, studied the use of weapons and armor, learned basic survival techniques, and spent time on a battlefield. Soldiers bond through hardship, fear, and violence — and that shared experience creates a loyalty unlike anything else. You know how to fight, and you know what it costs.\n\n**Feat:** {feat:Savage Attacker}\n\n**Skill Proficiencies:** Athletics, Intimidation\n\n**Tool Proficiency:** One kind of Gaming Set (your choice)\n\n**Equipment:** Choose A or B: (A) Spear, Shortbow, 20 Arrows, Gaming Set (same as above), Healer's Kit, Quiver, Traveler's Clothes, 14 GP; or (B) 50 GP",
-    "skills": ["Athletics", "Intimidation"],
-    "tools": ["Gaming Set"],
     "feat": "Savage Attacker",
-    "abilityScores": { "from": ["strength", "dexterity", "constitution"], "weights": [2, 1] },
-    "choices": [{ "id": "gaming-set", "label": "Gaming Set", "count": 1, "timing": "permanent", "pool": "tool", "from": ["Dice Set", "Dragonchess Set", "Playing Card Set", "Three-Dragon Ante Set"] }]
+    "effects": {
+      "properties": [
+        {
+          "type": "proficiency",
+          "category": "skill",
+          "value": "Athletics"
+        },
+        {
+          "type": "proficiency",
+          "category": "skill",
+          "value": "Intimidation"
+        },
+        {
+          "type": "proficiency",
+          "category": "tool",
+          "value": "Gaming Set"
+        }
+      ]
+    },
+    "abilityScores": {
+      "from": [
+        "strength",
+        "dexterity",
+        "constitution"
+      ],
+      "weights": [
+        2,
+        1
+      ]
+    },
+    "choices": [
+      {
+        "id": "gaming-set",
+        "label": "Gaming Set",
+        "count": 1,
+        "timing": "permanent",
+        "pool": "tool",
+        "from": [
+          "Dice Set",
+          "Dragonchess Set",
+          "Playing Card Set",
+          "Three-Dragon Ante Set"
+        ]
+      }
+    ]
   },
   {
     "name": "Wayfarer",
     "description": "You grew up among a community of travelers — wandering folk, itinerant traders, or displaced refugees who never settled long in any place. You learned to survive on the margins of society, to find opportunity in unlikely places, and to keep moving when things got dangerous. The road is your home, and you know its dangers better than most.\n\n**Feat:** {feat:Lucky}\n\n**Skill Proficiencies:** Insight, Stealth\n\n**Tool Proficiency:** Thieves' Tools\n\n**Equipment:** Choose A or B: (A) 2 Daggers, Thieves' Tools, Gaming Set (any), Bedroll, 2 Pouches, Traveler's Clothes, 16 GP; or (B) 50 GP",
-    "skills": ["Insight", "Stealth"],
-    "tools": ["Thieves' Tools"],
     "feat": "Lucky",
-    "abilityScores": { "from": ["dexterity", "wisdom", "charisma"], "weights": [2, 1] }
+    "effects": {
+      "properties": [
+        {
+          "type": "proficiency",
+          "category": "skill",
+          "value": "Insight"
+        },
+        {
+          "type": "proficiency",
+          "category": "skill",
+          "value": "Stealth"
+        },
+        {
+          "type": "proficiency",
+          "category": "tool",
+          "value": "Thieves' Tools"
+        }
+      ]
+    },
+    "abilityScores": {
+      "from": [
+        "dexterity",
+        "wisdom",
+        "charisma"
+      ],
+      "weights": [
+        2,
+        1
+      ]
+    }
   }
 ]

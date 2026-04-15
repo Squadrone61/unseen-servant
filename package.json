@@ -19,6 +19,7 @@
     "test:shared": "cd packages/shared && pnpm test",
     "test:web": "cd apps/web && pnpm test",
     "dead-code": "knip",
+    "audit:data": "pnpm --filter @unseen-servant/shared audit:data",
     "prepare": "husky"
   },
   "lint-staged": {

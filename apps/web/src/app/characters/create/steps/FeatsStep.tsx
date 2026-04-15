@@ -62,11 +62,14 @@ function cap(s: string): string {
 function meetsPrerequisite(feat: FeatDb, classLevel: number): boolean {
   if (!feat.prerequisite) return true;
 
-  // Level requirement: "Level N+" pattern
-  const levelMatch = feat.prerequisite.match(/Level\s+(\d+)\+/i);
-  if (levelMatch) {
-    const required = parseInt(levelMatch[1], 10);
-    if (classLevel < required) return false;
+  // Level requirement: check structured prerequisite
+  const prereq = feat.prerequisite;
+  if (prereq.type === "level" && classLevel < prereq.value) return false;
+  if (prereq.type === "allOf") {
+    return prereq.of.every((p) => {
+      if (p.type === "level") return classLevel >= p.value;
+      return true; // other checks not enforced in builder
+    });
   }
 
   return true;
@@ -93,9 +96,9 @@ function FeatPopover({ feat, onClose, position }: FeatPopoverProps) {
           >
             {feat.category}
           </span>
-          {feat.prerequisite && (
+          {feat.prerequisiteText && (
             <span className="text-xs px-2 py-0.5 rounded-full bg-gray-700/40 text-gray-400 border border-gray-600/40">
-              {feat.prerequisite}
+              {feat.prerequisiteText}
             </span>
           )}
           {feat.repeatable && (
@@ -350,7 +353,7 @@ function AsiSlot({
       (f) =>
         f.name.toLowerCase().includes(q) ||
         f.category.toLowerCase().includes(q) ||
-        (f.prerequisite ?? "").toLowerCase().includes(q),
+        (f.prerequisiteText ?? "").toLowerCase().includes(q),
     );
   }, [eligibleFeats, searchQuery]);
 
@@ -676,9 +679,9 @@ function OriginFeatDisplay({ featName }: OriginFeatDisplayProps) {
               >
                 {feat.category}
               </span>
-              {feat.prerequisite && (
+              {feat.prerequisiteText && (
                 <span className="text-xs px-2 py-0.5 rounded-full bg-gray-700/40 text-gray-400 border border-gray-600/40">
-                  {feat.prerequisite}
+                  {feat.prerequisiteText}
                 </span>
               )}
             </div>

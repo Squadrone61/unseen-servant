@@ -2,7 +2,11 @@
   {
     "name": "Ability Score Improvement",
     "category": "General",
-    "prerequisite": "Level 4+",
+    "prerequisite": {
+      "type": "level",
+      "value": 4
+    },
+    "prerequisiteText": "Level 4+",
     "repeatable": true,
     "description": "Increase one ability score of your choice by 2, or increase two ability scores of your choice by 1. This feat can't increase an ability score above 20.\n\n**Repeatable.** You can take this feat more than once.",
     "choices": [
@@ -251,7 +255,21 @@
   {
     "name": "Actor",
     "category": "General",
-    "prerequisite": "Level 4+, Charisma 13+",
+    "prerequisite": {
+      "type": "allOf",
+      "of": [
+        {
+          "type": "level",
+          "value": 4
+        },
+        {
+          "type": "ability",
+          "ability": "charisma",
+          "min": 13
+        }
+      ]
+    },
+    "prerequisiteText": "Level 4+, Charisma 13+",
     "description": "Increase your Charisma score by 1, to a maximum of 20. You gain the following benefits.\n\n**Impersonation.** While you're disguised as a real or fictional person, you have {rule:Advantage} on Charisma ({skill:Deception} or {skill:Performance}) checks to convince others that you are that person.\n\n**Mimicry.** You can mimic the sounds of other creatures, including speech. A creature that hears the mimicry must succeed on a Wisdom ({skill:Insight}) check to determine the effect is faked (DC 8 plus your Charisma modifier and Proficiency Bonus).",
     "effects": {
       "modifiers": [
@@ -294,7 +312,11 @@
   {
     "name": "Archery",
     "category": "Fighting Style",
-    "prerequisite": "Fighting Style feature",
+    "prerequisite": {
+      "type": "feature",
+      "featureName": "Fighting Style"
+    },
+    "prerequisiteText": "Fighting Style feature",
     "description": "You gain a +2 bonus to attack rolls you make with Ranged weapons.",
     "effects": {
       "modifiers": [
@@ -360,7 +382,31 @@
   {
     "name": "Athlete",
     "category": "General",
-    "prerequisite": "Level 4+, Strength 13+ or Dexterity 13+",
+    "prerequisite": {
+      "type": "allOf",
+      "of": [
+        {
+          "type": "level",
+          "value": 4
+        },
+        {
+          "type": "anyOf",
+          "of": [
+            {
+              "type": "ability",
+              "ability": "strength",
+              "min": 13
+            },
+            {
+              "type": "ability",
+              "ability": "dexterity",
+              "min": 13
+            }
+          ]
+        }
+      ]
+    },
+    "prerequisiteText": "Level 4+, Strength 13+ or Dexterity 13+",
     "description": "You gain the following benefits.\n\n**Climb Speed.** You gain a Climb Speed equal to your Speed.\n\n**Hop Up.** When you have the {condition:Prone} condition, you can right yourself with only 5 feet of movement.\n\n**Jumping.** You can make a running Long Jump or High Jump after moving only 5 feet.",
     "choices": [
       {
@@ -414,7 +460,20 @@
   {
     "name": "Blessed Warrior",
     "category": "Fighting Style",
-    "prerequisite": "Paladin level 2 Fighting Style feature",
+    "prerequisite": {
+      "type": "allOf",
+      "of": [
+        {
+          "type": "level",
+          "value": 2
+        },
+        {
+          "type": "feature",
+          "featureName": "Fighting Style"
+        }
+      ]
+    },
+    "prerequisiteText": "Paladin level 2 Fighting Style feature",
     "description": "You learn two Cleric cantrips of your choice. {spell:Guidance} and {spell:Sacred Flame} are recommended. The chosen cantrips count as Paladin spells for you, and Charisma is your spellcasting ability for them. Whenever you gain a Paladin level, you can replace one of these cantrips with another Cleric cantrip.",
     "choices": [
       {
@@ -442,7 +501,11 @@
   {
     "name": "Blind Fighting",
     "category": "Fighting Style",
-    "prerequisite": "Fighting Style feature",
+    "prerequisite": {
+      "type": "feature",
+      "featureName": "Fighting Style"
+    },
+    "prerequisiteText": "Fighting Style feature",
     "description": "You have Blindsight with a range of 10 feet.",
     "effects": {
       "properties": [
@@ -457,7 +520,11 @@
   {
     "name": "Boon of Combat Prowess",
     "category": "Epic Boon",
-    "prerequisite": "Level 19+",
+    "prerequisite": {
+      "type": "level",
+      "value": 19
+    },
+    "prerequisiteText": "Level 19+",
     "description": "You gain the following benefits.\n\n**Ability Score Increase.** Increase one ability score of your choice by 1, to a maximum of 30.\n\n**Peerless Aim.** When you miss with an attack roll, you can hit instead. Once you use this benefit, you can't use it again until the start of your next turn.",
     "effects": {
       "properties": [
@@ -488,7 +555,11 @@
   {
     "name": "Boon of Dimensional Travel",
     "category": "Epic Boon",
-    "prerequisite": "Level 19+",
+    "prerequisite": {
+      "type": "level",
+      "value": 19
+    },
+    "prerequisiteText": "Level 19+",
     "description": "You gain the following benefits.\n\n**Ability Score Increase.** Increase one ability score of your choice by 1, to a maximum of 30.\n\n**Blink Steps.** Immediately after you take the {action:Attack} action or the {action:Magic} action, you can teleport up to 30 feet to an unoccupied space you can see.",
     "effects": {
       "properties": [
@@ -519,7 +590,11 @@
   {
     "name": "Boon of Energy Resistance",
     "category": "Epic Boon",
-    "prerequisite": "Level 19+",
+    "prerequisite": {
+      "type": "level",
+      "value": 19
+    },
+    "prerequisiteText": "Level 19+",
     "description": "You gain the following benefits.\n\n**Ability Score Increase.** Increase one ability score of your choice by 1, to a maximum of 30.\n\n**Energy Resistances.** You gain {rule:Resistance|resistance} to two of the following damage types of your choice: Acid, Cold, Fire, Lightning, Necrotic, Poison, Psychic, Radiant, or Thunder. Whenever you finish a Long Rest, you can change your choices.\n\n**Energy Redirection.** When you take damage of one of the types chosen for the Energy Resistances benefit, you can take a Reaction to direct damage of the same type toward another creature you can see within 60 feet of yourself that isn't behind Total Cover. If you do so, that creature must succeed on a Dexterity saving throw (DC 8 plus your Constitution modifier and Proficiency Bonus) or take damage equal to 2d12 plus your Constitution modifier.",
     "effects": {
       "properties": [
@@ -661,7 +736,11 @@
   {
     "name": "Boon of Fate",
     "category": "Epic Boon",
-    "prerequisite": "Level 19+",
+    "prerequisite": {
+      "type": "level",
+      "value": 19
+    },
+    "prerequisiteText": "Level 19+",
     "description": "You gain the following benefits.\n\n**Ability Score Increase.** Increase one ability score of your choice by 1, to a maximum of 30.\n\n**Improve Fate.** When you or another creature within 60 feet of you succeeds on or fails a {rule:D20 Test}, you can roll 2d4 and apply the total rolled as a bonus or penalty to the d20 roll. Once you use this benefit, you can't use it again until you roll {rule:Initiative} or finish a Short Rest or Long Rest.",
     "effects": {
       "properties": [
@@ -692,7 +771,11 @@
   {
     "name": "Boon of Fortitude",
     "category": "Epic Boon",
-    "prerequisite": "Level 19+",
+    "prerequisite": {
+      "type": "level",
+      "value": 19
+    },
+    "prerequisiteText": "Level 19+",
     "description": "You gain the following benefits.\n\n**Ability Score Increase.** Increase one ability score of your choice by 1, to a maximum of 30.\n\n**Fortified Health.** Your Hit Point maximum increases by 40. In addition, whenever you regain Hit Points, you can regain additional Hit Points equal to your Constitution modifier. Once you've regained these additional Hit Points, you can't do so again until the start of your next turn.",
     "effects": {
       "modifiers": [
@@ -729,7 +812,11 @@
   {
     "name": "Boon of Irresistible Offense",
     "category": "Epic Boon",
-    "prerequisite": "Level 19+",
+    "prerequisite": {
+      "type": "level",
+      "value": 19
+    },
+    "prerequisiteText": "Level 19+",
     "description": "You gain the following benefits.\n\n**Ability Score Increase.** Increase your Strength or Dexterity by 1, to a maximum of 30.\n\n**Overcome Defenses.** The Bludgeoning, Piercing, and Slashing damage you deal always ignores {rule:Resistance}.\n\n**Overwhelming Strike.** When you roll a 20 on the d20 for an attack roll, you can deal extra damage to the target equal to the ability score increased by this feat. The extra damage's type is the same as the attack's type.",
     "effects": {
       "properties": [
@@ -760,7 +847,11 @@
   {
     "name": "Boon of Recovery",
     "category": "Epic Boon",
-    "prerequisite": "Level 19+",
+    "prerequisite": {
+      "type": "level",
+      "value": 19
+    },
+    "prerequisiteText": "Level 19+",
     "description": "You gain the following benefits.\n\n**Ability Score Increase.** Increase one ability score of your choice by 1, to a maximum of 30.\n\n**Last Stand.** When you would be reduced to 0 Hit Points, you can drop to 1 Hit Point instead and regain a number of Hit Points equal to half your Hit Point maximum. Once you use this benefit, you can't use it again until you finish a Long Rest.\n\n**Recover Vitality.** You have a pool of ten d10s. As a Bonus Action, you can expend dice from the pool, roll those dice, and regain a number of Hit Points equal to the roll's total. You regain all the expended dice when you finish a Long Rest.",
     "effects": {
       "properties": [
@@ -801,7 +892,11 @@
   {
     "name": "Boon of Skill",
     "category": "Epic Boon",
-    "prerequisite": "Level 19+",
+    "prerequisite": {
+      "type": "level",
+      "value": 19
+    },
+    "prerequisiteText": "Level 19+",
     "description": "You gain the following benefits.\n\n**Ability Score Increase.** Increase one ability score of your choice by 1, to a maximum of 30.\n\n**All-Around Adept.** You gain proficiency in all skills.\n\n**Expertise.** Choose one skill in which you lack {rule:Expertise}. You gain Expertise in that skill.",
     "effects": {
       "properties": [
@@ -925,7 +1020,11 @@
   {
     "name": "Boon of Speed",
     "category": "Epic Boon",
-    "prerequisite": "Level 19+",
+    "prerequisite": {
+      "type": "level",
+      "value": 19
+    },
+    "prerequisiteText": "Level 19+",
     "description": "You gain the following benefits.\n\n**Ability Score Increase.** Increase one ability score of your choice by 1, to a maximum of 30.\n\n**Escape Artist.** As a Bonus Action, you can take the {action:Disengage} action, which also ends the {condition:Grappled} condition on you.\n\n**Quickness.** Your Speed increases by 30 feet.",
     "effects": {
       "modifiers": [
@@ -962,7 +1061,19 @@
   {
     "name": "Boon of Spell Recall",
     "category": "Epic Boon",
-    "prerequisite": "Level 19+, Spellcasting or Pact Magic feature",
+    "prerequisite": {
+      "type": "allOf",
+      "of": [
+        {
+          "type": "level",
+          "value": 19
+        },
+        {
+          "type": "spellcasting"
+        }
+      ]
+    },
+    "prerequisiteText": "Level 19+, Spellcasting or Pact Magic feature",
     "description": "You gain the following benefits.\n\n**Ability Score Increase.** Increase your Intelligence, Wisdom, or Charisma by 1, to a maximum of 30.\n\n**Free Casting.** Whenever you cast a spell with a level 1–4 spell slot, roll 1d4. If the number you roll is the same as the slot's level, the slot isn't expended.",
     "effects": {
       "properties": [
@@ -990,7 +1101,11 @@
   {
     "name": "Boon of the Night Spirit",
     "category": "Epic Boon",
-    "prerequisite": "Level 19+",
+    "prerequisite": {
+      "type": "level",
+      "value": 19
+    },
+    "prerequisiteText": "Level 19+",
     "description": "You gain the following benefits.\n\n**Ability Score Increase.** Increase one ability score of your choice by 1, to a maximum of 30.\n\n**Merge with Shadows.** While within Dim Light or Darkness, you can give yourself the {condition:Invisible} condition as a Bonus Action. The condition ends on you immediately after you take an action, a Bonus Action, or a Reaction.\n\n**Shadowy Form.** While within Dim Light or Darkness, you have {rule:Resistance|resistance} to all damage except Psychic and Radiant.",
     "effects": {
       "properties": [
@@ -1076,7 +1191,11 @@
   {
     "name": "Boon of Truesight",
     "category": "Epic Boon",
-    "prerequisite": "Level 19+",
+    "prerequisite": {
+      "type": "level",
+      "value": 19
+    },
+    "prerequisiteText": "Level 19+",
     "description": "You gain the following benefits.\n\n**Ability Score Increase.** Increase one ability score of your choice by 1, to a maximum of 30.\n\n**Truesight.** You have {rule:Truesight|truesight} with a range of 60 feet.",
     "effects": {
       "properties": [
@@ -1108,7 +1227,11 @@
   {
     "name": "Bountiful Luck",
     "category": "General",
-    "prerequisite": "Halfling species",
+    "prerequisite": {
+      "type": "species",
+      "species": "Halfling"
+    },
+    "prerequisiteText": "Halfling species",
     "description": "Your people have extraordinary luck, which you have learned to mystically lend to your companions when you see them falter. When an ally you can see within 30 feet of you rolls a 1 on the d20 for an attack roll, an ability check, or a saving throw, you can use your reaction to let the ally reroll the die. The ally must use the new roll. When you use this ability, you can't use your Lucky racial trait before the end of your next turn.",
     "effects": {
       "properties": [
@@ -1122,7 +1245,31 @@
   {
     "name": "Charger",
     "category": "General",
-    "prerequisite": "Level 4+, Strength 13+ or Dexterity 13+",
+    "prerequisite": {
+      "type": "allOf",
+      "of": [
+        {
+          "type": "level",
+          "value": 4
+        },
+        {
+          "type": "anyOf",
+          "of": [
+            {
+              "type": "ability",
+              "ability": "strength",
+              "min": 13
+            },
+            {
+              "type": "ability",
+              "ability": "dexterity",
+              "min": 13
+            }
+          ]
+        }
+      ]
+    },
+    "prerequisiteText": "Level 4+, Strength 13+ or Dexterity 13+",
     "description": "You gain the following benefits.\n\n**Improved Dash.** When you take the {action:Dash} action, your Speed increases by 10 feet for that action.\n\n**Charge Attack.** If you move at least 10 feet in a straight line toward a target immediately before hitting it with a melee attack roll as part of the {action:Attack} action, choose one of the following effects: gain a 1d8 bonus to the attack's damage roll, or push the target up to 10 feet away if it is no more than one size larger than you. You can use this benefit only once on each of your turns.",
     "choices": [
       {
@@ -1172,7 +1319,11 @@
   {
     "name": "Chef",
     "category": "General",
-    "prerequisite": "Level 4+",
+    "prerequisite": {
+      "type": "level",
+      "value": 4
+    },
+    "prerequisiteText": "Level 4+",
     "description": "You gain the following benefits.\n\n**Cook's Utensils.** You gain proficiency with Cook's Utensils if you don't already have it.\n\n**Replenishing Meal.** As part of a {rule:Short Rest}, you can cook special food if you have ingredients and Cook's Utensils on hand. You can prepare enough food for a number of creatures equal to 4 plus your Proficiency Bonus. At the end of the Short Rest, any creature who eats the food and spends one or more Hit Dice to regain Hit Points regains an extra 1d8 Hit Points.\n\n**Bolstering Treats.** With 1 hour of work or when you finish a {rule:Long Rest}, you can cook a number of treats equal to your Proficiency Bonus if you have ingredients and Cook's Utensils on hand. These special treats last 8 hours after being made. A creature can use a Bonus Action to eat one of those treats to gain a number of Temporary Hit Points equal to your Proficiency Bonus.",
     "choices": [
       {
@@ -1263,7 +1414,21 @@
   {
     "name": "Crossbow Expert",
     "category": "General",
-    "prerequisite": "Level 4+, Dexterity 13+",
+    "prerequisite": {
+      "type": "allOf",
+      "of": [
+        {
+          "type": "level",
+          "value": 4
+        },
+        {
+          "type": "ability",
+          "ability": "dexterity",
+          "min": 13
+        }
+      ]
+    },
+    "prerequisiteText": "Level 4+, Dexterity 13+",
     "description": "Increase your Dexterity score by 1, to a maximum of 20. You gain the following benefits.\n\n**Ignore Loading.** You ignore the Loading property of the Hand Crossbow, Heavy Crossbow, and Light Crossbow. If you're holding one of them, you can load a piece of ammunition into it even if you lack a free hand.\n\n**Firing in Melee.** Being within 5 feet of an enemy doesn't impose {rule:Disadvantage} on your attack rolls with crossbows.\n\n**Dual Wielding.** When you make the extra attack of the Light property, you can add your ability modifier to the damage of the extra attack if that attack is with a crossbow that has the Light property and you aren't already adding that modifier to the damage.",
     "effects": {
       "modifiers": [
@@ -1291,7 +1456,11 @@
   {
     "name": "Crusher",
     "category": "General",
-    "prerequisite": "Level 4+",
+    "prerequisite": {
+      "type": "level",
+      "value": 4
+    },
+    "prerequisiteText": "Level 4+",
     "description": "You gain the following benefits.\n\n**Push.** Once per turn, when you hit a creature with an attack that deals Bludgeoning damage, you can move it 5 feet to an unoccupied space if the target is no more than one size larger than you.\n\n**Enhanced Critical.** When you score a {rule:Critical Hit} that deals Bludgeoning damage to a creature, attack rolls against that creature have {rule:Advantage} until the start of your next turn.",
     "choices": [
       {
@@ -1341,7 +1510,11 @@
   {
     "name": "Defense",
     "category": "Fighting Style",
-    "prerequisite": "Fighting Style feature",
+    "prerequisite": {
+      "type": "feature",
+      "featureName": "Fighting Style"
+    },
+    "prerequisiteText": "Fighting Style feature",
     "description": "While you're wearing Light, Medium, or Heavy armor, you gain a +1 bonus to Armor Class.",
     "effects": {
       "modifiers": [
@@ -1356,7 +1529,21 @@
   {
     "name": "Defensive Duelist",
     "category": "General",
-    "prerequisite": "Level 4+, Dexterity 13+",
+    "prerequisite": {
+      "type": "allOf",
+      "of": [
+        {
+          "type": "level",
+          "value": 4
+        },
+        {
+          "type": "ability",
+          "ability": "dexterity",
+          "min": 13
+        }
+      ]
+    },
+    "prerequisiteText": "Level 4+, Dexterity 13+",
     "description": "Increase your Dexterity score by 1, to a maximum of 20. You gain the following benefits.\n\n**Parry.** If you're holding a Finesse weapon and another creature hits you with a melee attack, you can take a Reaction to add your Proficiency Bonus to your Armor Class, potentially causing the attack to miss you. You gain this bonus to your AC against melee attacks until the start of your next turn.",
     "effects": {
       "modifiers": [
@@ -1376,7 +1563,11 @@
   {
     "name": "Dragon Fear",
     "category": "General",
-    "prerequisite": "Dragonborn species",
+    "prerequisite": {
+      "type": "species",
+      "species": "Dragonborn"
+    },
+    "prerequisiteText": "Dragonborn species",
     "description": "When angered, you radiate menace. Instead of exhaling destructive energy, you can expend a use of your Breath Weapon to roar, forcing each creature of your choice within 30 feet of you to make a Wisdom saving throw (DC 8 + your Proficiency Bonus + your Charisma modifier). A target automatically succeeds on the save if it can't hear or see you. On a failed save, a target becomes {condition:Frightened} of you for 1 minute. If the frightened target takes any damage, it can repeat the saving throw, ending the effect on itself on a success.",
     "choices": [
       {
@@ -1433,7 +1624,11 @@
   {
     "name": "Dragon Hide",
     "category": "General",
-    "prerequisite": "Dragonborn species",
+    "prerequisite": {
+      "type": "species",
+      "species": "Dragonborn"
+    },
+    "prerequisiteText": "Dragonborn species",
     "description": "You manifest scales and claws reminiscent of your draconic ancestors. While you aren't wearing armor, you can calculate your AC as 13 + your Dexterity modifier. You can use a shield and still gain this benefit. You grow retractable claws from the tips of your fingers. Extending or retracting the claws requires no action. The claws are natural weapons, which you can use to make unarmed strikes. If you hit with them, you deal slashing damage equal to 1d4 + your Strength modifier, instead of the normal bludgeoning damage for an unarmed strike.",
     "choices": [
       {
@@ -1494,7 +1689,11 @@
   {
     "name": "Drow High Magic",
     "category": "General",
-    "prerequisite": "Drow (Elf) species",
+    "prerequisite": {
+      "type": "species",
+      "species": "Drow (Elf)"
+    },
+    "prerequisiteText": "Drow (Elf) species",
     "description": "You learn more of the magic typical of dark elves. You learn the {spell:Detect Magic} spell and can cast it at will, without expending a spell slot. You also learn {spell:Levitate} and {spell:Dispel Magic}, each of which you can cast once without expending a spell slot. You regain the ability to cast those two spells in this way when you finish a {rule:Long Rest}. Charisma is your spellcasting ability for all three spells.",
     "effects": {
       "properties": [
@@ -1522,7 +1721,20 @@
   {
     "name": "Druidic Warrior",
     "category": "Fighting Style",
-    "prerequisite": "Ranger level 2 Fighting Style feature",
+    "prerequisite": {
+      "type": "allOf",
+      "of": [
+        {
+          "type": "level",
+          "value": 2
+        },
+        {
+          "type": "feature",
+          "featureName": "Fighting Style"
+        }
+      ]
+    },
+    "prerequisiteText": "Ranger level 2 Fighting Style feature",
     "description": "You learn two Druid cantrips of your choice. {spell:Guidance} and {spell:Starry Wisp} are recommended. The chosen cantrips count as Ranger spells for you, and Wisdom is your spellcasting ability for them. Whenever you gain a Ranger level, you can replace one of these cantrips with another Druid cantrip.",
     "choices": [
       {
@@ -1550,7 +1762,31 @@
   {
     "name": "Dual Wielder",
     "category": "General",
-    "prerequisite": "Level 4+, Strength 13+ or Dexterity 13+",
+    "prerequisite": {
+      "type": "allOf",
+      "of": [
+        {
+          "type": "level",
+          "value": 4
+        },
+        {
+          "type": "anyOf",
+          "of": [
+            {
+              "type": "ability",
+              "ability": "strength",
+              "min": 13
+            },
+            {
+              "type": "ability",
+              "ability": "dexterity",
+              "min": 13
+            }
+          ]
+        }
+      ]
+    },
+    "prerequisiteText": "Level 4+, Strength 13+ or Dexterity 13+",
     "description": "You gain the following benefits.\n\n**Enhanced Dual Wielding.** When you take the {action:Attack} action on your turn and attack with a weapon that has the Light property, you can make one extra attack as a Bonus Action later on the same turn with a different weapon, which must be a Melee weapon that lacks the Two-Handed property. You don't add your ability modifier to the extra attack's damage unless that modifier is negative.\n\n**Quick Draw.** You can draw or stow two weapons that lack the Two-Handed property when you would normally be able to draw or stow only one.",
     "choices": [
       {
@@ -1600,7 +1836,11 @@
   {
     "name": "Dueling",
     "category": "Fighting Style",
-    "prerequisite": "Fighting Style feature",
+    "prerequisite": {
+      "type": "feature",
+      "featureName": "Fighting Style"
+    },
+    "prerequisiteText": "Fighting Style feature",
     "description": "When you're holding a Melee weapon in one hand and no other weapons, you gain a +2 bonus to damage rolls with that weapon.",
     "effects": {
       "modifiers": [
@@ -1615,7 +1855,11 @@
   {
     "name": "Durable",
     "category": "General",
-    "prerequisite": "Level 4+",
+    "prerequisite": {
+      "type": "level",
+      "value": 4
+    },
+    "prerequisiteText": "Level 4+",
     "description": "You gain the following benefits.\n\n**Defy Death.** You have {rule:Advantage} on {rule:Death Saving Throw|Death Saving Throws}.\n\n**Speedy Recovery.** As a Bonus Action, you can expend one of your Hit Point Dice, roll the die, and regain a number of Hit Points equal to the roll.",
     "effects": {
       "modifiers": [
@@ -1639,7 +1883,11 @@
   {
     "name": "Dwarven Fortitude",
     "category": "General",
-    "prerequisite": "Dwarf species",
+    "prerequisite": {
+      "type": "species",
+      "species": "Dwarf"
+    },
+    "prerequisiteText": "Dwarf species",
     "description": "You have the blood of dwarf heroes flowing through your veins. Whenever you take the {action:Dodge} action in combat, you can spend one Hit Die to heal yourself. Roll the die, add your Constitution modifier, and regain a number of hit points equal to the total (minimum of 1).",
     "effects": {
       "modifiers": [
@@ -1659,7 +1907,10 @@
   {
     "name": "Eldritch Adept",
     "category": "General",
-    "prerequisite": "Spellcasting or Pact Magic feature",
+    "prerequisite": {
+      "type": "spellcasting"
+    },
+    "prerequisiteText": "Spellcasting or Pact Magic feature",
     "description": "Studying occult lore, you learn one {feat:Eldritch Invocation|Eldritch Invocation} option of your choice from the {class:Warlock} class. Your spellcasting ability for the invocation is Intelligence, Wisdom, or Charisma (choose when you select this feat). If the invocation has a prerequisite of any kind, you can choose that invocation only if you're a Warlock who meets the prerequisite. Whenever you gain a level, you can replace the invocation with another one from the Warlock class.",
     "effects": {
       "properties": [
@@ -1673,7 +1924,19 @@
   {
     "name": "Elemental Adept",
     "category": "General",
-    "prerequisite": "Level 4+, Spellcasting or Pact Magic feature",
+    "prerequisite": {
+      "type": "allOf",
+      "of": [
+        {
+          "type": "level",
+          "value": 4
+        },
+        {
+          "type": "spellcasting"
+        }
+      ]
+    },
+    "prerequisiteText": "Level 4+, Spellcasting or Pact Magic feature",
     "repeatable": true,
     "description": "You gain the following benefits.\n\n**Energy Mastery.** Choose one of the following damage types: Acid, Cold, Fire, Lightning, or Thunder. Spells you cast ignore {rule:Resistance} to damage of the chosen type. In addition, when you roll damage for a spell you cast that deals damage of that type, you can treat any 1 on a damage die as a 2.\n\n**Repeatable.** You can take this feat more than once, but you must choose a different damage type each time for Energy Mastery.",
     "choices": [
@@ -1786,7 +2049,20 @@
   {
     "name": "Elven Accuracy",
     "category": "General",
-    "prerequisite": "Elf or Half-Elf species",
+    "prerequisite": {
+      "type": "anyOf",
+      "of": [
+        {
+          "type": "species",
+          "species": "Elf"
+        },
+        {
+          "type": "species",
+          "species": "Half-Elf"
+        }
+      ]
+    },
+    "prerequisiteText": "Elf or Half-Elf species",
     "description": "The accuracy of elves is legendary, especially that of elf archers and spellcasters. Whenever you have {rule:Advantage} on an attack roll using Dexterity, Intelligence, Wisdom, or Charisma, you can reroll one of the dice once.",
     "choices": [
       {
@@ -1854,7 +2130,11 @@
   {
     "name": "Fade Away",
     "category": "General",
-    "prerequisite": "Gnome species",
+    "prerequisite": {
+      "type": "species",
+      "species": "Gnome"
+    },
+    "prerequisiteText": "Gnome species",
     "description": "Your people are clever, with a knack for illusion magic. You have learned a magical trick for fading away when you suffer harm. Immediately after you take damage, you can use a reaction to magically become {condition:Invisible} until the end of your next turn or until you attack, deal damage, or force someone to make a saving throw. Once you use this ability, you can't do so again until you finish a {rule:Short Rest} or {rule:Long Rest}.",
     "choices": [
       {
@@ -1907,7 +2187,11 @@
   {
     "name": "Fey Teleportation",
     "category": "General",
-    "prerequisite": "High Elf (Elf) species",
+    "prerequisite": {
+      "type": "species",
+      "species": "High Elf (Elf)"
+    },
+    "prerequisiteText": "High Elf (Elf) species",
     "description": "Your study of high elven lore has unlocked fey power. You learn to speak, read, and write Sylvan. You learn the {spell:Misty Step} spell and can cast it once without expending a spell slot. You regain the ability to cast it in this way when you finish a {rule:Short Rest} or {rule:Long Rest}. Intelligence is your spellcasting ability for this spell.",
     "choices": [
       {
@@ -1964,7 +2248,11 @@
   {
     "name": "Fey-Touched",
     "category": "General",
-    "prerequisite": "Level 4+",
+    "prerequisite": {
+      "type": "level",
+      "value": 4
+    },
+    "prerequisiteText": "Level 4+",
     "description": "Your exposure to the Feywild's magic grants you the following benefits.\n\n**Fey Magic.** Choose one level 1 spell from the Divination or Enchantment school of magic. You always have that spell and the {spell:Misty Step} spell prepared. You can cast each of these spells without expending a spell slot. Once you cast either spell in this way, you can't cast that spell in this way again until you finish a {rule:Long Rest}. You can also cast these spells using spell slots you have of the appropriate level. The spells' spellcasting ability is the ability increased by this feat.",
     "choices": [
       {
@@ -2039,7 +2327,11 @@
   {
     "name": "Fighting Initiate",
     "category": "General",
-    "prerequisite": "Proficiency with a Martial weapon",
+    "prerequisite": {
+      "type": "feature",
+      "featureName": "Martial Weapon Proficiency"
+    },
+    "prerequisiteText": "Proficiency with a Martial weapon",
     "description": "Your martial training has helped you develop a particular style of fighting. You learn one Fighting Style option of your choice from the {class:Fighter} class. If you already have a style, the one you choose must be different. Whenever you reach a level that grants the Ability Score Improvement feature, you can replace this feat's fighting style with another one from the Fighter class that you don't have.",
     "effects": {
       "properties": [
@@ -2053,7 +2345,11 @@
   {
     "name": "Flames of Phlegethos",
     "category": "General",
-    "prerequisite": "Tiefling species",
+    "prerequisite": {
+      "type": "species",
+      "species": "Tiefling"
+    },
+    "prerequisiteText": "Tiefling species",
     "description": "You learn to call on hellfire to serve your commands. When you roll fire damage for a spell you cast, you can reroll any roll of 1 on the fire damage dice, but you must use the new roll, even if it is another 1. Whenever you cast a spell that deals fire damage, you can cause flames to wreathe you until the end of your next turn. The flames don't harm you or your possessions, and they shed bright light out to 30 feet and dim light for an additional 30 feet. While the flames are present, any creature within 5 feet of you that hits you with a melee attack takes 1d4 fire damage.",
     "choices": [
       {
@@ -2103,7 +2399,31 @@
   {
     "name": "Grappler",
     "category": "General",
-    "prerequisite": "Level 4+, Strength 13+ or Dexterity 13+",
+    "prerequisite": {
+      "type": "allOf",
+      "of": [
+        {
+          "type": "level",
+          "value": 4
+        },
+        {
+          "type": "anyOf",
+          "of": [
+            {
+              "type": "ability",
+              "ability": "strength",
+              "min": 13
+            },
+            {
+              "type": "ability",
+              "ability": "dexterity",
+              "min": 13
+            }
+          ]
+        }
+      ]
+    },
+    "prerequisiteText": "Level 4+, Strength 13+ or Dexterity 13+",
     "description": "You gain the following benefits.\n\n**Punch and Grab.** When you hit a creature with an Unarmed Strike as part of the {action:Attack} action on your turn, you can use both the Damage and the Grapple option. You can use this benefit only once per turn.\n\n**Attack Advantage.** You have {rule:Advantage} on attack rolls against a creature {condition:Grappled} by you.\n\n**Fast Wrestler.** You don't have to spend extra movement to move a creature {condition:Grappled} by you if the creature is your size or smaller.",
     "choices": [
       {
@@ -2158,7 +2478,11 @@
   {
     "name": "Great Weapon Fighting",
     "category": "Fighting Style",
-    "prerequisite": "Fighting Style feature",
+    "prerequisite": {
+      "type": "feature",
+      "featureName": "Fighting Style"
+    },
+    "prerequisiteText": "Fighting Style feature",
     "description": "When you roll damage for an attack you make with a Melee weapon that you are holding with two hands, you can treat any 1 or 2 on a damage die as a 3. The weapon must have the Two-Handed or Versatile property to gain this benefit.",
     "effects": {
       "properties": [
@@ -2172,7 +2496,21 @@
   {
     "name": "Great Weapon Master",
     "category": "General",
-    "prerequisite": "Level 4+, Strength 13+",
+    "prerequisite": {
+      "type": "allOf",
+      "of": [
+        {
+          "type": "level",
+          "value": 4
+        },
+        {
+          "type": "ability",
+          "ability": "strength",
+          "min": 13
+        }
+      ]
+    },
+    "prerequisiteText": "Level 4+, Strength 13+",
     "description": "You gain the following benefits.\n\n**Heavy Weapon Mastery.** When you hit a creature with a weapon that has the Heavy property as part of the {action:Attack} action on your turn, you can cause the weapon to deal extra damage to the target. The extra damage equals your Proficiency Bonus.\n\n**Hew.** Immediately after you score a {rule:Critical Hit} with a Melee weapon or reduce a creature to 0 Hit Points with one, you can make one attack with the same weapon as a Bonus Action.",
     "effects": {
       "modifiers": [
@@ -2241,7 +2579,20 @@
   {
     "name": "Heavily Armored",
     "category": "General",
-    "prerequisite": "Level 4+, Proficiency with Medium armor",
+    "prerequisite": {
+      "type": "allOf",
+      "of": [
+        {
+          "type": "level",
+          "value": 4
+        },
+        {
+          "type": "feature",
+          "featureName": "Medium Armor Proficiency"
+        }
+      ]
+    },
+    "prerequisiteText": "Level 4+, Proficiency with Medium armor",
     "description": "You gain the following benefits.\n\n**Armor Training.** You gain training with Heavy armor.",
     "choices": [
       {
@@ -2288,7 +2639,20 @@
   {
     "name": "Heavy Armor Master",
     "category": "General",
-    "prerequisite": "Level 4+, Proficiency with Heavy armor",
+    "prerequisite": {
+      "type": "allOf",
+      "of": [
+        {
+          "type": "level",
+          "value": 4
+        },
+        {
+          "type": "feature",
+          "featureName": "Heavy Armor Proficiency"
+        }
+      ]
+    },
+    "prerequisiteText": "Level 4+, Proficiency with Heavy armor",
     "description": "You gain the following benefits.\n\n**Damage Reduction.** When you're hit by an attack while you're wearing Heavy armor, any Bludgeoning, Piercing, and Slashing damage dealt to you by that attack is reduced by an amount equal to your Proficiency Bonus.",
     "choices": [
       {
@@ -2334,7 +2698,11 @@
   {
     "name": "Infernal Constitution",
     "category": "General",
-    "prerequisite": "Tiefling species",
+    "prerequisite": {
+      "type": "species",
+      "species": "Tiefling"
+    },
+    "prerequisiteText": "Tiefling species",
     "description": "Fiendish blood runs strong in you, unlocking a resilience akin to that possessed by some fiends. You have resistance to cold and poison damage. You have {rule:Advantage} on saving throws against being {condition:Poisoned}.",
     "effects": {
       "modifiers": [
@@ -2363,7 +2731,31 @@
   {
     "name": "Inspiring Leader",
     "category": "General",
-    "prerequisite": "Level 4+, Wisdom 13+ or Charisma 13+",
+    "prerequisite": {
+      "type": "allOf",
+      "of": [
+        {
+          "type": "level",
+          "value": 4
+        },
+        {
+          "type": "anyOf",
+          "of": [
+            {
+              "type": "ability",
+              "ability": "wisdom",
+              "min": 13
+            },
+            {
+              "type": "ability",
+              "ability": "charisma",
+              "min": 13
+            }
+          ]
+        }
+      ]
+    },
+    "prerequisiteText": "Level 4+, Wisdom 13+ or Charisma 13+",
     "description": "You gain the following benefits.\n\n**Bolstering Performance.** When you finish a {rule:Short Rest} or {rule:Long Rest}, you can give an inspiring performance: a speech, song, or dance. When you do so, choose up to six allies (which can include yourself) within 30 feet of yourself who witness the performance. The chosen creatures each gain Temporary Hit Points equal to your character level plus the modifier of the ability you increased with this feat.",
     "choices": [
       {
@@ -2409,7 +2801,11 @@
   {
     "name": "Interception",
     "category": "Fighting Style",
-    "prerequisite": "Fighting Style feature",
+    "prerequisite": {
+      "type": "feature",
+      "featureName": "Fighting Style"
+    },
+    "prerequisiteText": "Fighting Style feature",
     "description": "When a creature you can see hits another creature within 5 feet of you with an attack roll, you can take a {rule:Reaction} to reduce the damage dealt to the target by 1d10 plus your Proficiency Bonus. You must be holding a Shield or a Simple or Martial weapon to use this Reaction.",
     "effects": {
       "properties": [
@@ -2424,7 +2820,21 @@
   {
     "name": "Keen Mind",
     "category": "General",
-    "prerequisite": "Level 4+, Intelligence 13+",
+    "prerequisite": {
+      "type": "allOf",
+      "of": [
+        {
+          "type": "level",
+          "value": 4
+        },
+        {
+          "type": "ability",
+          "ability": "intelligence",
+          "min": 13
+        }
+      ]
+    },
+    "prerequisiteText": "Level 4+, Intelligence 13+",
     "description": "You gain the following benefits.\n\n**Lore Knowledge.** Choose one of the following skills: Arcana, History, Investigation, Nature, or Religion. If you lack proficiency in the chosen skill, you gain proficiency in it, and if you already have proficiency in it, you gain {rule:Expertise} in it.\n\n**Quick Study.** You can take the {action:Study} action as a Bonus Action.",
     "effects": {
       "modifiers": [
@@ -2460,7 +2870,11 @@
   {
     "name": "Lightly Armored",
     "category": "General",
-    "prerequisite": "Level 4+",
+    "prerequisite": {
+      "type": "level",
+      "value": 4
+    },
+    "prerequisiteText": "Level 4+",
     "description": "You gain the following benefits.\n\n**Armor Training.** You gain training with Light armor and Shields.",
     "choices": [
       {
@@ -2535,7 +2949,11 @@
   {
     "name": "Mage Slayer",
     "category": "General",
-    "prerequisite": "Level 4+",
+    "prerequisite": {
+      "type": "level",
+      "value": 4
+    },
+    "prerequisiteText": "Level 4+",
     "description": "You gain the following benefits.\n\n**Concentration Breaker.** When you damage a creature that is {status:Concentration|Concentrating}, it has {rule:Disadvantage} on the saving throw it makes to maintain {status:Concentration}.\n\n**Guarded Mind.** If you fail an Intelligence, a Wisdom, or a Charisma saving throw, you can cause yourself to succeed instead. Once you use this benefit, you can't use it again until you finish a {rule:Short Rest} or {rule:Long Rest}.",
     "choices": [
       {
@@ -2642,7 +3060,11 @@
   {
     "name": "Martial Weapon Training",
     "category": "General",
-    "prerequisite": "Level 4+",
+    "prerequisite": {
+      "type": "level",
+      "value": 4
+    },
+    "prerequisiteText": "Level 4+",
     "description": "You gain the following benefits.\n\n**Weapon Proficiency.** You gain proficiency with Martial weapons.",
     "choices": [
       {
@@ -2689,7 +3111,20 @@
   {
     "name": "Medium Armor Master",
     "category": "General",
-    "prerequisite": "Level 4+, Proficiency with Medium armor",
+    "prerequisite": {
+      "type": "allOf",
+      "of": [
+        {
+          "type": "level",
+          "value": 4
+        },
+        {
+          "type": "feature",
+          "featureName": "Medium Armor Proficiency"
+        }
+      ]
+    },
+    "prerequisiteText": "Level 4+, Proficiency with Medium armor",
     "description": "You gain the following benefits.\n\n**Dexterous Wearer.** While you're wearing Medium armor, you can add 3, rather than 2, to your AC if you have a Dexterity score of 16 or higher.",
     "choices": [
       {
@@ -2735,7 +3170,10 @@
   {
     "name": "Metamagic Adept",
     "category": "General",
-    "prerequisite": "Spellcasting or Pact Magic feature",
+    "prerequisite": {
+      "type": "spellcasting"
+    },
+    "prerequisiteText": "Spellcasting or Pact Magic feature",
     "description": "You've learned how to exert your will on your spells to alter how they function. You learn two Metamagic options of your choice from the {class:Sorcerer} class. You can use only one Metamagic option on a spell when you cast it, unless the option says otherwise. Whenever you reach a level that grants the Ability Score Improvement feature, you can replace one of these Metamagic options with another one from the Sorcerer class. You gain 2 sorcery points to spend on Metamagic (these points are added to any sorcery points you have from another source but can be used only on Metamagic). You regain all spent sorcery points when you finish a {rule:Long Rest}.",
     "effects": {
       "properties": [
@@ -2770,7 +3208,20 @@
   {
     "name": "Moderately Armored",
     "category": "General",
-    "prerequisite": "Level 4+, Proficiency with Light armor",
+    "prerequisite": {
+      "type": "allOf",
+      "of": [
+        {
+          "type": "level",
+          "value": 4
+        },
+        {
+          "type": "feature",
+          "featureName": "Light Armor Proficiency"
+        }
+      ]
+    },
+    "prerequisiteText": "Level 4+, Proficiency with Light armor",
     "description": "You gain the following benefits.\n\n**Armor Training.** You gain training with Medium armor.",
     "choices": [
       {
@@ -2817,7 +3268,11 @@
   {
     "name": "Mounted Combatant",
     "category": "General",
-    "prerequisite": "Level 4+",
+    "prerequisite": {
+      "type": "level",
+      "value": 4
+    },
+    "prerequisiteText": "Level 4+",
     "description": "You gain the following benefits.\n\n**Mounted Strike.** While mounted, you have {rule:Advantage} on attack rolls against any unmounted creature within 5 feet of your mount that is at least one size smaller than the mount.\n\n**Leap Aside.** If your mount is subjected to an effect that allows it to make a Dexterity saving throw to take only half damage, it instead takes no damage if it succeeds on the saving throw and only half damage if it fails. For your mount to gain this benefit, you must be riding it, and neither of you can have the {condition:Incapacitated} condition.\n\n**Veer.** While mounted, you can force an attack that hits your mount to hit you instead if you don't have the {condition:Incapacitated} condition.",
     "choices": [
       {
@@ -2905,7 +3360,31 @@
   {
     "name": "Observant",
     "category": "General",
-    "prerequisite": "Level 4+, Intelligence 13+ or Wisdom 13+",
+    "prerequisite": {
+      "type": "allOf",
+      "of": [
+        {
+          "type": "level",
+          "value": 4
+        },
+        {
+          "type": "anyOf",
+          "of": [
+            {
+              "type": "ability",
+              "ability": "intelligence",
+              "min": 13
+            },
+            {
+              "type": "ability",
+              "ability": "wisdom",
+              "min": 13
+            }
+          ]
+        }
+      ]
+    },
+    "prerequisiteText": "Level 4+, Intelligence 13+ or Wisdom 13+",
     "description": "You gain the following benefits.\n\n**Keen Observer.** Choose one of the following skills: {rule:Insight}, {rule:Investigation}, or Perception. If you lack proficiency with the chosen skill, you gain proficiency in it, and if you already have proficiency in it, you gain {rule:Expertise} in it.\n\n**Quick Search.** You can take the {action:Search} action as a Bonus Action.",
     "choices": [
       {
@@ -2963,7 +3442,11 @@
   {
     "name": "Orcish Fury",
     "category": "General",
-    "prerequisite": "Half-Orc species",
+    "prerequisite": {
+      "type": "species",
+      "species": "Half-Orc"
+    },
+    "prerequisiteText": "Half-Orc species",
     "description": "Your fury burns tirelessly. You gain the following benefits:\n\nWhen you hit with an attack using a simple or martial weapon, you can roll one of the weapon's damage dice an additional time and add it as extra damage of the weapon's damage type. Once you use this ability, you can't use it again until you finish a Short or Long Rest.\n\nImmediately after you use your Relentless Endurance trait, you can use your reaction to make one weapon attack.",
     "choices": [
       {
@@ -3020,7 +3503,11 @@
   {
     "name": "Piercer",
     "category": "General",
-    "prerequisite": "Level 4+",
+    "prerequisite": {
+      "type": "level",
+      "value": 4
+    },
+    "prerequisiteText": "Level 4+",
     "description": "You gain the following benefits.\n\n**Puncture.** Once per turn, when you hit a creature with an attack that deals Piercing damage, you can reroll one of the attack's damage dice, and you must use the new roll.\n\n**Enhanced Critical.** When you score a {rule:Critical Hit} that deals Piercing damage to a creature, you can roll one additional damage die when determining the extra Piercing damage the target takes.",
     "choices": [
       {
@@ -3070,7 +3557,11 @@
   {
     "name": "Poisoner",
     "category": "General",
-    "prerequisite": "Level 4+",
+    "prerequisite": {
+      "type": "level",
+      "value": 4
+    },
+    "prerequisiteText": "Level 4+",
     "description": "You gain the following benefits.\n\n**Potent Poison.** When you make a damage roll that deals Poison damage, it ignores {rule:Resistance} to Poison damage.\n\n**Brew Poison.** You gain proficiency with the Poisoner's Kit. With 1 hour of work using such a kit and expending 50 GP worth of materials, you can create a number of poison doses equal to your Proficiency Bonus. As a Bonus Action, you can apply a poison dose to a weapon or piece of ammunition. Once applied, the poison retains its potency for 1 minute or until you deal damage with the poisoned item, whichever is shorter. When a creature takes damage from the poisoned item, that creature must succeed on a Constitution saving throw (DC 8 plus the modifier of the ability increased by this feat and your Proficiency Bonus) or take 2d8 Poison damage and have the {condition:Poisoned} condition until the end of your next turn.",
     "choices": [
       {
@@ -3125,7 +3616,31 @@
   {
     "name": "Polearm Master",
     "category": "General",
-    "prerequisite": "Level 4+, Strength 13+ or Dexterity 13+",
+    "prerequisite": {
+      "type": "allOf",
+      "of": [
+        {
+          "type": "level",
+          "value": 4
+        },
+        {
+          "type": "anyOf",
+          "of": [
+            {
+              "type": "ability",
+              "ability": "strength",
+              "min": 13
+            },
+            {
+              "type": "ability",
+              "ability": "dexterity",
+              "min": 13
+            }
+          ]
+        }
+      ]
+    },
+    "prerequisiteText": "Level 4+, Strength 13+ or Dexterity 13+",
     "description": "You gain the following benefits.\n\n**Pole Strike.** Immediately after you take the {action:Attack} action and attack with a Quarterstaff, a Spear, or a weapon that has the Heavy and Reach properties, you can use a Bonus Action to make a melee attack with the opposite end of the weapon. The weapon deals Bludgeoning damage, and the weapon's damage die for this attack is a d4.\n\n**Reactive Strike.** While you're holding a Quarterstaff, a Spear, or a weapon that has the Heavy and Reach properties, you can take a Reaction to make one melee attack against a creature that enters the reach you have with that weapon.",
     "choices": [
       {
@@ -3175,7 +3690,24 @@
   {
     "name": "Prodigy",
     "category": "General",
-    "prerequisite": "Half-Elf, Half-Orc, or Human species",
+    "prerequisite": {
+      "type": "anyOf",
+      "of": [
+        {
+          "type": "species",
+          "species": "Half-Elf"
+        },
+        {
+          "type": "species",
+          "species": "Half-Orc"
+        },
+        {
+          "type": "species",
+          "species": "Human"
+        }
+      ]
+    },
+    "prerequisiteText": "Half-Elf, Half-Orc, or Human species",
     "description": "You have a knack for learning new things. You gain the following benefits:\n\nYou gain one skill proficiency of your choice, one tool proficiency of your choice, and fluency in one language of your choice.\n\nChoose one skill in which you have proficiency. You gain {rule:Expertise} with that skill, which means your proficiency bonus is doubled for any ability check you make with it. The skill you choose must be one that isn't already benefiting from a feature, such as Expertise, that doubles your proficiency bonus.",
     "choices": [
       {
@@ -3211,7 +3743,11 @@
   {
     "name": "Protection",
     "category": "Fighting Style",
-    "prerequisite": "Fighting Style feature",
+    "prerequisite": {
+      "type": "feature",
+      "featureName": "Fighting Style"
+    },
+    "prerequisiteText": "Fighting Style feature",
     "description": "When a creature you can see attacks a target other than you that is within 5 feet of you, you can take a {rule:Reaction} to interpose your Shield if you're holding one. You impose {rule:Disadvantage} on the triggering attack roll and all other attack rolls against the target until the start of your next turn if you remain within 5 feet of the target.",
     "effects": {
       "properties": [
@@ -3226,7 +3762,11 @@
   {
     "name": "Resilient",
     "category": "General",
-    "prerequisite": "Level 4+",
+    "prerequisite": {
+      "type": "level",
+      "value": 4
+    },
+    "prerequisiteText": "Level 4+",
     "description": "You gain the following benefits.\n\n**Saving Throw Proficiency.** Choose one ability in which you lack saving throw proficiency. You gain saving throw proficiency with the chosen ability, and increase that ability score by 1, to a maximum of 20.",
     "choices": [
       {
@@ -3350,7 +3890,36 @@
   {
     "name": "Ritual Caster",
     "category": "General",
-    "prerequisite": "Level 4+, Intelligence 13+, Wisdom 13+, or Charisma 13+",
+    "prerequisite": {
+      "type": "allOf",
+      "of": [
+        {
+          "type": "level",
+          "value": 4
+        },
+        {
+          "type": "anyOf",
+          "of": [
+            {
+              "type": "ability",
+              "ability": "intelligence",
+              "min": 13
+            },
+            {
+              "type": "ability",
+              "ability": "wisdom",
+              "min": 13
+            },
+            {
+              "type": "ability",
+              "ability": "charisma",
+              "min": 13
+            }
+          ]
+        }
+      ]
+    },
+    "prerequisiteText": "Level 4+, Intelligence 13+, Wisdom 13+, or Charisma 13+",
     "description": "You gain the following benefits.\n\n**Ritual Spells.** Choose a number of level 1 spells equal to your Proficiency Bonus that have the Ritual tag. You always have those spells prepared, and you can cast them with any spell slots you have. The spells' spellcasting ability is the ability increased by this feat. Whenever your Proficiency Bonus increases thereafter, you can add an additional level 1 Ritual spell to the spells always prepared with this feature.\n\n**Quick Ritual.** With this benefit, you can cast a {rule:Ritual} spell that you have prepared using its regular casting time rather than the extended time for a Ritual. Doing so doesn't require a spell slot. Once you cast the spell in this way, you can't use this benefit again until you finish a Long Rest.",
     "choices": [
       {
@@ -3426,7 +3995,11 @@
   {
     "name": "Second Chance",
     "category": "General",
-    "prerequisite": "Halfling species",
+    "prerequisite": {
+      "type": "species",
+      "species": "Halfling"
+    },
+    "prerequisiteText": "Halfling species",
     "description": "Fortune favors you when someone tries to strike you. When a creature you can see hits you with an attack roll, you can use your reaction to force that creature to reroll. Once you use this ability, you can't use it again until you roll initiative at the start of combat or until you finish a Short or Long Rest.",
     "choices": [
       {
@@ -3490,7 +4063,31 @@
   {
     "name": "Sentinel",
     "category": "General",
-    "prerequisite": "Level 4+, Strength 13+ or Dexterity 13+",
+    "prerequisite": {
+      "type": "allOf",
+      "of": [
+        {
+          "type": "level",
+          "value": 4
+        },
+        {
+          "type": "anyOf",
+          "of": [
+            {
+              "type": "ability",
+              "ability": "strength",
+              "min": 13
+            },
+            {
+              "type": "ability",
+              "ability": "dexterity",
+              "min": 13
+            }
+          ]
+        }
+      ]
+    },
+    "prerequisiteText": "Level 4+, Strength 13+ or Dexterity 13+",
     "description": "You gain the following benefits.\n\n**Guardian.** Immediately after a creature within 5 feet of you takes the {action:Disengage} action or hits a target other than you with an attack, you can make an {action:Opportunity Attack} against that creature.\n\n**Halt.** When you hit a creature with an {action:Opportunity Attack}, the creature's Speed becomes 0 for the rest of the current turn.",
     "choices": [
       {
@@ -3540,7 +4137,11 @@
   {
     "name": "Shadow-Touched",
     "category": "General",
-    "prerequisite": "Level 4+",
+    "prerequisite": {
+      "type": "level",
+      "value": 4
+    },
+    "prerequisiteText": "Level 4+",
     "description": "Your exposure to the Shadowfell's magic grants you the following benefits.\n\n**Shadow Magic.** Choose one level 1 spell from the Illusion or Necromancy school of magic. You always have that spell and the {spell:Invisibility} spell prepared. You can cast each of these spells without expending a spell slot. Once you cast either spell in this way, you can't cast that spell in this way again until you finish a Long Rest. You can also cast these spells using spell slots you have of the appropriate level. The spells' spellcasting ability is the ability increased by this feat.",
     "choices": [
       {
@@ -3615,7 +4216,21 @@
   {
     "name": "Sharpshooter",
     "category": "General",
-    "prerequisite": "Level 4+, Dexterity 13+",
+    "prerequisite": {
+      "type": "allOf",
+      "of": [
+        {
+          "type": "level",
+          "value": 4
+        },
+        {
+          "type": "ability",
+          "ability": "dexterity",
+          "min": 13
+        }
+      ]
+    },
+    "prerequisiteText": "Level 4+, Dexterity 13+",
     "description": "Increase your Dexterity score by 1, to a maximum of 20. You gain the following benefits.\n\n**Bypass Cover.** Your ranged attacks with weapons ignore Half Cover and Three-Quarters Cover.\n\n**Firing in Melee.** Being within 5 feet of an enemy doesn't impose {rule:Disadvantage} on your attack rolls with Ranged weapons.\n\n**Long Shots.** Attacking at long range doesn't impose {rule:Disadvantage} on your attack rolls with Ranged weapons.",
     "effects": {
       "modifiers": [
@@ -3643,7 +4258,20 @@
   {
     "name": "Shield Master",
     "category": "General",
-    "prerequisite": "Level 4+, proficiency with Shields",
+    "prerequisite": {
+      "type": "allOf",
+      "of": [
+        {
+          "type": "level",
+          "value": 4
+        },
+        {
+          "type": "feature",
+          "featureName": "Shield Proficiency"
+        }
+      ]
+    },
+    "prerequisiteText": "Level 4+, proficiency with Shields",
     "description": "Increase your Strength score by 1, to a maximum of 20. You gain the following benefits.\n\n**Shield Bash.** If you attack a creature within 5 feet of you as part of the {action:Attack} action and hit with a Melee weapon, you can immediately bash the target with your Shield if it's equipped, forcing the target to make a Strength saving throw (DC 8 plus your Strength modifier and Proficiency Bonus). On a failed save, you either push the target 5 feet from you or cause it to have the {condition:Prone} condition (your choice). You can use this benefit only once on each of your turns.\n\n**Interpose Shield.** If you're subjected to an effect that allows you to make a Dexterity saving throw to take only half damage, you can take a Reaction to take no damage if you succeed on the saving throw and are holding a Shield.",
     "effects": {
       "modifiers": [
@@ -3667,7 +4295,11 @@
   {
     "name": "Skill Expert",
     "category": "General",
-    "prerequisite": "Level 4+",
+    "prerequisite": {
+      "type": "level",
+      "value": 4
+    },
+    "prerequisiteText": "Level 4+",
     "description": "You gain the following benefits.\n\n**Skill Proficiency.** You gain proficiency in one skill of your choice.\n\n**Expertise.** Choose one skill in which you have proficiency but lack {rule:Expertise}. You gain Expertise with that skill.",
     "choices": [
       {
@@ -3778,7 +4410,21 @@
   {
     "name": "Skulker",
     "category": "General",
-    "prerequisite": "Level 4+, Dexterity 13+",
+    "prerequisite": {
+      "type": "allOf",
+      "of": [
+        {
+          "type": "level",
+          "value": 4
+        },
+        {
+          "type": "ability",
+          "ability": "dexterity",
+          "min": 13
+        }
+      ]
+    },
+    "prerequisiteText": "Level 4+, Dexterity 13+",
     "description": "Increase your Dexterity score by 1, to a maximum of 20. You gain the following benefits.\n\n**Blindsight.** You have {rule:Blindsight} with a range of 10 feet.\n\n**Fog of War.** You exploit the distractions of battle, gaining {rule:Advantage} on any Dexterity (Stealth) check you make as part of the {action:Hide} action during combat.\n\n**Sniper.** If you make an attack roll while hidden and the roll misses, making the attack roll doesn't reveal your location.",
     "effects": {
       "modifiers": [
@@ -3808,7 +4454,11 @@
   {
     "name": "Slasher",
     "category": "General",
-    "prerequisite": "Level 4+",
+    "prerequisite": {
+      "type": "level",
+      "value": 4
+    },
+    "prerequisiteText": "Level 4+",
     "description": "You gain the following benefits.\n\n**Hamstring.** Once per turn when you hit a creature with an attack that deals Slashing damage, you can reduce the Speed of that creature by 10 feet until the start of your next turn.\n\n**Enhanced Critical.** When you score a {rule:Critical Hit} that deals Slashing damage to a creature, it has {rule:Disadvantage} on attack rolls until the start of your next turn.",
     "choices": [
       {
@@ -3858,7 +4508,31 @@
   {
     "name": "Speedy",
     "category": "General",
-    "prerequisite": "Level 4+, Dexterity 13+ or Constitution 13+",
+    "prerequisite": {
+      "type": "allOf",
+      "of": [
+        {
+          "type": "level",
+          "value": 4
+        },
+        {
+          "type": "anyOf",
+          "of": [
+            {
+              "type": "ability",
+              "ability": "dexterity",
+              "min": 13
+            },
+            {
+              "type": "ability",
+              "ability": "constitution",
+              "min": 13
+            }
+          ]
+        }
+      ]
+    },
+    "prerequisiteText": "Level 4+, Dexterity 13+ or Constitution 13+",
     "description": "You gain the following benefits.\n\n**Speed Increase.** Your Speed increases by 10 feet.\n\n**Dash over Difficult Terrain.** When you take the {action:Dash} action on your turn, Difficult Terrain doesn't cost you extra movement for the rest of that turn.\n\n**Agile Movement.** Opportunity Attacks have {rule:Disadvantage} against you.",
     "choices": [
       {
@@ -3914,7 +4588,19 @@
   {
     "name": "Spell Sniper",
     "category": "General",
-    "prerequisite": "Level 4+, Spellcasting or Pact Magic feature",
+    "prerequisite": {
+      "type": "allOf",
+      "of": [
+        {
+          "type": "level",
+          "value": 4
+        },
+        {
+          "type": "spellcasting"
+        }
+      ]
+    },
+    "prerequisiteText": "Level 4+, Spellcasting or Pact Magic feature",
     "description": "You gain the following benefits.\n\n**Bypass Cover.** Your attack rolls for spells ignore Half Cover and Three-Quarters Cover.\n\n**Casting in Melee.** Being within 5 feet of an enemy doesn't impose {rule:Disadvantage} on your attack rolls with spells.\n\n**Increased Range.** When you cast a spell that has a range of at least 10 feet and requires you to make an attack roll, you can increase the spell's range by 60 feet.",
     "choices": [
       {
@@ -3979,7 +4665,20 @@
   {
     "name": "Squat Nimbleness",
     "category": "General",
-    "prerequisite": "Dwarf or Small species",
+    "prerequisite": {
+      "type": "anyOf",
+      "of": [
+        {
+          "type": "species",
+          "species": "Dwarf"
+        },
+        {
+          "type": "species",
+          "species": "Small"
+        }
+      ]
+    },
+    "prerequisiteText": "Dwarf or Small species",
     "description": "You are uncommonly nimble for your species. You gain the following benefits:\n\nYour walking speed increases by 5 feet.\n\nYou gain proficiency in the Acrobatics or Athletics skill (your choice).\n\nYou have {rule:Advantage} on any Strength (Athletics) or Dexterity (Acrobatics) check you make to escape from being {condition:Grappled}.",
     "choices": [
       {
@@ -4074,7 +4773,11 @@
   {
     "name": "Telekinetic",
     "category": "General",
-    "prerequisite": "Level 4+",
+    "prerequisite": {
+      "type": "level",
+      "value": 4
+    },
+    "prerequisiteText": "Level 4+",
     "description": "You gain the following benefits.\n\n**Minor Telekinesis.** You learn the {spell:Mage Hand} spell. You can cast it without Verbal or Somatic components, you can make the spectral hand invisible, and its range and the distance it can be away from you both increase by 30 feet when you cast it. The spell's spellcasting ability is the ability increased by this feat.\n\n**Telekinetic Shove.** As a Bonus Action, you can telekinetically shove one creature you can see within 30 feet of yourself. When you do so, the target must succeed on a Strength saving throw (DC 8 plus the ability modifier of the score increased by this feat and your Proficiency Bonus) or be moved 5 feet toward or away from you.",
     "choices": [
       {
@@ -4140,7 +4843,11 @@
   {
     "name": "Telepathic",
     "category": "General",
-    "prerequisite": "Level 4+",
+    "prerequisite": {
+      "type": "level",
+      "value": 4
+    },
+    "prerequisiteText": "Level 4+",
     "description": "You gain the following benefits.\n\n**Telepathic Utterance.** You can speak telepathically to any creature you can see within 60 feet of yourself. Your telepathic utterances are in a language you know, and the creature understands you only if it knows that language. Your communication doesn't give the creature the ability to respond to you telepathically.\n\n**Detect Thoughts.** You always have the {spell:Detect Thoughts} spell prepared. You can cast it without a spell slot or spell components, and you must finish a Long Rest before you can cast it in this way again. You can also cast it using spell slots you have of the appropriate level. Your spellcasting ability for the spell is the ability increased by this feat.",
     "choices": [
       {
@@ -4206,7 +4913,11 @@
   {
     "name": "Thrown Weapon Fighting",
     "category": "Fighting Style",
-    "prerequisite": "Fighting Style feature",
+    "prerequisite": {
+      "type": "feature",
+      "featureName": "Fighting Style"
+    },
+    "prerequisiteText": "Fighting Style feature",
     "description": "When you hit with a ranged attack roll using a weapon that has the Thrown property, you gain a +2 bonus to the damage roll.",
     "effects": {
       "modifiers": [
@@ -4234,7 +4945,11 @@
   {
     "name": "Two-Weapon Fighting",
     "category": "Fighting Style",
-    "prerequisite": "Fighting Style feature",
+    "prerequisite": {
+      "type": "feature",
+      "featureName": "Fighting Style"
+    },
+    "prerequisiteText": "Fighting Style feature",
     "description": "When you make an extra attack as a result of using a weapon that has the Light property, you can add your ability modifier to the damage of that attack if you aren't already adding it to the damage.",
     "effects": {
       "properties": [
@@ -4248,7 +4963,11 @@
   {
     "name": "Unarmed Fighting",
     "category": "Fighting Style",
-    "prerequisite": "Fighting Style feature",
+    "prerequisite": {
+      "type": "feature",
+      "featureName": "Fighting Style"
+    },
+    "prerequisiteText": "Fighting Style feature",
     "description": "When you hit with your Unarmed Strike and deal damage, you can deal Bludgeoning damage equal to 1d6 plus your Strength modifier instead of the normal damage of an Unarmed Strike. If you aren't holding any weapons or a Shield when you make the attack roll, the d6 becomes a d8.\n\nAt the start of each of your turns, you can deal 1d4 Bludgeoning damage to one creature {condition:Grappled} by you.",
     "effects": {
       "properties": [
@@ -4266,7 +4985,19 @@
   {
     "name": "War Caster",
     "category": "General",
-    "prerequisite": "Level 4+, Spellcasting or Pact Magic feature",
+    "prerequisite": {
+      "type": "allOf",
+      "of": [
+        {
+          "type": "level",
+          "value": 4
+        },
+        {
+          "type": "spellcasting"
+        }
+      ]
+    },
+    "prerequisiteText": "Level 4+, Spellcasting or Pact Magic feature",
     "description": "You gain the following benefits.\n\n**Concentration.** You have {rule:Advantage} on Constitution saving throws that you make to maintain {status:Concentration}.\n\n**Reactive Spell.** When a creature provokes an {action:Opportunity Attack} from you by leaving your reach, you can take a Reaction to cast a spell at the creature rather than making an Opportunity Attack. The spell must have a casting time of one action and must target only that creature.\n\n**Somatic Components.** You can perform the Somatic components of spells even when you have weapons or a Shield in one or both hands.",
     "choices": [
       {
@@ -4331,7 +5062,11 @@
   {
     "name": "Weapon Master",
     "category": "General",
-    "prerequisite": "Level 4+",
+    "prerequisite": {
+      "type": "level",
+      "value": 4
+    },
+    "prerequisiteText": "Level 4+",
     "description": "You gain the following benefits.\n\n**Mastery Property.** Your training with weapons allows you to use the mastery property of one kind of Simple or Martial weapon of your choice, provided you have proficiency with it. Whenever you finish a Long Rest, you can change the kind of weapon to another eligible kind.",
     "choices": [
       {
@@ -4377,7 +5112,11 @@
   {
     "name": "Wood Elf Magic",
     "category": "General",
-    "prerequisite": "Wood Elf species",
+    "prerequisite": {
+      "type": "species",
+      "species": "Wood Elf"
+    },
+    "prerequisiteText": "Wood Elf species",
     "description": "You learn the magic of the primeval woods, which are revered and protected by your people. You learn one Druid cantrip of your choice. You also learn the {spell:Longstrider} and {spell:Pass without Trace} spells, each of which you can cast once without expending a spell slot. You regain the ability to cast these two spells in this way when you finish a Long Rest. Wisdom is your spellcasting ability for all three spells.",
     "choices": [
       {

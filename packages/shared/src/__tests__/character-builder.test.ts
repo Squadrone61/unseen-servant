@@ -178,7 +178,7 @@ describe("Rogue 1 — martial build", () => {
         level: 1,
         subclass: null,
         skills: ["stealth", "perception"],
-        choices: { expertise_1: ["stealth", "perception"] },
+        choices: { expertise: ["stealth", "perception"] },
       },
     ],
     baseAbilities: {
@@ -795,19 +795,6 @@ describe("Minimal state — level 1 no subclass", () => {
     const state = makeBuilderState({ species: "Human" });
     const { character } = buildCharacter(state);
     expect(character.static.languages).toContain("Common");
-  });
-
-  it("extra languages from speciesChoices are included", () => {
-    const state = makeBuilderState({
-      species: "Human",
-      speciesChoices: {
-        language_extra: ["Elvish", "Dwarvish"],
-      },
-    });
-    const { character } = buildCharacter(state);
-    expect(character.static.languages).toContain("Common");
-    expect(character.static.languages).toContain("Elvish");
-    expect(character.static.languages).toContain("Dwarvish");
   });
 
   it("output has all required static fields", () => {

@@ -260,12 +260,47 @@ function formatFeatFn(f: FeatDb): string {
   return text;
 }
 
+/** Extract proficiency properties from the L1 Proficiencies feature or class-level effects. */
+function getClassProficiencies(c: ClassDb): {
+  saves: string[];
+  armor: string[];
+  weapons: string[];
+  tools: string[];
+} {
+  // Prefer L1 "Proficiencies" feature; fall back to class-level effects
+  const l1Feat = c.features.find((f) => f.name === "Proficiencies" && f.level === 1);
+  const props = l1Feat?.effects?.properties ?? c.effects?.properties ?? [];
+  const saves: string[] = [];
+  const armor: string[] = [];
+  const weapons: string[] = [];
+  const tools: string[] = [];
+  for (const p of props) {
+    if (p.type !== "proficiency") continue;
+    switch (p.category) {
+      case "save":
+        saves.push(p.value);
+        break;
+      case "armor":
+        armor.push(p.value);
+        break;
+      case "weapon":
+        weapons.push(p.value);
+        break;
+      case "tool":
+        tools.push(p.value);
+        break;
+    }
+  }
+  return { saves, armor, weapons, tools };
+}
+
 function formatClassSummary(c: ClassDb): string {
+  const { saves, armor } = getClassProficiencies(c);
   const parts: string[] = [
     `${c.name}: d${c.hitDiceFaces} HD`,
-    `Saves: ${c.savingThrows.join("/")}`,
+    ...(saves.length ? [`Saves: ${saves.join("/")}`] : []),
   ];
-  if (c.armorProficiencies.length) parts.push(c.armorProficiencies.join(", "));
+  if (armor.length) parts.push(armor.join(", "));
   if (c.casterProgression) parts.push(`${c.casterProgression} caster`);
   else parts.push("non-caster");
   parts.push(`${c.subclasses.length} subclasses`);
@@ -273,15 +308,13 @@ function formatClassSummary(c: ClassDb): string {
 }
 
 function formatClassFn(c: ClassDb): string {
+  const { saves, armor, weapons, tools } = getClassProficiencies(c);
   let text = `# ${c.name}\n\n`;
   text += `**Hit Die:** d${c.hitDiceFaces}\n`;
-  text += `**Saving Throws:** ${c.savingThrows.join(", ")}\n`;
-  if (c.armorProficiencies.length)
-    text += `**Armor Proficiencies:** ${c.armorProficiencies.join(", ")}\n`;
-  if (c.weaponProficiencies.length)
-    text += `**Weapon Proficiencies:** ${c.weaponProficiencies.join(", ")}\n`;
-  if (c.toolProficiencies.length)
-    text += `**Tool Proficiencies:** ${c.toolProficiencies.join(", ")}\n`;
+  if (saves.length) text += `**Saving Throws:** ${saves.join(", ")}\n`;
+  if (armor.length) text += `**Armor Proficiencies:** ${armor.join(", ")}\n`;
+  if (weapons.length) text += `**Weapon Proficiencies:** ${weapons.join(", ")}\n`;
+  if (tools.length) text += `**Tool Proficiencies:** ${tools.join(", ")}\n`;
   if (c.skillChoices.from.length)
     text += `**Skill Choices:** Choose ${c.skillChoices.count} from ${c.skillChoices.from.join(", ")}\n`;
   if (c.casterProgression) text += `**Caster Type:** ${c.casterProgression}\n`;
@@ -300,9 +333,19 @@ function formatClassFn(c: ClassDb): string {
   return text;
 }
 
+/** Extract darkvision range (if any) from species effects properties. */
+function getSpeciesDarkvision(s: SpeciesDb): number | undefined {
+  const props = s.effects?.properties ?? [];
+  const sense = props.find(
+    (p) => p.type === "sense" && (p as { sense?: string }).sense === "darkvision",
+  );
+  return sense ? (sense as { range: number }).range : undefined;
+}
+
 function formatSpeciesSummary(s: SpeciesDb): string {
   const parts: string[] = [`${s.name}: ${formatSpeciesSize(s.size)}, ${s.speed} ft.`];
-  if (s.darkvision) parts.push(`Darkvision ${s.darkvision} ft.`);
+  const dv = getSpeciesDarkvision(s);
+  if (dv) parts.push(`Darkvision ${dv} ft.`);
   return parts.join(" | ");
 }
 
@@ -310,24 +353,40 @@ function formatSpeciesFn(s: SpeciesDb): string {
   let text = `# ${s.name}\n\n`;
   text += `**Size:** ${formatSpeciesSize(s.size)}\n`;
   text += `**Speed:** ${s.speed} ft.\n`;
-  if (s.darkvision) text += `**Darkvision:** ${s.darkvision} ft.\n`;
+  const dv = getSpeciesDarkvision(s);
+  if (dv) text += `**Darkvision:** ${dv} ft.\n`;
   text += `\n**Description:**\n${s.description}`;
   return text;
 }
 
+/** Extract skill and tool proficiencies from background effects properties. */
+function getBackgroundProficiencies(b: BackgroundDb): { skills: string[]; tools: string[] } {
+  const props = b.effects?.properties ?? [];
+  const skills: string[] = [];
+  const tools: string[] = [];
+  for (const p of props) {
+    if (p.type !== "proficiency") continue;
+    if (p.category === "skill") skills.push(p.value);
+    else if (p.category === "tool") tools.push(p.value);
+  }
+  return { skills, tools };
+}
+
 function formatBackgroundSummary(b: BackgroundDb): string {
+  const { skills, tools } = getBackgroundProficiencies(b);
   const parts: string[] = [b.name + ":"];
-  if (b.skills.length) parts.push(b.skills.join(" + "));
-  if (b.tools.length) parts.push(b.tools.join(", "));
+  if (skills.length) parts.push(skills.join(" + "));
+  if (tools.length) parts.push(tools.join(", "));
   if (b.feat) parts.push(`Feat: ${b.feat}`);
   return parts.join(" | ");
 }
 
 function formatBackgroundFn(b: BackgroundDb): string {
+  const { skills, tools } = getBackgroundProficiencies(b);
   let text = `# ${b.name}\n\n`;
   text += b.description + "\n\n";
-  if (b.skills.length) text += `**Skill Proficiencies:** ${b.skills.join(", ")}\n`;
-  if (b.tools.length) text += `**Tool Proficiencies:** ${b.tools.join(", ")}\n`;
+  if (skills.length) text += `**Skill Proficiencies:** ${skills.join(", ")}\n`;
+  if (tools.length) text += `**Tool Proficiencies:** ${tools.join(", ")}\n`;
   if (b.feat) text += `**Feat:** ${b.feat}\n`;
   if (b.abilityScores.from.length) {
     text += `**Ability Scores:** Choose from ${b.abilityScores.from.map((k) => ABILITY_MAP[k] ?? k).join(", ")} (weights: ${b.abilityScores.weights.join(", ")})\n`;

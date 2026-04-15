@@ -17,9 +17,12 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "type-check": "tsc --noEmit",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "audit:data": "tsx scripts/audit-data.ts",
+    "migrate:prereqs": "tsx scripts/migrate-feat-prereqs.ts"
   },
   "devDependencies": {
+    "tsx": "^4.19.4",
     "typescript": "^5.9",
     "vitest": "^3"
   },

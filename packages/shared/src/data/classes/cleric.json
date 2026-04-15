@@ -39,19 +39,6 @@
   "spellcastingAbility": "wisdom",
   "casterProgression": "full",
   "canRitualCast": true,
-  "savingThrows": [
-    "wisdom",
-    "charisma"
-  ],
-  "armorProficiencies": [
-    "Light Armor",
-    "Medium Armor",
-    "Shield"
-  ],
-  "weaponProficiencies": [
-    "Simple Weapons"
-  ],
-  "toolProficiencies": [],
   "skillChoices": {
     "from": [
       "History",
@@ -312,9 +299,63 @@
   },
   "features": [
     {
+      "name": "Proficiencies",
+      "level": 1,
+      "className": "Cleric",
+      "description": "Your Cleric training grants the following proficiencies.",
+      "effects": {
+        "properties": [
+          {
+            "type": "proficiency",
+            "category": "save",
+            "value": "Wisdom"
+          },
+          {
+            "type": "proficiency",
+            "category": "save",
+            "value": "Charisma"
+          },
+          {
+            "type": "proficiency",
+            "category": "armor",
+            "value": "Light Armor"
+          },
+          {
+            "type": "proficiency",
+            "category": "armor",
+            "value": "Medium Armor"
+          },
+          {
+            "type": "proficiency",
+            "category": "armor",
+            "value": "Shield"
+          },
+          {
+            "type": "proficiency",
+            "category": "weapon",
+            "value": "Simple Weapons"
+          }
+        ]
+      }
+    },
+    {
       "name": "Spellcasting",
       "level": 1,
       "className": "Cleric",
+      "effects": {
+        "modifiers": [
+          {
+            "target": "spell_save_dc",
+            "value": "8 + prof + wis",
+            "operation": "set"
+          },
+          {
+            "target": "spell_attack",
+            "value": "prof + wis",
+            "operation": "set"
+          }
+        ]
+      },
       "description": "You have learned to cast spells through prayer and meditation.\n\n**Cantrips.** You know three cantrips of your choice from the Cleric spell list. {spell:Guidance}, {spell:Sacred Flame}, and {spell:Thaumaturgy} are recommended. Whenever you gain a Cleric level, you can replace one of your cantrips with another cantrip from the Cleric spell list. When you reach Cleric levels 4 and 10, you learn another cantrip of your choice from the Cleric spell list.\n\n**Spell Slots.** The Cleric Features table shows how many spell slots you have to cast your level 1+ spells. You regain all expended slots when you finish a {rule:Long Rest}.\n\n**Prepared Spells of Level 1+.** You prepare the list of level 1+ spells available for you to cast. To start, choose four level 1 spells from the Cleric spell list. {spell:Bless}, {spell:Cure Wounds}, {spell:Guiding Bolt}, and {spell:Shield of Faith} are recommended. The number of spells on your list increases as you gain Cleric levels, as shown in the Prepared Spells column of the Cleric Features table. Whenever that number increases, choose additional spells from the Cleric spell list until the number matches the table. The chosen spells must be of a level for which you have spell slots. If another Cleric feature gives you spells that you always have prepared, those spells don't count against the number of spells you can prepare with this feature.\n\n**Changing Your Prepared Spells.** Whenever you finish a {rule:Long Rest}, you can change your list of prepared spells, replacing any of the spells there with other Cleric spells for which you have spell slots.\n\n**Spellcasting Ability.** Wisdom is your spellcasting ability for your Cleric spells.\n\n**Spellcasting Focus.** You can use a Holy Symbol as a Spellcasting Focus for your Cleric spells."
     },
     {

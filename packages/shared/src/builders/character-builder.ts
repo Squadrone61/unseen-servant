@@ -23,6 +23,8 @@ import type { Item } from "../types/item";
 import type { BuilderState } from "../types/builder";
 import type { EffectBundle, EntityEffects, Property, ResolveContext } from "../types/effects";
 import { resolveStat, getResources } from "../utils/effect-resolver";
+import { resolveSkillProfOrExpertise, collectChoiceEffectsPass1 } from "./choice-to-effects";
+import type { ChoiceSource } from "./choice-to-effects";
 import { evaluateExpression } from "../utils/expression-evaluator";
 import {
   getClass,
@@ -91,18 +93,48 @@ function computeMaxHPFromState(
 
 /**
  * Collect languages granted by species and background from the DB.
- * Common is always granted; language choice IDs add additional languages.
+ * Common is always granted; additional languages come from DB choices with pool:"language".
+ * String-matching on choiceId is intentionally removed — the unified choice pipeline
+ * handles language proficiency bundles; this function only needs the display list for
+ * CharacterStaticData.languages (a human-readable field, not used for checks).
  */
 function collectLanguagesFromState(state: BuilderState): string[] {
   const langs = new Set<string>(["Common"]);
-  for (const [choiceId, values] of Object.entries(state.speciesChoices)) {
-    if (choiceId.toLowerCase().includes("language")) {
-      values.forEach((v) => langs.add(v));
+  // Language choices are now properly typed with pool:"language" in the DB.
+  // We still read the raw values here for the languages display field.
+  // Species choices don't grant languages in 2024 data — handled via background/class/feat effects.
+  void state.backgroundChoices; // not used for languages anymore — background effects carry them
+
+  // Read language proficiencies from actual DB choices via pool:"language" selections.
+  // Species language choices
+  const speciesDb = state.species ? getSpecies(state.species) : null;
+  if (speciesDb?.choices) {
+    for (const choice of speciesDb.choices) {
+      if (!("pool" in choice) || (choice as { pool: string }).pool !== "language") continue;
+      const selected = state.speciesChoices[choice.id] ?? [];
+      selected.forEach((v) => langs.add(v));
     }
   }
-  for (const [choiceId, values] of Object.entries(state.backgroundChoices)) {
-    if (choiceId.toLowerCase().includes("language")) {
-      values.forEach((v) => langs.add(v));
+  // Background language choices
+  const bgDb = state.background ? getBackground(state.background) : null;
+  if (bgDb?.choices) {
+    for (const choice of bgDb.choices) {
+      if (!("pool" in choice) || (choice as { pool: string }).pool !== "language") continue;
+      const selected = state.backgroundChoices[choice.id] ?? [];
+      selected.forEach((v) => langs.add(v));
+    }
+  }
+  // Class feature language choices (Rogue Thieves' Cant, etc.)
+  for (const cls of state.classes) {
+    const classDb = getClass(cls.name);
+    if (!classDb) continue;
+    for (const feature of classDb.features) {
+      if (!feature.choices || feature.level > cls.level) continue;
+      for (const choice of feature.choices) {
+        if (!("pool" in choice) || (choice as { pool: string }).pool !== "language") continue;
+        const selected = state.classes.find((c) => c.name === cls.name)?.choices[choice.id] ?? [];
+        selected.forEach((v) => langs.add(v));
+      }
     }
   }
   return [...langs];
@@ -213,57 +245,8 @@ function assembleSpellsFromState(state: BuilderState, warnings: string[]): Spell
   return spells;
 }
 
-/**
- * Collect skill proficiencies from class selections + background DB skills.
- */
-function assembleSkillProficienciesFromState(state: BuilderState): string[] {
-  const skills = new Set<string>();
-  for (const cls of state.classes) {
-    for (const s of cls.skills) skills.add(s);
-  }
-  if (state.background) {
-    const bg = getBackground(state.background);
-    if (bg) bg.skills.forEach((s) => skills.add(s.toLowerCase()));
-  }
-  for (const [choiceId, values] of Object.entries(state.speciesChoices)) {
-    if (choiceId.toLowerCase().includes("skill")) {
-      values.forEach((v) => skills.add(v.toLowerCase()));
-    }
-  }
-  for (const [_featName, choices] of Object.entries(state.featChoices)) {
-    for (const [choiceId, values] of Object.entries(choices)) {
-      if (
-        choiceId.toLowerCase().includes("skill") ||
-        choiceId.toLowerCase().includes("proficiency")
-      ) {
-        values.forEach((v) => skills.add(v.toLowerCase()));
-      }
-    }
-  }
-  return [...skills];
-}
-
-/**
- * Collect skill expertise from class choices (Bard/Rogue Expertise) and feat choices.
- */
-function assembleSkillExpertiseFromState(state: BuilderState): string[] {
-  const expertise = new Set<string>();
-  for (const cls of state.classes) {
-    for (const [choiceId, values] of Object.entries(cls.choices)) {
-      if (choiceId.toLowerCase().includes("expertise")) {
-        (values as string[]).forEach((v) => expertise.add(v));
-      }
-    }
-  }
-  for (const [_featName, choices] of Object.entries(state.featChoices)) {
-    for (const [choiceId, values] of Object.entries(choices)) {
-      if (choiceId.toLowerCase().includes("expertise")) {
-        values.forEach((v) => expertise.add(v));
-      }
-    }
-  }
-  return [...expertise];
-}
+// assembleSkillProficienciesFromState and assembleSkillExpertiseFromState have been
+// replaced by the unified choiceToEffects pipeline in collectBuildEffects.
 
 /**
  * Map BuilderState.classes to CharacterClass[] (dropping builder-only fields).
@@ -296,13 +279,17 @@ function assembleAdditionalFeatures(state: BuilderState): CharacterFeatureRef[] 
 // ─── Effect Collection ───────────────────────────────────
 
 /**
- * Collect all build-time EffectBundles from the character's sources:
- * species, class features, subclass features, feats, and synthetic bundles
- * for class-level proficiency grants (saves, armor, weapons, tools) and
- * skill proficiencies/expertise from class/background/feat selections.
+ * Collect all build-time EffectBundles from the character's sources using the
+ * unified choice → effect pipeline.
  *
- * The synthetic bundles are needed because the resolver derives proficiencies,
- * saves, and skills entirely from effect properties — not from stored flat arrays.
+ * Four sources: species, classes + subclasses, background, feats.
+ * Each source contributes:
+ *   1. Its base `effects` (if any)
+ *   2. Effects resolved from each `choices[]` entry via choiceToEffects()
+ *
+ * Two-pass emission for skill choices:
+ *   Pass 1: everything except skill_proficiency_or_expertise; accumulate proficient skills.
+ *   Pass 2: resolve skill_proficiency_or_expertise using the accumulated set.
  */
 function collectBuildEffects(
   race: string,
@@ -312,24 +299,53 @@ function collectBuildEffects(
 ): EffectBundle[] {
   const bundles: EffectBundle[] = [];
 
-  // Species effects
-  const species = getSpecies(race);
-  if (species?.effects) {
-    bundles.push({
-      id: `species:${race}`,
-      source: { type: "species", name: race },
-      lifetime: { type: "permanent" },
-      effects: species.effects,
-    });
+  // Accumulated proficient skills for the two-pass skill_proficiency_or_expertise resolution.
+  const resolvedSkills = new Set<string>();
+
+  // Deferred skill_proficiency_or_expertise choices resolved in pass 2.
+  type DeferredSkill = {
+    choice: import("../types/effects").FeatureChoice;
+    selected: string[];
+    source: ChoiceSource;
+  };
+  const deferredSkillChoices: DeferredSkill[] = [];
+
+  // ── 1. Species ────────────────────────────────────────────────────────────
+  const speciesDb = getSpecies(race);
+  if (speciesDb) {
+    if (speciesDb.effects) {
+      bundles.push({
+        id: `species:${race}`,
+        source: { type: "species", name: race },
+        lifetime: { type: "permanent" },
+        effects: speciesDb.effects,
+      });
+    }
+    if (speciesDb.choices) {
+      const src: ChoiceSource = { kind: "species", sourceName: race };
+      const { bundles: choiceBundles, deferredChoices } = collectChoiceEffectsPass1(
+        speciesDb.choices,
+        state.speciesChoices,
+        src,
+        state,
+        resolvedSkills,
+      );
+      bundles.push(...choiceBundles);
+      deferredChoices.forEach((d) => deferredSkillChoices.push({ ...d, source: src }));
+    }
   }
 
-  // Class and subclass feature effects
-  for (const cls of classes) {
+  // ── 2. Classes and subclasses ─────────────────────────────────────────────
+  for (let ci = 0; ci < classes.length; ci++) {
+    const cls = classes[ci];
     const classDb = getClass(cls.name);
     if (!classDb) continue;
 
     for (const feature of classDb.features) {
-      if (feature.level <= cls.level && feature.effects) {
+      if (feature.level > cls.level) continue;
+
+      // Feature's own effects
+      if (feature.effects) {
         bundles.push({
           id: `class:${cls.name}:${feature.name}`,
           source: {
@@ -342,8 +358,48 @@ function collectBuildEffects(
           effects: feature.effects,
         });
       }
+
+      // Feature's choices (Fighting Style, Expertise, etc.)
+      if (feature.choices) {
+        const classCls = state.classes.find((c) => c.name === cls.name);
+        const classChoices = classCls?.choices ?? {};
+        const src: ChoiceSource = {
+          kind: "class-feature",
+          sourceName: cls.name,
+          featureName: feature.name,
+          level: feature.level,
+        };
+        const { bundles: choiceBundles, deferredChoices } = collectChoiceEffectsPass1(
+          feature.choices,
+          classChoices,
+          src,
+          state,
+          resolvedSkills,
+        );
+        bundles.push(...choiceBundles);
+        deferredChoices.forEach((d) => deferredSkillChoices.push({ ...d, source: src }));
+      }
     }
 
+    // Class skill proficiencies (player-chosen from skillChoices pool)
+    // These are stored in state.classes[i].skills and are not in DB choices yet.
+    const classCls = state.classes.find((c) => c.name === cls.name);
+    if (classCls?.skills?.length) {
+      const skillProps: Property[] = classCls.skills.map((s) => ({
+        type: "proficiency" as const,
+        category: "skill" as const,
+        value: s,
+      }));
+      bundles.push({
+        id: `class-skills:${cls.name}:${ci}`,
+        source: { type: "class", name: cls.name, featureName: "Skills" },
+        lifetime: { type: "permanent" },
+        effects: { properties: skillProps },
+      });
+      classCls.skills.forEach((s) => resolvedSkills.add(s.toLowerCase()));
+    }
+
+    // Subclass features
     if (cls.subclass) {
       const sub = classDb.subclasses.find(
         (s) =>
@@ -352,7 +408,9 @@ function collectBuildEffects(
       );
       if (sub) {
         for (const sf of sub.features) {
-          if (sf.level <= cls.level && sf.effects) {
+          if (sf.level > cls.level) continue;
+
+          if (sf.effects) {
             bundles.push({
               id: `subclass:${sub.name}:${sf.name}`,
               source: { type: "subclass", name: sub.name, featureName: sf.name, level: sf.level },
@@ -360,16 +418,111 @@ function collectBuildEffects(
               effects: sf.effects,
             });
           }
+
+          if (sf.choices) {
+            const classChoices = classCls?.choices ?? {};
+            const src: ChoiceSource = {
+              kind: "subclass-feature",
+              sourceName: sub.name,
+              featureName: sf.name,
+              level: sf.level,
+            };
+            const { bundles: choiceBundles, deferredChoices } = collectChoiceEffectsPass1(
+              sf.choices,
+              classChoices,
+              src,
+              state,
+              resolvedSkills,
+            );
+            bundles.push(...choiceBundles);
+            deferredChoices.forEach((d) => deferredSkillChoices.push({ ...d, source: src }));
+          }
         }
+      }
+    }
+
+    // Multiclass proficiencies (limited subset per PHB 2024 multiclassing rules)
+    // Only applies to classes[1+]; primary class proficiencies come from the L1 feature.
+    if (ci > 0 && classDb.multiclassing?.proficienciesGained) {
+      const mg = classDb.multiclassing.proficienciesGained;
+      const multiProps: Property[] = [];
+      for (const a of mg.armor ?? []) {
+        multiProps.push({ type: "proficiency", category: "armor", value: a });
+      }
+      for (const w of mg.weapons ?? []) {
+        multiProps.push({ type: "proficiency", category: "weapon", value: w });
+      }
+      for (const t of mg.tools ?? []) {
+        multiProps.push({ type: "proficiency", category: "tool", value: t });
+      }
+      if (mg.skills) {
+        // Skill selection for multiclassing is handled via state.classes[i].skills above
+      }
+      if (multiProps.length > 0) {
+        bundles.push({
+          id: `class-profs:${cls.name}:multiclass`,
+          source: { type: "class", name: cls.name, featureName: "Multiclass Proficiencies" },
+          lifetime: { type: "permanent" },
+          effects: { properties: multiProps },
+        });
       }
     }
   }
 
-  // Feat effects (from additional features) — top-level + selected sub-choice options
+  // ── 3. Background ─────────────────────────────────────────────────────────
+  if (state.background) {
+    const bg = getBackground(state.background);
+    if (bg) {
+      if (bg.effects) {
+        bundles.push({
+          id: `background:${state.background}`,
+          source: { type: "background", name: state.background },
+          lifetime: { type: "permanent" },
+          effects: bg.effects,
+        });
+      }
+      if (bg.choices) {
+        const src: ChoiceSource = { kind: "background", sourceName: state.background };
+        const { bundles: choiceBundles, deferredChoices } = collectChoiceEffectsPass1(
+          bg.choices,
+          state.backgroundChoices,
+          src,
+          state,
+          resolvedSkills,
+        );
+        bundles.push(...choiceBundles);
+        deferredChoices.forEach((d) => deferredSkillChoices.push({ ...d, source: src }));
+      }
+    }
+
+    // Background ability-score assignment (e.g. +2 STR / +1 CON)
+    if (Object.keys(state.abilityScoreAssignments).length > 0) {
+      const bgMods = Object.entries(state.abilityScoreAssignments).map(([ability, value]) => ({
+        target: ability as import("../types/effects").ModifierTarget,
+        value: value as number,
+        operation: "add" as const,
+      }));
+      if (bgMods.length > 0) {
+        bundles.push({
+          id: `background-abilities:${state.background}`,
+          source: {
+            type: "background",
+            name: state.background,
+            featureName: "Ability Score Assignment",
+          },
+          lifetime: { type: "permanent" },
+          effects: { modifiers: bgMods },
+        });
+      }
+    }
+  }
+
+  // ── 4. Feats (from additional features / feat selections) ─────────────────
   for (const feat of additionalFeatures) {
     if (feat.dbKind !== "feat") continue;
     const dbFeat = getFeat(feat.dbName);
     if (!dbFeat) continue;
+
     if (dbFeat.effects) {
       bundles.push({
         id: `feat:${feat.dbName}`,
@@ -378,46 +531,23 @@ function collectBuildEffects(
         effects: dbFeat.effects,
       });
     }
-    // Sub-choice option effects (Athlete's "Strength +1", Resilient's chosen save, etc.)
-    const picks = state.featChoices[feat.dbName] ?? {};
-    for (const choice of dbFeat.choices ?? []) {
-      if (!("options" in choice) || !choice.options) continue;
-      const selectedLabels = picks[choice.id] ?? [];
-      for (const label of selectedLabels) {
-        const option = choice.options.find((o) => o.label === label);
-        if (!option?.effects) continue;
-        bundles.push({
-          id: `feat-choice:${feat.dbName}:${choice.id}:${label}`,
-          source: { type: "feat", name: feat.dbName, featureName: choice.label },
-          lifetime: { type: "permanent" },
-          effects: option.effects,
-        });
-      }
+
+    if (dbFeat.choices) {
+      const src: ChoiceSource = { kind: "feat", sourceName: feat.dbName };
+      const featPicks = state.featChoices[feat.dbName] ?? {};
+      const { bundles: choiceBundles, deferredChoices } = collectChoiceEffectsPass1(
+        dbFeat.choices,
+        featPicks,
+        src,
+        state,
+        resolvedSkills,
+      );
+      bundles.push(...choiceBundles);
+      deferredChoices.forEach((d) => deferredSkillChoices.push({ ...d, source: src }));
     }
   }
 
-  // Background ability-score assignment (e.g. +2 STR / +1 CON)
-  if (state.background && Object.keys(state.abilityScoreAssignments).length > 0) {
-    const bgMods = Object.entries(state.abilityScoreAssignments).map(([ability, value]) => ({
-      target: ability as import("../types/effects").ModifierTarget,
-      value: value as number,
-      operation: "add" as const,
-    }));
-    if (bgMods.length > 0) {
-      bundles.push({
-        id: `background-abilities:${state.background}`,
-        source: {
-          type: "background",
-          name: state.background,
-          featureName: "Ability Score Assignment",
-        },
-        lifetime: { type: "permanent" },
-        effects: { modifiers: bgMods },
-      });
-    }
-  }
-
-  // ASI bundles (from feat selections of type "asi")
+  // ── 5. ASI bundles (from feat selections of type "asi") ───────────────────
   for (const selection of state.featSelections) {
     if (selection.type !== "asi" || !selection.asiAbilities) continue;
     const asiMods = Object.entries(selection.asiAbilities).map(([ability, value]) => ({
@@ -446,139 +576,15 @@ function collectBuildEffects(
     }
   }
 
-  // ── Synthetic proficiency bundles ─────────────────────────────────────────
-  // Class-level proficiencies (saves, armor, weapons, tools) come from the
-  // class DB but are NOT in the feature effect bundles above. Emit a synthetic
-  // bundle per primary class so the resolver can derive them via effect properties.
-  // Only the primary class (index 0) grants save proficiencies in D&D 5e/2024.
-  const primaryClass = classes[0];
-  if (primaryClass) {
-    const primaryDb = getClass(primaryClass.name);
-    if (primaryDb) {
-      const profProps: Property[] = [];
-
-      // Saving throw proficiencies (primary class only)
-      for (const ab of primaryDb.savingThrows) {
-        profProps.push({ type: "proficiency", category: "save", value: ab });
-      }
-
-      // Armor proficiencies
-      for (const a of primaryDb.armorProficiencies) {
-        profProps.push({ type: "proficiency", category: "armor", value: a });
-      }
-
-      // Weapon proficiencies
-      for (const w of primaryDb.weaponProficiencies) {
-        profProps.push({ type: "proficiency", category: "weapon", value: w });
-      }
-
-      // Tool proficiencies (class-level only)
-      for (const t of primaryDb.toolProficiencies) {
-        profProps.push({ type: "proficiency", category: "tool", value: t });
-      }
-
-      if (profProps.length > 0) {
-        bundles.push({
-          id: `class-profs:${primaryClass.name}`,
-          source: { type: "class", name: primaryClass.name, featureName: "Proficiencies" },
-          lifetime: { type: "permanent" },
-          effects: { properties: profProps },
-        });
-      }
-    }
-  }
-
-  // Multiclass additional armor/weapon proficiencies (limited per PHB multiclassing rules)
-  for (let i = 1; i < classes.length; i++) {
-    const cls = classes[i];
-    const classDb = getClass(cls.name);
-    if (!classDb) continue;
-
-    const multiProps: Property[] = [];
-    for (const a of classDb.armorProficiencies) {
-      multiProps.push({ type: "proficiency", category: "armor", value: a });
-    }
-    for (const w of classDb.weaponProficiencies) {
-      multiProps.push({ type: "proficiency", category: "weapon", value: w });
-    }
-
-    if (multiProps.length > 0) {
-      bundles.push({
-        id: `class-profs:${cls.name}:multiclass`,
-        source: { type: "class", name: cls.name, featureName: "Multiclass Proficiencies" },
-        lifetime: { type: "permanent" },
-        effects: { properties: multiProps },
-      });
-    }
-  }
-
-  // Background tool proficiencies
-  if (state.background) {
-    const bg = getBackground(state.background);
-    if (bg) {
-      const bgProps: Property[] = [];
-      for (const t of bg.tools) {
-        bgProps.push({ type: "proficiency", category: "tool", value: t });
-      }
-      if (bgProps.length > 0) {
-        bundles.push({
-          id: `background-tools:${state.background}`,
-          source: { type: "background", name: state.background, featureName: "Tool Proficiencies" },
-          lifetime: { type: "permanent" },
-          effects: { properties: bgProps },
-        });
-      }
-    }
-  }
-
-  // ── Skill proficiency bundles ─────────────────────────────────────────────
-  // Skill proficiencies and expertise from class selections, background, species
-  // choices, and feat choices. Emitted as proficiency/expertise effect properties.
-  const skillProfs = assembleSkillProficienciesFromState(state);
-  const skillExpertise = assembleSkillExpertiseFromState(state);
-  const skillProps: Property[] = [];
-
-  for (const sk of skillProfs) {
-    skillProps.push({ type: "proficiency", category: "skill", value: sk });
-  }
-
-  // Expertise entries (skill slugs like "perception", "stealth")
-  const SKILL_DISPLAY_NAMES: Record<string, string> = {
-    acrobatics: "Acrobatics",
-    animal_handling: "Animal Handling",
-    arcana: "Arcana",
-    athletics: "Athletics",
-    deception: "Deception",
-    history: "History",
-    insight: "Insight",
-    intimidation: "Intimidation",
-    investigation: "Investigation",
-    medicine: "Medicine",
-    nature: "Nature",
-    perception: "Perception",
-    performance: "Performance",
-    persuasion: "Persuasion",
-    religion: "Religion",
-    sleight_of_hand: "Sleight of Hand",
-    stealth: "Stealth",
-    survival: "Survival",
-  };
-  for (const sk of skillExpertise) {
-    const display = SKILL_DISPLAY_NAMES[sk.toLowerCase()] as
-      | import("../types/effects").Skill
-      | undefined;
-    if (display) {
-      skillProps.push({ type: "expertise", skill: display });
-    }
-  }
-
-  if (skillProps.length > 0) {
-    bundles.push({
-      id: "skill-profs:character",
-      source: { type: "class", name: primaryClass?.name ?? "Character", featureName: "Skills" },
-      lifetime: { type: "permanent" },
-      effects: { properties: skillProps },
-    });
+  // ── Pass 2: skill_proficiency_or_expertise ────────────────────────────────
+  for (const deferred of deferredSkillChoices) {
+    const pass2Bundles = resolveSkillProfOrExpertise(
+      deferred.choice,
+      deferred.selected,
+      deferred.source,
+      resolvedSkills,
+    );
+    bundles.push(...pass2Bundles);
   }
 
   return bundles;

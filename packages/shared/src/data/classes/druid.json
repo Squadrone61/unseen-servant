@@ -40,20 +40,6 @@
   "spellcastingAbility": "wisdom",
   "casterProgression": "full",
   "canRitualCast": true,
-  "savingThrows": [
-    "intelligence",
-    "wisdom"
-  ],
-  "armorProficiencies": [
-    "Light Armor",
-    "Shield"
-  ],
-  "weaponProficiencies": [
-    "Simple Weapons"
-  ],
-  "toolProficiencies": [
-    "Herbalism Kit"
-  ],
   "skillChoices": {
     "from": [
       "Arcana",
@@ -317,6 +303,46 @@
   ],
   "features": [
     {
+      "name": "Proficiencies",
+      "level": 1,
+      "className": "Druid",
+      "description": "Your Druid training grants the following proficiencies.",
+      "effects": {
+        "properties": [
+          {
+            "type": "proficiency",
+            "category": "save",
+            "value": "Intelligence"
+          },
+          {
+            "type": "proficiency",
+            "category": "save",
+            "value": "Wisdom"
+          },
+          {
+            "type": "proficiency",
+            "category": "armor",
+            "value": "Light Armor"
+          },
+          {
+            "type": "proficiency",
+            "category": "armor",
+            "value": "Shield"
+          },
+          {
+            "type": "proficiency",
+            "category": "weapon",
+            "value": "Simple Weapons"
+          },
+          {
+            "type": "proficiency",
+            "category": "tool",
+            "value": "Herbalism Kit"
+          }
+        ]
+      }
+    },
+    {
       "name": "Druidic",
       "level": 1,
       "className": "Druid",
@@ -385,13 +411,35 @@
       "name": "Spellcasting",
       "level": 1,
       "className": "Druid",
+      "effects": {
+        "modifiers": [
+          {
+            "target": "spell_save_dc",
+            "value": "8 + prof + wis",
+            "operation": "set"
+          },
+          {
+            "target": "spell_attack",
+            "value": "prof + wis",
+            "operation": "set"
+          }
+        ]
+      },
       "description": "You have learned to cast spells through studying the mystical forces of nature. Wisdom is your spellcasting ability for your Druid spells.\n\n**Cantrips.** You know two cantrips of your choice from the Druid spell list. Druidcraft and Produce Flame are recommended. Whenever you gain a Druid level, you can replace one of your cantrips with another cantrip from the Druid spell list. When you reach Druid levels 4 and 10, you learn another cantrip of your choice from the Druid spell list.\n\n**Spell Slots.** The Druid Features table shows how many spell slots you have to cast your level 1+ spells. You regain all expended slots when you finish a {rule:Long Rest}.\n\n**Prepared Spells of Level 1+.** You prepare the list of level 1+ spells that are available for you to cast with this feature. The number of spells on your list is shown in the Prepared Spells column of the Druid Features table. Whenever that number increases, choose additional spells from the Druid spell list. The chosen spells must be of a level for which you have spell slots.\n\n**Changing Your Prepared Spells.** Whenever you finish a {rule:Long Rest}, you can change your list of prepared spells, replacing any of the spells with other Druid spells for which you have spell slots.\n\n**Spellcasting Focus.** You can use a Druidic Focus as a {rule:Spellcasting Focus} for your Druid spells."
     },
     {
       "name": "Wild Companion",
       "level": 2,
       "className": "Druid",
-      "description": "You can summon a nature spirit that assumes an animal form to aid you. As a Magic action, you can expend a spell slot or a use of Wild Shape to cast the {spell:Find Familiar} spell without Material components.\n\nWhen you cast the spell in this way, the familiar is Fey and disappears when you finish a {rule:Long Rest}."
+      "description": "You can summon a nature spirit that assumes an animal form to aid you. As a Magic action, you can expend a spell slot or a use of Wild Shape to cast the {spell:Find Familiar} spell without Material components.\n\nWhen you cast the spell in this way, the familiar is Fey and disappears when you finish a {rule:Long Rest}.",
+      "effects": {
+        "properties": [
+          {
+            "type": "note",
+            "text": "As a Magic action, expend a spell slot or one Wild Shape use to cast Find Familiar without Material components. The familiar is Fey and vanishes at the end of a Long Rest."
+          }
+        ]
+      }
     },
     {
       "name": "Wild Shape",

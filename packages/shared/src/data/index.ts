@@ -448,11 +448,14 @@ export type {
   SpellLevel,
   ClassName,
   PackDb,
-  // Note: CreatureSize is intentionally NOT re-exported here — game-state.ts
-  // exports a different CreatureSize (lowercase) via types/index, and re-exporting
-  // the titlecase data.ts version would cause a conflict in shared/src/index.ts.
-  // Import CreatureSize from "@unseen-servant/shared/types/data" directly if needed.
 } from "../types/data";
+
+export type { Prerequisite } from "../types/effects";
+
+// Note: CreatureSize is intentionally NOT re-exported here — game-state.ts
+// exports a different CreatureSize (lowercase) via types/index, and re-exporting
+// the titlecase data.ts version would cause a conflict in shared/src/index.ts.
+// Import CreatureSize from "@unseen-servant/shared/types/data" directly if needed.
 
 export type { Entry } from "../types/entry-types";
 export type {

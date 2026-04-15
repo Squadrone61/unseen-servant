@@ -14,14 +14,20 @@
 //   Modifier values can be expressions evaluated against character context:
 //     Atoms: str/dex/con/int/wis/cha (ability modifier), prof, lvl, clvl, NdM dice, numbers
 //     Operators: +, -, *
-//     Functions: min(a,b), max(a,b), table(L:V, ...) (level-keyed lookup using clvl)
+//     Functions:
+//       min(a,b), max(a,b)
+//       table(L:V, ...)     — class-level keyed lookup (uses clvl, falls back to totalLevel)
+//       table_lvl(L:V, ...) — character-level keyed lookup (always uses totalLevel)
+//       table_prof(P:V, ...) — proficiency-bonus keyed lookup (uses proficiencyBonus)
 //   Examples:
-//     "10 + dex + con"        — Unarmored Defense (Barbarian)
-//     "table(1:2, 9:3, 16:4)" — Rage damage bonus by class level
-//     "max(cha, 1)"           — Bardic Inspiration uses (minimum 1)
-//     "2 * lvl"               — Tough feat HP bonus
-//     "prof"                  — Alert initiative bonus
-//     5                       — Shield spell AC bonus (plain number, always valid)
+//     "10 + dex + con"             — Unarmored Defense (Barbarian)
+//     "table(1:2, 9:3, 16:4)"      — Rage damage bonus by class level
+//     "table_lvl(1:2, 5:3, 11:4)"  — cantrip damage dice by character level
+//     "table_prof(2:1, 4:2, 6:3)"  — uses per proficiency bonus tier
+//     "max(cha, 1)"                — Bardic Inspiration uses (minimum 1)
+//     "2 * lvl"                    — Tough feat HP bonus
+//     "prof"                       — Alert initiative bonus
+//     5                            — Shield spell AC bonus (plain number, always valid)
 //
 // The 80/20 boundary:
 //   Common mechanics (resistance, sense, proficiency, advantage, spell grants, resources,
@@ -162,7 +168,14 @@ export type ModifierTarget =
   | "constitution"
   | "intelligence"
   | "wisdom"
-  | "charisma";
+  | "charisma"
+  // Ability checks (bonus to all checks using that ability)
+  | "strength_check"
+  | "dexterity_check"
+  | "constitution_check"
+  | "intelligence_check"
+  | "wisdom_check"
+  | "charisma_check";
 
 // ---------------------------------------------------------------------------
 // AdvantageTarget
@@ -217,6 +230,25 @@ export type AdvantageTarget =
   | "initiative"
   | "concentration"
   | "death_save";
+
+// ---------------------------------------------------------------------------
+// Prerequisite
+// ---------------------------------------------------------------------------
+
+/**
+ * Structured prerequisite for feats and optional features.
+ * Replaces the free-text `prerequisite?: string` field for machine-readable
+ * enforcement. During Phase 1 both fields coexist — `prerequisiteText` for
+ * display, `prerequisiteStructured` for future validation.
+ */
+export type Prerequisite =
+  | { type: "level"; value: number }
+  | { type: "ability"; ability: Ability; min: number }
+  | { type: "species"; species: string }
+  | { type: "feature"; featureName: string }
+  | { type: "spellcasting" }
+  | { type: "anyOf"; of: Prerequisite[] }
+  | { type: "allOf"; of: Prerequisite[] };
 
 // ---------------------------------------------------------------------------
 // Modifier
@@ -364,9 +396,10 @@ export type FeatureChoice = {
    * When the selection happens:
    *   "permanent"  — chosen once at level-up, stored in CharacterStaticData.buildChoices
    *   "long_rest"  — re-selected each long rest, stored in CharacterDynamicData.activeChoices
+   *   "short_rest" — re-selected each short rest (e.g. some Warlock invocations)
    *   "activation" — chosen each time the feature is activated (per rage, etc.)
    */
-  timing: "permanent" | "long_rest" | "activation";
+  timing: "permanent" | "long_rest" | "short_rest" | "activation";
 } & (
   | {
       options: ChoiceOption[];
@@ -589,7 +622,9 @@ export type EffectSource = z.infer<typeof effectSourceSchema>;
  *   permanent      — Lasts forever (build-time effects: species traits, class features, feats).
  *   concentration  — Active while the caster concentrates; removed by break_concentration.
  *   duration       — Expires after N rounds; decremented by advance_turn.
- *   until_rest     — Removed by short or long rest.
+ *   until_rest     — Removed automatically on a rest.
+ *                    rest: "short" — ends on a short rest OR a long rest (long implies short).
+ *                    rest: "long"  — ends only on a long rest; persists through short rests.
  *   manual         — No automatic expiry; must be dismissed explicitly via dismiss/remove tools.
  */
 export type EffectLifetime = z.infer<typeof effectLifetimeSchema>;

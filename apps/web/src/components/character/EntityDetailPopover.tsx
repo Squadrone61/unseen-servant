@@ -210,9 +210,9 @@ function resolveContent(
         title: data.name,
         body: (
           <div className="space-y-2">
-            {data.prerequisite && (
+            {data.prerequisiteText && (
               <span className="text-xs text-gray-400 italic">
-                Prerequisite: {data.prerequisite}
+                Prerequisite: {data.prerequisiteText}
               </span>
             )}
             <RichText

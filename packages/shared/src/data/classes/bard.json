@@ -29,19 +29,6 @@
   "spellcastingAbility": "charisma",
   "casterProgression": "full",
   "canRitualCast": true,
-  "savingThrows": [
-    "dexterity",
-    "charisma"
-  ],
-  "armorProficiencies": [
-    "Light Armor"
-  ],
-  "weaponProficiencies": [
-    "Simple Weapons"
-  ],
-  "toolProficiencies": [
-    "Musical Instrument (choose 3)"
-  ],
   "skillChoices": {
     "from": [
       "Acrobatics",
@@ -333,6 +320,41 @@
   ],
   "features": [
     {
+      "name": "Proficiencies",
+      "level": 1,
+      "className": "Bard",
+      "description": "Your Bard training grants the following proficiencies.",
+      "effects": {
+        "properties": [
+          {
+            "type": "proficiency",
+            "category": "save",
+            "value": "Dexterity"
+          },
+          {
+            "type": "proficiency",
+            "category": "save",
+            "value": "Charisma"
+          },
+          {
+            "type": "proficiency",
+            "category": "armor",
+            "value": "Light Armor"
+          },
+          {
+            "type": "proficiency",
+            "category": "weapon",
+            "value": "Simple Weapons"
+          },
+          {
+            "type": "proficiency",
+            "category": "tool",
+            "value": "Musical Instrument (choose 3)"
+          }
+        ]
+      }
+    },
+    {
       "name": "Bardic Inspiration",
       "level": 1,
       "className": "Bard",
@@ -357,6 +379,20 @@
       "name": "Spellcasting",
       "level": 1,
       "className": "Bard",
+      "effects": {
+        "modifiers": [
+          {
+            "target": "spell_save_dc",
+            "value": "8 + prof + cha",
+            "operation": "set"
+          },
+          {
+            "target": "spell_attack",
+            "value": "prof + cha",
+            "operation": "set"
+          }
+        ]
+      },
       "description": "You have learned to cast spells through your bardic arts. Charisma is your spellcasting ability for your Bard spells.\n\n**Cantrips.** You know two cantrips of your choice from the Bard spell list. Dancing Lights and Vicious Mockery are recommended. When you reach Bard levels 4 and 10, you learn another cantrip of your choice.\n\n**Spell Slots.** The Bard Features table shows how many spell slots you have to cast your level 1+ spells. You regain all expended slots when you finish a {rule:Long Rest}.\n\n**Prepared Spells of Level 1+.** You prepare the list of level 1+ spells available for you to cast. The number of spells on your list increases as you gain Bard levels, as shown in the Prepared Spells column. Whenever that number increases, choose additional spells from the Bard spell list. The chosen spells must be of a level for which you have spell slots.\n\n**Changing Your Prepared Spells.** Whenever you gain a Bard level, you can replace one spell on your list with another Bard spell for which you have spell slots.\n\n**Spellcasting Focus.** You can use a Musical Instrument as a {rule:Spellcasting Focus|Spellcasting Focus} for your Bard spells."
     },
     {

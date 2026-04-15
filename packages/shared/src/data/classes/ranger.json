@@ -45,20 +45,6 @@
     "Dexterity",
     "Wisdom"
   ],
-  "savingThrows": [
-    "strength",
-    "dexterity"
-  ],
-  "armorProficiencies": [
-    "Light Armor",
-    "Medium Armor",
-    "Shield"
-  ],
-  "weaponProficiencies": [
-    "Simple Weapons",
-    "Martial Weapons"
-  ],
-  "toolProficiencies": [],
   "skillChoices": {
     "from": [
       "Animal Handling",
@@ -250,6 +236,51 @@
     }
   },
   "features": [
+    {
+      "name": "Proficiencies",
+      "level": 1,
+      "className": "Ranger",
+      "description": "Your Ranger training grants the following proficiencies.",
+      "effects": {
+        "properties": [
+          {
+            "type": "proficiency",
+            "category": "save",
+            "value": "Strength"
+          },
+          {
+            "type": "proficiency",
+            "category": "save",
+            "value": "Dexterity"
+          },
+          {
+            "type": "proficiency",
+            "category": "armor",
+            "value": "Light Armor"
+          },
+          {
+            "type": "proficiency",
+            "category": "armor",
+            "value": "Medium Armor"
+          },
+          {
+            "type": "proficiency",
+            "category": "armor",
+            "value": "Shield"
+          },
+          {
+            "type": "proficiency",
+            "category": "weapon",
+            "value": "Simple Weapons"
+          },
+          {
+            "type": "proficiency",
+            "category": "weapon",
+            "value": "Martial Weapons"
+          }
+        ]
+      }
+    },
     {
       "name": "Spellcasting",
       "level": 1,
@@ -663,7 +694,44 @@
           "level": 3,
           "className": "Ranger",
           "subclassName": "Fey Wanderer",
-          "description": "When you reach a Ranger level specified below, you thereafter always have the listed spells prepared: level 3 — {spell:Charm Person}; level 5 — {spell:Misty Step}; level 9 — {spell:Summon Fey}; level 13 — {spell:Dimension Door}; level 17 — {spell:Mislead}.\n\nYou also possess a fey blessing chosen from the Feywild Gifts table (cosmetic effects such as illusory butterflies, flowers blooming from your hair, a faint pleasant scent, a dancing shadow, horns or antlers, or shifting skin and hair color each dawn)."
+          "description": "When you reach a Ranger level specified below, you thereafter always have the listed spells prepared: level 3 — {spell:Charm Person}; level 5 — {spell:Misty Step}; level 9 — {spell:Summon Fey}; level 13 — {spell:Dimension Door}; level 17 — {spell:Mislead}.\n\nYou also possess a fey blessing chosen from the Feywild Gifts table (cosmetic effects such as illusory butterflies, flowers blooming from your hair, a faint pleasant scent, a dancing shadow, horns or antlers, or shifting skin and hair color each dawn).",
+          "effects": {
+            "properties": [
+              {
+                "type": "spell_grant",
+                "spell": "Charm Person",
+                "usage": "always_prepared"
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Misty Step",
+                "usage": "always_prepared",
+                "minLevel": 5
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Summon Fey",
+                "usage": "always_prepared",
+                "minLevel": 9
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Dimension Door",
+                "usage": "always_prepared",
+                "minLevel": 13
+              },
+              {
+                "type": "spell_grant",
+                "spell": "Mislead",
+                "usage": "always_prepared",
+                "minLevel": 17
+              },
+              {
+                "type": "note",
+                "text": "You also possess a cosmetic fey blessing chosen from the Feywild Gifts table (e.g., illusory butterflies, flowers in your hair, a pleasant scent, a dancing shadow, horns or antlers, or shifting skin and hair color each dawn)."
+              }
+            ]
+          }
         },
         {
           "name": "Otherworldly Glamour",

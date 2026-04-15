@@ -25,15 +25,6 @@
   "spellcastingAbility": "intelligence",
   "casterProgression": "full",
   "canRitualCast": true,
-  "savingThrows": [
-    "intelligence",
-    "wisdom"
-  ],
-  "armorProficiencies": [],
-  "weaponProficiencies": [
-    "Simple Weapons"
-  ],
-  "toolProficiencies": [],
   "skillChoices": {
     "from": [
       "Arcana",
@@ -296,16 +287,63 @@
   ],
   "features": [
     {
+      "name": "Proficiencies",
+      "level": 1,
+      "className": "Wizard",
+      "description": "Your Wizard training grants the following proficiencies.",
+      "effects": {
+        "properties": [
+          {
+            "type": "proficiency",
+            "category": "save",
+            "value": "Intelligence"
+          },
+          {
+            "type": "proficiency",
+            "category": "save",
+            "value": "Wisdom"
+          },
+          {
+            "type": "proficiency",
+            "category": "weapon",
+            "value": "Simple Weapons"
+          }
+        ]
+      }
+    },
+    {
       "name": "Spellcasting",
       "level": 1,
       "className": "Wizard",
+      "effects": {
+        "modifiers": [
+          {
+            "target": "spell_save_dc",
+            "value": "8 + prof + int",
+            "operation": "set"
+          },
+          {
+            "target": "spell_attack",
+            "value": "prof + int",
+            "operation": "set"
+          }
+        ]
+      },
       "description": "As a student of arcane magic, you have learned to cast spells.\n\n**Cantrips.** You know three Wizard cantrips of your choice. {spell:Light}, {spell:Mage Hand}, and {spell:Ray of Frost} are recommended. Whenever you finish a {rule:Long Rest}, you can replace one of your cantrips from this feature with another Wizard cantrip of your choice. When you reach Wizard levels 4 and 10, you learn another Wizard cantrip of your choice, as shown in the Cantrips column of the Wizard Features table.\n\n**Spellbook.** Your wizardly apprenticeship culminated in the creation of a unique book: your spellbook. It is a Tiny object that weighs 3 pounds, contains 100 pages, and can be read only by you or someone casting {spell:Identify}. The book contains the level 1+ spells you know. It starts with six level 1 Wizard spells of your choice. {spell:Detect Magic}, {spell:Feather Fall}, {spell:Mage Armor}, {spell:Magic Missile}, {spell:Sleep}, and {spell:Thunderwave} are recommended. Whenever you gain a Wizard level after 1, add two Wizard spells of your choice to your spellbook. Each of these spells must be of a level for which you have spell slots, as shown in the Wizard Features table.\n\n**Spell Slots.** The Wizard Features table shows how many spell slots you have to cast your level 1+ spells. You regain all expended slots when you finish a {rule:Long Rest}.\n\n**Prepared Spells of Level 1+.** You prepare the list of level 1+ spells that are available for you to cast with this feature. To do so, choose four spells from your spellbook. The chosen spells must be of a level for which you have spell slots. The number of spells on your list increases as you gain Wizard levels, as shown in the Prepared Spells column of the Wizard Features table. If another Wizard feature gives you spells that you always have prepared, those spells don't count against the number of spells you can prepare with this feature, but those spells otherwise count as Wizard spells for you.\n\n**Changing Your Prepared Spells.** Whenever you finish a {rule:Long Rest}, you can change your list of prepared spells, replacing any of the spells there with spells from your spellbook.\n\n**Spellcasting Ability.** Intelligence is your spellcasting ability for your Wizard spells.\n\n**Spellcasting Focus.** You can use an {item:Arcane Focus} or your spellbook as a {rule:Spellcasting Focus} for your Wizard spells."
     },
     {
       "name": "Ritual Adept",
       "level": 1,
       "className": "Wizard",
-      "description": "You can cast any spell as a {rule:Ritual} if that spell has the Ritual tag and the spell is in your spellbook. You needn't have the spell prepared, but you must read from the book to cast a spell in this way."
+      "description": "You can cast any spell as a {rule:Ritual} if that spell has the Ritual tag and the spell is in your spellbook. You needn't have the spell prepared, but you must read from the book to cast a spell in this way.",
+      "effects": {
+        "properties": [
+          {
+            "type": "note",
+            "text": "You can cast any Ritual-tagged spell from your spellbook as a Ritual (10 extra minutes, no slot consumed) without having it prepared. You must have the spellbook in hand."
+          }
+        ]
+      }
     },
     {
       "name": "Arcane Recovery",
@@ -366,7 +404,15 @@
       "name": "Memorize Spell",
       "level": 5,
       "className": "Wizard",
-      "description": "Whenever you finish a {rule:Short Rest}, you can study your spellbook and replace one of the level 1+ Wizard spells you have prepared for your Spellcasting feature with another level 1+ spell from the book."
+      "description": "Whenever you finish a {rule:Short Rest}, you can study your spellbook and replace one of the level 1+ Wizard spells you have prepared for your Spellcasting feature with another level 1+ spell from the book.",
+      "effects": {
+        "properties": [
+          {
+            "type": "note",
+            "text": "After each Short Rest, you can swap one prepared level 1+ Wizard spell for another level 1+ spell from your spellbook."
+          }
+        ]
+      }
     },
     {
       "name": "Subclass Feature",
@@ -458,7 +504,15 @@
           "level": 3,
           "className": "Wizard",
           "subclassName": "Abjurer",
-          "description": "Choose two Wizard spells from the Abjuration school, each of which must be no higher than level 2, and add them to your spellbook for free.\n\nIn addition, whenever you gain access to a new level of spell slots in this class, you can add one Wizard spell from the Abjuration school to your spellbook for free. The chosen spell must be of a level for which you have spell slots."
+          "description": "Choose two Wizard spells from the Abjuration school, each of which must be no higher than level 2, and add them to your spellbook for free.\n\nIn addition, whenever you gain access to a new level of spell slots in this class, you can add one Wizard spell from the Abjuration school to your spellbook for free. The chosen spell must be of a level for which you have spell slots.",
+          "effects": {
+            "properties": [
+              {
+                "type": "note",
+                "text": "Choose 2 Abjuration Wizard spells of level 1–2 and copy them into your spellbook for free. Each time you gain access to a new spell slot level, also copy one Abjuration Wizard spell of that level or lower into your spellbook for free."
+              }
+            ]
+          }
         },
         {
           "name": "Arcane Ward",
@@ -553,7 +607,15 @@
           "level": 3,
           "className": "Wizard",
           "subclassName": "Diviner",
-          "description": "Choose two Wizard spells from the Divination school, each of which must be no higher than level 2, and add them to your spellbook for free.\n\nIn addition, whenever you gain access to a new level of spell slots in this class, you can add one Wizard spell from the Divination school to your spellbook for free. The chosen spell must be of a level for which you have spell slots."
+          "description": "Choose two Wizard spells from the Divination school, each of which must be no higher than level 2, and add them to your spellbook for free.\n\nIn addition, whenever you gain access to a new level of spell slots in this class, you can add one Wizard spell from the Divination school to your spellbook for free. The chosen spell must be of a level for which you have spell slots.",
+          "effects": {
+            "properties": [
+              {
+                "type": "note",
+                "text": "Choose 2 Divination Wizard spells of level 1–2 and copy them into your spellbook for free. Each time you gain access to a new spell slot level, also copy one Divination Wizard spell of that level or lower into your spellbook for free."
+              }
+            ]
+          }
         },
         {
           "name": "Portent",
@@ -636,7 +698,15 @@
           "level": 3,
           "className": "Wizard",
           "subclassName": "Evoker",
-          "description": "Choose two Wizard spells from the Evocation school, each of which must be no higher than level 2, and add them to your spellbook for free.\n\nIn addition, whenever you gain access to a new level of spell slots in this class, you can add one Wizard spell from the Evocation school to your spellbook for free. The chosen spell must be of a level for which you have spell slots."
+          "description": "Choose two Wizard spells from the Evocation school, each of which must be no higher than level 2, and add them to your spellbook for free.\n\nIn addition, whenever you gain access to a new level of spell slots in this class, you can add one Wizard spell from the Evocation school to your spellbook for free. The chosen spell must be of a level for which you have spell slots.",
+          "effects": {
+            "properties": [
+              {
+                "type": "note",
+                "text": "Choose 2 Evocation Wizard spells of level 1–2 and copy them into your spellbook for free. Each time you gain access to a new spell slot level, also copy one Evocation Wizard spell of that level or lower into your spellbook for free."
+              }
+            ]
+          }
         },
         {
           "name": "Potent Cantrip",
@@ -712,7 +782,15 @@
           "level": 3,
           "className": "Wizard",
           "subclassName": "Illusionist",
-          "description": "Choose two Wizard spells from the Illusion school, each of which must be no higher than level 2, and add them to your spellbook for free.\n\nIn addition, whenever you gain access to a new level of spell slots in this class, you can add one Wizard spell from the Illusion school to your spellbook for free. The chosen spell must be of a level for which you have spell slots."
+          "description": "Choose two Wizard spells from the Illusion school, each of which must be no higher than level 2, and add them to your spellbook for free.\n\nIn addition, whenever you gain access to a new level of spell slots in this class, you can add one Wizard spell from the Illusion school to your spellbook for free. The chosen spell must be of a level for which you have spell slots.",
+          "effects": {
+            "properties": [
+              {
+                "type": "note",
+                "text": "Choose 2 Illusion Wizard spells of level 1–2 and copy them into your spellbook for free. Each time you gain access to a new spell slot level, also copy one Illusion Wizard spell of that level or lower into your spellbook for free."
+              }
+            ]
+          }
         },
         {
           "name": "Improved Illusions",

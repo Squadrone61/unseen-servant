@@ -6,11 +6,17 @@
  *   - Ability modifiers: str, dex, con, int, wis, cha  → Math.floor((score - 10) / 2)
  *   - Context atoms: prof, lvl, clvl
  *   - Arithmetic: +, -, *  (standard precedence: * before +/-)
- *   - Functions: min(a, b), max(a, b), table(L:V, L:V, ...)
+ *   - Functions:
+ *       min(a, b), max(a, b)
+ *       table(L:V, ...)     — class-level keyed lookup (uses clvl, falls back to totalLevel)
+ *       table_lvl(L:V, ...) — character-level keyed lookup (always uses totalLevel)
+ *       table_prof(P:V, ...) — proficiency-bonus keyed lookup (uses proficiencyBonus)
  *
  * Usage:
- *   evaluateExpression("10 + dex + con", ctx)  // 17
- *   evaluateExpression("table(1:2, 9:3, 16:4)", ctx)  // 3 at clvl 12
+ *   evaluateExpression("10 + dex + con", ctx)           // 17
+ *   evaluateExpression("table(1:2, 9:3, 16:4)", ctx)    // 3 at clvl 12
+ *   evaluateExpression("table_lvl(1:2, 5:3, 11:4)", ctx) // 3 at totalLevel 7
+ *   evaluateExpression("table_prof(2:1, 4:2, 6:3)", ctx) // 2 at profBonus 4
  */
 
 import type { ResolveContext } from "../types/effects";
@@ -236,7 +242,13 @@ class Parser {
           return Math.max(a, b);
         }
         if (name === "table") {
-          return this.parseTable();
+          return this.parseTable("class");
+        }
+        if (name === "table_lvl") {
+          return this.parseTable("character");
+        }
+        if (name === "table_prof") {
+          return this.parseTable("prof");
         }
         throw new Error(`Unknown function '${name}'`);
       }
@@ -249,16 +261,21 @@ class Parser {
   }
 
   /**
-   * table(L:V, L:V, ...) — already consumed 'table' and '('.
-   * Uses clvl. Finds highest entry where L ≤ clvl.
+   * Parses a table(K:V, K:V, ...) expression — already consumed the function
+   * name and the opening '('. Finds the highest entry where K ≤ key.
    * Returns 0 if no entry applies.
+   *
+   * keyType controls which context value is used as the lookup key:
+   *   "class"     — clvl (classLevel ?? totalLevel)  — used by table()
+   *   "character" — totalLevel                        — used by table_lvl()
+   *   "prof"      — proficiencyBonus                  — used by table_prof()
    */
-  private parseTable(): number {
+  private parseTable(keyType: "class" | "character" | "prof"): number {
     const entries: Array<{ level: number; value: number }> = [];
 
-    // Parse zero or more L:V pairs separated by commas
+    // Parse zero or more K:V pairs separated by commas
     while (this.peek().kind !== "rparen" && this.peek().kind !== "eof") {
-      // Level key — may be negative (unlikely but handle it)
+      // Key — may be negative (unlikely but handle it)
       let levelNeg = false;
       if (this.peek().kind === "minus") {
         this.consume();
@@ -287,12 +304,23 @@ class Parser {
 
     this.expect("rparen");
 
-    const clvl = this.ctx.classLevel ?? this.ctx.totalLevel;
+    let key: number;
+    switch (keyType) {
+      case "class":
+        key = this.ctx.classLevel ?? this.ctx.totalLevel;
+        break;
+      case "character":
+        key = this.ctx.totalLevel;
+        break;
+      case "prof":
+        key = this.ctx.proficiencyBonus;
+        break;
+    }
 
-    // Find highest entry where entry.level ≤ clvl
+    // Find highest entry where entry.level ≤ key
     let result = 0;
     for (const entry of entries) {
-      if (entry.level <= clvl) {
+      if (entry.level <= key) {
         result = entry.value;
       }
     }

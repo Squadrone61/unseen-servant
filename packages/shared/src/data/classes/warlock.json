@@ -30,17 +30,6 @@
   "primaryAbility": "Charisma",
   "spellcastingAbility": "charisma",
   "canRitualCast": true,
-  "savingThrows": [
-    "wisdom",
-    "charisma"
-  ],
-  "armorProficiencies": [
-    "Light Armor"
-  ],
-  "weaponProficiencies": [
-    "Simple Weapons"
-  ],
-  "toolProficiencies": [],
   "skillChoices": {
     "from": [
       "Arcana",
@@ -322,6 +311,36 @@
   "pactMagic": true,
   "features": [
     {
+      "name": "Proficiencies",
+      "level": 1,
+      "className": "Warlock",
+      "description": "Your Warlock training grants the following proficiencies.",
+      "effects": {
+        "properties": [
+          {
+            "type": "proficiency",
+            "category": "save",
+            "value": "Wisdom"
+          },
+          {
+            "type": "proficiency",
+            "category": "save",
+            "value": "Charisma"
+          },
+          {
+            "type": "proficiency",
+            "category": "armor",
+            "value": "Light Armor"
+          },
+          {
+            "type": "proficiency",
+            "category": "weapon",
+            "value": "Simple Weapons"
+          }
+        ]
+      }
+    },
+    {
       "name": "Eldritch Invocations",
       "level": 1,
       "className": "Warlock",
@@ -341,6 +360,18 @@
       "className": "Warlock",
       "description": "Through occult ceremony, you have formed a pact with a mysterious entity to gain magical powers. The entity is a voice in the shadows—its identity unclear—but its boon to you is concrete: the ability to cast spells.\n\n**Cantrips.** You know two Warlock cantrips of your choice. {spell:Eldritch Blast} and {spell:Prestidigitation} are recommended. Whenever you gain a Warlock level, you can replace one of your cantrips from this feature with another Warlock cantrip of your choice. When you reach Warlock levels 4 and 10, you learn another Warlock cantrip of your choice, as shown in the Cantrips column of the Warlock Features table.\n\n**Spell Slots.** The Warlock Features table shows how many spell slots you have to cast your Warlock spells of levels 1–5. The table also shows the level of those slots, all of which are the same level. You regain all expended Pact Magic spell slots when you finish a {rule:Short Rest} or {rule:Long Rest}.\n\n**Prepared Spells of Level 1+.** You prepare the list of level 1+ spells that are available for you to cast with this feature. To start, choose two level 1 Warlock spells. {spell:Charm Person} and {spell:Hex} are recommended. The number of spells on your list increases as you gain Warlock levels, as shown in the Prepared Spells column of the Warlock Features table. Whenever that number increases, choose additional Warlock spells until the number of spells on your list matches the number in the table. The chosen spells must be of a level no higher than what's shown in the table's Slot Level column for your level.\n\nIf another Warlock feature gives you spells that you always have prepared, those spells don't count against the number of spells you can prepare with this feature, but those spells otherwise count as Warlock spells for you.\n\n**Changing Your Prepared Spells.** Whenever you gain a Warlock level, you can replace one spell on your list with another Warlock spell of an eligible level.\n\n**Spellcasting Ability.** Charisma is the spellcasting ability for your Warlock spells.\n\n**Spellcasting Focus.** You can use an {item:Arcane Focus} as a {rule:Spellcasting Focus} for your Warlock spells.",
       "effects": {
+        "modifiers": [
+          {
+            "target": "spell_save_dc",
+            "value": "8 + prof + cha",
+            "operation": "set"
+          },
+          {
+            "target": "spell_attack",
+            "value": "prof + cha",
+            "operation": "set"
+          }
+        ],
         "properties": [
           {
             "type": "note",
@@ -449,7 +480,15 @@
       "name": "Mystic Arcanum",
       "level": 13,
       "className": "Warlock",
-      "description": "You gain a level 7 Warlock spell of your choice as an additional arcanum. You can cast it once without expending a spell slot, and you must finish a {rule:Long Rest} before you can cast it in this way again."
+      "description": "You gain a level 7 Warlock spell of your choice as an additional arcanum. You can cast it once without expending a spell slot, and you must finish a {rule:Long Rest} before you can cast it in this way again.",
+      "effects": {
+        "properties": [
+          {
+            "type": "note",
+            "text": "Gain one level 7 Warlock spell as a Mystic Arcanum. Cast it once per Long Rest without expending a spell slot."
+          }
+        ]
+      }
     },
     {
       "name": "Subclass Feature",
@@ -461,7 +500,15 @@
       "name": "Mystic Arcanum",
       "level": 15,
       "className": "Warlock",
-      "description": "You gain a level 8 Warlock spell of your choice as an additional arcanum. You can cast it once without expending a spell slot, and you must finish a {rule:Long Rest} before you can cast it in this way again."
+      "description": "You gain a level 8 Warlock spell of your choice as an additional arcanum. You can cast it once without expending a spell slot, and you must finish a {rule:Long Rest} before you can cast it in this way again.",
+      "effects": {
+        "properties": [
+          {
+            "type": "note",
+            "text": "Gain one level 8 Warlock spell as a Mystic Arcanum. Cast it once per Long Rest without expending a spell slot."
+          }
+        ]
+      }
     },
     {
       "name": "Ability Score Improvement",
@@ -473,7 +520,15 @@
       "name": "Mystic Arcanum",
       "level": 17,
       "className": "Warlock",
-      "description": "You gain a level 9 Warlock spell of your choice as an additional arcanum. You can cast it once without expending a spell slot, and you must finish a {rule:Long Rest} before you can cast it in this way again."
+      "description": "You gain a level 9 Warlock spell of your choice as an additional arcanum. You can cast it once without expending a spell slot, and you must finish a {rule:Long Rest} before you can cast it in this way again.",
+      "effects": {
+        "properties": [
+          {
+            "type": "note",
+            "text": "Gain one level 9 Warlock spell as a Mystic Arcanum. Cast it once per Long Rest without expending a spell slot."
+          }
+        ]
+      }
     },
     {
       "name": "Epic Boon",

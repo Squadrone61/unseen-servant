@@ -482,10 +482,14 @@ describe("species lookup", () => {
       expect(sp!.speed).toBe(30);
     });
 
-    it("Elf darkvision is 60 feet", () => {
+    it("Elf has darkvision 60 feet in effects properties", () => {
       const sp = getSpecies("Elf");
       expect(sp).toBeDefined();
-      expect(sp!.darkvision).toBe(60);
+      const dvProp = (sp!.effects?.properties ?? []).find(
+        (p) => p.type === "sense" && (p as { sense?: string }).sense === "darkvision",
+      );
+      expect(dvProp).toBeDefined();
+      expect((dvProp as { range: number }).range).toBe(60);
     });
 
     it("Elf description contains rich text {spell:} or {condition:} links", () => {
@@ -531,19 +535,24 @@ describe("background lookup", () => {
       expect(bg!.description.length).toBeGreaterThan(0);
     });
 
-    it("Acolyte skills is a non-empty array of strings", () => {
+    it("Acolyte has Insight and Religion skill proficiencies in effects.properties", () => {
       const bg = getBackground("Acolyte");
       expect(bg).toBeDefined();
-      expect(Array.isArray(bg!.skills)).toBe(true);
-      expect(bg!.skills.length).toBeGreaterThan(0);
-      expect(bg!.skills).toContain("Insight");
-      expect(bg!.skills).toContain("Religion");
+      const skillProps = (bg!.effects?.properties ?? []).filter(
+        (p) => p.type === "proficiency" && (p as { category?: string }).category === "skill",
+      );
+      const skillValues = skillProps.map((p) => (p as { value: string }).value);
+      expect(skillValues).toContain("Insight");
+      expect(skillValues).toContain("Religion");
     });
 
-    it("Acolyte tools is an array (may be empty for some backgrounds)", () => {
+    it("Acolyte has tool proficiencies in effects.properties", () => {
       const bg = getBackground("Acolyte");
       expect(bg).toBeDefined();
-      expect(Array.isArray(bg!.tools)).toBe(true);
+      const toolProps = (bg!.effects?.properties ?? []).filter(
+        (p) => p.type === "proficiency" && (p as { category?: string }).category === "tool",
+      );
+      expect(Array.isArray(toolProps)).toBe(true);
     });
 
     it("Acolyte feat is a string", () => {
@@ -619,13 +628,14 @@ describe("feat lookup", () => {
     });
   });
 
-  describe("Great Weapon Master has a prerequisite", () => {
-    it("Great Weapon Master prerequisite is a non-empty string", () => {
+  describe("Great Weapon Master has a structured prerequisite", () => {
+    it("Great Weapon Master prerequisite is a structured Prerequisite object", () => {
       const feat = getFeat("Great Weapon Master");
       // Only test if the feat exists in the database.
       if (feat) {
-        expect(typeof feat.prerequisite).toBe("string");
-        expect(feat.prerequisite!.length).toBeGreaterThan(0);
+        expect(feat.prerequisite).toBeDefined();
+        expect(typeof feat.prerequisite).toBe("object");
+        expect(feat.prerequisiteText).toBeDefined();
       }
     });
   });
@@ -671,12 +681,17 @@ describe("class lookup", () => {
       expect(cls!.hitDiceFaces).toBe(6);
     });
 
-    it("Wizard savingThrows includes intelligence and wisdom", () => {
+    it("Wizard L1 Proficiencies feature includes intelligence and wisdom saves", () => {
       const cls = getClass("Wizard");
       expect(cls).toBeDefined();
-      expect(Array.isArray(cls!.savingThrows)).toBe(true);
-      expect(cls!.savingThrows).toContain("intelligence");
-      expect(cls!.savingThrows).toContain("wisdom");
+      const l1Prof = cls!.features.find((f) => f.name === "Proficiencies" && f.level === 1);
+      expect(l1Prof).toBeDefined();
+      const saveProps = (l1Prof!.effects?.properties ?? []).filter(
+        (p) => p.type === "proficiency" && (p as { category?: string }).category === "save",
+      );
+      const saveValues = saveProps.map((p) => (p as { value: string }).value.toLowerCase());
+      expect(saveValues).toContain("intelligence");
+      expect(saveValues).toContain("wisdom");
     });
 
     it("Wizard features is a non-empty array", () => {
@@ -1250,9 +1265,12 @@ describe("data integrity", () => {
       }
     });
 
-    it("every background has a skills array", () => {
+    it("every background has skill proficiencies in effects.properties", () => {
       for (const bg of backgroundsArray) {
-        expect(Array.isArray(bg.skills)).toBe(true);
+        const skillProps = (bg.effects?.properties ?? []).filter(
+          (p) => p.type === "proficiency" && (p as { category?: string }).category === "skill",
+        );
+        expect(skillProps.length).toBeGreaterThan(0);
       }
     });
 
@@ -1264,7 +1282,7 @@ describe("data integrity", () => {
     });
   });
 
-  describe("all classes have name, hitDiceFaces, savingThrows, features, and subclasses", () => {
+  describe("all classes have name, hitDiceFaces, L1 proficiencies, features, and subclasses", () => {
     it("class database has exactly 12 entries", () => {
       expect(classesArray.length).toBe(12);
     });
@@ -1284,10 +1302,14 @@ describe("data integrity", () => {
       }
     });
 
-    it("every class has a non-empty savingThrows array", () => {
+    it("every class has saving throw proficiencies in the L1 Proficiencies feature", () => {
       for (const cls of classesArray) {
-        expect(Array.isArray(cls.savingThrows)).toBe(true);
-        expect(cls.savingThrows.length).toBeGreaterThan(0);
+        const l1Prof = cls.features.find((f) => f.name === "Proficiencies" && f.level === 1);
+        expect(l1Prof).toBeDefined();
+        const saveProps = (l1Prof!.effects?.properties ?? []).filter(
+          (p) => p.type === "proficiency" && (p as { category?: string }).category === "save",
+        );
+        expect(saveProps.length).toBeGreaterThan(0);
       }
     });
 

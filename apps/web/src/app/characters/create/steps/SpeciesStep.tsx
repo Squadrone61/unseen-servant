@@ -32,9 +32,19 @@ function SpeciesPopover({
           <span className="text-xs px-2 py-0.5 rounded-full bg-gray-700/50 text-gray-300 border border-gray-600/30">
             {species.speed} ft
           </span>
-          {species.darkvision && (
+          {(species.effects?.properties ?? []).find(
+            (p) => p.type === "sense" && (p as { sense?: string }).sense === "darkvision",
+          ) && (
             <span className="text-xs px-2 py-0.5 rounded-full bg-blue-900/40 text-blue-300 border border-blue-700/30">
-              Darkvision {species.darkvision} ft
+              Darkvision{" "}
+              {
+                (
+                  (species.effects?.properties ?? []).find(
+                    (p) => p.type === "sense" && (p as { sense?: string }).sense === "darkvision",
+                  ) as { range: number }
+                ).range
+              }{" "}
+              ft
             </span>
           )}
         </div>
@@ -87,7 +97,11 @@ function SpeciesCard({
         </div>
         <span className="text-xs text-gray-500 shrink-0 whitespace-nowrap">
           {species.size.join("/")} · {species.speed} ft
-          {species.darkvision ? ` · DV ${species.darkvision}` : ""}
+          {(species.effects?.properties ?? []).find(
+            (p) => p.type === "sense" && (p as { sense?: string }).sense === "darkvision",
+          )
+            ? ` · DV ${((species.effects?.properties ?? []).find((p) => p.type === "sense" && (p as { sense?: string }).sense === "darkvision") as { range: number }).range}`
+            : ""}
         </span>
       </div>
     </button>
@@ -155,7 +169,11 @@ export function SpeciesStep() {
           <span className="text-sm text-amber-200 font-medium">✓ {selectedSpecies.name}</span>
           <span className="text-xs text-gray-500">
             {selectedSpecies.size.join("/")} · {selectedSpecies.speed} ft
-            {selectedSpecies.darkvision ? ` · Darkvision ${selectedSpecies.darkvision} ft` : ""}
+            {(selectedSpecies.effects?.properties ?? []).find(
+              (p) => p.type === "sense" && (p as { sense?: string }).sense === "darkvision",
+            )
+              ? ` · Darkvision ${((selectedSpecies.effects?.properties ?? []).find((p) => p.type === "sense" && (p as { sense?: string }).sense === "darkvision") as { range: number }).range} ft`
+              : ""}
           </span>
           <div className="flex-1" />
           <button
