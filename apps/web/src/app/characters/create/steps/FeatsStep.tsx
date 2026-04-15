@@ -155,7 +155,7 @@ function FeatCard({ feat, isSelected, onClick, onInfo }: FeatCardProps) {
         <div className="flex items-center gap-2 shrink-0">
           <span className="text-xs text-gray-500 whitespace-nowrap">
             {feat.category}
-            {feat.prerequisite ? ` · ${feat.prerequisite}` : ""}
+            {feat.prerequisiteText ? ` · ${feat.prerequisiteText}` : ""}
           </span>
           <InfoButton onClick={onInfo} />
         </div>
@@ -458,7 +458,7 @@ function AsiSlot({
               </span>
               <span className="text-xs text-gray-500">
                 {selectedFeatData.category}
-                {selectedFeatData.prerequisite ? ` · ${selectedFeatData.prerequisite}` : ""}
+                {selectedFeatData.prerequisiteText ? ` · ${selectedFeatData.prerequisiteText}` : ""}
               </span>
               <div className="flex-1" />
               <button
@@ -647,7 +647,7 @@ function OriginFeatDisplay({ featName }: OriginFeatDisplayProps) {
           </span>
           <span className="text-xs text-gray-500 shrink-0">
             {feat.category}
-            {feat.prerequisite ? ` · ${feat.prerequisite}` : ""}
+            {feat.prerequisiteText ? ` · ${feat.prerequisiteText}` : ""}
           </span>
         </div>
         {feat.effects && (
