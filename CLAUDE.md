@@ -113,7 +113,10 @@ pnpm deploy:web     # Deploy web only
 ### DM Launcher (apps/dm-launcher/src/)
 
 - `entry.ts` — npm bin entry point
-- `cli.ts` — Spawns Claude Code with MCP config, writes DM_SYSTEM_PROMPT as CLAUDE.md
+- `cli.ts` — Spawns Claude Code with MCP config, writes CLAUDE.md + `.claude/rules/*.md` + `.claude/skills/<name>/SKILL.md` from bundled `.md` sources
+- `claude-md.md` — Trimmed core-contract CLAUDE.md (game loop, invariants) written to the DM's workDir at launch
+- `rules/*.md` — Set-in-stone DM rules (player identity, response-vs-acknowledge, creativity, entity highlighting, action_ref, skills routing). Loaded into every DM session via Claude Code's `.claude/rules/` system.
+- `skills/*.md` — Model-invocable DM skills (combat, combat-prep, narration, rules, campaign, social, recap, npc-voice, story-arc, loot-drop, tavern, battle-tactics, travel, trap, puzzle). Inlined into the launcher binary via esbuild's `.md` text loader.
 - `server.ts` — Express server for OAuth callback handling
 
 ### Backend (apps/worker/src/)
@@ -146,8 +149,7 @@ pnpm deploy:web     # Deploy web only
 - `types/game-state.ts` — GameState, CombatState, GameEvent, EncounterState, CampaignJournal, MapTile (with TileObject, cover, elevation), AoEOverlay
 - `types/ai-actions.ts` — AI parsed action types
 - `schemas/messages.ts` — Zod schemas for runtime message validation
-- `constants.ts` — DM*SYSTEM_PROMPT (single source of truth), DM_SKILL*\* modules, room limits, token limits
-- `skills.ts` — Native Claude Code skill definitions (9 slash commands: recap, npc-voice, story-arc, loot-drop, tavern, battle-tactics, travel, trap, puzzle)
+- `constants.ts` — Room limits, token limits, shared constants
 - `utils/dice.ts` — Shared dice rolling (rollDie, rollDice, rollCheck, rollInitiative, rollDamage)
 - `utils/check-helpers.ts` — Check modifier computation, label building from character sheets
 - `data/index.ts` — D&D 2024 database: type-safe lookup maps + helpers (getSpell, getMonster, getClass, getClassSpellSlots, getCasterMultiplier, etc.)

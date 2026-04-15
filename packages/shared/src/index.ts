@@ -1,7 +1,6 @@
 export * from "./types/index";
 export * from "./schemas/index";
 export * from "./constants";
-export * from "./skills";
 export * from "./data/index";
 export * from "./builders/index";
 export { evaluateExpression } from "./utils/expression-evaluator";

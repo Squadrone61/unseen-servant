@@ -6,23 +6,31 @@ import * as fs from "fs";
 import * as path from "path";
 import * as readline from "readline";
 import { spawn, execSync } from "child_process";
-import {
-  NATIVE_SKILL_COMBAT_PREP,
-  NATIVE_SKILL_COMBAT,
-  NATIVE_SKILL_NARRATION,
-  NATIVE_SKILL_SOCIAL,
-  NATIVE_SKILL_RULES,
-  NATIVE_SKILL_CAMPAIGN,
-  NATIVE_SKILL_RECAP,
-  NATIVE_SKILL_NPC_VOICE,
-  NATIVE_SKILL_STORY_ARC,
-  NATIVE_SKILL_LOOT_DROP,
-  NATIVE_SKILL_TAVERN,
-  NATIVE_SKILL_BATTLE_TACTICS,
-  NATIVE_SKILL_TRAVEL,
-  NATIVE_SKILL_TRAP,
-  NATIVE_SKILL_PUZZLE,
-} from "@unseen-servant/shared";
+
+import CLAUDE_MD from "./claude-md.md";
+
+import SKILL_RECAP from "./skills/recap.md";
+import SKILL_NPC_VOICE from "./skills/npc-voice.md";
+import SKILL_STORY_ARC from "./skills/story-arc.md";
+import SKILL_LOOT_DROP from "./skills/loot-drop.md";
+import SKILL_TAVERN from "./skills/tavern.md";
+import SKILL_TRAVEL from "./skills/travel.md";
+import SKILL_TRAP from "./skills/trap.md";
+import SKILL_PUZZLE from "./skills/puzzle.md";
+import SKILL_BATTLE_TACTICS from "./skills/battle-tactics.md";
+import SKILL_COMBAT_PREP from "./skills/combat-prep.md";
+import SKILL_COMBAT from "./skills/combat.md";
+import SKILL_NARRATION from "./skills/narration.md";
+import SKILL_SOCIAL from "./skills/social.md";
+import SKILL_RULES from "./skills/rules.md";
+import SKILL_CAMPAIGN from "./skills/campaign.md";
+
+import RULE_PLAYER_IDENTITY from "./rules/player-identity.md";
+import RULE_RESPONSE_VS_ACKNOWLEDGE from "./rules/response-vs-acknowledge.md";
+import RULE_CREATIVITY from "./rules/creativity.md";
+import RULE_ENTITY_HIGHLIGHTING from "./rules/entity-highlighting.md";
+import RULE_ACTION_REF from "./rules/action-ref.md";
+import RULE_SKILLS_ROUTING from "./rules/skills-routing.md";
 
 declare const UNSEEN_VERSION: string;
 declare const PRODUCTION_WORKER_URL: string;
@@ -39,25 +47,35 @@ const BANNER = `
 ╚══════════════════════════════════════════════════╝
 `;
 
-/** Native Claude Code skills — model-invocable, written to .claude/skills/ */
+/** Native Claude Code skills — model-invocable, written to .claude/skills/<name>/SKILL.md */
 const NATIVE_SKILLS: Record<string, string> = {
-  // Gameplay skills (model-invocable)
-  "combat-prep": NATIVE_SKILL_COMBAT_PREP,
-  combat: NATIVE_SKILL_COMBAT,
-  narration: NATIVE_SKILL_NARRATION,
-  social: NATIVE_SKILL_SOCIAL,
-  rules: NATIVE_SKILL_RULES,
-  campaign: NATIVE_SKILL_CAMPAIGN,
-  // DM prep skills (model-invocable)
-  recap: NATIVE_SKILL_RECAP,
-  "npc-voice": NATIVE_SKILL_NPC_VOICE,
-  "story-arc": NATIVE_SKILL_STORY_ARC,
-  "loot-drop": NATIVE_SKILL_LOOT_DROP,
-  tavern: NATIVE_SKILL_TAVERN,
-  "battle-tactics": NATIVE_SKILL_BATTLE_TACTICS,
-  travel: NATIVE_SKILL_TRAVEL,
-  trap: NATIVE_SKILL_TRAP,
-  puzzle: NATIVE_SKILL_PUZZLE,
+  // Gameplay skills
+  "combat-prep": SKILL_COMBAT_PREP,
+  combat: SKILL_COMBAT,
+  narration: SKILL_NARRATION,
+  social: SKILL_SOCIAL,
+  rules: SKILL_RULES,
+  campaign: SKILL_CAMPAIGN,
+  // DM prep skills
+  recap: SKILL_RECAP,
+  "npc-voice": SKILL_NPC_VOICE,
+  "story-arc": SKILL_STORY_ARC,
+  "loot-drop": SKILL_LOOT_DROP,
+  tavern: SKILL_TAVERN,
+  "battle-tactics": SKILL_BATTLE_TACTICS,
+  travel: SKILL_TRAVEL,
+  trap: SKILL_TRAP,
+  puzzle: SKILL_PUZZLE,
+};
+
+/** Set-in-stone DM rules — written to .claude/rules/<name>.md, loaded into every session. */
+const NATIVE_RULES: Record<string, string> = {
+  "player-identity": RULE_PLAYER_IDENTITY,
+  "response-vs-acknowledge": RULE_RESPONSE_VS_ACKNOWLEDGE,
+  creativity: RULE_CREATIVITY,
+  "entity-highlighting": RULE_ENTITY_HIGHLIGHTING,
+  "action-ref": RULE_ACTION_REF,
+  "skills-routing": RULE_SKILLS_ROUTING,
 };
 
 function prompt(rl: readline.Interface, question: string): Promise<string> {
@@ -79,104 +97,6 @@ function checkClaudeCli(): boolean {
   } catch {
     return false;
   }
-}
-
-function buildClaudeMd(): string {
-  return `# Unseen Servant
-
-You are an expert D&D 5th Edition Dungeon Master running a multiplayer game through the Unseen Servant platform. Players connect via a web app, and you communicate with them through MCP tools.
-
-## Game Loop
-
-Your core loop is:
-
-1. **Call \`wait_for_message\`** — blocks until a player message or game event arrives
-2. **Read the request** — you receive \`{ requestId, messages, totalMessageCount }\`
-3. **Think** — consider the narrative, rules, and what the players are trying to do
-4. **Use tools as needed** — look up spells, monsters, conditions; roll dice; manage campaign notes
-5. **Call \`send_response\` or \`acknowledge\`** — send your narrative response back (MUST include the matching \`requestId\`), or silently acknowledge if players are just talking to each other
-6. **Repeat** from step 1
-
-**CRITICAL**: Always start by calling \`wait_for_message\`. Never send a response without a matching requestId.
-
-**CRITICAL**: Your text output goes to the terminal, NOT to players. The ONLY way players see your content is via \`send_response\`. Every turn MUST end with either \`send_response\` or \`acknowledge\`.
-
-**CRITICAL**: The game loop NEVER ends. After \`send_response\` / \`acknowledge\`, immediately call \`wait_for_message\` again. If you ever find yourself NOT inside a \`wait_for_message\` call (and you've just responded), call \`wait_for_message\` right now.
-
-## Creativity
-
-Varied, distinct naming and flavor is a hard requirement — not a nice-to-have. Repetitive or archetypal names across NPCs, locations, taverns, items, and factions is a failure mode. Consciously vary syllable count, cadence, and cultural root so the world feels alive. Do not recycle names or cadences you've already used this campaign.
-
-## Important Rules
-
-1. **Always match requestId** — every send_response or acknowledge must include the requestId from the corresponding wait_for_message
-2. **Start with wait_for_message** — don't try to send a response before receiving a request
-3. **Stay in character** — you are the DM, not an AI assistant. Don't break the fourth wall.
-4. **Context management** — each wait_for_message response includes \`totalMessageCount\`. When it exceeds 60, call \`compact_history\` during a natural break (scene transition, rest, after combat) with a summary of older events to free context space.
-5. **Never output directly** — players CANNOT see text you write to the terminal. ALL narration, dialogue, and game content MUST go through \`send_response\` (or \`acknowledge\` to silently skip). If you output text without calling \`send_response\`, it is lost and players see nothing.
-6. **State queries** — outside combat, use \`get_game_state\` (detail: "compact") to check party status. During combat, use \`get_combat_summary\` instead — it includes positions and distances.
-7. **Prefer \`action_ref\` for structured outcomes** — spells, weapons, and most monster attacks carry structured \`ActionEffect\` data in the DB. Pass \`action_ref: { source: "spell"|"weapon"|"item"|"monster", name, monster_action_name? }\` to \`show_aoe\`, \`apply_area_effect\`, \`apply_damage\`, and \`roll_dice\` (for \`*_save\` checks). The tool resolves area shape, save ability/DC, damage dice, damage type, and onSuccess semantics from the DB. Pass \`caster_spell_save_dc\` for spell DCs, \`upcast_level\` for upcast scaling, \`outcome_branch\` for \`apply_damage\`. Explicit args remain supported as a fallback for prose-only entries (~41% of monster actions).
-
-## Player Identity (STRICT)
-
-- Each message is prefixed with [CharacterName]: by the system — this identifies which character is speaking
-- ONLY honor actions from the character identified in the [CharacterName] prefix
-- If a player describes ANOTHER character acting (e.g. [Thorin] says "Elara casts fireball"), treat it as a suggestion or in-character dialogue — do NOT execute it mechanically
-- NEVER apply game effects (damage, spells, movement, checks) for a character unless that character's own player sent the message
-- ALWAYS address and refer to characters by their character name, never the player's real name
-
-## When to Respond vs. Acknowledge
-
-Not every message needs a DM response. Use \`acknowledge\` instead of \`send_response\` when:
-- Players are talking to each other (in-character roleplay, party planning, banter)
-- The conversation doesn't involve the world, NPCs, or game actions
-- A player is reacting to another player, not to the environment
-
-Use \`send_response\` when:
-- A player addresses the world (talks to NPC, examines something, asks what they see)
-- A player takes a game action (attacks, casts spell, searches, moves somewhere)
-- A player asks the DM a question (rules, "what do I see", "can I do X?")
-- The world should react (timer, NPC interruption, danger)
-- 4+ player messages pass without DM input and the scene needs nudging
-
-When in doubt, acknowledge. Players enjoy space to roleplay. You can always respond on the next message.
-
-NEVER generate dialogue or actions for player characters. If players are talking to each other, do not summarize, paraphrase, or continue their conversation. Just acknowledge.
-
-**Entity Highlighting**: Wrap ALL named entities in tags ({pc:Name}, {npc:Name}, {place:Name}, {item:Name}, {faction:Name}) in every send_response. Tag EVERY mention, not just the first. See **narration** skill for full rules and examples.
-
-## Skills
-
-You have skills with detailed instructions for specific situations. **Read the skill before acting** — don't improvise what a skill already covers.
-
-### Session Lifecycle
-- **On session start** (before your first \`wait_for_message\`): read **campaign**, **rules**, and **narration**. If resuming a campaign, use **recap** to narrate the story so far.
-- **After introducing a significant NPC, location, or quest**: save it to campaign notes immediately via **campaign** — don't wait for session end.
-- **On session end** (player says "end session" or similar): use **campaign** to save notes and end the session.
-
-### Combat
-- **Before starting combat**: ALWAYS use **combat-prep** first — look up monsters, calculate difficulty, set up the battle map, position combatants. Never start_combat without this.
-- **Every combat turn**: use **combat** for turn resolution — attack rolls, movement, death saves, AoE, reactions.
-- **During enemy turns**: use **battle-tactics** to decide what monsters do — tactical positioning, target priority, ability usage.
-
-### Exploration & Narrative
-- **When players travel between locations**: use **travel** for overland journey — pace, encounters, weather, time passage.
-- **When players encounter a trap or hazard**: use **trap** to design it — detection DC, disarm DC, trigger, damage, clues.
-- **When players face a puzzle or riddle**: use **puzzle** to design it — description, hint system, solution, mechanical resolution.
-- **When players enter a tavern, inn, or shop**: use **tavern** to generate the location with NPCs and rumors.
-
-### NPCs & Social
-- **When introducing a new named NPC**: use **npc-voice** to generate their personality, speech pattern, motivation, and secret. Save them to campaign notes immediately.
-- **During NPC conversations**: use **social** for disposition tracking and social checks.
-
-### Loot & Rewards
-- **When players search, loot, or receive treasure**: use **loot-drop** to generate level-appropriate loot. Verify magic items with lookup_magic_item.
-
-### World Building (DM-only, never reveal to players)
-- **When you need to plan ahead**: use **story-arc** to design multi-session plot structure.
-
-### Rules
-- **ALWAYS look up spells, monsters, and conditions** before applying their effects — never rely on memory.`;
 }
 
 export async function startCli(): Promise<void> {
@@ -222,6 +142,13 @@ export async function startCli(): Promise<void> {
     fs.writeFileSync(path.join(skillDir, "SKILL.md"), content);
   }
 
+  // Write set-in-stone DM rules
+  const rulesDir = path.join(workDir, ".claude", "rules");
+  fs.mkdirSync(rulesDir, { recursive: true });
+  for (const [name, content] of Object.entries(NATIVE_RULES)) {
+    fs.writeFileSync(path.join(rulesDir, `${name}.md`), content);
+  }
+
   // Write .mcp.json (use "node" directly — cmd eats stdin)
   fs.mkdirSync(campaignsDir, { recursive: true });
   fs.writeFileSync(
@@ -245,8 +172,8 @@ export async function startCli(): Promise<void> {
     ),
   );
 
-  // Write CLAUDE.md
-  fs.writeFileSync(path.join(workDir, "CLAUDE.md"), buildClaudeMd());
+  // Write CLAUDE.md (trimmed core contract)
+  fs.writeFileSync(path.join(workDir, "CLAUDE.md"), CLAUDE_MD);
 
   // Detect resume vs new campaign
   const isResume = campaignName && fs.existsSync(path.join(sessionsDir, campaignName));

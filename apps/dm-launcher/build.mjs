@@ -21,6 +21,9 @@ const result = await esbuild.build({
   // Keep readable for debugging
   keepNames: true,
 
+  // Inline .md files as string constants (rules, skills, CLAUDE.md)
+  loader: { ".md": "text" },
+
   // Node builtins are external (available at runtime)
   // Also exclude optional native WebSocket deps
   external: ["bufferutil", "utf-8-validate"],
