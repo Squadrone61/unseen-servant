@@ -320,6 +320,12 @@ export function searchMagicItems(query: string): MagicItemDb[] {
   return magicItemsArray.filter((s) => s.name.toLowerCase().includes(lower));
 }
 
+/** Search base (mundane) items: weapons, armor, tools, gear. */
+export function searchBaseItems(query: string): BaseItemDb[] {
+  const lower = query.toLowerCase();
+  return baseItemsArray.filter((s) => s.name.toLowerCase().includes(lower));
+}
+
 // ─── Feature Ref Helpers ───────────────────────────────
 
 /** Return all classes in the DB (useful for subclass lookups). */

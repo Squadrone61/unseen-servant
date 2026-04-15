@@ -53,7 +53,7 @@ function startCombatWithNPCs(
 // ---------------------------------------------------------------------------
 
 describe("resolveActionRef", () => {
-  it("resolves Fireball spell to sphere/20ft save action", () => {
+  it("resolves Fireball spell to sphere/20ft save action", async () => {
     const { action, displayName } = resolveActionRef({ source: "spell", name: "Fireball" });
     expect(displayName).toBe("Fireball");
     expect(action).not.toBeNull();
@@ -70,7 +70,7 @@ describe("resolveActionRef", () => {
     expect(dmg[0].dice).toBe("8d6");
   });
 
-  it("resolves Magic Missile spell to auto-hit force action", () => {
+  it("resolves Magic Missile spell to auto-hit force action", async () => {
     const { action, displayName } = resolveActionRef({ source: "spell", name: "Magic Missile" });
     expect(displayName).toBe("Magic Missile");
     expect(action).not.toBeNull();
@@ -79,7 +79,7 @@ describe("resolveActionRef", () => {
     expect(action!.onHit?.damage?.[0].dice).toBe("1d4+1");
   });
 
-  it("resolves Longsword weapon to attack action", () => {
+  it("resolves Longsword weapon to attack action", async () => {
     const { action, displayName } = resolveActionRef({ source: "weapon", name: "Longsword" });
     expect(displayName).toBe("Longsword");
     expect(action).not.toBeNull();
@@ -89,7 +89,7 @@ describe("resolveActionRef", () => {
     expect(action!.onHit?.damage?.[0].dice).toBe("1d8");
   });
 
-  it("resolves Adult Red Dragon Fire Breath monster action", () => {
+  it("resolves Adult Red Dragon Fire Breath monster action", async () => {
     const { action, displayName } = resolveActionRef({
       source: "monster",
       name: "Adult Red Dragon",
@@ -103,7 +103,7 @@ describe("resolveActionRef", () => {
     expect(action!.save?.dc).toBe(21);
   });
 
-  it("returns null action for unknown spell", () => {
+  it("returns null action for unknown spell", async () => {
     const { action, displayName } = resolveActionRef({
       source: "spell",
       name: "Nonexistent Spell XYZ",
@@ -112,7 +112,7 @@ describe("resolveActionRef", () => {
     expect(displayName).toBe("Nonexistent Spell XYZ");
   });
 
-  it("returns null action for monster with no matching action name", () => {
+  it("returns null action for monster with no matching action name", async () => {
     const { action } = resolveActionRef({
       source: "monster",
       name: "Goblin",
@@ -121,7 +121,7 @@ describe("resolveActionRef", () => {
     expect(action).toBeNull();
   });
 
-  it("returns null action for monster with no monsterActionName", () => {
+  it("returns null action for monster with no monsterActionName", async () => {
     const { action } = resolveActionRef({ source: "monster", name: "Goblin" });
     expect(action).toBeNull();
   });
@@ -132,7 +132,7 @@ describe("resolveActionRef", () => {
 // ---------------------------------------------------------------------------
 
 describe("getAction — context substitution", () => {
-  it("substitutes spell_save_dc with casterSpellSaveDC", () => {
+  it("substitutes spell_save_dc with casterSpellSaveDC", async () => {
     const { action } = resolveActionRef({ source: "spell", name: "Fireball" });
     expect(action).not.toBeNull();
 
@@ -141,14 +141,14 @@ describe("getAction — context substitution", () => {
     expect(resolved!.save?.dc).toBe(17);
   });
 
-  it("leaves DC as 'spell_save_dc' when no casterSpellSaveDC given", () => {
+  it("leaves DC as 'spell_save_dc' when no casterSpellSaveDC given", async () => {
     const { action } = resolveActionRef({ source: "spell", name: "Fireball" });
     const resolved = getAction({ effects: { action: action! } }, {});
     // dc stays as "spell_save_dc" when no substitution context
     expect(resolved!.save?.dc).toBe("spell_save_dc");
   });
 
-  it("applies upcast scaling: Fireball at 1 extra level adds 1d6 fire damage", () => {
+  it("applies upcast scaling: Fireball at 1 extra level adds 1d6 fire damage", async () => {
     const { action } = resolveActionRef({ source: "spell", name: "Fireball" });
     const resolved = getAction(
       { effects: { action: action! } },
@@ -164,7 +164,7 @@ describe("getAction — context substitution", () => {
     expect(dmg!.every((d) => d.type === "fire")).toBe(true);
   });
 
-  it("returns null for entity without action", () => {
+  it("returns null for entity without action", async () => {
     const resolved = getAction({ effects: { modifiers: [] } }, {});
     expect(resolved).toBeNull();
   });
@@ -175,7 +175,7 @@ describe("getAction — context substitution", () => {
 // ---------------------------------------------------------------------------
 
 describe("apply_damage with actionRef (end-to-end at GSM level)", () => {
-  it("Longsword onHit deals 1d8 slashing to NPC — HP drops by expected range", () => {
+  it("Longsword onHit deals 1d8 slashing to NPC — HP drops by expected range", async () => {
     const { gsm } = createTestGSM();
     setupCombatMap(gsm);
     startCombatWithNPCs(gsm, [{ name: "Orc", maxHP: 50, position: { x: 5, y: 5 } }]);
@@ -207,7 +207,7 @@ describe("apply_damage with actionRef (end-to-end at GSM level)", () => {
 // ---------------------------------------------------------------------------
 
 describe("apply_area_effect with Fireball actionRef (GSM level)", () => {
-  it("resolves Fireball area shape as sphere/20ft with DEX save DC from context", () => {
+  it("resolves Fireball area shape as sphere/20ft with DEX save DC from context", async () => {
     const { action } = resolveActionRef({ source: "spell", name: "Fireball" });
     const resolved = getAction({ effects: { action: action! } }, { spellSaveDC: 15 });
 
@@ -220,7 +220,7 @@ describe("apply_area_effect with Fireball actionRef (GSM level)", () => {
     expect(resolved!.onFailedSave?.damage?.[0].type).toBe("fire");
   });
 
-  it("Fireball deals fire damage to NPCs in a 20ft sphere (DC 15 DEX save)", () => {
+  it("Fireball deals fire damage to NPCs in a 20ft sphere (DC 15 DEX save)", async () => {
     const { gsm } = createTestGSM();
     setupCombatMap(gsm);
     // Place goblins at center of the board — F6 is (5,5)
@@ -238,7 +238,7 @@ describe("apply_area_effect with Fireball actionRef (GSM level)", () => {
     const damageType = failedSaveDamage[0].type;
 
     // Apply area effect with the resolved params — cover whole map with size=100
-    const result = gsm.applyAreaEffect({
+    const result = await gsm.applyAreaEffect({
       shape: "sphere",
       center: "F6",
       size: 100, // huge radius to guarantee all goblins are hit
@@ -274,14 +274,14 @@ describe("apply_area_effect with Fireball actionRef (GSM level)", () => {
 // ---------------------------------------------------------------------------
 
 describe("show_aoe with actionRef area resolution", () => {
-  it("Fireball area is sphere with size 20 from actionRef", () => {
+  it("Fireball area is sphere with size 20 from actionRef", async () => {
     const { action } = resolveActionRef({ source: "spell", name: "Fireball" });
     expect(action!.area).toBeDefined();
     expect(action!.area!.shape).toBe("sphere");
     expect(action!.area!.size).toBe(20);
   });
 
-  it("Adult Red Dragon Fire Breath area resolves as cone (if structured)", () => {
+  it("Adult Red Dragon Fire Breath area resolves as cone (if structured)", async () => {
     const { action } = resolveActionRef({
       source: "monster",
       name: "Adult Red Dragon",
@@ -301,7 +301,7 @@ describe("show_aoe with actionRef area resolution", () => {
 // ---------------------------------------------------------------------------
 
 describe("roll_dice action_ref DC auto-fill", () => {
-  it("resolves DC 21 from Adult Red Dragon Fire Breath via getAction", () => {
+  it("resolves DC 21 from Adult Red Dragon Fire Breath via getAction", async () => {
     const { action } = resolveActionRef({
       source: "monster",
       name: "Adult Red Dragon",
@@ -312,13 +312,13 @@ describe("roll_dice action_ref DC auto-fill", () => {
     expect(resolved!.save?.dc).toBe(21);
   });
 
-  it("resolves Fireball DC via caster_spell_save_dc substitution", () => {
+  it("resolves Fireball DC via caster_spell_save_dc substitution", async () => {
     const { action } = resolveActionRef({ source: "spell", name: "Fireball" });
     const resolved = getAction({ effects: { action: action! } }, { spellSaveDC: 16 });
     expect(resolved!.save?.dc).toBe(16);
   });
 
-  it("leaves DC as string 'spell_save_dc' when no casterSpellSaveDC provided", () => {
+  it("leaves DC as string 'spell_save_dc' when no casterSpellSaveDC provided", async () => {
     const { action } = resolveActionRef({ source: "spell", name: "Fireball" });
     const resolved = getAction({ effects: { action: action! } }, {});
     expect(resolved!.save?.dc).toBe("spell_save_dc");
@@ -330,7 +330,7 @@ describe("roll_dice action_ref DC auto-fill", () => {
 // ---------------------------------------------------------------------------
 
 describe("get_character inventory weapon action enrichment (pure resolver)", () => {
-  it("Longsword base item has ActionEffect in DB", () => {
+  it("Longsword base item has ActionEffect in DB", async () => {
     const { action } = resolveActionRef({ source: "weapon", name: "Longsword" });
     expect(action).not.toBeNull();
     expect(action!.kind).toBe("attack");
@@ -339,7 +339,7 @@ describe("get_character inventory weapon action enrichment (pure resolver)", () 
     expect(action!.onHit!.damage![0].type).toBe("slashing");
   });
 
-  it("Longbow base item has ActionEffect with ranged attack", () => {
+  it("Longbow base item has ActionEffect with ranged attack", async () => {
     const { action, displayName } = resolveActionRef({ source: "weapon", name: "Longbow" });
     expect(displayName).toBe("Longbow");
     expect(action).not.toBeNull();
@@ -348,7 +348,7 @@ describe("get_character inventory weapon action enrichment (pure resolver)", () 
     expect(action!.onHit?.damage?.[0].type).toBe("piercing");
   });
 
-  it("getWeaponAttack works for Barbarian with Longsword", () => {
+  it("getWeaponAttack works for Barbarian with Longsword", async () => {
     const char = createBarbarianCharacter();
     const baseItem = getBaseItem("longsword");
     if (baseItem) {

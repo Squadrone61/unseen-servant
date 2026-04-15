@@ -31,11 +31,13 @@ user-invocable: false
 
 # /npc-voice
 
-Create a detailed NPC based on the user's description:
+Create a detailed NPC based on the user's description.
+
+**Name variety is a hard requirement.** Repetitive or archetypal names are a failure — consciously vary syllable count, cadence, and cultural root across every NPC you create this campaign. Do not recycle names or cadences you've already used.
 
 1. **Parse the description** — extract the NPC concept (e.g., "grizzled dwarf blacksmith", "nervous elven scholar")
 2. **Generate the NPC profile:**
-   - **Name** — a fitting fantasy name
+   - **Name** — a fitting fantasy name (distinct in sound and origin from prior NPCs)
    - **Appearance** — 2-3 distinctive physical traits
    - **Personality** — core trait, flaw, and bond
    - **Speech pattern** — a verbal tic, accent note, or catchphrase that makes them recognizable (e.g., always speaks in questions, uses nautical metaphors, whispers everything)
@@ -85,14 +87,16 @@ user-invocable: false
 
 # /loot-drop
 
-Generate loot appropriate to the encounter and party:
+Generate loot appropriate to the encounter and party. ALWAYS prefer items that already exist in the 2024 SRD databases — invent new flavor items only when nothing fits.
 
 1. **Get party info** — call \`get_players\` to see classes and levels (tailor loot to the party)
-2. **Generate a loot table** with 3-5 items: a mix of gold, consumables, and 0-1 notable items
-   - Gold amount should be level-appropriate (DMG treasure tables as reference)
-   - Consumables: potions, scrolls, ammunition
-   - Notable items: magic items, quest-relevant objects, flavorful mundane items
-3. **Verify magic items** — for any magic item in the loot, call \`lookup_magic_item\` to confirm it exists in the SRD and get accurate rarity/attunement/effects
+2. **Search the databases first** — before inventing anything, run \`search_rules\` with a theme/tier keyword. It searches magic items (563 entries), mundane weapons/armor/tools/gear (base items), spells (for scrolls), and more. Pick from real matches when possible.
+3. **Generate a loot table** with 3-5 items — a mix of:
+   - **Gold** (level-appropriate; DMG treasure tables as reference)
+   - **Consumables** — potions (\`lookup_magic_item\`), scrolls (scroll of X — \`lookup_spell\` to confirm the spell), ammunition
+   - **Mundane items** — weapons/armor/tools from the base-item DB (visible via \`search_rules\`)
+   - **Notable items** — magic items from the DB; 0-1 per encounter
+4. **Verify every item** — call \`lookup_magic_item\` for magic items, \`lookup_spell\` for scrolls. For mundane items, cross-check with \`search_rules\` so the name matches what's in the DB.
 4. **For each notable item**, provide:
    - **Name** — a fitting, evocative name
    - **Description** — what it looks like
@@ -111,10 +115,12 @@ user-invocable: false
 
 # /tavern
 
-Generate a tavern or shop on the fly:
+Generate a tavern or shop on the fly.
+
+**Name variety matters.** Location and NPC names should be distinct and inventive — avoid reusing syllables, structures, or archetypes from earlier taverns/NPCs this campaign.
 
 1. **Generate the location:**
-   - **Name** — a memorable, thematic name
+   - **Name** — a memorable, thematic name (fresh — not a variant of a previous location's name)
    - **Atmosphere** — 2-3 sensory details (sights, sounds, smells)
    - **Notable feature** — one thing that makes this place unique
 2. **Generate 2-3 NPCs** (bartender/shopkeep + patrons/customers):
@@ -474,6 +480,7 @@ NEVER guess spell effects, monster stats, or condition rules. ALWAYS look them u
 
 ### Dice Rolling
 - ALL rolls go through \`roll_dice\` so players see them in chat — never narrate a roll without actually rolling
+- **NEVER type "roll a d20" / "roll initiative" / "roll a death save" / "roll X" in prose.** Every player-side roll MUST be an interactive \`roll_dice\` call with \`player\` set — the player sees a Roll button. Prose roll requests are broken — the player can't respond to them and the system can't capture the result
 - \`checkType\` auto-computes modifiers from the character sheet. Valid values:
   - **Skills:** perception, stealth, athletics, acrobatics, arcana, deception, history, insight, intimidation, investigation, medicine, nature, performance, persuasion, religion, sleight_of_hand, animal_handling, survival
   - **Abilities:** strength, dexterity, constitution, intelligence, wisdom, charisma

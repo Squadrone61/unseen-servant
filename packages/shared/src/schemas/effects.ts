@@ -229,6 +229,7 @@ export const effectSourceTypeSchema = z.enum([
   "spell",
   "condition",
   "environment",
+  "monster",
 ]);
 
 export const effectSourceSchema = z.object({

@@ -64,9 +64,37 @@ export function registerGameTools(
   wsClient: WSClient,
   gameLogger: GameLogger,
 ): void {
+  // Rate-limited player-facing activity pings so long tool chains don't look silent.
+  // Rotates through generic atmospheric lines per tool category; at most one per 2.5s.
+  const TOOL_ACTIVITY_LABEL: Record<string, string> = {
+    apply_damage: "The DM tallies the wound…",
+    heal: "Healing magic weaves through the scene…",
+    start_combat: "Initiative is called…",
+    advance_turn: "Turn ticks forward…",
+    add_combatant: "A new combatant enters the fray…",
+    move_combatant: "Tokens shift on the map…",
+    show_aoe: "The DM prepares an area effect…",
+    apply_area_effect: "The DM resolves the area effect…",
+    update_battle_map: "The battlefield takes shape…",
+    use_spell_slot: "Arcane power is spent…",
+    use_class_resource: "A hero draws on their reserves…",
+    set_concentration: "A spell takes hold…",
+    break_concentration: "Concentration falters…",
+    add_condition: "A condition takes hold…",
+    remove_condition: "A condition fades…",
+    long_rest: "The party settles in for a long rest…",
+    short_rest: "The party takes a short rest…",
+  };
+  function maybePingActivity(toolName: string): void {
+    const label = TOOL_ACTIVITY_LABEL[toolName];
+    if (!label) return;
+    wsClient.pingActivity(label);
+  }
+
   /** Convert a ToolResponse from GSM into an MCP CallToolResult, logging the call. */
   function fromToolResponse(r: ToolResponse, toolName: string, args?: Record<string, unknown>) {
     gameLogger.toolCall(toolName, args ?? {}, r.text);
+    if (!r.error) maybePingActivity(toolName);
     if (r.error) {
       gameLogger.error(toolName, r.text);
       return buildError(r.text, r.hints);
@@ -709,6 +737,12 @@ export function registerGameTools(
           .describe(
             "Per-ability saving throw bonuses (e.g., {dexterity: 5, wisdom: 3}). From monster stat block.",
           ),
+        monster_ref: z
+          .string()
+          .optional()
+          .describe(
+            "Bestiary name (e.g., 'Skeleton', 'Fire Elemental') to auto-load innate damage resistances, immunities, vulnerabilities, and condition immunities. Defaults to `name` for non-player combatants if omitted.",
+          ),
       },
     },
     async (params) => {
@@ -805,17 +839,25 @@ export function registerGameTools(
     "use_class_resource",
     {
       description:
-        "Expend a use of a class resource (e.g., Bardic Inspiration, Channel Divinity, Rage, Ki Points, Wild Shape, Lay on Hands).",
+        "Expend one or more uses of a class resource (e.g., Bardic Inspiration, Channel Divinity, Rage, Ki Points, Wild Shape, Lay on Hands). Use `amount` > 1 for pool-style resources spent in a single action (e.g., Lay on Hands 15 HP).",
       inputSchema: {
         name: z.string().describe("Character name"),
         resource_name: z
           .string()
           .describe("Resource name (e.g., 'Channel Divinity', 'Rage', 'Bardic Inspiration')"),
+        amount: z
+          .number()
+          .int()
+          .positive()
+          .optional()
+          .describe(
+            "Number of uses/points to spend (default 1). For Lay on Hands, pass the HP amount.",
+          ),
       },
     },
-    async ({ name, resource_name }) => {
-      const result = wsClient.gameStateManager.useClassResource(name, resource_name);
-      return fromToolResponse(result, "use_class_resource", { name, resource_name });
+    async ({ name, resource_name, amount }) => {
+      const result = wsClient.gameStateManager.useClassResource(name, resource_name, amount);
+      return fromToolResponse(result, "use_class_resource", { name, resource_name, amount });
     },
   );
 
@@ -1250,19 +1292,58 @@ export function registerGameTools(
         );
       }
 
-      const result = wsClient.gameStateManager.applyAreaEffect({
-        shape: resolvedShape,
-        center: resolvedCenter,
-        size: resolvedSize,
-        direction: resolvedDirection,
-        from: resolvedFrom,
-        to: resolvedTo,
-        damage: resolvedDamage,
-        damageType: resolvedDamageType,
-        saveAbility: resolvedSaveAbility,
-        saveDC: resolvedSaveDC,
-        halfOnSave: resolvedHalfOnSave,
-      });
+      const interactiveSaveForPC = async (
+        targetName: string,
+        ability: string,
+        dc: number,
+      ): Promise<{ total: number; passed: boolean; mod: number; rolled: number } | null> => {
+        try {
+          const res = await wsClient.sendCheckRequest({
+            notation: "1d20",
+            checkType: `${ability}_save`,
+            targetCharacter: targetName,
+            dc,
+            reason: `${ability} save vs DC ${dc}`,
+          });
+          const rolled = res.roll.rolls[0]?.result ?? 0;
+          return {
+            total: res.roll.total,
+            passed: res.success ?? res.roll.total >= dc,
+            mod: res.roll.modifier,
+            rolled,
+          };
+        } catch {
+          // Character-not-found or similar — fall through to server-side roll
+          return null;
+        }
+      };
+
+      const result = await wsClient.gameStateManager.applyAreaEffect(
+        {
+          shape: resolvedShape,
+          center: resolvedCenter,
+          size: resolvedSize,
+          direction: resolvedDirection,
+          from: resolvedFrom,
+          to: resolvedTo,
+          damage: resolvedDamage,
+          damageType: resolvedDamageType,
+          saveAbility: resolvedSaveAbility,
+          saveDC: resolvedSaveDC,
+          halfOnSave: resolvedHalfOnSave,
+        },
+        interactiveSaveForPC,
+      );
+
+      // Auto-dismiss non-persistent AoEs after damage resolution
+      if (aoe_id && !result.error) {
+        const combat = wsClient.gameStateManager.gameState.encounter?.combat;
+        const overlay = combat?.activeAoE?.find((a) => a.id === aoe_id);
+        if (overlay && !overlay.persistent) {
+          wsClient.gameStateManager.dismissAoE(aoe_id);
+        }
+      }
+
       return fromToolResponse(result, "apply_area_effect", {
         aoe_id,
         shape: resolvedShape,

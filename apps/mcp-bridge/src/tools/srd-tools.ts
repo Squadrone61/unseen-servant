@@ -7,6 +7,7 @@ import {
   searchSpells,
   searchMonsters,
   searchMagicItems,
+  searchBaseItems,
   searchFeats,
   searchOptionalFeatures,
   fuzzyLookup,
@@ -46,6 +47,7 @@ import {
   type ActionDb,
   type LanguageDb,
   type DiseaseDb,
+  type BaseItemDb,
 } from "@unseen-servant/shared/data";
 import {
   formatSchool,
@@ -524,6 +526,22 @@ export function registerSrdTools(
   wsClient: WSClient,
   gameLogger: GameLogger,
 ): void {
+  const LOOKUP_ACTIVITY_LABEL: Record<string, string> = {
+    lookup_spell: "The DM flips through the arcane tome…",
+    lookup_monster: "The DM consults the bestiary…",
+    lookup_condition: "The DM checks the rulebook…",
+    lookup_magic_item: "The DM examines the treasure ledger…",
+    lookup_feat: "The DM reviews training manuals…",
+    lookup_class: "The DM consults class lore…",
+    lookup_species: "The DM consults the lineage codex…",
+    lookup_background: "The DM reads the background codex…",
+    lookup_action: "The DM checks the action rules…",
+    lookup_language: "The DM glances at the linguist's scroll…",
+    lookup_disease: "The DM checks the plague ledger…",
+    lookup_optional_feature: "The DM weighs an optional feature…",
+    search_rules: "The DM searches the rulebooks…",
+  };
+
   /** Wrap an SRD lookup handler to log the tool call. */
   function loggedLookup(
     toolName: string,
@@ -535,6 +553,8 @@ export function registerSrdTools(
         ? (result.content[0] as { type: "text"; text: string }).text
         : "";
     gameLogger.toolCall(toolName, args, text);
+    const label = LOOKUP_ACTIVITY_LABEL[toolName];
+    if (label) wsClient.pingActivity(label);
     return result;
   }
 
@@ -1001,6 +1021,7 @@ export function registerSrdTools(
       const matchedSpells = searchSpells(query).slice(0, limit);
       const matchedMonsters = searchMonsters(query).slice(0, limit);
       const matchedItems = searchMagicItems(query).slice(0, limit);
+      const matchedBaseItems = searchBaseItems(query).slice(0, limit);
       const matchedFeats = searchFeats(query).slice(0, limit);
       const matchedOptFeats = searchOptionalFeatures(query).slice(0, limit);
 
@@ -1090,6 +1111,14 @@ export function registerSrdTools(
           "## Magic Items\n" +
             matchedItems
               .map((i: MagicItemDb) => `- **${i.name}** (${i.rarity}, ${i.type ?? "wondrous"})`)
+              .join("\n"),
+        );
+      }
+      if (matchedBaseItems.length > 0) {
+        results.push(
+          "## Mundane Items (weapons, armor, tools, gear)\n" +
+            matchedBaseItems
+              .map((i: BaseItemDb) => `- **${i.name}**${i.type ? ` (${i.type})` : ""}`)
               .join("\n"),
         );
       }

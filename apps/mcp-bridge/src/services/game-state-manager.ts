@@ -36,6 +36,7 @@ import {
   parseGridPosition,
   gridDistance,
   computeAoETiles,
+  isTileBlocking,
 } from "@unseen-servant/shared/utils";
 import { rollNotation } from "./dice-engine.js";
 import { getClass, getMagicItem, getSpell } from "@unseen-servant/shared/data";
@@ -45,6 +46,7 @@ import {
   createActivationBundle,
   createSpellBundle,
   createItemBundle,
+  createMonsterBundle,
   enrichItem,
 } from "@unseen-servant/shared/builders";
 import {
@@ -749,13 +751,20 @@ export class GameStateManager {
     });
 
     try {
-      // Build greeting dm_request
+      // Build greeting dm_request with a one-line flavor block per PC
       const partyDescriptions = Object.entries(this.characters).map(([pName, char]) => {
-        const classes = char.static.classes?.map((c) => `${c.name} ${c.level}`).join("/");
-        return `${pName} (${char.static.name}, ${char.static.species || char.static.race} ${classes || "Unknown"})`;
+        const s = char.static;
+        const classes = s.classes?.map((c) => `${c.name} ${c.level}`).join("/");
+        const flavorBits: string[] = [];
+        if (s.appearance?.gender) flavorBits.push(s.appearance.gender);
+        if (s.alignment) flavorBits.push(s.alignment);
+        const flavor = flavorBits.length > 0 ? `, ${flavorBits.join(", ")}` : "";
+        const firstLine = (s.backstory ?? "").split(/\r?\n/).find((l) => l.trim().length > 0);
+        const backHint = firstLine ? ` — "${firstLine.slice(0, 140)}"` : "";
+        return `${pName} (${s.name}, ${s.species || s.race} ${classes || "Unknown"}${flavor})${backHint}`;
       });
 
-      const userMsg = `The adventuring party has gathered: ${partyDescriptions.join(", ")}. Set the scene and introduce each character!`;
+      const userMsg = `The adventuring party has gathered:\n- ${partyDescriptions.join("\n- ")}\n\nReference each character by their pronouns, alignment, and backstory hooks in narration. Set the scene and introduce each character!`;
 
       this.conversationHistory.push({
         role: "user",
@@ -2869,6 +2878,7 @@ export class GameStateManager {
     size?: CreatureSize;
     tokenColor?: string;
     saveBonuses?: Record<string, number>;
+    monster_ref?: string;
   }): ToolResponse {
     const combat = this.gameState.encounter?.combat;
     if (!combat || combat.phase !== "active") {
@@ -2913,6 +2923,10 @@ export class GameStateManager {
       addCombatantSpeed = { walk: c.speed ?? 30 };
     }
 
+    // Seed innate monster resistances/immunities/vulnerabilities from the bestiary
+    const monsterLookupName = c.monster_ref ?? (c.type !== "player" ? c.name : undefined);
+    const innateBundle = monsterLookupName ? createMonsterBundle(monsterLookupName) : null;
+
     combat.combatants[id] = {
       id,
       name: c.name,
@@ -2931,6 +2945,7 @@ export class GameStateManager {
       armorClass: c.armorClass,
       conditions: [],
       ...(c.saveBonuses ? { saveBonuses: c.saveBonuses } : {}),
+      ...(innateBundle ? { activeEffects: [innateBundle] } : {}),
     };
 
     // Insert into turn order by initiative
@@ -3072,7 +3087,49 @@ export class GameStateManager {
     }
 
     const from = combatant.position ? formatGridPosition(combatant.position) : null;
+
+    // Reject placement on blocking tiles (walls, pits, full-cover objects)
+    const map = this.gameState.encounter?.map;
+    const targetTile = map?.tiles[to.y]?.[to.x];
+    if (targetTile && isTileBlocking(targetTile)) {
+      const reason =
+        targetTile.type === "wall"
+          ? "a wall"
+          : targetTile.type === "pit"
+            ? "a pit"
+            : `${targetTile.object?.name ?? "an obstacle"} (full cover)`;
+      return toResponse(
+        `Cannot move ${combatant.name} to ${formatGridPosition(to)} — tile blocked by ${reason}`,
+        { target: combatantName, to: formatGridPosition(to) },
+        true,
+        ["Choose an adjacent walkable tile, or destroy/remove the obstacle first."],
+      );
+    }
+
     const overlapWarning = this.checkTokenOverlap(to, combatant.size, combatant.id);
+
+    // Detect potential opportunity attacks: threats adjacent to the OLD position
+    // that are NOT adjacent to the NEW position (and still alive).
+    const oldPos = combatant.position;
+    const moverIsFoeOfEnemies = combatant.type !== "enemy"; // players/npcs are foes of enemies
+    const aooThreats: string[] = [];
+    if (oldPos) {
+      for (const other of Object.values(combat.combatants)) {
+        if (other.id === combatant.id) continue;
+        if (!other.position) continue;
+        if ((other.currentHP ?? 1) <= 0) continue;
+        const isOpposing = moverIsFoeOfEnemies
+          ? other.type === "enemy"
+          : other.type === "player" || other.type === "npc";
+        if (!isOpposing) continue;
+        const wasAdjacent = gridDistance(other.position, oldPos) <= 5;
+        const stillAdjacent = gridDistance(other.position, to) <= 5;
+        if (wasAdjacent && !stillAdjacent) {
+          aooThreats.push(other.name);
+        }
+      }
+    }
+
     combatant.position = to;
 
     this.broadcast({
@@ -3084,11 +3141,23 @@ export class GameStateManager {
 
     const text = `${combatant.name} moved to ${formatGridPosition(to)}`;
     this.markDirty();
-    return toResponse(overlapWarning ? `${text}. ${overlapWarning}` : text, {
-      name: combatant.name,
-      from,
-      to: formatGridPosition(to),
-    });
+    const hints: string[] = [];
+    if (aooThreats.length > 0) {
+      hints.push(
+        `Possible Opportunity Attack from: ${aooThreats.join(", ")} (unless ${combatant.name} used Disengage)`,
+      );
+    }
+    return toResponse(
+      overlapWarning ? `${text}. ${overlapWarning}` : text,
+      {
+        name: combatant.name,
+        from,
+        to: formatGridPosition(to),
+        ...(aooThreats.length > 0 ? { opportunityAttackFrom: aooThreats } : {}),
+      },
+      false,
+      hints.length > 0 ? hints : undefined,
+    );
   }
 
   /** Use a spell slot */
@@ -3311,7 +3380,8 @@ export class GameStateManager {
   }
 
   /** Use a class resource (Bardic Inspiration, Channel Divinity, Rage, etc.) */
-  useClassResource(characterName: string, resourceName: string): ToolResponse {
+  useClassResource(characterName: string, resourceName: string, amount = 1): ToolResponse {
+    const requested = Math.max(1, Math.floor(amount));
     for (const [pName, char] of Object.entries(this.characters)) {
       if (char.static.name.toLowerCase() === characterName.toLowerCase()) {
         const classResources = getClassResources(char);
@@ -3330,9 +3400,10 @@ export class GameStateManager {
         const canonicalName = resource.name;
         char.dynamic.resourcesUsed = char.dynamic.resourcesUsed ?? {};
         const used = char.dynamic.resourcesUsed[canonicalName] ?? 0;
-        if (used >= resource.maxUses) {
+        const available = resource.maxUses - used;
+        if (available < requested) {
           return toResponse(
-            `${char.static.name} has no ${canonicalName} uses remaining (0/${resource.maxUses})`,
+            `${char.static.name} cannot spend ${requested} ${canonicalName} — only ${available}/${resource.maxUses} remaining`,
             {
               character: char.static.name,
               resource: canonicalName,
@@ -3357,11 +3428,13 @@ export class GameStateManager {
           );
         }
 
-        this.createEvent("resource_used", `${char.static.name} used ${canonicalName}`, [
-          { type: "resource_use", target: characterName, resource: canonicalName },
-        ]);
-        char.dynamic.resourcesUsed[canonicalName] = used + 1;
-        const remaining = resource.maxUses - (used + 1);
+        this.createEvent(
+          "resource_used",
+          `${char.static.name} used ${canonicalName}${requested > 1 ? ` x${requested}` : ""}`,
+          [{ type: "resource_use", target: characterName, resource: canonicalName }],
+        );
+        char.dynamic.resourcesUsed[canonicalName] = used + requested;
+        const remaining = resource.maxUses - (used + requested);
 
         this.broadcast({
           type: "server:character_updated",
@@ -3371,10 +3444,11 @@ export class GameStateManager {
 
         this.markCharacterDirty(pName);
         return toResponse(
-          `${char.static.name} used ${canonicalName} (${remaining}/${resource.maxUses} remaining)`,
+          `${char.static.name} used ${canonicalName}${requested > 1 ? ` x${requested}` : ""} (${remaining}/${resource.maxUses} remaining)`,
           {
             character: char.static.name,
             resource: canonicalName,
+            spent: requested,
             remaining,
             maxUses: resource.maxUses,
           },
@@ -4981,20 +5055,27 @@ export class GameStateManager {
     });
   }
 
-  /** Apply area effect damage with saving throws */
-  applyAreaEffect(params: {
-    shape: "sphere" | "cone" | "rectangle";
-    center?: string;
-    size?: number;
-    direction?: number;
-    from?: string;
-    to?: string;
-    damage: string;
-    damageType: string;
-    saveAbility: string;
-    saveDC: number;
-    halfOnSave?: boolean;
-  }): ToolResponse {
+  /** Apply area effect damage with saving throws. PC saves route through `interactiveSaveForPC` when provided (interactive player rolls); otherwise resolved server-side. */
+  async applyAreaEffect(
+    params: {
+      shape: "sphere" | "cone" | "rectangle";
+      center?: string;
+      size?: number;
+      direction?: number;
+      from?: string;
+      to?: string;
+      damage: string;
+      damageType: string;
+      saveAbility: string;
+      saveDC: number;
+      halfOnSave?: boolean;
+    },
+    interactiveSaveForPC?: (
+      targetName: string,
+      ability: string,
+      dc: number,
+    ) => Promise<{ total: number; passed: boolean; mod: number; rolled: number } | null>,
+  ): Promise<ToolResponse> {
     const combat = this.gameState.encounter?.combat;
     if (!combat || combat.phase !== "active") {
       return toResponse("No active combat", {}, true, [
@@ -5083,7 +5164,6 @@ export class GameStateManager {
           const abilities = getAbilities(ch);
           const abilityScore = (abilities as unknown as Record<string, number>)[abilityKey] ?? 10;
           saveMod = Math.floor((abilityScore - 10) / 2);
-          // Check for saving throw proficiency — Phase 7: via getSavingThrows()
           const totalLevel = ch.static.classes.reduce((sum, c) => sum + c.level, 0);
           const profBonusDerived = Math.floor((totalLevel - 1) / 4) + 2;
           const saveProf = getSavingThrows(ch).find(
@@ -5094,18 +5174,32 @@ export class GameStateManager {
             if (saveProf.bonus) saveMod += saveProf.bonus;
           }
         }
-      } else {
-        // For enemies, estimate from ability if available; default to 0
-        saveMod = 0;
       }
 
-      // Roll saving throw
-      const saveNotation = `1d20${saveMod >= 0 ? "+" : ""}${saveMod}`;
-      const { result: saveRoll } = rollNotation(
-        saveNotation,
-        `${params.saveAbility} save vs DC ${params.saveDC}`,
-      );
-      const passed = saveRoll.total >= params.saveDC;
+      // Roll saving throw — PCs go through interactive router when available
+      let saveTotal: number;
+      let passed: boolean;
+      let rolledFace: number | string;
+
+      const interactive =
+        target.type === "player" && interactiveSaveForPC
+          ? await interactiveSaveForPC(target.name, abilityKey, params.saveDC)
+          : null;
+      if (interactive) {
+        saveTotal = interactive.total;
+        passed = interactive.passed;
+        saveMod = interactive.mod;
+        rolledFace = interactive.rolled;
+      } else {
+        const saveNotation = `1d20${saveMod >= 0 ? "+" : ""}${saveMod}`;
+        const { result: saveRoll } = rollNotation(
+          saveNotation,
+          `${params.saveAbility} save vs DC ${params.saveDC}`,
+        );
+        saveTotal = saveRoll.total;
+        passed = saveTotal >= params.saveDC;
+        rolledFace = saveRoll.rolls[0]?.result ?? "?";
+      }
 
       // Roll damage
       const { result: damageRoll } = rollNotation(params.damage);
@@ -5116,7 +5210,6 @@ export class GameStateManager {
         finalDamage = 0;
       }
 
-      // Apply damage
       if (finalDamage > 0) {
         this.applyDamage(target.name, finalDamage, params.damageType);
       }
@@ -5124,11 +5217,11 @@ export class GameStateManager {
       const passStr = passed ? "PASS" : "FAIL";
       const damageStr = finalDamage > 0 ? `${finalDamage} ${params.damageType}` : "no damage";
       textResults.push(
-        `${target.name}: ${params.saveAbility} save ${saveRoll.total} (rolled ${saveRoll.rolls[0]?.result ?? "?"}+${saveMod}) — ${passStr} (${damageStr})`,
+        `${target.name}: ${params.saveAbility} save ${saveTotal} (rolled ${rolledFace}+${saveMod}) — ${passStr} (${damageStr})`,
       );
       dataResults.push({
         target: target.name,
-        saveRoll: saveRoll.total,
+        saveRoll: saveTotal,
         saveMod,
         passed,
         damage: finalDamage,

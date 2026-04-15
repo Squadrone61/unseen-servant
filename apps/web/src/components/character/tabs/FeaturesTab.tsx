@@ -14,6 +14,7 @@ export function FeaturesTab({ character, onFeatureClick }: FeaturesTabProps) {
   const [filter, setFilter] = useState<string>("all");
   const [traitsOpen, setTraitsOpen] = useState(false);
   const [appearanceOpen, setAppearanceOpen] = useState(false);
+  const [backstoryOpen, setBackstoryOpen] = useState(false);
   const s = character.static;
 
   const counts = useMemo(() => {
@@ -105,9 +106,16 @@ export function FeaturesTab({ character, onFeatureClick }: FeaturesTabProps) {
         <div className="text-xs text-gray-600 text-center py-4">No features</div>
       )}
 
-      {/* Divider — traits & appearance */}
-      {(hasTraits || s.appearance) && (
+      {/* Divider — traits, appearance, alignment, backstory */}
+      {(hasTraits || s.appearance || s.alignment || s.backstory) && (
         <div className="border-t border-gray-700/40 pt-2 mt-2 space-y-1.5">
+          {/* Alignment (inline — one liner) */}
+          {s.alignment && (
+            <div className="px-1.5 flex items-baseline gap-2">
+              <span className="text-xs text-gray-500">Alignment</span>
+              <span className="text-xs text-gray-300">{s.alignment}</span>
+            </div>
+          )}
           {/* Traits */}
           {hasTraits && (
             <div>
@@ -144,6 +152,26 @@ export function FeaturesTab({ character, onFeatureClick }: FeaturesTabProps) {
                       <div className="text-xs text-gray-300">{s.traits.flaws}</div>
                     </div>
                   )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Backstory */}
+          {s.backstory && (
+            <div>
+              <button
+                onClick={() => setBackstoryOpen(!backstoryOpen)}
+                className="flex items-center justify-between w-full text-xs text-gray-400 font-medium px-1.5"
+              >
+                <span>Backstory</span>
+                <span className="text-gray-600">{backstoryOpen ? "\u2212" : "+"}</span>
+              </button>
+              {backstoryOpen && (
+                <div className="mt-1 px-1.5">
+                  <div className="text-xs text-gray-300 whitespace-pre-wrap break-words">
+                    {s.backstory}
+                  </div>
                 </div>
               )}
             </div>

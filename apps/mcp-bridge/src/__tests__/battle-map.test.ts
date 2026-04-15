@@ -97,7 +97,7 @@ function startCombatWithGoblins(gsm: TestGSM["gsm"]) {
 
 describe("updateBattleMap", () => {
   describe("creates encounter when none exists", () => {
-    it("creates an encounter with phase=exploration when no encounter existed", () => {
+    it("creates an encounter with phase=exploration when no encounter existed", async () => {
       const { gsm } = createTestGSM();
       expect(gsm.gameState.encounter).toBeNull();
 
@@ -114,7 +114,7 @@ describe("updateBattleMap", () => {
       expect(gsm.gameState.encounter!.phase).toBe("exploration");
     });
 
-    it("stores the map with correct dimensions", () => {
+    it("stores the map with correct dimensions", async () => {
       const { gsm } = createTestGSM();
       gsm.updateBattleMap({ id: "map1", width: 10, height: 10, tiles: [], name: "Arena" });
 
@@ -126,7 +126,7 @@ describe("updateBattleMap", () => {
   });
 
   describe("overwrites existing map without clearing combat", () => {
-    it("updates map dimensions when called a second time", () => {
+    it("updates map dimensions when called a second time", async () => {
       const { gsm } = createTestGSM();
       gsm.updateBattleMap({ id: "map1", width: 10, height: 10, tiles: [], name: "Arena" });
       gsm.updateBattleMap({ id: "map2", width: 20, height: 15, tiles: [], name: "Dungeon" });
@@ -139,7 +139,7 @@ describe("updateBattleMap", () => {
   });
 
   describe("broadcasts combat_update with new map", () => {
-    it("emits server:combat_update after setting the map", () => {
+    it("emits server:combat_update after setting the map", async () => {
       const { gsm, broadcasts } = createTestGSM();
       const before = broadcasts.length;
 
@@ -151,7 +151,7 @@ describe("updateBattleMap", () => {
   });
 
   describe("stores tiles correctly", () => {
-    it("tiles array is preserved on the stored map", () => {
+    it("tiles array is preserved on the stored map", async () => {
       const { gsm } = createTestGSM();
       const tiles: import("@unseen-servant/shared/types").MapTile[][] = [
         [{ type: "wall" }, { type: "difficult_terrain" }],
@@ -164,7 +164,7 @@ describe("updateBattleMap", () => {
   });
 
   describe("data shape", () => {
-    it("returns width, height, and name in data", () => {
+    it("returns width, height, and name in data", async () => {
       const { gsm } = createTestGSM();
       const result = gsm.updateBattleMap({
         id: "map1",
@@ -188,7 +188,7 @@ describe("updateBattleMap", () => {
 
 describe("showAoE", () => {
   describe("no active combat — error", () => {
-    it("returns error when no combat is active", () => {
+    it("returns error when no combat is active", async () => {
       const { gsm } = createTestGSM();
       setupMap(gsm);
 
@@ -205,7 +205,7 @@ describe("showAoE", () => {
   });
 
   describe("invalid A1 center — error", () => {
-    it("returns error for a malformed center string", () => {
+    it("returns error for a malformed center string", async () => {
       const { gsm } = createTestGSM();
       setupMap(gsm);
       startCombatWithGoblins(gsm);
@@ -224,7 +224,7 @@ describe("showAoE", () => {
   });
 
   describe("adds overlay to combat.activeAoE", () => {
-    it("overlay is appended to activeAoE after showAoE call", () => {
+    it("overlay is appended to activeAoE after showAoE call", async () => {
       const { gsm } = createTestGSM();
       setupMap(gsm);
       startCombatWithGoblins(gsm);
@@ -244,7 +244,7 @@ describe("showAoE", () => {
       expect(aoe![0].label).toBe("Fireball");
     });
 
-    it("defaults persistent=false when not specified", () => {
+    it("defaults persistent=false when not specified", async () => {
       const { gsm } = createTestGSM();
       setupMap(gsm);
       startCombatWithGoblins(gsm);
@@ -263,7 +263,7 @@ describe("showAoE", () => {
   });
 
   describe("returns list of combatants whose position is on an affected tile", () => {
-    it("returns affected combatant names when they are in the AoE", () => {
+    it("returns affected combatant names when they are in the AoE", async () => {
       const { gsm } = createTestGSM();
       setupMap(gsm);
       startCombatWithGoblins(gsm);
@@ -288,7 +288,7 @@ describe("showAoE", () => {
   });
 
   describe("excludes dead NPC combatants from affected list", () => {
-    it("dead NPC (currentHP=0) is not included in affected", () => {
+    it("dead NPC (currentHP=0) is not included in affected", async () => {
       const { gsm } = createTestGSM();
       setupMap(gsm);
       startCombatWithGoblins(gsm);
@@ -310,7 +310,7 @@ describe("showAoE", () => {
   });
 
   describe("returns aoeId in data", () => {
-    it("data contains a non-empty aoeId string", () => {
+    it("data contains a non-empty aoeId string", async () => {
       const { gsm } = createTestGSM();
       setupMap(gsm);
       startCombatWithGoblins(gsm);
@@ -338,7 +338,7 @@ describe("showAoE", () => {
 
 describe("dismissAoE", () => {
   describe("no active combat — error", () => {
-    it("returns error when there is no combat", () => {
+    it("returns error when there is no combat", async () => {
       const { gsm } = createTestGSM();
       const result = gsm.dismissAoE("some-id");
       assertToolError(result);
@@ -346,7 +346,7 @@ describe("dismissAoE", () => {
   });
 
   describe("no active AoE overlays — error", () => {
-    it("returns error when activeAoE is empty", () => {
+    it("returns error when activeAoE is empty", async () => {
       const { gsm } = createTestGSM();
       setupMap(gsm);
       startCombatWithGoblins(gsm);
@@ -359,7 +359,7 @@ describe("dismissAoE", () => {
   });
 
   describe("aoeId not found — error with hints", () => {
-    it("returns error with hints listing active AoE ids when id is wrong", () => {
+    it("returns error with hints listing active AoE ids when id is wrong", async () => {
       const { gsm } = createTestGSM();
       setupMap(gsm);
       startCombatWithGoblins(gsm);
@@ -381,7 +381,7 @@ describe("dismissAoE", () => {
   });
 
   describe("removes overlay by id and broadcasts update", () => {
-    it("overlay is removed from activeAoE after dismiss", () => {
+    it("overlay is removed from activeAoE after dismiss", async () => {
       const { gsm } = createTestGSM();
       setupMap(gsm);
       startCombatWithGoblins(gsm);
@@ -406,7 +406,7 @@ describe("dismissAoE", () => {
       expect(gsm.gameState.encounter!.combat!.activeAoE!.length).toBe(0);
     });
 
-    it("emits server:combat_update after dismissing overlay", () => {
+    it("emits server:combat_update after dismissing overlay", async () => {
       const { gsm, broadcasts } = createTestGSM();
       setupMap(gsm);
       startCombatWithGoblins(gsm);
@@ -439,11 +439,11 @@ describe("applyAreaEffect", () => {
   // -------------------------------------------------------------------------
 
   describe("no active combat — error", () => {
-    it("returns error when no combat is active", () => {
+    it("returns error when no combat is active", async () => {
       const { gsm } = createTestGSM();
       setupMap(gsm);
 
-      const result = gsm.applyAreaEffect({
+      const result = await gsm.applyAreaEffect({
         shape: "sphere",
         center: "E5",
         size: 10,
@@ -459,12 +459,12 @@ describe("applyAreaEffect", () => {
   });
 
   describe("invalid A1 center — error", () => {
-    it("returns error for a malformed center string", () => {
+    it("returns error for a malformed center string", async () => {
       const { gsm } = createTestGSM();
       setupMap(gsm);
       startCombatWithGoblins(gsm);
 
-      const result = gsm.applyAreaEffect({
+      const result = await gsm.applyAreaEffect({
         shape: "sphere",
         center: "ZZ99",
         size: 10,
@@ -485,14 +485,14 @@ describe("applyAreaEffect", () => {
   // -------------------------------------------------------------------------
 
   describe("sphere AoE hitting both goblins", () => {
-    it("returns results array with one entry per affected combatant", () => {
+    it("returns results array with one entry per affected combatant", async () => {
       const { gsm } = createTestGSM();
       setupMap(gsm);
       startCombatWithGoblins(gsm);
       // Goblin1 at x=5,y=5 (F6); Goblin2 at x=6,y=5 (G6).
       // Center at F6 with radius=20 covers the full 10x10 map.
 
-      const result = gsm.applyAreaEffect({
+      const result = await gsm.applyAreaEffect({
         shape: "sphere",
         center: "F6",
         size: 20,
@@ -508,12 +508,12 @@ describe("applyAreaEffect", () => {
       expect(result.data.results).toHaveLength(2);
     });
 
-    it("each result entry has required fields with correct types", () => {
+    it("each result entry has required fields with correct types", async () => {
       const { gsm } = createTestGSM();
       setupMap(gsm);
       startCombatWithGoblins(gsm);
 
-      const result = gsm.applyAreaEffect({
+      const result = await gsm.applyAreaEffect({
         shape: "sphere",
         center: "F6",
         size: 20,
@@ -537,12 +537,12 @@ describe("applyAreaEffect", () => {
       }
     });
 
-    it("results contain both goblin names", () => {
+    it("results contain both goblin names", async () => {
       const { gsm } = createTestGSM();
       setupMap(gsm);
       startCombatWithGoblins(gsm);
 
-      const result = gsm.applyAreaEffect({
+      const result = await gsm.applyAreaEffect({
         shape: "sphere",
         center: "F6",
         size: 20,
@@ -565,14 +565,14 @@ describe("applyAreaEffect", () => {
   // -------------------------------------------------------------------------
 
   describe("AoE with no targets in area", () => {
-    it("returns success with empty results when AoE misses all combatants", () => {
+    it("returns success with empty results when AoE misses all combatants", async () => {
       const { gsm } = createTestGSM();
       setupMap(gsm);
       startCombatWithGoblins(gsm);
       // Goblins are at F6/G6. A1 is x=0,y=0 — far corner.
       // Radius 1 covers only adjacent tiles, not F6/G6.
 
-      const result = gsm.applyAreaEffect({
+      const result = await gsm.applyAreaEffect({
         shape: "sphere",
         center: "A1",
         size: 1,
@@ -597,12 +597,12 @@ describe("applyAreaEffect", () => {
   // -------------------------------------------------------------------------
 
   describe("halfOnSave=true — passing saves deal half damage (>= 0)", () => {
-    it("damage field is >= 0 for all results (includes halved damage on pass)", () => {
+    it("damage field is >= 0 for all results (includes halved damage on pass)", async () => {
       const { gsm } = createTestGSM();
       setupMap(gsm);
       startCombatWithGoblins(gsm);
 
-      const result = gsm.applyAreaEffect({
+      const result = await gsm.applyAreaEffect({
         shape: "sphere",
         center: "F6",
         size: 20,
@@ -623,14 +623,14 @@ describe("applyAreaEffect", () => {
   });
 
   describe("halfOnSave=false — passing saves deal exactly 0 damage", () => {
-    it("entries that passed the save have damage=0 when halfOnSave is false", () => {
+    it("entries that passed the save have damage=0 when halfOnSave is false", async () => {
       const { gsm } = createTestGSM();
       setupMap(gsm);
       startCombatWithGoblins(gsm);
 
       // Use DC 1 to make saves almost always pass (nat 20 always passes regardless).
       // Even if some roll a nat 1 and fail, the test only asserts passed entries.
-      const result = gsm.applyAreaEffect({
+      const result = await gsm.applyAreaEffect({
         shape: "sphere",
         center: "F6",
         size: 20,
@@ -649,14 +649,14 @@ describe("applyAreaEffect", () => {
       }
     });
 
-    it("entries that failed the save have damage > 0 when halfOnSave is false", () => {
+    it("entries that failed the save have damage > 0 when halfOnSave is false", async () => {
       const { gsm } = createTestGSM();
       setupMap(gsm);
       startCombatWithGoblins(gsm);
 
       // DC 30 makes saves almost always fail.
       // A nat 20 with saveMod=0 gives total=20, still < 30, so always fails for NPCs.
-      const result = gsm.applyAreaEffect({
+      const result = await gsm.applyAreaEffect({
         shape: "sphere",
         center: "F6",
         size: 20,
@@ -681,7 +681,7 @@ describe("applyAreaEffect", () => {
   // -------------------------------------------------------------------------
 
   describe("dead NPCs are excluded from AoE targets", () => {
-    it("dead goblin (currentHP=0) is not in results", () => {
+    it("dead goblin (currentHP=0) is not in results", async () => {
       const { gsm } = createTestGSM();
       setupMap(gsm);
       startCombatWithGoblins(gsm);
@@ -689,7 +689,7 @@ describe("applyAreaEffect", () => {
       // Kill Goblin2 outright.
       gsm.applyDamage("Goblin2", 999);
 
-      const result = gsm.applyAreaEffect({
+      const result = await gsm.applyAreaEffect({
         shape: "sphere",
         center: "F6",
         size: 20,
@@ -712,7 +712,7 @@ describe("applyAreaEffect", () => {
   // -------------------------------------------------------------------------
 
   describe("player character in AoE uses character-sheet save modifier", () => {
-    it("Theron (Fighter, DEX 14, no DEX save prof) gets saveMod=+2", () => {
+    it("Theron (Fighter, DEX 14, no DEX save prof) gets saveMod=+2", async () => {
       const { gsm } = createTestGSM();
       setupMap(gsm);
 
@@ -735,7 +735,7 @@ describe("applyAreaEffect", () => {
       ]);
 
       // AoE centered on A1 — only Theron is in this tiny blast zone.
-      const result = gsm.applyAreaEffect({
+      const result = await gsm.applyAreaEffect({
         shape: "sphere",
         center: "A1",
         size: 1,
@@ -765,7 +765,7 @@ describe("applyAreaEffect", () => {
   // -------------------------------------------------------------------------
 
   describe("damage is applied to combatant HP", () => {
-    it("goblin HP decreases after AoE with guaranteed-fail DC (DC 30)", () => {
+    it("goblin HP decreases after AoE with guaranteed-fail DC (DC 30)", async () => {
       const { gsm } = createTestGSM();
       setupMap(gsm);
       startCombatWithGoblins(gsm);
@@ -779,7 +779,7 @@ describe("applyAreaEffect", () => {
       const hpBefore = goblin1Before!.currentHP ?? goblin1Before!.maxHP ?? 0;
 
       // DC 30 guarantees NPC failures (max roll = 20 + 0 = 20 < 30).
-      gsm.applyAreaEffect({
+      await gsm.applyAreaEffect({
         shape: "sphere",
         center: "F6",
         size: 20,

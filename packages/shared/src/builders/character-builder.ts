@@ -21,7 +21,14 @@ import type {
 import type { Spell } from "../types/spell";
 import type { Item } from "../types/item";
 import type { BuilderState } from "../types/builder";
-import type { EffectBundle, EntityEffects, Property, ResolveContext } from "../types/effects";
+import type {
+  EffectBundle,
+  EntityEffects,
+  Property,
+  ResolveContext,
+  DamageType,
+  ConditionName,
+} from "../types/effects";
 import { resolveStat, getResources } from "../utils/effect-resolver";
 import { resolveSkillProfOrExpertise, collectChoiceEffectsPass1 } from "./choice-to-effects";
 import type { ChoiceSource } from "./choice-to-effects";
@@ -34,6 +41,7 @@ import {
   getBaseItem,
   getCondition,
   getMagicItem,
+  getMonster,
   getCasterMultiplier,
   getBackground,
 } from "../data/index";
@@ -1258,5 +1266,112 @@ export function createItemBundle(itemName: string): EffectBundle | null {
     source: { type: "item", name: itemName },
     lifetime: { type: "manual" },
     effects: item.effects,
+  };
+}
+
+/**
+ * Create an EffectBundle carrying a monster's innate damage resistances,
+ * immunities, vulnerabilities, and condition immunities. Returns null if the
+ * monster has no such entries or isn't in the bestiary.
+ *
+ * Bestiary entries can be bare strings ("fire"), structured objects with a
+ * nested array plus a `cond: true` flag ("from nonmagical attacks"), or
+ * compound strings describing conditional resistances. Only unconditional,
+ * canonical entries are translated — conditional/compound entries are dropped
+ * because we can't enforce their preconditions automatically (the DM must
+ * handle those with explicit `apply_damage` adjustments).
+ */
+const DAMAGE_TYPES = new Set<DamageType>([
+  "acid",
+  "bludgeoning",
+  "cold",
+  "fire",
+  "force",
+  "lightning",
+  "necrotic",
+  "piercing",
+  "poison",
+  "psychic",
+  "radiant",
+  "slashing",
+  "thunder",
+]);
+
+const CONDITION_NAMES = new Set<ConditionName>([
+  "Blinded",
+  "Charmed",
+  "Deafened",
+  "Exhaustion",
+  "Frightened",
+  "Grappled",
+  "Incapacitated",
+  "Invisible",
+  "Paralyzed",
+  "Petrified",
+  "Poisoned",
+  "Prone",
+  "Restrained",
+  "Stunned",
+  "Unconscious",
+]);
+
+/** Title-case the first letter of each word, matching ConditionName casing. */
+function titleCase(s: string): string {
+  return s.replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+export function createMonsterBundle(monsterName: string): EffectBundle | null {
+  const monster = getMonster(monsterName);
+  if (!monster) return null;
+
+  const properties: Property[] = [];
+
+  /**
+   * Flatten bestiary entries to a list of canonical strings, skipping any
+   * object entry flagged as conditional (e.g., "from nonmagical attacks").
+   */
+  const flatten = (entries: unknown[] | undefined, key: string): string[] => {
+    if (!entries) return [];
+    const out: string[] = [];
+    for (const e of entries) {
+      if (typeof e === "string") out.push(e);
+      else if (e && typeof e === "object") {
+        const rec = e as Record<string, unknown>;
+        if (rec.cond === true) continue; // conditional — skip (DM adjudicates)
+        const arr = rec[key];
+        if (Array.isArray(arr)) for (const v of arr) if (typeof v === "string") out.push(v);
+      }
+    }
+    return out;
+  };
+
+  const pushDamage = (kind: "resistance" | "immunity" | "vulnerability", raw: string) => {
+    const dt = raw.trim().toLowerCase();
+    if (!DAMAGE_TYPES.has(dt as DamageType)) return; // compound or unknown — skip
+    properties.push({ type: kind, damageType: dt as DamageType });
+  };
+
+  for (const dt of flatten(monster.resist as unknown[] | undefined, "resist")) {
+    pushDamage("resistance", dt);
+  }
+  for (const dt of flatten(monster.immune as unknown[] | undefined, "immune")) {
+    pushDamage("immunity", dt);
+  }
+  for (const dt of flatten(monster.vulnerable as unknown[] | undefined, "vulnerable")) {
+    pushDamage("vulnerability", dt);
+  }
+  for (const cn of flatten(monster.conditionImmune as unknown[] | undefined, "conditionImmune")) {
+    const name = titleCase(cn.trim()) as ConditionName;
+    if (!CONDITION_NAMES.has(name)) continue;
+    properties.push({ type: "condition_immunity", conditionName: name });
+  }
+
+  if (properties.length === 0) return null;
+
+  return {
+    id: `monster:${monsterName.toLowerCase()}`,
+    source: { type: "monster", name: monsterName },
+    lifetime: { type: "permanent" },
+    effects: { properties },
   };
 }

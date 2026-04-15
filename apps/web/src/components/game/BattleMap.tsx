@@ -22,6 +22,7 @@ import {
   formatGridPosition,
   gridDistance,
   computeAoETiles,
+  isTileBlocking,
   type AoEShape,
 } from "@unseen-servant/shared/utils";
 import { getHP, getAC } from "@unseen-servant/shared/character";
@@ -134,7 +135,7 @@ function getReachableTiles(from: GridPosition, budgetFt: number, map: BattleMapS
 
         const tile = map.tiles[ny]?.[nx];
         if (!tile) continue;
-        if (tile.type === "wall" || tile.type === "pit") continue;
+        if (isTileBlocking(tile)) continue;
 
         const moveCost = tile.type === "difficult_terrain" || tile.type === "water" ? 10 : 5;
         const total = cur.cost + moveCost;

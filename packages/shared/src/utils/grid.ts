@@ -28,6 +28,25 @@ export function gridDistance(a: { x: number; y: number }, b: { x: number; y: num
   return Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y)) * 5;
 }
 
+/**
+ * Whether a tile blocks movement. Walls and pits are always blocking; any tile
+ * carrying a non-destroyed object with full cover also blocks (a creature can't
+ * walk through a closed armoire). Half / three-quarters cover remain walkable.
+ */
+export function isTileBlocking(tile: {
+  type?: string;
+  object?: { destructible?: boolean; hp?: number } | undefined;
+  cover?: string;
+}): boolean {
+  if (tile.type === "wall" || tile.type === "pit") return true;
+  if (tile.object && tile.cover === "full") {
+    // A destroyed destructible object (hp === 0) no longer blocks
+    if (tile.object.destructible && tile.object.hp === 0) return false;
+    return true;
+  }
+  return false;
+}
+
 // ─── AoE geometry ───────────────────────────────────────────────────────────
 //
 // All math in "tile units" (1 unit = 5ft). Tile (x,y) occupies [x, x+1] × [y, y+1];

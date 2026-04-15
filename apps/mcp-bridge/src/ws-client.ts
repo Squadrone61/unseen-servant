@@ -736,6 +736,15 @@ export class WSClient {
     });
   }
 
+  /** Rate-limited activity ping so long DM tool chains don't look silent. */
+  private lastActivityPingAt = 0;
+  pingActivity(content: string, minIntervalMs = 2500): void {
+    const now = Date.now();
+    if (now - this.lastActivityPingAt < minIntervalMs) return;
+    this.lastActivityPingAt = now;
+    this.broadcastSystemEvent(content);
+  }
+
   /** Send a DM response — now goes through GameStateManager */
   sendDMResponse(requestId: string, text: string): void {
     this.gameStateManager.sendResponse(requestId, text);
@@ -839,20 +848,16 @@ export class WSClient {
           this.gameStateManager.handleRollDice(targetPlayerName, checkId);
           // The polling interval will detect the cleared check and resolve normally
         } else {
-          // No character found — clear interval and resolve with a fallback
+          // No character found — surface the problem loudly rather than silently failing the save
           clearInterval(interval);
-          resolve({
-            requestId: checkId,
-            roll: {
-              id: crypto.randomUUID(),
-              rolls: [],
-              modifier: 0,
-              total: 0,
-              label: params.reason,
-            },
-            success: false,
-            characterName: params.targetCharacter,
-          });
+          log(
+            "ws-client",
+            `Check for unknown character "${params.targetCharacter}" — rejecting so the caller can handle it`,
+          );
+          this.broadcastSystemEvent(
+            `Check request ignored — no character named "${params.targetCharacter}" in this session.`,
+          );
+          reject(new Error(`No character named "${params.targetCharacter}"`));
         }
       }, 120_000);
     });

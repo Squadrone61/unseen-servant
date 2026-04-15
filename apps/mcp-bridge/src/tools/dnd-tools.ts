@@ -19,6 +19,8 @@ export function registerDndTools(
     {
       description: `Roll dice. notation is always required.
 
+NEVER ask a player to "roll X" in prose. If a PC must roll — attack, save, check, death save, initiative, damage — call \`roll_dice\` with \`player\` set so the player gets an interactive Roll button. Omit \`player\` ONLY for hidden DM/NPC/monster rolls.
+
 When checkType is provided with player, the modifier is auto-computed from the character sheet — do NOT include a modifier in notation. Just use bare dice:
   - "1d20" for a normal check
   - "2d20kh1" for advantage

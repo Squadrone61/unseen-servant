@@ -231,6 +231,21 @@ function CharacterSheetInner({ character, onCastAoE }: CharacterSheetProps) {
           </span>
         </div>
 
+        {/* Concentration */}
+        {d.concentratingOn && (
+          <div>
+            <div
+              className="text-sm text-gray-500 uppercase tracking-wider font-medium mb-1"
+              style={{ fontFamily: "var(--font-cinzel)" }}
+            >
+              Concentrating On
+            </div>
+            <span className="bg-purple-900/30 text-purple-300 text-xs px-2 py-0.5 rounded-full border border-purple-800/50">
+              {d.concentratingOn.spellName}
+            </span>
+          </div>
+        )}
+
         {/* Conditions */}
         {d.conditions.length > 0 && (
           <div>
