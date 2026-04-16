@@ -78,7 +78,7 @@ function normalizeSkillName(raw: string): string {
  * @param state   - Full BuilderState (used for feat sub-choice recursion)
  * @param resolvedProficienciesSoFar - Accumulated proficient skills (for skill_proficiency_or_expertise)
  */
-export function choiceToEffects(
+function choiceToEffects(
   choice: FeatureChoice,
   selectedValues: string[],
   source: ChoiceSource,
