@@ -295,7 +295,7 @@ export class GameStateManager {
       // Write dirty character snapshots (delegate to canonical snapshotCharacters)
       const charCount = this._dirtyCharacters.size;
       if (charCount > 0) {
-        const dirtyChars: Record<string, { static: unknown; dynamic: unknown }> = {};
+        const dirtyChars: Record<string, CharacterData> = {};
         for (const playerName of this._dirtyCharacters) {
           const char = this.characters[playerName];
           if (char) dirtyChars[playerName] = char;

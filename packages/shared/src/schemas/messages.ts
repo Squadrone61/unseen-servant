@@ -195,6 +195,7 @@ export const characterDataSchema = z.object({
 export const characterSnapshotSchema = z.object({
   playerName: z.string(),
   userId: z.string().optional(),
+  builder: builderStateOpaqueSchema.optional(),
   static: characterStaticDataSchema,
   dynamic: characterDynamicDataSchema,
 });

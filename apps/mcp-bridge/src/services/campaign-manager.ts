@@ -4,7 +4,7 @@ import { log } from "../logger.js";
 import { campaignManifestSchema } from "../types.js";
 import type { CampaignManifest, CampaignSummary } from "../types.js";
 import { characterSnapshotSchema } from "@unseen-servant/shared/schemas";
-import type { CharacterStaticData, CharacterDynamicData } from "@unseen-servant/shared/types";
+import type { CharacterData } from "@unseen-servant/shared/types";
 
 const CAMPAIGNS_ROOT =
   process.env.UNSEEN_CAMPAIGNS_DIR || path.join(process.cwd(), ".unseen", "campaigns");
@@ -250,7 +250,7 @@ export class CampaignManager {
 
   /** Snapshot character data into the campaign's characters/ folder. */
   snapshotCharacters(
-    characters: Record<string, { static: unknown; dynamic: unknown }>,
+    characters: Record<string, CharacterData>,
     userIds?: Record<string, string | undefined>,
   ): number {
     if (!this.activeDir) throw new Error("No campaign loaded");
@@ -259,7 +259,7 @@ export class CampaignManager {
 
     let count = 0;
     for (const [playerName, charData] of Object.entries(characters)) {
-      const slug = slugify((charData.static as { name?: string })?.name || playerName);
+      const slug = slugify(charData.static?.name || playerName);
       const userId = userIds?.[playerName];
       fs.writeFileSync(
         path.join(charDir, `${slug}.json`),
@@ -272,11 +272,8 @@ export class CampaignManager {
   }
 
   /** Load character snapshots from campaign's characters/ folder.
-   *  Returns a map of playerName → { static, dynamic } for restoring into game state. */
-  loadCharacterSnapshots(): Record<
-    string,
-    { static: CharacterStaticData; dynamic: CharacterDynamicData }
-  > {
+   *  Returns a map of playerName → CharacterData for restoring into game state. */
+  loadCharacterSnapshots(): Record<string, CharacterData> {
     return this.loadCharacterSnapshotsWithIds().characters;
   }
 
@@ -293,17 +290,14 @@ export class CampaignManager {
    * migrated files that may be missing required fields.
    */
   loadCharacterSnapshotsWithIds(): {
-    characters: Record<string, { static: CharacterStaticData; dynamic: CharacterDynamicData }>;
+    characters: Record<string, CharacterData>;
     userIds: Record<string, string>;
   } {
     if (!this.activeDir) throw new Error("No campaign loaded");
     const charDir = path.join(this.activeDir, "characters");
     if (!fs.existsSync(charDir)) return { characters: {}, userIds: {} };
 
-    const characters: Record<
-      string,
-      { static: CharacterStaticData; dynamic: CharacterDynamicData }
-    > = {};
+    const characters: Record<string, CharacterData> = {};
     const userIds: Record<string, string> = {};
     const charFiles = fs.readdirSync(charDir).filter((f) => f.endsWith(".json"));
 
@@ -324,10 +318,17 @@ export class CampaignManager {
         continue;
       }
 
-      const { playerName, userId, static: staticData, dynamic: dynamicData } = result.data;
+      const { playerName, userId, builder, static: staticData, dynamic: dynamicData } = result.data;
       // Use saved playerName, fall back to character name from static data
       const key = playerName || staticData.name || file.replace(".json", "");
-      characters[key] = { static: staticData, dynamic: dynamicData };
+      // `builder` is optional in the schema for back-compat with legacy snapshots;
+      // cast allows assignment into CharacterData (which requires it) — callers
+      // must tolerate a possibly-undefined builder on very old files.
+      characters[key] = {
+        builder: builder as CharacterData["builder"],
+        static: staticData,
+        dynamic: dynamicData,
+      };
       if (userId && key) {
         userIds[key] = userId;
       }
@@ -479,7 +480,7 @@ export class CampaignManager {
   endSession(
     summary: string,
     activeContext: string,
-    characters?: Record<string, { static: unknown; dynamic: unknown }>,
+    characters?: Record<string, CharacterData>,
   ): { sessionNumber: number } {
     if (!this.activeDir || !this.cachedManifest) throw new Error("No campaign loaded");
 
@@ -503,7 +504,7 @@ export class CampaignManager {
 
       // Update players list from characters
       this.cachedManifest.players = Object.values(characters).map(
-        (c) => (c.static as { name?: string })?.name || "Unknown",
+        (c) => c.static?.name || "Unknown",
       );
     }
 
