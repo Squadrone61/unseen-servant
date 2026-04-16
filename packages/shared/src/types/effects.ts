@@ -342,6 +342,18 @@ export type Property = {
   | { type: "extra_attack"; count: number }
   | {
       /**
+       * Raises the maximum value the named ability score can reach.
+       * Currently descriptive (the resolver does not clamp scores), but consumed
+       * by the ASI builder UI and the character sheet to surface the new ceiling
+       * (e.g. Barbarian Primal Champion raises STR/CON max from 20 to 25).
+       * Multiple sources stack via max() of all caps.
+       */
+      type: "score_cap";
+      ability: Ability;
+      max: number;
+    }
+  | {
+      /**
        * Applies another entity's effects by name and category. The resolver
        * looks up the entity in the specified DB category and includes its
        * effects. Creates an inheritance chain: Paralyzed → grant condition

@@ -226,6 +226,12 @@ function propertyBadge(prop: Property, compact: boolean): Badge | null {
         className: "bg-amber-900/40 text-amber-300 border border-amber-700/40",
       };
 
+    case "score_cap":
+      return {
+        label: `${titleCase(prop.ability)} Max ${prop.max}`,
+        className: "bg-amber-900/40 text-amber-300 border border-amber-700/40",
+      };
+
     case "grant":
       return {
         label: `Grants: ${prop.grant}`,

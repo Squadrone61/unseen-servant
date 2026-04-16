@@ -13,7 +13,12 @@ import {
   getProficiencyBonus,
   getTotalLevel,
 } from "@unseen-servant/shared/utils";
-import { getSkills, getSavingThrows, getAbilities } from "@unseen-servant/shared/character";
+import {
+  getSkills,
+  getSavingThrows,
+  getAbilities,
+  getScoreCaps,
+} from "@unseen-servant/shared/character";
 import { DetailPopover } from "./DetailPopover";
 import { useMemo } from "react";
 
@@ -32,6 +37,7 @@ export function AbilityDetailPopup({
 }: AbilityDetailPopupProps) {
   const s = character.static;
   const abilities = useMemo(() => getAbilities(character), [character]);
+  const cap = useMemo(() => getScoreCaps(character)[abilityKey], [character, abilityKey]);
   const score = abilities[abilityKey];
   const mod = getModifier(score);
   const modStr = formatModifier(score);
@@ -59,7 +65,10 @@ export function AbilityDetailPopup({
             >
               {modStr}
             </div>
-            <div className="text-sm text-gray-400">{score}</div>
+            <div className="text-sm text-gray-400">
+              {score}
+              {cap !== 20 && <span className="text-amber-400/60"> / {cap}</span>}
+            </div>
           </div>
           <div>
             <div className="text-lg font-semibold text-gray-200">{fullName}</div>

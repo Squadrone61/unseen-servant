@@ -164,6 +164,28 @@ export function getAbilities(char: CharacterData): AbilityScores {
 }
 
 /**
+ * Per-ability score ceiling. Default cap is 20; features like Barbarian
+ * Primal Champion and Monk Body and Mind raise it via `score_cap` properties.
+ * Returns the resolved cap for every ability, taking the max across stacking
+ * sources so effects compose without trampling each other.
+ */
+export function getScoreCaps(char: CharacterData): AbilityScores {
+  const bundles = collectActiveBundles(char);
+  const caps: AbilityScores = {
+    strength: 20,
+    dexterity: 20,
+    constitution: 20,
+    intelligence: 20,
+    wisdom: 20,
+    charisma: 20,
+  };
+  for (const prop of collectProperties(bundles, "score_cap")) {
+    if (prop.max > caps[prop.ability]) caps[prop.ability] = prop.max;
+  }
+  return caps;
+}
+
+/**
  * Collect all active EffectBundles for a character.
  *
  * Combines:

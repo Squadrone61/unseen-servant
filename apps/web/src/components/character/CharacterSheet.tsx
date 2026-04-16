@@ -21,10 +21,11 @@ import {
   getHP,
   getAC,
   getSpeed,
-  getSenses,
   getAdvantages,
   getSpellcasting,
   getAbilities,
+  getScoreCaps,
+  getPassivePerception,
 } from "@unseen-servant/shared/character";
 import { useMemo } from "react";
 import { HPBar } from "./HPBar";
@@ -112,6 +113,7 @@ function CharacterSheetInner({ character, onCastAoE }: CharacterSheetProps) {
   const s = character.static;
   const d = character.dynamic;
   const abilities = useMemo(() => getAbilities(character), [character]);
+  const scoreCaps = useMemo(() => getScoreCaps(character), [character]);
   const [activeTab, setActiveTab] = useState<TabId>("actions");
   const [popup, setPopup] = useState<PopupState>(null);
   const { stack } = useEntityPopover();
@@ -125,7 +127,6 @@ function CharacterSheetInner({ character, onCastAoE }: CharacterSheetProps) {
     return undefined;
   })();
   const isCaster = primarySpellcasting != null || s.spells.length > 0;
-  const senses = getSenses(character);
   const advantages = getAdvantages(character);
   const profBonus = Math.floor((getTotalLevel(s.classes) - 1) / 4) + 2;
 
@@ -198,13 +199,7 @@ function CharacterSheetInner({ character, onCastAoE }: CharacterSheetProps) {
               <div className="bg-gray-900/60 border border-gray-700/50 rounded py-1">
                 <div className="text-xs text-gray-500 uppercase">Passive</div>
                 <div className="text-base font-bold text-gray-200">
-                  {parseInt(
-                    senses
-                      .find((sense) => sense.startsWith("Passive Perception"))
-                      ?.split(" ")
-                      .at(-1) ?? String(10 + getModifier(abilities.wisdom)),
-                    10,
-                  )}
+                  {getPassivePerception(character)}
                 </div>
               </div>
             </>
@@ -337,7 +332,12 @@ function CharacterSheetInner({ character, onCastAoE }: CharacterSheetProps) {
                   >
                     {modStr}
                   </div>
-                  <div className="text-xs text-gray-500">{score}</div>
+                  <div className="text-xs text-gray-500">
+                    {score}
+                    {scoreCaps[key] !== 20 && (
+                      <span className="text-amber-400/60"> / {scoreCaps[key]}</span>
+                    )}
+                  </div>
                   {(hasAdv || hasDisadv) && (
                     <span className="absolute top-0.5 right-0.5" title={advTooltip}>
                       {hasAdv && <span className="text-xs text-green-400 font-bold">▲</span>}

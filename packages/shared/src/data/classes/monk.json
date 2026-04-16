@@ -471,8 +471,14 @@
         ],
         "properties": [
           {
-            "type": "note",
-            "text": "Dexterity and Wisdom scores each increase by 4, to a maximum of 25 (normal cap raised from 20 to 25 for these ability scores)."
+            "type": "score_cap",
+            "ability": "dexterity",
+            "max": 25
+          },
+          {
+            "type": "score_cap",
+            "ability": "wisdom",
+            "max": 25
           }
         ]
       }

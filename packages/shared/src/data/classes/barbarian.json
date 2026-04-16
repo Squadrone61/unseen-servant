@@ -459,8 +459,14 @@
         ],
         "properties": [
           {
-            "type": "note",
-            "text": "Strength and Constitution scores each increase by 4 (maximum 25, not the usual 20). Recalculate HP with the new Constitution modifier."
+            "type": "score_cap",
+            "ability": "strength",
+            "max": 25
+          },
+          {
+            "type": "score_cap",
+            "ability": "constitution",
+            "max": 25
           }
         ]
       }
