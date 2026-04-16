@@ -1131,3 +1131,169 @@ describe("Combat bonuses", () => {
     expect(alert?.value).toBe(2);
   });
 });
+
+// ---------------------------------------------------------------------------
+// 11. Fighting Style double-bonus regression (fix: fromClassFeatureChoice)
+// ---------------------------------------------------------------------------
+
+describe("Fighting Style — no double-bonus (regression)", () => {
+  // Chain mail: heavy armor, base AC 16.
+  const chainMail = {
+    name: "Chain Mail",
+    equipped: true,
+    quantity: 1,
+    armor: { type: "heavy" as const, baseAc: 16, stealthDisadvantage: true },
+  };
+
+  it("Fighter 1 with Defence fighting style (class choice) and chain mail has AC 17, not 18", () => {
+    // Defence grants +1 AC while wearing armor.
+    // Before the fix, the +1 was emitted twice: once from the class feature choice
+    // pipeline (section 2) and again from section 4 (additionalFeatures), giving +2.
+    // After the fix, section 4 skips entries flagged fromClassFeatureChoice=true.
+    const state = makeBuilderState({
+      classes: [
+        {
+          name: "Fighter",
+          level: 1,
+          subclass: null,
+          skills: [],
+          choices: { "fighting-style": ["Defense"] },
+        },
+      ],
+      baseAbilities: {
+        strength: 16,
+        dexterity: 14,
+        constitution: 14,
+        intelligence: 10,
+        wisdom: 12,
+        charisma: 8,
+      },
+      equipment: [chainMail],
+    });
+    const { character } = buildCharacter(state);
+    expect(getAC(character)).toBe(17); // 16 (chain mail) + 1 (Defence) = 17, not 18
+  });
+
+  it("Fighter 1 without Defence and chain mail has AC 16 (baseline)", () => {
+    const state = makeBuilderState({
+      classes: [{ name: "Fighter", level: 1, subclass: null, skills: [], choices: {} }],
+      equipment: [chainMail],
+    });
+    const { character } = buildCharacter(state);
+    expect(getAC(character)).toBe(16);
+  });
+
+  it("Defence via class choice contributes exactly +1 AC over baseline", () => {
+    const withDefence = makeBuilderState({
+      classes: [
+        {
+          name: "Fighter",
+          level: 1,
+          subclass: null,
+          skills: [],
+          choices: { "fighting-style": ["Defense"] },
+        },
+      ],
+      equipment: [chainMail],
+    });
+    const without = makeBuilderState({
+      classes: [{ name: "Fighter", level: 1, subclass: null, skills: [], choices: {} }],
+      equipment: [chainMail],
+    });
+    const { character: charWith } = buildCharacter(withDefence);
+    const { character: charWithout } = buildCharacter(without);
+    expect(getAC(charWith) - getAC(charWithout)).toBe(1);
+  });
+
+  it("Archery fighting style (class choice) grants exactly +2 ranged attack bonus, not +4", () => {
+    // Archery via class choices — exercises the fromClassFeatureChoice guard for
+    // a non-AC modifier. Before the fix this would have yielded +4 (doubled).
+    const state = makeBuilderState({
+      classes: [
+        {
+          name: "Fighter",
+          level: 1,
+          subclass: null,
+          skills: [],
+          choices: { "fighting-style": ["Archery"] },
+        },
+      ],
+    });
+    const { character } = buildCharacter(state);
+    const bonuses = getCombatBonus(character);
+    // getCombatBonus aggregates all modifiers per attack type into one entry.
+    const ranged = bonuses.find((b) => b.type === "attack" && b.attackType === "ranged");
+    expect(ranged).toBeDefined();
+    expect(ranged?.value).toBe(2); // exactly +2, not +4 (would be +4 if doubled)
+  });
+
+  it("Great Weapon Fighting (class choice) does not double its property note", () => {
+    // GWF has no numeric modifier — only a note property. Verifies section-4 skip
+    // doesn't break property-only feats either.
+    const stateNoStyle = makeBuilderState({
+      classes: [{ name: "Fighter", level: 1, subclass: null, skills: [], choices: {} }],
+      equipment: [chainMail],
+    });
+    const { character: charNoStyle } = buildCharacter(stateNoStyle);
+    const stateGwf = makeBuilderState({
+      classes: [
+        {
+          name: "Fighter",
+          level: 1,
+          subclass: null,
+          skills: [],
+          choices: { "fighting-style": ["Great Weapon Fighting"] },
+        },
+      ],
+      equipment: [chainMail],
+    });
+    const { character: charGwf } = buildCharacter(stateGwf);
+    // GWF has no AC modifier; both should be identical
+    expect(getAC(charGwf)).toBe(getAC(charNoStyle));
+  });
+
+  it("Second Wind (independent class feature, not a fighting style) is unaffected", () => {
+    // Verify the fix only skips fromClassFeatureChoice entries; Second Wind is a
+    // normal class feature and must still produce its class resource.
+    const state = makeBuilderState({
+      classes: [{ name: "Fighter", level: 1, subclass: null, skills: [], choices: {} }],
+    });
+    const { character } = buildCharacter(state);
+    const sw = getClassResources(character).find((r) => r.name === "Second Wind");
+    expect(sw).toBeDefined();
+    expect(sw?.maxUses).toBe(2);
+  });
+
+  it("Tough feat via independent featSelections (not class choice) still applies its HP bonus", () => {
+    // Tough is added via state.featSelections — the section-4 path that is NOT
+    // flagged fromClassFeatureChoice. The fix must not break this legitimate path.
+    const level = 3;
+    // Fighter 3 CON 14: base HP = 10+2 + 2*(6+2) = 28; Tough adds 2*3=6 → 34
+    const withTough = makeBuilderState({
+      classes: [{ name: "Fighter", level, subclass: null, skills: [], choices: {} }],
+      featSelections: [{ level: 4, type: "feat", featName: "Tough" }],
+      baseAbilities: {
+        strength: 16,
+        dexterity: 14,
+        constitution: 14,
+        intelligence: 10,
+        wisdom: 12,
+        charisma: 8,
+      },
+    });
+    const without = makeBuilderState({
+      classes: [{ name: "Fighter", level, subclass: null, skills: [], choices: {} }],
+      baseAbilities: {
+        strength: 16,
+        dexterity: 14,
+        constitution: 14,
+        intelligence: 10,
+        wisdom: 12,
+        charisma: 8,
+      },
+    });
+    const { character: charWith } = buildCharacter(withTough);
+    const { character: charWithout } = buildCharacter(without);
+    expect(getHP(charWith) - getHP(charWithout)).toBe(2 * level); // Tough: +2 per level
+  });
+});

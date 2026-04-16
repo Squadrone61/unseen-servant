@@ -102,6 +102,7 @@ export const characterFeatureRefSchema = z.object({
   sourceLabel: z.string(),
   requiredLevel: z.number().optional(),
   choices: z.record(z.string(), z.union([z.string(), z.array(z.string())])).optional(),
+  fromClassFeatureChoice: z.literal(true).optional(),
 });
 
 export const advantageEntrySchema = z.object({

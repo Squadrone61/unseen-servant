@@ -84,6 +84,13 @@ export interface CharacterFeatureRef {
    * so players can see what they picked. Omitted when no choices were made.
    */
   choices?: Record<string, string | string[]>;
+  /**
+   * Set to true when this entry was picked via a class feature pool choice
+   * (e.g. Fighting Style, feat-from-class-feature). The class feature choice
+   * pipeline already emitted the effect bundle for this entry, so section 4
+   * of collectBuildEffects must skip it to avoid double-applying the effects.
+   */
+  fromClassFeatureChoice?: true;
 }
 
 export interface CombatBonus {

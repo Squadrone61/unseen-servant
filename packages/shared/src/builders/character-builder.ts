@@ -368,6 +368,7 @@ function assembleAdditionalFeatures(state: BuilderState): CharacterFeatureRef[] 
             dbName: featName,
             sourceLabel: pool === "fighting_style" ? "Fighting Style" : `${cls.name} Feat`,
             choices: picks && Object.keys(picks).length > 0 ? picks : undefined,
+            fromClassFeatureChoice: true,
           });
         }
       }
@@ -619,8 +620,14 @@ function collectBuildEffects(
   }
 
   // ── 4. Feats (from additional features / feat selections) ─────────────────
+  // Skip entries that came from a class feature pool choice (e.g. Fighting Style,
+  // feat-from-class-feature). Those entries are present in additionalFeatures for
+  // display purposes only — their effect bundles were already emitted by the class
+  // feature choice pipeline (section 2 above). Re-emitting them here would double
+  // every modifier they carry (e.g. Defence +1 AC would become +2 AC).
   for (const feat of additionalFeatures) {
     if (feat.dbKind !== "feat") continue;
+    if (feat.fromClassFeatureChoice) continue;
     const dbFeat = getFeat(feat.dbName);
     if (!dbFeat) continue;
 
