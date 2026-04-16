@@ -1677,14 +1677,22 @@
       }
     ],
     "effects": {
+      "modifiers": [
+        {
+          "target": "ac",
+          "value": "13 + dex",
+          "operation": "set",
+          "condition": "while not wearing armor"
+        }
+      ],
       "properties": [
         {
           "type": "note",
-          "text": "While unarmored, your AC equals 13 + Dexterity modifier. You can still use a shield."
+          "text": "Your AC formula of 13 + Dexterity modifier applies while you are not wearing armor. You can still benefit from a shield."
         },
         {
           "type": "note",
-          "text": "You have retractable claws usable as natural weapons for unarmed strikes dealing 1d4 + Strength modifier slashing damage."
+          "text": "You have retractable claws that function as natural weapons. When you hit with an unarmed strike using the claws, you deal 1d4 + Strength modifier Slashing damage instead of the normal Bludgeoning damage. Extending or retracting the claws requires no action."
         }
       ]
     }
@@ -1757,7 +1765,7 @@
       "properties": [
         {
           "type": "note",
-          "text": "The two chosen Druid cantrips use Wisdom as the spellcasting ability and count as Ranger spells. You can replace one at each Ranger level."
+          "text": "The two chosen Druid cantrips count as Ranger spells for you, and Wisdom is your spellcasting ability for them. Whenever you gain a Ranger level, you can replace one of these cantrips with another Druid cantrip."
         }
       ]
     }
@@ -1827,11 +1835,11 @@
       "properties": [
         {
           "type": "note",
-          "text": "When you use the Attack action with a Light weapon, you can make one extra Bonus Action attack with a different melee weapon that lacks the Two-Handed property. No ability modifier to damage on the extra attack (unless negative)."
+          "text": "Enhanced Dual Wielding: When you take the Attack action on your turn and attack with a weapon that has the Light property, you can make one extra attack as a Bonus Action later on the same turn with a different weapon, which must be a Melee weapon that lacks the Two-Handed property. You don't add your ability modifier to the extra attack's damage unless that modifier is negative."
         },
         {
           "type": "note",
-          "text": "You can draw or stow two non-Two-Handed weapons at once."
+          "text": "Quick Draw: You can draw or stow two weapons that lack the Two-Handed property when you would normally be able to draw or stow only one."
         }
       ]
     }
@@ -1919,7 +1927,7 @@
       "properties": [
         {
           "type": "note",
-          "text": "Learn one Eldritch Invocation from the Warlock class. Spellcasting ability is Int, Wis, or Cha (your choice). Can only choose an invocation with prerequisites if you're a Warlock who meets them. Can swap at each level."
+          "text": "You learn one Eldritch Invocation option of your choice from the Warlock class. Your spellcasting ability for the invocation is Intelligence, Wisdom, or Charisma (choose when you select this feat). If the invocation has a prerequisite of any kind, you can choose that invocation only if you're a Warlock who meets the prerequisite. Whenever you gain a level, you can replace the invocation with another one from the Warlock class."
         }
       ]
     }
@@ -2125,7 +2133,7 @@
       "properties": [
         {
           "type": "note",
-          "text": "When you have advantage on an attack roll using Dexterity, Intelligence, Wisdom, or Charisma, you can reroll one of the dice once."
+          "text": "Elven Accuracy: Whenever you have Advantage on an attack roll using Dexterity, Intelligence, Wisdom, or Charisma, you can reroll one of the dice once. This effectively gives you three dice to pick from instead of two."
         }
       ]
     }
@@ -2336,11 +2344,20 @@
     },
     "prerequisiteText": "Proficiency with a Martial weapon",
     "description": "Your martial training has helped you develop a particular style of fighting. You learn one Fighting Style option of your choice from the {class:Fighter} class. If you already have a style, the one you choose must be different. Whenever you reach a level that grants the Ability Score Improvement feature, you can replace this feat's fighting style with another one from the Fighter class that you don't have.",
+    "choices": [
+      {
+        "id": "fighting-initiate-style",
+        "label": "Fighting Style",
+        "count": 1,
+        "timing": "permanent",
+        "pool": "fighting_style"
+      }
+    ],
     "effects": {
       "properties": [
         {
           "type": "note",
-          "text": "Learn one Fighter Fighting Style of your choice. Must be different from any you already have. Can swap at any level that grants an ASI."
+          "text": "You learn one Fighting Style feat of your choice from the Fighter class list. The chosen style must be different from any Fighting Style you already have. Whenever you reach a level that grants the Ability Score Improvement feature, you can replace this fighting style with another Fighter Fighting Style you don't already have."
         }
       ]
     }
@@ -2390,11 +2407,11 @@
       "properties": [
         {
           "type": "note",
-          "text": "When rolling fire damage for a spell, you can reroll any 1 on the damage dice (must use new roll)."
+          "text": "Fire Reroll: When you roll fire damage for a spell you cast, you can reroll any roll of 1 on the fire damage dice, but you must use the new roll, even if it is another 1."
         },
         {
           "type": "note",
-          "text": "When you cast a fire-damage spell, you can cause flames to wreathe you until end of your next turn: bright light 30 ft, dim 30 ft. Creatures within 5 ft that hit you with a melee attack take 1d4 fire damage."
+          "text": "Hellfire Wreath: Whenever you cast a spell that deals fire damage, you can cause flames to wreathe you until the end of your next turn. The flames don't harm you or your possessions and shed bright light out to 30 feet and dim light for an additional 30 feet. While the flames are present, any creature within 5 feet of you that hits you with a melee attack takes 1d4 fire damage."
         }
       ]
     }
@@ -2491,7 +2508,7 @@
       "properties": [
         {
           "type": "note",
-          "text": "When rolling damage with a Two-Handed or Versatile melee weapon held in two hands, treat any damage die result of 1 or 2 as a 3."
+          "text": "When you roll damage for an attack you make with a Melee weapon that you are holding with two hands, you can treat any 1 or 2 on a damage die as a 3. The weapon must have the Two-Handed or Versatile property to gain this benefit."
         }
       ]
     }
@@ -2570,11 +2587,11 @@
       "properties": [
         {
           "type": "note",
-          "text": "Requires a Healer's Kit. As a Utilize action, expend one kit use: a creature within 5 feet spends a Hit Die and regains that roll + your Proficiency Bonus in HP."
+          "text": "Battle Medic: If you have a Healer's Kit, you can expend one use of it and tend to a creature within 5 feet of yourself as a Utilize action. That creature can expend one of its Hit Point Dice, and you then roll that die. The creature regains a number of Hit Points equal to the roll plus your Proficiency Bonus."
         },
         {
           "type": "note",
-          "text": "When you roll a 1 on any die to determine HP restored (via spell or Battle Medic), you may reroll and must use the new result."
+          "text": "Healing Rerolls: Whenever you roll a die to determine the number of Hit Points you restore with a spell or with this feat's Battle Medic benefit, you can reroll the die if it rolls a 1, and you must use the new roll."
         }
       ]
     }
@@ -2693,7 +2710,7 @@
       "properties": [
         {
           "type": "note",
-          "text": "While wearing Heavy armor, Bludgeoning, Piercing, and Slashing damage from attacks against you is reduced by your Proficiency Bonus."
+          "text": "Damage Reduction: When you're hit by an attack while you're wearing Heavy armor, any Bludgeoning, Piercing, and Slashing damage dealt to you by that attack is reduced by an amount equal to your Proficiency Bonus."
         }
       ]
     }
@@ -2796,7 +2813,7 @@
       "properties": [
         {
           "type": "note",
-          "text": "After a Short or Long Rest, give an inspiring performance to up to 6 allies within 30 ft. Each gains Temporary HP equal to your character level + the modifier of the ability increased by this feat."
+          "text": "Bolstering Performance: When you finish a Short Rest or Long Rest, you can give an inspiring performance: a speech, song, or dance. Choose up to six allies (which can include yourself) within 30 feet of yourself who witness the performance. Each chosen creature gains Temporary Hit Points equal to your character level plus the modifier of the ability you increased with this feat."
         }
       ]
     }
@@ -2814,7 +2831,7 @@
       "properties": [
         {
           "type": "note",
-          "text": "Reaction: When a visible creature hits another creature within 5 feet of you, reduce the damage by 1d10 + Proficiency Bonus. Requires holding a shield or Simple/Martial weapon."
+          "text": "Reaction: When a creature you can see hits another creature within 5 feet of you with an attack roll, you can take a Reaction to reduce the damage dealt to the target by 1d10 plus your Proficiency Bonus. You must be holding a Shield or a Simple or Martial weapon to use this Reaction."
         }
       ]
     },
@@ -3049,13 +3066,36 @@
             "label": "Charisma"
           }
         ]
+      },
+      {
+        "id": "magic-initiate-cantrips",
+        "label": "Cantrips",
+        "count": 2,
+        "timing": "permanent",
+        "pool": "spell_cantrip"
+      },
+      {
+        "id": "magic-initiate-spell",
+        "label": "Level 1 Spell",
+        "count": 1,
+        "timing": "permanent",
+        "options": [
+          {
+            "label": "Any level 1 spell from chosen list",
+            "description": "Choose one level 1 spell from the same spell list selected above. It is always prepared and can be cast once per Long Rest without a spell slot."
+          }
+        ]
       }
     ],
     "effects": {
       "properties": [
         {
           "type": "note",
-          "text": "Learn 2 cantrips and 1 level 1 spell from the chosen list. The level 1 spell is always prepared and can be cast once per Long Rest without a slot."
+          "text": "Two Cantrips: You learn two cantrips of your choice from the chosen spell list. The chosen spellcasting ability (Int, Wis, or Cha) applies to all spells from this feat."
+        },
+        {
+          "type": "note",
+          "text": "Level 1 Spell: The chosen level 1 spell is always prepared. You can cast it once per Long Rest without expending a spell slot; you can also cast it using any spell slots you have. Whenever you gain a new level, you can replace one of the spells you chose for this feat with a different spell of the same level from the chosen spell list."
         }
       ]
     }
