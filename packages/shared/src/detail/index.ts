@@ -128,7 +128,6 @@ export function entityDetailFromSpell(spell: SpellDb): EntityDetailData {
 
   return {
     title: spell.name,
-    subtitle: levelStr,
     badges,
     properties,
     description: spell.description,
@@ -144,13 +143,14 @@ export function entityDetailFromCondition(c: ConditionDb): EntityDetailData {
 }
 
 export function entityDetailFromFeat(feat: FeatDb): EntityDetailData {
-  const badges: EntityDetailBadge[] = [];
-  badges.push({ label: feat.category, tone: "amber" });
+  const badges: EntityDetailBadge[] = feat.category
+    ? [{ label: feat.category, tone: "amber" }]
+    : [];
 
   return {
     title: feat.name,
     subtitle: feat.prerequisiteText ? `Prerequisite: ${feat.prerequisiteText}` : undefined,
-    badges,
+    badges: badges.length > 0 ? badges : undefined,
     description: feat.description,
   };
 }
@@ -264,7 +264,7 @@ export function entityDetailFromAbilityScore(
   const sections: EntityDetailSection[] = [
     {
       heading: "Saving Throw",
-      body: `${fullName} Save: ${formatBonus(saveMod)}${saveProficient ? " (proficient)" : ""}`,
+      body: `${formatBonus(saveMod)}${saveProficient ? " (proficient)" : ""}`,
     },
   ];
   if (relatedSkills.length > 0) {
@@ -282,7 +282,6 @@ export function entityDetailFromAbilityScore(
   return {
     title: fullName,
     subtitle: `${modStr} (${score})`,
-    badges: [{ label: "Ability Score", tone: "gray" }],
     sections,
   };
 }
@@ -308,13 +307,14 @@ export function entityDetailFromClassFeature(
   };
 
   const displayName = feature.featureName ?? feature.dbName;
-  const sourceTag = feature.sourceLabel
-    ? `${SOURCE_LABELS[feature.dbKind]}: ${feature.sourceLabel}`
-    : SOURCE_LABELS[feature.dbKind];
+  const sourceTag = feature.sourceLabel ?? SOURCE_LABELS[feature.dbKind];
   const description = resolveFeatureDescription(feature);
 
   const badges: EntityDetailBadge[] = [{ label: sourceTag, tone: "amber" }];
-  if (feature.requiredLevel != null) {
+  if (
+    feature.requiredLevel != null &&
+    !new RegExp(`\\b${feature.requiredLevel}\\b`).test(sourceTag)
+  ) {
     badges.push({ label: `Level ${feature.requiredLevel}`, tone: "gray" });
   }
 

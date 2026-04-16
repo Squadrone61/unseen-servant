@@ -86,16 +86,13 @@ export function EntityDetail({ data, onActionTriggered }: EntityDetailProps) {
       {sections && sections.length > 0 && (
         <div className="space-y-2">
           {sections.map((section, i) => (
-            <div key={i}>
-              <div
-                className="text-sm text-gray-500 uppercase tracking-wider font-medium mb-1"
-                style={{ fontFamily: "var(--font-cinzel)" }}
-              >
+            <div key={i} className="flex items-baseline gap-2 text-sm">
+              <div className="text-[11px] text-gray-500 uppercase tracking-wide shrink-0">
                 {section.heading}
               </div>
               <RichText
                 text={section.body}
-                className="text-gray-300 text-sm"
+                className="text-gray-300"
                 onEntityClick={onEntityClick}
               />
             </div>
