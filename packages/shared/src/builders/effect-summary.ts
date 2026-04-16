@@ -98,6 +98,8 @@ function propertyToken(prop: Property): string | null {
       return prop.count > 1 ? `Extra Attack \u00d7${prop.count}` : "Extra Attack";
     case "weapon_mastery_grant":
       return `Mastery: ${prop.weapon}`;
+    case "metamagic_grant":
+      return `Metamagic: ${prop.metamagic}`;
     case "score_cap":
       return `${titleCase(prop.ability)} Max ${prop.max}`;
     case "roll_minimum": {

@@ -398,14 +398,15 @@
       "level": 2,
       "className": "Sorcerer",
       "description": "Because your magic flows from within, you can alter your spells to suit your needs. You gain two Metamagic options of your choice from the Metamagic Options available to Sorcerers. You use the chosen options to temporarily modify spells you cast. To use an option, you must spend the number of Sorcery Points that it costs.\n\nYou can use only one Metamagic option on a spell when you cast it unless otherwise noted in one of those options. Whenever you gain a Sorcerer level, you can replace one of your Metamagic options with one you don't know. You gain two more options at Sorcerer level 10 and two more at Sorcerer level 17.",
-      "effects": {
-        "properties": [
-          {
-            "type": "note",
-            "text": "Choose 2 Metamagic options at level 2. Gain 2 more at level 10 (total 4), and 2 more at level 17 (total 6). Can replace one option each Sorcerer level."
-          }
-        ]
-      }
+      "choices": [
+        {
+          "id": "metamagic-l2",
+          "label": "Metamagic Options",
+          "count": 2,
+          "timing": "permanent",
+          "pool": "metamagic"
+        }
+      ]
     },
     {
       "name": "Sorcerer Subclass",
@@ -465,14 +466,15 @@
       "level": 10,
       "className": "Sorcerer",
       "description": "You gain two additional Metamagic options of your choice, for a total of four. Whenever you gain a Sorcerer level, you can replace one of your Metamagic options with one you don't know.",
-      "effects": {
-        "properties": [
-          {
-            "type": "note",
-            "text": "Gain 2 additional Metamagic options (total 4). Player selects options via the character builder. Can replace one Metamagic option per Sorcerer level gained."
-          }
-        ]
-      }
+      "choices": [
+        {
+          "id": "metamagic-l10",
+          "label": "Metamagic Options",
+          "count": 2,
+          "timing": "permanent",
+          "pool": "metamagic"
+        }
+      ]
     },
     {
       "name": "Ability Score Improvement",
@@ -497,14 +499,15 @@
       "level": 17,
       "className": "Sorcerer",
       "description": "You gain two additional Metamagic options of your choice, for a total of six. Whenever you gain a Sorcerer level, you can replace one of your Metamagic options with one you don't know.",
-      "effects": {
-        "properties": [
-          {
-            "type": "note",
-            "text": "Gain 2 additional Metamagic options (total 6). Player selects options via the character builder. Can replace one Metamagic option per Sorcerer level gained."
-          }
-        ]
-      }
+      "choices": [
+        {
+          "id": "metamagic-l17",
+          "label": "Metamagic Options",
+          "count": 2,
+          "timing": "permanent",
+          "pool": "metamagic"
+        }
+      ]
     },
     {
       "name": "Subclass Feature",

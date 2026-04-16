@@ -1,7 +1,14 @@
 import type { FeatureChoice } from "../types/effects";
 import type { EntityCategory } from "../types/effects";
 import type { EntityDetailPayload } from "../detail/index";
-import { featsArray, spellsArray, baseItemsArray, getFeat, getBaseItem } from "../data/index";
+import {
+  featsArray,
+  spellsArray,
+  baseItemsArray,
+  getFeat,
+  getBaseItem,
+  getOptionalFeaturesByType,
+} from "../data/index";
 import { getEligibleMasteryWeapons } from "../utils/weapon-mastery";
 import { summarizeEffects } from "./effect-summary";
 
@@ -234,6 +241,18 @@ export function resolveChoice(choice: FeatureChoice, ctx?: ResolveChoiceContext)
         detail: {
           category: "item" as EntityCategory,
           name,
+        },
+      }));
+    }
+
+    case "metamagic": {
+      const options = getOptionalFeaturesByType("MM");
+      return options.map((opt) => ({
+        id: opt.name,
+        name: opt.name,
+        detail: {
+          category: "optional_feature" as EntityCategory,
+          name: opt.name,
         },
       }));
     }

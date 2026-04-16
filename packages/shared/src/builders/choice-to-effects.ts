@@ -300,6 +300,22 @@ function choiceToEffects(
       break;
     }
 
+    case "metamagic": {
+      const props: Property[] = selectedValues.map((v) => ({
+        type: "metamagic_grant" as const,
+        metamagic: v,
+      }));
+      if (props.length > 0) {
+        bundles.push({
+          id: bundleId(selectedValues.join(",")),
+          source: effectSource,
+          lifetime: { type: "permanent" },
+          effects: { properties: props },
+        });
+      }
+      break;
+    }
+
     case "ability_score": {
       // ability_score pool choices are handled via options-based branch.
       // Pool form is a fallback — emit nothing (caller handles ability assignments separately).

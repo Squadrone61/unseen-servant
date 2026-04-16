@@ -359,6 +359,16 @@ export type Property = {
     }
   | {
       /**
+       * Player has learned a Metamagic option. Documentary: surfaces on
+       * the character sheet and in get_character output. Sorcery Point
+       * cost enforcement happens at cast time via the Sorcery Points
+       * resource, not here.
+       */
+      type: "metamagic_grant";
+      metamagic: string;
+    }
+  | {
+      /**
        * Raises the maximum value the named ability score can reach.
        * Currently descriptive (the resolver does not clamp scores), but consumed
        * by the ASI builder UI and the character sheet to surface the new ceiling
@@ -526,7 +536,8 @@ export type FeatureChoice = {
         | "ability_score" // pick an ability to increase (ASI feats, class features)
         | "fighting_style" // pick from Fighting Style feats
         | "spell_cantrip" // pick a cantrip (constrain class via `from`)
-        | "weapon_mastery"; // pick weapons whose Mastery property the character can use
+        | "weapon_mastery" // pick weapons whose Mastery property the character can use
+        | "metamagic"; // pick a Metamagic option (Sorcerer)
       /** Constrained list. Omit for "any from pool". */
       from?: string[];
       options?: never;

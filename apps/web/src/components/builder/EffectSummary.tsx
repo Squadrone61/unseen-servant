@@ -41,6 +41,8 @@ function badgeClassFromProperty(prop: Property, compact: boolean): string | null
       return "bg-blue-900/40 text-blue-300 border border-blue-700/40";
     case "spell_grant":
       return "bg-violet-900/40 text-violet-300 border border-violet-700/40";
+    case "metamagic_grant":
+      return "bg-violet-900/40 text-violet-300 border border-violet-700/40";
     case "resource":
       return "bg-amber-900/40 text-amber-300 border border-amber-700/40";
     case "advantage":
