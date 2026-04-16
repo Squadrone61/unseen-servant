@@ -4,7 +4,7 @@ import type { WSClient } from "../ws-client.js";
 import type { GameLogger } from "../services/game-logger.js";
 import { rollNotation, buildOutputFromResult, formatRollOutput } from "../services/dice-engine.js";
 import { parseCheckType, getCheckAdvantageInfo } from "@unseen-servant/shared/utils";
-import { getRollMinimums, getSkills } from "@unseen-servant/shared/character";
+import { getRollMinimums, getSkills, getCritRiders } from "@unseen-servant/shared/character";
 import { getCombatBonus } from "@unseen-servant/shared/character";
 import { resolveActionRef } from "@unseen-servant/shared/data";
 import type { ActionRef } from "@unseen-servant/shared/data";
@@ -187,6 +187,26 @@ Examples:
                 m.mode === "total"
                   ? `\n🎯 Roll floor: if total < ${m.min}, use ${m.min}`
                   : `\n🎯 Roll floor: treat any d20 ≤ ${m.min - 1} as ${m.min}`;
+            }
+          }
+
+          // Crit-rider hints (Crusher / Slasher / Piercer) on weapon attacks.
+          if (parsed && parsed.category === "attack") {
+            for (const rider of getCritRiders(char)) {
+              const dmg = rider.weaponDamageType;
+              let effectText: string;
+              switch (rider.effect.kind) {
+                case "extra_die":
+                  effectText = "roll one extra weapon damage die";
+                  break;
+                case "advantage_next_attack":
+                  effectText = "next attack vs the target has advantage";
+                  break;
+                case "target_disadvantage_attacks":
+                  effectText = "target has Disadvantage on attacks until start of your next turn";
+                  break;
+              }
+              effectHints += `\n💥 On ${dmg} crit: ${effectText}`;
             }
           }
         }

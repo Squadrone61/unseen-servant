@@ -193,6 +193,19 @@ export function getScoreCaps(char: CharacterData): AbilityScores {
  * current ResolveContext, so callers receive concrete numbers and can
  * apply them without re-evaluating the language.
  */
+/**
+ * Crit-triggered riders the character carries (Crusher / Slasher / Piercer).
+ *
+ * Each rider matches a weapon damage type. The game engine consumes them
+ * inside the apply_damage path when a crit is recorded.
+ */
+export function getCritRiders(
+  char: CharacterData,
+): Array<Extract<import("../types/effects").Property, { type: "crit_rider" }>> {
+  const bundles = collectActiveBundles(char);
+  return collectProperties(bundles, "crit_rider");
+}
+
 export function getRollMinimums(
   char: CharacterData,
 ): Array<{ on: string; min: number; mode: "d20" | "total"; proficientOnly: boolean }> {

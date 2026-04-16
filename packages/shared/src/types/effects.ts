@@ -375,6 +375,23 @@ export type Property = {
     }
   | {
       /**
+       * Rider that fires when this character lands a critical hit with a
+       * weapon of the matching damage type (Crusher / Slasher / Piercer family).
+       *
+       *   extra_die                  — roll one extra weapon die on the crit (Piercer).
+       *   advantage_next_attack      — next attack vs the target has advantage (Crusher).
+       *   target_disadvantage_attacks — target has Disadvantage on attacks until
+       *                                 the start of your next turn (Slasher).
+       */
+      type: "crit_rider";
+      weaponDamageType: "bludgeoning" | "slashing" | "piercing";
+      effect:
+        | { kind: "extra_die" }
+        | { kind: "advantage_next_attack" }
+        | { kind: "target_disadvantage_attacks" };
+    }
+  | {
+      /**
        * Applies another entity's effects by name and category. The resolver
        * looks up the entity in the specified DB category and includes its
        * effects. Creates an inheritance chain: Paralyzed → grant condition

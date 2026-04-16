@@ -364,6 +364,16 @@ export const propertySchema: z.ZodType<Property> = z.discriminatedUnion("type", 
     condition: z.string().optional(),
   }),
   z.object({
+    type: z.literal("crit_rider"),
+    weaponDamageType: z.enum(["bludgeoning", "slashing", "piercing"]),
+    effect: z.discriminatedUnion("kind", [
+      z.object({ kind: z.literal("extra_die") }),
+      z.object({ kind: z.literal("advantage_next_attack") }),
+      z.object({ kind: z.literal("target_disadvantage_attacks") }),
+    ]),
+    condition: z.string().optional(),
+  }),
+  z.object({
     type: z.literal("grant"),
     grant: z.string(),
     grantType: entityCategorySchema,

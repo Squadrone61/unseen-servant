@@ -1504,8 +1504,11 @@
           "text": "Push: Once per turn, when you hit a creature with an attack that deals Bludgeoning damage, you can move it 5 feet to an unoccupied space, provided the target is no more than one size larger than you."
         },
         {
-          "type": "note",
-          "text": "Enhanced Critical: When you score a Critical Hit that deals Bludgeoning damage to a creature, attack rolls against that creature have Advantage until the start of your next turn."
+          "type": "crit_rider",
+          "weaponDamageType": "bludgeoning",
+          "effect": {
+            "kind": "advantage_next_attack"
+          }
         }
       ]
     }
@@ -3591,8 +3594,11 @@
           "text": "**Puncture.** Once per turn, when you hit a creature with an attack that deals Piercing damage, you can reroll one of the attack's damage dice, and you must use the new roll."
         },
         {
-          "type": "note",
-          "text": "**Enhanced Critical.** When you score a Critical Hit that deals Piercing damage to a creature, you can roll one additional damage die when determining the extra Piercing damage the target takes."
+          "type": "crit_rider",
+          "weaponDamageType": "piercing",
+          "effect": {
+            "kind": "extra_die"
+          }
         }
       ]
     }
@@ -4542,8 +4548,11 @@
           "text": "**Hamstring.** Once per turn when you hit a creature with an attack that deals Slashing damage, you can reduce the Speed of that creature by 10 feet until the start of your next turn."
         },
         {
-          "type": "note",
-          "text": "**Enhanced Critical.** When you score a Critical Hit that deals Slashing damage to a creature, it has Disadvantage on attack rolls until the start of your next turn."
+          "type": "crit_rider",
+          "weaponDamageType": "slashing",
+          "effect": {
+            "kind": "target_disadvantage_attacks"
+          }
         }
       ]
     }

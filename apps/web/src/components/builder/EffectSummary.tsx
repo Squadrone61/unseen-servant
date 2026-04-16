@@ -242,6 +242,26 @@ function propertyBadge(prop: Property, compact: boolean): Badge | null {
       };
     }
 
+    case "crit_rider": {
+      const dmgType = titleCase(prop.weaponDamageType);
+      let effectLabel: string;
+      switch (prop.effect.kind) {
+        case "extra_die":
+          effectLabel = "extra die";
+          break;
+        case "advantage_next_attack":
+          effectLabel = "next atk vs target has adv";
+          break;
+        case "target_disadvantage_attacks":
+          effectLabel = "target disadv on attacks";
+          break;
+      }
+      return {
+        label: `${dmgType} crit: ${effectLabel}`,
+        className: "bg-red-900/40 text-red-300 border border-red-700/40",
+      };
+    }
+
     case "grant":
       return {
         label: `Grants: ${prop.grant}`,
