@@ -101,6 +101,7 @@ export const characterFeatureRefSchema = z.object({
   featureName: z.string().optional(),
   sourceLabel: z.string(),
   requiredLevel: z.number().optional(),
+  choices: z.record(z.string(), z.union([z.string(), z.array(z.string())])).optional(),
 });
 
 export const advantageEntrySchema = z.object({
@@ -123,6 +124,7 @@ export const classResourceSchema = z.object({
   longRest: z.union([z.number(), z.literal("all")]),
   shortRest: z.union([z.number(), z.literal("all")]).optional(),
   source: z.string(),
+  sourceFeature: characterFeatureRefSchema.optional(),
 });
 
 export const combatBonusSchema = z.object({

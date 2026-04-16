@@ -87,6 +87,15 @@ export const combatantSchema = z.object({
     climb: z.number().optional(),
     burrow: z.number().optional(),
   }),
+  baseSpeed: z
+    .object({
+      walk: z.number(),
+      fly: z.number().optional(),
+      swim: z.number().optional(),
+      climb: z.number().optional(),
+      burrow: z.number().optional(),
+    })
+    .optional(),
   movementUsed: z.number(),
   position: gridPositionSchema.optional(),
   size: creatureSizeSchema,

@@ -9,7 +9,7 @@ user-invocable: false
 
 When initiating combat, follow these steps IN ORDER. Do NOT skip any step. Do NOT start combat without a battle map.
 
-1. Call `lookup_monster` for EVERY enemy type to get accurate stats
+1. Call `lookup_rule(query="...", category="monster")` for EVERY enemy type to get accurate stats
 2. Call `calculate_encounter_difficulty` to validate the encounter is appropriately challenging for the party
    - Use `get_character` for party members if you need to check current HP, spell slots, or abilities to tune the encounter
 3. Call `update_battle_map` to create the terrain grid with rich tiles — use objects, cover, and elevation to make the battlefield tactical and interesting

@@ -189,17 +189,17 @@ pnpm deploy:web     # Deploy web only
 
 ### Combat Management
 
-| Tool               | Description                                                                       |
-| ------------------ | --------------------------------------------------------------------------------- |
-| `start_combat`     | Initialize combat, auto-roll initiative, create turn order.                       |
-| `end_combat`       | End combat, return to exploration phase.                                          |
-| `advance_turn`     | Next combatant's turn, increment round counter. Expires duration-based effects.   |
-| `set_initiative`   | Override a combatant's initiative value and re-sort turn order.                   |
-| `set_active_turn`  | Jump to a specific combatant's turn (DM override, skips condition expiry).        |
-| `add_combatant`    | Add mid-fight reinforcements.                                                     |
-| `remove_combatant` | Remove dead/fled/dismissed combatant.                                             |
-| `move_combatant`   | Move token on battle map (accepts A1 notation).                                   |
-| `death_save`       | Record a death saving throw (auto-stabilize at 3 successes, death at 3 failures). |
+| Tool               | Description                                                                                                         |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------- |
+| `start_combat`     | Initialize combat, auto-roll initiative, create turn order.                                                         |
+| `end_combat`       | End combat, return to exploration phase.                                                                            |
+| `advance_turn`     | Next combatant's turn, increment round counter. Expires duration-based effects.                                     |
+| `set_initiative`   | Override a combatant's initiative value and re-sort turn order.                                                     |
+| `set_active_turn`  | Jump to a specific combatant's turn (DM override, skips condition expiry).                                          |
+| `add_combatant`    | Add mid-fight reinforcements.                                                                                       |
+| `remove_combatant` | Remove dead/fled/dismissed combatant.                                                                               |
+| `move_combatant`   | Move token on battle map (accepts A1 notation). Optional `movement_left` sets remaining movement budget for the UI. |
+| `death_save`       | Record a death saving throw (auto-stabilize at 3 successes, death at 3 failures).                                   |
 
 ### Rests
 
@@ -210,10 +210,10 @@ pnpm deploy:web     # Deploy web only
 
 ### Concentration
 
-| Tool                  | Description                                                                                      |
-| --------------------- | ------------------------------------------------------------------------------------------------ |
-| `set_concentration`   | Set a character as concentrating on a spell (auto-breaks previous). Creates spell effect bundle. |
-| `break_concentration` | Break a character's concentration, ending their concentration spell and removing effect bundle.  |
+| Tool                  | Description                                                                                                                                                                                                                                   |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `set_concentration`   | Set a character as concentrating on a spell (auto-breaks previous). Creates spell effect bundle. Optional `applied_targets` propagates spell effects (e.g. Bane disadvantage) to named combatants; effects auto-clear on concentration break. |
+| `break_concentration` | Break a character's concentration, ending their concentration spell and removing effect bundle.                                                                                                                                               |
 
 ### Exhaustion
 
@@ -281,24 +281,10 @@ pnpm deploy:web     # Deploy web only
 
 ### D&D Reference (Unified 2024 Database)
 
-All lookup tools accept `detail`: `"summary"` (default, ~30 tokens) or `"full"` (complete rules text).
-
-| Tool                      | Description                                                                                                                                                                                                                                                                                                                                                                             |
-| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `lookup_spell`            | Look up spell details from D&D 2024 database (490 spells).                                                                                                                                                                                                                                                                                                                              |
-| `lookup_monster`          | Look up monster stat block from D&D 2024 database (580 monsters).                                                                                                                                                                                                                                                                                                                       |
-| `lookup_condition`        | Look up condition effects from D&D 2024 database (15 conditions).                                                                                                                                                                                                                                                                                                                       |
-| `lookup_magic_item`       | Look up a magic item from D&D 2024 database (563 items).                                                                                                                                                                                                                                                                                                                                |
-| `lookup_feat`             | Look up a feat from D&D 2024 database (103 feats).                                                                                                                                                                                                                                                                                                                                      |
-| `lookup_class`            | Look up class details from D&D 2024 database (12 classes with subclasses).                                                                                                                                                                                                                                                                                                              |
-| `lookup_species`          | Look up species from D&D 2024 database (28 species).                                                                                                                                                                                                                                                                                                                                    |
-| `lookup_background`       | Look up background from D&D 2024 database (27 backgrounds).                                                                                                                                                                                                                                                                                                                             |
-| `lookup_optional_feature` | Look up optional class feature (Eldritch Invocations, Maneuvers, Metamagic, etc.).                                                                                                                                                                                                                                                                                                      |
-| `lookup_action`           | Look up a standard game action (Attack, Dash, Dodge, Disengage, Help, Hide, etc.).                                                                                                                                                                                                                                                                                                      |
-| `lookup_language`         | Look up a D&D language from the 2024 database.                                                                                                                                                                                                                                                                                                                                          |
-| `lookup_disease`          | Look up a disease from the D&D 2024 database.                                                                                                                                                                                                                                                                                                                                           |
-| `search_rules`            | Search across all D&D data categories by keyword.                                                                                                                                                                                                                                                                                                                                       |
-| `roll_dice`               | Roll dice — notation always required. Optional checkType auto-computes modifier from character sheet (requires player) and returns advantage/disadvantage hints from active effects. For `*_save` checks, optional `action_ref` auto-fills the DC from DB `ActionEffect.save.dc`. Advantage = "2d20kh1", disadvantage = "2d20kl1". With player = interactive, without = DM server-side. |
+| Tool          | Description                                                                                                                                                                                                                                                                                                                                                                             |
+| ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `lookup_rule` | Single unified lookup across ALL D&D 2024 data (spells, monsters, conditions, magic items, feats, classes, species, backgrounds, optional features, actions, languages, diseases). Fuzzy-matches the `query` across all categories; optional `category` narrows when names collide. `detail`: `"summary"` (default, ~30 tokens) or `"full"` (complete rules text).                      |
+| `roll_dice`   | Roll dice — notation always required. Optional checkType auto-computes modifier from character sheet (requires player) and returns advantage/disadvantage hints from active effects. For `*_save` checks, optional `action_ref` auto-fills the DC from DB `ActionEffect.save.dc`. Advantage = "2d20kh1", disadvantage = "2d20kl1". With player = interactive, without = DM server-side. |
 
 ### Campaign Persistence
 

@@ -204,11 +204,15 @@ export function hasDisadvantage(bundles: EffectBundle[], on: string): boolean {
   );
 }
 
-/** Get all proficiencies of a given category */
+/** Get all proficiencies of a given category (case-insensitive dedup) */
 export function getProficiencies(bundles: EffectBundle[], category: string): string[] {
-  return collectProperties(bundles, "proficiency")
-    .filter((p) => p.category === category)
-    .map((p) => p.value);
+  const seen = new Map<string, string>();
+  for (const prop of collectProperties(bundles, "proficiency")) {
+    if (prop.category !== category) continue;
+    const key = prop.value.toLowerCase();
+    if (!seen.has(key)) seen.set(key, prop.value);
+  }
+  return Array.from(seen.values());
 }
 
 /** Get all senses (returns array of {sense, range}). For duplicate senses, the larger range wins. */

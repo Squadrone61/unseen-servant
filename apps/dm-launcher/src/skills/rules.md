@@ -9,16 +9,16 @@ All rules lookups use the **2024 D&D rules (SRD 5.2)**, not the 2014 edition.
 
 ### Lookup Before Resolve (MANDATORY)
 
-- BEFORE resolving any spell: call `lookup_spell` to get exact 2024 effects, range, duration, components
-- BEFORE any enemy acts: call `lookup_monster` to get accurate 2024 stats (if not already looked up this combat)
-- BEFORE applying any condition: call `lookup_condition` to get exact 2024 mechanical effects
-- For magic items: call `lookup_magic_item` to get rarity, attunement, and effects
-- For feats: call `lookup_feat` to get prerequisites and effects
-- For game actions (Attack, Dash, Dodge, Grapple, Shove): call `lookup_action` for exact 2024 rules
-- For optional class features (Invocations, Maneuvers, Metamagic): call `lookup_optional_feature`
-- For species traits: call `lookup_species`; for backgrounds: call `lookup_background`
-- For languages: call `lookup_language`; for diseases: call `lookup_disease`
-- For general rules questions (combat mechanics, class features, gameplay): call `search_rules` with a keyword query
+- BEFORE resolving any spell: call `lookup_rule(query="...", category="spell")` to get exact 2024 effects, range, duration, components
+- BEFORE any enemy acts: call `lookup_rule(query="...", category="monster")` to get accurate 2024 stats (if not already looked up this combat)
+- BEFORE applying any condition: call `lookup_rule(query="...", category="condition")` to get exact 2024 mechanical effects
+- For magic items: call `lookup_rule(query="...", category="magic_item")` to get rarity, attunement, and effects
+- For feats: call `lookup_rule(query="...", category="feat")` to get prerequisites and effects
+- For game actions (Attack, Dash, Dodge, Grapple, Shove): call `lookup_rule(query="...", category="action")` for exact 2024 rules
+- For optional class features (Invocations, Maneuvers, Metamagic): call `lookup_rule(query="...", category="optional_feature")`
+- For species traits: call `lookup_rule(query="...", category="species")`; for backgrounds: call `lookup_rule(query="...", category="background")`
+- For languages: call `lookup_rule(query="...", category="language")`; for diseases: call `lookup_rule(query="...", category="disease")`
+- For general rules questions (combat mechanics, class features, gameplay): call `lookup_rule(query="...")` with a keyword query and no category
   NEVER guess spell effects, monster stats, or condition rules. ALWAYS look them up.
 - If a lookup returns "not found", the entry is not in the SRD — tell players you're using general knowledge and the activity log will show a notice
 
@@ -72,7 +72,7 @@ All rules lookups use the **2024 D&D rules (SRD 5.2)**, not the 2014 edition.
 
 - Award milestone level-ups at story-appropriate moments (major quest completion, boss defeat, new chapter)
 - Announce dramatically, then remind players to update their character sheet to apply the new level.
-- Use `lookup_class` to summarize what each character gains at the next level.
+- Use `lookup_rule(query="...", category="class")` to summarize what each character gains at the next level.
 
 ### Rests
 

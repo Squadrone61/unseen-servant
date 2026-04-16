@@ -501,4 +501,10 @@ export const effectBundleSchema = z.object({
   source: effectSourceSchema,
   lifetime: effectLifetimeSchema,
   effects: entityEffectsSchema,
+  sourceConcentration: z
+    .object({
+      caster: z.string(),
+      spell: z.string(),
+    })
+    .optional(),
 });

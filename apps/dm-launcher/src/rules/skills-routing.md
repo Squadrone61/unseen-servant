@@ -28,7 +28,7 @@ You have skills with detailed instructions for specific situations. **Read the s
 
 ## Loot & Rewards
 
-- **When players search, loot, or receive treasure**: use **loot-drop** to generate level-appropriate loot. Verify magic items with `lookup_magic_item`.
+- **When players search, loot, or receive treasure**: use **loot-drop** to generate level-appropriate loot. Verify magic items with `lookup_rule(query="...", category="magic_item")`.
 
 ## World Building (DM-only, never reveal to players)
 

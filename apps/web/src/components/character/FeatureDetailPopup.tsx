@@ -58,6 +58,23 @@ export function FeatureDetailPopup({ feature, onClose, position }: FeatureDetail
           className="text-gray-300 text-sm"
           onEntityClick={onEntityClick}
         />
+
+        {/* Player-selected choices */}
+        {feature.choices && Object.keys(feature.choices).length > 0 && (
+          <div className="border-t border-gray-700/50 pt-2 space-y-1">
+            <div className="text-xs uppercase tracking-wider text-gray-500">Chosen</div>
+            {Object.entries(feature.choices).map(([key, value]) => {
+              const display = Array.isArray(value) ? value.join(", ") : value;
+              if (!display) return null;
+              return (
+                <div key={key} className="text-xs flex gap-2">
+                  <span className="text-gray-500 capitalize">{key.replace(/[-_]/g, " ")}:</span>
+                  <span className="text-amber-300">{display}</span>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </DetailPopover>
   );

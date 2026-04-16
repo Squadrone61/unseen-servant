@@ -178,9 +178,24 @@ export function ActionsTab({ character, onItemClick, onFeatureClick }: ActionsTa
           {classResources.map((resource) => {
             const used = (d.resourcesUsed || {})[resource.name] ?? 0;
             const remaining = resource.maxUses - used;
+            const clickable = !!resource.sourceFeature;
             return (
-              <div key={resource.name} className="flex items-center gap-1.5 text-xs px-1.5 py-0.5">
-                <span className="text-gray-300 truncate flex-1">{resource.name}</span>
+              <div
+                key={resource.name}
+                className={`flex items-center gap-1.5 text-xs px-1.5 py-0.5 rounded ${
+                  clickable ? "cursor-pointer hover:bg-gray-800/60 transition-colors group" : ""
+                }`}
+                onClick={clickable ? (e) => onFeatureClick(resource.sourceFeature!, e) : undefined}
+              >
+                <span
+                  className={`truncate flex-1 ${
+                    clickable
+                      ? "text-gray-300 group-hover:text-amber-300 transition-colors"
+                      : "text-gray-300"
+                  }`}
+                >
+                  {resource.name}
+                </span>
                 <span className="text-xs text-gray-500">
                   {[resource.shortRest && "SR", resource.longRest && "LR"]
                     .filter(Boolean)

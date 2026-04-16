@@ -93,6 +93,8 @@ export interface Combatant {
   /** DEX score used as initiative tiebreaker (higher goes first). */
   dexScore: number;
   speed: CharacterSpeed;
+  /** Snapshot of base speed before effect modifiers (for re-resolution). */
+  baseSpeed?: CharacterSpeed;
   movementUsed: number;
   position?: GridPosition;
   size: CreatureSize;

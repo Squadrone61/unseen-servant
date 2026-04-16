@@ -20,7 +20,7 @@ Design a multi-session campaign story arc. This is **DM-only prep** — never re
    - **Climax** — the big confrontation or decision
    - **Twist** — at least one surprise that recontextualizes earlier events
    - **Consequences** — how the resolution changes the world
-4. **Validate monsters** — call `lookup_monster` for each suggested encounter creature to verify stats exist
+4. **Validate monsters** — call `lookup_rule(query="...", category="monster")` for each suggested encounter creature to verify stats exist
 5. **Save the arc** — call `save_campaign_file` to write `dm/story-arc.md`. This is a **DM planning directory** — never referenced in player-facing responses.
 6. **Present to DM** — show the arc summary to the DM operator. **DO NOT call `send_response`** — players must never see this.
 

@@ -253,6 +253,68 @@ function assembleSpellsFromState(state: BuilderState, warnings: string[]): Spell
   return spells;
 }
 
+/**
+ * Walk all effect bundles for `spell_grant` properties and convert them into
+ * Spell entries on the character sheet. Skips spells already present (a class
+ * pick or another grant of the same spell wins). Tags each granted spell with
+ * a spellSource derived from the originating bundle (feat/species/item/etc).
+ */
+function assembleGrantedSpells(
+  bundles: EffectBundle[],
+  existing: Spell[],
+  warnings: string[],
+): Spell[] {
+  const out: Spell[] = [];
+  const seen = new Set(existing.map((s) => s.name.toLowerCase()));
+
+  for (const bundle of bundles) {
+    const grants = (bundle.effects.properties ?? []).filter(
+      (p): p is Extract<Property, { type: "spell_grant" }> => p.type === "spell_grant",
+    );
+    if (grants.length === 0) continue;
+
+    const sourceKind = bundle.source.type;
+    const spellSource: Spell["spellSource"] =
+      sourceKind === "feat"
+        ? "feat"
+        : sourceKind === "species"
+          ? "species"
+          : sourceKind === "item"
+            ? "item"
+            : "class";
+
+    for (const grant of grants) {
+      const key = grant.spell.toLowerCase();
+      if (seen.has(key)) continue;
+      const db = getSpell(grant.spell);
+      if (!db) {
+        warnings.push(`Unknown granted spell "${grant.spell}" — skipped (no DB entry)`);
+        continue;
+      }
+      seen.add(key);
+      out.push({
+        name: grant.spell,
+        level: db.level,
+        school: db.school,
+        castingTime: db.castingTime,
+        range: db.range,
+        components: db.components,
+        duration: db.duration,
+        description: db.description,
+        ritual: db.ritual ?? false,
+        concentration: db.concentration ?? false,
+        prepared: true,
+        alwaysPrepared: true,
+        spellSource,
+        knownByClass: false,
+        sourceClass: bundle.source.featureName ?? bundle.source.name,
+      });
+    }
+  }
+
+  return out;
+}
+
 // assembleSkillProficienciesFromState and assembleSkillExpertiseFromState have been
 // replaced by the unified choiceToEffects pipeline in collectBuildEffects.
 
@@ -274,13 +336,44 @@ function assembleAdditionalFeatures(state: BuilderState): CharacterFeatureRef[] 
   const features: CharacterFeatureRef[] = [];
   for (const selection of state.featSelections) {
     if (selection.type === "feat" && selection.featName) {
+      const picks = state.featChoices[selection.featName];
       features.push({
         dbKind: "feat",
         dbName: selection.featName,
         sourceLabel: `Feat`,
+        choices: picks && Object.keys(picks).length > 0 ? picks : undefined,
       });
     }
   }
+
+  // Class-level choice picks that resolve to feats (Fighting Style picks, etc.)
+  // so they appear as clickable entries on the Features tab with their own
+  // description / mechanical effects rather than being silently absorbed into
+  // the effect bundle list.
+  for (const cls of state.classes) {
+    const classDb = getClass(cls.name);
+    if (!classDb) continue;
+    for (const feature of classDb.features) {
+      if (feature.level > cls.level || !feature.choices) continue;
+      for (const choice of feature.choices) {
+        if (!("pool" in choice)) continue;
+        const pool = (choice as { pool: string }).pool;
+        if (pool !== "fighting_style" && pool !== "feat") continue;
+        const picked = cls.choices?.[choice.id] ?? [];
+        for (const featName of picked) {
+          if (!getFeat(featName)) continue;
+          const picks = state.featChoices[featName];
+          features.push({
+            dbKind: "feat",
+            dbName: featName,
+            sourceLabel: pool === "fighting_style" ? "Fighting Style" : `${cls.name} Feat`,
+            choices: picks && Object.keys(picks).length > 0 ? picks : undefined,
+          });
+        }
+      }
+    }
+  }
+
   return features;
 }
 
@@ -773,6 +866,10 @@ export function buildCharacter(state: BuilderState): {
     };
   });
 
+  // ── Granted spells from effect bundles (feats/items/species spell_grant) ──
+  const granted = assembleGrantedSpells(bundles, spells, warnings);
+  spells.push(...granted);
+
   // ── Features (from DB) ──────────────────────────────────
   const features = computeFeatures(race, classes, additionalFeatures);
 
@@ -1087,12 +1184,40 @@ function computeResources(bundles: EffectBundle[], ctx: ResolveContext): ClassRe
 
     const className = bundleSource?.name ?? "Unknown";
 
+    // Map the EffectSource onto a CharacterFeatureRef so the Actions tab can
+    // open the source feature's full description in a popover.
+    let sourceFeature: CharacterFeatureRef | undefined;
+    if (bundleSource) {
+      const sourceKind = bundleSource.type;
+      const dbKind: CharacterFeatureRef["dbKind"] | null =
+        sourceKind === "class"
+          ? "class"
+          : sourceKind === "subclass"
+            ? "subclass"
+            : sourceKind === "feat"
+              ? "feat"
+              : sourceKind === "species"
+                ? "species"
+                : sourceKind === "background"
+                  ? "background"
+                  : null;
+      if (dbKind) {
+        sourceFeature = {
+          dbKind,
+          dbName: bundleSource.name,
+          featureName: bundleSource.featureName,
+          sourceLabel: bundleSource.featureName ?? bundleSource.name,
+        };
+      }
+    }
+
     resources.push({
       name: res.name,
       maxUses: Math.floor(maxUses),
       longRest: res.longRest,
       shortRest: res.shortRest,
       source: className,
+      sourceFeature,
     });
   }
 
@@ -1175,6 +1300,70 @@ export function createSpellBundle(spellName: string): EffectBundle | null {
     source: { type: "spell", name: spellName },
     lifetime: spell.concentration ? { type: "concentration" } : { type: "manual" },
     effects: spell.effects,
+  };
+}
+
+/**
+ * Build the EffectBundle that a spell applies to a target creature when its
+ * outcome lands (save failed, attack hit, or auto-applied). Pulls EntityEffects
+ * from the spell's ActionEffect outcome branches — `onFailedSave` for save-kind
+ * spells, `onHit` for attack-kind, the first available outcome for auto-kind.
+ *
+ * The returned bundle is tagged with `sourceConcentration: { caster, spell }`
+ * so the GSM can sweep all such bundles off every combatant when the caster's
+ * concentration breaks. Returns null if the spell has no target-applied effects
+ * (pure damage spells, etc. — caller should fall through to manual handling).
+ */
+export function createSpellTargetBundle(spellName: string, caster: string): EffectBundle | null {
+  const spell = getSpell(spellName);
+  const action = spell?.effects?.action;
+  if (!action) return null;
+
+  const outcome =
+    action.kind === "save"
+      ? action.onFailedSave
+      : action.kind === "attack"
+        ? action.onHit
+        : (action.onFailedSave ?? action.onHit ?? action.onSuccessfulSave);
+  if (!outcome) return null;
+
+  const merged: EntityEffects = {
+    modifiers: outcome.applyEffects?.modifiers,
+    properties: outcome.applyEffects?.properties,
+  };
+
+  // Inline applyConditions as condition-grant properties so the resolver
+  // surfaces their mechanical effects on the target.
+  if (outcome.applyConditions && outcome.applyConditions.length > 0) {
+    const conditionProps: Property[] = outcome.applyConditions.flatMap((c) => {
+      const cond = getCondition(c.name);
+      const inlined = cond?.effects ? resolveConditionGrants(cond.effects) : null;
+      const out: Property[] = [];
+      if (inlined?.properties) out.push(...inlined.properties);
+      return out;
+    });
+    if (conditionProps.length > 0) {
+      merged.properties = [...(merged.properties ?? []), ...conditionProps];
+    }
+    // Also fold inlined modifiers from the granted conditions
+    const conditionMods = outcome.applyConditions.flatMap((c) => {
+      const cond = getCondition(c.name);
+      const inlined = cond?.effects ? resolveConditionGrants(cond.effects) : null;
+      return inlined?.modifiers ?? [];
+    });
+    if (conditionMods.length > 0) {
+      merged.modifiers = [...(merged.modifiers ?? []), ...conditionMods];
+    }
+  }
+
+  if (!merged.modifiers && !merged.properties) return null;
+
+  return {
+    id: `spell-target:${spellName.toLowerCase()}:${caster.toLowerCase()}`,
+    source: { type: "spell", name: spellName },
+    lifetime: spell?.concentration ? { type: "concentration" } : { type: "manual" },
+    effects: merged,
+    sourceConcentration: { caster, spell: spellName },
   };
 }
 

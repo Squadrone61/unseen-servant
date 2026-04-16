@@ -77,6 +77,13 @@ export interface CharacterFeatureRef {
   featureName?: string; // "Rage", "Reckless Attack"
   sourceLabel: string; // "Barbarian 3"
   requiredLevel?: number;
+  /**
+   * Player-selected choice values for this feature/feat, keyed by the choice id
+   * defined on the DB entity (e.g. Skilled → { "skills": ["Perception", ...] },
+   * Telekinetic → { "ability": ["intelligence"] }). Surfaced in detail popovers
+   * so players can see what they picked. Omitted when no choices were made.
+   */
+  choices?: Record<string, string | string[]>;
 }
 
 export interface CombatBonus {
@@ -95,6 +102,12 @@ export interface ClassResource {
   /** Amount recovered on short rest. Omit if not recovered on short rest. */
   shortRest?: number | "all";
   source: string; // class name: "Paladin", "Cleric", "Monk", etc.
+  /**
+   * The feature that grants this resource (e.g. Barbarian's Rage feature for
+   * the Rage resource). Surfaced as a clickable detail popover on the Actions
+   * tab so players can read the source feature's full description.
+   */
+  sourceFeature?: CharacterFeatureRef;
 }
 
 export interface ProficiencyGroup {

@@ -3,6 +3,7 @@ export {
   computeBaseAbilities,
   createConditionBundle,
   createSpellBundle,
+  createSpellTargetBundle,
   createActivationBundle,
   createItemBundle,
   createMonsterBundle,

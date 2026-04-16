@@ -650,6 +650,14 @@ export interface EffectBundle {
   source: EffectSource;
   lifetime: EffectLifetime;
   effects: EntityEffects;
+  /**
+   * If set, this bundle was applied to a target by another creature's
+   * concentration spell (e.g. Bane disadvantage on a goblin saved against
+   * the wizard's concentration). When the caster's concentration breaks (or
+   * is replaced), every bundle in the room tagged with this caster+spell
+   * pair is removed in one sweep — no manual `remove_condition` per target.
+   */
+  sourceConcentration?: { caster: string; spell: string };
 }
 
 // ---------------------------------------------------------------------------

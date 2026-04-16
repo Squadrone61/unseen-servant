@@ -4,12 +4,6 @@ import { log } from "../logger.js";
 import type { WSClient } from "../ws-client.js";
 import type { GameLogger } from "../services/game-logger.js";
 import {
-  searchSpells,
-  searchMonsters,
-  searchMagicItems,
-  searchBaseItems,
-  searchFeats,
-  searchOptionalFeatures,
   fuzzyLookup,
   spells,
   spellsArray,
@@ -47,10 +41,8 @@ import {
   type ActionDb,
   type LanguageDb,
   type DiseaseDb,
-  type BaseItemDb,
 } from "@unseen-servant/shared/data";
 import {
-  formatSchool,
   formatMonsterSize,
   formatMonsterType,
   formatMonsterAc,
@@ -519,6 +511,111 @@ function fuzzyLookupOrSuggest<T extends { name: string }>(
   return notFoundResult(category, query);
 }
 
+// ─── Category Dispatch Table ────────────────────────────────
+
+interface CategoryEntry<T extends { name: string }> {
+  label: string;
+  exactMap: Map<string, T>;
+  allItems: T[];
+  formatSummary: (item: T) => string;
+  formatFull: (item: T) => string;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnyCategory = CategoryEntry<any>;
+
+const CATEGORIES: Record<string, AnyCategory> = {
+  spell: {
+    label: "Spell",
+    exactMap: spells,
+    allItems: spellsArray,
+    formatSummary: formatSpellSummary,
+    formatFull: formatSpell,
+  },
+  monster: {
+    label: "Monster",
+    exactMap: monsters,
+    allItems: monstersArray,
+    formatSummary: formatMonsterSummary,
+    formatFull: formatMonster,
+  },
+  condition: {
+    label: "Condition",
+    exactMap: conditions,
+    allItems: conditionsArray,
+    formatSummary: formatConditionSummary,
+    formatFull: formatCondition,
+  },
+  magic_item: {
+    label: "Magic Item",
+    exactMap: magicItems,
+    allItems: magicItemsArray,
+    formatSummary: formatMagicItemSummary,
+    formatFull: formatMagicItemFn,
+  },
+  feat: {
+    label: "Feat",
+    exactMap: feats,
+    allItems: featsArray,
+    formatSummary: formatFeatSummary,
+    formatFull: formatFeatFn,
+  },
+  class: {
+    label: "Class",
+    exactMap: classes,
+    allItems: classesArray,
+    formatSummary: formatClassSummary,
+    formatFull: formatClassFn,
+  },
+  species: {
+    label: "Species",
+    exactMap: species,
+    allItems: speciesArray,
+    formatSummary: formatSpeciesSummary,
+    formatFull: formatSpeciesFn,
+  },
+  background: {
+    label: "Background",
+    exactMap: backgrounds,
+    allItems: backgroundsArray,
+    formatSummary: formatBackgroundSummary,
+    formatFull: formatBackgroundFn,
+  },
+  optional_feature: {
+    label: "Optional Feature",
+    exactMap: optionalFeatures,
+    allItems: optionalFeaturesArray,
+    formatSummary: formatOptionalFeatureSummary,
+    formatFull: formatOptionalFeatureFn,
+  },
+  action: {
+    label: "Action",
+    exactMap: actions,
+    allItems: actionsArray,
+    formatSummary: formatActionSummary,
+    formatFull: formatActionFn,
+  },
+  language: {
+    label: "Language",
+    exactMap: languages,
+    allItems: languagesArray,
+    formatSummary: formatLanguageSummary,
+    formatFull: formatLanguageFn,
+  },
+  disease: {
+    label: "Disease",
+    exactMap: diseases,
+    allItems: diseasesArray,
+    formatSummary: formatDiseaseSummary,
+    formatFull: formatDiseaseFn,
+  },
+};
+
+const CATEGORY_KEYS = Object.keys(CATEGORIES);
+
+// Match quality tiers (higher = better)
+const MATCH_RANK: Record<string, number> = { exact: 4, substring: 3, word: 2, levenshtein: 1 };
+
 // ─── Tool Registration ──────────────────────────────────────
 
 export function registerSrdTools(
@@ -526,652 +623,121 @@ export function registerSrdTools(
   wsClient: WSClient,
   gameLogger: GameLogger,
 ): void {
-  const LOOKUP_ACTIVITY_LABEL: Record<string, string> = {
-    lookup_spell: "The DM flips through the arcane tome…",
-    lookup_monster: "The DM consults the bestiary…",
-    lookup_condition: "The DM checks the rulebook…",
-    lookup_magic_item: "The DM examines the treasure ledger…",
-    lookup_feat: "The DM reviews training manuals…",
-    lookup_class: "The DM consults class lore…",
-    lookup_species: "The DM consults the lineage codex…",
-    lookup_background: "The DM reads the background codex…",
-    lookup_action: "The DM checks the action rules…",
-    lookup_language: "The DM glances at the linguist's scroll…",
-    lookup_disease: "The DM checks the plague ledger…",
-    lookup_optional_feature: "The DM weighs an optional feature…",
-    search_rules: "The DM searches the rulebooks…",
-  };
-
-  /** Wrap an SRD lookup handler to log the tool call. */
-  function loggedLookup(
-    toolName: string,
-    args: Record<string, unknown>,
-    result: ToolResult,
-  ): ToolResult {
-    const text =
-      result.content?.[0]?.type === "text"
-        ? (result.content[0] as { type: "text"; text: string }).text
-        : "";
-    gameLogger.toolCall(toolName, args, text);
-    const label = LOOKUP_ACTIVITY_LABEL[toolName];
-    if (label) wsClient.pingActivity(label);
-    return result;
-  }
-
   server.registerTool(
-    "lookup_spell",
-    {
-      description: "Look up a spell from the D&D 2024 database.",
-      inputSchema: {
-        name: z
-          .string()
-          .describe(
-            "Spell name, e.g. 'Fireball', 'Cure Wounds', 'Shield', 'Silvery Barbs'. Case-insensitive with fuzzy matching — close matches auto-selected, ambiguous ones return suggestions.",
-          ),
-        detail: z
-          .enum(["summary", "full"])
-          .optional()
-          .default("summary")
-          .describe(
-            "Level of detail (default: summary). 'summary' (~30 tokens) or 'full' (complete rules text).",
-          ),
-      },
-    },
-    async ({ name, detail }) => {
-      return loggedLookup(
-        "lookup_spell",
-        { name, detail },
-        fuzzyLookupOrSuggest(
-          name,
-          spells,
-          spellsArray,
-          "Spell",
-          formatSpellSummary,
-          formatSpell,
-          detail,
-          wsClient,
-        ),
-      );
-    },
-  );
-
-  server.registerTool(
-    "lookup_monster",
-    {
-      description: "Look up a monster/creature stat block from the D&D 2024 database.",
-      inputSchema: {
-        name: z
-          .string()
-          .describe(
-            "Monster name, e.g. 'Goblin', 'Adult Red Dragon', 'Bugbear'. Case-insensitive with fuzzy matching — close matches auto-selected, ambiguous ones return suggestions.",
-          ),
-        detail: z
-          .enum(["summary", "full"])
-          .optional()
-          .default("summary")
-          .describe(
-            "Level of detail (default: summary). 'summary' (~30 tokens) or 'full' (complete rules text).",
-          ),
-      },
-    },
-    async ({ name, detail }) => {
-      return loggedLookup(
-        "lookup_monster",
-        { name, detail },
-        fuzzyLookupOrSuggest(
-          name,
-          monsters,
-          monstersArray,
-          "Monster",
-          formatMonsterSummary,
-          formatMonster,
-          detail,
-          wsClient,
-        ),
-      );
-    },
-  );
-
-  server.registerTool(
-    "lookup_condition",
-    {
-      description: "Look up condition effects from the D&D 2024 database.",
-      inputSchema: {
-        name: z
-          .string()
-          .describe(
-            "Condition name, e.g. 'Grappled', 'Stunned', 'Prone', 'Frightened'. Case-insensitive with fuzzy matching — close matches auto-selected, ambiguous ones return suggestions.",
-          ),
-        detail: z
-          .enum(["summary", "full"])
-          .optional()
-          .default("summary")
-          .describe(
-            "Level of detail (default: summary). 'summary' (~30 tokens) or 'full' (complete rules text).",
-          ),
-      },
-    },
-    async ({ name, detail }) => {
-      return loggedLookup(
-        "lookup_condition",
-        { name, detail },
-        fuzzyLookupOrSuggest(
-          name,
-          conditions,
-          conditionsArray,
-          "Condition",
-          formatConditionSummary,
-          formatCondition,
-          detail,
-          wsClient,
-        ),
-      );
-    },
-  );
-
-  server.registerTool(
-    "lookup_magic_item",
-    {
-      description: "Look up a magic item from the D&D 2024 database.",
-      inputSchema: {
-        name: z
-          .string()
-          .describe(
-            "Magic item name, e.g. 'Bag of Holding', 'Flame Tongue'. Case-insensitive with fuzzy matching — close matches auto-selected, ambiguous ones return suggestions.",
-          ),
-        detail: z
-          .enum(["summary", "full"])
-          .optional()
-          .default("summary")
-          .describe(
-            "Level of detail (default: summary). 'summary' (~30 tokens) or 'full' (complete rules text).",
-          ),
-      },
-    },
-    async ({ name, detail }) => {
-      return loggedLookup(
-        "lookup_magic_item",
-        { name, detail },
-        fuzzyLookupOrSuggest(
-          name,
-          magicItems,
-          magicItemsArray,
-          "Magic Item",
-          formatMagicItemSummary,
-          formatMagicItemFn,
-          detail,
-          wsClient,
-        ),
-      );
-    },
-  );
-
-  server.registerTool(
-    "lookup_feat",
-    {
-      description: "Look up a feat from the D&D 2024 database.",
-      inputSchema: {
-        name: z
-          .string()
-          .describe(
-            "Feat name, e.g. 'Alert', 'Great Weapon Master'. Case-insensitive with fuzzy matching — close matches auto-selected, ambiguous ones return suggestions.",
-          ),
-        detail: z
-          .enum(["summary", "full"])
-          .optional()
-          .default("summary")
-          .describe(
-            "Level of detail (default: summary). 'summary' (~30 tokens) or 'full' (complete rules text).",
-          ),
-      },
-    },
-    async ({ name, detail }) => {
-      return loggedLookup(
-        "lookup_feat",
-        { name, detail },
-        fuzzyLookupOrSuggest(
-          name,
-          feats,
-          featsArray,
-          "Feat",
-          formatFeatSummary,
-          formatFeatFn,
-          detail,
-          wsClient,
-        ),
-      );
-    },
-  );
-
-  server.registerTool(
-    "lookup_class",
-    {
-      description: "Look up a D&D class from the D&D 2024 database.",
-      inputSchema: {
-        name: z
-          .string()
-          .describe(
-            "Class name, e.g. 'Paladin', 'Rogue', 'Wizard'. Case-insensitive with fuzzy matching — close matches auto-selected, ambiguous ones return suggestions.",
-          ),
-        detail: z
-          .enum(["summary", "full"])
-          .optional()
-          .default("summary")
-          .describe(
-            "Level of detail (default: summary). 'summary' (~30 tokens) or 'full' (complete rules text).",
-          ),
-      },
-    },
-    async ({ name, detail }) => {
-      return loggedLookup(
-        "lookup_class",
-        { name, detail },
-        fuzzyLookupOrSuggest(
-          name,
-          classes,
-          classesArray,
-          "Class",
-          formatClassSummary,
-          formatClassFn,
-          detail,
-          wsClient,
-        ),
-      );
-    },
-  );
-
-  server.registerTool(
-    "lookup_species",
-    {
-      description: "Look up a D&D species/race from the D&D 2024 database.",
-      inputSchema: {
-        name: z
-          .string()
-          .describe(
-            "Species name, e.g. 'Tiefling', 'Aasimar', 'Goliath', 'Kenku'. Case-insensitive with fuzzy matching — close matches auto-selected, ambiguous ones return suggestions.",
-          ),
-        detail: z
-          .enum(["summary", "full"])
-          .optional()
-          .default("summary")
-          .describe(
-            "Level of detail (default: summary). 'summary' (~30 tokens) or 'full' (complete rules text).",
-          ),
-      },
-    },
-    async ({ name, detail }) => {
-      return loggedLookup(
-        "lookup_species",
-        { name, detail },
-        fuzzyLookupOrSuggest(
-          name,
-          species,
-          speciesArray,
-          "Species",
-          formatSpeciesSummary,
-          formatSpeciesFn,
-          detail,
-          wsClient,
-        ),
-      );
-    },
-  );
-
-  server.registerTool(
-    "lookup_background",
-    {
-      description: "Look up a D&D background from the D&D 2024 database.",
-      inputSchema: {
-        name: z
-          .string()
-          .describe(
-            "Background name, e.g. 'Noble', 'Criminal', 'Sage', 'Haunted One'. Case-insensitive with fuzzy matching — close matches auto-selected, ambiguous ones return suggestions.",
-          ),
-        detail: z
-          .enum(["summary", "full"])
-          .optional()
-          .default("summary")
-          .describe(
-            "Level of detail (default: summary). 'summary' (~30 tokens) or 'full' (complete rules text).",
-          ),
-      },
-    },
-    async ({ name, detail }) => {
-      return loggedLookup(
-        "lookup_background",
-        { name, detail },
-        fuzzyLookupOrSuggest(
-          name,
-          backgrounds,
-          backgroundsArray,
-          "Background",
-          formatBackgroundSummary,
-          formatBackgroundFn,
-          detail,
-          wsClient,
-        ),
-      );
-    },
-  );
-
-  // ─── New Lookup Tools ────────────────────────────────────
-
-  server.registerTool(
-    "lookup_optional_feature",
+    "lookup_rule",
     {
       description:
-        "Look up an optional class feature (Eldritch Invocation, Battle Master Maneuver, Metamagic, etc.) from the D&D 2024 database.",
-      inputSchema: {
-        name: z
-          .string()
-          .describe("Feature name, e.g. 'Agonizing Blast', 'Riposte', 'Quickened Spell'"),
-        detail: z
-          .enum(["summary", "full"])
-          .optional()
-          .default("summary")
-          .describe(
-            "Level of detail (default: summary). 'summary' (~30 tokens) or 'full' (complete rules text).",
-          ),
-      },
-    },
-    async ({ name, detail }) => {
-      return loggedLookup(
-        "lookup_optional_feature",
-        { name, detail },
-        fuzzyLookupOrSuggest(
-          name,
-          optionalFeatures,
-          optionalFeaturesArray,
-          "Optional Feature",
-          formatOptionalFeatureSummary,
-          formatOptionalFeatureFn,
-          detail,
-          wsClient,
-        ),
-      );
-    },
-  );
-
-  server.registerTool(
-    "lookup_action",
-    {
-      description:
-        "Look up a game action (Attack, Dash, Dodge, Disengage, Help, Hide, etc.) from the D&D 2024 database.",
-      inputSchema: {
-        name: z.string().describe("Action name, e.g. 'Attack', 'Grapple', 'Shove', 'Dodge'"),
-        detail: z
-          .enum(["summary", "full"])
-          .optional()
-          .default("summary")
-          .describe(
-            "Level of detail (default: summary). 'summary' (~30 tokens) or 'full' (complete rules text).",
-          ),
-      },
-    },
-    async ({ name, detail }) => {
-      return loggedLookup(
-        "lookup_action",
-        { name, detail },
-        fuzzyLookupOrSuggest(
-          name,
-          actions,
-          actionsArray,
-          "Action",
-          formatActionSummary,
-          formatActionFn,
-          detail,
-          wsClient,
-        ),
-      );
-    },
-  );
-
-  server.registerTool(
-    "lookup_language",
-    {
-      description: "Look up a D&D language from the 2024 database.",
-      inputSchema: {
-        name: z.string().describe("Language name, e.g. 'Elvish', 'Draconic', 'Infernal'"),
-        detail: z
-          .enum(["summary", "full"])
-          .optional()
-          .default("summary")
-          .describe(
-            "Level of detail (default: summary). 'summary' (~30 tokens) or 'full' (complete rules text).",
-          ),
-      },
-    },
-    async ({ name, detail }) => {
-      return loggedLookup(
-        "lookup_language",
-        { name, detail },
-        fuzzyLookupOrSuggest(
-          name,
-          languages,
-          languagesArray,
-          "Language",
-          formatLanguageSummary,
-          formatLanguageFn,
-          detail,
-          wsClient,
-        ),
-      );
-    },
-  );
-
-  server.registerTool(
-    "lookup_disease",
-    {
-      description: "Look up a disease from the D&D 2024 database.",
-      inputSchema: {
-        name: z.string().describe("Disease name, e.g. 'Cackle Fever', 'Sewer Plague'"),
-        detail: z
-          .enum(["summary", "full"])
-          .optional()
-          .default("summary")
-          .describe(
-            "Level of detail (default: summary). 'summary' (~30 tokens) or 'full' (complete rules text).",
-          ),
-      },
-    },
-    async ({ name, detail }) => {
-      return loggedLookup(
-        "lookup_disease",
-        { name, detail },
-        fuzzyLookupOrSuggest(
-          name,
-          diseases,
-          diseasesArray,
-          "Disease",
-          formatDiseaseSummary,
-          formatDiseaseFn,
-          detail,
-          wsClient,
-        ),
-      );
-    },
-  );
-
-  // ─── Search ──────────────────────────────────────────────
-
-  server.registerTool(
-    "search_rules",
-    {
-      description: "Search the D&D 2024 database across all categories by keyword.",
+        "Look up ANY D&D 2024 rule, entity, or concept from the unified database. Searches spells, monsters, conditions, magic items, feats, classes, species, backgrounds, optional features, actions, languages, and diseases — all in one tool. Provide an optional `category` to narrow results when names collide across categories (e.g. Bane is both a spell and a condition). Fuzzy matching auto-corrects typos and close matches.",
       inputSchema: {
         query: z
           .string()
           .describe(
-            "Search query, e.g. 'opportunity attack', 'fire damage spell', 'flying creature'",
+            "Name or search term, e.g. 'Fireball', 'Goblin', 'Grappled', 'Great Weapon Master'. Fuzzy matching handles typos.",
           ),
-        limit: z.coerce
-          .number()
+        category: z
+          .enum([
+            "spell",
+            "monster",
+            "condition",
+            "magic_item",
+            "feat",
+            "class",
+            "species",
+            "background",
+            "optional_feature",
+            "action",
+            "language",
+            "disease",
+          ])
           .optional()
-          .default(5)
           .describe(
-            "Max results per category (default 5). Total results may be higher since limit applies per category.",
+            "Optional category to narrow search. Omit to search all categories. Use when names collide (e.g. query='Bane', category='spell' for the spell, category='condition' for the condition).",
+          ),
+        detail: z
+          .enum(["summary", "full"])
+          .optional()
+          .default("summary")
+          .describe(
+            "Level of detail (default: summary). 'summary' (~30 tokens) or 'full' (complete rules text).",
           ),
       },
     },
-    async ({ query, limit }) => {
-      const results: string[] = [];
-      const lowerQuery = query.toLowerCase();
+    async ({ query, category, detail }) => {
+      wsClient.pingActivity("The DM consults the rulebooks…");
 
-      // Search across all data types
-      const matchedSpells = searchSpells(query).slice(0, limit);
-      const matchedMonsters = searchMonsters(query).slice(0, limit);
-      const matchedItems = searchMagicItems(query).slice(0, limit);
-      const matchedBaseItems = searchBaseItems(query).slice(0, limit);
-      const matchedFeats = searchFeats(query).slice(0, limit);
-      const matchedOptFeats = searchOptionalFeatures(query).slice(0, limit);
-
-      const matchedConditions = conditionsArray
-        .filter(
-          (c: ConditionDb) =>
-            c.name.toLowerCase().includes(lowerQuery) ||
-            c.description.toLowerCase().includes(lowerQuery),
-        )
-        .slice(0, limit);
-
-      const matchedClasses = classesArray
-        .filter((c: ClassDb) => c.name.toLowerCase().includes(lowerQuery))
-        .slice(0, limit);
-
-      const matchedSpecies = speciesArray
-        .filter(
-          (s: SpeciesDb) =>
-            s.name.toLowerCase().includes(lowerQuery) ||
-            s.description.toLowerCase().includes(lowerQuery),
-        )
-        .slice(0, limit);
-
-      const matchedBackgrounds = backgroundsArray
-        .filter(
-          (b: BackgroundDb) =>
-            b.name.toLowerCase().includes(lowerQuery) ||
-            b.description.toLowerCase().includes(lowerQuery),
-        )
-        .slice(0, limit);
-
-      const matchedActions = actionsArray
-        .filter(
-          (a: ActionDb) =>
-            a.name.toLowerCase().includes(lowerQuery) ||
-            a.description.toLowerCase().includes(lowerQuery),
-        )
-        .slice(0, limit);
-
-      if (matchedConditions.length > 0) {
-        results.push(
-          "## Conditions\n" +
-            matchedConditions.map((c: ConditionDb) => formatCondition(c)).join("\n\n---\n\n"),
+      // Category-scoped lookup
+      if (category) {
+        const cat = CATEGORIES[category];
+        if (!cat) {
+          const text = `Unknown category "${category}". Valid: ${CATEGORY_KEYS.join(", ")}`;
+          gameLogger.toolCall("lookup_rule", { query, category, detail }, text);
+          return { content: [{ type: "text" as const, text }] };
+        }
+        const result = fuzzyLookupOrSuggest(
+          query,
+          cat.exactMap,
+          cat.allItems,
+          cat.label,
+          cat.formatSummary,
+          cat.formatFull,
+          detail,
+          wsClient,
         );
-      }
-      if (matchedActions.length > 0) {
-        results.push(
-          "## Actions\n" +
-            matchedActions.map((a: ActionDb) => formatActionFn(a)).join("\n\n---\n\n"),
-        );
-      }
-      if (matchedClasses.length > 0) {
-        results.push(
-          "## Classes\n" +
-            matchedClasses
-              .map(
-                (c: ClassDb) =>
-                  `- **${c.name}** (d${c.hitDiceFaces}, ${c.casterProgression ?? "non-caster"})`,
-              )
-              .join("\n"),
-        );
-      }
-      if (matchedSpells.length > 0) {
-        results.push(
-          "## Spells\n" +
-            matchedSpells
-              .map(
-                (s: SpellDb) =>
-                  `- **${s.name}** (${s.level === 0 ? "Cantrip" : `Level ${s.level}`} ${formatSchool(s.school)}): ${s.description.slice(0, 150)}...`,
-              )
-              .join("\n"),
-        );
-      }
-      if (matchedMonsters.length > 0) {
-        results.push(
-          "## Monsters\n" +
-            matchedMonsters
-              .map(
-                (m: MonsterDb) =>
-                  `- **${m.name}** (CR ${formatMonsterCr(m.cr)}, ${formatMonsterSize(m.size)} ${formatMonsterType(m.type)})`,
-              )
-              .join("\n"),
-        );
-      }
-      if (matchedItems.length > 0) {
-        results.push(
-          "## Magic Items\n" +
-            matchedItems
-              .map((i: MagicItemDb) => `- **${i.name}** (${i.rarity}, ${i.type ?? "wondrous"})`)
-              .join("\n"),
-        );
-      }
-      if (matchedBaseItems.length > 0) {
-        results.push(
-          "## Mundane Items (weapons, armor, tools, gear)\n" +
-            matchedBaseItems
-              .map((i: BaseItemDb) => `- **${i.name}**${i.type ? ` (${i.type})` : ""}`)
-              .join("\n"),
-        );
-      }
-      if (matchedFeats.length > 0) {
-        results.push(
-          "## Feats\n" +
-            matchedFeats
-              .map(
-                (f: FeatDb) =>
-                  `- **${f.name}** (${formatFeatCategory(f.category)}): ${f.description.slice(0, 150)}...`,
-              )
-              .join("\n"),
-        );
-      }
-      if (matchedOptFeats.length > 0) {
-        results.push(
-          "## Optional Features\n" +
-            matchedOptFeats
-              .map(
-                (f: OptionalFeatureDb) =>
-                  `- **${f.name}** (${formatOptionalFeatureType(f.featureType)}): ${f.description.slice(0, 150)}...`,
-              )
-              .join("\n"),
-        );
-      }
-      if (matchedSpecies.length > 0) {
-        results.push(
-          "## Species\n" +
-            matchedSpecies
-              .map(
-                (s: SpeciesDb) =>
-                  `- **${s.name}** (${formatSpeciesSize(s.size)}, speed ${s.speed} ft.)`,
-              )
-              .join("\n"),
-        );
-      }
-      if (matchedBackgrounds.length > 0) {
-        results.push(
-          "## Backgrounds\n" +
-            matchedBackgrounds
-              .map((b: BackgroundDb) => `- **${b.name}**: ${b.description.slice(0, 150)}...`)
-              .join("\n"),
-        );
+        const text = result.content[0]?.text ?? "";
+        gameLogger.toolCall("lookup_rule", { query, category, detail }, text);
+        return result;
       }
 
-      if (results.length === 0) {
-        const text = `No results found matching "${query}" in the D&D 2024 database. Use your training knowledge as fallback.`;
-        gameLogger.toolCall("search_rules", { query, limit }, text);
+      // Cross-category search: run fuzzyLookup on each, collect best
+      type Hit = { category: string; label: string; name: string; rank: number; text: string };
+      const hits: Hit[] = [];
+
+      for (const [key, cat] of Object.entries(CATEGORIES)) {
+        const result = fuzzyLookup(query, cat.exactMap, cat.allItems);
+        if (result.match) {
+          const rank = MATCH_RANK[result.matchType] ?? 0;
+          const formatted =
+            detail === "full" ? cat.formatFull(result.match) : cat.formatSummary(result.match);
+          hits.push({
+            category: key,
+            label: cat.label,
+            name: result.match.name,
+            rank,
+            text: formatted,
+          });
+        }
+      }
+
+      if (hits.length === 0) {
+        logLookupFailure(wsClient, "Any", query);
+        const result = notFoundResult("Any", query);
+        gameLogger.toolCall("lookup_rule", { query, detail }, result.content[0].text);
+        return result;
+      }
+
+      // Sort by match quality
+      hits.sort((a, b) => b.rank - a.rank);
+      const best = hits[0];
+
+      // If the top hit is exact or unique, return it directly
+      const sameRank = hits.filter((h) => h.rank === best.rank);
+      if (sameRank.length === 1 || best.rank >= MATCH_RANK.substring) {
+        const prefix =
+          hits.length > 1
+            ? `[${best.label}] (also found in: ${hits
+                .slice(1, 4)
+                .map((h) => `${h.label} "${h.name}"`)
+                .join(", ")})\n\n`
+            : "";
+        const text = prefix + best.text;
+        gameLogger.toolCall("lookup_rule", { query, detail }, text);
         return { content: [{ type: "text" as const, text }] };
       }
 
-      const text = results.join("\n\n");
-      gameLogger.toolCall("search_rules", { query, limit }, text);
+      // Ambiguous: multiple categories at the same match tier
+      const list = sameRank.map((h) => `- **${h.name}** [${h.label}]`).join("\n");
+      const text = `"${query}" matched in multiple categories. Specify a \`category\` to disambiguate:\n${list}`;
+      gameLogger.toolCall("lookup_rule", { query, detail }, text);
       return { content: [{ type: "text" as const, text }] };
     },
   );

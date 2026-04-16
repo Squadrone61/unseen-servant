@@ -41,12 +41,14 @@ export function fuzzyLookup<T extends { name: string }>(
   const exact = exactMap.get(queryLower);
   if (exact) return { match: exact, suggestions: [], matchType: "exact" };
 
-  // Tier 2: Substring match (skip for very short queries to avoid noise)
+  // Tier 2: Query is a substring of the candidate name (query narrows to a
+  // specific item). We no longer accept the reverse direction — a 6-char name
+  // like "Common" being a substring of a long stuffed query such as
+  // "ring amulet necklace common magic" would falsely hijack the match.
   if (queryLower.length >= 3) {
-    const substringMatches = allItems.filter((item) => {
-      const nameLower = item.name.toLowerCase();
-      return nameLower.includes(queryLower) || queryLower.includes(nameLower);
-    });
+    const substringMatches = allItems.filter((item) =>
+      item.name.toLowerCase().includes(queryLower),
+    );
     if (substringMatches.length === 1) {
       return { match: substringMatches[0], suggestions: [], matchType: "substring" };
     }
@@ -65,17 +67,38 @@ export function fuzzyLookup<T extends { name: string }>(
     }
   }
 
-  // Tier 3: Word match — all query words appear in candidate name
+  // Tier 3: Word match. Strict pass — every query word appears in the name.
+  // Fall back to "most query words appear" ranked by fraction if strict fails;
+  // require at least 50% overlap so a 5-word stuffed query doesn't latch onto
+  // a single shared word.
   const queryWords = queryLower.split(/\s+/).filter(Boolean);
   if (queryWords.length > 1) {
-    const wordMatches = allItems.filter((item) => wordMatch(queryWords, item.name.toLowerCase()));
-    if (wordMatches.length === 1) {
-      return { match: wordMatches[0], suggestions: [], matchType: "word" };
+    const strict = allItems.filter((item) => wordMatch(queryWords, item.name.toLowerCase()));
+    if (strict.length === 1) {
+      return { match: strict[0], suggestions: [], matchType: "word" };
     }
-    if (wordMatches.length > 1) {
+    if (strict.length > 1) {
+      return { match: null, suggestions: strict.slice(0, maxSuggestions), matchType: "word" };
+    }
+
+    // Loose word match — count how many query words appear in each candidate.
+    const scored = allItems
+      .map((item) => {
+        const nameLower = item.name.toLowerCase();
+        const hitCount = queryWords.filter((w) => nameLower.includes(w)).length;
+        return { item, hitCount };
+      })
+      .filter((e) => e.hitCount / queryWords.length >= 0.5)
+      .sort((a, b) => b.hitCount - a.hitCount || a.item.name.length - b.item.name.length);
+    if (scored.length > 0) {
+      const topCount = scored[0].hitCount;
+      const top = scored.filter((e) => e.hitCount === topCount);
+      if (top.length === 1) {
+        return { match: top[0].item, suggestions: [], matchType: "word" };
+      }
       return {
         match: null,
-        suggestions: wordMatches.slice(0, maxSuggestions),
+        suggestions: top.slice(0, maxSuggestions).map((e) => e.item),
         matchType: "word",
       };
     }

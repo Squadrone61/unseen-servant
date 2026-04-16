@@ -27,6 +27,7 @@ import type {
   DieRoll,
   EffectBundle,
   PendingAoEPayload,
+  ResolveContext,
 } from "@unseen-servant/shared/types";
 import {
   rollInitiative,
@@ -45,6 +46,7 @@ import {
   createConditionBundle,
   createActivationBundle,
   createSpellBundle,
+  createSpellTargetBundle,
   createItemBundle,
   createMonsterBundle,
   enrichItem,
@@ -255,6 +257,41 @@ export class GameStateManager {
   private clampCurrentHP(char: CharacterData): void {
     const max = getHP(char);
     if (char.dynamic.currentHP > max) char.dynamic.currentHP = max;
+  }
+
+  /**
+   * Recompute a combatant's `speed` from `baseSpeed` + activeEffects.
+   * Called after mutations that may add/remove speed-affecting bundles
+   * (conditions, concentration target effects, feature activations, Dash).
+   */
+  private recomputeCombatantSpeed(combatant: Combatant): void {
+    const base = combatant.baseSpeed ?? combatant.speed;
+    const bundles = combatant.activeEffects ?? [];
+    const npcCtx: ResolveContext = {
+      abilities: {
+        strength: 10,
+        dexterity: 10,
+        constitution: 10,
+        intelligence: 10,
+        wisdom: 10,
+        charisma: 10,
+      },
+      totalLevel: 1,
+      classLevel: 1,
+      proficiencyBonus: 2,
+    };
+    const walk = resolveStat(bundles, "speed", base.walk, npcCtx);
+    const fly = resolveStat(bundles, "speed_fly", base.fly ?? 0, npcCtx);
+    const swim = resolveStat(bundles, "speed_swim", base.swim ?? 0, npcCtx);
+    const climb = resolveStat(bundles, "speed_climb", base.climb ?? 0, npcCtx);
+    const burrow = resolveStat(bundles, "speed_burrow", base.burrow ?? 0, npcCtx);
+    combatant.speed = {
+      walk,
+      ...(fly > 0 ? { fly } : {}),
+      ...(swim > 0 ? { swim } : {}),
+      ...(climb > 0 ? { climb } : {}),
+      ...(burrow > 0 ? { burrow } : {}),
+    };
   }
 
   /** Schedule a debounced flush (resets timer on each call) */
@@ -2255,6 +2292,7 @@ export class GameStateManager {
           if (conditionBundle) {
             if (!combatant.activeEffects) combatant.activeEffects = [];
             combatant.activeEffects.push(conditionBundle);
+            this.recomputeCombatantSpeed(combatant);
           }
         }
         // Auto-break concentration if an incapacitating condition is applied
@@ -2344,6 +2382,7 @@ export class GameStateManager {
         // Remove matching condition effect bundle
         if (combatant.activeEffects) {
           combatant.activeEffects = combatant.activeEffects.filter((b) => b.id !== bundleId);
+          this.recomputeCombatantSpeed(combatant);
         }
         this.broadcast({
           type: "server:combat_update",
@@ -2608,6 +2647,7 @@ export class GameStateManager {
         initiativeModifier: initMod,
         dexScore,
         speed: combatantSpeed,
+        baseSpeed: { ...combatantSpeed },
         movementUsed: 0,
         position: c.position,
         size: c.size ?? "medium",
@@ -3072,7 +3112,7 @@ export class GameStateManager {
   }
 
   /** Move a combatant on the battle map */
-  moveCombatant(combatantName: string, to: GridPosition): ToolResponse {
+  moveCombatant(combatantName: string, to: GridPosition, movementLeft?: number): ToolResponse {
     const combat = this.gameState.encounter?.combat;
     if (!combat) return toResponse("No active combat", {}, true);
 
@@ -3131,6 +3171,16 @@ export class GameStateManager {
     }
 
     combatant.position = to;
+
+    // DM-set remaining movement: combatant.speed.walk - movementLeft worth of
+    // budget has been consumed on this turn. Negative or oversized values are
+    // clamped to [0, speed.walk]. Omit the param for narrative repositioning
+    // that doesn't count against the budget.
+    if (typeof movementLeft === "number") {
+      const speed = combatant.speed?.walk ?? 0;
+      const remaining = Math.max(0, Math.min(speed, Math.floor(movementLeft)));
+      combatant.movementUsed = Math.max(0, speed - remaining);
+    }
 
     this.broadcast({
       type: "server:combat_update",
@@ -4152,7 +4202,8 @@ export class GameStateManager {
           restored.push(`Cleared: ${cleared.map((c) => c.name).join(", ")}`);
         }
 
-        // Clear concentration and its spell bundle
+        // Clear concentration and its spell bundle (plus any target bundles
+        // it stamped onto other combatants/characters).
         if (char.dynamic.concentratingOn) {
           const concSpell = char.dynamic.concentratingOn.spellName;
           restored.push(`Concentration on ${concSpell} ended`);
@@ -4162,6 +4213,7 @@ export class GameStateManager {
               (b) => b.id !== `spell:${concSpell.toLowerCase()}`,
             );
           }
+          this.clearConcentrationTargetBundles(char.static.name, concSpell);
         }
 
         // Clear effect bundles with until_rest lifetime (long rest clears both short and long)
@@ -4330,7 +4382,111 @@ export class GameStateManager {
   }
 
   /** Set concentration on a spell (auto-breaks previous concentration) */
-  setConcentration(targetName: string, spellName: string): ToolResponse {
+  /**
+   * Remove every effect bundle in the encounter that was applied to a target
+   * by the given caster's concentration on the given spell. Sweeps both NPC
+   * combatants and player characters. Used when concentration breaks or is
+   * replaced — keeps Bane disadvantage / Bless bonuses / etc. from lingering
+   * on the targets after the caster lost focus.
+   */
+  private clearConcentrationTargetBundles(
+    caster: string,
+    spell: string,
+  ): {
+    targetsCleared: string[];
+  } {
+    const cleared: string[] = [];
+    const matches = (b: { sourceConcentration?: { caster: string; spell: string } }) =>
+      b.sourceConcentration?.caster.toLowerCase() === caster.toLowerCase() &&
+      b.sourceConcentration?.spell.toLowerCase() === spell.toLowerCase();
+
+    const combat = this.gameState.encounter?.combat;
+    if (combat) {
+      for (const c of Object.values(combat.combatants)) {
+        if (!c.activeEffects?.length) continue;
+        const before = c.activeEffects.length;
+        c.activeEffects = c.activeEffects.filter((b) => !matches(b));
+        if (c.activeEffects.length < before) {
+          this.recomputeCombatantSpeed(c);
+          cleared.push(c.name);
+        }
+      }
+    }
+    for (const [pName, char] of Object.entries(this.characters)) {
+      if (!char.dynamic.activeEffects?.length) continue;
+      const before = char.dynamic.activeEffects.length;
+      char.dynamic.activeEffects = char.dynamic.activeEffects.filter((b) => !matches(b));
+      if (char.dynamic.activeEffects.length < before) {
+        cleared.push(char.static.name);
+        this.markCharacterDirty(pName);
+      }
+    }
+    return { targetsCleared: cleared };
+  }
+
+  /**
+   * Apply the spell's target-effects bundle to each named target. The DM has
+   * already adjudicated who is affected (rolled saves, attack rolls); this
+   * just stamps the bundle onto each combatant/character so the resolver
+   * picks up the disadvantage/modifier/condition until concentration ends.
+   */
+  private applyConcentrationTargetBundles(
+    caster: string,
+    spellName: string,
+    targetNames: string[],
+  ): { applied: string[]; missing: string[] } {
+    const applied: string[] = [];
+    const missing: string[] = [];
+    const combat = this.gameState.encounter?.combat;
+
+    for (const targetName of targetNames) {
+      const bundle = createSpellTargetBundle(spellName, caster);
+      if (!bundle) {
+        missing.push(targetName);
+        continue;
+      }
+      // NPC combatant
+      const combatant = combat
+        ? Object.values(combat.combatants).find(
+            (c) => c.name.toLowerCase() === targetName.toLowerCase() && c.type !== "player",
+          )
+        : undefined;
+      if (combatant) {
+        if (!combatant.activeEffects) combatant.activeEffects = [];
+        // Drop any pre-existing bundle from the same caster+spell on this target
+        combatant.activeEffects = combatant.activeEffects.filter(
+          (b) =>
+            b.sourceConcentration?.caster.toLowerCase() !== caster.toLowerCase() ||
+            b.sourceConcentration?.spell.toLowerCase() !== spellName.toLowerCase(),
+        );
+        combatant.activeEffects.push(bundle);
+        this.recomputeCombatantSpeed(combatant);
+        applied.push(combatant.name);
+        continue;
+      }
+      // Player character
+      const charEntry = Object.entries(this.characters).find(
+        ([, ch]) => ch.static.name.toLowerCase() === targetName.toLowerCase(),
+      );
+      if (charEntry) {
+        const [pName, char] = charEntry;
+        if (!char.dynamic.activeEffects) char.dynamic.activeEffects = [];
+        char.dynamic.activeEffects = char.dynamic.activeEffects.filter(
+          (b) =>
+            b.sourceConcentration?.caster.toLowerCase() !== caster.toLowerCase() ||
+            b.sourceConcentration?.spell.toLowerCase() !== spellName.toLowerCase(),
+        );
+        char.dynamic.activeEffects.push(bundle);
+        applied.push(char.static.name);
+        this.markCharacterDirty(pName);
+        continue;
+      }
+      missing.push(targetName);
+    }
+    return { applied, missing };
+  }
+
+  setConcentration(targetName: string, spellName: string, appliedTargets?: string[]): ToolResponse {
     // Check NPC combatants
     const combat = this.gameState.encounter?.combat;
     if (combat) {
@@ -4344,29 +4500,43 @@ export class GameStateManager {
           combatant.activeEffects = combatant.activeEffects.filter(
             (b) => b.id !== `spell:${prev.toLowerCase()}`,
           );
+          // Sweep target bundles from the previous spell
+          this.clearConcentrationTargetBundles(combatant.name, prev);
         }
         combatant.concentratingOn = { spellName, since: combat.round };
-        // Add new spell bundle
+        // Add new spell bundle on the caster
         const spellBundle = createSpellBundle(spellName);
         if (spellBundle) {
           if (!combatant.activeEffects) combatant.activeEffects = [];
           combatant.activeEffects.push(spellBundle);
         }
+        // Apply target bundles
+        const { applied, missing } = this.applyConcentrationTargetBundles(
+          combatant.name,
+          spellName,
+          appliedTargets ?? [],
+        );
         this.broadcast({
           type: "server:combat_update",
           combat,
           map: this.gameState.encounter?.map ?? null,
           timestamp: Date.now(),
         });
-        const text = prev
-          ? `${combatant.name} breaks concentration on ${prev}, now concentrating on ${spellName}`
-          : `${combatant.name} is now concentrating on ${spellName}`;
+        const parts = [
+          prev
+            ? `${combatant.name} breaks concentration on ${prev}, now concentrating on ${spellName}`
+            : `${combatant.name} is now concentrating on ${spellName}`,
+        ];
+        if (applied.length > 0) parts.push(`Applied to: ${applied.join(", ")}`);
+        if (missing.length > 0) parts.push(`Could not apply to: ${missing.join(", ")}`);
         this.markDirty();
-        return toResponse(text, {
+        return toResponse(parts.join(". "), {
           target: combatant.name,
           spell: spellName,
           previousSpell: prev ?? null,
           effectsApplied: !!spellBundle,
+          appliedTargets: applied,
+          missingTargets: missing,
         });
       }
     }
@@ -4380,29 +4550,40 @@ export class GameStateManager {
           char.dynamic.activeEffects = char.dynamic.activeEffects.filter(
             (b) => b.id !== `spell:${prev.toLowerCase()}`,
           );
+          this.clearConcentrationTargetBundles(char.static.name, prev);
         }
         char.dynamic.concentratingOn = { spellName, since: combat?.round };
-        // Add new spell bundle
         const spellBundle = createSpellBundle(spellName);
         if (spellBundle) {
           if (!char.dynamic.activeEffects) char.dynamic.activeEffects = [];
           char.dynamic.activeEffects.push(spellBundle);
         }
+        const { applied, missing } = this.applyConcentrationTargetBundles(
+          char.static.name,
+          spellName,
+          appliedTargets ?? [],
+        );
         this.clampCurrentHP(char);
         this.broadcast({
           type: "server:character_updated",
           playerName: pName,
           character: char,
         });
-        const text = prev
-          ? `${char.static.name} breaks concentration on ${prev}, now concentrating on ${spellName}`
-          : `${char.static.name} is now concentrating on ${spellName}`;
+        const parts = [
+          prev
+            ? `${char.static.name} breaks concentration on ${prev}, now concentrating on ${spellName}`
+            : `${char.static.name} is now concentrating on ${spellName}`,
+        ];
+        if (applied.length > 0) parts.push(`Applied to: ${applied.join(", ")}`);
+        if (missing.length > 0) parts.push(`Could not apply to: ${missing.join(", ")}`);
         this.markCharacterDirty(pName);
-        return toResponse(text, {
+        return toResponse(parts.join(". "), {
           target: char.static.name,
           spell: spellName,
           previousSpell: prev ?? null,
           effectsApplied: !!spellBundle,
+          appliedTargets: applied,
+          missingTargets: missing,
         });
       }
     }
@@ -4435,6 +4616,7 @@ export class GameStateManager {
             (b) => b.id !== `spell:${spell.toLowerCase()}`,
           );
         }
+        const { targetsCleared } = this.clearConcentrationTargetBundles(combatant.name, spell);
         this.broadcast({
           type: "server:combat_update",
           combat,
@@ -4442,9 +4624,14 @@ export class GameStateManager {
           timestamp: Date.now(),
         });
         this.markDirty();
-        return toResponse(`${combatant.name} lost concentration on ${spell}`, {
+        const text =
+          targetsCleared.length > 0
+            ? `${combatant.name} lost concentration on ${spell}. Effects cleared from: ${targetsCleared.join(", ")}`
+            : `${combatant.name} lost concentration on ${spell}`;
+        return toResponse(text, {
           target: combatant.name,
           spell,
+          targetsCleared,
         });
       }
     }
@@ -4465,6 +4652,7 @@ export class GameStateManager {
             (b) => b.id !== `spell:${spell.toLowerCase()}`,
           );
         }
+        const { targetsCleared } = this.clearConcentrationTargetBundles(char.static.name, spell);
         this.clampCurrentHP(char);
         this.broadcast({
           type: "server:character_updated",
@@ -4472,9 +4660,14 @@ export class GameStateManager {
           character: char,
         });
         this.markCharacterDirty(pName);
-        return toResponse(`${char.static.name} lost concentration on ${spell}`, {
+        const text =
+          targetsCleared.length > 0
+            ? `${char.static.name} lost concentration on ${spell}. Effects cleared from: ${targetsCleared.join(", ")}`
+            : `${char.static.name} lost concentration on ${spell}`;
+        return toResponse(text, {
           target: char.static.name,
           spell,
+          targetsCleared,
         });
       }
     }

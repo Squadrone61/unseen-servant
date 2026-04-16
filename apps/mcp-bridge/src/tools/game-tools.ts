@@ -777,13 +777,19 @@ export function registerGameTools(
     "move_combatant",
     {
       description:
-        "Move a combatant's token on the battle map to a new position. Use A1 notation (e.g., 'E5').",
+        "Move a combatant's token on the battle map to a new position (A1 notation, e.g. 'E5'). Optional `movement_left` declares how much movement remains for this turn — pass it when the move is the player taking their turn so the UI shrinks the drag radius accordingly. Omit it for narrative repositioning, going back to fix a misplay, or DM-driven moves that shouldn't count against the budget.",
       inputSchema: {
         name: z.string().describe("Name of the combatant to move"),
         position: z.string().describe("Grid position in A1 notation (e.g. 'E5')"),
+        movement_left: z
+          .number()
+          .optional()
+          .describe(
+            "Movement remaining (in feet) after this move. Omit to leave the budget untouched. 0 = used all movement.",
+          ),
       },
     },
-    async ({ name, position }) => {
+    async ({ name, position, movement_left }) => {
       const parsed = parseGridPosition(position);
       if (!parsed) {
         return {
@@ -795,8 +801,12 @@ export function registerGameTools(
           ],
         };
       }
-      const result = wsClient.gameStateManager.moveCombatant(name, parsed);
-      return fromToolResponse(result, "move_combatant", { name, position });
+      const result = wsClient.gameStateManager.moveCombatant(name, parsed, movement_left);
+      return fromToolResponse(result, "move_combatant", {
+        name,
+        position,
+        movement_left,
+      });
     },
   );
 
@@ -1755,15 +1765,25 @@ export function registerGameTools(
     "set_concentration",
     {
       description:
-        "Set a character or combatant as concentrating on a spell. Auto-breaks any previous concentration.",
+        "Set a character or combatant as concentrating on a spell. Auto-breaks any previous concentration. Optionally provide `applied_targets` — combatant names (allies or enemies) the spell now affects. The spell's mechanical effects (e.g. Bane disadvantage, Bless bonus) are applied to each target as a tracked bundle, and they are all cleared automatically when the caster's concentration ends.",
       inputSchema: {
-        name: z.string().describe("Character or combatant name"),
+        name: z.string().describe("Caster name (character or combatant)"),
         spell_name: z.string().describe("Name of the concentration spell"),
+        applied_targets: z
+          .array(z.string())
+          .optional()
+          .describe(
+            "Combatant or character names that the spell's effects apply to (allies or enemies). Effects are removed automatically when concentration ends.",
+          ),
       },
     },
-    async ({ name, spell_name }) => {
-      const result = wsClient.gameStateManager.setConcentration(name, spell_name);
-      return fromToolResponse(result, "set_concentration", { name, spell_name });
+    async ({ name, spell_name, applied_targets }) => {
+      const result = wsClient.gameStateManager.setConcentration(name, spell_name, applied_targets);
+      return fromToolResponse(result, "set_concentration", {
+        name,
+        spell_name,
+        applied_targets,
+      });
     },
   );
 
