@@ -65,7 +65,7 @@ function tokenize(src: string): Token[] {
       continue;
     }
 
-    // Identifier: str, dex, con, int, wis, cha, prof, lvl, clvl, min, max, table
+    // Identifier: str, dex, con, int, wis, cha, prof, half_prof, lvl, clvl, min, max, table
     if ((ch >= "a" && ch <= "z") || (ch >= "A" && ch <= "Z") || ch === "_") {
       let ident = "";
       while (
@@ -345,6 +345,8 @@ class Parser {
         return abilityModifier(abilities.charisma);
       case "prof":
         return proficiencyBonus;
+      case "half_prof":
+        return Math.floor(proficiencyBonus / 2);
       case "lvl":
         return totalLevel;
       case "clvl":

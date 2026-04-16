@@ -12,7 +12,7 @@
 //
 // Value Notation Language:
 //   Modifier values can be expressions evaluated against character context:
-//     Atoms: str/dex/con/int/wis/cha (ability modifier), prof, lvl, clvl, NdM dice, numbers
+//     Atoms: str/dex/con/int/wis/cha (ability modifier), prof, half_prof, lvl, clvl, NdM dice, numbers
 //     Operators: +, -, *
 //     Functions:
 //       min(a,b), max(a,b)
