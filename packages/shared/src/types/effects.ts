@@ -175,7 +175,10 @@ export type ModifierTarget =
   | "constitution_check"
   | "intelligence_check"
   | "wisdom_check"
-  | "charisma_check";
+  | "charisma_check"
+  // Passive scores (additive bonuses from feats like Observant)
+  | "passive_perception"
+  | "passive_investigation";
 
 // ---------------------------------------------------------------------------
 // AdvantageTarget

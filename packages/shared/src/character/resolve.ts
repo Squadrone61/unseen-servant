@@ -405,7 +405,7 @@ export function getSenses(char: CharacterData): string[] {
   }
 
   // Passive Perception
-  const pp = computePassivePerceptionValue(char, bundles);
+  const pp = computePassiveValue(char, bundles, "wisdom", "perception", "passive_perception");
   senses.push(`Passive Perception ${pp}`);
 
   return senses;
@@ -629,14 +629,19 @@ export function getCombatBonus(char: CharacterData): import("../types/character"
 }
 
 // ---------------------------------------------------------------------------
-// Internal helper for passive perception
+// Passive scores
 // ---------------------------------------------------------------------------
 
-function computePassivePerceptionValue(char: CharacterData, bundles: EffectBundle[]): number {
+function computePassiveValue(
+  char: CharacterData,
+  bundles: EffectBundle[],
+  ability: keyof AbilityScores,
+  skillKey: string,
+  bonusTarget: ModifierTarget,
+): number {
   const profBonus = deriveProficiencyBonus(char.static.classes);
-  const wisMod = abilityMod(getAbilityScore(char, "wisdom", bundles));
+  const mod = abilityMod(getAbilityScore(char, ability, bundles));
 
-  // Check proficiency/expertise in perception from bundles
   const profSkills = new Set(
     getProficienciesFromBundles(bundles, "skill").map((s) => s.toLowerCase()),
   );
@@ -644,26 +649,49 @@ function computePassivePerceptionValue(char: CharacterData, bundles: EffectBundl
     collectProperties(bundles, "expertise").map((p) => p.skill.toLowerCase().replace(/ /g, "_")),
   );
 
-  const proficient = profSkills.has("perception");
-  const expertise = expertiseSkills.has("perception");
+  const proficient = profSkills.has(skillKey);
+  const expertise = expertiseSkills.has(skillKey);
 
-  let pp = 10 + wisMod;
+  let base = 10 + mod;
   if (expertise) {
-    pp += profBonus * 2;
+    base += profBonus * 2;
   } else if (proficient) {
-    pp += profBonus;
+    base += profBonus;
   }
-  return pp;
+
+  // Layer bonuses from passive_perception / passive_investigation modifiers
+  // (Observant feat, etc.) on top of the base value.
+  const baseCtx: ResolveContext = {
+    ...buildBaseCtx(char),
+    abilities: char.static.abilities,
+  };
+  return resolveStat(bundles, bonusTarget, base, baseCtx);
 }
 
 /**
  * Passive Perception score.
  *
- * Phase 7: computed from WIS modifier + Perception proficiency/expertise from bundles.
+ * 10 + WIS mod + Perception proficiency/expertise + passive_perception modifiers.
  */
 export function getPassivePerception(char: CharacterData): number {
   const bundles = collectActiveBundles(char);
-  return computePassivePerceptionValue(char, bundles);
+  return computePassiveValue(char, bundles, "wisdom", "perception", "passive_perception");
+}
+
+/**
+ * Passive Investigation score.
+ *
+ * 10 + INT mod + Investigation proficiency/expertise + passive_investigation modifiers.
+ */
+export function getPassiveInvestigation(char: CharacterData): number {
+  const bundles = collectActiveBundles(char);
+  return computePassiveValue(
+    char,
+    bundles,
+    "intelligence",
+    "investigation",
+    "passive_investigation",
+  );
 }
 
 /**

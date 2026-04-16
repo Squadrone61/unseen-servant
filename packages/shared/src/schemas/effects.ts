@@ -145,6 +145,8 @@ export const modifierTargetSchema = z.enum([
   "intelligence_check",
   "wisdom_check",
   "charisma_check",
+  "passive_perception",
+  "passive_investigation",
 ]);
 
 export const advantageTargetSchema = z.enum([
