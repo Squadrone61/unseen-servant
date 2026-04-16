@@ -19,7 +19,8 @@
     "type-check": "tsc --noEmit",
     "lint": "eslint .",
     "audit:data": "tsx scripts/audit-data.ts",
-    "migrate:prereqs": "tsx scripts/migrate-feat-prereqs.ts"
+    "migrate:prereqs": "tsx scripts/migrate-feat-prereqs.ts",
+    "migrate:queue": "tsx scripts/find-migration-queue.ts"
   },
   "devDependencies": {
     "tsx": "^4.19.4",
