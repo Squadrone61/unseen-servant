@@ -520,7 +520,7 @@
         "properties": [
           {
             "type": "note",
-            "text": "When using Lay on Hands, you can also expend 5 HP from the healing pool per condition to remove Blinded, Charmed, Deafened, Frightened, Paralyzed, or Stunned from the target (those points don't restore HP)."
+            "text": "When you use Lay on Hands on a creature, you can also expend 5 Hit Points from the healing pool per condition to remove one or more of the following conditions from that creature: Blinded, Charmed, Deafened, Frightened, Paralyzed, or Stunned. Those points don't also restore Hit Points to the creature."
           }
         ]
       }
