@@ -3205,7 +3205,7 @@
       "properties": [
         {
           "type": "note",
-          "text": "While wearing Medium armor, you can add up to 3 (instead of 2) to your AC from Dexterity if your Dexterity score is 16 or higher."
+          "text": "**Dexterous Wearer.** While you're wearing Medium armor, you can add 3, rather than 2, to your AC if you have a Dexterity score of 16 or higher."
         }
       ]
     }
@@ -3386,7 +3386,7 @@
       "properties": [
         {
           "type": "note",
-          "text": "After a Short Rest or Long Rest, you can grant Heroic Inspiration to a number of allies equal to your Proficiency Bonus who heard you play."
+          "text": "**Encouraging Song.** As you finish a Short Rest or Long Rest, you can play a song on a Musical Instrument with which you have proficiency and give Heroic Inspiration to allies who hear the song. The number of allies you can affect in this way equals your Proficiency Bonus."
         }
       ]
     },
@@ -3477,7 +3477,7 @@
       "properties": [
         {
           "type": "note",
-          "text": "Can take the Search action as a Bonus Action."
+          "text": "**Quick Search.** You can take the Search action as a Bonus Action."
         }
       ]
     }
@@ -3588,11 +3588,11 @@
       "properties": [
         {
           "type": "note",
-          "text": "Once per turn, when you deal Piercing damage, you can reroll one damage die and must use the new result."
+          "text": "**Puncture.** Once per turn, when you hit a creature with an attack that deals Piercing damage, you can reroll one of the attack's damage dice, and you must use the new roll."
         },
         {
           "type": "note",
-          "text": "On a Critical Hit that deals Piercing damage, roll one additional damage die for the extra damage."
+          "text": "**Enhanced Critical.** When you score a Critical Hit that deals Piercing damage to a creature, you can roll one additional damage die when determining the extra Piercing damage the target takes."
         }
       ]
     }
@@ -3721,11 +3721,11 @@
       "properties": [
         {
           "type": "note",
-          "text": "After taking the Attack action with a Quarterstaff, Spear, or Heavy+Reach weapon, you can use a Bonus Action to make a d4 Bludgeoning melee attack with the weapon's opposite end."
+          "text": "**Pole Strike.** Immediately after you take the Attack action and attack with a Quarterstaff, a Spear, or a weapon that has the Heavy and Reach properties, you can use a Bonus Action to make a melee attack with the opposite end of the weapon. The weapon deals Bludgeoning damage, and the weapon's damage die for this attack is a d4."
         },
         {
           "type": "note",
-          "text": "While holding a Quarterstaff, Spear, or Heavy+Reach weapon, you can use your Reaction to make a melee attack against a creature that enters your reach."
+          "text": "**Reactive Strike.** While you're holding a Quarterstaff, a Spear, or a weapon that has the Heavy and Reach properties, you can take a Reaction to make one melee attack against a creature that enters the reach you have with that weapon."
         }
       ]
     }
@@ -3796,7 +3796,7 @@
       "properties": [
         {
           "type": "note",
-          "text": "Reaction (requires Shield): When a visible creature attacks a target within 5 feet of you (not you), impose Disadvantage on that attack and all attacks against the same target until the start of your next turn, while you remain within 5 feet."
+          "text": "When a creature you can see attacks a target other than you that is within 5 feet of you, you can take a Reaction to interpose your Shield if you're holding one. You impose Disadvantage on the triggering attack roll and all other attack rolls against the target until the start of your next turn if you remain within 5 feet of the target."
         }
       ]
     },
@@ -4030,7 +4030,7 @@
       "properties": [
         {
           "type": "note",
-          "text": "Once per turn when you hit with a weapon attack, you can roll the weapon's damage dice twice and use either result."
+          "text": "Once per turn when you hit a target with a weapon, you can roll the weapon's damage dice twice and use either roll against the target."
         }
       ]
     }
@@ -4168,11 +4168,11 @@
       "properties": [
         {
           "type": "note",
-          "text": "Immediately after a creature within 5 feet of you takes the Disengage action or hits a target other than you with an attack, you can make an Opportunity Attack against that creature."
+          "text": "**Guardian.** Immediately after a creature within 5 feet of you takes the Disengage action or hits a target other than you with an attack, you can make an Opportunity Attack against that creature."
         },
         {
           "type": "note",
-          "text": "When you hit a creature with an Opportunity Attack, the creature's Speed becomes 0 for the rest of the current turn."
+          "text": "**Halt.** When you hit a creature with an Opportunity Attack, the creature's Speed becomes 0 for the rest of the current turn."
         }
       ]
     }
@@ -4539,11 +4539,11 @@
       "properties": [
         {
           "type": "note",
-          "text": "Once per turn, when you deal Slashing damage, you can reduce the target's Speed by 10 feet until the start of your next turn."
+          "text": "**Hamstring.** Once per turn when you hit a creature with an attack that deals Slashing damage, you can reduce the Speed of that creature by 10 feet until the start of your next turn."
         },
         {
           "type": "note",
-          "text": "On a Critical Hit that deals Slashing damage, the target has Disadvantage on attack rolls until the start of your next turn."
+          "text": "**Enhanced Critical.** When you score a Critical Hit that deals Slashing damage to a creature, it has Disadvantage on attack rolls until the start of your next turn."
         }
       ]
     }
@@ -4692,15 +4692,15 @@
       "properties": [
         {
           "type": "note",
-          "text": "Your spell attack rolls ignore Half Cover and Three-Quarters Cover."
+          "text": "**Bypass Cover.** Your attack rolls for spells ignore Half Cover and Three-Quarters Cover."
         },
         {
           "type": "note",
-          "text": "Being within 5 feet of an enemy doesn't impose Disadvantage on your spell attack rolls."
+          "text": "**Casting in Melee.** Being within 5 feet of an enemy doesn't impose Disadvantage on your attack rolls with spells."
         },
         {
           "type": "note",
-          "text": "When you cast a spell with a range of at least 10 feet that requires an attack roll, you can increase its range by 60 feet."
+          "text": "**Increased Range.** When you cast a spell that has a range of at least 10 feet and requires you to make an attack roll, you can increase the spell's range by 60 feet."
         }
       ]
     }
@@ -4998,7 +4998,7 @@
       "properties": [
         {
           "type": "note",
-          "text": "When making the extra attack granted by a Light weapon, add your ability modifier to that attack's damage if not already applied."
+          "text": "When you make an extra attack as a result of using a weapon that has the Light property, you can add your ability modifier to the damage of that attack if you aren't already adding it to the damage."
         }
       ]
     }
@@ -5016,11 +5016,11 @@
       "properties": [
         {
           "type": "note",
-          "text": "Unarmed Strikes deal 1d6 + Strength modifier Bludgeoning damage, or 1d8 + Strength modifier if your hands are empty (no weapons or shield)."
+          "text": "When you hit with your Unarmed Strike and deal damage, you can deal Bludgeoning damage equal to 1d6 plus your Strength modifier instead of the normal damage of an Unarmed Strike. If you aren't holding any weapons or a Shield when you make the attack roll, the d6 becomes a d8."
         },
         {
           "type": "note",
-          "text": "At the start of each of your turns, you can deal 1d4 Bludgeoning damage to one creature you have Grappled."
+          "text": "At the start of each of your turns, you can deal 1d4 Bludgeoning damage to one creature Grappled by you."
         }
       ]
     }
@@ -5147,7 +5147,7 @@
       "properties": [
         {
           "type": "note",
-          "text": "You can use the mastery property of one Simple or Martial weapon you are proficient with. You can change which weapon on a Long Rest."
+          "text": "**Mastery Property.** Your training with weapons allows you to use the mastery property of one kind of Simple or Martial weapon of your choice, provided you have proficiency with it. Whenever you finish a Long Rest, you can change the kind of weapon to another eligible kind."
         }
       ]
     }
