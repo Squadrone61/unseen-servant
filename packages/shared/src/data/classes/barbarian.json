@@ -311,6 +311,14 @@
       "level": 7,
       "className": "Barbarian",
       "description": "As part of the {rule:Bonus Action} you take to enter your Rage, you can move up to half your {rule:Speed}.",
+      "effects": {
+        "properties": [
+          {
+            "type": "note",
+            "text": "As part of the Bonus Action used to enter Rage, you can move up to half your Speed."
+          }
+        ]
+      },
       "activationType": "bonus"
     },
     {
@@ -439,10 +447,20 @@
       "className": "Barbarian",
       "description": "You embody primal power. Your Strength and Constitution scores increase by 4, to a maximum of 25.",
       "effects": {
+        "modifiers": [
+          {
+            "target": "strength",
+            "value": 4
+          },
+          {
+            "target": "constitution",
+            "value": 4
+          }
+        ],
         "properties": [
           {
             "type": "note",
-            "text": "Strength and Constitution scores each increase by 4, to a maximum of 25. Recalculate HP with the new Constitution modifier."
+            "text": "Strength and Constitution scores each increase by 4 (maximum 25, not the usual 20). Recalculate HP with the new Constitution modifier."
           }
         ]
       }
