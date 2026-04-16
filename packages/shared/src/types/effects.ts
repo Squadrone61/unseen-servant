@@ -345,6 +345,16 @@ export type Property = {
   | { type: "extra_attack"; count: number }
   | {
       /**
+       * Records that the character has unlocked a weapon's Mastery property
+       * (Vex, Sap, Topple, etc.). Emitted by the `weapon_mastery` FeatureChoice
+       * pool. The mastery rule itself lives on the weapon entry in the items
+       * database — this Property only records the player's selection.
+       */
+      type: "weapon_mastery_grant";
+      weapon: string;
+    }
+  | {
+      /**
        * Raises the maximum value the named ability score can reach.
        * Currently descriptive (the resolver does not clamp scores), but consumed
        * by the ASI builder UI and the character sheet to surface the new ceiling
@@ -464,7 +474,8 @@ export type FeatureChoice = {
         | "tool"
         | "ability_score" // pick an ability to increase (ASI feats, class features)
         | "fighting_style" // pick from Fighting Style feats
-        | "spell_cantrip"; // pick a cantrip (constrain class via `from`)
+        | "spell_cantrip" // pick a cantrip (constrain class via `from`)
+        | "weapon_mastery"; // pick weapons whose Mastery property the character can use
       /** Constrained list. Omit for "any from pool". */
       from?: string[];
       options?: never;

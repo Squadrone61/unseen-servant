@@ -111,12 +111,14 @@ function classify(
   const totalNotes = baseline.notes + activation.notes;
   const hasChoices = (entity.choices?.length ?? 0) > 0;
 
-  const hasStructured = structuredMods > 0 || structuredProps > 0 || hasAction;
+  // `choices` is a structured input — counts as structure for migration purposes.
+  const hasStructured = structuredMods > 0 || structuredProps > 0 || hasAction || hasChoices;
 
   if (hasStructured && totalNotes > 0) return "notes_plus_structure";
+  if (hasStructured && hasChoices && structuredMods === 0 && structuredProps === 0 && !hasAction)
+    return "choices_only";
   if (hasStructured) return "structured";
   if (totalNotes > 0) return "note_only";
-  if (hasChoices) return "choices_only";
   return "empty";
 }
 

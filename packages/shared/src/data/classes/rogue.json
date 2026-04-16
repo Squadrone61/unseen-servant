@@ -150,11 +150,20 @@
       "level": 1,
       "className": "Rogue",
       "description": "Your training with weapons allows you to use the {rule:weapon mastery properties|mastery properties} of two kinds of weapons of your choice with which you have proficiency, such as Daggers and Shortbows.\n\nWhenever you finish a {rule:Long Rest}, you can change the kinds of weapons you chose.",
+      "choices": [
+        {
+          "id": "weapon-mastery",
+          "label": "Weapon Mastery",
+          "count": 2,
+          "timing": "permanent",
+          "pool": "weapon_mastery"
+        }
+      ],
       "effects": {
         "properties": [
           {
             "type": "note",
-            "text": "You can use the mastery properties of 2 weapons of your choice (must have proficiency). Whenever you finish a Long Rest, you can change any of the weapons you chose."
+            "text": "Choose only weapons you're proficient with. You can change any chosen weapon on each Long Rest."
           }
         ]
       }

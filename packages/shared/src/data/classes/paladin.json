@@ -302,11 +302,20 @@
       "level": 1,
       "className": "Paladin",
       "description": "Your training with weapons allows you to use the mastery properties of two kinds of weapons of your choice with which you have proficiency, such as Longswords and Javelins.\n\nWhenever you finish a {rule:Long Rest}, you can change the kinds of weapons you chose. For example, you could switch to using the mastery properties of Halberds and Flails.",
+      "choices": [
+        {
+          "id": "weapon-mastery",
+          "label": "Weapon Mastery",
+          "count": 2,
+          "timing": "permanent",
+          "pool": "weapon_mastery"
+        }
+      ],
       "effects": {
         "properties": [
           {
             "type": "note",
-            "text": "You can use the mastery properties of 2 weapons of your choice (weapons you have proficiency with). You can change your choices on each Long Rest."
+            "text": "Choose only weapons you're proficient with. You can change your choices on each Long Rest."
           }
         ]
       }

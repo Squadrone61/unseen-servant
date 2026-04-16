@@ -176,11 +176,20 @@
       "level": 1,
       "className": "Barbarian",
       "description": "Your training with weapons allows you to use the mastery properties of two kinds of Simple or Martial Melee weapons of your choice, such as Greataxes and Handaxes. Whenever you finish a {rule:Long Rest}, you can practice weapon drills and change one of those weapon choices.\n\nWhen you reach certain Barbarian levels, you gain the ability to use the mastery properties of more kinds of weapons, as shown in the Weapon Mastery column of the Barbarian Features table.",
+      "choices": [
+        {
+          "id": "weapon-mastery",
+          "label": "Weapon Mastery",
+          "count": 2,
+          "timing": "permanent",
+          "pool": "weapon_mastery"
+        }
+      ],
       "effects": {
         "properties": [
           {
             "type": "note",
-            "text": "You can use the mastery properties of a number of Simple or Martial Melee weapons equal to table(1:2, 4:3, 10:4) for your Barbarian level. You can change one weapon choice on each Long Rest."
+            "text": "Mastery slots scale: table(1:2, 4:3, 10:4) by Barbarian level (only level-1 picks are tracked here; +1 picks at L4/L10 are deferred). You can change one chosen weapon on each Long Rest. Choose only Simple or Martial Melee weapons."
           }
         ]
       }

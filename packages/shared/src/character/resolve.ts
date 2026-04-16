@@ -194,6 +194,20 @@ export function getScoreCaps(char: CharacterData): AbilityScores {
  * apply them without re-evaluating the language.
  */
 /**
+ * Weapons whose Mastery property the character can use this Long Rest.
+ * Returned as a Set of lowercased weapon names for quick membership checks
+ * (the ActionsTab weapon row uses this to badge the equipped weapon).
+ */
+export function getWeaponMasteries(char: CharacterData): Set<string> {
+  const bundles = collectActiveBundles(char);
+  const set = new Set<string>();
+  for (const prop of collectProperties(bundles, "weapon_mastery_grant")) {
+    set.add(prop.weapon.toLowerCase());
+  }
+  return set;
+}
+
+/**
  * Crit-triggered riders the character carries (Crusher / Slasher / Piercer).
  *
  * Each rider matches a weapon damage type. The game engine consumes them

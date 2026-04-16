@@ -161,11 +161,20 @@
       "level": 1,
       "className": "Fighter",
       "description": "Your training with weapons allows you to use the mastery properties of three kinds of Simple or Martial weapons of your choice. Whenever you finish a {rule:Long Rest}, you can practice weapon drills and change one of those weapon choices.\n\nWhen you reach certain Fighter levels, you gain the ability to use the mastery properties of more kinds of weapons, as shown in the Weapon Mastery column of the Fighter Features table.",
+      "choices": [
+        {
+          "id": "weapon-mastery",
+          "label": "Weapon Mastery",
+          "count": 3,
+          "timing": "permanent",
+          "pool": "weapon_mastery"
+        }
+      ],
       "effects": {
         "properties": [
           {
             "type": "note",
-            "text": "You can use the mastery properties of a number of Simple or Martial weapons equal to table(1:3, 4:4, 10:5, 16:6) for your Fighter level. You can change one weapon choice on each Long Rest."
+            "text": "Mastery slots scale: table(1:3, 4:4, 10:5, 16:6) by Fighter level (only level-1 picks are tracked here; additional picks at L4/L10/L16 are deferred). You can change one chosen weapon on each Long Rest."
           }
         ]
       }

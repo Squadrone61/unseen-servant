@@ -2,8 +2,15 @@
 
 import { useState, useMemo } from "react";
 import type { FeatureChoice, ChoiceOption } from "@unseen-servant/shared/types";
-import type { FeatDb, SpellDb } from "@unseen-servant/shared/data";
-import { featsArray, spellsArray, getFeat, getSpell } from "@unseen-servant/shared";
+import type { FeatDb, SpellDb, BaseItemDb } from "@unseen-servant/shared/data";
+import {
+  featsArray,
+  spellsArray,
+  baseItemsArray,
+  getFeat,
+  getSpell,
+  getBaseItem,
+} from "@unseen-servant/shared";
 import { RichText } from "@/components/ui/RichText";
 import { EffectSummary } from "./EffectSummary";
 import { InfoButton } from "./InfoButton";
@@ -100,6 +107,20 @@ function resolvePool(choice: Extract<FeatureChoice, { pool: string }>): string[]
         return cantrips.filter((s) => s.classes.some((c) => from.includes(c))).map((s) => s.name);
       }
       return cantrips.map((s) => s.name);
+    }
+
+    case "weapon_mastery": {
+      // Pool = all weapons that carry a Mastery property in the base-items DB.
+      // Class-specific filters (e.g. Barbarian's "melee only") can be supplied
+      // via `from`; otherwise the player picks from any mastery-bearing weapon.
+      const masteryWeapons = baseItemsArray.filter(
+        (i) => i.weapon && i.mastery && i.mastery.length > 0,
+      );
+      const filtered =
+        from && from.length > 0
+          ? masteryWeapons.filter((w) => from.includes(w.name))
+          : masteryWeapons;
+      return filtered.map((w) => w.name).sort();
     }
 
     default:
@@ -290,6 +311,51 @@ function FeatInfoPopover({
           </div>
         )}
         {feat.effects && <EffectSummary effects={feat.effects} />}
+      </div>
+    </DetailPopover>
+  );
+}
+
+function WeaponInfoPopover({
+  weapon,
+  position,
+  onClose,
+}: {
+  weapon: BaseItemDb;
+  position: { x: number; y: number };
+  onClose: () => void;
+}) {
+  return (
+    <DetailPopover title={weapon.name} onClose={onClose} position={position}>
+      <div className="space-y-3">
+        <div className="flex items-center gap-2 flex-wrap">
+          {weapon.weaponCategory && (
+            <span className="text-xs px-2 py-0.5 rounded-full bg-gray-700/50 text-gray-300 border border-gray-600/30">
+              {weapon.weaponCategory === "simple" ? "Simple" : "Martial"}
+            </span>
+          )}
+          {weapon.damage && (
+            <span className="text-xs px-2 py-0.5 rounded-full bg-gray-700/50 text-gray-300 border border-gray-600/30">
+              {weapon.damage} {weapon.damageType ?? ""}
+            </span>
+          )}
+          {(weapon.mastery ?? []).map((m) => (
+            <span
+              key={m}
+              className="text-xs px-2 py-0.5 rounded-full bg-amber-900/40 text-amber-300 border border-amber-700/40"
+            >
+              Mastery: {m}
+            </span>
+          ))}
+        </div>
+        {weapon.properties && weapon.properties.length > 0 && (
+          <div className="text-xs text-gray-400">
+            <span className="text-gray-500">Properties:</span> {weapon.properties.join(", ")}
+          </div>
+        )}
+        {weapon.description && (
+          <div className="text-sm text-gray-300 leading-relaxed">{weapon.description}</div>
+        )}
       </div>
     </DetailPopover>
   );
@@ -570,6 +636,7 @@ export function ChoicePicker({
   const [pillPopover, setPillPopover] = useState<
     | { kind: "feat"; entity: FeatDb; position: { x: number; y: number } }
     | { kind: "spell"; entity: SpellDb; position: { x: number; y: number } }
+    | { kind: "weapon"; entity: BaseItemDb; position: { x: number; y: number } }
     | null
   >(null);
 
@@ -655,7 +722,7 @@ export function ChoicePicker({
     };
 
     const handlePillInfo =
-      pool === "fighting_style" || pool === "spell_cantrip"
+      pool === "fighting_style" || pool === "spell_cantrip" || pool === "weapon_mastery"
         ? (item: string, e: React.MouseEvent) => {
             e.stopPropagation();
             if (pool === "fighting_style") {
@@ -666,12 +733,20 @@ export function ChoicePicker({
                   entity: feat,
                   position: { x: e.clientX, y: e.clientY },
                 });
-            } else {
+            } else if (pool === "spell_cantrip") {
               const spell = getSpell(item);
               if (spell)
                 setPillPopover({
                   kind: "spell",
                   entity: spell,
+                  position: { x: e.clientX, y: e.clientY },
+                });
+            } else {
+              const weapon = getBaseItem(item);
+              if (weapon)
+                setPillPopover({
+                  kind: "weapon",
+                  entity: weapon,
                   position: { x: e.clientX, y: e.clientY },
                 });
             }
@@ -747,7 +822,7 @@ export function ChoicePicker({
 
         {renderPoolBody()}
 
-        {/* Pill info popovers for fighting_style and spell_cantrip */}
+        {/* Pill info popovers for fighting_style, spell_cantrip, weapon_mastery */}
         {pillPopover && pillPopover.kind === "feat" && (
           <FeatInfoPopover
             feat={pillPopover.entity}
@@ -758,6 +833,13 @@ export function ChoicePicker({
         {pillPopover && pillPopover.kind === "spell" && (
           <SpellInfoPopover
             spell={pillPopover.entity}
+            position={pillPopover.position}
+            onClose={() => setPillPopover(null)}
+          />
+        )}
+        {pillPopover && pillPopover.kind === "weapon" && (
+          <WeaponInfoPopover
+            weapon={pillPopover.entity}
             position={pillPopover.position}
             onClose={() => setPillPopover(null)}
           />

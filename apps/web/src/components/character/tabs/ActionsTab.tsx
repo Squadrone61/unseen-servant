@@ -1,11 +1,12 @@
 import { useState, useMemo } from "react";
 import type { CharacterData, CharacterFeatureRef, Item } from "@unseen-servant/shared/types";
-import { actionsArray, resolveFeatureActivation } from "@unseen-servant/shared/data";
+import { actionsArray, resolveFeatureActivation, getBaseItem } from "@unseen-servant/shared/data";
 import { getTotalLevel } from "@unseen-servant/shared/utils";
 import {
   getClassResources,
   getProficiencies,
   getAbilities,
+  getWeaponMasteries,
 } from "@unseen-servant/shared/character";
 import { FilterChipBar } from "../FilterChipBar";
 
@@ -82,6 +83,7 @@ export function ActionsTab({ character, onItemClick, onFeatureClick }: ActionsTa
   const abilities = useMemo(() => getAbilities(character), [character]);
   const profBonus = Math.floor((getTotalLevel(s.classes) - 1) / 4) + 2;
   const weaponProfsList = getProficiencies(character, "weapons");
+  const weaponMasteries = useMemo(() => getWeaponMasteries(character), [character]);
   const classResources = getClassResources(character);
 
   // Equipped weapons with damage
@@ -112,6 +114,11 @@ export function ActionsTab({ character, onItemClick, onFeatureClick }: ActionsTa
         const attackBonus = abilityMod + (isProficient ? profBonus : 0);
         parts.push(`${attackBonus >= 0 ? "+" : ""}${attackBonus}`);
         parts.push([damage, damageType].filter(Boolean).join(" "));
+        if (weaponMasteries.has(item.name.toLowerCase())) {
+          const baseDb = getBaseItem(item.name);
+          const masteryName = baseDb?.mastery?.[0];
+          if (masteryName) parts.push(`Mastery: ${masteryName}`);
+        }
         result.push({
           name: item.name,
           detail: parts.join(" · "),
@@ -120,7 +127,7 @@ export function ActionsTab({ character, onItemClick, onFeatureClick }: ActionsTa
       }
     }
     return result;
-  }, [d.inventory, abilities, profBonus, weaponProfsList]);
+  }, [d.inventory, abilities, profBonus, weaponProfsList, weaponMasteries]);
 
   // Feature-based actions grouped by type
   const featureGroups: FeatureGroup[] = useMemo(() => {
