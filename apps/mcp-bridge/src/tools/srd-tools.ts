@@ -1,34 +1,16 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
+import Fuse from "fuse.js";
 import { log } from "../logger.js";
 import type { WSClient } from "../ws-client.js";
 import type { GameLogger } from "../services/game-logger.js";
 import {
-  fuzzyLookup,
-  spells,
-  spellsArray,
-  monsters,
-  monstersArray,
-  conditions,
-  conditionsArray,
-  magicItems,
-  magicItemsArray,
-  feats,
-  featsArray,
-  classes,
-  classesArray,
-  species,
-  speciesArray,
-  backgrounds,
-  backgroundsArray,
-  optionalFeatures,
-  optionalFeaturesArray,
-  actions,
-  actionsArray,
-  languages,
-  languagesArray,
-  diseases,
-  diseasesArray,
+  searchIndex,
+  LOOKUP_CATEGORIES,
+  CATEGORY_LABELS,
+  type LookupCategory,
+  type SearchEntry,
+  type ClassFeatureRef,
   type SpellDb,
   type MonsterDb,
   type ConditionDb,
@@ -472,149 +454,133 @@ function notFoundResult(category: string, name: string) {
   };
 }
 
-type ToolResult = { content: { type: "text"; text: string }[] };
+// ─── Per-category formatters (summary + full) ────────────────
 
-function fuzzyLookupOrSuggest<T extends { name: string }>(
-  query: string,
-  exactMap: Map<string, T>,
-  allItems: T[],
-  category: string,
-  formatSummary: (item: T) => string,
-  formatFull: (item: T) => string,
-  detail: "summary" | "full",
-  wsClient: WSClient,
-): ToolResult {
-  const result = fuzzyLookup(query, exactMap, allItems);
+type FormatterPair<T> = {
+  summary: (item: T) => string;
+  full: (item: T) => string;
+};
 
-  if (result.match) {
-    const text = detail === "full" ? formatFull(result.match) : formatSummary(result.match);
-    const prefix =
-      result.matchType !== "exact"
-        ? `(Matched "${result.match.name}" from query "${query}")\n\n`
-        : "";
-    return { content: [{ type: "text", text: prefix + text }] };
-  }
-
-  if (result.suggestions.length > 0) {
-    const list = result.suggestions.map((s) => `- ${s.name}`).join("\n");
-    return {
-      content: [
-        {
-          type: "text",
-          text: `"${query}" matched multiple ${category.toLowerCase()}s. Did you mean one of:\n${list}\n\nCall lookup again with the exact name.`,
-        },
-      ],
-    };
-  }
-
-  logLookupFailure(wsClient, category, query);
-  return notFoundResult(category, query);
+function formatClassFeature(ref: ClassFeatureRef): string {
+  const source = ref.subclassName ? `${ref.className} / ${ref.subclassName}` : ref.className;
+  return `# ${ref.feature.name}\n*${source}, level ${ref.feature.level}*\n\n${ref.feature.description}`;
 }
 
-// ─── Category Dispatch Table ────────────────────────────────
-
-interface CategoryEntry<T extends { name: string }> {
-  label: string;
-  exactMap: Map<string, T>;
-  allItems: T[];
-  formatSummary: (item: T) => string;
-  formatFull: (item: T) => string;
+function formatClassFeatureSummary(ref: ClassFeatureRef): string {
+  const source = ref.subclassName ? `${ref.className} / ${ref.subclassName}` : ref.className;
+  const brief = ref.feature.description.slice(0, 120);
+  const cut = brief.lastIndexOf(". ");
+  const snippet =
+    cut > 20
+      ? brief.slice(0, cut + 1)
+      : brief + (ref.feature.description.length > 120 ? "..." : "");
+  return `${ref.feature.name} (${source}, L${ref.feature.level}): ${snippet}`;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type AnyCategory = CategoryEntry<any>;
-
-const CATEGORIES: Record<string, AnyCategory> = {
+const FORMATTERS: Record<LookupCategory, FormatterPair<unknown>> = {
   spell: {
-    label: "Spell",
-    exactMap: spells,
-    allItems: spellsArray,
-    formatSummary: formatSpellSummary,
-    formatFull: formatSpell,
+    summary: (x) => formatSpellSummary(x as SpellDb),
+    full: (x) => formatSpell(x as SpellDb),
   },
   monster: {
-    label: "Monster",
-    exactMap: monsters,
-    allItems: monstersArray,
-    formatSummary: formatMonsterSummary,
-    formatFull: formatMonster,
+    summary: (x) => formatMonsterSummary(x as MonsterDb),
+    full: (x) => formatMonster(x as MonsterDb),
   },
   condition: {
-    label: "Condition",
-    exactMap: conditions,
-    allItems: conditionsArray,
-    formatSummary: formatConditionSummary,
-    formatFull: formatCondition,
+    summary: (x) => formatConditionSummary(x as ConditionDb),
+    full: (x) => formatCondition(x as ConditionDb),
   },
   magic_item: {
-    label: "Magic Item",
-    exactMap: magicItems,
-    allItems: magicItemsArray,
-    formatSummary: formatMagicItemSummary,
-    formatFull: formatMagicItemFn,
+    summary: (x) => formatMagicItemSummary(x as MagicItemDb),
+    full: (x) => formatMagicItemFn(x as MagicItemDb),
   },
-  feat: {
-    label: "Feat",
-    exactMap: feats,
-    allItems: featsArray,
-    formatSummary: formatFeatSummary,
-    formatFull: formatFeatFn,
-  },
+  feat: { summary: (x) => formatFeatSummary(x as FeatDb), full: (x) => formatFeatFn(x as FeatDb) },
   class: {
-    label: "Class",
-    exactMap: classes,
-    allItems: classesArray,
-    formatSummary: formatClassSummary,
-    formatFull: formatClassFn,
+    summary: (x) => formatClassSummary(x as ClassDb),
+    full: (x) => formatClassFn(x as ClassDb),
   },
   species: {
-    label: "Species",
-    exactMap: species,
-    allItems: speciesArray,
-    formatSummary: formatSpeciesSummary,
-    formatFull: formatSpeciesFn,
+    summary: (x) => formatSpeciesSummary(x as SpeciesDb),
+    full: (x) => formatSpeciesFn(x as SpeciesDb),
   },
   background: {
-    label: "Background",
-    exactMap: backgrounds,
-    allItems: backgroundsArray,
-    formatSummary: formatBackgroundSummary,
-    formatFull: formatBackgroundFn,
+    summary: (x) => formatBackgroundSummary(x as BackgroundDb),
+    full: (x) => formatBackgroundFn(x as BackgroundDb),
   },
   optional_feature: {
-    label: "Optional Feature",
-    exactMap: optionalFeatures,
-    allItems: optionalFeaturesArray,
-    formatSummary: formatOptionalFeatureSummary,
-    formatFull: formatOptionalFeatureFn,
+    summary: (x) => formatOptionalFeatureSummary(x as OptionalFeatureDb),
+    full: (x) => formatOptionalFeatureFn(x as OptionalFeatureDb),
   },
   action: {
-    label: "Action",
-    exactMap: actions,
-    allItems: actionsArray,
-    formatSummary: formatActionSummary,
-    formatFull: formatActionFn,
+    summary: (x) => formatActionSummary(x as ActionDb),
+    full: (x) => formatActionFn(x as ActionDb),
   },
   language: {
-    label: "Language",
-    exactMap: languages,
-    allItems: languagesArray,
-    formatSummary: formatLanguageSummary,
-    formatFull: formatLanguageFn,
+    summary: (x) => formatLanguageSummary(x as LanguageDb),
+    full: (x) => formatLanguageFn(x as LanguageDb),
   },
   disease: {
-    label: "Disease",
-    exactMap: diseases,
-    allItems: diseasesArray,
-    formatSummary: formatDiseaseSummary,
-    formatFull: formatDiseaseFn,
+    summary: (x) => formatDiseaseSummary(x as DiseaseDb),
+    full: (x) => formatDiseaseFn(x as DiseaseDb),
+  },
+  class_feature: {
+    summary: (x) => formatClassFeatureSummary(x as ClassFeatureRef),
+    full: (x) => formatClassFeature(x as ClassFeatureRef),
   },
 };
 
-const CATEGORY_KEYS = Object.keys(CATEGORIES);
+function formatEntry(entry: SearchEntry, detail: "summary" | "full"): string {
+  const pair = FORMATTERS[entry.category];
+  return detail === "full" ? pair.full(entry.ref) : pair.summary(entry.ref);
+}
 
-// Match quality tiers (higher = better)
-const MATCH_RANK: Record<string, number> = { exact: 4, substring: 3, word: 2, levenshtein: 1 };
+// ─── Fuse.js index ──────────────────────────────────────────
+
+// One Fuse instance over the unified search index. Fuse gives us IDF-aware
+// token ranking (stuffed queries like "ring amulet necklace common magic"
+// don't get hijacked by a single shared word), weighted keys across
+// name/source/description, and a principled score for cross-category
+// disambiguation. Bundle cost: ~8 KB gzipped.
+const fuse = new Fuse(searchIndex, {
+  keys: [
+    { name: "name", weight: 1.0 },
+    { name: "source", weight: 0.3 },
+    { name: "description", weight: 0.1 },
+  ],
+  threshold: 0.4,
+  ignoreLocation: true,
+  includeScore: true,
+  minMatchCharLength: 3,
+  // Token search splits multi-word queries, fuzzy-matches each term
+  // independently, and ranks with BM25-style IDF weighting. This is what
+  // fixes stuffed queries like "divine sense paladin" → "Divine Sense"
+  // (the word "paladin" contributes nothing, "divine" + "sense" carry it).
+  useTokenSearch: true,
+});
+
+/**
+ * Fuse score interpretation (lower = better, 0 = exact):
+ *   ≤ 0.15  → exact/near-exact, return the match
+ *   ≤ 0.40  → strong, return the match if the runner-up is clearly weaker
+ *   ≤ 0.60  → weak, show as candidates only
+ *   > 0.60  → noise, drop (Fuse's `threshold` option doesn't hard-filter here)
+ */
+const STRONG_MATCH_SCORE = 0.15;
+const AMBIGUOUS_SCORE_GAP = 0.12;
+const MAX_ACCEPTABLE_SCORE = 0.6;
+
+interface FuseHit {
+  entry: SearchEntry;
+  score: number;
+}
+
+function runSearch(query: string, category: LookupCategory | undefined): FuseHit[] {
+  const raw = fuse.search(query);
+  const filtered = raw
+    .filter((r) => (r.score ?? 1) <= MAX_ACCEPTABLE_SCORE)
+    .filter((r) => !category || r.item.category === category);
+  return filtered.map((r) => ({ entry: r.item, score: r.score ?? 1 }));
+}
 
 // ─── Tool Registration ──────────────────────────────────────
 
@@ -635,23 +601,10 @@ export function registerSrdTools(
             "Name or search term, e.g. 'Fireball', 'Goblin', 'Grappled', 'Great Weapon Master'. Fuzzy matching handles typos.",
           ),
         category: z
-          .enum([
-            "spell",
-            "monster",
-            "condition",
-            "magic_item",
-            "feat",
-            "class",
-            "species",
-            "background",
-            "optional_feature",
-            "action",
-            "language",
-            "disease",
-          ])
+          .enum(LOOKUP_CATEGORIES)
           .optional()
           .describe(
-            "Optional category to narrow search. Omit to search all categories. Use when names collide (e.g. query='Bane', category='spell' for the spell, category='condition' for the condition).",
+            "Optional category to narrow search. Omit to search all categories. Use when names collide (e.g. query='Bane', category='spell' for the spell, category='condition' for the condition). `class_feature` covers class and subclass features (Rage, Vow of Enmity, Divine Sense, etc.).",
           ),
         detail: z
           .enum(["summary", "full"])
@@ -665,79 +618,55 @@ export function registerSrdTools(
     async ({ query, category, detail }) => {
       wsClient.pingActivity("The DM consults the rulebooks…");
 
-      // Category-scoped lookup
-      if (category) {
-        const cat = CATEGORIES[category];
-        if (!cat) {
-          const text = `Unknown category "${category}". Valid: ${CATEGORY_KEYS.join(", ")}`;
-          gameLogger.toolCall("lookup_rule", { query, category, detail }, text);
-          return { content: [{ type: "text" as const, text }] };
-        }
-        const result = fuzzyLookupOrSuggest(
-          query,
-          cat.exactMap,
-          cat.allItems,
-          cat.label,
-          cat.formatSummary,
-          cat.formatFull,
-          detail,
-          wsClient,
-        );
-        const text = result.content[0]?.text ?? "";
-        gameLogger.toolCall("lookup_rule", { query, category, detail }, text);
-        return result;
-      }
-
-      // Cross-category search: run fuzzyLookup on each, collect best
-      type Hit = { category: string; label: string; name: string; rank: number; text: string };
-      const hits: Hit[] = [];
-
-      for (const [key, cat] of Object.entries(CATEGORIES)) {
-        const result = fuzzyLookup(query, cat.exactMap, cat.allItems);
-        if (result.match) {
-          const rank = MATCH_RANK[result.matchType] ?? 0;
-          const formatted =
-            detail === "full" ? cat.formatFull(result.match) : cat.formatSummary(result.match);
-          hits.push({
-            category: key,
-            label: cat.label,
-            name: result.match.name,
-            rank,
-            text: formatted,
-          });
-        }
-      }
+      const hits = runSearch(query, category as LookupCategory | undefined);
 
       if (hits.length === 0) {
-        logLookupFailure(wsClient, "Any", query);
-        const result = notFoundResult("Any", query);
-        gameLogger.toolCall("lookup_rule", { query, detail }, result.content[0].text);
+        logLookupFailure(wsClient, category ?? "Any", query);
+        const result = notFoundResult(category ?? "Any", query);
+        gameLogger.toolCall("lookup_rule", { query, category, detail }, result.content[0].text);
         return result;
       }
 
-      // Sort by match quality
-      hits.sort((a, b) => b.rank - a.rank);
-      const best = hits[0];
+      const top = hits[0];
+      const second = hits[1];
 
-      // If the top hit is exact or unique, return it directly
-      const sameRank = hits.filter((h) => h.rank === best.rank);
-      if (sameRank.length === 1 || best.rank >= MATCH_RANK.substring) {
-        const prefix =
-          hits.length > 1
-            ? `[${best.label}] (also found in: ${hits
-                .slice(1, 4)
-                .map((h) => `${h.label} "${h.name}"`)
-                .join(", ")})\n\n`
-            : "";
-        const text = prefix + best.text;
-        gameLogger.toolCall("lookup_rule", { query, detail }, text);
+      // Return the full entry outright when we're confident:
+      //   - Very strong match (score <= 0.15), OR
+      //   - Reasonable match (score <= 0.5) AND either it's the only hit OR
+      //     it has a clear lead over the runner-up.
+      // A single weak hit (score > 0.5) still gets the candidate-list treatment
+      // so the caller can decide whether it's the right entry.
+      const isStrong =
+        top.score <= STRONG_MATCH_SCORE ||
+        (top.score <= 0.5 &&
+          (second === undefined || second.score - top.score >= AMBIGUOUS_SCORE_GAP));
+
+      if (isStrong) {
+        const body = formatEntry(top.entry, detail);
+        const label = CATEGORY_LABELS[top.entry.category];
+        const others = hits
+          .slice(1, 4)
+          .map((h) => `${CATEGORY_LABELS[h.entry.category]} "${h.entry.name}"`);
+        const header = `[${label}] ${top.entry.name}`;
+        const prefix = others.length > 0 ? `${header} (also: ${others.join(", ")})\n\n` : "";
+        const text = prefix + body;
+        gameLogger.toolCall("lookup_rule", { query, category, detail }, text);
         return { content: [{ type: "text" as const, text }] };
       }
 
-      // Ambiguous: multiple categories at the same match tier
-      const list = sameRank.map((h) => `- **${h.name}** [${h.label}]`).join("\n");
-      const text = `"${query}" matched in multiple categories. Specify a \`category\` to disambiguate:\n${list}`;
-      gameLogger.toolCall("lookup_rule", { query, detail }, text);
+      // Ambiguous — show top candidates ranked by score so the caller can
+      // re-query with the specific name (and optional category).
+      const list = hits
+        .slice(0, 6)
+        .map(
+          (h) =>
+            `- **${h.entry.name}** [${CATEGORY_LABELS[h.entry.category]}]${
+              h.entry.source ? ` — ${h.entry.source}` : ""
+            }`,
+        )
+        .join("\n");
+      const text = `"${query}" matched multiple entries. Re-query with the exact name (and optional category):\n${list}`;
+      gameLogger.toolCall("lookup_rule", { query, category, detail }, text);
       return { content: [{ type: "text" as const, text }] };
     },
   );

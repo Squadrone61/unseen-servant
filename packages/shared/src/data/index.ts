@@ -299,9 +299,16 @@ export function getCasterMultiplier(className: string): number {
   }
 }
 
-// ─── Fuzzy lookup ────────────────────────────────────────
+// ─── Unified search index ───────────────────────────────
 
-export { fuzzyLookup, type FuzzyResult } from "../utils/fuzzy-lookup";
+export {
+  searchIndex,
+  LOOKUP_CATEGORIES,
+  CATEGORY_LABELS,
+  type LookupCategory,
+  type SearchEntry,
+  type ClassFeatureRef,
+} from "./search-index";
 
 // ─── Search helpers ────────────────────────────────────
 

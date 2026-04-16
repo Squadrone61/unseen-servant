@@ -14,6 +14,7 @@
     "@dice-roller/rpg-dice-roller": "^5.x",
     "@modelcontextprotocol/sdk": "^1.12.1",
     "@unseen-servant/shared": "workspace:*",
+    "fuse.js": "^7.3.0",
     "ws": "^8.18.0",
     "zod": "^4"
   },
