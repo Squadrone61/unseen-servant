@@ -57,12 +57,23 @@ export function EntityDetail({ data, onActionTriggered }: EntityDetailProps) {
       {/* 3. Properties grid (2-column) */}
       {properties && properties.length > 0 && (
         <div className="grid grid-cols-2 gap-1.5 text-xs">
-          {properties.map((prop, i) => (
-            <div key={i} className="bg-gray-900/50 border border-gray-700 rounded px-2 py-1">
-              <div className="text-gray-500 uppercase text-[10px]">{prop.label}</div>
-              <div className="text-gray-300">{prop.value}</div>
-            </div>
-          ))}
+          {properties.map((prop, i) => {
+            const toneBorder = prop.tone
+              ? BADGE_CLASSES[prop.tone]
+              : "bg-gray-900/50 border border-gray-700";
+            const valueTone =
+              prop.tone === "amber"
+                ? "text-amber-200 font-medium"
+                : prop.tone === "green"
+                  ? "text-emerald-200 font-medium"
+                  : "text-gray-300";
+            return (
+              <div key={i} className={`${toneBorder} rounded px-2 py-1`}>
+                <div className="text-gray-500 uppercase text-[10px]">{prop.label}</div>
+                <div className={valueTone}>{prop.value}</div>
+              </div>
+            );
+          })}
         </div>
       )}
 

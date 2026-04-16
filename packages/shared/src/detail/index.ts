@@ -37,6 +37,7 @@ export interface EntityDetailBadge {
 export interface EntityDetailProperty {
   label: string;
   value: string;
+  tone?: BadgeTone;
 }
 
 export interface EntityDetailSection {
@@ -242,47 +243,40 @@ export function entityDetailFromAbilityScore(
 ): EntityDetailData {
   const abilities = getAbilities(character);
   const score = abilities[ability];
-  const mod = getModifier(score);
   const modStr = formatModifier(score);
   const fullName = ABILITY_FULL_NAMES[ability];
   const totalLevel = getTotalLevel(character.static.classes);
   const profBonus = getProficiencyBonus(totalLevel);
 
   const save = getSavingThrows(character).find((sv) => sv.ability === ability);
-  const saveMod = save ? getSavingThrowModifier(save, abilities, profBonus) : mod;
+  const saveMod = save ? getSavingThrowModifier(save, abilities, profBonus) : getModifier(score);
   const saveProficient = save?.proficient ?? false;
 
-  const relatedSkills = getSkills(character)
-    .filter((sk) => sk.ability === ability)
-    .map((sk) => ({
-      name: SKILL_DISPLAY_NAMES[sk.name] ?? sk.name,
-      modifier: getSkillModifier(sk, abilities, profBonus),
-      proficient: sk.proficient,
-      expertise: sk.expertise,
-    }));
-
-  const sections: EntityDetailSection[] = [
+  const properties: EntityDetailProperty[] = [
     {
-      heading: "Saving Throw",
-      body: `${formatBonus(saveMod)}${saveProficient ? " (proficient)" : ""}`,
+      label: "Save",
+      value: formatBonus(saveMod),
+      tone: saveProficient ? "amber" : undefined,
     },
   ];
-  if (relatedSkills.length > 0) {
-    sections.push({
-      heading: "Related Skills",
-      body: relatedSkills
-        .map(
-          (s) =>
-            `${s.name}: ${formatBonus(s.modifier)}${s.expertise ? " (exp)" : s.proficient ? " (prof)" : ""}`,
-        )
-        .join(", "),
+  for (const sk of getSkills(character).filter((s) => s.ability === ability)) {
+    const mod = getSkillModifier(sk, abilities, profBonus);
+    const tone: BadgeTone | undefined = sk.expertise
+      ? "green"
+      : sk.proficient
+        ? "amber"
+        : undefined;
+    properties.push({
+      label: SKILL_DISPLAY_NAMES[sk.name] ?? sk.name,
+      value: formatBonus(mod),
+      tone,
     });
   }
 
   return {
     title: fullName,
     subtitle: `${modStr} (${score})`,
-    sections,
+    properties,
   };
 }
 
