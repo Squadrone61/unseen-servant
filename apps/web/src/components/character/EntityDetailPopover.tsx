@@ -1,6 +1,28 @@
 "use client";
 
+import { useMemo } from "react";
 import type { EntityCategory } from "@unseen-servant/shared/types";
+import type { EntityDetailData } from "@unseen-servant/shared/detail";
+import {
+  entityDetailFromSpell,
+  entityDetailFromCondition,
+  entityDetailFromFeat,
+  entityDetailFromBaseItem,
+  entityDetailFromMagicItem,
+  entityDetailFromAction,
+  entityDetailFromDisease,
+  entityDetailFromStatus,
+  entityDetailFromAbilityScore,
+  entityDetailFromClassFeature,
+  entityDetailFromInventoryItem,
+  entityDetailFromChoiceOption,
+} from "@unseen-servant/shared/detail";
+import type {
+  AbilityScoreDetailPayload,
+  ClassFeatureDetailPayload,
+  InventoryItemDetailPayload,
+  ChoiceOptionDetailPayload,
+} from "@unseen-servant/shared/detail";
 import {
   getSpell,
   getCondition,
@@ -11,222 +33,170 @@ import {
   getDisease,
   getStatus,
 } from "@unseen-servant/shared/data";
+import { damageTypeColor } from "@unseen-servant/shared/utils";
 import { DetailPopover } from "./DetailPopover";
-import { RichText } from "../ui/RichText";
-import { useEntityPopover, useEntityClick } from "./EntityPopoverContext";
+import { EntityDetail } from "./EntityDetail";
+import { useEntityPopover, type PopoverEntry } from "./EntityPopoverContext";
+import type { StartPlacementParams } from "@/hooks/useAoEPlacement";
 
 // ---------------------------------------------------------------------------
 // Props
 // ---------------------------------------------------------------------------
 
 interface EntityDetailPopoverProps {
-  id: string;
-  category: EntityCategory;
-  name: string;
-  position: { x: number; y: number };
-  level: number;
+  entry: PopoverEntry;
+}
+
+// ---------------------------------------------------------------------------
+// Routing: resolve EntityDetailData from category + name + optional payload
+// ---------------------------------------------------------------------------
+
+function resolveEntityDetailData(
+  category: EntityCategory,
+  name: string,
+  payload: PopoverEntry["payload"],
+): EntityDetailData | null {
+  switch (category) {
+    case "spell": {
+      const data = getSpell(name);
+      if (!data) return null;
+      return entityDetailFromSpell(data);
+    }
+    case "condition": {
+      const data = getCondition(name);
+      if (!data) return null;
+      return entityDetailFromCondition(data);
+    }
+    case "feat": {
+      const data = getFeat(name);
+      if (!data) return null;
+      return entityDetailFromFeat(data);
+    }
+    case "item": {
+      const base = getBaseItem(name);
+      if (base) return entityDetailFromBaseItem(base);
+      const magic = getMagicItem(name);
+      if (magic) return entityDetailFromMagicItem(magic);
+      return null;
+    }
+    case "action": {
+      const data = getAction(name);
+      if (!data) return null;
+      return entityDetailFromAction(data);
+    }
+    case "disease": {
+      const data = getDisease(name);
+      if (!data) return null;
+      return entityDetailFromDisease(data);
+    }
+    case "status": {
+      const data = getStatus(name);
+      if (!data) return null;
+      return entityDetailFromStatus(data);
+    }
+    case "ability-score": {
+      const p = payload as AbilityScoreDetailPayload | undefined;
+      if (!p) return null;
+      return entityDetailFromAbilityScore(p.character, p.ability);
+    }
+    case "class-feature": {
+      const p = payload as ClassFeatureDetailPayload | undefined;
+      if (!p) return null;
+      return entityDetailFromClassFeature(p.character, p.featureId);
+    }
+    case "inventory-item": {
+      const p = payload as InventoryItemDetailPayload | undefined;
+      if (!p) return null;
+      return entityDetailFromInventoryItem(p.character, p.inventoryId);
+    }
+    case "choice-option": {
+      const p = payload as ChoiceOptionDetailPayload | undefined;
+      if (!p) return { title: name };
+      return entityDetailFromChoiceOption(p);
+    }
+    // No popover data for these categories yet
+    case "rule":
+    case "class":
+    case "species":
+    case "background":
+      return null;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// "Place on Map" action handler — constructed from DB spell data
+// ---------------------------------------------------------------------------
+
+function mapAoEShape(dbShape: string): "sphere" | "cone" | "rectangle" {
+  if (dbShape === "cone") return "cone";
+  if (dbShape === "sphere" || dbShape === "cylinder") return "sphere";
+  return "rectangle";
+}
+
+function mapRectPreset(dbShape: string): "free" | "line" | "cube" | undefined {
+  if (dbShape === "line") return "line";
+  if (dbShape === "cube") return "cube";
+  return undefined;
+}
+
+function buildPlaceOnMapParams(spellName: string): StartPlacementParams | null {
+  const dbSpell = getSpell(spellName);
+  const area = dbSpell?.effects?.action?.area;
+  if (!area) return null;
+
+  const action = dbSpell?.effects?.action;
+  const primaryDamage = action?.onFailedSave?.damage?.[0]?.type ?? action?.onHit?.damage?.[0]?.type;
+  const color = damageTypeColor(primaryDamage);
+
+  return {
+    shape: mapAoEShape(area.shape),
+    size: area.size,
+    spellName,
+    label: spellName,
+    color,
+    concentration: dbSpell?.concentration ?? false,
+    rectanglePreset: mapRectPreset(area.shape),
+    save: action?.save ? { ability: action.save.ability, dc: action.save.dc } : undefined,
+  };
 }
 
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
-export function EntityDetailPopover({
-  id,
-  category,
-  name,
-  position,
-  level,
-}: EntityDetailPopoverProps) {
+export function EntityDetailPopover({ entry }: EntityDetailPopoverProps) {
   const { pop, isTopmost } = useEntityPopover();
-  const onEntityClick = useEntityClick();
 
-  const content = resolveContent(category, name, onEntityClick);
+  const data = useMemo(
+    () => resolveEntityDetailData(entry.category, entry.name, entry.payload),
+    [entry.category, entry.name, entry.payload],
+  );
+  if (!data) return null;
 
-  if (!content) return null;
+  const topmost = isTopmost(entry.id);
+
+  function handleActionTriggered(label: string) {
+    if (label === "Place on Map") {
+      const onCastAoE = entry.actionHandlers?.onCastAoE;
+      if (!onCastAoE) return;
+      const params = buildPlaceOnMapParams(entry.name);
+      if (params) {
+        onCastAoE(params);
+        pop();
+      }
+    }
+  }
 
   return (
     <DetailPopover
-      title={content.title}
+      title={data.title}
       onClose={pop}
-      position={position}
-      level={level + 1}
-      popoverId={id}
-      isTopmost={isTopmost(id)}
+      position={entry.position}
+      level={entry.level + 1}
+      popoverId={entry.id}
+      isTopmost={topmost}
     >
-      {content.body}
+      <EntityDetail data={data} onActionTriggered={handleActionTriggered} />
     </DetailPopover>
   );
-}
-
-// ---------------------------------------------------------------------------
-// Entity resolution
-// ---------------------------------------------------------------------------
-
-interface ResolvedContent {
-  title: string;
-  body: React.ReactNode;
-}
-
-function resolveContent(
-  category: EntityCategory,
-  name: string,
-  onEntityClick?: (
-    category: EntityCategory,
-    name: string,
-    position: { x: number; y: number },
-  ) => void,
-): ResolvedContent | null {
-  switch (category) {
-    case "condition": {
-      const data = getCondition(name);
-      if (!data) return null;
-      return {
-        title: data.name,
-        body: (
-          <RichText
-            text={data.description}
-            className="text-gray-300 text-sm"
-            onEntityClick={onEntityClick}
-          />
-        ),
-      };
-    }
-
-    case "disease": {
-      const data = getDisease(name);
-      if (!data) return null;
-      return {
-        title: data.name,
-        body: (
-          <RichText
-            text={data.description}
-            className="text-gray-300 text-sm"
-            onEntityClick={onEntityClick}
-          />
-        ),
-      };
-    }
-
-    case "status": {
-      const data = getStatus(name);
-      if (!data) return null;
-      return {
-        title: data.name,
-        body: (
-          <RichText
-            text={data.description}
-            className="text-gray-300 text-sm"
-            onEntityClick={onEntityClick}
-          />
-        ),
-      };
-    }
-
-    case "spell": {
-      const data = getSpell(name);
-      if (!data) return null;
-      const levelStr =
-        data.level === 0 ? "Cantrip" : `Level ${data.level}${data.school ? ` ${data.school}` : ""}`;
-      return {
-        title: data.name,
-        body: (
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs bg-amber-900/20 text-amber-300 px-2 py-0.5 rounded-full border border-amber-700/30">
-                {levelStr}
-              </span>
-              {data.concentration && (
-                <span className="text-xs bg-yellow-900/40 text-yellow-300 px-2 py-0.5 rounded-full border border-yellow-700/50">
-                  Concentration
-                </span>
-              )}
-            </div>
-            <div className="grid grid-cols-2 gap-1.5 text-xs">
-              {data.castingTime && (
-                <div className="bg-gray-900/50 border border-gray-700 rounded px-2 py-1">
-                  <div className="text-gray-500 uppercase text-[10px]">Cast</div>
-                  <div className="text-gray-300">{data.castingTime}</div>
-                </div>
-              )}
-              {data.range && (
-                <div className="bg-gray-900/50 border border-gray-700 rounded px-2 py-1">
-                  <div className="text-gray-500 uppercase text-[10px]">Range</div>
-                  <div className="text-gray-300">{data.range}</div>
-                </div>
-              )}
-            </div>
-            <RichText
-              text={data.description}
-              className="text-gray-300 text-sm"
-              onEntityClick={onEntityClick}
-            />
-          </div>
-        ),
-      };
-    }
-
-    case "action": {
-      const data = getAction(name);
-      if (!data) return null;
-      return {
-        title: data.name,
-        body: (
-          <div className="space-y-2">
-            {data.time && (
-              <span className="text-xs bg-blue-900/30 text-blue-300 px-2 py-0.5 rounded-full border border-blue-700/30">
-                {data.time}
-              </span>
-            )}
-            <RichText
-              text={data.description}
-              className="text-gray-300 text-sm"
-              onEntityClick={onEntityClick}
-            />
-          </div>
-        ),
-      };
-    }
-
-    case "item": {
-      const data = getBaseItem(name) ?? getMagicItem(name);
-      if (!data) return null;
-      return {
-        title: data.name,
-        body: (
-          <RichText
-            text={data.description ?? "No description available."}
-            className="text-gray-300 text-sm"
-            onEntityClick={onEntityClick}
-          />
-        ),
-      };
-    }
-
-    case "feat": {
-      const data = getFeat(name);
-      if (!data) return null;
-      return {
-        title: data.name,
-        body: (
-          <div className="space-y-2">
-            {data.prerequisiteText && (
-              <span className="text-xs text-gray-400 italic">
-                Prerequisite: {data.prerequisiteText}
-              </span>
-            )}
-            <RichText
-              text={data.description}
-              className="text-gray-300 text-sm"
-              onEntityClick={onEntityClick}
-            />
-          </div>
-        ),
-      };
-    }
-
-    // rule, class, species, background — no nested popover data yet
-    default:
-      return null;
-  }
 }

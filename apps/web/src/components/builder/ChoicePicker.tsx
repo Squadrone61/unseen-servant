@@ -1,199 +1,21 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import type { FeatureChoice, ChoiceOption } from "@unseen-servant/shared/types";
-import type { FeatDb, SpellDb, BaseItemDb } from "@unseen-servant/shared/data";
-import {
-  featsArray,
-  spellsArray,
-  baseItemsArray,
-  getFeat,
-  getSpell,
-  getBaseItem,
-} from "@unseen-servant/shared";
-import { RichText } from "@/components/ui/RichText";
-import { EffectSummary } from "./EffectSummary";
+import type { FeatureChoice } from "@unseen-servant/shared/types";
+import type { ResolveChoiceContext, ResolvedOption } from "@unseen-servant/shared/builders";
+import { resolveChoice } from "@unseen-servant/shared/builders";
+import { useEntityClick } from "@/components/character/EntityPopoverContext";
 import { InfoButton } from "./InfoButton";
-import { DetailPopover } from "@/components/character/DetailPopover";
-
-// ---------------------------------------------------------------------------
-// Per-pool item metadata
-//
-// Pools opt in to richer rendering by returning non-null from getPoolItemMeta.
-// The CardGrid render tier kicks in whenever ANY item in the pool has a
-// primaryDetail or badge; the sub-choice expansion fires for any selected
-// item with subChoices regardless of which render tier is active.
-//
-// Adding a new pool with rich items is a single switch case here — no new
-// component required.
-// ---------------------------------------------------------------------------
-
-type ItemBadgeTone = "violet" | "amber" | "emerald";
-
-interface PoolItemMeta {
-  /** Compact right-side detail (e.g. "1d8" damage). */
-  primaryDetail?: string;
-  /** Right-side colored badge (e.g. weapon Mastery name). */
-  badge?: { label: string; tone: ItemBadgeTone };
-  /** Sub-choices to expand inline when this item is selected. */
-  subChoices?: FeatureChoice[];
-}
-
-const BADGE_TONE_CLASS: Record<ItemBadgeTone, string> = {
-  violet: "bg-violet-900/30 text-violet-300 border-violet-700/30",
-  amber: "bg-amber-900/30 text-amber-300 border-amber-700/30",
-  emerald: "bg-emerald-900/30 text-emerald-300 border-emerald-700/30",
-};
-
-function getPoolItemMeta(pool: string, item: string): PoolItemMeta | null {
-  if (pool === "weapon_mastery") {
-    const weapon = getBaseItem(item);
-    if (!weapon) return null;
-    const damage =
-      weapon.versatileDamage && weapon.damage
-        ? `${weapon.damage}/${weapon.versatileDamage}`
-        : (weapon.damage ?? "");
-    const mastery = weapon.mastery?.[0];
-    return {
-      primaryDetail: damage || undefined,
-      badge: mastery ? { label: mastery, tone: "violet" } : undefined,
-    };
-  }
-
-  if (pool === "fighting_style") {
-    const feat = getFeat(item);
-    if (!feat) return null;
-    const sub = feat.choices?.filter((c) => c.timing === "permanent") ?? [];
-    return {
-      subChoices: sub.length > 0 ? sub : undefined,
-    };
-  }
-
-  return null;
-}
-
-// ---------------------------------------------------------------------------
-// Static pool data
-// ---------------------------------------------------------------------------
-
-const ALL_SKILLS: string[] = [
-  "Acrobatics",
-  "Animal Handling",
-  "Arcana",
-  "Athletics",
-  "Deception",
-  "History",
-  "Insight",
-  "Intimidation",
-  "Investigation",
-  "Medicine",
-  "Nature",
-  "Perception",
-  "Performance",
-  "Persuasion",
-  "Religion",
-  "Sleight of Hand",
-  "Stealth",
-  "Survival",
-];
-
-const ALL_ABILITIES: string[] = [
-  "Strength",
-  "Dexterity",
-  "Constitution",
-  "Intelligence",
-  "Wisdom",
-  "Charisma",
-];
-
-const COMMON_LANGUAGES: string[] = [
-  "Common",
-  "Dwarvish",
-  "Elvish",
-  "Giant",
-  "Gnomish",
-  "Goblin",
-  "Halfling",
-  "Orc",
-  "Abyssal",
-  "Celestial",
-  "Deep Speech",
-  "Draconic",
-  "Infernal",
-  "Primordial",
-  "Sylvan",
-  "Undercommon",
-];
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-/** Derives the candidate item list for pool-based choices. */
-function resolvePool(choice: Extract<FeatureChoice, { pool: string }>): string[] | null {
-  const { pool, from } = choice;
-
-  // If a constrained list is supplied, always prefer it.
-  if (from && from.length > 0) return from;
-
-  switch (pool) {
-    case "skill_proficiency":
-    case "skill_expertise":
-    case "skill_proficiency_or_expertise":
-      return ALL_SKILLS;
-
-    case "ability_score":
-      return ALL_ABILITIES;
-
-    case "language":
-      return COMMON_LANGUAGES;
-
-    case "tool":
-      // No universal list — caller must supply `from`
-      return null;
-
-    case "fighting_style": {
-      const fightingStyleFeats = featsArray.filter((f) => f.category === "Fighting Style");
-      return fightingStyleFeats.map((f) => f.name);
-    }
-
-    case "spell_cantrip": {
-      const cantrips = spellsArray.filter((s) => s.level === 0);
-      if (from && from.length > 0) {
-        return cantrips.filter((s) => s.classes.some((c) => from.includes(c))).map((s) => s.name);
-      }
-      return cantrips.map((s) => s.name);
-    }
-
-    case "weapon_mastery": {
-      // Pool = all weapons that carry a Mastery property in the base-items DB.
-      // Class-specific filters (e.g. Barbarian's "melee only") can be supplied
-      // via `from`; otherwise the player picks from any mastery-bearing weapon.
-      const masteryWeapons = baseItemsArray.filter(
-        (i) => i.weapon && i.mastery && i.mastery.length > 0,
-      );
-      const filtered =
-        from && from.length > 0
-          ? masteryWeapons.filter((w) => from.includes(w.name))
-          : masteryWeapons;
-      return filtered.map((w) => w.name).sort();
-    }
-
-    default:
-      return null;
-  }
-}
-
-/** Remaining picks label. */
 function remainingLabel(count: number, selected: number): string {
   const rem = count - selected;
   if (rem <= 0) return "All picked";
   return `Pick ${rem} of ${count}`;
 }
-
-// ---------------------------------------------------------------------------
-// Shared selection helpers
-// ---------------------------------------------------------------------------
 
 function toggleItem(selected: string[], item: string, count: number, radio: boolean): string[] {
   if (radio) {
@@ -210,32 +32,37 @@ function toggleItem(selected: string[], item: string, count: number, radio: bool
 }
 
 // ---------------------------------------------------------------------------
-// Sub-renderers
+// OptionRow — single card in the unified grid
 // ---------------------------------------------------------------------------
 
-// ---- Options-based --------------------------------------------------------
-
-interface OptionCardProps {
-  option: ChoiceOption;
+interface OptionRowProps {
+  option: ResolvedOption;
   isSelected: boolean;
-  onToggle: () => void;
   radio: boolean;
   disabled: boolean;
-  /** Nested choice UI rendered below the card when selected */
+  onToggle: () => void;
+  onInfo: (e: React.MouseEvent) => void;
   nested?: React.ReactNode;
 }
 
-function OptionCard({ option, isSelected, onToggle, radio, disabled, nested }: OptionCardProps) {
+function OptionRow({
+  option,
+  isSelected,
+  radio,
+  disabled,
+  onToggle,
+  onInfo,
+  nested,
+}: OptionRowProps) {
   return (
-    <div className="flex flex-col">
-      <button
-        type="button"
-        aria-pressed={isSelected}
-        disabled={disabled && !isSelected}
-        onClick={onToggle}
+    <div
+      aria-disabled={option.disabled ? true : undefined}
+      title={option.disabled && option.disabledReason ? option.disabledReason : undefined}
+      className={option.disabled ? "opacity-40" : undefined}
+    >
+      <div
         className={[
-          "text-left w-full rounded-lg border p-3 transition-all duration-150",
-          "focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/60",
+          "flex items-center gap-2 w-full rounded-lg border px-3 py-2 transition-all duration-150",
           isSelected
             ? "border-amber-500/60 bg-amber-900/20"
             : "border-gray-700/30 bg-gray-800/30 hover:border-gray-600/50 hover:bg-gray-800/50",
@@ -244,13 +71,18 @@ function OptionCard({ option, isSelected, onToggle, radio, disabled, nested }: O
           .filter(Boolean)
           .join(" ")}
       >
-        {/* Header row */}
-        <div className="flex items-start gap-2">
-          {/* Checkbox / radio indicator */}
+        {/* Checkbox / radio — clicking the whole row toggles */}
+        <button
+          type="button"
+          aria-pressed={isSelected}
+          disabled={(disabled || !!option.disabled) && !isSelected}
+          onClick={onToggle}
+          className="flex items-center gap-2 flex-1 min-w-0 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/60 rounded"
+        >
           <span
             aria-hidden="true"
             className={[
-              "mt-0.5 shrink-0 w-4 h-4 rounded border flex items-center justify-center",
+              "shrink-0 w-4 h-4 border flex items-center justify-center",
               radio ? "rounded-full" : "rounded",
               isSelected
                 ? "bg-amber-500 border-amber-500 text-gray-900"
@@ -276,509 +108,83 @@ function OptionCard({ option, isSelected, onToggle, radio, disabled, nested }: O
               </svg>
             )}
           </span>
-
-          <div className="flex-1 min-w-0">
-            <div className="text-sm font-semibold text-gray-200">{option.label}</div>
-            {option.description && (
-              <div className="mt-1 text-xs text-gray-400 leading-relaxed">
-                <RichText text={option.description} />
-              </div>
-            )}
-            {option.effects && (
-              <div className="mt-2">
-                <EffectSummary effects={option.effects} />
-              </div>
-            )}
-          </div>
-        </div>
-      </button>
-
-      {/* Nested choices rendered outside the button to avoid invalid DOM nesting */}
-      {isSelected && nested && (
-        <div className="ml-4 pl-4 border-l-2 border-amber-500/20 mt-3">{nested}</div>
-      )}
-    </div>
-  );
-}
-
-// ---- Pool: pill buttons (≤ 10 items) --------------------------------------
-
-interface PillGridProps {
-  items: string[];
-  selected: string[];
-  count: number;
-  onToggle: (item: string) => void;
-  disabled: boolean;
-  /** If provided, renders an InfoButton on each pill that calls this handler */
-  onInfo?: (item: string, e: React.MouseEvent) => void;
-}
-
-function PillGrid({ items, selected, count, onToggle, disabled, onInfo }: PillGridProps) {
-  return (
-    <div className="flex flex-wrap gap-2">
-      {items.map((item) => {
-        const isSelected = selected.includes(item);
-        const isDisabled = disabled || (!isSelected && selected.length >= count);
-        return (
-          <div key={item} className="inline-flex items-center gap-1">
-            <button
-              type="button"
-              aria-pressed={isSelected}
-              disabled={isDisabled && !isSelected}
-              onClick={() => onToggle(item)}
-              className={[
-                "px-3 py-1.5 rounded-full text-sm border transition-all duration-150",
-                "focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/60",
-                isSelected
-                  ? "border-amber-500/50 bg-amber-900/20 text-amber-200"
-                  : "border-gray-600/40 bg-gray-800/40 text-gray-300 hover:border-gray-500/60 hover:text-gray-200",
-                isDisabled && !isSelected ? "opacity-40 cursor-not-allowed" : "cursor-pointer",
-              ]
-                .filter(Boolean)
-                .join(" ")}
-            >
-              {item}
-            </button>
-            {onInfo && <InfoButton onClick={(e) => onInfo(item, e)} />}
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-// ---- Pill info popovers ---------------------------------------------------
-
-function FeatInfoPopover({
-  feat,
-  position,
-  onClose,
-}: {
-  feat: FeatDb;
-  position: { x: number; y: number };
-  onClose: () => void;
-}) {
-  return (
-    <DetailPopover title={feat.name} onClose={onClose} position={position}>
-      <div className="space-y-3">
-        {feat.description && (
-          <div className="text-sm text-gray-300 leading-relaxed">
-            <RichText text={feat.description} />
-          </div>
-        )}
-        {feat.effects && <EffectSummary effects={feat.effects} />}
-      </div>
-    </DetailPopover>
-  );
-}
-
-function WeaponInfoPopover({
-  weapon,
-  position,
-  onClose,
-}: {
-  weapon: BaseItemDb;
-  position: { x: number; y: number };
-  onClose: () => void;
-}) {
-  return (
-    <DetailPopover title={weapon.name} onClose={onClose} position={position}>
-      <div className="space-y-3">
-        <div className="flex items-center gap-2 flex-wrap">
-          {weapon.weaponCategory && (
-            <span className="text-xs px-2 py-0.5 rounded-full bg-gray-700/50 text-gray-300 border border-gray-600/30">
-              {weapon.weaponCategory === "simple" ? "Simple" : "Martial"}
-            </span>
-          )}
-          {weapon.damage && (
-            <span className="text-xs px-2 py-0.5 rounded-full bg-gray-700/50 text-gray-300 border border-gray-600/30">
-              {weapon.damage} {weapon.damageType ?? ""}
-            </span>
-          )}
-          {(weapon.mastery ?? []).map((m) => (
-            <span
-              key={m}
-              className="text-xs px-2 py-0.5 rounded-full bg-amber-900/40 text-amber-300 border border-amber-700/40"
-            >
-              Mastery: {m}
-            </span>
-          ))}
-        </div>
-        {weapon.properties && weapon.properties.length > 0 && (
-          <div className="text-xs text-gray-400">
-            <span className="text-gray-500">Properties:</span> {weapon.properties.join(", ")}
-          </div>
-        )}
-        {weapon.description && (
-          <div className="text-sm text-gray-300 leading-relaxed">{weapon.description}</div>
-        )}
-      </div>
-    </DetailPopover>
-  );
-}
-
-function SpellInfoPopover({
-  spell,
-  position,
-  onClose,
-}: {
-  spell: SpellDb;
-  position: { x: number; y: number };
-  onClose: () => void;
-}) {
-  return (
-    <DetailPopover title={spell.name} onClose={onClose} position={position}>
-      <div className="space-y-3">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-xs px-2 py-0.5 rounded-full bg-gray-700/50 text-gray-300 border border-gray-600/30">
-            {spell.level === 0 ? "Cantrip" : `Level ${spell.level}`}
-          </span>
-          <span className="text-xs px-2 py-0.5 rounded-full bg-gray-700/50 text-gray-300 border border-gray-600/30">
-            {spell.school}
-          </span>
-          {spell.concentration && (
-            <span className="text-xs px-2 py-0.5 rounded-full bg-teal-900/40 text-teal-300 border border-teal-700/30">
-              Concentration
-            </span>
-          )}
-        </div>
-        <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
-          <div>
-            <span className="text-gray-500">Casting Time:</span>{" "}
-            <span className="text-gray-300">{spell.castingTime}</span>
-          </div>
-          <div>
-            <span className="text-gray-500">Range:</span>{" "}
-            <span className="text-gray-300">{spell.range}</span>
-          </div>
-          <div>
-            <span className="text-gray-500">Duration:</span>{" "}
-            <span className="text-gray-300">{spell.duration}</span>
-          </div>
-        </div>
-        <div className="text-sm text-gray-300 leading-relaxed">
-          <RichText text={spell.description} />
-        </div>
-      </div>
-    </DetailPopover>
-  );
-}
-
-// ---- Pool: checkbox grid (11-30 items) ------------------------------------
-
-interface CheckboxGridProps {
-  items: string[];
-  selected: string[];
-  count: number;
-  onToggle: (item: string) => void;
-  disabled: boolean;
-}
-
-function CheckboxGrid({ items, selected, count, onToggle, disabled }: CheckboxGridProps) {
-  return (
-    <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-1.5">
-      {items.map((item) => {
-        const isSelected = selected.includes(item);
-        const isDisabled = disabled || (!isSelected && selected.length >= count);
-        return (
-          <label
-            key={item}
-            className={[
-              "flex items-center gap-2 text-sm rounded px-2 py-1 transition-colors cursor-pointer",
-              isSelected ? "text-amber-200" : "text-gray-300 hover:text-gray-200",
-              isDisabled && !isSelected ? "opacity-40 cursor-not-allowed" : "",
-            ]
-              .filter(Boolean)
-              .join(" ")}
-          >
-            <input
-              type="checkbox"
-              checked={isSelected}
-              disabled={isDisabled && !isSelected}
-              onChange={() => onToggle(item)}
-              className="sr-only"
-            />
-            <span
-              aria-hidden="true"
-              className={[
-                "w-4 h-4 shrink-0 rounded border flex items-center justify-center",
-                isSelected
-                  ? "bg-amber-500 border-amber-500 text-gray-900"
-                  : "bg-gray-800 border-gray-600",
-              ].join(" ")}
-            >
-              {isSelected && (
-                <svg
-                  className="w-2.5 h-2.5"
-                  viewBox="0 0 10 10"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="M1.5 5l2.5 2.5 4.5-4.5" />
-                </svg>
-              )}
-            </span>
-            {item}
-          </label>
-        );
-      })}
-    </div>
-  );
-}
-
-// ---- Pool: card grid (rich items with damage / badges) -------------------
-
-interface RichCardProps {
-  item: string;
-  meta: PoolItemMeta;
-  isSelected: boolean;
-  disabled: boolean;
-  onToggle: () => void;
-  onInfo?: (e: React.MouseEvent) => void;
-}
-
-function RichCard({ item, meta, isSelected, disabled, onToggle, onInfo }: RichCardProps) {
-  return (
-    <button
-      type="button"
-      aria-pressed={isSelected}
-      disabled={disabled && !isSelected}
-      onClick={onToggle}
-      className={[
-        "text-left w-full rounded-lg border px-3 py-2.5 transition-all duration-150",
-        "focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/60",
-        isSelected
-          ? "border-amber-500/60 bg-amber-900/20"
-          : "border-gray-700/30 bg-gray-800/30 hover:border-gray-600/50 hover:bg-gray-800/50",
-        disabled && !isSelected ? "opacity-40 cursor-not-allowed" : "cursor-pointer",
-      ]
-        .filter(Boolean)
-        .join(" ")}
-    >
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2 min-w-0">
-          <span
-            aria-hidden="true"
-            className={[
-              "shrink-0 w-3.5 h-3.5 rounded border flex items-center justify-center",
-              isSelected
-                ? "bg-amber-500 border-amber-500 text-gray-900"
-                : "bg-gray-800 border-gray-600",
-            ].join(" ")}
-          >
-            {isSelected && (
-              <svg
-                className="w-2 h-2"
-                viewBox="0 0 10 10"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={2}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <path d="M1.5 5l2.5 2.5 4.5-4.5" />
-              </svg>
-            )}
-          </span>
           <span
             className={`text-sm font-medium truncate ${
               isSelected ? "text-amber-200" : "text-gray-200"
             }`}
           >
-            {item}
+            {option.name}
           </span>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          {meta.primaryDetail && (
-            <span className="text-xs text-gray-500 font-mono tabular-nums">
-              {meta.primaryDetail}
-            </span>
-          )}
-          {meta.badge && (
-            <span
-              className={`text-[10px] px-1.5 py-0.5 rounded-full border whitespace-nowrap ${BADGE_TONE_CLASS[meta.badge.tone]}`}
-            >
-              {meta.badge.label}
-            </span>
-          )}
-          {onInfo && <InfoButton onClick={onInfo} />}
-        </div>
+        </button>
+
+        {/* Info button */}
+        <InfoButton onClick={onInfo} />
       </div>
-    </button>
-  );
-}
 
-interface CardGridProps {
-  items: string[];
-  metaByItem: Record<string, PoolItemMeta>;
-  selected: string[];
-  count: number;
-  onToggle: (item: string) => void;
-  disabled: boolean;
-  onInfo?: (item: string, e: React.MouseEvent) => void;
-}
-
-function CardGrid({
-  items,
-  metaByItem,
-  selected,
-  count,
-  onToggle,
-  disabled,
-  onInfo,
-}: CardGridProps) {
-  const allPicked = selected.length >= count;
-  return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
-      {items.map((item) => {
-        const isSelected = selected.includes(item);
-        return (
-          <RichCard
-            key={item}
-            item={item}
-            meta={metaByItem[item] ?? {}}
-            isSelected={isSelected}
-            disabled={disabled || (!isSelected && allPicked)}
-            onToggle={() => onToggle(item)}
-            onInfo={onInfo ? (e) => onInfo(item, e) : undefined}
-          />
-        );
-      })}
+      {/* Nested choices rendered outside the selection row */}
+      {isSelected && nested && (
+        <div className="ml-4 pl-4 border-l-2 border-amber-500/20 mt-2 flex flex-col gap-2">
+          {nested}
+        </div>
+      )}
     </div>
   );
 }
 
-// ---- Pool: searchable list (30+ items) ------------------------------------
+// ---------------------------------------------------------------------------
+// Search input — only rendered when options.length > 15
+// ---------------------------------------------------------------------------
 
-interface SearchableListProps {
-  items: string[];
-  selected: string[];
-  count: number;
-  onToggle: (item: string) => void;
-  disabled: boolean;
+interface SearchInputProps {
+  query: string;
+  onChange: (q: string) => void;
 }
 
-function SearchableList({ items, selected, count, onToggle, disabled }: SearchableListProps) {
-  const [query, setQuery] = useState("");
-
-  const filtered = useMemo(() => {
-    if (!query.trim()) return items;
-    const lower = query.trim().toLowerCase();
-    return items.filter((i) => i.toLowerCase().includes(lower));
-  }, [items, query]);
-
+function SearchInput({ query, onChange }: SearchInputProps) {
   return (
-    <div className="flex flex-col gap-2">
-      {/* Search input */}
-      <div className="relative">
-        <svg
-          className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={2}
-          aria-hidden="true"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"
-          />
-        </svg>
-        <input
-          type="text"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search..."
-          aria-label="Search options"
-          className="w-full bg-gray-800/60 border border-gray-700/40 rounded-lg pl-10 pr-4 py-2 text-gray-200 placeholder-gray-500 focus:border-amber-500/50 focus:outline-none text-sm transition-colors"
+    <div className="relative">
+      <svg
+        className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        strokeWidth={2}
+        aria-hidden="true"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"
         />
-        {query.length > 0 && (
-          <button
-            type="button"
-            onClick={() => setQuery("")}
-            aria-label="Clear search"
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors"
+      </svg>
+      <input
+        type="text"
+        value={query}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="Search..."
+        aria-label="Search options"
+        className="w-full bg-gray-800/60 border border-gray-700/40 rounded-lg pl-10 pr-9 py-2 text-gray-200 placeholder-gray-500 focus:border-amber-500/50 focus:outline-none text-sm transition-colors"
+      />
+      {query.length > 0 && (
+        <button
+          type="button"
+          onClick={() => onChange("")}
+          aria-label="Clear search"
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors"
+        >
+          <svg
+            className="w-4 h-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+            aria-hidden="true"
           >
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-              aria-hidden="true"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        )}
-      </div>
-
-      {/* Scrollable list */}
-      <div className="max-h-52 overflow-y-auto rounded-lg border border-gray-700/30 bg-gray-900/30 divide-y divide-gray-700/20">
-        {filtered.length === 0 ? (
-          <div className="py-4 text-center text-sm text-gray-500">No results</div>
-        ) : (
-          filtered.map((item) => {
-            const isSelected = selected.includes(item);
-            const isDisabled = disabled || (!isSelected && selected.length >= count);
-            return (
-              <button
-                key={item}
-                type="button"
-                aria-pressed={isSelected}
-                disabled={isDisabled && !isSelected}
-                onClick={() => onToggle(item)}
-                className={[
-                  "w-full text-left px-3 py-2 text-sm transition-colors",
-                  "focus:outline-none focus-visible:bg-gray-800/60",
-                  isSelected
-                    ? "bg-amber-900/20 text-amber-200 hover:bg-amber-900/30"
-                    : "text-gray-300 hover:bg-gray-800/40 hover:text-gray-200",
-                  isDisabled && !isSelected ? "opacity-40 cursor-not-allowed" : "cursor-pointer",
-                ]
-                  .filter(Boolean)
-                  .join(" ")}
-              >
-                <span className="flex items-center gap-2">
-                  {isSelected && (
-                    <svg
-                      className="w-3.5 h-3.5 text-amber-400 shrink-0"
-                      viewBox="0 0 10 10"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth={2}
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      aria-hidden="true"
-                    >
-                      <path d="M1.5 5l2.5 2.5 4.5-4.5" />
-                    </svg>
-                  )}
-                  {!isSelected && <span className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />}
-                  {item}
-                </span>
-              </button>
-            );
-          })
-        )}
-      </div>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      )}
     </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Fallback label for unresolvable pools
-// ---------------------------------------------------------------------------
-
-function PoolFallback({ label }: { label: string }) {
-  return (
-    <p className="text-sm text-gray-500 italic">{label} — selection handled at class/feat level.</p>
   );
 }
 
@@ -789,18 +195,15 @@ function PoolFallback({ label }: { label: string }) {
 interface ChoicePickerProps {
   choice: FeatureChoice;
   selected: string[];
-  onSelect: (selections: string[]) => void;
-  /** Nested selections keyed by child choice id (used by options-based picks). */
-  nestedSelections?: Record<string, string[]>;
-  onNestedSelect?: (choiceId: string, selections: string[]) => void;
+  onSelect: (values: string[]) => void;
+  /** Context for resolving pool choices (e.g. className for weapon_mastery). */
+  ctx?: ResolveChoiceContext;
   /**
-   * Sub-choice picks for pool items that are themselves entities with their
-   * own choices (e.g. Druidic Warrior fighting style → cantrip pick). The
-   * parent owns the storage scope (typically state.featChoices[item]) so
-   * sub-choices flow through choice-to-effects correctly.
+   * Unified nested selections map keyed by choice ID (including nested IDs).
+   * Used for both options-based sub-choices and pool-item sub-choices.
    */
-  getSubChoiceSelections?: (item: string, subChoiceId: string) => string[];
-  onSubChoiceSelect?: (item: string, subChoiceId: string, values: string[]) => void;
+  nestedSelections?: Record<string, string[]>;
+  onNestedSelect?: (choiceId: string, values: string[]) => void;
   disabled?: boolean;
   className?: string;
 }
@@ -809,268 +212,113 @@ export function ChoicePicker({
   choice,
   selected,
   onSelect,
+  ctx,
   nestedSelections = {},
   onNestedSelect,
-  getSubChoiceSelections,
-  onSubChoiceSelect,
   disabled = false,
   className,
 }: ChoicePickerProps) {
   const radio = choice.count === 1;
-  const remainingText = remainingLabel(choice.count, selected.length);
   const allPicked = selected.length >= choice.count;
+  const remainingText = remainingLabel(choice.count, selected.length);
 
-  // Pill info popover state (fighting_style + spell_cantrip pools)
-  // Must be declared unconditionally per Rules of Hooks.
-  const [pillPopover, setPillPopover] = useState<
-    | { kind: "feat"; entity: FeatDb; position: { x: number; y: number } }
-    | { kind: "spell"; entity: SpellDb; position: { x: number; y: number } }
-    | { kind: "weapon"; entity: BaseItemDb; position: { x: number; y: number } }
-    | null
-  >(null);
+  const onEntityClick = useEntityClick();
 
-  // ---- Options-based -------------------------------------------------------
+  // Resolve options via shared adapter — no DB imports in this file
+  const resolvedOptions = useMemo(() => resolveChoice(choice, ctx), [choice, ctx]);
 
-  if ("options" in choice && choice.options) {
-    const handleToggle = (label: string) => {
-      if (disabled) return;
-      onSelect(toggleItem(selected, label, choice.count, radio));
-    };
+  // Search state — only used when options.length > 15
+  const [query, setQuery] = useState("");
 
-    return (
-      <div
-        className={["bg-gray-800/30 border border-gray-700/20 rounded-lg p-4", className]
-          .filter(Boolean)
-          .join(" ")}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between mb-3">
-          <span className="text-sm font-medium text-gray-300">{choice.label}</span>
-          <span
-            className={[
-              "text-xs px-2 py-0.5 rounded-full border",
-              allPicked
-                ? "border-emerald-600/40 bg-emerald-900/20 text-emerald-400"
-                : "border-amber-600/30 bg-amber-900/10 text-amber-400/80",
-            ].join(" ")}
-          >
-            {remainingText}
-          </span>
-        </div>
+  const visibleOptions = useMemo(() => {
+    if (resolvedOptions.length <= 15 || !query.trim()) return resolvedOptions;
+    const lower = query.trim().toLowerCase();
+    return resolvedOptions.filter((o) => o.name.toLowerCase().includes(lower));
+  }, [resolvedOptions, query]);
 
-        {/* Option cards */}
-        <div className="flex flex-col gap-2">
-          {choice.options.map((option: ChoiceOption) => {
-            const isSelected = selected.includes(option.label);
+  const handleToggle = (optionId: string) => {
+    if (disabled) return;
+    onSelect(toggleItem(selected, optionId, choice.count, radio));
+  };
 
-            // Build nested picker nodes for options that have sub-choices
-            const nestedNode =
-              isSelected && option.choices && option.choices.length > 0
-                ? option.choices.map((nestedChoice) => (
-                    <ChoicePicker
-                      key={nestedChoice.id}
-                      choice={nestedChoice}
-                      selected={nestedSelections[nestedChoice.id] ?? []}
-                      onSelect={(s) => onNestedSelect?.(nestedChoice.id, s)}
-                      nestedSelections={nestedSelections}
-                      onNestedSelect={onNestedSelect}
-                      disabled={disabled}
-                    />
-                  ))
-                : undefined;
-
-            return (
-              <OptionCard
-                key={option.label}
-                option={option}
-                isSelected={isSelected}
-                radio={radio}
-                disabled={disabled || (!isSelected && allPicked)}
-                onToggle={() => handleToggle(option.label)}
-                nested={
-                  nestedNode ? <div className="flex flex-col gap-3">{nestedNode}</div> : undefined
-                }
-              />
-            );
-          })}
-        </div>
-      </div>
+  const handleInfo = (option: ResolvedOption, e: React.MouseEvent) => {
+    e.stopPropagation();
+    onEntityClick?.(
+      option.detail.category,
+      option.detail.name,
+      { x: e.clientX, y: e.clientY },
+      option.detail.payload,
     );
-  }
+  };
 
-  // ---- Pool-based ----------------------------------------------------------
+  return (
+    <div
+      className={["bg-gray-800/30 border border-gray-700/20 rounded-lg p-4", className]
+        .filter(Boolean)
+        .join(" ")}
+    >
+      {/* Header */}
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-sm font-medium text-gray-300">{choice.label}</span>
+        <span
+          className={[
+            "text-xs px-2 py-0.5 rounded-full border",
+            allPicked
+              ? "border-emerald-600/40 bg-emerald-900/20 text-emerald-400"
+              : "border-amber-600/30 bg-amber-900/10 text-amber-400/80",
+          ].join(" ")}
+        >
+          {remainingText}
+        </span>
+      </div>
 
-  if ("pool" in choice && choice.pool) {
-    const poolChoice = choice as Extract<FeatureChoice, { pool: string }>;
-    const items = resolvePool(poolChoice);
-    const pool = poolChoice.pool;
+      {/* Search (only when > 15 options) */}
+      {resolvedOptions.length > 15 && (
+        <div className="mb-3">
+          <SearchInput query={query} onChange={setQuery} />
+        </div>
+      )}
 
-    const handleToggle = (item: string) => {
-      if (disabled) return;
-      onSelect(toggleItem(selected, item, choice.count, radio));
-    };
+      {/* Option grid */}
+      <div className="flex flex-col gap-1.5">
+        {visibleOptions.length === 0 && query.trim() && (
+          <p className="text-sm text-gray-500 italic py-2 text-center">No results</p>
+        )}
+        {visibleOptions.map((option) => {
+          const isSelected = selected.includes(option.id);
+          const isDisabled = disabled || !!option.disabled || (!isSelected && allPicked);
 
-    // Per-item metadata (rich card info + sub-choices) for this pool.
-    const metaByItem: Record<string, PoolItemMeta> = {};
-    if (items) {
-      for (const item of items) {
-        const meta = getPoolItemMeta(pool, item);
-        if (meta) metaByItem[item] = meta;
-      }
-    }
-    const anyRich = Object.values(metaByItem).some((m) => m.primaryDetail || m.badge);
+          // Build nested pickers for sub-choices unlocked by this option
+          const nestedNode =
+            isSelected && option.subChoices && option.subChoices.length > 0
+              ? option.subChoices.map((subChoice) => (
+                  <ChoicePicker
+                    key={subChoice.id}
+                    choice={subChoice}
+                    selected={nestedSelections[subChoice.id] ?? []}
+                    onSelect={(values) => onNestedSelect?.(subChoice.id, values)}
+                    ctx={ctx}
+                    nestedSelections={nestedSelections}
+                    onNestedSelect={onNestedSelect}
+                    disabled={disabled}
+                  />
+                ))
+              : undefined;
 
-    const openPopover = (item: string, e: React.MouseEvent) => {
-      e.stopPropagation();
-      const position = { x: e.clientX, y: e.clientY };
-      if (pool === "fighting_style") {
-        const feat = getFeat(item);
-        if (feat) setPillPopover({ kind: "feat", entity: feat, position });
-      } else if (pool === "spell_cantrip") {
-        const spell = getSpell(item);
-        if (spell) setPillPopover({ kind: "spell", entity: spell, position });
-      } else if (pool === "weapon_mastery") {
-        const weapon = getBaseItem(item);
-        if (weapon) setPillPopover({ kind: "weapon", entity: weapon, position });
-      }
-    };
-    const popoverPools = new Set<string>(["fighting_style", "spell_cantrip", "weapon_mastery"]);
-    const handlePillInfo = popoverPools.has(pool) ? openPopover : undefined;
-
-    // Render the picker body. CardGrid wins when any item carries a primaryDetail
-    // or badge; otherwise fall back to the size-driven Pill / Checkbox / Search tiers.
-    const renderPoolBody = () => {
-      if (!items) return <PoolFallback label={choice.label} />;
-
-      if (anyRich) {
-        return (
-          <CardGrid
-            items={items}
-            metaByItem={metaByItem}
-            selected={selected}
-            count={choice.count}
-            onToggle={handleToggle}
-            disabled={disabled}
-            onInfo={handlePillInfo}
-          />
-        );
-      }
-
-      if (items.length <= 10) {
-        return (
-          <PillGrid
-            items={items}
-            selected={selected}
-            count={choice.count}
-            onToggle={handleToggle}
-            disabled={disabled}
-            onInfo={handlePillInfo}
-          />
-        );
-      }
-
-      if (items.length <= 30) {
-        return (
-          <CheckboxGrid
-            items={items}
-            selected={selected}
-            count={choice.count}
-            onToggle={handleToggle}
-            disabled={disabled}
-          />
-        );
-      }
-
-      return (
-        <SearchableList
-          items={items}
-          selected={selected}
-          count={choice.count}
-          onToggle={handleToggle}
-          disabled={disabled}
-        />
-      );
-    };
-
-    // Sub-choice expansion for currently-selected items that own choices.
-    const renderSubChoices = () => {
-      if (!getSubChoiceSelections || !onSubChoiceSelect) return null;
-      const blocks = selected
-        .map((item) => {
-          const meta = metaByItem[item];
-          if (!meta?.subChoices?.length) return null;
           return (
-            <div key={item} className="flex flex-col gap-2">
-              <div className="text-xs font-semibold uppercase tracking-wider text-amber-400/70">
-                {item} Choices
-              </div>
-              {meta.subChoices.map((sub) => (
-                <ChoicePicker
-                  key={sub.id}
-                  choice={sub}
-                  selected={getSubChoiceSelections(item, sub.id)}
-                  onSelect={(values) => onSubChoiceSelect(item, sub.id, values)}
-                  disabled={disabled}
-                />
-              ))}
-            </div>
+            <OptionRow
+              key={option.id}
+              option={option}
+              isSelected={isSelected}
+              radio={radio}
+              disabled={isDisabled}
+              onToggle={() => handleToggle(option.id)}
+              onInfo={(e) => handleInfo(option, e)}
+              nested={nestedNode}
+            />
           );
-        })
-        .filter(Boolean);
-      if (blocks.length === 0) return null;
-      return <div className="mt-3 flex flex-col gap-3">{blocks}</div>;
-    };
-
-    return (
-      <div
-        className={["bg-gray-800/30 border border-gray-700/20 rounded-lg p-4", className]
-          .filter(Boolean)
-          .join(" ")}
-      >
-        <div className="flex items-center justify-between mb-3">
-          <span className="text-sm font-medium text-gray-300">{choice.label}</span>
-          {items && (
-            <span
-              className={[
-                "text-xs px-2 py-0.5 rounded-full border",
-                allPicked
-                  ? "border-emerald-600/40 bg-emerald-900/20 text-emerald-400"
-                  : "border-amber-600/30 bg-amber-900/10 text-amber-400/80",
-              ].join(" ")}
-            >
-              {remainingText}
-            </span>
-          )}
-        </div>
-
-        {renderPoolBody()}
-        {renderSubChoices()}
-
-        {pillPopover && pillPopover.kind === "feat" && (
-          <FeatInfoPopover
-            feat={pillPopover.entity}
-            position={pillPopover.position}
-            onClose={() => setPillPopover(null)}
-          />
-        )}
-        {pillPopover && pillPopover.kind === "spell" && (
-          <SpellInfoPopover
-            spell={pillPopover.entity}
-            position={pillPopover.position}
-            onClose={() => setPillPopover(null)}
-          />
-        )}
-        {pillPopover && pillPopover.kind === "weapon" && (
-          <WeaponInfoPopover
-            weapon={pillPopover.entity}
-            position={pillPopover.position}
-            onClose={() => setPillPopover(null)}
-          />
-        )}
+        })}
       </div>
-    );
-  }
-
-  // Malformed choice — render nothing
-  return null;
+    </div>
+  );
 }

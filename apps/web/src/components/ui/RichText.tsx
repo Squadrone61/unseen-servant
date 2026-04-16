@@ -17,6 +17,10 @@ const categoryStyles: Record<EntityCategory, string> = {
   background: "text-emerald-400",
   disease: "text-orange-400",
   status: "text-orange-400",
+  "ability-score": "text-amber-300",
+  "class-feature": "text-amber-300",
+  "choice-option": "text-gray-300",
+  "inventory-item": "text-amber-400",
 };
 
 const KNOWN_CATEGORIES = new Set<string>([
@@ -31,6 +35,10 @@ const KNOWN_CATEGORIES = new Set<string>([
   "disease",
   "status",
   "rule",
+  "ability-score",
+  "class-feature",
+  "choice-option",
+  "inventory-item",
 ]);
 
 // ---------------------------------------------------------------------------

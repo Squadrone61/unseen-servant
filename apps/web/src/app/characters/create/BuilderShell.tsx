@@ -7,6 +7,11 @@ import { Button } from "@/components/ui/Button";
 import { useBuilder } from "./BuilderContext";
 import { useComputedCharacter } from "./useComputedCharacter";
 import { CharacterSheet } from "@/components/character/CharacterSheet";
+import {
+  EntityPopoverProvider,
+  useEntityPopover,
+} from "@/components/character/EntityPopoverContext";
+import { EntityDetailPopover } from "@/components/character/EntityDetailPopover";
 import { useCharacterLibrary } from "@/hooks/useCharacterLibrary";
 import { SpeciesStep } from "./steps/SpeciesStep";
 import { BackgroundStep } from "./steps/BackgroundStep";
@@ -333,6 +338,66 @@ export function BuilderShell({ mode, editId, editName, editDynamicData }: Builde
   const topBarCurrent = isEditMode ? `Editing: ${editName ?? "Character"}` : "Create Character";
 
   return (
+    <EntityPopoverProvider>
+      <BuilderLayout
+        topBarCurrent={topBarCurrent}
+        character={character}
+        activeStep={activeStep}
+        prevStep={prevStep}
+        nextStep={nextStep}
+        nextStepLabel={nextStepLabel}
+        goToPreviousStep={goToPreviousStep}
+        goToNextStep={goToNextStep}
+        completedSteps={completedSteps}
+        isEditMode={isEditMode}
+        unlockedSteps={unlockedSteps}
+        onSelectStep={setActiveStep}
+        handleFinish={handleFinish}
+        canFinish={canFinish}
+        finishError={finishError}
+      />
+    </EntityPopoverProvider>
+  );
+}
+
+interface BuilderLayoutProps {
+  topBarCurrent: string;
+  character: ReturnType<typeof useComputedCharacter>["character"];
+  activeStep: StepId;
+  prevStep: StepDef | null;
+  nextStep: StepDef | null;
+  nextStepLabel: string | undefined;
+  goToPreviousStep: () => void;
+  goToNextStep: () => void;
+  completedSteps: Set<StepId>;
+  isEditMode: boolean;
+  unlockedSteps: Set<StepId>;
+  onSelectStep: (step: StepId) => void;
+  handleFinish: () => void;
+  canFinish: boolean;
+  finishError: string | null;
+}
+
+function BuilderLayout({
+  topBarCurrent,
+  character,
+  activeStep,
+  prevStep,
+  nextStep,
+  nextStepLabel,
+  goToPreviousStep,
+  goToNextStep,
+  completedSteps,
+  isEditMode,
+  unlockedSteps,
+  onSelectStep,
+  handleFinish,
+  canFinish,
+  finishError,
+}: BuilderLayoutProps) {
+  const { stack } = useEntityPopover();
+
+  return (
     <div className="min-h-screen flex flex-col bg-gray-950">
       <TopBar items={[{ label: "Characters", href: "/characters" }]} current={topBarCurrent} />
 
@@ -381,13 +446,17 @@ export function BuilderShell({ mode, editId, editName, editDynamicData }: Builde
           activeStep={activeStep}
           unlockedSteps={unlockedSteps}
           completedSteps={completedSteps}
-          onSelectStep={setActiveStep}
+          onSelectStep={onSelectStep}
           onFinish={handleFinish}
           canFinish={canFinish}
           finishError={finishError}
           finishLabel={isEditMode ? "Save Changes" : "Finish"}
         />
       </div>
+
+      {stack.map((entry) => (
+        <EntityDetailPopover key={entry.id} entry={entry} />
+      ))}
     </div>
   );
 }

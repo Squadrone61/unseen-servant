@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo, useCallback } from "react";
 import type {
   CharacterData,
   Spell,
@@ -27,12 +27,7 @@ import {
   getScoreCaps,
   getPassivePerception,
 } from "@unseen-servant/shared/character";
-import { useMemo } from "react";
 import { HPBar } from "./HPBar";
-import { AbilityDetailPopup } from "./AbilityDetailPopup";
-import { SpellDetailPopup } from "./SpellDetailPopup";
-import { ItemDetailPopup } from "./ItemDetailPopup";
-import { FeatureDetailPopup } from "./FeatureDetailPopup";
 import { ActionsTab } from "./tabs/ActionsTab";
 import { SpellsTab } from "./tabs/SpellsTab";
 import { InventoryTab } from "./tabs/InventoryTab";
@@ -50,15 +45,6 @@ function findAdvantages(advantages: AdvantageEntry[], ...subTypes: string[]): Ad
 }
 
 // ─── Types ───
-
-type ClickPosition = { x: number; y: number };
-
-type PopupState =
-  | { type: "ability"; id: keyof AbilityScores; position: ClickPosition }
-  | { type: "spell"; spell: Spell; position: ClickPosition }
-  | { type: "item"; item: Item; position: ClickPosition }
-  | { type: "feature"; feature: CharacterFeatureRef; position: ClickPosition }
-  | null;
 
 type TabId = "stats" | "actions" | "spells" | "inventory" | "features";
 
@@ -115,8 +101,7 @@ function CharacterSheetInner({ character, onCastAoE }: CharacterSheetProps) {
   const abilities = useMemo(() => getAbilities(character), [character]);
   const scoreCaps = useMemo(() => getScoreCaps(character), [character]);
   const [activeTab, setActiveTab] = useState<TabId>("actions");
-  const [popup, setPopup] = useState<PopupState>(null);
-  const { stack } = useEntityPopover();
+  const { stack, push } = useEntityPopover();
 
   // Find first class with spellcasting ability for primary spellcasting stats
   const primarySpellcasting = (() => {
@@ -129,6 +114,46 @@ function CharacterSheetInner({ character, onCastAoE }: CharacterSheetProps) {
   const isCaster = primarySpellcasting != null || s.spells.length > 0;
   const advantages = getAdvantages(character);
   const profBonus = Math.floor((getTotalLevel(s.classes) - 1) / 4) + 2;
+
+  const handleAbilityClick = useCallback(
+    (key: keyof AbilityScores, e: React.MouseEvent) => {
+      push("ability-score", key, { x: e.clientX, y: e.clientY }, { character, ability: key });
+    },
+    [push, character],
+  );
+
+  const handleSpellClick = useCallback(
+    (spell: Spell, e: React.MouseEvent) => {
+      push(
+        "spell",
+        spell.name,
+        { x: e.clientX, y: e.clientY },
+        undefined,
+        onCastAoE ? { onCastAoE } : undefined,
+      );
+    },
+    [push, onCastAoE],
+  );
+
+  const handleItemClick = useCallback(
+    (item: Item, e: React.MouseEvent) => {
+      push(
+        "inventory-item",
+        item.name,
+        { x: e.clientX, y: e.clientY },
+        { character, inventoryId: item.name },
+      );
+    },
+    [push, character],
+  );
+
+  const handleFeatureClick = useCallback(
+    (feature: CharacterFeatureRef, e: React.MouseEvent) => {
+      const featureId = feature.featureName ?? feature.dbName;
+      push("class-feature", featureId, { x: e.clientX, y: e.clientY }, { character, featureId });
+    },
+    [push, character],
+  );
 
   return (
     <div className="flex flex-col h-full text-sm">
@@ -318,9 +343,7 @@ function CharacterSheetInner({ character, onCastAoE }: CharacterSheetProps) {
                 <div
                   key={key}
                   className="bg-gray-900/60 border border-gray-700/50 rounded p-1 py-1.5 text-center relative cursor-pointer hover:border-amber-500/50 hover:bg-gray-900/70 transition-colors"
-                  onClick={(e) =>
-                    setPopup({ type: "ability", id: key, position: { x: e.clientX, y: e.clientY } })
-                  }
+                  onClick={(e) => handleAbilityClick(key, e)}
                 >
                   <div className="text-xs text-gray-500 uppercase tracking-wider font-medium">
                     {label}
@@ -360,82 +383,24 @@ function CharacterSheetInner({ character, onCastAoE }: CharacterSheetProps) {
         {activeTab === "actions" && (
           <ActionsTab
             character={character}
-            onItemClick={(item, e) =>
-              setPopup({ type: "item", item, position: { x: e.clientX, y: e.clientY } })
-            }
-            onFeatureClick={(feature, e) =>
-              setPopup({ type: "feature", feature, position: { x: e.clientX, y: e.clientY } })
-            }
+            onItemClick={handleItemClick}
+            onFeatureClick={handleFeatureClick}
           />
         )}
         {activeTab === "spells" && (
-          <SpellsTab
-            character={character}
-            onSpellClick={(spell, e) =>
-              setPopup({ type: "spell", spell, position: { x: e.clientX, y: e.clientY } })
-            }
-          />
+          <SpellsTab character={character} onSpellClick={handleSpellClick} />
         )}
         {activeTab === "inventory" && (
-          <InventoryTab
-            character={character}
-            onItemClick={(item, e) =>
-              setPopup({ type: "item", item, position: { x: e.clientX, y: e.clientY } })
-            }
-          />
+          <InventoryTab character={character} onItemClick={handleItemClick} />
         )}
         {activeTab === "features" && (
-          <FeaturesTab
-            character={character}
-            onFeatureClick={(feature, e) =>
-              setPopup({ type: "feature", feature, position: { x: e.clientX, y: e.clientY } })
-            }
-          />
+          <FeaturesTab character={character} onFeatureClick={handleFeatureClick} />
         )}
       </div>
 
-      {/* Popup popovers */}
-      {popup?.type === "ability" && (
-        <AbilityDetailPopup
-          abilityKey={popup.id}
-          character={character}
-          onClose={() => setPopup(null)}
-          position={popup.position}
-        />
-      )}
-      {popup?.type === "spell" && (
-        <SpellDetailPopup
-          spell={popup.spell}
-          onClose={() => setPopup(null)}
-          position={popup.position}
-          onCastAoE={onCastAoE}
-        />
-      )}
-      {popup?.type === "item" && (
-        <ItemDetailPopup
-          item={popup.item}
-          onClose={() => setPopup(null)}
-          position={popup.position}
-        />
-      )}
-      {popup?.type === "feature" && (
-        <FeatureDetailPopup
-          feature={popup.feature}
-          onClose={() => setPopup(null)}
-          position={popup.position}
-        />
-      )}
-
-      {/* Entity popover stack (nested popovers from RichText entity clicks) */}
+      {/* Entity popover stack — all detail clicks (ability, spell, item, feature, rich-text links) */}
       {stack.map((entry) => (
-        <EntityDetailPopover
-          key={entry.id}
-          id={entry.id}
-          category={entry.category}
-          name={entry.name}
-          position={entry.position}
-          level={entry.level}
-        />
+        <EntityDetailPopover key={entry.id} entry={entry} />
       ))}
     </div>
   );

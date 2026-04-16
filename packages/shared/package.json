@@ -11,6 +11,7 @@
     "./data": "./src/data/index.ts",
     "./builders": "./src/builders/index.ts",
     "./character": "./src/character/index.ts",
+    "./detail": "./src/detail/index.ts",
     "./test-helpers": "./src/__tests__/helpers/makeBuilderState.ts"
   },
   "scripts": {

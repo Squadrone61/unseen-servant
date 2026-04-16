@@ -124,7 +124,11 @@ export type EntityCategory =
   | "background"
   | "disease"
   | "status"
-  | "rule";
+  | "rule"
+  | "ability-score"
+  | "class-feature"
+  | "choice-option"
+  | "inventory-item";
 
 // ---------------------------------------------------------------------------
 // ModifierTarget

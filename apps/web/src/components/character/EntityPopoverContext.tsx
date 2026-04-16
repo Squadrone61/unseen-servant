@@ -2,22 +2,41 @@
 
 import { createContext, useCallback, useContext, useState, type ReactNode } from "react";
 import type { EntityCategory } from "@unseen-servant/shared/types";
+import type { EntityDetailPayload } from "@unseen-servant/shared/detail";
+import type { StartPlacementParams } from "@/hooks/useAoEPlacement";
+
+// ---------------------------------------------------------------------------
+// Action handlers passed alongside the entry (frontend-only, not serializable)
+// ---------------------------------------------------------------------------
+
+export interface PopoverActionHandlers {
+  /** Only relevant for spell entries that have an AoE area. */
+  onCastAoE?: (params: StartPlacementParams) => void;
+}
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
-interface PopoverEntry {
+export interface PopoverEntry {
   id: string;
   category: EntityCategory;
   name: string;
   position: { x: number; y: number };
   level: number;
+  payload?: EntityDetailPayload[EntityCategory];
+  actionHandlers?: PopoverActionHandlers;
 }
 
 interface EntityPopoverContextType {
   stack: PopoverEntry[];
-  push: (category: EntityCategory, name: string, position: { x: number; y: number }) => void;
+  push: (
+    category: EntityCategory,
+    name: string,
+    position: { x: number; y: number },
+    payload?: EntityDetailPayload[EntityCategory],
+    actionHandlers?: PopoverActionHandlers,
+  ) => void;
   pop: () => void;
   closeAll: () => void;
   isTopmost: (id: string) => boolean;
@@ -39,17 +58,27 @@ export function EntityPopoverProvider({ children }: { children: ReactNode }) {
   const [stack, setStack] = useState<PopoverEntry[]>([]);
 
   const push = useCallback(
-    (category: EntityCategory, name: string, position: { x: number; y: number }) => {
-      // Don't open the same entity if it's already the topmost
+    (
+      category: EntityCategory,
+      name: string,
+      position: { x: number; y: number },
+      payload?: EntityDetailPayload[EntityCategory],
+      actionHandlers?: PopoverActionHandlers,
+    ) => {
+      // Don't open the same entity if it's already the topmost.
+      // Equality considers category + name. For contextual categories that may
+      // differ by payload, we treat any new push as distinct.
       setStack((prev) => {
         const top = prev[prev.length - 1];
-        if (top && top.category === category && top.name === name) return prev;
+        if (top && top.category === category && top.name === name && !payload) return prev;
         const entry: PopoverEntry = {
           id: `ep-${++nextId}`,
           category,
           name,
           position,
           level: prev.length,
+          payload,
+          actionHandlers,
         };
         return [...prev, entry];
       });
@@ -80,7 +109,7 @@ export function EntityPopoverProvider({ children }: { children: ReactNode }) {
 }
 
 // ---------------------------------------------------------------------------
-// Hook
+// Hooks
 // ---------------------------------------------------------------------------
 
 export function useEntityPopover() {
@@ -98,8 +127,13 @@ export function useEntityPopover() {
 export function useEntityClick() {
   const ctx = useContext(EntityPopoverContext);
   const handleEntityClick = useCallback(
-    (category: EntityCategory, name: string, position: { x: number; y: number }) => {
-      ctx?.push(category, name, position);
+    (
+      category: EntityCategory,
+      name: string,
+      position: { x: number; y: number },
+      payload?: EntityDetailPayload[EntityCategory],
+    ) => {
+      ctx?.push(category, name, position, payload);
     },
     [ctx],
   );
