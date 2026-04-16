@@ -921,7 +921,7 @@
                 "name": "Psionic Energy Dice",
                 "maxUses": "table(3:4, 5:6, 9:8, 11:8, 13:10, 17:12)",
                 "longRest": "all",
-                "shortRest": "all"
+                "shortRest": 1
               },
               {
                 "type": "note",
@@ -936,6 +936,14 @@
           "className": "Fighter",
           "subclassName": "Psi Warrior",
           "description": "When you or another creature you can see within 30 feet of you takes damage, you can take a {rule:Reaction} to expend one Psionic Energy Die, roll the die, and reduce the damage taken by the number rolled plus your Intelligence modifier (minimum reduction of 1), as you create a momentary shield of telekinetic force.",
+          "effects": {
+            "properties": [
+              {
+                "type": "note",
+                "text": "Reaction: expend one Psionic Energy Die when you or a creature you can see within 30 ft takes damage. Roll the die; reduce that damage by the result + INT modifier (minimum reduction of 1). Uses the shared Psionic Energy Dice resource from Psionic Power."
+              }
+            ]
+          },
           "activationType": "reaction"
         },
         {
@@ -944,6 +952,14 @@
           "className": "Fighter",
           "subclassName": "Psi Warrior",
           "description": "You can propel your weapons with psionic force. Once on each of your turns, immediately after you hit a target within 30 feet of yourself with an attack and deal damage to it with a weapon, you can expend one Psionic Energy Die, rolling it and dealing Force damage to the target equal to the number rolled plus your Intelligence modifier.",
+          "effects": {
+            "properties": [
+              {
+                "type": "note",
+                "text": "Once per turn: immediately after you hit a target within 30 ft with a weapon and deal damage, expend one Psionic Energy Die to deal bonus Force damage equal to the die roll + INT modifier. Uses the shared Psionic Energy Dice resource from Psionic Power."
+              }
+            ]
+          },
           "activationType": "action"
         },
         {
@@ -952,6 +968,14 @@
           "className": "Fighter",
           "subclassName": "Psi Warrior",
           "description": "As a {action:Magic} action, choose one target you can see within 30 feet of yourself; the target must be a loose object that is Large or smaller or one willing creature other than you. You transport the target up to 30 feet to an unoccupied space you can see. Alternatively, if the target is a Tiny object, you can transport it to or from your hand. Once you take this action, you can't do so again until you finish a {rule:Short Rest} or {rule:Long Rest} unless you expend a Psionic Energy Die (no action required) to restore your use of it.",
+          "effects": {
+            "properties": [
+              {
+                "type": "note",
+                "text": "Magic action: telekinetically move one Large-or-smaller loose object or willing creature within 30 ft to an unoccupied space within 30 ft you can see (Tiny objects can be moved to/from your hand). Recharges on Short or Long Rest, or spend one Psionic Energy Die (no action) to restore the use immediately. Uses the shared Psionic Energy Dice resource from Psionic Power."
+              }
+            ]
+          },
           "activationType": "action"
         },
         {
