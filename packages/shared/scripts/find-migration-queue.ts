@@ -1,20 +1,22 @@
 #!/usr/bin/env tsx
 /**
- * find-migration-queue.ts — one-shot helper
+ * find-migration-queue.ts — note/empty enumeration diagnostic
  *
  * Enumerates player-build DB entities whose mechanical payload is either
  *   - "note_only": has `effects` but every property is a `note` placeholder
  *                  (no modifiers, no action, no activation, no structured properties)
  *   - "empty":     has no effects / no activation / no choices at all
  *
- * Categories covered in this pass: feats, optional features, species,
- * backgrounds, class features, subclass features.
+ * Categories covered: feats, optional features, species, backgrounds,
+ * class features, subclass features.
  *
  * Output:
  *   .testing/migration-queue.json           — structured queue (per-entry rows)
  *   .testing/migration-queue-summary.md     — human-readable summary for triage
  *
- * This script is disposable — once the migration lands, delete it.
+ * Complementary to audit-data.ts (which checks schema validity). This one
+ * surfaces *which* entries are still relying on note placeholders so a future
+ * migration pass can target them when new effect types are added.
  */
 
 import fs from "node:fs";
