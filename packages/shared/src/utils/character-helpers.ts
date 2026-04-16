@@ -343,7 +343,7 @@ export const ABILITY_FULL_NAMES: Record<keyof AbilityScores, string> = {
  */
 export const SKILL_DISPLAY_NAMES: Record<string, string> = {
   acrobatics: "Acrobatics",
-  "animal-handling": "Animal Handling",
+  animal_handling: "Animal Handling",
   arcana: "Arcana",
   athletics: "Athletics",
   deception: "Deception",
@@ -357,7 +357,7 @@ export const SKILL_DISPLAY_NAMES: Record<string, string> = {
   performance: "Performance",
   persuasion: "Persuasion",
   religion: "Religion",
-  "sleight-of-hand": "Sleight of Hand",
+  sleight_of_hand: "Sleight of Hand",
   stealth: "Stealth",
   survival: "Survival",
 };

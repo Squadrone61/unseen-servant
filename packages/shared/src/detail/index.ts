@@ -12,6 +12,7 @@ import type {
 import { getAbilities, getSkills, getSavingThrows } from "../character/resolve";
 import {
   ABILITY_FULL_NAMES,
+  SKILL_DISPLAY_NAMES,
   getModifier,
   formatModifier,
   formatBonus,
@@ -254,7 +255,7 @@ export function entityDetailFromAbilityScore(
   const relatedSkills = getSkills(character)
     .filter((sk) => sk.ability === ability)
     .map((sk) => ({
-      name: sk.name,
+      name: SKILL_DISPLAY_NAMES[sk.name] ?? sk.name,
       modifier: getSkillModifier(sk, abilities, profBonus),
       proficient: sk.proficient,
       expertise: sk.expertise,
