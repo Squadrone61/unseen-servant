@@ -835,7 +835,8 @@
                 "text": "Healing Light: Bonus Action, spend up to CHA mod (min 1) d6s from your pool (pool size = Warlock level + 1) to restore HP equal to the roll to yourself or a creature within 60 ft. Pool resets on Long Rest."
               }
             ]
-          }
+          },
+          "activationType": "bonus"
         },
         {
           "name": "Radiant Soul",
