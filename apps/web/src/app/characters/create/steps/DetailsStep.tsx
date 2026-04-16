@@ -22,12 +22,13 @@ const ALIGNMENTS = [
 
 const APPEARANCE_FIELDS: { key: keyof CharacterAppearance; label: string; placeholder: string }[] =
   [
+    { key: "gender", label: "Gender", placeholder: "e.g. Female" },
+    { key: "age", label: "Age", placeholder: "e.g. 28" },
     { key: "height", label: "Height", placeholder: "e.g. 5'10\"" },
     { key: "weight", label: "Weight", placeholder: "e.g. 175 lbs" },
     { key: "eyes", label: "Eye Color", placeholder: "e.g. Amber" },
     { key: "hair", label: "Hair", placeholder: "e.g. Black, shoulder-length" },
     { key: "skin", label: "Skin", placeholder: "e.g. Olive" },
-    { key: "age", label: "Age", placeholder: "e.g. 28" },
   ];
 
 // ---------------------------------------------------------------------------
@@ -292,26 +293,6 @@ export function DetailsStep() {
               />
             </div>
           ))}
-        </div>
-      </div>
-
-      <SectionDivider />
-
-      {/* ── Starting Equipment ── */}
-      <div className="flex flex-col gap-3">
-        <h2 className={SECTION_HEADING_CLASS}>Starting Equipment</h2>
-
-        <div className="bg-gray-800/30 border border-gray-700/20 rounded-lg px-4 py-3">
-          <p className="text-sm text-gray-500 leading-relaxed">
-            Starting equipment will be based on your class and background. The AI Dungeon Master
-            will equip your character with appropriate gear when your adventure begins.
-          </p>
-          {(state.classes[0]?.name ?? null) && (
-            <p className="mt-2 text-xs text-amber-400/70">
-              Class: {state.classes[0]?.name ?? null}
-              {state.background ? ` · Background: ${state.background}` : ""}
-            </p>
-          )}
         </div>
       </div>
     </section>

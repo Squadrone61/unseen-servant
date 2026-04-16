@@ -49,6 +49,28 @@ body {
   border-radius: 4px;
 }
 
+/* Native select dropdown theming — applies to the OS-rendered option list */
+select {
+  color-scheme: dark;
+}
+select option {
+  background-color: var(--color-gray-900);
+  color: var(--color-gray-200);
+}
+select option:hover,
+select option:focus,
+select option:active {
+  background-color: var(--color-gray-700);
+  color: var(--color-gray-100);
+}
+select option:checked {
+  background-color: var(--color-gray-700);
+  color: var(--color-gray-100);
+}
+select option:disabled {
+  color: var(--color-gray-500);
+}
+
 /* Entity color-coding for DM narrative tags */
 .entity-place {
   color: #fbbf24;
