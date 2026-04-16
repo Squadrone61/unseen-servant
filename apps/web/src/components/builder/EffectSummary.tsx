@@ -232,6 +232,16 @@ function propertyBadge(prop: Property, compact: boolean): Badge | null {
         className: "bg-amber-900/40 text-amber-300 border border-amber-700/40",
       };
 
+    case "roll_minimum": {
+      const target = titleCase(prop.on.replace(/_/g, " "));
+      const prefix = prop.mode === "total" ? "Total" : "d20";
+      const suffix = prop.proficientOnly ? " (if proficient)" : "";
+      return {
+        label: `${target}: ${prefix} ≥ ${prop.min}${suffix}`,
+        className: "bg-amber-900/40 text-amber-300 border border-amber-700/40",
+      };
+    }
+
     case "grant":
       return {
         label: `Grants: ${prop.grant}`,

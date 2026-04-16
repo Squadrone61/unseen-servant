@@ -267,8 +267,10 @@
       "effects": {
         "properties": [
           {
-            "type": "note",
-            "text": "For ability checks using a skill or tool proficiency, treat any d20 roll of 9 or lower as a 10."
+            "type": "roll_minimum",
+            "on": "ability_check",
+            "min": 10,
+            "proficientOnly": true
           }
         ]
       }

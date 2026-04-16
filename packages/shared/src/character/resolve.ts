@@ -186,6 +186,27 @@ export function getScoreCaps(char: CharacterData): AbilityScores {
 }
 
 /**
+ * D20-roll floors that apply when this character makes the named check
+ * (Reliable Talent, Indomitable Might).
+ *
+ * Each entry's `min` expression is pre-evaluated against the character's
+ * current ResolveContext, so callers receive concrete numbers and can
+ * apply them without re-evaluating the language.
+ */
+export function getRollMinimums(
+  char: CharacterData,
+): Array<{ on: string; min: number; mode: "d20" | "total"; proficientOnly: boolean }> {
+  const bundles = collectActiveBundles(char);
+  const ctx = buildCtx(char);
+  return collectProperties(bundles, "roll_minimum").map((prop) => ({
+    on: prop.on,
+    min: typeof prop.min === "number" ? prop.min : Math.floor(evaluateExpression(prop.min, ctx)),
+    mode: prop.mode ?? "d20",
+    proficientOnly: prop.proficientOnly ?? false,
+  }));
+}
+
+/**
  * Collect all active EffectBundles for a character.
  *
  * Combines:

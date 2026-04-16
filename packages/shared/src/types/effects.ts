@@ -357,6 +357,24 @@ export type Property = {
     }
   | {
       /**
+       * Floors a d20 outcome on the named target. Two modes:
+       *   "d20"   — treat the d20 die as no less than `min` (Reliable Talent).
+       *   "total" — if the total is below `min`, use `min` instead (Indomitable
+       *             Might: "use STR score in place of the total"). `min` accepts
+       *             the expression language, so Indomitable Might encodes this
+       *             as min: "strength".
+       * Defaults to "d20". Optional `proficientOnly` gates the floor on the
+       * character being proficient with the targeted skill (Reliable Talent
+       * says "any ability check that uses one of your skill proficiencies").
+       */
+      type: "roll_minimum";
+      on: AdvantageTarget;
+      min: number | string;
+      mode?: "d20" | "total";
+      proficientOnly?: boolean;
+    }
+  | {
+      /**
        * Applies another entity's effects by name and category. The resolver
        * looks up the entity in the specified DB category and includes its
        * effects. Creates an inheritance chain: Paralyzed → grant condition

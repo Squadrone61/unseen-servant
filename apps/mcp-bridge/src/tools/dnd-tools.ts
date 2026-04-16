@@ -4,6 +4,7 @@ import type { WSClient } from "../ws-client.js";
 import type { GameLogger } from "../services/game-logger.js";
 import { rollNotation, buildOutputFromResult, formatRollOutput } from "../services/dice-engine.js";
 import { parseCheckType, getCheckAdvantageInfo } from "@unseen-servant/shared/utils";
+import { getRollMinimums, getSkills } from "@unseen-servant/shared/character";
 import { getCombatBonus } from "@unseen-servant/shared/character";
 import { resolveActionRef } from "@unseen-servant/shared/data";
 import type { ActionRef } from "@unseen-servant/shared/data";
@@ -146,6 +147,46 @@ Examples:
             effectHints = "\n⚡ " + advInfo.sources.join("; ");
             if (advInfo.advantage && advInfo.disadvantage) {
               effectHints += " (advantage and disadvantage cancel out → normal roll)";
+            }
+          }
+
+          // Roll-minimum hints (Reliable Talent, Indomitable Might).
+          // The d20 result is set in the player's browser, so we surface the
+          // floor as a DM-visible reminder rather than rewriting the total.
+          const parsed = parseCheckType(checkType);
+          const minimums = getRollMinimums(char);
+          if (parsed && minimums.length > 0) {
+            const skillKey =
+              parsed.category === "skill" ? parsed.skill.replace(/_/g, "_") : undefined;
+            const proficient =
+              parsed.category === "skill" && skillKey
+                ? getSkills(char).some(
+                    (s) => s.name.toLowerCase() === skillKey && (s.proficient || s.expertise),
+                  )
+                : false;
+            const matchingTargets = new Set<string>();
+            if (parsed.category === "skill") matchingTargets.add(parsed.skill);
+            if (parsed.category === "ability" || parsed.category === "skill") {
+              matchingTargets.add("ability_check");
+              matchingTargets.add(`${parsed.ability}_check`);
+            }
+            if (parsed.category === "saving_throw") {
+              matchingTargets.add("save");
+              matchingTargets.add(`save_${parsed.ability}`);
+            }
+            if (parsed.category === "attack") {
+              matchingTargets.add("attack");
+              if (parsed.attackType !== "finesse")
+                matchingTargets.add(`attack_${parsed.attackType}`);
+            }
+            const applicable = minimums.filter(
+              (m) => matchingTargets.has(m.on) && (!m.proficientOnly || proficient),
+            );
+            for (const m of applicable) {
+              effectHints +=
+                m.mode === "total"
+                  ? `\n🎯 Roll floor: if total < ${m.min}, use ${m.min}`
+                  : `\n🎯 Roll floor: treat any d20 ≤ ${m.min - 1} as ${m.min}`;
             }
           }
         }

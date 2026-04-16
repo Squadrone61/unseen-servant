@@ -16,6 +16,7 @@ import {
   getProficiencies,
   getSenses,
   getAbilities,
+  getRollMinimums,
 } from "@unseen-servant/shared/character";
 import { useMemo } from "react";
 
@@ -94,6 +95,7 @@ export function StatsTab({ character }: StatsTabProps) {
   const savingThrows = getSavingThrows(character);
   const skills = getSkills(character);
   const advantages = getAdvantages(character);
+  const rollMinimums = getRollMinimums(character);
   const armorProfs = getProficiencies(character, "armor");
   const weaponProfs = getProficiencies(character, "weapons");
   const toolProfs = getProficiencies(character, "tools");
@@ -155,11 +157,19 @@ export function StatsTab({ character }: StatsTabProps) {
             {skills.map((skill) => {
               const mod = getSkillModifier(skill, abilities, profBonus);
               const skillAdvs = findAdvantages(advantages, skill.name);
+              const proficient = skill.proficient || skill.expertise;
+              const skillFloor = rollMinimums.find((m) => {
+                if (m.proficientOnly && !proficient) return false;
+                if (m.on === skill.name) return true;
+                if (m.on === "ability_check") return true;
+                if (m.on === `${skill.ability}_check`) return true;
+                return false;
+              });
               return (
                 <div
                   key={skill.name}
                   className={`flex items-center gap-1.5 rounded px-2 py-0.5 ${
-                    skill.proficient || skill.expertise ? "bg-gray-900/30" : ""
+                    proficient ? "bg-gray-900/30" : ""
                   }`}
                 >
                   <span
@@ -171,24 +181,28 @@ export function StatsTab({ character }: StatsTabProps) {
                           : "bg-gray-700"
                     }`}
                   />
-                  <span
-                    className={`text-xs ${
-                      skill.proficient || skill.expertise ? "text-gray-300" : "text-gray-500"
-                    }`}
-                  >
+                  <span className={`text-xs ${proficient ? "text-gray-300" : "text-gray-500"}`}>
                     {SKILL_DISPLAY_NAMES[skill.name] || skill.name}
                   </span>
                   {skill.expertise && (
                     <span className="text-xs text-yellow-500 font-bold uppercase">E</span>
                   )}
                   <AdvMarker entries={skillAdvs} />
+                  {skillFloor && (
+                    <span
+                      className="text-[10px] text-amber-400/80 font-bold"
+                      title={
+                        skillFloor.mode === "total"
+                          ? `Roll floor: if total < ${skillFloor.min}, use ${skillFloor.min}`
+                          : `Roll floor: treat any d20 ≤ ${skillFloor.min - 1} as ${skillFloor.min}`
+                      }
+                    >
+                      {skillFloor.mode === "total" ? "T" : ""}≥{skillFloor.min}
+                    </span>
+                  )}
                   <span
                     className={`ml-auto text-xs font-semibold ${
-                      skill.proficient || skill.expertise
-                        ? mod >= 0
-                          ? "text-gray-300"
-                          : "text-red-400"
-                        : "text-gray-600"
+                      proficient ? (mod >= 0 ? "text-gray-300" : "text-red-400") : "text-gray-600"
                     }`}
                   >
                     {formatBonus(mod)}

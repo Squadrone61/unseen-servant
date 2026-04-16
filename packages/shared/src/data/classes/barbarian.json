@@ -429,8 +429,16 @@
       "effects": {
         "properties": [
           {
-            "type": "note",
-            "text": "For Strength checks and Strength saving throws, you can use your Strength score instead of the roll total if the score is higher."
+            "type": "roll_minimum",
+            "on": "strength_check",
+            "min": "strength",
+            "mode": "total"
+          },
+          {
+            "type": "roll_minimum",
+            "on": "save_strength",
+            "min": "strength",
+            "mode": "total"
           }
         ]
       }
