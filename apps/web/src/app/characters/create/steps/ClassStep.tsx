@@ -10,10 +10,10 @@ import type {
 } from "@unseen-servant/shared/types";
 import { DetailPopover } from "@/components/character/DetailPopover";
 import { ChoicePicker } from "@/components/builder/ChoicePicker";
-import { WeaponMasteryPicker } from "@/components/builder/WeaponMasteryPicker";
 import { EffectSummary } from "@/components/builder/EffectSummary";
 import { RichText } from "@/components/ui/RichText";
 import { InfoButton } from "@/components/builder/InfoButton";
+import { getEligibleMasteryWeapons } from "@unseen-servant/shared/utils";
 import { useBuilder } from "../BuilderContext";
 
 // ---------------------------------------------------------------------------
@@ -551,8 +551,15 @@ interface FeatureRowProps {
   choiceSelections: Record<string, string[]>;
   onChoiceSelect: (choiceId: string, values: string[]) => void;
   choicePrefix?: string;
-  /** When provided, renders a WeaponMasteryPicker for the "Weapon Mastery" feature. */
+  /**
+   * When set, the weapon_mastery pool inside this feature is restricted to
+   * the per-class eligible-weapon list (Barbarian melee-only, Rogue
+   * simple+finesse/light, etc.) by populating `from` upstream.
+   */
   weaponMasteryClassName?: string;
+  /** Sub-choice picks for pool items that own their own choices. */
+  getSubChoiceSelections?: (item: string, subChoiceId: string) => string[];
+  onSubChoiceSelect?: (item: string, subChoiceId: string, values: string[]) => void;
 }
 
 function FeatureRow({
@@ -561,6 +568,8 @@ function FeatureRow({
   onChoiceSelect,
   choicePrefix = "",
   weaponMasteryClassName,
+  getSubChoiceSelections,
+  onSubChoiceSelect,
 }: FeatureRowProps) {
   const [expanded, setExpanded] = useState(false);
 
@@ -571,22 +580,13 @@ function FeatureRow({
   const permanentChoices = feature.choices?.filter((c) => c.timing === "permanent") ?? [];
   const hasPermanentChoices = permanentChoices.length > 0;
 
-  const isWeaponMastery =
-    feature.name === "Weapon Mastery" &&
-    weaponMasteryClassName !== undefined &&
-    weaponMasteryClassName in
-      ({ Barbarian: 1, Fighter: 1, Paladin: 1, Ranger: 1, Rogue: 1 } as Record<string, number>);
-
-  const WEAPON_MASTERY_CHOICE_ID = "weapon-mastery";
-
   return (
     <li className="flex flex-col gap-2 pl-4 border-l-2 border-gray-700/40">
-      {/* Feature header */}
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-sm font-semibold text-gray-200">{feature.name}</span>
           {hasEffects && <EffectSummary effects={feature.effects} compact />}
-          {(hasPermanentChoices || isWeaponMastery) && (
+          {hasPermanentChoices && (
             <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs border bg-amber-900/20 text-amber-400/80 border-amber-600/30">
               choose
             </span>
@@ -625,32 +625,34 @@ function FeatureRow({
         </div>
       )}
 
-      {isWeaponMastery && (
-        <div className="mt-1">
-          <WeaponMasteryPicker
-            className={weaponMasteryClassName ?? ""}
-            selected={choiceSelections[WEAPON_MASTERY_CHOICE_ID] ?? []}
-            onSelect={(weapons) => onChoiceSelect(WEAPON_MASTERY_CHOICE_ID, weapons)}
-          />
-        </div>
-      )}
-
       {hasPermanentChoices && (
         <div className="flex flex-col gap-2 mt-1">
           {permanentChoices.map((choice) => {
-            // The dedicated WeaponMasteryPicker (rendered above) already owns the
-            // weapon-mastery choice for the five Weapon Mastery class features —
-            // skip the generic ChoicePicker render to avoid a duplicate UI.
-            if (isWeaponMastery && choice.id === WEAPON_MASTERY_CHOICE_ID) return null;
             const choiceId = choicePrefix ? `${choicePrefix}${choice.id}` : choice.id;
+
+            // Inject the per-class eligible weapon list for the weapon_mastery pool
+            // so ChoicePicker's CardGrid can render the right roster — keeps the
+            // class-specific knowledge upstream of the generic picker.
+            let derived = choice;
+            if (
+              "pool" in choice &&
+              choice.pool === "weapon_mastery" &&
+              weaponMasteryClassName &&
+              !choice.from
+            ) {
+              derived = { ...choice, from: getEligibleMasteryWeapons(weaponMasteryClassName) };
+            }
+
             return (
               <ChoicePicker
                 key={choiceId}
-                choice={choice}
+                choice={derived}
                 selected={choiceSelections[choiceId] ?? []}
                 onSelect={(values) => onChoiceSelect(choiceId, values)}
                 nestedSelections={choiceSelections}
                 onNestedSelect={(nestedId, values) => onChoiceSelect(nestedId, values)}
+                getSubChoiceSelections={getSubChoiceSelections}
+                onSubChoiceSelect={onSubChoiceSelect}
               />
             );
           })}
@@ -672,6 +674,8 @@ interface FeatureLevelGroupProps {
   choicePrefix?: string;
   extra?: React.ReactNode;
   weaponMasteryClassName?: string;
+  getSubChoiceSelections?: (item: string, subChoiceId: string) => string[];
+  onSubChoiceSelect?: (item: string, subChoiceId: string, values: string[]) => void;
 }
 
 function FeatureLevelGroup({
@@ -682,6 +686,8 @@ function FeatureLevelGroup({
   choicePrefix,
   extra,
   weaponMasteryClassName,
+  getSubChoiceSelections,
+  onSubChoiceSelect,
 }: FeatureLevelGroupProps) {
   return (
     <div className="flex flex-col gap-1">
@@ -699,6 +705,8 @@ function FeatureLevelGroup({
             onChoiceSelect={onChoiceSelect}
             choicePrefix={choicePrefix}
             weaponMasteryClassName={weaponMasteryClassName}
+            getSubChoiceSelections={getSubChoiceSelections}
+            onSubChoiceSelect={onSubChoiceSelect}
           />
         ))}
         {extra}
@@ -1013,6 +1021,16 @@ export function ClassStep() {
 
   function handleClassChoice(choiceId: string, values: string[]) {
     dispatch({ type: "SET_CLASS_CHOICE", index: activeIdx, choiceId, values });
+  }
+
+  // Sub-choice picks for pool items that own their own choices (e.g.
+  // Druidic Warrior fighting style → cantrip pick). Routes to state.featChoices
+  // so choice-to-effects.ts can resolve them via getFeat(featName).choices.
+  function getSubChoiceSelections(featName: string, subChoiceId: string): string[] {
+    return state.featChoices[featName]?.[subChoiceId] ?? [];
+  }
+  function handleSubChoiceSelect(featName: string, subChoiceId: string, values: string[]) {
+    dispatch({ type: "SET_FEAT_CHOICE", featName, choiceId: subChoiceId, values });
   }
 
   function handleTabClick(index: number) {
@@ -1334,6 +1352,8 @@ export function ClassStep() {
                             choicePrefix=""
                             extra={subclassPrompt}
                             weaponMasteryClassName={activeClassName ?? undefined}
+                            getSubChoiceSelections={getSubChoiceSelections}
+                            onSubChoiceSelect={handleSubChoiceSelect}
                           />
                         );
                       })}
