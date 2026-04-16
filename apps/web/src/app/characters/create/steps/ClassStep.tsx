@@ -638,6 +638,10 @@ function FeatureRow({
       {hasPermanentChoices && (
         <div className="flex flex-col gap-2 mt-1">
           {permanentChoices.map((choice) => {
+            // The dedicated WeaponMasteryPicker (rendered above) already owns the
+            // weapon-mastery choice for the five Weapon Mastery class features —
+            // skip the generic ChoicePicker render to avoid a duplicate UI.
+            if (isWeaponMastery && choice.id === WEAPON_MASTERY_CHOICE_ID) return null;
             const choiceId = choicePrefix ? `${choicePrefix}${choice.id}` : choice.id;
             return (
               <ChoicePicker
