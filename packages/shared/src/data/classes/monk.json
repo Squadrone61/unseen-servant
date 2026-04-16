@@ -429,6 +429,22 @@
             "text": "Spend 3 Focus Points at the start of your turn: gain resistance to all damage except Force damage for 1 minute or until Incapacitated."
           }
         ]
+      },
+      "activation": {
+        "properties": [
+          { "type": "resistance", "damageType": "bludgeoning" },
+          { "type": "resistance", "damageType": "piercing" },
+          { "type": "resistance", "damageType": "slashing" },
+          { "type": "resistance", "damageType": "acid" },
+          { "type": "resistance", "damageType": "cold" },
+          { "type": "resistance", "damageType": "fire" },
+          { "type": "resistance", "damageType": "lightning" },
+          { "type": "resistance", "damageType": "necrotic" },
+          { "type": "resistance", "damageType": "poison" },
+          { "type": "resistance", "damageType": "psychic" },
+          { "type": "resistance", "damageType": "radiant" },
+          { "type": "resistance", "damageType": "thunder" }
+        ]
       }
     },
     {
@@ -443,10 +459,20 @@
       "className": "Monk",
       "description": "You have developed your body and mind to new heights. Your Dexterity and Wisdom scores increase by 4, to a maximum of 25.",
       "effects": {
+        "modifiers": [
+          {
+            "target": "dexterity",
+            "value": 4
+          },
+          {
+            "target": "wisdom",
+            "value": 4
+          }
+        ],
         "properties": [
           {
             "type": "note",
-            "text": "Dexterity and Wisdom scores each increase by 4, to a maximum of 25. Recalculate AC (Unarmored Defense), initiative, and other dependent stats."
+            "text": "Dexterity and Wisdom scores each increase by 4, to a maximum of 25 (normal cap raised from 20 to 25 for these ability scores)."
           }
         ]
       }
