@@ -190,15 +190,19 @@
       "properties": [
         {
           "type": "note",
-          "text": "Charge: If you move at least 30 ft straight toward a target and hit it with a melee weapon attack, you can make one bonus action hoof attack against it."
+          "text": "Creature Type: Fey."
         },
         {
           "type": "note",
-          "text": "Equine Build: Count as one size larger for carrying capacity. Climbs requiring hands and feet cost 4 extra ft per foot of movement instead of 1."
+          "text": "Charge: If you move at least 30 feet straight toward a target and hit it with a melee weapon attack on the same turn, you can immediately follow that attack with a Bonus Action, making one attack against the target with your hooves."
         },
         {
           "type": "note",
-          "text": "Hooves: Unarmed strike deals 1d6 + Strength modifier bludgeoning damage."
+          "text": "Equine Build: Count as one size larger when determining your carrying capacity and the weight you can push or drag. Any climb that requires hands and feet costs you 4 extra feet of movement per foot instead of the normal 1 extra foot."
+        },
+        {
+          "type": "note",
+          "text": "Hooves: Your hooves are a natural weapon for unarmed strikes. When you hit with them, the strike deals 1d6 + your Strength modifier bludgeoning damage, instead of the bludgeoning damage normal for an unarmed strike."
         }
       ]
     },
@@ -230,7 +234,11 @@
       "properties": [
         {
           "type": "note",
-          "text": "Shapechanger: As an action, change your appearance and voice (coloration, hair, sex, height between Medium and Small). Can't duplicate an appearance you've never seen. Lasts until you use an action to revert or you die."
+          "text": "Creature Type: Fey."
+        },
+        {
+          "type": "note",
+          "text": "Shapechanger: As an action, change your appearance and voice. You determine the specifics of the changes, including coloration, hair length, and sex. You can also adjust your height between Medium and Small, and make yourself appear as a member of another species, though none of your game statistics change. You can't duplicate the appearance of an individual you've never seen, and you must adopt a form that has the same basic arrangement of limbs. Your clothing and equipment aren't changed. You stay in the new form until you use an action to revert to your true form or until you die."
         }
       ]
     },
@@ -1312,11 +1320,11 @@
       "properties": [
         {
           "type": "note",
-          "text": "Resourceful: Gain Heroic Inspiration whenever you finish a Long Rest."
+          "text": "Resourceful: You gain Heroic Inspiration whenever you finish a Long Rest."
         },
         {
           "type": "note",
-          "text": "Versatile: Gain one Origin feat of your choice."
+          "text": "Versatile: You gain one Origin feat of your choice. (Handled at character creation.)"
         }
       ]
     },
@@ -1341,16 +1349,23 @@
     "effects": {
       "properties": [
         {
-          "type": "note",
-          "text": "Expert Duplication: Advantage on ability checks to produce an exact copy of writing or craftwork."
+          "type": "advantage",
+          "on": "ability_check",
+          "condition": "to produce an exact copy of writing or craftwork (Expert Duplication)"
+        },
+        {
+          "type": "resource",
+          "name": "Kenku Recall",
+          "maxUses": "prof",
+          "longRest": "all"
         },
         {
           "type": "note",
-          "text": "Kenku Recall: Gain advantage on an ability check using a skill you are proficient in before rolling. Proficiency Bonus times per Long Rest."
+          "text": "Kenku Recall: Before making an ability check using a skill in which you have proficiency, you can expend one use of Kenku Recall to give yourself advantage on that check. You have a number of uses equal to your Proficiency Bonus, and you regain all expended uses when you finish a Long Rest."
         },
         {
           "type": "note",
-          "text": "Mimicry: Can accurately mimic sounds and voices heard. Detected only with a Wisdom (Insight) check DC 8 + Proficiency Bonus + Charisma modifier."
+          "text": "Mimicry: You can accurately mimic sounds you have heard, including voices. A creature that hears the sounds you make can tell they are imitations only with a successful Wisdom (Insight) check against DC 8 + your Proficiency Bonus + your Charisma modifier."
         }
       ]
     },
