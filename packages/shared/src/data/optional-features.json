@@ -1003,12 +1003,12 @@
       "FS:F",
       "FS:P"
     ],
-    "description": "When a creature you can see hits a target, other than you, within 5 feet of you with an attack, you can use your reaction to reduce the damage the target takes by 1d10 + your proficiency bonus (to a minimum of 0 damage). You must be wielding a shield or a simple or martial weapon to use this reaction.",
+    "description": "When a creature you can see hits another creature within 5 feet of you with an attack roll, you can take a {rule:Reaction} to reduce the damage dealt to the target by 1d10 plus your Proficiency Bonus. You must be holding a Shield or a Simple or Martial weapon to use this Reaction.",
     "effects": {
       "properties": [
         {
           "type": "note",
-          "text": "Reaction: when a creature you can see hits an ally within 5 ft of you, reduce the damage by 1d10 + proficiency bonus (minimum 0). Requires wielding a shield or simple/martial weapon."
+          "text": "Reaction: When a creature you can see hits another creature within 5 feet of you with an attack roll, you can take a Reaction to reduce the damage dealt to the target by 1d10 plus your Proficiency Bonus. You must be holding a Shield or a Simple or Martial weapon to use this Reaction."
         }
       ]
     }
@@ -1994,12 +1994,16 @@
     "featureType": [
       "FS:F"
     ],
-    "description": "Your unarmed strikes can deal bludgeoning damage equal to 1d6 + your Strength modifier on a hit. If you aren't wielding any weapons or a shield when you make the attack roll, the d6 becomes a d8.\n\nAt the start of each of your turns, you can deal 1d4 bludgeoning damage to one creature {condition:Grappled} by you.",
+    "description": "When you hit with your Unarmed Strike and deal damage, you can deal Bludgeoning damage equal to 1d6 plus your Strength modifier instead of the normal damage of an Unarmed Strike. If you aren't holding any weapons or a Shield when you make the attack roll, the d6 becomes a d8.\n\nAt the start of each of your turns, you can deal 1d4 Bludgeoning damage to one creature {condition:Grappled} by you.",
     "effects": {
       "properties": [
         {
           "type": "note",
-          "text": "Unarmed strikes deal 1d6 + Strength modifier bludgeoning damage (d8 if holding no weapon or shield). At the start of each of your turns, you may deal 1d4 bludgeoning damage to one creature you have Grappled."
+          "text": "When you hit with your Unarmed Strike and deal damage, you can deal Bludgeoning damage equal to 1d6 plus your Strength modifier instead of the normal damage of an Unarmed Strike. If you aren't holding any weapons or a Shield when you make the attack roll, the d6 becomes a d8."
+        },
+        {
+          "type": "note",
+          "text": "At the start of each of your turns, you can deal 1d4 Bludgeoning damage to one creature Grappled by you."
         }
       ]
     }
