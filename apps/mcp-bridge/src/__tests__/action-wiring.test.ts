@@ -14,8 +14,9 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { createTestGSM, assertToolSuccess } from "./setup.js";
-import { createBarbarianCharacter } from "./fixtures.js";
+import { createTestGSM, assertToolSuccess, registerCharacter } from "./setup.js";
+import { createBarbarianCharacter, createFighterCharacter } from "./fixtures.js";
+import type { EffectBundle } from "@unseen-servant/shared/types";
 
 // Import the helper functions directly (pure, no side effects)
 import { resolveActionRef, getBaseItem } from "@unseen-servant/shared/data";
@@ -366,5 +367,164 @@ describe("get_character inventory weapon action enrichment (pure resolver)", () 
       // If longsword not in DB, skip gracefully
       expect(true).toBe(true);
     }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Evasion / save_outcome_override integration tests
+// ---------------------------------------------------------------------------
+
+function makeEvasionBundle(ability: string = "dexterity"): EffectBundle {
+  return {
+    id: "test-evasion",
+    source: { type: "class", name: "Rogue", featureName: "Evasion" },
+    lifetime: { type: "permanent" },
+    effects: {
+      properties: [
+        {
+          type: "save_outcome_override",
+          ability: ability as "dexterity",
+          saveEffect: "evasion",
+        },
+      ],
+    },
+  };
+}
+
+/** Set up a combat with a PC at a known grid position. Returns the GSM. */
+function setupEvasionCombat() {
+  const { gsm } = createTestGSM();
+  registerCharacter(gsm, "Player1", createFighterCharacter());
+  gsm.updateBattleMap({ id: "map1", width: 20, height: 20, tiles: [], name: "Arena" });
+  gsm.startCombat([
+    {
+      name: "Theron",
+      type: "player",
+      initiativeModifier: 0,
+      position: { x: 5, y: 5 },
+    },
+  ]);
+  return gsm;
+}
+
+describe("Evasion / save_outcome_override", () => {
+  it("PC with Evasion passes DEX save (DC=1) → takes 0 damage", async () => {
+    const gsm = setupEvasionCombat();
+    // Inject Evasion bundle into PC's active effects
+    gsm.characters["Player1"].dynamic.activeEffects = [makeEvasionBundle("dexterity")];
+    const before = gsm.characters["Player1"].dynamic.currentHP;
+
+    // DC 1 = guaranteed pass; halfOnSave=true with Evasion → 0 damage on pass
+    const result = await gsm.applyAreaEffect({
+      shape: "sphere",
+      center: "F6",
+      size: 100,
+      damage: "10",
+      damageType: "fire",
+      saveAbility: "dexterity",
+      saveDC: 1,
+      halfOnSave: true,
+    });
+
+    assertToolSuccess(result);
+    const data = result.data as {
+      results: Array<{ target: string; damage: number; passed: boolean; evasion?: boolean }>;
+    };
+    const entry = data.results.find((r) => r.target === "Theron");
+    expect(entry).toBeDefined();
+    expect(entry!.passed).toBe(true);
+    expect(entry!.damage).toBe(0);
+    expect(entry!.evasion).toBe(true);
+    expect(gsm.characters["Player1"].dynamic.currentHP).toBe(before); // no HP lost
+  });
+
+  it("PC with Evasion fails DEX save (DC=999) → takes half damage", async () => {
+    const gsm = setupEvasionCombat();
+    gsm.characters["Player1"].dynamic.activeEffects = [makeEvasionBundle("dexterity")];
+    const before = gsm.characters["Player1"].dynamic.currentHP;
+
+    // DC 999 = guaranteed fail; halfOnSave=true with Evasion → half damage on fail
+    const result = await gsm.applyAreaEffect({
+      shape: "sphere",
+      center: "F6",
+      size: 100,
+      damage: "10", // fixed 10 so half = 5
+      damageType: "fire",
+      saveAbility: "dexterity",
+      saveDC: 999,
+      halfOnSave: true,
+    });
+
+    assertToolSuccess(result);
+    const data = result.data as {
+      results: Array<{ target: string; damage: number; passed: boolean; evasion?: boolean }>;
+    };
+    const entry = data.results.find((r) => r.target === "Theron");
+    expect(entry).toBeDefined();
+    expect(entry!.passed).toBe(false);
+    expect(entry!.damage).toBe(5); // Math.floor(10 / 2)
+    expect(entry!.evasion).toBe(true);
+    expect(gsm.characters["Player1"].dynamic.currentHP).toBe(before - 5);
+  });
+
+  it("PC with Evasion but Incapacitated → normal save-for-half (pass=half, fail=full)", async () => {
+    const gsm = setupEvasionCombat();
+    gsm.characters["Player1"].dynamic.activeEffects = [makeEvasionBundle("dexterity")];
+    // Apply Incapacitated condition — suppresses Evasion
+    gsm.characters["Player1"].dynamic.conditions.push({ name: "Incapacitated" });
+
+    const before = gsm.characters["Player1"].dynamic.currentHP;
+
+    // DC 1 = guaranteed pass; without Evasion, halfOnSave → half damage on pass
+    const result = await gsm.applyAreaEffect({
+      shape: "sphere",
+      center: "F6",
+      size: 100,
+      damage: "10",
+      damageType: "fire",
+      saveAbility: "dexterity",
+      saveDC: 1,
+      halfOnSave: true,
+    });
+
+    assertToolSuccess(result);
+    const data = result.data as {
+      results: Array<{ target: string; damage: number; passed: boolean; evasion?: boolean }>;
+    };
+    const entry = data.results.find((r) => r.target === "Theron");
+    expect(entry).toBeDefined();
+    expect(entry!.passed).toBe(true);
+    expect(entry!.damage).toBe(5); // normal half-on-save, not 0
+    expect(entry!.evasion).toBeUndefined(); // Evasion did NOT fire
+    expect(gsm.characters["Player1"].dynamic.currentHP).toBe(before - 5);
+  });
+
+  it("PC with Evasion keyed to WISDOM has no effect on DEX saves (DC=1, passes → normal half=5)", async () => {
+    const gsm = setupEvasionCombat();
+    // Evasion on WISDOM — should not fire for a DEX save
+    gsm.characters["Player1"].dynamic.activeEffects = [makeEvasionBundle("wisdom")];
+    const before = gsm.characters["Player1"].dynamic.currentHP;
+
+    const result = await gsm.applyAreaEffect({
+      shape: "sphere",
+      center: "F6",
+      size: 100,
+      damage: "10",
+      damageType: "fire",
+      saveAbility: "dexterity",
+      saveDC: 1,
+      halfOnSave: true,
+    });
+
+    assertToolSuccess(result);
+    const data = result.data as {
+      results: Array<{ target: string; damage: number; passed: boolean; evasion?: boolean }>;
+    };
+    const entry = data.results.find((r) => r.target === "Theron");
+    expect(entry).toBeDefined();
+    expect(entry!.passed).toBe(true);
+    expect(entry!.damage).toBe(5); // normal half-on-save
+    expect(entry!.evasion).toBeUndefined(); // no Evasion fired
+    expect(gsm.characters["Player1"].dynamic.currentHP).toBe(before - 5);
   });
 });

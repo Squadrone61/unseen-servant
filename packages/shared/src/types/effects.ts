@@ -415,6 +415,53 @@ export type Property = {
       grant: string;
       grantType: EntityCategory;
     }
+  | {
+      /**
+       * Reduces incoming damage by a flat amount (or halves it) after
+       * resistance/immunity/vulnerability resolve. Flat reductions stack
+       * by summing; `amount: "half"` applies once per hit.
+       *
+       * `trigger: "passive"` (default) — engine auto-applies on every
+       *   matching hit (Heavy Armor Master).
+       * `trigger: "reaction"` — descriptive only; DM opts in and calls
+       *   apply_damage with the already-reduced number (Uncanny Dodge,
+       *   Deflect Attacks, Interception). Skipped by the resolver.
+       */
+      type: "damage_reduction";
+      /** Damage types this applies to. Omit for "all types". */
+      damageTypes?: (DamageType | "all")[];
+      /** Flat number, Expression string (evaluated via expression-evaluator), or "half". */
+      amount: number | string | "half";
+      /**
+       * "passive" = engine auto-applies on every matching hit (Heavy Armor Master).
+       * "reaction" = descriptive only; DM opts in and calls apply_damage with the
+       *              already-reduced number. Skipped by the resolver.
+       * Default: "passive".
+       */
+      trigger?: "passive" | "reaction";
+    }
+  | {
+      /**
+       * Inverts the default save-for-half logic for damage.
+       *   saveEffect: "evasion" — success → 0 damage, failure → half damage.
+       * Keyed to the save ability; use the `condition` base field for gates
+       * like "while not Incapacitated" (engine enforces the Incapacitated
+       * skip separately).
+       */
+      type: "save_outcome_override";
+      ability: Ability;
+      saveEffect: "evasion";
+    }
+  | {
+      /**
+       * The character gains access to standard actions as bonus actions
+       * (Rogue Cunning Action → Dash, Disengage, Hide as BA). Documentary only —
+       * the AI DM reads the list; the engine does not enforce bonus-action
+       * economy. Multiple grants stack.
+       */
+      type: "bonus_action_grant";
+      actions: string[];
+    }
   | { type: "note"; text: string }
 );
 

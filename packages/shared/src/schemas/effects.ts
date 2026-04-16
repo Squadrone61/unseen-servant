@@ -389,6 +389,24 @@ export const propertySchema: z.ZodType<Property> = z.discriminatedUnion("type", 
     text: z.string(),
     condition: z.string().optional(),
   }),
+  z.object({
+    type: z.literal("damage_reduction"),
+    damageTypes: z.array(damageTypeOrAllSchema).optional(),
+    amount: z.union([z.number(), z.string()]),
+    trigger: z.enum(["passive", "reaction"]).optional(),
+    condition: z.string().optional(),
+  }),
+  z.object({
+    type: z.literal("save_outcome_override"),
+    ability: abilitySchema,
+    saveEffect: z.literal("evasion"),
+    condition: z.string().optional(),
+  }),
+  z.object({
+    type: z.literal("bonus_action_grant"),
+    actions: z.array(z.string()),
+    condition: z.string().optional(),
+  }),
 ]);
 
 // ---------------------------------------------------------------------------

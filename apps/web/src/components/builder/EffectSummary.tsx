@@ -54,6 +54,12 @@ function badgeClassFromProperty(prop: Property, compact: boolean): string | null
       return "bg-amber-900/40 text-amber-300 border border-amber-700/40";
     case "crit_rider":
       return "bg-red-900/40 text-red-300 border border-red-700/40";
+    case "damage_reduction":
+      return "bg-amber-900/40 text-amber-300 border border-amber-700/40";
+    case "save_outcome_override":
+      return "bg-blue-900/40 text-blue-300 border border-blue-700/40";
+    case "bonus_action_grant":
+      return "bg-emerald-900/40 text-emerald-300 border border-emerald-700/40";
     case "grant":
       return "bg-purple-900/40 text-purple-300 border border-purple-700/40";
     case "note":

@@ -124,6 +124,23 @@ function propertyToken(prop: Property): string | null {
     }
     case "grant":
       return `Grants: ${prop.grant}`;
+    case "damage_reduction": {
+      const amtLabel =
+        prop.amount === "half"
+          ? "half"
+          : typeof prop.amount === "number"
+            ? String(prop.amount)
+            : prop.amount;
+      const typesLabel =
+        !prop.damageTypes || prop.damageTypes.length === 0
+          ? "all"
+          : prop.damageTypes.map((t) => t.toUpperCase().slice(0, 3)).join("/");
+      return `DR ${amtLabel} (${typesLabel})`;
+    }
+    case "save_outcome_override":
+      return `Evasion (${titleCase(prop.ability)})`;
+    case "bonus_action_grant":
+      return `BA: ${prop.actions.join("/")}`;
     case "note":
       return prop.text;
   }

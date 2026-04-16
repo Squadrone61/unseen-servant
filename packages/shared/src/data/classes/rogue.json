@@ -176,8 +176,8 @@
       "effects": {
         "properties": [
           {
-            "type": "note",
-            "text": "On your turn, you can take Dash, Disengage, or Hide as a Bonus Action."
+            "type": "bonus_action_grant",
+            "actions": ["Dash", "Disengage", "Hide"]
           }
         ]
       },
@@ -232,8 +232,13 @@
       "effects": {
         "properties": [
           {
+            "type": "damage_reduction",
+            "amount": "half",
+            "trigger": "reaction"
+          },
+          {
             "type": "note",
-            "text": "Reaction: when an attacker you can see hits you with an attack roll, halve the attack's damage against you (round down)."
+            "text": "Reaction trigger: attacker must be visible to you. Once per round (one Reaction per round)."
           }
         ]
       },
@@ -262,8 +267,10 @@
       "effects": {
         "properties": [
           {
-            "type": "note",
-            "text": "When subjected to a Dexterity save for half damage, take no damage on a success and half damage on a failure. Unavailable while Incapacitated."
+            "type": "save_outcome_override",
+            "ability": "dexterity",
+            "saveEffect": "evasion",
+            "condition": "while not Incapacitated"
           }
         ]
       }

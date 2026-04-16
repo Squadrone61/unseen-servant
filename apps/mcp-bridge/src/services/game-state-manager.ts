@@ -57,6 +57,7 @@ import {
   resolveStat,
   hasAdvantage,
   hasDisadvantage,
+  hasEvasion,
 } from "@unseen-servant/shared/utils";
 import {
   getHP,
@@ -1855,7 +1856,7 @@ export class GameStateManager {
       if (combatant) {
         // Check NPC activeEffects for condition-granted resistances
         let npcDmg = dmg;
-        let npcApplied: "normal" | "resistant" | "immune" | "vulnerable" = "normal";
+        let npcApplied: "normal" | "resistant" | "immune" | "vulnerable" | "reduced" = "normal";
         if (damageType && combatant.activeEffects && combatant.activeEffects.length > 0) {
           const result = applyDamageWithEffects(combatant.activeEffects, dmg, damageType);
           npcDmg = result.effectiveDamage;
@@ -1919,7 +1920,7 @@ export class GameStateManager {
       if (char.static.name.toLowerCase() === targetName.toLowerCase()) {
         // Apply resistance/immunity/vulnerability from active effect bundles
         let effectiveDmg = dmg;
-        let damageApplied: "normal" | "resistant" | "immune" | "vulnerable" = "normal";
+        let damageApplied: "normal" | "resistant" | "immune" | "vulnerable" | "reduced" = "normal";
         if (damageType) {
           const activeEffects = char.dynamic.activeEffects ?? [];
           if (activeEffects.length > 0) {
@@ -5341,6 +5342,7 @@ export class GameStateManager {
       passed: boolean;
       damage: number;
       damageType: string;
+      evasion?: boolean;
     }> = [];
 
     for (const target of targets) {
@@ -5348,24 +5350,27 @@ export class GameStateManager {
       const abilityKey = params.saveAbility.toLowerCase();
       let saveMod = 0;
 
-      if (target.type === "player") {
-        const charEntry = Object.entries(this.characters).find(
-          ([, ch]) => ch.static.name.toLowerCase() === target.name.toLowerCase(),
+      // Resolve the PC character record once — used for save mod AND Evasion check below.
+      const charRecord =
+        target.type === "player"
+          ? (Object.entries(this.characters).find(
+              ([, ch]) => ch.static.name.toLowerCase() === target.name.toLowerCase(),
+            ) ?? null)
+          : null;
+
+      if (charRecord) {
+        const [, ch] = charRecord;
+        const abilities = getAbilities(ch);
+        const abilityScore = (abilities as unknown as Record<string, number>)[abilityKey] ?? 10;
+        saveMod = Math.floor((abilityScore - 10) / 2);
+        const totalLevel = ch.static.classes.reduce((sum, c) => sum + c.level, 0);
+        const profBonusDerived = Math.floor((totalLevel - 1) / 4) + 2;
+        const saveProf = getSavingThrows(ch).find(
+          (st) => st.ability === abilityKey && st.proficient,
         );
-        if (charEntry) {
-          const [, ch] = charEntry;
-          const abilities = getAbilities(ch);
-          const abilityScore = (abilities as unknown as Record<string, number>)[abilityKey] ?? 10;
-          saveMod = Math.floor((abilityScore - 10) / 2);
-          const totalLevel = ch.static.classes.reduce((sum, c) => sum + c.level, 0);
-          const profBonusDerived = Math.floor((totalLevel - 1) / 4) + 2;
-          const saveProf = getSavingThrows(ch).find(
-            (st) => st.ability === abilityKey && st.proficient,
-          );
-          if (saveProf) {
-            saveMod += profBonusDerived;
-            if (saveProf.bonus) saveMod += saveProf.bonus;
-          }
+        if (saveProf) {
+          saveMod += profBonusDerived;
+          if (saveProf.bonus) saveMod += saveProf.bonus;
         }
       }
 
@@ -5396,11 +5401,54 @@ export class GameStateManager {
 
       // Roll damage
       const { result: damageRoll } = rollNotation(params.damage);
-      let finalDamage = damageRoll.total;
-      if (passed && params.halfOnSave) {
-        finalDamage = Math.floor(finalDamage / 2);
-      } else if (passed && !params.halfOnSave) {
-        finalDamage = 0;
+      const rawDamage = damageRoll.total;
+      let finalDamage = rawDamage;
+
+      // --- Evasion check ---
+      // Evasion only fires on Dexterity saves; it inverts save-for-half:
+      //   pass + halfOnSave → 0 (was half)
+      //   fail + halfOnSave → half (was full)
+      // It does NOT apply when the target is Incapacitated (PHB 2024).
+      let evasionFired = false;
+      if (abilityKey === "dexterity" && params.halfOnSave) {
+        // Collect the target's active effect bundles.
+        const targetBundles: EffectBundle[] =
+          target.type === "player"
+            ? charRecord
+              ? (charRecord[1].dynamic.activeEffects ?? [])
+              : []
+            : (target.activeEffects ?? []);
+
+        // Check for incapacitation — Evasion is suppressed.
+        const targetConditions: string[] =
+          target.type === "player"
+            ? charRecord
+              ? charRecord[1].dynamic.conditions.map((c) => c.name)
+              : []
+            : (target.conditions?.map((c) => c.name) ?? []);
+
+        const INCAP_CONDITIONS = new Set([
+          "Incapacitated",
+          "Paralyzed",
+          "Stunned",
+          "Unconscious",
+          "Petrified",
+        ]);
+        const isIncapacitated = targetConditions.some((c) => INCAP_CONDITIONS.has(c));
+
+        if (!isIncapacitated && hasEvasion(targetBundles, "dexterity")) {
+          evasionFired = true;
+          // Evasion flips the save outcome for halfOnSave effects.
+          finalDamage = passed ? 0 : Math.floor(rawDamage / 2);
+        }
+      }
+
+      if (!evasionFired) {
+        if (passed && params.halfOnSave) {
+          finalDamage = Math.floor(rawDamage / 2);
+        } else if (passed && !params.halfOnSave) {
+          finalDamage = 0;
+        }
       }
 
       if (finalDamage > 0) {
@@ -5409,17 +5457,28 @@ export class GameStateManager {
 
       const passStr = passed ? "PASS" : "FAIL";
       const damageStr = finalDamage > 0 ? `${finalDamage} ${params.damageType}` : "no damage";
+      const evasionTag = evasionFired ? " [Evasion]" : "";
       textResults.push(
-        `${target.name}: ${params.saveAbility} save ${saveTotal} (rolled ${rolledFace}+${saveMod}) — ${passStr} (${damageStr})`,
+        `${target.name}: ${params.saveAbility} save ${saveTotal} (rolled ${rolledFace}+${saveMod}) — ${passStr} (${damageStr})${evasionTag}`,
       );
-      dataResults.push({
+      const resultEntry: {
+        target: string;
+        saveRoll: number;
+        saveMod: number;
+        passed: boolean;
+        damage: number;
+        damageType: string;
+        evasion?: boolean;
+      } = {
         target: target.name,
         saveRoll: saveTotal,
         saveMod,
         passed,
         damage: finalDamage,
         damageType: params.damageType,
-      });
+      };
+      if (evasionFired) resultEntry.evasion = true;
+      dataResults.push(resultEntry);
     }
 
     this.markDirty();

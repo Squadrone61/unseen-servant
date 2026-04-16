@@ -5,8 +5,19 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { getAction } from "../utils/effect-resolver.js";
-import type { EntityEffects, ActionEffect, ActionOutcome } from "../types/effects.js";
+import {
+  getAction,
+  applyDamageWithEffects,
+  getDamageReductions,
+  hasEvasion,
+} from "../utils/effect-resolver.js";
+import type {
+  EntityEffects,
+  ActionEffect,
+  ActionOutcome,
+  EffectBundle,
+  Property,
+} from "../types/effects.js";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -209,5 +220,227 @@ describe("getAction — cantrip scaling", () => {
     const result = getAction(entity);
     const hitDmg = result?.onHit?.damage ?? [];
     expect(hitDmg).toHaveLength(1);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Helpers for damage-reduction / evasion tests
+// ---------------------------------------------------------------------------
+
+/** Minimal ResolveContext for expression evaluation. */
+const baseCtx = {
+  abilities: {
+    strength: 10,
+    dexterity: 10,
+    constitution: 10,
+    intelligence: 10,
+    wisdom: 10,
+    charisma: 10,
+  },
+  totalLevel: 5,
+  proficiencyBonus: 3,
+};
+
+function makeDRBundle(prop: Property): EffectBundle {
+  return {
+    id: "test-dr",
+    source: { type: "feat", name: "Test Feat" },
+    lifetime: { type: "permanent" },
+    effects: { properties: [prop] },
+  };
+}
+
+// ---------------------------------------------------------------------------
+// getDamageReductions
+// ---------------------------------------------------------------------------
+
+describe("getDamageReductions", () => {
+  it("returns empty array when no bundles", () => {
+    expect(getDamageReductions([], "fire")).toEqual([]);
+  });
+
+  it("returns flat reduction for a matching type", () => {
+    const bundle = makeDRBundle({
+      type: "damage_reduction",
+      damageTypes: ["fire"],
+      amount: 3,
+    });
+    const result = getDamageReductions([bundle], "fire");
+    expect(result).toEqual([{ amount: 3, kind: "flat" }]);
+  });
+
+  it("does not return flat reduction for a non-matching type", () => {
+    const bundle = makeDRBundle({
+      type: "damage_reduction",
+      damageTypes: ["bludgeoning"],
+      amount: 3,
+    });
+    expect(getDamageReductions([bundle], "fire")).toEqual([]);
+  });
+
+  it("returns reduction when damageTypes is omitted (all types)", () => {
+    const bundle = makeDRBundle({ type: "damage_reduction", amount: 5 });
+    const result = getDamageReductions([bundle], "psychic");
+    expect(result).toEqual([{ amount: 5, kind: "flat" }]);
+  });
+
+  it("returns reduction when damageTypes contains 'all'", () => {
+    const bundle = makeDRBundle({
+      type: "damage_reduction",
+      damageTypes: ["all"],
+      amount: 2,
+    });
+    expect(getDamageReductions([bundle], "cold")).toEqual([{ amount: 2, kind: "flat" }]);
+  });
+
+  it("skips trigger: 'reaction' entries", () => {
+    const bundle = makeDRBundle({
+      type: "damage_reduction",
+      amount: 10,
+      trigger: "reaction",
+    });
+    expect(getDamageReductions([bundle], "fire")).toEqual([]);
+  });
+
+  it("returns half reduction for amount: 'half'", () => {
+    const bundle = makeDRBundle({ type: "damage_reduction", amount: "half" });
+    expect(getDamageReductions([bundle], "fire")).toEqual([{ amount: 0, kind: "half" }]);
+  });
+
+  it("evaluates expression amount with context", () => {
+    // prof = 3 at baseCtx
+    const bundle = makeDRBundle({ type: "damage_reduction", amount: "prof" });
+    const result = getDamageReductions([bundle], "fire", baseCtx);
+    expect(result).toEqual([{ amount: 3, kind: "flat" }]);
+  });
+
+  it("skips expression amount when no context and emits console.warn", () => {
+    const bundle = makeDRBundle({ type: "damage_reduction", amount: "prof" });
+    const result = getDamageReductions([bundle], "fire");
+    expect(result).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// hasEvasion
+// ---------------------------------------------------------------------------
+
+describe("hasEvasion", () => {
+  it("returns false when no bundles", () => {
+    expect(hasEvasion([], "dexterity")).toBe(false);
+  });
+
+  it("returns true when a matching save_outcome_override is present", () => {
+    const bundle = makeDRBundle({
+      type: "save_outcome_override",
+      ability: "dexterity",
+      saveEffect: "evasion",
+    });
+    expect(hasEvasion([bundle], "dexterity")).toBe(true);
+  });
+
+  it("returns false when the ability does not match", () => {
+    const bundle = makeDRBundle({
+      type: "save_outcome_override",
+      ability: "dexterity",
+      saveEffect: "evasion",
+    });
+    expect(hasEvasion([bundle], "constitution")).toBe(false);
+  });
+
+  it("returns false when no save_outcome_override property exists", () => {
+    const bundle = makeDRBundle({ type: "resistance", damageType: "fire" });
+    expect(hasEvasion([bundle], "dexterity")).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// applyDamageWithEffects — damage_reduction integration
+// ---------------------------------------------------------------------------
+
+describe("applyDamageWithEffects — damage_reduction", () => {
+  it("flat reduction of 2: 10 → 8, applied: 'reduced'", () => {
+    const bundle = makeDRBundle({ type: "damage_reduction", amount: 2 });
+    const result = applyDamageWithEffects([bundle], 10, "fire");
+    expect(result).toEqual({ effectiveDamage: 8, applied: "reduced" });
+  });
+
+  it("two stacked flat reductions (3 + 2): 10 → 5", () => {
+    const b1 = makeDRBundle({ type: "damage_reduction", amount: 3 });
+    const b2 = { ...makeDRBundle({ type: "damage_reduction", amount: 2 }), id: "dr2" };
+    const result = applyDamageWithEffects([b1, b2], 10, "fire");
+    expect(result).toEqual({ effectiveDamage: 5, applied: "reduced" });
+  });
+
+  it("reduction clamps at 0 (flat 20, dmg 5 → 0)", () => {
+    const bundle = makeDRBundle({ type: "damage_reduction", amount: 20 });
+    const result = applyDamageWithEffects([bundle], 5, "fire");
+    expect(result).toEqual({ effectiveDamage: 0, applied: "reduced" });
+  });
+
+  it("type-filtered reduction does NOT reduce non-matching damage type", () => {
+    const bundle = makeDRBundle({
+      type: "damage_reduction",
+      damageTypes: ["bludgeoning"],
+      amount: 5,
+    });
+    const result = applyDamageWithEffects([bundle], 10, "fire");
+    expect(result).toEqual({ effectiveDamage: 10, applied: "normal" });
+  });
+
+  it("omitted damageTypes reduces any type", () => {
+    const bundle = makeDRBundle({ type: "damage_reduction", amount: 4 });
+    const result = applyDamageWithEffects([bundle], 10, "psychic");
+    expect(result).toEqual({ effectiveDamage: 6, applied: "reduced" });
+  });
+
+  it("amount: 'half' alone: 10 → 5", () => {
+    const bundle = makeDRBundle({ type: "damage_reduction", amount: "half" });
+    const result = applyDamageWithEffects([bundle], 10, "fire");
+    expect(result).toEqual({ effectiveDamage: 5, applied: "reduced" });
+  });
+
+  it("flat 2 + half combined: (10 - 2) / 2 = 4", () => {
+    const bFlat = makeDRBundle({ type: "damage_reduction", amount: 2 });
+    const bHalf = {
+      ...makeDRBundle({ type: "damage_reduction", amount: "half" as const }),
+      id: "half",
+    };
+    const result = applyDamageWithEffects([bFlat, bHalf], 10, "fire");
+    expect(result).toEqual({ effectiveDamage: 4, applied: "reduced" });
+  });
+
+  it("immunity short-circuits: immune + reduction = 0, applied: 'immune'", () => {
+    const immBundle: EffectBundle = {
+      id: "imm",
+      source: { type: "feat", name: "Test" },
+      lifetime: { type: "permanent" },
+      effects: { properties: [{ type: "immunity", damageType: "fire" }] },
+    };
+    const drBundle = makeDRBundle({ type: "damage_reduction", amount: 5 });
+    const result = applyDamageWithEffects([immBundle, drBundle], 10, "fire");
+    expect(result).toEqual({ effectiveDamage: 0, applied: "immune" });
+  });
+
+  it("resistant + flat 2: 10 fire resistant → 5, then 5 - 2 = 3, applied: 'reduced'", () => {
+    const resBundle: EffectBundle = {
+      id: "res",
+      source: { type: "feat", name: "Test" },
+      lifetime: { type: "permanent" },
+      effects: { properties: [{ type: "resistance", damageType: "fire" }] },
+    };
+    const drBundle = makeDRBundle({ type: "damage_reduction", amount: 2 });
+    const result = applyDamageWithEffects([resBundle, drBundle], 10, "fire");
+    expect(result).toEqual({ effectiveDamage: 3, applied: "reduced" });
+  });
+
+  it("trigger: 'reaction' is ignored by applyDamageWithEffects", () => {
+    const bundle = makeDRBundle({
+      type: "damage_reduction",
+      amount: 10,
+      trigger: "reaction",
+    });
+    const result = applyDamageWithEffects([bundle], 10, "fire");
+    expect(result).toEqual({ effectiveDamage: 10, applied: "normal" });
   });
 });

@@ -655,8 +655,14 @@
           "effects": {
             "properties": [
               {
+                "type": "save_outcome_override",
+                "ability": "dexterity",
+                "saveEffect": "evasion",
+                "condition": "while not Incapacitated"
+              },
+              {
                 "type": "note",
-                "text": "Evasion: succeed on a DEX save for half damage — take no damage instead. Fail — take half damage. Can share this benefit with creatures within 5 ft making the same save. Doesn't work if Incapacitated."
+                "text": "Creatures within 5 ft of you gain the benefit of this feature against the same effect."
               }
             ]
           }

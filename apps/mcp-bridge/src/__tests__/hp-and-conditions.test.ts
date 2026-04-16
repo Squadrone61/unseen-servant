@@ -9,6 +9,7 @@ import {
 } from "./setup.js";
 import { createBarbarianCharacter } from "./fixtures.js";
 import { getAC, getHP, getClassResources } from "@unseen-servant/shared/character";
+import type { EffectBundle, Property } from "@unseen-servant/shared/types";
 
 /**
  * Behavioral contracts for HP and condition methods on GameStateManager.
@@ -772,5 +773,104 @@ describe("Barbarian character data integrity — Gruk (Barbarian 5)", () => {
   it("dynamic.pactMagicSlots is empty (Barbarian has no pact magic)", () => {
     const char = gsm.characters["Player4"];
     expect(char.dynamic.pactMagicSlots ?? []).toHaveLength(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// damage_reduction integration tests
+// ---------------------------------------------------------------------------
+
+function makeDRBundle(prop: Property): EffectBundle {
+  return {
+    id: "test-dr",
+    source: { type: "feat", name: "Test Feat" },
+    lifetime: { type: "permanent" },
+    effects: { properties: [prop] },
+  };
+}
+
+describe("damage_reduction (passive auto-apply via applyDamageWithEffects)", () => {
+  beforeEach(() => {
+    // Use a fresh GSM + Fighter character for each test in this block
+    t = createTestGSM();
+    gsm = t.gsm;
+    registerCharacter(gsm, "Player1", createFighterCharacter());
+  });
+
+  it("PC with DR 2 vs bludgeoning takes 8 HP damage from 10 bludgeoning", () => {
+    // Inject a Heavy-Armor-Master-style bundle into the character's activeEffects.
+    const bundle = makeDRBundle({
+      type: "damage_reduction",
+      damageTypes: ["bludgeoning"],
+      amount: 2,
+      trigger: "passive",
+    });
+    gsm.characters["Player1"].dynamic.activeEffects = [bundle];
+
+    const before = gsm.characters["Player1"].dynamic.currentHP;
+    const result = gsm.applyDamage("Theron", 10, "bludgeoning");
+    assertToolSuccess(result);
+    const after = gsm.characters["Player1"].dynamic.currentHP;
+    expect(before - after).toBe(8); // 10 - 2 = 8
+    expect(result.data?.applied).toBe("reduced");
+  });
+
+  it("DR vs bludgeoning does NOT reduce fire damage — full 10 damage applied (applied=normal)", () => {
+    const bundle = makeDRBundle({
+      type: "damage_reduction",
+      damageTypes: ["bludgeoning"],
+      amount: 2,
+      trigger: "passive",
+    });
+    gsm.characters["Player1"].dynamic.activeEffects = [bundle];
+
+    const before = gsm.characters["Player1"].dynamic.currentHP;
+    const result = gsm.applyDamage("Theron", 10, "fire");
+    assertToolSuccess(result);
+    const after = gsm.characters["Player1"].dynamic.currentHP;
+    expect(before - after).toBe(10); // no reduction
+    expect(result.data?.applied).toBe("normal");
+  });
+
+  it("immunity to fire wins over DR 5 for fire — 0 damage (applied=immune)", () => {
+    // Bundle 1: immune to fire
+    const immuneBundle: EffectBundle = {
+      id: "test-immune-fire",
+      source: { type: "feat", name: "Fire Immunity" },
+      lifetime: { type: "permanent" },
+      effects: {
+        properties: [{ type: "immunity", damageType: "fire" }],
+      },
+    };
+    // Bundle 2: DR 5 fire
+    const drBundle = makeDRBundle({
+      type: "damage_reduction",
+      damageTypes: ["fire"],
+      amount: 5,
+      trigger: "passive",
+    });
+    gsm.characters["Player1"].dynamic.activeEffects = [immuneBundle, drBundle];
+
+    const before = gsm.characters["Player1"].dynamic.currentHP;
+    const result = gsm.applyDamage("Theron", 10, "fire");
+    // Immune → 0 damage, returns early without hitting HP
+    expect(result.data?.applied).toBe("immune");
+    expect(result.data?.damageDealt).toBe(0);
+    expect(gsm.characters["Player1"].dynamic.currentHP).toBe(before);
+  });
+
+  it("trigger: 'reaction' DR is NOT auto-applied — full 10 damage", () => {
+    const bundle = makeDRBundle({
+      type: "damage_reduction",
+      damageTypes: ["bludgeoning"],
+      amount: 5,
+      trigger: "reaction",
+    });
+    gsm.characters["Player1"].dynamic.activeEffects = [bundle];
+
+    const before = gsm.characters["Player1"].dynamic.currentHP;
+    gsm.applyDamage("Theron", 10, "bludgeoning");
+    const after = gsm.characters["Player1"].dynamic.currentHP;
+    expect(before - after).toBe(10); // reaction reduction not auto-applied
   });
 });

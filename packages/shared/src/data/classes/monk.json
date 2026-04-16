@@ -265,8 +265,10 @@
       "effects": {
         "properties": [
           {
-            "type": "note",
-            "text": "Against effects that allow a DEX save for half damage: take no damage on a success, half on a failure. Does not apply while Incapacitated."
+            "type": "save_outcome_override",
+            "ability": "dexterity",
+            "saveEffect": "evasion",
+            "condition": "while not Incapacitated"
           }
         ]
       }

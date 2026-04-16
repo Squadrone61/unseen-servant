@@ -2712,8 +2712,11 @@
     "effects": {
       "properties": [
         {
-          "type": "note",
-          "text": "Damage Reduction: When you're hit by an attack while you're wearing Heavy armor, any Bludgeoning, Piercing, and Slashing damage dealt to you by that attack is reduced by an amount equal to your Proficiency Bonus."
+          "type": "damage_reduction",
+          "damageTypes": ["bludgeoning", "piercing", "slashing"],
+          "amount": "prof",
+          "trigger": "passive",
+          "condition": "while wearing heavy armor"
         }
       ]
     }

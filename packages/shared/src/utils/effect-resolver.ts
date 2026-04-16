@@ -1,4 +1,5 @@
 import type {
+  Ability,
   EffectBundle,
   Modifier,
   ModifierTarget,
@@ -377,19 +378,109 @@ export function getAction(
   return action;
 }
 
+// ---------------------------------------------------------------------------
+// Damage Reduction Helpers
+// ---------------------------------------------------------------------------
+
+/** Internal shape for a resolved damage reduction entry. */
+export interface DamageReduction {
+  amount: number;
+  kind: "flat" | "half";
+}
+
 /**
- * Apply damage considering resistance/immunity/vulnerability from effects.
- * Returns the effective damage amount after applying modifiers.
- * Order: immunity (0) > resistance (halved) > vulnerability (doubled).
- * If both resistance and vulnerability apply, they cancel out (normal damage).
+ * Collect all passive damage reductions from bundles that apply to a given
+ * damage type. Skips `trigger: "reaction"` entries (DM-applied, not automatic).
+ *
+ * @param bundles     Active effect bundles to search.
+ * @param damageType  The incoming damage type (case-insensitive).
+ * @param context     Optional ResolveContext for evaluating expression-valued amounts.
+ *                    If omitted, expression-valued amounts are skipped with a warning.
+ * @returns           Array of resolved reductions to apply in sequence.
+ */
+export function getDamageReductions(
+  bundles: EffectBundle[],
+  damageType: string,
+  context?: ResolveContext,
+): DamageReduction[] {
+  const props = collectProperties(bundles, "damage_reduction");
+  const result: DamageReduction[] = [];
+
+  for (const prop of props) {
+    // Skip reaction-triggered reductions — those are DM-applied.
+    if (prop.trigger === "reaction") continue;
+
+    // Check damage type match: no damageTypes = all types; explicit list must include this type or "all".
+    if (prop.damageTypes !== undefined && prop.damageTypes.length > 0) {
+      const normalized = damageType.toLowerCase();
+      const matches = prop.damageTypes.some(
+        (dt) => dt === "all" || dt.toLowerCase() === normalized,
+      );
+      if (!matches) continue;
+    }
+
+    // Resolve the amount.
+    if (prop.amount === "half") {
+      result.push({ amount: 0, kind: "half" });
+    } else if (typeof prop.amount === "number") {
+      result.push({ amount: prop.amount, kind: "flat" });
+    } else {
+      // Expression string — requires a context.
+      if (!context) {
+        console.warn(
+          `[effect-resolver] damage_reduction has expression amount "${prop.amount}" but no ResolveContext was provided; skipping.`,
+        );
+        continue;
+      }
+      const resolved = evaluateExpression(prop.amount, context);
+      result.push({ amount: resolved, kind: "flat" });
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Check whether any bundle grants Evasion for a specific saving throw ability.
+ * Evasion inverts save-for-half: success = 0 damage, failure = half damage.
+ */
+export function hasEvasion(bundles: EffectBundle[], ability: Ability): boolean {
+  return collectProperties(bundles, "save_outcome_override").some(
+    (p) => p.ability === ability && p.saveEffect === "evasion",
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Damage Application
+// ---------------------------------------------------------------------------
+
+/**
+ * Apply damage considering resistance/immunity/vulnerability from effects,
+ * followed by any passive damage reductions.
+ *
+ * Resolution order:
+ *   1. Immunity          — returns 0, applied: "immune" (short-circuits all else).
+ *   2. Resistance/vulnerability — halves or doubles; if both present, cancel out.
+ *   3. Flat reductions   — summed and subtracted (clamped at 0).
+ *   4. "half" reductions — if any present, divide by 2 (Math.floor), applied once.
+ *
+ * `applied` tag priority (most protective wins when multiple categories fire):
+ *   immune > reduced > resistant > vulnerable > normal.
+ *   If resistant AND a flat/half reduction both fire, the tag is "reduced" (more specific).
+ *
+ * @param bundles     Active effect bundles for the target.
+ * @param amount      Raw incoming damage (before any effects).
+ * @param damageType  The damage type string (e.g. "fire", "bludgeoning").
+ * @param context     Optional ResolveContext for expression-valued damage_reduction amounts.
  */
 export function applyDamageWithEffects(
   bundles: EffectBundle[],
   amount: number,
   damageType: string,
+  context?: ResolveContext,
 ): {
   effectiveDamage: number;
-  applied: "normal" | "resistant" | "immune" | "vulnerable";
+  applied: "normal" | "resistant" | "immune" | "vulnerable" | "reduced";
 } {
   const immune = hasImmunity(bundles, damageType);
   if (immune) {
@@ -399,18 +490,46 @@ export function applyDamageWithEffects(
   const resistant = hasResistance(bundles, damageType);
   const vulnerable = hasVulnerability(bundles, damageType);
 
-  // Resistance and vulnerability cancel each other out
+  // Resistance and vulnerability cancel each other out.
+  let dmg: number;
+  let baseApplied: "normal" | "resistant" | "vulnerable";
   if (resistant && vulnerable) {
-    return { effectiveDamage: amount, applied: "normal" };
+    dmg = amount;
+    baseApplied = "normal";
+  } else if (resistant) {
+    dmg = Math.floor(amount / 2);
+    baseApplied = "resistant";
+  } else if (vulnerable) {
+    dmg = amount * 2;
+    baseApplied = "vulnerable";
+  } else {
+    dmg = amount;
+    baseApplied = "normal";
   }
 
-  if (resistant) {
-    return { effectiveDamage: Math.floor(amount / 2), applied: "resistant" };
+  // Apply passive damage reductions.
+  const reductions = getDamageReductions(bundles, damageType, context);
+  if (reductions.length === 0) {
+    return { effectiveDamage: dmg, applied: baseApplied };
   }
 
-  if (vulnerable) {
-    return { effectiveDamage: amount * 2, applied: "vulnerable" };
-  }
+  // 1. Sum flat reductions and subtract.
+  const flatTotal = reductions
+    .filter((r) => r.kind === "flat")
+    .reduce((acc, r) => acc + r.amount, 0);
+  const hasHalf = reductions.some((r) => r.kind === "half");
 
-  return { effectiveDamage: amount, applied: "normal" };
+  let reduced = dmg - flatTotal;
+  if (hasHalf) {
+    reduced = Math.floor(reduced / 2);
+  }
+  // Clamp at 0.
+  reduced = Math.max(0, reduced);
+
+  // Determine applied tag: "reduced" is more specific than resistant/vulnerable/normal,
+  // but never overrides "immune" (already returned above).
+  const applied: "reduced" | "resistant" | "vulnerable" | "normal" =
+    reduced !== dmg ? "reduced" : baseApplied;
+
+  return { effectiveDamage: reduced, applied };
 }

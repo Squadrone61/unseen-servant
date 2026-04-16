@@ -363,7 +363,7 @@ export function registerGameTools(
     "apply_damage",
     {
       description:
-        "Deal damage to a character or combatant. Handles temp HP absorption automatically. When damage_type is provided, resistance (half), immunity (zero), and vulnerability (double) are applied automatically from active effects. If the target was already at 0 HP, records a death save failure instead (2 failures if is_critical_hit is true).\n\nAlternative: provide actionRef instead of explicit amount/damage_type to auto-resolve damage dice and type from the DB entity's ActionEffect. Use outcomeBranch to pick which outcome (default: onHit for attack/auto, onFailedSave for save). For spells, provide upcast_level (extra levels above base) and caster_spell_save_dc if needed.",
+        "Deal damage to a character or combatant. Handles temp HP absorption automatically. When damage_type is provided, resistance (half), immunity (zero), and vulnerability (double) are applied automatically from active effects. Passive damage reductions (e.g. Heavy Armor Master) auto-apply from active effects — pass raw damage, do not pre-subtract. If the target was already at 0 HP, records a death save failure instead (2 failures if is_critical_hit is true).\n\nAlternative: provide actionRef instead of explicit amount/damage_type to auto-resolve damage dice and type from the DB entity's ActionEffect. Use outcomeBranch to pick which outcome (default: onHit for attack/auto, onFailedSave for save). For spells, provide upcast_level (extra levels above base) and caster_spell_save_dc if needed.",
       inputSchema: {
         name: z.string().describe("Character or combatant name"),
         amount: z.coerce
@@ -1108,7 +1108,7 @@ export function registerGameTools(
     "apply_area_effect",
     {
       description:
-        "Apply damage to all combatants in an area with saving throws. Sphere: center + size (radius). Cone: center (caster) + size (length) + direction. Rectangle: from + to (two corners in A1).\n\nAlternative: provide action_ref to auto-resolve area shape, size, damage dice, damage type, save ability, and DC from a DB entity's ActionEffect (e.g., Fireball: sphere 20ft, 8d6 fire, DEX save). Explicit args override actionRef values. For spells, provide caster_spell_save_dc to substitute 'spell_save_dc'. For upcast spells, provide upcast_level (extra levels above base).\n\nProvide aoe_id to reuse the geometry of a committed player AoE overlay (shape, center, size, direction, from, to) without re-specifying position args.",
+        "Apply damage to all combatants in an area with saving throws. Sphere: center + size (radius). Cone: center (caster) + size (length) + direction. Rectangle: from + to (two corners in A1).\n\nAlternative: provide action_ref to auto-resolve area shape, size, damage dice, damage type, save ability, and DC from a DB entity's ActionEffect (e.g., Fireball: sphere 20ft, 8d6 fire, DEX save). Explicit args override actionRef values. For spells, provide caster_spell_save_dc to substitute 'spell_save_dc'. For upcast spells, provide upcast_level (extra levels above base).\n\nProvide aoe_id to reuse the geometry of a committed player AoE overlay (shape, center, size, direction, from, to) without re-specifying position args. Evasion (from `save_outcome_override` effects) auto-inverts the save-for-half outcome on Dexterity saves — pass standard halfOnSave, the engine handles the flip.",
       inputSchema: {
         aoe_id: z
           .string()
