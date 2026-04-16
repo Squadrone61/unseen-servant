@@ -154,7 +154,7 @@
         "properties": [
           {
             "type": "note",
-            "text": "You can use the mastery properties of 2 weapons of your choice (must have proficiency). Change one choice on each Long Rest."
+            "text": "You can use the mastery properties of 2 weapons of your choice (must have proficiency). Whenever you finish a Long Rest, you can change any of the weapons you chose."
           }
         ]
       }
@@ -329,8 +329,7 @@
             "text": "Three additional Cunning Strike options: Daze (2d6 cost, CON save or can only move OR take one action/bonus action on its next turn), Knock Out (6d6 cost, CON save or Unconscious 1 min or until damaged), Obscure (3d6 cost, DEX save or Blinded until end of its next turn). Save DC = 8 + DEX mod + Prof."
           }
         ]
-      },
-      "activationType": "bonus"
+      }
     },
     {
       "name": "Slippery Mind",
