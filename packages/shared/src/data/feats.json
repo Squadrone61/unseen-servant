@@ -335,11 +335,11 @@
       "properties": [
         {
           "type": "note",
-          "text": "Learn one Artificer cantrip and one Artificer 1st-level spell. Intelligence is your spellcasting ability. The 1st-level spell can be cast once per long rest without a spell slot, and also using any spell slots you have."
+          "text": "You know one Artificer cantrip of your choice (chosen via Artificer Cantrip selection). Intelligence is your spellcasting ability for it; you can cast it at will."
         },
         {
           "type": "note",
-          "text": "Gain proficiency with one artisan's tool of your choice, usable as a spellcasting focus for Intelligence-based spells."
+          "text": "You know one Artificer 1st-level spell of your choice (chosen via Artificer 1st-Level Spell selection). Intelligence is your spellcasting ability. You can cast it once per Long Rest without expending a spell slot; you can also cast it using any spell slots you have. The chosen artisan's tool (from Artisan's Tool Proficiency selection) can be used as a spellcasting focus for any Intelligence-based spell."
         }
       ]
     },
@@ -444,15 +444,15 @@
       "properties": [
         {
           "type": "note",
-          "text": "Climb Speed equals your Speed."
+          "text": "Climb Speed: You gain a Climb Speed equal to your current walk Speed."
         },
         {
           "type": "note",
-          "text": "While Prone, you can stand up using only 5 feet of movement."
+          "text": "Hop Up: When you have the Prone condition, you can right yourself using only 5 feet of movement instead of half your Speed."
         },
         {
           "type": "note",
-          "text": "You can make a running Long Jump or High Jump after moving only 5 feet."
+          "text": "Jumping: You can make a running Long Jump or High Jump after moving only 5 feet on foot (rather than the normal 10 feet required)."
         }
       ]
     }
@@ -493,7 +493,7 @@
       "properties": [
         {
           "type": "note",
-          "text": "The two chosen Cleric cantrips use Charisma as the spellcasting ability and count as Paladin spells. You can replace one at each Paladin level."
+          "text": "The two chosen Cleric cantrips (selected via Cleric Cantrips) count as Paladin spells for you and use Charisma as the spellcasting ability. Whenever you gain a Paladin level, you can replace one of these cantrips with another Cleric cantrip."
         }
       ]
     }
@@ -530,7 +530,7 @@
       "properties": [
         {
           "type": "note",
-          "text": "Peerless Aim: When you miss with an attack roll, you can hit instead. Once per turn."
+          "text": "Peerless Aim: When you miss with an attack roll, you can choose to hit instead. Once you use this benefit, you can't use it again until the start of your next turn."
         }
       ]
     },
@@ -565,7 +565,7 @@
       "properties": [
         {
           "type": "note",
-          "text": "Blink Steps: Immediately after you take the Attack action or the Magic action, you can teleport up to 30 feet to an unoccupied space you can see."
+          "text": "Blink Steps: Immediately after you take the Attack action or the Magic action on your turn, you can teleport up to 30 feet to an unoccupied space you can see."
         }
       ]
     },
@@ -600,11 +600,7 @@
       "properties": [
         {
           "type": "note",
-          "text": "Energy Resistances: Choose 2 damage types from Acid, Cold, Fire, Lightning, Necrotic, Poison, Psychic, Radiant, Thunder. You have resistance to those types. You can change choices on a Long Rest."
-        },
-        {
-          "type": "note",
-          "text": "Energy Redirection: When you take one of your chosen damage types, you can use your Reaction to direct damage of the same type at a creature you can see within 60 feet (not behind Total Cover). The creature makes a Dexterity saving throw (DC 8 + CON modifier + Proficiency Bonus). On a failed save, it takes 2d12 + CON modifier damage. On a successful save, it takes no damage."
+          "text": "Energy Redirection: When you take damage of one of your two chosen resistance types (selected via Energy Resistances), you can use your Reaction to direct damage of the same type at a creature you can see within 60 feet that isn't behind Total Cover. That creature makes a Dexterity saving throw (DC 8 + Constitution modifier + Proficiency Bonus). On a failed save, it takes 2d12 + your Constitution modifier damage of that type. On a success, it takes no damage."
         }
       ]
     },
@@ -745,8 +741,15 @@
     "effects": {
       "properties": [
         {
+          "type": "resource",
+          "name": "Improve Fate",
+          "maxUses": 1,
+          "longRest": "all",
+          "shortRest": "all"
+        },
+        {
           "type": "note",
-          "text": "Improve Fate: When you or a creature within 60 feet succeeds or fails a D20 Test, you can roll 2d4 and add or subtract the result from the d20 roll. Recharges on Initiative roll or Short/Long Rest."
+          "text": "Improve Fate: When you or another creature within 60 feet of you succeeds on or fails a D20 Test, you can expend your Improve Fate use to roll 2d4 and apply the total as a bonus or penalty to the d20 roll (your choice). Recharges when you roll Initiative or finish a Short Rest or Long Rest."
         }
       ]
     },
@@ -822,11 +825,11 @@
       "properties": [
         {
           "type": "note",
-          "text": "Overcome Defenses: Bludgeoning, Piercing, and Slashing damage you deal always ignores Resistance."
+          "text": "Overcome Defenses: The Bludgeoning, Piercing, and Slashing damage you deal always ignores Resistance."
         },
         {
           "type": "note",
-          "text": "Overwhelming Strike: When you roll a 20 on the d20 for an attack roll, deal extra damage equal to the increased ability score. Same damage type as the attack."
+          "text": "Overwhelming Strike: When you roll a 20 on the d20 for an attack roll, you can deal extra damage to the target equal to the ability score increased by this feat (Strength or Dexterity). The extra damage's type is the same as the attack's damage type."
         }
       ]
     },
@@ -1079,7 +1082,7 @@
       "properties": [
         {
           "type": "note",
-          "text": "Free Casting: Whenever you cast a spell using a level 1–4 spell slot, roll 1d4. If the result equals the slot's level, the slot is not expended."
+          "text": "Free Casting: Whenever you cast a spell with a level 1–4 spell slot, roll 1d4. If the number you roll equals the slot's level, the slot is not expended. This applies each time you cast a qualifying spell."
         }
       ]
     },
@@ -1237,7 +1240,7 @@
       "properties": [
         {
           "type": "note",
-          "text": "When an ally within 30 feet rolls a 1 on a d20 for an attack roll, ability check, or saving throw, you can use your reaction to let them reroll. They must use the new roll. You can't use your Lucky trait before the end of your next turn after using this."
+          "text": "When an ally you can see within 30 feet of you rolls a 1 on the d20 for an attack roll, an ability check, or a saving throw, you can use your Reaction to let the ally reroll the die. The ally must use the new roll. After you use this benefit, you can't use your Lucky racial trait before the end of your next turn."
         }
       ]
     }
@@ -1307,11 +1310,11 @@
       "properties": [
         {
           "type": "note",
-          "text": "When you take the Dash action, your Speed increases by 10 feet for that action."
+          "text": "Improved Dash: When you take the Dash action, your Speed increases by 10 feet for the duration of that action."
         },
         {
           "type": "note",
-          "text": "If you move at least 10 feet in a straight line toward a target before hitting it with a melee attack (part of the Attack action), you may deal an extra 1d8 damage or push the target up to 10 feet (if it's no more than one size larger). Once per turn."
+          "text": "Charge Attack: If you move at least 10 feet in a straight line toward a target immediately before hitting it with a melee attack roll as part of the Attack action, choose one of the following effects: gain a 1d8 bonus to the attack's damage roll, or push the target up to 10 feet away (only if the target is no more than one size larger than you). You can use this benefit only once on each of your turns."
         }
       ]
     }
@@ -1383,11 +1386,11 @@
       "properties": [
         {
           "type": "note",
-          "text": "You receive a 20% discount when purchasing nonmagical items."
+          "text": "Discount: Whenever you buy a nonmagical item, you receive a 20 percent discount on it."
         },
         {
           "type": "note",
-          "text": "After a Long Rest, you can craft one temporary item using your proficient Artisan's Tools. The item lasts until your next Long Rest."
+          "text": "Fast Crafting: When you finish a Long Rest, you can craft one piece of gear from the Fast Crafting table, provided you have the Artisan's Tools associated with that item and have proficiency with those tools. The item lasts until you finish another Long Rest, at which point it falls apart."
         }
       ]
     },
@@ -1498,11 +1501,11 @@
       "properties": [
         {
           "type": "note",
-          "text": "Once per turn, when you deal Bludgeoning damage, you can push the target up to 5 feet to an unoccupied space (target must be no more than one size larger than you)."
+          "text": "Push: Once per turn, when you hit a creature with an attack that deals Bludgeoning damage, you can move it 5 feet to an unoccupied space, provided the target is no more than one size larger than you."
         },
         {
           "type": "note",
-          "text": "When you score a Critical Hit with Bludgeoning damage, attack rolls against that creature have advantage until the start of your next turn."
+          "text": "Enhanced Critical: When you score a Critical Hit that deals Bludgeoning damage to a creature, attack rolls against that creature have Advantage until the start of your next turn."
         }
       ]
     }
@@ -1616,7 +1619,7 @@
       "properties": [
         {
           "type": "note",
-          "text": "You can expend a use of your Breath Weapon to roar instead of exhaling: targets of your choice within 30 ft must make a Wisdom save (DC 8 + Prof + Cha mod) or be Frightened of you for 1 minute. They can repeat the save when they take damage."
+          "text": "Instead of exhaling destructive energy, you can expend a use of your Breath Weapon to roar with menace. Each creature of your choice within 30 feet must make a Wisdom saving throw (DC 8 + your Proficiency Bonus + your Charisma modifier). A target automatically succeeds if it can't hear or see you. On a failed save, the target has the Frightened condition focused on you for 1 minute. If a Frightened target takes any damage, it can repeat the saving throw, ending the condition on a success."
         }
       ]
     }
