@@ -90,19 +90,19 @@ function FeatPopover({ feat, onClose, position }: FeatPopoverProps) {
     <DetailPopover title={feat.name} onClose={onClose} position={position}>
       <div className="space-y-3">
         {/* Meta badges */}
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex flex-wrap items-center gap-2">
           <span
-            className={`text-xs px-2 py-0.5 rounded-full border ${CATEGORY_BADGE[feat.category] ?? "bg-gray-700/50 text-gray-300 border-gray-600/30"}`}
+            className={`rounded-full border px-2 py-0.5 text-xs ${CATEGORY_BADGE[feat.category] ?? "border-gray-600/30 bg-gray-700/50 text-gray-300"}`}
           >
             {feat.category}
           </span>
           {feat.prerequisiteText && (
-            <span className="text-xs px-2 py-0.5 rounded-full bg-gray-700/40 text-gray-400 border border-gray-600/40">
+            <span className="rounded-full border border-gray-600/40 bg-gray-700/40 px-2 py-0.5 text-xs text-gray-400">
               {feat.prerequisiteText}
             </span>
           )}
           {feat.repeatable && (
-            <span className="text-xs px-2 py-0.5 rounded-full bg-teal-900/40 text-teal-300 border border-teal-700/40">
+            <span className="rounded-full border border-teal-700/40 bg-teal-900/40 px-2 py-0.5 text-xs text-teal-300">
               Repeatable
             </span>
           )}
@@ -112,7 +112,7 @@ function FeatPopover({ feat, onClose, position }: FeatPopoverProps) {
         {feat.effects && <EffectSummary effects={feat.effects} />}
 
         {/* Description */}
-        <div className="text-sm text-gray-300 leading-relaxed">
+        <div className="text-sm leading-relaxed text-gray-300">
           <RichText text={feat.description} />
         </div>
       </div>
@@ -136,7 +136,7 @@ function FeatCard({ feat, isSelected, onClick, onInfo }: FeatCardProps) {
     <button
       onClick={onClick}
       className={`
-        w-full text-left px-4 py-3 rounded-lg border transition-all duration-200
+        w-full rounded-lg border px-4 py-3 text-left transition-all duration-200
         ${
           isSelected
             ? "border-amber-500/50 bg-amber-950/20 ring-1 ring-amber-500/20"
@@ -145,15 +145,11 @@ function FeatCard({ feat, isSelected, onClick, onInfo }: FeatCardProps) {
       `}
     >
       <div className="flex items-center justify-between gap-2">
-        <span
-          className={`font-[family-name:var(--font-cinzel)] text-sm ${
-            isSelected ? "text-amber-200" : "text-gray-200"
-          }`}
-        >
+        <span className={`font-cinzel text-sm ${isSelected ? "text-amber-200" : "text-gray-200"}`}>
           {feat.name}
         </span>
-        <div className="flex items-center gap-2 shrink-0">
-          <span className="text-xs text-gray-500 whitespace-nowrap">
+        <div className="flex shrink-0 items-center gap-2">
+          <span className="text-xs whitespace-nowrap text-gray-500">
             {feat.category}
             {feat.prerequisiteText ? ` · ${feat.prerequisiteText}` : ""}
           </span>
@@ -219,8 +215,8 @@ function ASIPanel({ index, selection, onUpdate }: ASIPanelProps) {
   return (
     <div className="flex flex-col gap-3" aria-label={`ASI slot ${index + 1} ability selection`}>
       <p className="text-xs text-gray-400">
-        Choose one ability for <span className="text-amber-300 font-medium">+2</span>, or two
-        abilities for <span className="text-amber-300 font-medium">+1 / +1</span>.
+        Choose one ability for <span className="font-medium text-amber-300">+2</span>, or two
+        abilities for <span className="font-medium text-amber-300">+1 / +1</span>.
         {mode === "none" && " Click an ability to start."}
         {mode === "plus2" &&
           " Click another ability to split into +1/+1, or click the selected one to remove."}
@@ -232,17 +228,17 @@ function ASIPanel({ index, selection, onUpdate }: ASIPanelProps) {
           {selectedAbilities.map((ab) => (
             <span
               key={ab}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-amber-500/30 bg-amber-900/10 text-amber-300 text-xs font-medium"
+              className="inline-flex items-center gap-1.5 rounded-md border border-amber-500/30 bg-amber-900/10 px-2.5 py-1 text-xs font-medium text-amber-300"
             >
               {cap(ab)} +{asiAbilities[ab]}
               <button
                 type="button"
                 onClick={() => handleClick(ab)}
                 aria-label={`Remove ${cap(ab)} bonus`}
-                className="ml-1 text-amber-500/60 hover:text-amber-300 transition-colors"
+                className="ml-1 text-amber-500/60 transition-colors hover:text-amber-300"
               >
                 <svg
-                  className="w-3 h-3"
+                  className="h-3 w-3"
                   viewBox="0 0 10 10"
                   fill="none"
                   stroke="currentColor"
@@ -257,7 +253,7 @@ function ASIPanel({ index, selection, onUpdate }: ASIPanelProps) {
           ))}
           <button
             type="button"
-            className="text-xs text-gray-600 hover:text-gray-400 transition-colors"
+            className="text-xs text-gray-600 transition-colors hover:text-gray-400"
             onClick={handleClear}
           >
             Reset
@@ -391,10 +387,10 @@ function AsiSlot({
   }
 
   return (
-    <div className="bg-gray-800/40 border border-gray-700/30 rounded-lg p-5 mb-4">
+    <div className="mb-4 rounded-lg border border-gray-700/30 bg-gray-800/40 p-5">
       {/* Header */}
-      <div className="flex items-center gap-3 mb-4">
-        <span className="text-xs bg-amber-900/40 text-amber-300 border border-amber-700/40 rounded-full px-2 py-0.5 font-medium">
+      <div className="mb-4 flex items-center gap-3">
+        <span className="rounded-full border border-amber-700/40 bg-amber-900/40 px-2 py-0.5 text-xs font-medium text-amber-300">
           Level {level}
         </span>
         <h3
@@ -406,7 +402,7 @@ function AsiSlot({
       </div>
 
       {/* Type toggle */}
-      <div className="flex gap-2 mb-5" role="radiogroup" aria-label={`Level ${level} ASI type`}>
+      <div className="mb-5 flex gap-2" role="radiogroup" aria-label={`Level ${level} ASI type`}>
         {(["asi", "feat"] as const).map((type) => {
           const selected = selection.type === type;
           const label = type === "asi" ? "Ability Score Increase" : "Choose a Feat";
@@ -435,7 +431,7 @@ function AsiSlot({
                 ].join(" ")}
               >
                 {selected && (
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400" aria-hidden="true" />
+                  <span className="h-1.5 w-1.5 rounded-full bg-amber-400" aria-hidden="true" />
                 )}
               </span>
               {label}
@@ -452,8 +448,8 @@ function AsiSlot({
         <div className="flex flex-col gap-3">
           {/* Selected feat banner */}
           {selectedFeatData && (
-            <div className="flex items-center gap-3 px-4 py-3 rounded-lg border border-amber-500/30 bg-amber-950/15">
-              <span className="text-sm text-amber-200 font-medium">
+            <div className="flex items-center gap-3 rounded-lg border border-amber-500/30 bg-amber-950/15 px-4 py-3">
+              <span className="text-sm font-medium text-amber-200">
                 &#10003; {selectedFeatData.name}
               </span>
               <span className="text-xs text-gray-500">
@@ -463,13 +459,13 @@ function AsiSlot({
               <div className="flex-1" />
               <button
                 onClick={(e) => handleFeatInfo(selectedFeatData, e)}
-                className="text-xs text-amber-400/70 hover:text-amber-300 transition-colors"
+                className="text-xs text-amber-400/70 transition-colors hover:text-amber-300"
               >
                 View Details
               </button>
               <button
                 onClick={() => onUpdate({ level, type: "feat", featName: undefined })}
-                className="text-xs text-gray-500 hover:text-red-400 transition-colors"
+                className="text-xs text-gray-500 transition-colors hover:text-red-400"
               >
                 Change
               </button>
@@ -478,9 +474,9 @@ function AsiSlot({
 
           {/* Search */}
           <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm pointer-events-none">
+            <span className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-sm text-gray-500">
               <svg
-                className="w-3.5 h-3.5"
+                className="h-3.5 w-3.5"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -500,16 +496,16 @@ function AsiSlot({
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search feats..."
               aria-label="Search feats"
-              className="w-full pl-9 pr-4 py-2.5 bg-gray-800/60 border border-gray-700/40 rounded-lg text-sm text-gray-200 placeholder-gray-500 focus:border-amber-500/50 focus:outline-none transition-colors"
+              className="w-full rounded-lg border border-gray-700/40 bg-gray-800/60 py-2.5 pr-4 pl-9 text-sm text-gray-200 placeholder-gray-500 transition-colors focus:border-amber-500/50 focus:outline-none"
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery("")}
                 aria-label="Clear search"
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors"
+                className="absolute top-1/2 right-3 -translate-y-1/2 text-gray-500 transition-colors hover:text-gray-300"
               >
                 <svg
-                  className="w-3.5 h-3.5"
+                  className="h-3.5 w-3.5"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -528,7 +524,7 @@ function AsiSlot({
 
           {/* Compact feat grid — height capped to avoid infinite page growth */}
           <div
-            className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 max-h-80 overflow-y-auto rounded-lg pr-1"
+            className="grid max-h-80 grid-cols-1 gap-1.5 overflow-y-auto rounded-lg pr-1 sm:grid-cols-2"
             role="listbox"
             aria-label="Available feats"
           >
@@ -542,7 +538,7 @@ function AsiSlot({
               />
             ))}
             {filteredFeats.length === 0 && (
-              <p className="col-span-full text-center text-gray-500 text-sm py-6">
+              <p className="col-span-full py-6 text-center text-sm text-gray-500">
                 No feats match your search.
               </p>
             )}
@@ -562,7 +558,7 @@ function AsiSlot({
               />
               <div>
                 <h4
-                  className="text-sm font-semibold text-amber-400/90 uppercase tracking-wider mb-3"
+                  className="mb-3 text-sm font-semibold tracking-wider text-amber-400/90 uppercase"
                   style={{ fontFamily: "var(--font-cinzel)" }}
                 >
                   {selectedFeatData.name} Choices
@@ -612,7 +608,7 @@ function OriginFeatDisplay({ featName }: OriginFeatDisplayProps) {
 
   if (!feat) {
     return (
-      <div className="bg-gray-800/40 border border-gray-700/30 rounded-lg p-4">
+      <div className="rounded-lg border border-gray-700/30 bg-gray-800/40 p-4">
         <p className="text-sm text-gray-400">
           Origin feat: <span className="text-amber-300">{featName}</span>
         </p>
@@ -621,10 +617,10 @@ function OriginFeatDisplay({ featName }: OriginFeatDisplayProps) {
   }
 
   return (
-    <div className="bg-gray-800/40 border border-violet-700/30 rounded-lg p-5">
+    <div className="rounded-lg border border-violet-700/30 bg-gray-800/40 p-5">
       {/* Header */}
-      <div className="flex items-center gap-3 mb-3">
-        <span className="text-xs bg-violet-900/40 text-violet-300 border border-violet-700/40 rounded-full px-2 py-0.5 font-medium">
+      <div className="mb-3 flex items-center gap-3">
+        <span className="rounded-full border border-violet-700/40 bg-violet-900/40 px-2 py-0.5 text-xs font-medium text-violet-300">
           Origin Feat
         </span>
         <h3
@@ -633,19 +629,17 @@ function OriginFeatDisplay({ featName }: OriginFeatDisplayProps) {
         >
           {feat.name}
         </h3>
-        <span className="text-xs text-gray-500 ml-auto">Granted by background</span>
+        <span className="ml-auto text-xs text-gray-500">Granted by background</span>
       </div>
 
       {/* Compact display row */}
       <button
         onClick={(e) => setPopover({ position: { x: e.clientX, y: e.clientY } })}
-        className="w-full text-left px-4 py-3 rounded-lg border border-violet-700/20 bg-gray-800/30 hover:border-violet-600/40 hover:bg-gray-800/50 transition-all duration-200 mb-3"
+        className="mb-3 w-full rounded-lg border border-violet-700/20 bg-gray-800/30 px-4 py-3 text-left transition-all duration-200 hover:border-violet-600/40 hover:bg-gray-800/50"
       >
         <div className="flex items-center justify-between gap-2">
-          <span className="font-[family-name:var(--font-cinzel)] text-sm text-violet-200">
-            {feat.name}
-          </span>
-          <span className="text-xs text-gray-500 shrink-0">
+          <span className="font-cinzel text-sm text-violet-200">{feat.name}</span>
+          <span className="shrink-0 text-xs text-gray-500">
             {feat.category}
             {feat.prerequisiteText ? ` · ${feat.prerequisiteText}` : ""}
           </span>
@@ -673,20 +667,20 @@ function OriginFeatDisplay({ featName }: OriginFeatDisplayProps) {
           position={popover.position}
         >
           <div className="space-y-3">
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex flex-wrap items-center gap-2">
               <span
-                className={`text-xs px-2 py-0.5 rounded-full border ${CATEGORY_BADGE[feat.category] ?? "bg-gray-700/50 text-gray-300 border-gray-600/30"}`}
+                className={`rounded-full border px-2 py-0.5 text-xs ${CATEGORY_BADGE[feat.category] ?? "border-gray-600/30 bg-gray-700/50 text-gray-300"}`}
               >
                 {feat.category}
               </span>
               {feat.prerequisiteText && (
-                <span className="text-xs px-2 py-0.5 rounded-full bg-gray-700/40 text-gray-400 border border-gray-600/40">
+                <span className="rounded-full border border-gray-600/40 bg-gray-700/40 px-2 py-0.5 text-xs text-gray-400">
                   {feat.prerequisiteText}
                 </span>
               )}
             </div>
             {feat.effects && <EffectSummary effects={feat.effects} />}
-            <div className="text-sm text-gray-300 leading-relaxed">
+            <div className="text-sm leading-relaxed text-gray-300">
               <RichText text={feat.description} />
             </div>
           </div>
@@ -780,10 +774,7 @@ export function FeatsStep() {
     <section aria-labelledby="feats-step-heading" className="flex flex-col gap-6">
       {/* Section header */}
       <div>
-        <h1
-          id="feats-step-heading"
-          className="text-xl font-[family-name:var(--font-cinzel)] text-amber-200/90 mb-1"
-        >
+        <h1 id="feats-step-heading" className="mb-1 font-cinzel text-xl text-amber-200/90">
           Feats & Ability Improvements
         </h1>
         <p className="text-sm text-gray-400">
@@ -792,7 +783,7 @@ export function FeatsStep() {
           Epic Boon feat slot at 19. Each slot may be spent on a +2 (or +1/+1) ability bump or on a
           feat.
           {noSlotsYet && (
-            <span className="block mt-1 text-gray-500">
+            <span className="mt-1 block text-gray-500">
               No ASI slots unlocked yet. Raise a class to level 4 or higher to unlock them.
             </span>
           )}
@@ -804,7 +795,7 @@ export function FeatsStep() {
         <>
           <div>
             <h2
-              className="text-xs font-medium text-violet-400/80 uppercase tracking-widest mb-3"
+              className="mb-3 text-xs font-medium tracking-widest text-violet-400/80 uppercase"
               style={{ fontFamily: "var(--font-cinzel)" }}
             >
               Background Origin Feat
@@ -828,7 +819,7 @@ export function FeatsStep() {
           {slotsByClass.map((group) => (
             <div key={group.classIndex}>
               <h2
-                className="text-xs font-medium text-amber-400/80 uppercase tracking-widest mb-4"
+                className="mb-4 text-xs font-medium tracking-widest text-amber-400/80 uppercase"
                 style={{ fontFamily: "var(--font-cinzel)" }}
               >
                 {group.className} — ASI Slots

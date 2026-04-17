@@ -52,7 +52,7 @@ export default function RoomsPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="flex min-h-screen flex-col">
       <TopBar items={[]} current="Browse Rooms">
         <Button
           variant="secondary"
@@ -61,7 +61,7 @@ export default function RoomsPage() {
           disabled={refreshing}
         >
           <svg
-            className={`w-3.5 h-3.5 ${refreshing ? "animate-spin" : ""}`}
+            className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`}
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -78,37 +78,37 @@ export default function RoomsPage() {
       </TopBar>
 
       <div className="flex-1 p-6">
-        <div className="max-w-5xl mx-auto">
+        <div className="mx-auto max-w-5xl">
           {loading ? (
-            <div className="text-center py-16">
+            <div className="py-16 text-center">
               <p className="text-gray-600">Loading rooms...</p>
             </div>
           ) : error ? (
-            <div className="text-center py-16">
-              <p className="text-red-400 text-sm">{error}</p>
+            <div className="py-16 text-center">
+              <p className="text-sm text-red-400">{error}</p>
             </div>
           ) : rooms.length === 0 ? (
-            <div className="text-center py-16">
+            <div className="py-16 text-center">
               <p
-                className="text-lg text-gray-500 mb-2"
+                className="mb-2 text-lg text-gray-500"
                 style={{ fontFamily: "var(--font-cinzel)" }}
               >
                 No active rooms
               </p>
-              <p className="text-sm text-gray-600 mb-4">Be the first to start an adventure.</p>
+              <p className="mb-4 text-sm text-gray-600">Be the first to start an adventure.</p>
               <Button size="md" href="/">
                 Create a Room
               </Button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {rooms.map((room) => (
                 <div
                   key={room.roomCode}
-                  className="bg-gray-900/60 border border-gray-700/25 rounded-lg hover:border-gray-700/40 transition-colors p-3"
+                  className="rounded-lg border border-gray-700/25 bg-gray-900/60 p-3 transition-colors hover:border-gray-700/40"
                 >
-                  <div className="flex items-center justify-between gap-2 mb-2">
-                    <span className="text-sm font-semibold text-gray-300 tracking-wide truncate">
+                  <div className="mb-2 flex items-center justify-between gap-2">
+                    <span className="truncate text-sm font-semibold tracking-wide text-gray-300">
                       {room.hostName ? `${room.hostName}'s Room` : room.roomCode}
                     </span>
                     <Button
@@ -119,12 +119,12 @@ export default function RoomsPage() {
                       Join
                     </Button>
                   </div>
-                  <span className="text-xs text-gray-600 font-mono tracking-wide">
+                  <span className="font-mono text-xs tracking-wide text-gray-600">
                     {room.roomCode}
                   </span>
-                  <div className="flex items-center gap-1.5 text-xs text-gray-600 mt-1.5">
+                  <div className="mt-1.5 flex items-center gap-1.5 text-xs text-gray-600">
                     <svg
-                      className="w-2.5 h-2.5"
+                      className="h-2.5 w-2.5"
                       viewBox="0 0 24 24"
                       fill="none"
                       stroke="currentColor"
@@ -138,7 +138,7 @@ export default function RoomsPage() {
                     <span>{room.playerCount}</span>
                     {room.hasPassword && (
                       <svg
-                        className="w-2.5 h-2.5 text-yellow-500/60 ml-1"
+                        className="ml-1 h-2.5 w-2.5 text-yellow-500/60"
                         viewBox="0 0 24 24"
                         fill="none"
                         stroke="currentColor"

@@ -27,7 +27,7 @@ export function CharacterPopover({ character, playerName, online }: CharacterPop
   const hpPercent = maxHP > 0 ? Math.round((d.currentHP / maxHP) * 100) : 0;
 
   return (
-    <div className="bg-gray-800/60 border border-gray-700/40 rounded-lg p-3 shadow-xl w-64 z-50 backdrop-blur-sm">
+    <div className="z-50 w-64 rounded-lg border border-gray-700/40 bg-gray-800/60 p-3 shadow-xl backdrop-blur-sm">
       {/* Header */}
       <div className="mb-2">
         <div
@@ -47,8 +47,8 @@ export function CharacterPopover({ character, playerName, online }: CharacterPop
       </div>
 
       {/* Key Stats */}
-      <div className="grid grid-cols-3 gap-1.5 mb-2">
-        <div className="bg-gray-900/50 rounded px-2 py-1 text-center">
+      <div className="mb-2 grid grid-cols-3 gap-1.5">
+        <div className="rounded bg-gray-900/50 px-2 py-1 text-center">
           <div className="text-xs text-gray-500">HP</div>
           <div
             className={`text-xs font-bold ${
@@ -62,11 +62,11 @@ export function CharacterPopover({ character, playerName, online }: CharacterPop
             {d.currentHP}/{maxHP}
           </div>
         </div>
-        <div className="bg-gray-900/50 rounded px-2 py-1 text-center">
+        <div className="rounded bg-gray-900/50 px-2 py-1 text-center">
           <div className="text-xs text-gray-500">AC</div>
           <div className="text-xs font-bold text-gray-200">{ac}</div>
         </div>
-        <div className="bg-gray-900/50 rounded px-2 py-1 text-center">
+        <div className="rounded bg-gray-900/50 px-2 py-1 text-center">
           <div className="text-xs text-gray-500">Speed</div>
           <div className="text-xs font-bold text-gray-200">{speed.walk} ft</div>
         </div>
@@ -90,7 +90,7 @@ export function CharacterPopover({ character, playerName, online }: CharacterPop
       {d.conditions.length > 0 && (
         <div className="mt-2 flex flex-wrap gap-1">
           {d.conditions.map((c, i) => (
-            <span key={i} className="bg-red-900/30 text-red-400 text-xs px-1.5 py-0.5 rounded-full">
+            <span key={i} className="rounded-full bg-red-900/30 px-1.5 py-0.5 text-xs text-red-400">
               {typeof c === "string" ? c : c.name}
             </span>
           ))}

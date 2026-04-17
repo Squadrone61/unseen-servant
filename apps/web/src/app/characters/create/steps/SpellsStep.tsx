@@ -161,7 +161,7 @@ function SpellCard({ spell, selected, onToggle, disabled, onDetail }: SpellCardP
             strokeWidth={2}
             strokeLinecap="round"
             strokeLinejoin="round"
-            className="w-2.5 h-2.5 text-amber-400"
+            className="h-2.5 w-2.5 text-amber-400"
           >
             <path d="M1.5 5l2.5 2.5 5-5" />
           </svg>
@@ -190,22 +190,22 @@ function SpellCard({ spell, selected, onToggle, disabled, onDetail }: SpellCardP
         {spell.name}
       </span>
 
-      <div className="flex items-center gap-1 ml-auto shrink-0">
+      <div className="ml-auto flex shrink-0 items-center gap-1">
         <span
           className={[
-            "inline-flex items-center px-1.5 py-0 rounded text-[10px] border",
+            "inline-flex items-center px-1.5 py-0 rounded text-xs border",
             schoolBadge(spell.school),
           ].join(" ")}
         >
           {spell.school}
         </span>
         {spell.concentration && (
-          <span className="inline-flex items-center px-1.5 py-0 rounded text-[10px] border bg-teal-900/30 text-teal-400 border-teal-700/30">
+          <span className="inline-flex items-center rounded border border-teal-700/30 bg-teal-900/30 px-1.5 py-0 text-xs text-teal-400">
             Conc.
           </span>
         )}
         {spell.ritual && (
-          <span className="inline-flex items-center px-1.5 py-0 rounded text-[10px] border bg-violet-900/30 text-violet-400 border-violet-700/30">
+          <span className="inline-flex items-center rounded border border-violet-700/30 bg-violet-900/30 px-1.5 py-0 text-xs text-violet-400">
             Ritual
           </span>
         )}
@@ -230,7 +230,7 @@ function SpellPopover({
   return (
     <DetailPopover title={spell.name} onClose={onClose} position={position}>
       <div className="space-y-3">
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex flex-wrap items-center gap-2">
           <span
             className={[
               "inline-flex items-center px-1.5 py-0.5 rounded text-xs border",
@@ -239,16 +239,16 @@ function SpellPopover({
           >
             {spell.school}
           </span>
-          <span className="text-xs px-2 py-0.5 rounded-full bg-gray-700/50 text-gray-300 border border-gray-600/30">
+          <span className="rounded-full border border-gray-600/30 bg-gray-700/50 px-2 py-0.5 text-xs text-gray-300">
             {spell.level === 0 ? "Cantrip" : `Level ${spell.level}`}
           </span>
           {spell.concentration && (
-            <span className="text-xs px-2 py-0.5 rounded-full bg-teal-900/40 text-teal-300 border border-teal-700/30">
+            <span className="rounded-full border border-teal-700/30 bg-teal-900/40 px-2 py-0.5 text-xs text-teal-300">
               Concentration
             </span>
           )}
           {spell.ritual && (
-            <span className="text-xs px-2 py-0.5 rounded-full bg-violet-900/40 text-violet-300 border border-violet-700/30">
+            <span className="rounded-full border border-violet-700/30 bg-violet-900/40 px-2 py-0.5 text-xs text-violet-300">
               Ritual
             </span>
           )}
@@ -273,13 +273,13 @@ function SpellPopover({
           </div>
         </div>
 
-        <div className="text-sm text-gray-300 leading-relaxed">
+        <div className="text-sm leading-relaxed text-gray-300">
           <RichText text={spell.description} />
         </div>
 
         {spell.higherLevels && (
-          <div className="text-sm text-gray-400 leading-relaxed border-t border-gray-700/30 pt-2">
-            <span className="text-gray-500 font-medium">At Higher Levels: </span>
+          <div className="border-t border-gray-700/30 pt-2 text-sm leading-relaxed text-gray-400">
+            <span className="font-medium text-gray-500">At Higher Levels: </span>
             <RichText text={spell.higherLevels} />
           </div>
         )}
@@ -296,7 +296,7 @@ function Counter({ current, max, label }: { current: number; max: number; label?
   const full = current >= max;
   return (
     <span className={["text-sm font-medium", full ? "text-amber-400" : "text-gray-400"].join(" ")}>
-      {label && <span className="text-gray-400 font-normal">{label} </span>}
+      {label && <span className="font-normal text-gray-400">{label} </span>}
       {current} of {max}
     </span>
   );
@@ -314,7 +314,7 @@ function AlwaysPreparedBadges({ spellNames }: { spellNames: string[] }) {
 
   if (spellNames.length === 0) return null;
   return (
-    <div className="flex flex-wrap gap-2 items-center">
+    <div className="flex flex-wrap items-center gap-2">
       <span className="text-xs text-gray-500">Always Prepared:</span>
       {spellNames.map((name) => (
         <button
@@ -324,7 +324,7 @@ function AlwaysPreparedBadges({ spellNames }: { spellNames: string[] }) {
             const spell = getSpell(name);
             if (spell) setPopover({ spell, position: { x: e.clientX, y: e.clientY } });
           }}
-          className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-violet-900/30 text-violet-300 border border-violet-700/30 hover:bg-violet-900/50 hover:border-violet-600/50 transition-colors cursor-pointer"
+          className="inline-flex cursor-pointer items-center rounded border border-violet-700/30 bg-violet-900/30 px-2 py-0.5 text-xs text-violet-300 transition-colors hover:border-violet-600/50 hover:bg-violet-900/50"
           title="Click to view spell details"
         >
           {name}
@@ -482,7 +482,7 @@ function ClassSpellPanel({
       {alwaysPrepared.length > 0 && <AlwaysPreparedBadges spellNames={alwaysPrepared} />}
 
       {/* Counter row */}
-      <div className="flex items-center gap-4 flex-wrap">
+      <div className="flex flex-wrap items-center gap-4">
         {numCantrips > 0 && (
           <Counter current={cantrips.length} max={numCantrips} label="Cantrips:" />
         )}
@@ -492,18 +492,18 @@ function ClassSpellPanel({
       </div>
 
       {/* Formula explanation for prepared casters */}
-      {formulaDesc && <p className="text-xs text-gray-500 -mt-4">{formulaDesc}</p>}
+      {formulaDesc && <p className="-mt-4 text-xs text-gray-500">{formulaDesc}</p>}
 
       {/* Ritual casting note */}
       {classDb.canRitualCast && (
-        <p className="text-xs text-violet-400/80 bg-violet-900/10 border border-violet-700/20 rounded-lg px-3 py-2 leading-relaxed">
+        <p className="rounded-lg border border-violet-700/20 bg-violet-900/10 px-3 py-2 text-xs leading-relaxed text-violet-400/80">
           Ritual spells can be cast without expending a spell slot if you have the spell prepared.
         </p>
       )}
 
       {/* Spell level tabs */}
       <div
-        className="flex gap-0 border-b border-gray-700/40 overflow-x-auto"
+        className="flex gap-0 overflow-x-auto border-b border-gray-700/40"
         role="tablist"
         aria-label="Spell level"
       >
@@ -522,7 +522,7 @@ function ClassSpellPanel({
           >
             Cantrips
             {cantrips.length > 0 && (
-              <span className="w-4 h-4 rounded-full bg-amber-500/20 text-amber-400 text-[10px] flex items-center justify-center font-medium">
+              <span className="flex h-4 w-4 items-center justify-center rounded-full bg-amber-500/20 text-xs font-medium text-amber-400">
                 {cantrips.length}
               </span>
             )}
@@ -550,7 +550,7 @@ function ClassSpellPanel({
             >
               {ORDINAL[level] ?? `${level}th`}
               {countAtLevel > 0 && (
-                <span className="w-4 h-4 rounded-full bg-amber-500/20 text-amber-400 text-[10px] flex items-center justify-center font-medium">
+                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-amber-500/20 text-xs font-medium text-amber-400">
                   {countAtLevel}
                 </span>
               )}
@@ -571,14 +571,14 @@ function ClassSpellPanel({
             ? "Search cantrips..."
             : `Search ${ORDINAL[activeSpellLevel] ?? `level ${activeSpellLevel}`} spells...`
         }
-        className="w-full bg-gray-800/60 border border-gray-700/40 rounded-lg px-4 py-2 text-sm text-gray-200 placeholder-gray-600 focus:border-amber-500/50 focus:outline-none"
+        className="w-full rounded-lg border border-gray-700/40 bg-gray-800/60 px-4 py-2 text-sm text-gray-200 placeholder-gray-600 focus:border-amber-500/50 focus:outline-none"
         aria-label="Search spells"
       />
 
       {/* Spell list for active tab */}
       {activeSpellLevel === 0 ? (
         filteredCantrips.length === 0 ? (
-          <p className="text-sm text-gray-600 py-4 text-center">No cantrips match your search.</p>
+          <p className="py-4 text-center text-sm text-gray-600">No cantrips match your search.</p>
         ) : (
           <div className="flex flex-col gap-1.5">
             {filteredCantrips.map((spell) => {
@@ -598,7 +598,7 @@ function ClassSpellPanel({
           </div>
         )
       ) : filteredSpells.length === 0 ? (
-        <p className="text-sm text-gray-600 py-4 text-center">No spells match your search.</p>
+        <p className="py-4 text-center text-sm text-gray-600">No spells match your search.</p>
       ) : (
         <div className="flex flex-col gap-1.5">
           {filteredSpells.map((spell) => {
@@ -655,10 +655,7 @@ export function SpellsStep() {
     return (
       <section aria-labelledby="spells-step-heading" className="flex flex-col gap-6">
         <div>
-          <h1
-            id="spells-step-heading"
-            className="text-xl font-[family-name:var(--font-cinzel)] text-amber-200/90 mb-1"
-          >
+          <h1 id="spells-step-heading" className="mb-1 font-cinzel text-xl text-amber-200/90">
             Spells
           </h1>
           <p className="text-sm text-gray-400">
@@ -669,10 +666,8 @@ export function SpellsStep() {
                 : "None of your classes cast spells. Continue to the next step."}
           </p>
         </div>
-        <div className="bg-gray-800/30 border border-gray-700/20 rounded-lg p-8 text-center">
-          <p className="text-gray-600 text-sm font-[family-name:var(--font-cinzel)]">
-            No spells available for this class.
-          </p>
+        <div className="rounded-lg border border-gray-700/20 bg-gray-800/30 p-8 text-center">
+          <p className="font-cinzel text-sm text-gray-600">No spells available for this class.</p>
         </div>
       </section>
     );
@@ -684,10 +679,7 @@ export function SpellsStep() {
     <section aria-labelledby="spells-step-heading" className="flex flex-col gap-6">
       {/* Header */}
       <div>
-        <h1
-          id="spells-step-heading"
-          className="text-xl font-[family-name:var(--font-cinzel)] text-amber-200/90 mb-1"
-        >
+        <h1 id="spells-step-heading" className="mb-1 font-cinzel text-xl text-amber-200/90">
           Choose Your Spells
         </h1>
         <p className="text-sm text-gray-400">

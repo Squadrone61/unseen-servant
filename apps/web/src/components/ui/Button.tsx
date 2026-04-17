@@ -39,7 +39,7 @@ type ButtonProps = ButtonAsButton | ButtonAsLink;
 
 const variantStyles: Record<ButtonVariant, string> = {
   primary:
-    "bg-amber-600/80 hover:bg-amber-500/80 text-amber-50 font-medium shadow-[0_0_12px_rgba(245,158,11,0.15)] hover:shadow-[0_0_20px_rgba(245,158,11,0.25)] disabled:bg-gray-700 disabled:text-gray-500 disabled:shadow-none",
+    "bg-amber-600/80 hover:bg-amber-500/80 text-amber-50 font-medium shadow-glow-amber hover:shadow-glow-amber-lg disabled:bg-gray-700 disabled:text-gray-500 disabled:shadow-none",
   secondary:
     "bg-gray-800/60 hover:bg-gray-700/60 border border-gray-600/50 hover:border-amber-500/30 text-gray-300 font-medium disabled:opacity-40",
   outline:
@@ -49,7 +49,7 @@ const variantStyles: Record<ButtonVariant, string> = {
   danger:
     "bg-red-950/40 hover:bg-red-900/50 border border-red-800/50 text-red-400 hover:text-red-300 font-medium disabled:opacity-40",
   success:
-    "bg-emerald-600/90 hover:bg-emerald-500 text-white font-medium shadow-[0_0_16px_rgba(16,185,129,0.15)] hover:shadow-[0_0_20px_rgba(16,185,129,0.25)] disabled:opacity-20 disabled:shadow-none",
+    "bg-emerald-600/90 hover:bg-emerald-500 text-white font-medium shadow-glow-emerald hover:shadow-glow-emerald-lg disabled:opacity-20 disabled:shadow-none",
   icon: "text-gray-500 hover:text-gray-300 disabled:opacity-40 p-1",
 };
 

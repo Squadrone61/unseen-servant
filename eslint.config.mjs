@@ -1,8 +1,14 @@
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import js from "@eslint/js";
 import tseslint from "typescript-eslint";
 import reactHooks from "eslint-plugin-react-hooks";
 import nextPlugin from "@next/eslint-plugin-next";
 import prettierConfig from "eslint-config-prettier";
+import tailwindcss from "eslint-plugin-tailwindcss";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const twConfig = resolve(__dirname, "apps/web/src/app/globals.css");
 
 export default tseslint.config(
   // Global ignores
@@ -80,6 +86,28 @@ export default tseslint.config(
       "no-console": "off",
       "@typescript-eslint/no-explicit-any": "off",
       "@typescript-eslint/no-non-null-assertion": "off",
+    },
+  },
+
+  // Tailwind CSS rules for frontend
+  {
+    files: ["apps/web/**/*.ts", "apps/web/**/*.tsx"],
+    plugins: {
+      tailwindcss: tailwindcss,
+    },
+    settings: {
+      tailwindcss: {
+        config: twConfig,
+        cssFiles: ["apps/web/src/app/globals.css"],
+      },
+    },
+    rules: {
+      "tailwindcss/no-arbitrary-value": "error",
+      "tailwindcss/classnames-order": "error",
+      "tailwindcss/no-contradicting-classname": "error",
+      "tailwindcss/no-unnecessary-arbitrary-value": "error",
+      "tailwindcss/enforces-shorthand": "warn",
+      "tailwindcss/no-custom-classname": "off",
     },
   },
 

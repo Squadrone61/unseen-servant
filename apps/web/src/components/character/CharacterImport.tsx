@@ -24,7 +24,7 @@ export function CharacterImport({
   if (importState === "success" && character) {
     const s = character.static;
     return (
-      <div className="bg-gray-800/60 border border-gray-700/40 rounded-lg p-3">
+      <div className="rounded-lg border border-gray-700/40 bg-gray-800/60 p-3">
         <div className="flex items-center justify-between">
           <div>
             <div className="text-sm font-medium text-amber-300">{s.name}</div>
@@ -34,7 +34,7 @@ export function CharacterImport({
           </div>
           <button
             onClick={onClear}
-            className="text-xs text-gray-500 hover:text-gray-300 transition-colors"
+            className="text-xs text-gray-500 transition-colors hover:text-gray-300"
           >
             Clear
           </button>
@@ -45,7 +45,7 @@ export function CharacterImport({
 
   return (
     <div className="space-y-2">
-      <p className="text-xs text-gray-500 leading-relaxed">
+      <p className="text-xs leading-relaxed text-gray-500">
         Import a character from a <code className="text-gray-400">.unseen.json</code> file exported
         from this app.
       </p>
@@ -68,13 +68,13 @@ export function CharacterImport({
       />
       <button
         onClick={() => fileInputRef.current?.click()}
-        className="w-full bg-amber-600/80 hover:bg-amber-500/80 text-amber-50 py-1.5 rounded-lg text-sm font-medium transition-colors"
+        className="w-full rounded-lg bg-amber-600/80 py-1.5 text-sm font-medium text-amber-50 transition-colors hover:bg-amber-500/80"
       >
         Upload .unseen.json
       </button>
 
       {error && (
-        <div className="text-xs text-red-400 bg-red-900/10 rounded px-2 py-1.5">{error}</div>
+        <div className="rounded bg-red-900/10 px-2 py-1.5 text-xs text-red-400">{error}</div>
       )}
     </div>
   );

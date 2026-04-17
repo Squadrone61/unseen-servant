@@ -31,7 +31,7 @@ function EditInner({ id }: EditInnerProps) {
 
   if (!loaded) {
     return (
-      <div className="flex items-center justify-center min-h-screen text-gray-500">
+      <div className="flex min-h-screen items-center justify-center text-gray-500">
         Loading character...
       </div>
     );

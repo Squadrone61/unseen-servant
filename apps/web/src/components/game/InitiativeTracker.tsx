@@ -15,9 +15,9 @@ export function InitiativeTracker({
   if (combat.phase !== "active") return null;
 
   return (
-    <div className="flex items-stretch gap-1.5 px-3 py-1.5 bg-gray-950 border-b border-gray-700/20 shrink-0 overflow-x-auto">
+    <div className="flex shrink-0 items-stretch gap-1.5 overflow-x-auto border-b border-gray-700/20 bg-gray-950 px-3 py-1.5">
       {/* Divider */}
-      <div className="w-px h-9 bg-gray-700/20 shrink-0" />
+      <div className="h-9 w-px shrink-0 bg-gray-700/20" />
 
       {combat.turnOrder.map((id, idx) => {
         const combatant = combat.combatants[id];
@@ -59,23 +59,23 @@ export function InitiativeTracker({
             type="button"
             onClick={() => onCombatantClick?.(id)}
             className={`
-              flex flex-col items-center shrink-0 w-20 px-2.5 py-1.5 rounded-lg gap-0.5
+              flex w-20 shrink-0 flex-col items-center gap-0.5 rounded-lg px-2.5 py-1.5
               transition-all
               ${onCombatantClick ? "cursor-pointer hover:bg-gray-700/40" : ""}
-              ${isActive ? "ring-2 ring-amber-400 bg-amber-900/20" : isEnemy ? "border border-red-500/20 bg-gray-800/50" : "border border-gray-700/30 bg-gray-800/50"}
+              ${isActive ? "bg-amber-900/20 ring-2 ring-amber-400" : isEnemy ? "border border-red-500/20 bg-gray-800/50" : "border border-gray-700/30 bg-gray-800/50"}
               ${isDead ? "opacity-40" : ""}
             `}
           >
             {/* Top: dot + name */}
-            <div className="flex items-center gap-1 w-full min-w-0">
+            <div className="flex w-full min-w-0 items-center gap-1">
               <div
-                className={`w-2 h-2 rounded-full shrink-0 ${
+                className={`h-2 w-2 shrink-0 rounded-full ${
                   isPlayer ? "bg-blue-500" : isEnemy ? "bg-red-500" : "bg-gray-500"
                 }`}
                 style={combatant.tokenColor ? { backgroundColor: combatant.tokenColor } : undefined}
               />
               <span
-                className={`text-xs font-medium truncate ${
+                className={`truncate text-xs font-medium ${
                   isActive ? "text-amber-300" : "text-gray-300"
                 }`}
               >
@@ -89,7 +89,7 @@ export function InitiativeTracker({
             {/* HP bar */}
             {hpPercent !== null && (
               <>
-                <div className="w-full h-1 bg-gray-700 rounded-full mt-0.5 overflow-hidden">
+                <div className="mt-0.5 h-1 w-full overflow-hidden rounded-full bg-gray-700">
                   <div
                     className={`h-full rounded-full transition-all ${
                       hpPercent > 50
@@ -102,7 +102,7 @@ export function InitiativeTracker({
                   />
                 </div>
                 {isPlayer && currentHP !== undefined && maxHP !== undefined && (
-                  <div className="text-[10px] text-gray-500 leading-tight">
+                  <div className="text-xs leading-tight text-gray-500">
                     {currentHP}/{maxHP}
                   </div>
                 )}
@@ -112,7 +112,7 @@ export function InitiativeTracker({
             {/* Concentration */}
             {concentratingOn && (
               <div
-                className="text-[10px] text-purple-400 font-bold mt-0.5"
+                className="mt-0.5 text-xs font-bold text-purple-400"
                 title={`Concentrating: ${concentratingOn.spellName}`}
               >
                 C
@@ -122,13 +122,13 @@ export function InitiativeTracker({
             {/* Conditions */}
             {combatant.conditions && combatant.conditions.length > 0 && (
               <div
-                className="flex items-center gap-0.5 mt-0.5"
+                className="mt-0.5 flex items-center gap-0.5"
                 title={combatant.conditions.map((c) => c.name).join(", ")}
               >
                 {combatant.conditions.slice(0, 3).map((cond, ci) => (
                   <svg
                     key={ci}
-                    className="w-3 h-3 text-orange-400"
+                    className="h-3 w-3 text-orange-400"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"

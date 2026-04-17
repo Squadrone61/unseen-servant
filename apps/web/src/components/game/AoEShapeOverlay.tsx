@@ -80,7 +80,7 @@ export function AoEShapeOverlay({
   tileUnit,
 }: AoEShapeOverlayProps) {
   return (
-    <svg className="absolute inset-0 pointer-events-none" style={{ zIndex: 18, width, height }}>
+    <svg className="pointer-events-none absolute inset-0" style={{ zIndex: 18, width, height }}>
       {committed.map(({ aoe, shape }) => (
         <AoEShapePath
           key={`committed-${aoe.id}`}

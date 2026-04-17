@@ -26,17 +26,17 @@ function SpeciesPopover({
     <DetailPopover title={species.name} onClose={onClose} position={position}>
       <div className="space-y-3">
         {/* Quick stats */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-xs px-2 py-0.5 rounded-full bg-gray-700/50 text-gray-300 border border-gray-600/30">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="rounded-full border border-gray-600/30 bg-gray-700/50 px-2 py-0.5 text-xs text-gray-300">
             {species.size.join("/")}
           </span>
-          <span className="text-xs px-2 py-0.5 rounded-full bg-gray-700/50 text-gray-300 border border-gray-600/30">
+          <span className="rounded-full border border-gray-600/30 bg-gray-700/50 px-2 py-0.5 text-xs text-gray-300">
             {species.speed} ft
           </span>
           {(species.effects?.properties ?? []).find(
             (p) => p.type === "sense" && (p as { sense?: string }).sense === "darkvision",
           ) && (
-            <span className="text-xs px-2 py-0.5 rounded-full bg-blue-900/40 text-blue-300 border border-blue-700/30">
+            <span className="rounded-full border border-blue-700/30 bg-blue-900/40 px-2 py-0.5 text-xs text-blue-300">
               Darkvision{" "}
               {
                 (
@@ -54,7 +54,7 @@ function SpeciesPopover({
         {species.effects && <EffectSummary effects={species.effects} />}
 
         {/* Description — never truncated */}
-        <div className="text-sm text-gray-300 leading-relaxed">
+        <div className="text-sm leading-relaxed text-gray-300">
           <RichText text={species.description} />
         </div>
       </div>
@@ -79,7 +79,7 @@ function SpeciesCard({
     <button
       onClick={onClick}
       className={`
-        w-full text-left px-4 py-3 rounded-lg border transition-all duration-200
+        w-full rounded-lg border px-4 py-3 text-left transition-all duration-200
         ${
           isSelected
             ? "border-amber-500/50 bg-amber-950/20 ring-1 ring-amber-500/20"
@@ -88,7 +88,7 @@ function SpeciesCard({
       `}
     >
       <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-1.5 min-w-0">
+        <div className="flex min-w-0 items-center gap-1.5">
           <span
             className={`font-cinzel text-sm ${isSelected ? "text-amber-200" : "text-gray-200"}`}
           >
@@ -96,7 +96,7 @@ function SpeciesCard({
           </span>
           <InfoButton onClick={onDetailsClick} />
         </div>
-        <span className="text-xs text-gray-500 shrink-0 whitespace-nowrap">
+        <span className="shrink-0 text-xs whitespace-nowrap text-gray-500">
           {species.size.join("/")} · {species.speed} ft
           {(species.effects?.properties ?? []).find(
             (p) => p.type === "sense" && (p as { sense?: string }).sense === "darkvision",
@@ -155,7 +155,7 @@ export function SpeciesStep() {
     <section aria-labelledby="species-step-heading" className="flex flex-col gap-5">
       {/* Header */}
       <div>
-        <h1 id="species-step-heading" className="text-xl font-cinzel text-amber-200/90 mb-1">
+        <h1 id="species-step-heading" className="mb-1 font-cinzel text-xl text-amber-200/90">
           Choose Your Species
         </h1>
         <p className="text-sm text-gray-400">
@@ -166,8 +166,8 @@ export function SpeciesStep() {
 
       {/* Selected banner */}
       {selectedSpecies && (
-        <div className="flex items-center gap-3 px-4 py-3 rounded-lg border border-amber-500/30 bg-amber-950/15">
-          <span className="text-sm text-amber-200 font-medium">✓ {selectedSpecies.name}</span>
+        <div className="flex items-center gap-3 rounded-lg border border-amber-500/30 bg-amber-950/15 px-4 py-3">
+          <span className="text-sm font-medium text-amber-200">✓ {selectedSpecies.name}</span>
           <span className="text-xs text-gray-500">
             {selectedSpecies.size.join("/")} · {selectedSpecies.speed} ft
             {(selectedSpecies.effects?.properties ?? []).find(
@@ -179,13 +179,13 @@ export function SpeciesStep() {
           <div className="flex-1" />
           <button
             onClick={(e) => handleDetailsClick(selectedSpecies, e)}
-            className="text-xs text-amber-400/70 hover:text-amber-300 transition-colors"
+            className="text-xs text-amber-400/70 transition-colors hover:text-amber-300"
           >
             View Details
           </button>
           <button
             onClick={() => dispatch({ type: "CLEAR_SPECIES" })}
-            className="text-xs text-gray-500 hover:text-red-400 transition-colors"
+            className="text-xs text-gray-500 transition-colors hover:text-red-400"
           >
             Change
           </button>
@@ -194,18 +194,18 @@ export function SpeciesStep() {
 
       {/* Search */}
       <div className="relative">
-        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">🔍</span>
+        <span className="absolute top-1/2 left-3 -translate-y-1/2 text-sm text-gray-500">🔍</span>
         <input
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Search species..."
-          className="w-full pl-9 pr-4 py-2.5 bg-gray-800/60 border border-gray-700/40 rounded-lg text-sm text-gray-200 placeholder-gray-500 focus:border-amber-500/50 focus:outline-none transition-colors"
+          className="w-full rounded-lg border border-gray-700/40 bg-gray-800/60 py-2.5 pr-4 pl-9 text-sm text-gray-200 placeholder-gray-500 transition-colors focus:border-amber-500/50 focus:outline-none"
         />
         {searchQuery && (
           <button
             onClick={() => setSearchQuery("")}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300"
+            className="absolute top-1/2 right-3 -translate-y-1/2 text-gray-500 hover:text-gray-300"
           >
             ✕
           </button>
@@ -213,7 +213,7 @@ export function SpeciesStep() {
       </div>
 
       {/* Compact grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
         {filteredSpecies.map((species) => (
           <SpeciesCard
             key={species.name}
@@ -224,20 +224,20 @@ export function SpeciesStep() {
           />
         ))}
         {filteredSpecies.length === 0 && (
-          <p className="col-span-full text-center text-gray-500 text-sm py-6">
+          <p className="col-span-full py-6 text-center text-sm text-gray-500">
             No species match your search.
           </p>
         )}
       </div>
 
-      <p className="text-xs text-gray-600 text-center">{sortedSpecies.length} species available</p>
+      <p className="text-center text-xs text-gray-600">{sortedSpecies.length} species available</p>
 
       {/* Choices section (inline, below grid) */}
       {selectedSpecies && selectedSpecies.choices && selectedSpecies.choices.length > 0 && (
         <>
           <div className="h-px bg-linear-to-r from-transparent via-amber-500/20 to-transparent" />
           <div>
-            <h2 className="text-lg font-cinzel text-amber-200/90 mb-1">
+            <h2 className="mb-1 font-cinzel text-lg text-amber-200/90">
               {selectedSpecies.name} Traits
             </h2>
             <p className="text-sm text-gray-400">

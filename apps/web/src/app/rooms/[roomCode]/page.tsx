@@ -717,23 +717,23 @@ function GameContent({ roomCode, playerName }: { roomCode: string; playerName: s
   // Password prompt overlay
   if (passwordRequired) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="bg-gray-800/60 border border-gray-700/40 rounded-xl p-6 w-full max-w-sm space-y-4">
+      <div className="flex min-h-screen items-center justify-center p-4">
+        <div className="w-full max-w-sm space-y-4 rounded-xl border border-gray-700/40 bg-gray-800/60 p-6">
           <div className="text-center">
-            <div className="text-3xl mb-2">&#128274;</div>
+            <div className="mb-2 text-3xl">&#128274;</div>
             <h2
               className="text-lg font-semibold text-amber-200/90"
               style={{ fontFamily: "var(--font-cinzel)" }}
             >
               Room Password Required
             </h2>
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="mt-1 text-sm text-gray-500">
               Room <span className="font-mono text-amber-300">{roomCode}</span> is password
               protected
             </p>
           </div>
 
-          {passwordError && <p className="text-red-400 text-sm text-center">{passwordError}</p>}
+          {passwordError && <p className="text-center text-sm text-red-400">{passwordError}</p>}
 
           <input
             type="password"
@@ -742,9 +742,9 @@ function GameContent({ roomCode, playerName }: { roomCode: string; playerName: s
             onKeyDown={(e) => e.key === "Enter" && handlePasswordSubmit()}
             placeholder="Enter room password..."
             autoFocus
-            className="w-full bg-gray-900/60 border border-gray-700/50 rounded-lg px-4 py-2.5
-                       text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-1
-                       focus:ring-amber-500/50 focus:border-amber-500/30"
+            className="w-full rounded-lg border border-gray-700/50 bg-gray-900/60 px-4 py-2.5
+                       text-gray-100 placeholder-gray-500 focus:border-amber-500/30 focus:ring-1
+                       focus:ring-amber-500/50 focus:outline-none"
           />
 
           <div className="flex gap-3">
@@ -753,7 +753,7 @@ function GameContent({ roomCode, playerName }: { roomCode: string; playerName: s
             </Button>
             <button
               onClick={() => router.push("/")}
-              className="px-4 text-gray-500 hover:text-gray-300 text-sm transition-colors"
+              className="px-4 text-sm text-gray-500 transition-colors hover:text-gray-300"
             >
               Back
             </button>
@@ -766,9 +766,9 @@ function GameContent({ roomCode, playerName }: { roomCode: string; playerName: s
   // Show connecting state until we've successfully joined
   if (!joined) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="text-center space-y-3">
-          <div className="w-8 h-8 border-2 border-amber-500/70 border-t-transparent rounded-full animate-spin mx-auto" />
+      <div className="flex min-h-screen items-center justify-center p-4">
+        <div className="space-y-3 text-center">
+          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-amber-500/70 border-t-transparent" />
           <p className="text-sm text-gray-400">
             Connecting to room <span className="font-mono text-amber-300">{roomCode}</span>...
           </p>
@@ -778,7 +778,7 @@ function GameContent({ roomCode, playerName }: { roomCode: string; playerName: s
   }
 
   return (
-    <div className="flex flex-col h-screen">
+    <div className="flex h-screen flex-col">
       <GameNavBar
         roomCode={roomCode}
         isHost={isHost}
@@ -798,17 +798,17 @@ function GameContent({ roomCode, playerName }: { roomCode: string; playerName: s
         onOpenGuide={() => setShowGuide(true)}
       />
       {/* Main Content Area */}
-      <div className="flex flex-1 min-h-0">
+      <div className="flex min-h-0 flex-1">
         {/* Lobby: inline character picker sidebar (only until a character is selected) */}
         {!storyStarted && !myCharacter && (
-          <div className="w-52 border-r border-gray-700/20 flex flex-col bg-gray-950 shrink-0">
+          <div className="flex w-52 shrink-0 flex-col border-r border-gray-700/20 bg-gray-950">
             <LeftSidebar character={myCharacter} onCharacterImported={handleCharacterImported} />
           </div>
         )}
 
         {/* Inline character sheet panel: always in lobby, togglable once story starts */}
         {(showCharacterDrawer || !storyStarted) && myCharacter && (
-          <div className="w-80 shrink-0 border-r border-gray-700/20 overflow-y-auto bg-gray-900">
+          <div className="w-80 shrink-0 overflow-y-auto border-r border-gray-700/20 bg-gray-900">
             <CharacterSheet
               character={myCharacter}
               onCastAoE={
@@ -823,13 +823,13 @@ function GameContent({ roomCode, playerName }: { roomCode: string; playerName: s
         )}
 
         {/* Center content */}
-        <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
           {/* Lobby center: waiting state + campaign config */}
           {!storyStarted && (
-            <div className="flex-1 flex flex-col items-center justify-center gap-3">
+            <div className="flex flex-1 flex-col items-center justify-center gap-3">
               {campaignConfigured && activeCampaignName && (
                 <div className="flex items-center gap-1.5">
-                  <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                  <div className="h-2 w-2 rounded-full bg-emerald-500" />
                   <span className="text-sm font-medium text-emerald-400">{activeCampaignName}</span>
                 </div>
               )}
@@ -837,7 +837,7 @@ function GameContent({ roomCode, playerName }: { roomCode: string; playerName: s
               <p className="text-base text-gray-600" style={{ fontFamily: "var(--font-cinzel)" }}>
                 Waiting for the adventure to begin…
               </p>
-              <div className="w-10 h-px bg-amber-500/25" />
+              <div className="h-px w-10 bg-amber-500/25" />
 
               {isHost &&
                 (campaignConfigured && dmConnected ? (
@@ -924,7 +924,7 @@ function GameContent({ roomCode, playerName }: { roomCode: string; playerName: s
 
           {/* Bottom bar: chat input for lobby */}
           {!storyStarted && (
-            <div className="flex items-center gap-3 h-14 px-4 border-t border-gray-700/20 bg-gray-950 shrink-0">
+            <div className="flex h-14 shrink-0 items-center gap-3 border-t border-gray-700/20 bg-gray-950 px-4">
               {/* Character trigger (shown after character is selected) */}
               {myCharacter && (
                 <CharacterTrigger
@@ -936,7 +936,7 @@ function GameContent({ roomCode, playerName }: { roomCode: string; playerName: s
                 type="text"
                 placeholder="What do you do?"
                 disabled
-                className="flex-1 h-9 bg-gray-900/60 border border-gray-700/30 rounded-md px-3
+                className="h-9 flex-1 rounded-md border border-gray-700/30 bg-gray-900/60 px-3
                            text-sm text-gray-100 placeholder-gray-600 disabled:opacity-50"
               />
               <Button disabled size="sm">
@@ -951,22 +951,22 @@ function GameContent({ roomCode, playerName }: { roomCode: string; playerName: s
       {showParty && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setShowParty(false)} />
-          <div className="fixed top-12 right-24 z-50 w-72 bg-gray-900 border border-gray-700/40 rounded-lg shadow-2xl">
-            <div className="flex items-center justify-between px-3 py-2 border-b border-gray-700/30">
+          <div className="fixed top-12 right-24 z-50 w-72 rounded-lg border border-gray-700/40 bg-gray-900 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-gray-700/30 px-3 py-2">
               <span
-                className="text-xs text-gray-400 uppercase tracking-wider font-medium"
+                className="text-xs font-medium tracking-wider text-gray-400 uppercase"
                 style={{ fontFamily: "var(--font-cinzel)" }}
               >
                 Party
               </span>
               <button
                 onClick={() => setShowParty(false)}
-                className="text-gray-500 hover:text-gray-300 text-lg leading-none"
+                className="text-lg leading-none text-gray-500 hover:text-gray-300"
               >
                 ×
               </button>
             </div>
-            <div className="p-3 space-y-2.5 max-h-80 overflow-y-auto">
+            <div className="max-h-80 space-y-2.5 overflow-y-auto p-3">
               {(allPlayers.length > 0
                 ? allPlayers
                 : players.map((name) => ({ name, online: true, isHost: name === hostName }))
@@ -981,9 +981,9 @@ function GameContent({ roomCode, playerName }: { roomCode: string; playerName: s
                   >
                     <div className="flex items-center gap-2 text-sm">
                       <div
-                        className={`w-2 h-2 rounded-full shrink-0 ${player.online ? "bg-green-500" : "bg-gray-600"}`}
+                        className={`h-2 w-2 shrink-0 rounded-full ${player.online ? "bg-green-500" : "bg-gray-600"}`}
                       />
-                      <div className="flex-1 min-w-0">
+                      <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1.5">
                           <span className={player.online ? "text-gray-200" : "text-gray-500"}>
                             {player.name}
@@ -1003,7 +1003,7 @@ function GameContent({ roomCode, playerName }: { roomCode: string; playerName: s
                       {isHost && !player.isHost && player.online && (
                         <button
                           onClick={() => handleKick(player.name)}
-                          className="text-xs text-red-400/60 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="text-xs text-red-400/60 opacity-0 transition-opacity group-hover:opacity-100 hover:text-red-400"
                         >
                           Kick
                         </button>
@@ -1025,7 +1025,7 @@ function GameContent({ roomCode, playerName }: { roomCode: string; playerName: s
               const charData = player ? partyCharacters[player.name] : undefined;
               if (!player || !charData) return null;
               return (
-                <div className="fixed z-[60]" style={{ top: "3rem", right: "calc(6rem + 18rem)" }}>
+                <div className="fixed z-60" style={{ top: "3rem", right: "calc(6rem + 18rem)" }}>
                   <CharacterPopover
                     character={charData}
                     playerName={player.name}
@@ -1038,7 +1038,7 @@ function GameContent({ roomCode, playerName }: { roomCode: string; playerName: s
       )}
 
       <Drawer open={showActivity} onClose={() => setShowActivity(false)} title="Activity Log">
-        <div className="p-4 space-y-1.5">
+        <div className="space-y-1.5 p-4">
           {logMessages.length === 0 ? (
             <p className="text-xs text-gray-600 italic">No activity yet</p>
           ) : (
@@ -1048,7 +1048,7 @@ function GameContent({ roomCode, playerName }: { roomCode: string; playerName: s
                 className={`flex items-start gap-2 text-xs ${msg.type === "server:error" ? "text-red-400" : "text-gray-500"}`}
               >
                 {"timestamp" in msg && typeof msg.timestamp === "number" && (
-                  <span className="shrink-0 text-gray-600 font-mono">
+                  <span className="shrink-0 font-mono text-gray-600">
                     {new Date(msg.timestamp).toLocaleTimeString([], {
                       hour: "2-digit",
                       minute: "2-digit",
@@ -1063,14 +1063,14 @@ function GameContent({ roomCode, playerName }: { roomCode: string; playerName: s
       </Drawer>
 
       <Drawer open={showEvents} onClose={() => setShowEvents(false)} title="Event Log">
-        <div className="p-4 space-y-2">
+        <div className="space-y-2 p-4">
           {!eventLog || eventLog.length === 0 ? (
             <p className="text-xs text-gray-600 italic">No events yet</p>
           ) : (
             eventLog.slice(-10).map((evt) => (
-              <div key={evt.id} className="flex items-start justify-between gap-2 group">
-                <div className="text-xs text-gray-400 flex-1 flex items-start gap-2">
-                  <span className="shrink-0 text-gray-600 font-mono">
+              <div key={evt.id} className="group flex items-start justify-between gap-2">
+                <div className="flex flex-1 items-start gap-2 text-xs text-gray-400">
+                  <span className="shrink-0 font-mono text-gray-600">
                     {new Date(evt.timestamp).toLocaleTimeString([], {
                       hour: "2-digit",
                       minute: "2-digit",
@@ -1083,7 +1083,7 @@ function GameContent({ roomCode, playerName }: { roomCode: string; playerName: s
                 {isHost && (
                   <button
                     onClick={() => handleRollback(evt.id)}
-                    className="text-xs text-red-400/60 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                    className="shrink-0 text-xs text-red-400/60 opacity-0 transition-opacity group-hover:opacity-100 hover:text-red-400"
                   >
                     Undo
                   </button>
@@ -1198,7 +1198,7 @@ function CombatLayout({
   }, [onBattleMapWidthChange]);
 
   return (
-    <div ref={containerRef} className="flex-1 flex flex-row min-h-0">
+    <div ref={containerRef} className="flex min-h-0 flex-1 flex-row">
       <BattleMap
         map={battleMap}
         combat={combatState}
@@ -1213,7 +1213,7 @@ function CombatLayout({
       />
       {/* Resize handle */}
       <div
-        className="w-1 cursor-col-resize bg-gray-700/50 hover:bg-amber-500/50 active:bg-amber-400/60 transition-colors shrink-0"
+        className="w-1 shrink-0 cursor-col-resize bg-gray-700/50 transition-colors hover:bg-amber-500/50 active:bg-amber-400/60"
         onMouseDown={() => {
           draggingRef.current = true;
         }}

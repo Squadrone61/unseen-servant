@@ -27,9 +27,9 @@ export function HowToPlayModal({ onClose }: HowToPlayModalProps) {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="bg-gray-800/95 backdrop-blur-sm rounded-xl w-full max-w-3xl h-[80vh] flex flex-col mx-4 border border-gray-700/40 shadow-2xl">
+      <div className="mx-4 flex h-guide-modal w-full max-w-3xl flex-col rounded-xl border border-gray-700/40 bg-gray-800/95 shadow-2xl backdrop-blur-sm">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-700/40">
+        <div className="flex items-center justify-between border-b border-gray-700/40 px-5 py-4">
           <div>
             <h2
               className="text-base font-semibold text-amber-200/90"
@@ -40,7 +40,7 @@ export function HowToPlayModal({ onClose }: HowToPlayModalProps) {
             >
               Tome of Knowledge
             </h2>
-            <p className="text-xs text-gray-500 mt-0.5">How to play Unseen Servant</p>
+            <p className="mt-0.5 text-xs text-gray-500">How to play Unseen Servant</p>
           </div>
           <Button variant="icon" onClick={onClose}>
             <span className="text-lg leading-none">&times;</span>
@@ -48,7 +48,7 @@ export function HowToPlayModal({ onClose }: HowToPlayModalProps) {
         </div>
 
         {/* Body: Sidebar + Content */}
-        <div className="flex-1 flex min-h-0">
+        <div className="flex min-h-0 flex-1">
           <GuideSidebar activeTopicId={activeTopicId} onSelectTopic={setActiveTopicId} />
           <GuideContent activeTopicId={activeTopicId} />
         </div>

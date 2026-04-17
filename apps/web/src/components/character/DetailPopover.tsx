@@ -93,7 +93,7 @@ export function DetailPopover({
   return (
     <div
       ref={cardRef}
-      className="fixed bg-gray-800/60 border border-gray-700/40 rounded-lg shadow-xl max-w-sm w-[384px] max-h-[70vh] flex flex-col backdrop-blur-sm"
+      className="fixed flex max-h-popover w-96 max-w-sm flex-col rounded-lg border border-gray-700/40 bg-gray-800/60 shadow-xl backdrop-blur-sm"
       style={{
         zIndex: 50 + level * 10,
         left: coords?.left ?? -9999,
@@ -102,15 +102,15 @@ export function DetailPopover({
       }}
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-700/40 shrink-0">
+      <div className="flex shrink-0 items-center justify-between border-b border-gray-700/40 px-4 py-3">
         <h3
-          className="text-base font-semibold text-amber-200/90 pr-2"
+          className="pr-2 text-base font-semibold text-amber-200/90"
           style={{ fontFamily: "var(--font-cinzel)" }}
         >
           {title}
         </h3>
         <Button variant="icon" onClick={onClose} className="shrink-0">
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               strokeLinecap="round"
               strokeLinejoin="round"

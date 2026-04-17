@@ -71,7 +71,7 @@ export function FeaturesTab({ character, onFeatureClick }: FeaturesTabProps) {
         <div key={group.key}>
           {group.label && (
             <div
-              className="text-sm text-gray-500 uppercase tracking-wider font-medium mb-0.5 px-1.5"
+              className="mb-0.5 px-1.5 text-sm font-medium tracking-wider text-gray-500 uppercase"
               style={{ fontFamily: "var(--font-cinzel)" }}
             >
               {group.label} ({group.features.length})
@@ -84,16 +84,16 @@ export function FeaturesTab({ character, onFeatureClick }: FeaturesTabProps) {
               return (
                 <div
                   key={`${feat.dbKind}-${feat.dbName}-${feat.featureName ?? ""}-${i}`}
-                  className={`text-xs px-1.5 py-0.5 rounded flex items-center gap-1 ${
+                  className={`flex items-center gap-1 rounded px-1.5 py-0.5 text-xs ${
                     description
-                      ? "text-gray-300 cursor-pointer hover:text-amber-300 hover:bg-gray-800/60 transition-colors"
+                      ? "cursor-pointer text-gray-300 transition-colors hover:bg-gray-800/60 hover:text-amber-300"
                       : "text-gray-400"
                   }`}
                   onClick={description ? (e) => onFeatureClick(feat, e) : undefined}
                 >
                   <span className="truncate">{displayName}</span>
                   {(feat.dbKind === "class" || feat.dbKind === "subclass") && feat.sourceLabel && (
-                    <span className="text-xs text-amber-400/60 shrink-0">{feat.sourceLabel}</span>
+                    <span className="shrink-0 text-xs text-amber-400/60">{feat.sourceLabel}</span>
                   )}
                 </div>
               );
@@ -103,15 +103,15 @@ export function FeaturesTab({ character, onFeatureClick }: FeaturesTabProps) {
       ))}
 
       {s.features.length === 0 && (
-        <div className="text-xs text-gray-600 text-center py-4">No features</div>
+        <div className="py-4 text-center text-xs text-gray-600">No features</div>
       )}
 
       {/* Divider — traits, appearance, alignment, backstory */}
       {(hasTraits || s.appearance || s.alignment || s.backstory) && (
-        <div className="border-t border-gray-700/40 pt-2 mt-2 space-y-1.5">
+        <div className="mt-2 space-y-1.5 border-t border-gray-700/40 pt-2">
           {/* Alignment (inline — one liner) */}
           {s.alignment && (
-            <div className="px-1.5 flex items-baseline gap-2">
+            <div className="flex items-baseline gap-2 px-1.5">
               <span className="text-xs text-gray-500">Alignment</span>
               <span className="text-xs text-gray-300">{s.alignment}</span>
             </div>
@@ -121,7 +121,7 @@ export function FeaturesTab({ character, onFeatureClick }: FeaturesTabProps) {
             <div>
               <button
                 onClick={() => setTraitsOpen(!traitsOpen)}
-                className="flex items-center justify-between w-full text-xs text-gray-400 font-medium px-1.5"
+                className="flex w-full items-center justify-between px-1.5 text-xs font-medium text-gray-400"
               >
                 <span>Traits</span>
                 <span className="text-gray-600">{traitsOpen ? "\u2212" : "+"}</span>
@@ -162,14 +162,14 @@ export function FeaturesTab({ character, onFeatureClick }: FeaturesTabProps) {
             <div>
               <button
                 onClick={() => setBackstoryOpen(!backstoryOpen)}
-                className="flex items-center justify-between w-full text-xs text-gray-400 font-medium px-1.5"
+                className="flex w-full items-center justify-between px-1.5 text-xs font-medium text-gray-400"
               >
                 <span>Backstory</span>
                 <span className="text-gray-600">{backstoryOpen ? "\u2212" : "+"}</span>
               </button>
               {backstoryOpen && (
                 <div className="mt-1 px-1.5">
-                  <div className="text-xs text-gray-300 whitespace-pre-wrap break-words">
+                  <div className="text-xs break-words whitespace-pre-wrap text-gray-300">
                     {s.backstory}
                   </div>
                 </div>
@@ -182,7 +182,7 @@ export function FeaturesTab({ character, onFeatureClick }: FeaturesTabProps) {
             <div>
               <button
                 onClick={() => setAppearanceOpen(!appearanceOpen)}
-                className="flex items-center justify-between w-full text-xs text-gray-400 font-medium px-1.5"
+                className="flex w-full items-center justify-between px-1.5 text-xs font-medium text-gray-400"
               >
                 <span>Appearance</span>
                 <span className="text-gray-600">{appearanceOpen ? "\u2212" : "+"}</span>

@@ -3,7 +3,7 @@ import { GuideCallout } from "../GuideCallout";
 export function TopicStartCampaign() {
   return (
     <div className="space-y-6">
-      <p className="text-sm text-amber-200/60 italic leading-relaxed border-l-2 border-amber-500/30 pl-4">
+      <p className="border-l-2 border-amber-500/30 pl-4 text-sm leading-relaxed text-amber-200/60 italic">
         A great adventure needs a steady hand to guide it. As host, you set the stage.
       </p>
 
@@ -35,7 +35,7 @@ export function TopicStartCampaign() {
           .
         </p>
         <p>In your terminal, run:</p>
-        <pre className="bg-gray-900/60 border border-gray-700/30 rounded-lg px-4 py-3 text-xs text-gray-300 font-mono overflow-x-auto">
+        <pre className="overflow-x-auto rounded-lg border border-gray-700/30 bg-gray-900/60 px-4 py-3 font-mono text-xs text-gray-300">
           node unseen-servant.mjs
         </pre>
         <p>
@@ -43,16 +43,16 @@ export function TopicStartCampaign() {
           you'll see the DM status indicator turn green in the top bar.
         </p>
         <p>You can also pass arguments directly to skip the interactive prompts:</p>
-        <pre className="bg-gray-900/60 border border-gray-700/30 rounded-lg px-4 py-3 text-xs text-gray-300 font-mono overflow-x-auto whitespace-pre-wrap">
+        <pre className="overflow-x-auto rounded-lg border border-gray-700/30 bg-gray-900/60 px-4 py-3 font-mono text-xs whitespace-pre-wrap text-gray-300">
           {`node unseen-servant.mjs --room ABC123 --model opus`}
         </pre>
         <GuideCallout type="tip">
           To name your session for future resumption, use the{" "}
-          <code className="text-amber-300/70 bg-gray-800/60 px-1 py-0.5 rounded text-xs">
+          <code className="rounded bg-gray-800/60 px-1 py-0.5 text-xs text-amber-300/70">
             --campaign
           </code>{" "}
           flag:{" "}
-          <code className="text-amber-300/70 bg-gray-800/60 px-1 py-0.5 rounded text-xs">
+          <code className="rounded bg-gray-800/60 px-1 py-0.5 text-xs text-amber-300/70">
             node unseen-servant.mjs --room ABC123 --campaign "curse-of-strahd"
           </code>
           . The next time you launch with the same campaign name, the DM picks up where it left off.
@@ -65,7 +65,7 @@ export function TopicStartCampaign() {
           can start a new campaign or load an existing one.
         </p>
         <p>For a new campaign, you'll set:</p>
-        <ul className="list-disc list-inside space-y-1 text-gray-400">
+        <ul className="list-inside list-disc space-y-1 text-gray-400">
           <li>
             <strong className="text-gray-300">Campaign Name</strong> — Give your adventure a title
           </li>
@@ -102,12 +102,12 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   return (
     <div className="space-y-3">
       <h3
-        className="text-sm font-semibold text-amber-200/80 uppercase tracking-wider"
+        className="text-sm font-semibold tracking-wider text-amber-200/80 uppercase"
         style={{ fontFamily: "var(--font-cinzel)" }}
       >
         {title}
       </h3>
-      <div className="space-y-3 text-sm text-gray-400 leading-relaxed">{children}</div>
+      <div className="space-y-3 text-sm leading-relaxed text-gray-400">{children}</div>
     </div>
   );
 }

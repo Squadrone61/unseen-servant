@@ -67,9 +67,9 @@ export function SettingsModal({
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="bg-gray-800/60 rounded-xl w-full max-w-sm flex flex-col mx-4 border border-gray-700/40 shadow-2xl">
+      <div className="mx-4 flex w-full max-w-sm flex-col rounded-xl border border-gray-700/40 bg-gray-800/60 shadow-2xl">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-700/40">
+        <div className="flex items-center justify-between border-b border-gray-700/40 px-5 py-4">
           <h2
             className="text-base font-semibold text-amber-200/90"
             style={{ fontFamily: "var(--font-cinzel)" }}
@@ -82,12 +82,12 @@ export function SettingsModal({
         </div>
 
         {/* Body */}
-        <div className="p-5 space-y-4">
+        <div className="space-y-4 p-5">
           {/* Narration Volume */}
           <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="text-sm text-gray-300 font-medium">Narration Volume</label>
-              <span className="text-xs text-gray-500 font-mono tabular-nums">
+            <div className="mb-2 flex items-center justify-between">
+              <label className="text-sm font-medium text-gray-300">Narration Volume</label>
+              <span className="font-mono text-xs text-gray-500 tabular-nums">
                 {Math.round(volume * 100)}%
               </span>
             </div>
@@ -98,7 +98,7 @@ export function SettingsModal({
               step="0.05"
               value={volume}
               onChange={(e) => handleVolumeChange(parseFloat(e.target.value))}
-              className="w-full h-1.5 accent-amber-500 cursor-pointer"
+              className="h-1.5 w-full cursor-pointer accent-amber-500"
               aria-label="Narration volume"
             />
           </div>
@@ -107,20 +107,20 @@ export function SettingsModal({
           {isHost && (onSetPassword || onDestroyRoom) && (
             <>
               <div className="flex items-center gap-3">
-                <div className="flex-1 h-px bg-gradient-to-r from-transparent via-amber-500/20 to-transparent" />
+                <div className="h-px flex-1 bg-gradient-to-r from-transparent via-amber-500/20 to-transparent" />
                 <span
-                  className="text-sm text-gray-500 uppercase tracking-wider"
+                  className="text-sm tracking-wider text-gray-500 uppercase"
                   style={{ fontFamily: "var(--font-cinzel)" }}
                 >
                   Host
                 </span>
-                <div className="flex-1 h-px bg-gradient-to-r from-transparent via-amber-500/20 to-transparent" />
+                <div className="h-px flex-1 bg-gradient-to-r from-transparent via-amber-500/20 to-transparent" />
               </div>
 
               {/* Room Password */}
               {onSetPassword && (
                 <div>
-                  <div className="text-sm text-gray-500 uppercase tracking-wider mb-2">
+                  <div className="mb-2 text-sm tracking-wider text-gray-500 uppercase">
                     Room Password
                   </div>
                   {passwordSet ? (
@@ -141,9 +141,9 @@ export function SettingsModal({
                         onChange={(e) => setPasswordInput(e.target.value)}
                         onKeyDown={(e) => e.key === "Enter" && handleSetPassword()}
                         placeholder="Set password..."
-                        className="flex-1 bg-gray-900/60 border border-gray-700/40 rounded px-2 py-1.5
-                                   text-sm text-gray-100 placeholder-gray-500 focus:outline-none
-                                   focus:ring-1 focus:ring-amber-500/50 focus:border-amber-500/30 min-w-0"
+                        className="min-w-0 flex-1 rounded border border-gray-700/40 bg-gray-900/60 px-2
+                                   py-1.5 text-sm text-gray-100 placeholder-gray-500
+                                   focus:border-amber-500/30 focus:ring-1 focus:ring-amber-500/50 focus:outline-none"
                       />
                       <Button
                         size="xs"

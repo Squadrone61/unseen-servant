@@ -14,7 +14,7 @@ export function PlayerNotesPanel({ notes, saveState, onChange, onClose }: Player
 
   return (
     <div
-      className="fixed z-40 flex flex-col bg-gray-900/80 backdrop-blur-sm border border-gray-700/50 rounded-xl shadow-2xl"
+      className="fixed z-40 flex flex-col rounded-xl border border-gray-700/50 bg-gray-900/80 shadow-2xl backdrop-blur-sm"
       style={{
         left: geometry.x,
         top: geometry.y,
@@ -25,17 +25,17 @@ export function PlayerNotesPanel({ notes, saveState, onChange, onClose }: Player
       {/* Header — drag handle */}
       <div
         {...dragHandleProps}
-        className="flex items-center justify-between px-4 py-2.5 border-b border-gray-700/50 select-none"
+        className="flex items-center justify-between border-b border-gray-700/50 px-4 py-2.5 select-none"
       >
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-gray-200 font-cinzel tracking-wide">Notes</span>
+          <span className="font-cinzel text-sm font-medium tracking-wide text-gray-200">Notes</span>
           <span
-            className={`text-xs px-1.5 py-0.5 rounded-full ${
+            className={`rounded-full px-1.5 py-0.5 text-xs ${
               saveState === "saved"
-                ? "text-green-400/70 bg-green-400/10"
+                ? "bg-green-400/10 text-green-400/70"
                 : saveState === "saving"
-                  ? "text-yellow-400/70 bg-yellow-400/10"
-                  : "text-gray-500 bg-gray-700"
+                  ? "bg-yellow-400/10 text-yellow-400/70"
+                  : "bg-gray-700 text-gray-500"
             }`}
           >
             {saveState === "saved" ? "Saved" : saveState === "saving" ? "Saving..." : "Unsaved"}
@@ -44,7 +44,7 @@ export function PlayerNotesPanel({ notes, saveState, onChange, onClose }: Player
         <button
           onClick={onClose}
           onMouseDown={(e) => e.stopPropagation()}
-          className="text-gray-500 hover:text-gray-300 transition-colors text-lg leading-none"
+          className="text-lg leading-none text-gray-500 transition-colors hover:text-gray-300"
           title="Close notes"
         >
           &times;
@@ -56,25 +56,25 @@ export function PlayerNotesPanel({ notes, saveState, onChange, onClose }: Player
         value={notes}
         onChange={(e) => onChange(e.target.value)}
         placeholder="Track NPCs, quest objectives, loot, plans..."
-        className={`flex-1 px-4 py-3 bg-transparent text-sm text-gray-300
-                   placeholder-gray-600 resize-none focus:outline-none font-mono leading-relaxed overflow-y-auto
+        className={`flex-1 resize-none overflow-y-auto bg-transparent px-4 py-3
+                   font-mono text-sm leading-relaxed text-gray-300 placeholder-gray-600 focus:outline-none
                    ${isInteracting ? "pointer-events-none" : ""}`}
         spellCheck={false}
       />
 
       {/* Resize handles — edges */}
-      <div {...resizeHandleProps("n")} className="absolute top-0 left-2 right-2 h-1.5" />
-      <div {...resizeHandleProps("s")} className="absolute bottom-0 left-2 right-2 h-1.5" />
-      <div {...resizeHandleProps("w")} className="absolute left-0 top-2 bottom-2 w-1.5" />
-      <div {...resizeHandleProps("e")} className="absolute right-0 top-2 bottom-2 w-1.5" />
+      <div {...resizeHandleProps("n")} className="absolute top-0 right-2 left-2 h-1.5" />
+      <div {...resizeHandleProps("s")} className="absolute right-2 bottom-0 left-2 h-1.5" />
+      <div {...resizeHandleProps("w")} className="absolute top-2 bottom-2 left-0 w-1.5" />
+      <div {...resizeHandleProps("e")} className="absolute top-2 right-0 bottom-2 w-1.5" />
 
       {/* Resize handles — corners */}
-      <div {...resizeHandleProps("nw")} className="absolute top-0 left-0 w-3 h-3" />
-      <div {...resizeHandleProps("ne")} className="absolute top-0 right-0 w-3 h-3" />
-      <div {...resizeHandleProps("sw")} className="absolute bottom-0 left-0 w-3 h-3" />
+      <div {...resizeHandleProps("nw")} className="absolute top-0 left-0 h-3 w-3" />
+      <div {...resizeHandleProps("ne")} className="absolute top-0 right-0 h-3 w-3" />
+      <div {...resizeHandleProps("sw")} className="absolute bottom-0 left-0 h-3 w-3" />
       <div
         {...resizeHandleProps("se")}
-        className="absolute bottom-0 right-0 w-4 h-4 flex items-end justify-end pr-1 pb-1"
+        className="absolute right-0 bottom-0 flex h-4 w-4 items-end justify-end pr-1 pb-1"
       >
         {/* Visible grip icon */}
         <svg width="8" height="8" viewBox="0 0 8 8" className="text-gray-500">

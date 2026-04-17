@@ -33,16 +33,16 @@ function SpellRow({ spell, onClick }: { spell: Spell; onClick: (e: React.MouseEv
 
   return (
     <div
-      className={`text-xs flex items-center gap-1.5 cursor-pointer hover:text-amber-300 transition-colors px-1.5 py-0.5 rounded hover:bg-gray-800/60 ${styles.text}`}
+      className={`flex cursor-pointer items-center gap-1.5 rounded px-1.5 py-0.5 text-xs transition-colors hover:bg-gray-800/60 hover:text-amber-300 ${styles.text}`}
       onClick={onClick}
     >
-      <span className={`inline-block w-1.5 h-1.5 rounded-full shrink-0 ${styles.dot}`} />
-      <span className="truncate flex-1">{spell.name}</span>
+      <span className={`inline-block h-1.5 w-1.5 shrink-0 rounded-full ${styles.dot}`} />
+      <span className="flex-1 truncate">{spell.name}</span>
 
       {/* Grant usage badge — "At Will", "1/LR", "2/SR" */}
       {grantLabel && (
         <span
-          className="text-xs text-violet-400/70 font-medium shrink-0"
+          className="shrink-0 text-xs font-medium text-violet-400/70"
           title={`Cast without a spell slot: ${grantLabel}`}
         >
           {grantLabel}
@@ -52,7 +52,7 @@ function SpellRow({ spell, onClick }: { spell: Spell; onClick: (e: React.MouseEv
       {/* Grant condition note */}
       {spell.grantCondition && (
         <span
-          className="text-xs text-orange-400/60 italic shrink-0 truncate max-w-[120px]"
+          className="max-w-32 shrink-0 truncate text-xs text-orange-400/60 italic"
           title={spell.grantCondition}
         >
           ({spell.grantCondition})
@@ -61,26 +61,26 @@ function SpellRow({ spell, onClick }: { spell: Spell; onClick: (e: React.MouseEv
 
       {/* Source badges */}
       {(spell.spellSource === "race" || spell.spellSource === "species") && (
-        <span className="text-xs text-emerald-400/60 font-semibold shrink-0" title="Species spell">
+        <span className="shrink-0 text-xs font-semibold text-emerald-400/60" title="Species spell">
           S
         </span>
       )}
       {spell.spellSource === "feat" && (
-        <span className="text-xs text-amber-400/60 font-semibold shrink-0" title="Feat spell">
+        <span className="shrink-0 text-xs font-semibold text-amber-400/60" title="Feat spell">
           F
         </span>
       )}
       {spell.spellSource === "item" && (
-        <span className="text-xs text-cyan-400/60 font-semibold shrink-0" title="Item spell">
+        <span className="shrink-0 text-xs font-semibold text-cyan-400/60" title="Item spell">
           I
         </span>
       )}
 
       {/* Concentration & Ritual badges */}
       {spell.concentration && (
-        <span className="text-xs text-yellow-500 font-semibold shrink-0">C</span>
+        <span className="shrink-0 text-xs font-semibold text-yellow-500">C</span>
       )}
-      {spell.ritual && <span className="text-xs text-blue-400 font-semibold shrink-0">R</span>}
+      {spell.ritual && <span className="shrink-0 text-xs font-semibold text-blue-400">R</span>}
     </div>
   );
 }
@@ -132,22 +132,22 @@ export function SpellsTab({ character, onSpellClick }: SpellsTabProps) {
 
       {/* Pact Magic Slots (Warlock) */}
       {pactSlots.length > 0 && (
-        <div className="flex items-center gap-2 text-xs px-1.5 py-1 bg-amber-500/10 border border-gray-700/50 rounded">
-          <span className="text-amber-400 font-medium text-xs">Pact Slots</span>
+        <div className="flex items-center gap-2 rounded border border-gray-700/50 bg-amber-500/10 px-1.5 py-1 text-xs">
+          <span className="text-xs font-medium text-amber-400">Pact Slots</span>
           {pactSlots.map((sl) => (
             <span key={sl.level} className="text-gray-300">
-              <span className="text-gray-500 text-xs">Lvl {sl.level}:</span>{" "}
+              <span className="text-xs text-gray-500">Lvl {sl.level}:</span>{" "}
               <span className="text-amber-400/80">
                 {sl.total - sl.used}/{sl.total}
               </span>
             </span>
           ))}
-          <span className="text-xs text-gray-600 ml-auto">short rest</span>
+          <span className="ml-auto text-xs text-gray-600">short rest</span>
         </div>
       )}
 
       {s.spells.length === 0 && pactSlots.length === 0 && (
-        <div className="text-xs text-gray-600 text-center py-4">No spells known</div>
+        <div className="py-4 text-center text-xs text-gray-600">No spells known</div>
       )}
 
       <div className="space-y-2">
@@ -159,7 +159,7 @@ export function SpellsTab({ character, onSpellClick }: SpellsTabProps) {
 
           return (
             <div key={lvl}>
-              <div className="text-xs text-gray-500 mb-0.5 flex items-center gap-1.5 px-1.5">
+              <div className="mb-0.5 flex items-center gap-1.5 px-1.5 text-xs text-gray-500">
                 <span className="font-medium">{lvl === 0 ? "Cantrips" : `Level ${lvl}`}</span>
                 {slotData && slotData.total > 0 && (
                   <span className="text-amber-400/80">

@@ -3,7 +3,7 @@ import { GuideCallout } from "../GuideCallout";
 export function TopicNarrative() {
   return (
     <div className="space-y-6">
-      <p className="text-sm text-amber-200/60 italic leading-relaxed border-l-2 border-amber-500/30 pl-4">
+      <p className="border-l-2 border-amber-500/30 pl-4 text-sm leading-relaxed text-amber-200/60 italic">
         The world responds to your words. Speak boldly, act wisely, and the story unfolds.
       </p>
 
@@ -13,7 +13,7 @@ export function TopicNarrative() {
           reads what you write and responds with narrative, NPC dialogue, and consequences.
         </p>
         <p>You can write in any style:</p>
-        <ul className="list-disc list-inside space-y-1 text-gray-400">
+        <ul className="list-inside list-disc space-y-1 text-gray-400">
           <li>
             <strong className="text-gray-300">Actions:</strong>{" "}
             <em>"I search the room for hidden doors"</em>
@@ -54,7 +54,7 @@ export function TopicNarrative() {
           Everyone types in the same chat. The DM reads all messages and responds to the group. A
           few tips for smooth play:
         </p>
-        <ul className="list-disc list-inside space-y-1 text-gray-400">
+        <ul className="list-inside list-disc space-y-1 text-gray-400">
           <li>Take turns — let others act before sending your next message</li>
           <li>Be specific about what your character does, not just what you want to happen</li>
           <li>
@@ -79,12 +79,12 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   return (
     <div className="space-y-3">
       <h3
-        className="text-sm font-semibold text-amber-200/80 uppercase tracking-wider"
+        className="text-sm font-semibold tracking-wider text-amber-200/80 uppercase"
         style={{ fontFamily: "var(--font-cinzel)" }}
       >
         {title}
       </h3>
-      <div className="space-y-3 text-sm text-gray-400 leading-relaxed">{children}</div>
+      <div className="space-y-3 text-sm leading-relaxed text-gray-400">{children}</div>
     </div>
   );
 }

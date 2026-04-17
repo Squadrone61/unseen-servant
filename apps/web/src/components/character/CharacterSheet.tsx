@@ -80,7 +80,7 @@ function SheetTabBar({
       onChange={onTabChange}
       stretch
       size="sm"
-      className="border-t border-gray-700/40 bg-gray-800/60 shrink-0"
+      className="shrink-0 border-t border-gray-700/40 bg-gray-800/60"
     />
   );
 }
@@ -156,9 +156,9 @@ function CharacterSheetInner({ character, onCastAoE }: CharacterSheetProps) {
   );
 
   return (
-    <div className="flex flex-col h-full text-sm">
+    <div className="flex h-full flex-col text-sm">
       {/* ═══ UPPER SECTION (compact, never overflows) ═══ */}
-      <div className="shrink-0 p-3 space-y-3">
+      <div className="shrink-0 space-y-3 p-3">
         {/* Character Identity */}
         <div>
           <h2
@@ -178,31 +178,31 @@ function CharacterSheetInner({ character, onCastAoE }: CharacterSheetProps) {
 
         {/* Stat Boxes — 3-column grid, 2 rows */}
         <div className="grid grid-cols-3 gap-1.5 text-center">
-          <div className="bg-gray-900/60 border border-gray-700/50 rounded py-1">
+          <div className="rounded border border-gray-700/50 bg-gray-900/60 py-1">
             <div className="text-xs text-gray-500 uppercase">AC</div>
             <div className="text-base font-bold text-gray-200">{getAC(character)}</div>
           </div>
-          <div className="bg-gray-900/60 border border-gray-700/50 rounded py-1">
+          <div className="rounded border border-gray-700/50 bg-gray-900/60 py-1">
             <div className="text-xs text-gray-500 uppercase">Speed</div>
             <div className="text-base font-bold text-gray-200">{getSpeed(character).walk} ft</div>
           </div>
-          <div className="bg-gray-900/60 border border-gray-700/50 rounded py-1">
+          <div className="rounded border border-gray-700/50 bg-gray-900/60 py-1">
             <div className="text-xs text-gray-500 uppercase">Prof</div>
             <div className="text-base font-bold text-gray-200">+{profBonus}</div>
           </div>
           {isCaster ? (
             <>
-              <div className="bg-gray-900/60 border border-gray-700/50 rounded py-1">
+              <div className="rounded border border-gray-700/50 bg-gray-900/60 py-1">
                 <div className="text-xs text-gray-500 uppercase">Spell DC</div>
                 <div className="text-base font-bold text-gray-200">{primarySpellcasting?.dc}</div>
               </div>
-              <div className="bg-gray-900/60 border border-gray-700/50 rounded py-1">
+              <div className="rounded border border-gray-700/50 bg-gray-900/60 py-1">
                 <div className="text-xs text-gray-500 uppercase">Spell Atk</div>
                 <div className="text-base font-bold text-gray-200">
                   {formatBonus(primarySpellcasting?.attackBonus ?? 0)}
                 </div>
               </div>
-              <div className="bg-gray-900/60 border border-gray-700/50 rounded py-1">
+              <div className="rounded border border-gray-700/50 bg-gray-900/60 py-1">
                 <div className="text-xs text-gray-500 uppercase">Init</div>
                 <div className="text-base font-bold text-gray-200">
                   {formatBonus(getModifier(abilities.dexterity))}
@@ -211,17 +211,17 @@ function CharacterSheetInner({ character, onCastAoE }: CharacterSheetProps) {
             </>
           ) : (
             <>
-              <div className="bg-gray-900/60 border border-gray-700/50 rounded py-1">
+              <div className="rounded border border-gray-700/50 bg-gray-900/60 py-1">
                 <div className="text-xs text-gray-500 uppercase">Init</div>
                 <div className="text-base font-bold text-gray-200">
                   {formatBonus(getModifier(abilities.dexterity))}
                 </div>
               </div>
-              <div className="bg-gray-900/60 border border-gray-700/50 rounded py-1">
+              <div className="rounded border border-gray-700/50 bg-gray-900/60 py-1">
                 <div className="text-xs text-gray-500 uppercase">Hit Dice</div>
                 <div className="text-base font-bold text-gray-200">{getTotalLevel(s.classes)}</div>
               </div>
-              <div className="bg-gray-900/60 border border-gray-700/50 rounded py-1">
+              <div className="rounded border border-gray-700/50 bg-gray-900/60 py-1">
                 <div className="text-xs text-gray-500 uppercase">Passive</div>
                 <div className="text-base font-bold text-gray-200">
                   {getPassivePerception(character)}
@@ -235,12 +235,12 @@ function CharacterSheetInner({ character, onCastAoE }: CharacterSheetProps) {
         <div
           className={`flex items-center gap-1.5 rounded px-2 py-0.5 ${
             d.heroicInspiration
-              ? "bg-yellow-900/20 border border-yellow-700/40"
-              : "bg-gray-900/30 border border-gray-700/30"
+              ? "border border-yellow-700/40 bg-yellow-900/20"
+              : "border border-gray-700/30 bg-gray-900/30"
           }`}
         >
           <span
-            className={`text-sm ${d.heroicInspiration ? "text-yellow-400 drop-shadow-[0_0_4px_rgba(250,204,21,0.4)]" : "text-gray-600"}`}
+            className={`text-sm ${d.heroicInspiration ? "text-yellow-400 drop-shadow-glow-yellow" : "text-gray-600"}`}
           >
             {d.heroicInspiration ? "\u2605" : "\u2606"}
           </span>
@@ -255,12 +255,12 @@ function CharacterSheetInner({ character, onCastAoE }: CharacterSheetProps) {
         {d.concentratingOn && (
           <div>
             <div
-              className="text-sm text-gray-500 uppercase tracking-wider font-medium mb-1"
+              className="mb-1 text-sm font-medium tracking-wider text-gray-500 uppercase"
               style={{ fontFamily: "var(--font-cinzel)" }}
             >
               Concentrating On
             </div>
-            <span className="bg-purple-900/30 text-purple-300 text-xs px-2 py-0.5 rounded-full border border-purple-800/50">
+            <span className="rounded-full border border-purple-800/50 bg-purple-900/30 px-2 py-0.5 text-xs text-purple-300">
               {d.concentratingOn.spellName}
             </span>
           </div>
@@ -270,7 +270,7 @@ function CharacterSheetInner({ character, onCastAoE }: CharacterSheetProps) {
         {d.conditions.length > 0 && (
           <div>
             <div
-              className="text-sm text-gray-500 uppercase tracking-wider font-medium mb-1"
+              className="mb-1 text-sm font-medium tracking-wider text-gray-500 uppercase"
               style={{ fontFamily: "var(--font-cinzel)" }}
             >
               Conditions
@@ -279,7 +279,7 @@ function CharacterSheetInner({ character, onCastAoE }: CharacterSheetProps) {
               {d.conditions.map((c, i) => (
                 <span
                   key={i}
-                  className="bg-red-900/30 text-red-400 text-xs px-2 py-0.5 rounded-full border border-red-800/50"
+                  className="rounded-full border border-red-800/50 bg-red-900/30 px-2 py-0.5 text-xs text-red-400"
                   title={
                     typeof c === "string"
                       ? c
@@ -303,7 +303,7 @@ function CharacterSheetInner({ character, onCastAoE }: CharacterSheetProps) {
               {Array.from({ length: 3 }, (_, i) => (
                 <span
                   key={i}
-                  className={`inline-block w-2 h-2 rounded-full mx-0.5 ${
+                  className={`mx-0.5 inline-block h-2 w-2 rounded-full ${
                     i < d.deathSaves.successes ? "bg-green-500" : "bg-gray-700"
                   }`}
                 />
@@ -314,7 +314,7 @@ function CharacterSheetInner({ character, onCastAoE }: CharacterSheetProps) {
               {Array.from({ length: 3 }, (_, i) => (
                 <span
                   key={i}
-                  className={`inline-block w-2 h-2 rounded-full mx-0.5 ${
+                  className={`mx-0.5 inline-block h-2 w-2 rounded-full ${
                     i < d.deathSaves.failures ? "bg-red-500" : "bg-gray-700"
                   }`}
                 />
@@ -342,10 +342,10 @@ function CharacterSheetInner({ character, onCastAoE }: CharacterSheetProps) {
               return (
                 <div
                   key={key}
-                  className="bg-gray-900/60 border border-gray-700/50 rounded p-1 py-1.5 text-center relative cursor-pointer hover:border-amber-500/50 hover:bg-gray-900/70 transition-colors"
+                  className="relative cursor-pointer rounded border border-gray-700/50 bg-gray-900/60 p-1 py-1.5 text-center transition-colors hover:border-amber-500/50 hover:bg-gray-900/70"
                   onClick={(e) => handleAbilityClick(key, e)}
                 >
-                  <div className="text-xs text-gray-500 uppercase tracking-wider font-medium">
+                  <div className="text-xs font-medium tracking-wider text-gray-500 uppercase">
                     {label}
                   </div>
                   <div
@@ -363,8 +363,8 @@ function CharacterSheetInner({ character, onCastAoE }: CharacterSheetProps) {
                   </div>
                   {(hasAdv || hasDisadv) && (
                     <span className="absolute top-0.5 right-0.5" title={advTooltip}>
-                      {hasAdv && <span className="text-xs text-green-400 font-bold">▲</span>}
-                      {hasDisadv && <span className="text-xs text-red-400 font-bold">▼</span>}
+                      {hasAdv && <span className="text-xs font-bold text-green-400">▲</span>}
+                      {hasDisadv && <span className="text-xs font-bold text-red-400">▼</span>}
                     </span>
                   )}
                 </div>

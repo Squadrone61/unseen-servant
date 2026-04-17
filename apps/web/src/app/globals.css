@@ -27,6 +27,43 @@
   --color-red-500: #ef4444;
   --color-red-900: #7f1d1d;
   --font-cinzel: "Cinzel", serif;
+
+  /* z-60 for popovers above z-50 modals */
+  --z-index-60: 60;
+}
+
+/* Custom glow shadow utilities */
+@utility shadow-glow-amber {
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.15);
+}
+@utility shadow-glow-amber-lg {
+  box-shadow: 0 0 20px rgba(245, 158, 11, 0.25);
+}
+@utility shadow-glow-emerald {
+  box-shadow: 0 0 16px rgba(16, 185, 129, 0.15);
+}
+@utility shadow-glow-emerald-lg {
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.25);
+}
+@utility drop-shadow-glow-yellow {
+  filter: drop-shadow(0 0 4px rgba(250, 204, 21, 0.4));
+}
+
+/* Layout utilities */
+@utility max-h-modal {
+  max-height: 85vh;
+}
+@utility max-h-popover {
+  max-height: 70vh;
+}
+@utility h-guide-modal {
+  height: 80vh;
+}
+@utility inset-door {
+  inset: 28%;
+}
+@utility appearance-textfield {
+  appearance: textfield;
 }
 
 body {

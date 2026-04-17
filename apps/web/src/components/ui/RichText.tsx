@@ -292,14 +292,14 @@ function renderBlock(
 
   if (block.type === "bullet-list") {
     return (
-      <ul key={bk} className="mb-1 last:mb-0 space-y-0.5 pl-4">
+      <ul key={bk} className="mb-1 space-y-0.5 pl-4 last:mb-0">
         {block.lines.map((line, li) => {
           // Strip leading bullet character
           const content = line.replace(/^[•-]\s/, "");
           const segments = parseSegments(content);
           return (
             <li key={`${bk}-li${li}`} className="flex gap-2">
-              <span className="mt-px text-gray-500 select-none shrink-0">&bull;</span>
+              <span className="mt-px shrink-0 text-gray-500 select-none">&bull;</span>
               <span>{renderLineSegments(segments, `${bk}-li${li}`, onEntityClick)}</span>
             </li>
           );
@@ -316,15 +316,15 @@ function renderBlock(
     const headerCells = headerRow ? parseTableCells(headerRow) : [];
 
     return (
-      <div key={bk} className="mb-1 last:mb-0 overflow-x-auto">
-        <table className="w-full text-sm border-collapse">
+      <div key={bk} className="mb-1 overflow-x-auto last:mb-0">
+        <table className="w-full border-collapse text-sm">
           {headerCells.length > 0 && (
             <thead>
               <tr>
                 {headerCells.map((cell, ci) => (
                   <th
                     key={`${bk}-th${ci}`}
-                    className="border border-gray-700 px-2 py-1 text-left text-gray-300 font-semibold bg-gray-800/60"
+                    className="border border-gray-700 bg-gray-800/60 px-2 py-1 text-left font-semibold text-gray-300"
                   >
                     {renderLineSegments(parseSegments(cell), `${bk}-th${ci}`, onEntityClick)}
                   </th>

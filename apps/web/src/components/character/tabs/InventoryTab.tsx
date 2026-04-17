@@ -52,9 +52,9 @@ export function InventoryTab({ character, onItemClick }: InventoryTabProps) {
     <div className="space-y-2">
       {/* Currency */}
       {hasCurrency && (
-        <div className="px-1.5 pb-1 border-b border-gray-700/40">
+        <div className="border-b border-gray-700/40 px-1.5 pb-1">
           <div
-            className="text-sm text-gray-500 uppercase tracking-wider font-medium mb-0.5"
+            className="mb-0.5 text-sm font-medium tracking-wider text-gray-500 uppercase"
             style={{ fontFamily: "var(--font-cinzel)" }}
           >
             Currency
@@ -71,7 +71,7 @@ export function InventoryTab({ character, onItemClick }: InventoryTabProps) {
       <FilterChipBar chips={chips} activeChipId={filter} onSelect={setFilter} />
 
       {sorted.length === 0 && (
-        <div className="text-xs text-gray-600 text-center py-4">No items</div>
+        <div className="py-4 text-center text-xs text-gray-600">No items</div>
       )}
 
       <div className="space-y-0.5">
@@ -97,28 +97,28 @@ export function InventoryTab({ character, onItemClick }: InventoryTabProps) {
           return (
             <div
               key={`${item.name}-${i}`}
-              className="flex items-center gap-1.5 text-xs px-1.5 py-1 rounded cursor-pointer hover:bg-gray-800/60 transition-colors group"
+              className="group flex cursor-pointer items-center gap-1.5 rounded px-1.5 py-1 text-xs transition-colors hover:bg-gray-800/60"
               onClick={(e) => onItemClick(item, e)}
             >
               {/* Equipped indicator */}
               <span
-                className={`inline-block w-1.5 h-1.5 rounded-full shrink-0 ${
+                className={`inline-block h-1.5 w-1.5 shrink-0 rounded-full ${
                   item.equipped ? "bg-green-500" : "bg-gray-700"
                 }`}
               />
 
               {/* Name */}
               <span
-                className={`truncate flex-1 group-hover:text-amber-300 transition-colors ${rarityColor}`}
+                className={`flex-1 truncate transition-colors group-hover:text-amber-300 ${rarityColor}`}
               >
                 {item.name}
-                {isMagic && <span className="text-amber-400 ml-0.5">✦</span>}
+                {isMagic && <span className="ml-0.5 text-amber-400">✦</span>}
               </span>
 
               {/* Attunement indicator */}
               {item.attunement && (
                 <span
-                  className={`text-xs shrink-0 ${
+                  className={`shrink-0 text-xs ${
                     item.attuned ? "text-amber-400" : "text-gray-600"
                   }`}
                   title={item.attuned ? "Attuned" : "Requires attunement"}
@@ -129,11 +129,11 @@ export function InventoryTab({ character, onItemClick }: InventoryTabProps) {
 
               {/* Quantity */}
               {item.quantity > 1 && (
-                <span className="text-gray-500 text-xs shrink-0">×{item.quantity}</span>
+                <span className="shrink-0 text-xs text-gray-500">×{item.quantity}</span>
               )}
 
               {/* Type badge */}
-              {typeLabel && <span className="text-xs text-gray-600 shrink-0">{typeLabel}</span>}
+              {typeLabel && <span className="shrink-0 text-xs text-gray-600">{typeLabel}</span>}
             </div>
           );
         })}

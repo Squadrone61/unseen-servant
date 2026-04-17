@@ -3,7 +3,7 @@ import { GuideCallout } from "../GuideCallout";
 export function TopicCombat() {
   return (
     <div className="space-y-6">
-      <p className="text-sm text-amber-200/60 italic leading-relaxed border-l-2 border-amber-500/30 pl-4">
+      <p className="border-l-2 border-amber-500/30 pl-4 text-sm leading-relaxed text-amber-200/60 italic">
         Steel yourself, adventurer. Initiative has been rolled.
       </p>
 
@@ -12,7 +12,7 @@ export function TopicCombat() {
           The DM starts combat when a hostile encounter begins. When this happens, several things
           appear automatically:
         </p>
-        <ul className="list-disc list-inside space-y-1 text-gray-400">
+        <ul className="list-inside list-disc space-y-1 text-gray-400">
           <li>
             <strong className="text-gray-300">Battle Map</strong> — A tactical grid showing the
             environment with tokens for each combatant
@@ -33,7 +33,7 @@ export function TopicCombat() {
           The battle map is a grid where each cell represents a 5-foot square. Tokens represent
           characters and enemies.
         </p>
-        <ul className="list-disc list-inside space-y-1 text-gray-400">
+        <ul className="list-inside list-disc space-y-1 text-gray-400">
           <li>
             <strong className="text-gray-300">Your token</strong> — Drag it to a highlighted cell to
             move there
@@ -67,7 +67,7 @@ export function TopicCombat() {
 
       <Section title="Taking Your Turn">
         <p>When it's your turn, the initiative tracker highlights your name. You can:</p>
-        <ol className="list-decimal list-inside space-y-1 text-gray-400">
+        <ol className="list-inside list-decimal space-y-1 text-gray-400">
           <li>
             <strong className="text-gray-300">Move</strong> — Drag your token to where you want to
             go
@@ -92,7 +92,7 @@ export function TopicCombat() {
           When you cast a spell, the DM automatically tracks your spell slots. You can see your
           remaining slots on your character sheet. The DM will:
         </p>
-        <ul className="list-disc list-inside space-y-1 text-gray-400">
+        <ul className="list-inside list-disc space-y-1 text-gray-400">
           <li>Deduct the spell slot at the appropriate level</li>
           <li>Apply the spell's effects (damage, conditions, healing)</li>
           <li>Track concentration if the spell requires it</li>
@@ -109,7 +109,7 @@ export function TopicCombat() {
           Your HP bar is visible on the battle map token and in your character sheet. The DM handles
           all damage and healing automatically. You'll see updates in real time:
         </p>
-        <ul className="list-disc list-inside space-y-1 text-gray-400">
+        <ul className="list-inside list-disc space-y-1 text-gray-400">
           <li>Damage reduces your HP (temporary HP absorbs damage first)</li>
           <li>Healing restores HP up to your maximum</li>
           <li>
@@ -139,12 +139,12 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   return (
     <div className="space-y-3">
       <h3
-        className="text-sm font-semibold text-amber-200/80 uppercase tracking-wider"
+        className="text-sm font-semibold tracking-wider text-amber-200/80 uppercase"
         style={{ fontFamily: "var(--font-cinzel)" }}
       >
         {title}
       </h3>
-      <div className="space-y-3 text-sm text-gray-400 leading-relaxed">{children}</div>
+      <div className="space-y-3 text-sm leading-relaxed text-gray-400">{children}</div>
     </div>
   );
 }

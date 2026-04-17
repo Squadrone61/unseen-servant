@@ -77,7 +77,7 @@ function OptionRow({
           aria-pressed={isSelected}
           disabled={(disabled || !!option.disabled) && !isSelected}
           onClick={onToggle}
-          className="flex items-center gap-2 flex-1 min-w-0 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/60 rounded"
+          className="flex min-w-0 flex-1 items-center gap-2 rounded text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/60"
         >
           <span
             aria-hidden="true"
@@ -91,7 +91,7 @@ function OptionRow({
           >
             {isSelected && (
               <svg
-                className="w-2.5 h-2.5"
+                className="h-2.5 w-2.5"
                 viewBox="0 0 10 10"
                 fill="none"
                 stroke="currentColor"
@@ -109,7 +109,7 @@ function OptionRow({
             )}
           </span>
           <span
-            className={`text-sm font-medium truncate ${
+            className={`truncate text-sm font-medium ${
               isSelected ? "text-amber-200" : "text-gray-200"
             }`}
           >
@@ -123,7 +123,7 @@ function OptionRow({
 
       {/* Nested choices rendered outside the selection row */}
       {isSelected && nested && (
-        <div className="ml-4 pl-4 border-l-2 border-amber-500/20 mt-2 flex flex-col gap-2">
+        <div className="mt-2 ml-4 flex flex-col gap-2 border-l-2 border-amber-500/20 pl-4">
           {nested}
         </div>
       )}
@@ -144,7 +144,7 @@ function SearchInput({ query, onChange }: SearchInputProps) {
   return (
     <div className="relative">
       <svg
-        className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none"
+        className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-500"
         fill="none"
         viewBox="0 0 24 24"
         stroke="currentColor"
@@ -163,17 +163,17 @@ function SearchInput({ query, onChange }: SearchInputProps) {
         onChange={(e) => onChange(e.target.value)}
         placeholder="Search..."
         aria-label="Search options"
-        className="w-full bg-gray-800/60 border border-gray-700/40 rounded-lg pl-10 pr-9 py-2 text-gray-200 placeholder-gray-500 focus:border-amber-500/50 focus:outline-none text-sm transition-colors"
+        className="w-full rounded-lg border border-gray-700/40 bg-gray-800/60 py-2 pr-9 pl-10 text-sm text-gray-200 placeholder-gray-500 transition-colors focus:border-amber-500/50 focus:outline-none"
       />
       {query.length > 0 && (
         <button
           type="button"
           onClick={() => onChange("")}
           aria-label="Clear search"
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors"
+          className="absolute top-1/2 right-3 -translate-y-1/2 text-gray-500 transition-colors hover:text-gray-300"
         >
           <svg
-            className="w-4 h-4"
+            className="h-4 w-4"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -267,7 +267,7 @@ export function ChoicePicker({
         .join(" ")}
     >
       {/* Header */}
-      <div className="flex items-center justify-between mb-3">
+      <div className="mb-3 flex items-center justify-between">
         <span className="text-sm font-medium text-gray-300">{choice.label}</span>
         <span
           className={[
@@ -289,9 +289,9 @@ export function ChoicePicker({
       )}
 
       {/* Option grid */}
-      <div className="flex flex-col gap-1.5 max-h-96 overflow-y-auto">
+      <div className="flex max-h-96 flex-col gap-1.5 overflow-y-auto">
         {visibleOptions.length === 0 && query.trim() && (
-          <p className="text-sm text-gray-500 italic py-2 text-center">No results</p>
+          <p className="py-2 text-center text-sm text-gray-500 italic">No results</p>
         )}
         {visibleOptions.map((option) => {
           const isSelected = selected.includes(option.id);

@@ -3,7 +3,7 @@ import { GuideCallout } from "../GuideCallout";
 export function TopicCharacterBuilder() {
   return (
     <div className="space-y-6">
-      <p className="text-sm text-amber-200/60 italic leading-relaxed border-l-2 border-amber-500/30 pl-4">
+      <p className="border-l-2 border-amber-500/30 pl-4 text-sm leading-relaxed text-amber-200/60 italic">
         Every hero begins with a name, a past, and the courage to face the unknown.
       </p>
 
@@ -12,7 +12,7 @@ export function TopicCharacterBuilder() {
           From the home page, click <strong>My Characters</strong> (bottom-right) then{" "}
           <strong>Create New Character</strong>. The builder walks you through each step:
         </p>
-        <ol className="list-decimal list-inside space-y-1 text-gray-400">
+        <ol className="list-inside list-decimal space-y-1 text-gray-400">
           <li>
             <strong className="text-gray-300">Species</strong> — Choose your race (Human, Elf,
             Dwarf, etc.) and any species traits
@@ -56,7 +56,7 @@ export function TopicCharacterBuilder() {
         <p>
           If you have a character from a previous session, you can import it. Character files use
           the{" "}
-          <code className="text-amber-300/70 bg-gray-800/60 px-1.5 py-0.5 rounded text-xs">
+          <code className="rounded bg-gray-800/60 px-1.5 py-0.5 text-xs text-amber-300/70">
             .unseen.json
           </code>{" "}
           format.
@@ -84,12 +84,12 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   return (
     <div className="space-y-3">
       <h3
-        className="text-sm font-semibold text-amber-200/80 uppercase tracking-wider"
+        className="text-sm font-semibold tracking-wider text-amber-200/80 uppercase"
         style={{ fontFamily: "var(--font-cinzel)" }}
       >
         {title}
       </h3>
-      <div className="space-y-3 text-sm text-gray-400 leading-relaxed">{children}</div>
+      <div className="space-y-3 text-sm leading-relaxed text-gray-400">{children}</div>
     </div>
   );
 }

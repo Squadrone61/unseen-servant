@@ -151,18 +151,18 @@ function HomePageInner() {
   const topCharacters = characters.slice(0, 4);
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="flex min-h-screen flex-col">
       {/* ── Nav Bar ── */}
-      <nav className="flex items-center justify-between h-11 px-7 bg-gray-950 border-b border-gray-700/25 shrink-0">
+      <nav className="flex h-11 shrink-0 items-center justify-between border-b border-gray-700/25 bg-gray-950 px-7">
         <div className="flex items-center gap-2">
-          <Image src="/icon.svg" alt="Unseen Servant" width={20} height={20} className="w-5 h-5" />
+          <Image src="/icon.svg" alt="Unseen Servant" width={20} height={20} className="h-5 w-5" />
         </div>
 
         <div className="flex items-center gap-2.5">
           <Button variant="ghost" size="sm" onClick={() => setShowGuide(true)}>
             How to Play
           </Button>
-          <div className="w-px h-4 bg-gray-700/30" />
+          <div className="h-4 w-px bg-gray-700/30" />
           {authLoading ? (
             <span className="text-xs text-gray-600">Loading...</span>
           ) : user ? (
@@ -170,7 +170,7 @@ function HomePageInner() {
               <div className="flex items-center gap-2">
                 {user.avatarUrl && (
                   // eslint-disable-next-line @next/next/no-img-element -- external Google avatar URL, no remote host config
-                  <img src={user.avatarUrl} alt="" className="w-6 h-6 rounded-full" />
+                  <img src={user.avatarUrl} alt="" className="h-6 w-6 rounded-full" />
                 )}
                 <span className="text-xs text-gray-400">{user.displayName}</span>
               </div>
@@ -183,10 +183,10 @@ function HomePageInner() {
               <span className="text-xs text-gray-600">Playing as guest</span>
               <button
                 onClick={login}
-                className="flex items-center gap-1.5 bg-white hover:bg-gray-100 text-gray-800
-                           text-xs font-medium px-3 py-1.5 rounded-md transition-colors"
+                className="flex items-center gap-1.5 rounded-md bg-white px-3
+                           py-1.5 text-xs font-medium text-gray-800 transition-colors hover:bg-gray-100"
               >
-                <svg className="w-3 h-3" viewBox="0 0 24 24">
+                <svg className="h-3 w-3" viewBox="0 0 24 24">
                   <path
                     fill="#4285F4"
                     d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"
@@ -213,12 +213,12 @@ function HomePageInner() {
 
       {/* ── Hero Area ── */}
       <div
-        className="flex-1 flex flex-col items-center justify-center gap-5 px-8"
+        className="flex flex-1 flex-col items-center justify-center gap-5 px-8"
         style={{
           background: "radial-gradient(ellipse at center, #1a1610 0%, #111318 70%)",
         }}
       >
-        <Image src="/icon.svg" alt="" width={96} height={96} className="w-24 h-24" />
+        <Image src="/icon.svg" alt="" width={96} height={96} className="h-24 w-24" />
         <h1
           className="text-4xl font-bold text-amber-200/90"
           style={{
@@ -228,19 +228,19 @@ function HomePageInner() {
         >
           Unseen Servant
         </h1>
-        <p className="text-gray-600 text-xs tracking-widest uppercase">
+        <p className="text-xs tracking-widest text-gray-600 uppercase">
           D&D 5E WITH AN AI GAME MASTER
         </p>
-        <div className="w-10 h-px bg-amber-500/25" />
+        <div className="h-px w-10 bg-amber-500/25" />
 
         {/* First-time guide banner */}
         {!guideBannerDismissed && (
-          <div className="w-full max-w-xl flex items-center gap-3 px-4 py-2.5 bg-amber-500/5 border border-amber-500/15 rounded-lg">
-            <span className="text-sm text-gray-400 flex-1">
+          <div className="flex w-full max-w-xl items-center gap-3 rounded-lg border border-amber-500/15 bg-amber-500/5 px-4 py-2.5">
+            <span className="flex-1 text-sm text-gray-400">
               New to Unseen Servant?{" "}
               <button
                 onClick={() => setShowGuide(true)}
-                className="text-amber-400 hover:text-amber-300 underline underline-offset-2 transition-colors"
+                className="text-amber-400 underline underline-offset-2 transition-colors hover:text-amber-300"
               >
                 Learn how to play
               </button>
@@ -250,7 +250,7 @@ function HomePageInner() {
                 setGuideBannerDismissed(true);
                 localStorage.setItem("unseen-guide-dismissed", "1");
               }}
-              className="text-gray-600 hover:text-gray-400 transition-colors text-lg leading-none"
+              className="text-lg leading-none text-gray-600 transition-colors hover:text-gray-400"
             >
               &times;
             </button>
@@ -259,7 +259,7 @@ function HomePageInner() {
 
         {/* Kick/Reject message */}
         {kickMessage && (
-          <div className="bg-red-900/20 border border-red-700/50 rounded-lg p-3 max-w-lg w-full text-center">
+          <div className="w-full max-w-lg rounded-lg border border-red-700/50 bg-red-900/20 p-3 text-center">
             <p className="text-sm text-red-400">{kickMessage}</p>
           </div>
         )}
@@ -267,7 +267,7 @@ function HomePageInner() {
         {/* Player Name */}
         <div className="w-full max-w-xl space-y-1">
           <label
-            className="text-xs text-gray-600 uppercase tracking-wider font-medium"
+            className="text-xs font-medium tracking-wider text-gray-600 uppercase"
             style={{ fontFamily: "var(--font-cinzel)" }}
           >
             Player Name
@@ -278,25 +278,25 @@ function HomePageInner() {
             onChange={(e) => setPlayerName(e.target.value)}
             placeholder="What should we call you?"
             maxLength={30}
-            className="w-full h-10 bg-gray-900/80 border border-gray-700/40 rounded-lg px-4
-                       text-sm text-gray-100 placeholder-gray-600 focus:outline-none focus:ring-1
-                       focus:ring-amber-500/40 focus:border-amber-500/25 transition-colors"
+            className="h-10 w-full rounded-lg border border-gray-700/40 bg-gray-900/80 px-4
+                       text-sm text-gray-100 placeholder-gray-600 transition-colors focus:border-amber-500/25
+                       focus:ring-1 focus:ring-amber-500/40 focus:outline-none"
           />
         </div>
 
-        {error && <p className="text-red-400 text-sm">{error}</p>}
+        {error && <p className="text-sm text-red-400">{error}</p>}
 
         {/* Create / Join Cards */}
-        <div className="w-full max-w-xl flex gap-4">
+        <div className="flex w-full max-w-xl gap-4">
           {/* Create Room — primary */}
-          <div className="flex-1 flex flex-col gap-3 p-5 bg-gray-800/50 border border-amber-500/15 rounded-xl">
+          <div className="flex flex-1 flex-col gap-3 rounded-xl border border-amber-500/15 bg-gray-800/50 p-5">
             <div
-              className="text-xs text-amber-200/90 uppercase tracking-widest"
+              className="text-xs tracking-widest text-amber-200/90 uppercase"
               style={{ fontFamily: "var(--font-cinzel)" }}
             >
               Create Room
             </div>
-            <p className="text-xs text-gray-500 leading-relaxed flex-1">
+            <p className="flex-1 text-xs leading-relaxed text-gray-500">
               Start a new adventure as the host. Configure your campaign and invite players.
             </p>
             <Button onClick={handleCreate} disabled={loading} size="lg" fullWidth>
@@ -305,14 +305,14 @@ function HomePageInner() {
           </div>
 
           {/* Join Room — secondary */}
-          <div className="flex-1 flex flex-col gap-3 p-5 bg-gray-800/30 border border-gray-700/50 rounded-xl">
+          <div className="flex flex-1 flex-col gap-3 rounded-xl border border-gray-700/50 bg-gray-800/30 p-5">
             <div
-              className="text-xs text-gray-600 uppercase tracking-widest"
+              className="text-xs tracking-widest text-gray-600 uppercase"
               style={{ fontFamily: "var(--font-cinzel)" }}
             >
               Join Room
             </div>
-            <div className="flex gap-2 flex-1">
+            <div className="flex flex-1 gap-2">
               <div className="flex-1 space-y-1">
                 <label className="text-xs text-gray-600">Room Code</label>
                 <input
@@ -321,10 +321,10 @@ function HomePageInner() {
                   onChange={(e) => setJoinCode(e.target.value.toUpperCase().slice(0, 6))}
                   placeholder="ABCDEF"
                   maxLength={6}
-                  className="w-full h-10 bg-gray-900/60 border border-gray-700/40 rounded-lg px-3
-                             text-sm text-gray-100 placeholder-gray-600 focus:outline-none focus:ring-1
-                             focus:ring-amber-500/40 focus:border-amber-500/25 font-mono text-center
-                             tracking-widest transition-colors"
+                  className="h-10 w-full rounded-lg border border-gray-700/40 bg-gray-900/60 px-3
+                             text-center font-mono text-sm tracking-widest text-gray-100
+                             placeholder-gray-600 transition-colors focus:border-amber-500/25 focus:ring-1
+                             focus:ring-amber-500/40 focus:outline-none"
                 />
               </div>
               <div className="flex-1 space-y-1">
@@ -334,9 +334,9 @@ function HomePageInner() {
                   value={joinPassword}
                   onChange={(e) => setJoinPassword(e.target.value)}
                   placeholder="Leave blank if none"
-                  className="w-full h-10 bg-gray-900/60 border border-gray-700/40 rounded-lg px-3
-                             text-xs text-gray-100 placeholder-gray-600 focus:outline-none focus:ring-1
-                             focus:ring-amber-500/40 focus:border-amber-500/25 transition-colors"
+                  className="h-10 w-full rounded-lg border border-gray-700/40 bg-gray-900/60 px-3
+                             text-xs text-gray-100 placeholder-gray-600 transition-colors focus:border-amber-500/25
+                             focus:ring-1 focus:ring-amber-500/40 focus:outline-none"
                 />
               </div>
             </div>
@@ -348,20 +348,20 @@ function HomePageInner() {
       </div>
 
       {/* ── Bottom Context Strip ── */}
-      <div className="flex h-72 bg-gray-950 border-t border-gray-700/20 px-7 py-5 gap-6 shrink-0">
+      <div className="flex h-72 shrink-0 gap-6 border-t border-gray-700/20 bg-gray-950 px-7 py-5">
         {/* Active Rooms */}
-        <div className="flex-1 flex flex-col gap-2.5 min-w-0">
+        <div className="flex min-w-0 flex-1 flex-col gap-2.5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span
-                className="text-xs text-gray-500 uppercase tracking-widest"
+                className="text-xs tracking-widest text-gray-500 uppercase"
                 style={{ fontFamily: "var(--font-cinzel)" }}
               >
                 Active Rooms
               </span>
               <Button variant="icon" onClick={() => fetchRooms()} title="Refresh rooms">
                 <svg
-                  className="w-3 h-3"
+                  className="h-3 w-3"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
@@ -378,38 +378,38 @@ function HomePageInner() {
             </div>
             <Link
               href="/rooms"
-              className="text-xs text-amber-500/60 hover:text-amber-500/90 transition-colors"
+              className="text-xs text-amber-500/60 transition-colors hover:text-amber-500/90"
             >
               Browse all →
             </Link>
           </div>
 
-          <div className="flex gap-2.5 flex-1 min-h-0">
+          <div className="flex min-h-0 flex-1 gap-2.5">
             {rooms.length === 0 ? (
-              <div className="flex-1 flex items-center justify-center text-xs text-gray-700">
+              <div className="flex flex-1 items-center justify-center text-xs text-gray-700">
                 No active rooms
               </div>
             ) : (
               rooms.slice(0, 3).map((room) => (
                 <div
                   key={room.roomCode}
-                  className="w-56 h-24 shrink-0 flex flex-col gap-2 p-3 bg-gray-900/60 border border-gray-700/25
-                             rounded-lg hover:border-gray-700/40 transition-colors"
+                  className="flex h-24 w-56 shrink-0 flex-col gap-2 rounded-lg border border-gray-700/25 bg-gray-900/60
+                             p-3 transition-colors hover:border-gray-700/40"
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-sm font-semibold text-gray-300 tracking-wide truncate">
+                    <span className="truncate text-sm font-semibold tracking-wide text-gray-300">
                       {room.hostName ? `${room.hostName}'s Room` : room.roomCode}
                     </span>
                     <Button variant="outline" size="xs" onClick={() => handleJoin(room.roomCode)}>
                       Join
                     </Button>
                   </div>
-                  <span className="text-xs text-gray-600 font-mono tracking-wide">
+                  <span className="font-mono text-xs tracking-wide text-gray-600">
                     {room.roomCode}
                   </span>
                   <div className="flex items-center gap-1.5 text-xs text-gray-600">
                     <svg
-                      className="w-2.5 h-2.5"
+                      className="h-2.5 w-2.5"
                       viewBox="0 0 24 24"
                       fill="none"
                       stroke="currentColor"
@@ -423,7 +423,7 @@ function HomePageInner() {
                     <span>{room.playerCount}</span>
                     {room.hasPassword && (
                       <svg
-                        className="w-2.5 h-2.5 text-yellow-500/60 ml-1"
+                        className="ml-1 h-2.5 w-2.5 text-yellow-500/60"
                         viewBox="0 0 24 24"
                         fill="none"
                         stroke="currentColor"
@@ -442,32 +442,32 @@ function HomePageInner() {
         </div>
 
         {/* Divider */}
-        <div className="w-px bg-gray-700/20 self-stretch" />
+        <div className="w-px self-stretch bg-gray-700/20" />
 
         {/* Characters */}
-        <div className="flex-1 flex flex-col gap-2.5 min-w-0">
+        <div className="flex min-w-0 flex-1 flex-col gap-2.5">
           <div className="flex items-center justify-between">
             <span
-              className="text-xs text-gray-500 uppercase tracking-widest"
+              className="text-xs tracking-widest text-gray-500 uppercase"
               style={{ fontFamily: "var(--font-cinzel)" }}
             >
               Characters
             </span>
             <Link
               href="/characters"
-              className="text-xs text-gray-500 hover:text-gray-400 transition-colors"
+              className="text-xs text-gray-500 transition-colors hover:text-gray-400"
             >
               Manage all →
             </Link>
           </div>
 
-          <div className="flex gap-2.5 flex-1 min-h-0">
+          <div className="flex min-h-0 flex-1 gap-2.5">
             {topCharacters.length === 0 ? (
-              <div className="flex-1 flex flex-col items-center justify-center gap-2">
+              <div className="flex flex-1 flex-col items-center justify-center gap-2">
                 <span className="text-xs text-gray-700">No characters yet</span>
                 <Link
                   href="/characters/create"
-                  className="text-xs text-gray-500 hover:text-gray-400 transition-colors"
+                  className="text-xs text-gray-500 transition-colors hover:text-gray-400"
                 >
                   Create one →
                 </Link>
@@ -484,11 +484,11 @@ function HomePageInner() {
                   <Link
                     key={saved.id}
                     href={`/characters/${saved.id}`}
-                    className="w-56 h-24 shrink-0 flex items-center gap-3 p-3 bg-gray-900/60 border border-gray-700/25
-                               rounded-lg hover:border-gray-700/40 transition-colors"
+                    className="flex h-24 w-56 shrink-0 items-center gap-3 rounded-lg border border-gray-700/25 bg-gray-900/60
+                               p-3 transition-colors hover:border-gray-700/40"
                   >
                     <div
-                      className={`w-10 h-10 shrink-0 rounded-md ${color.bg} border ${color.border}
+                      className={`h-10 w-10 shrink-0 rounded-md ${color.bg} border ${color.border}
                                   flex items-center justify-center`}
                     >
                       <span
@@ -498,19 +498,19 @@ function HomePageInner() {
                         {name[0]?.toUpperCase()}
                       </span>
                     </div>
-                    <div className="min-w-0 flex flex-col gap-0.5">
+                    <div className="flex min-w-0 flex-col gap-0.5">
                       <span
-                        className="text-xs text-gray-300 truncate"
+                        className="truncate text-xs text-gray-300"
                         style={{ fontFamily: "var(--font-cinzel)" }}
                       >
                         {name}
                       </span>
-                      <span className="text-xs text-gray-600 truncate">
+                      <span className="truncate text-xs text-gray-600">
                         Lv {level} {mainClass?.name || ""}
                         {c.static?.species ? ` · ${c.static.species}` : ""}
                       </span>
                       {saved.campaignSlug && (
-                        <span className="text-xs text-amber-500/40 bg-amber-500/5 border border-amber-500/10 rounded px-1.5 py-0.5 truncate w-fit">
+                        <span className="w-fit truncate rounded border border-amber-500/10 bg-amber-500/5 px-1.5 py-0.5 text-xs text-amber-500/40">
                           {saved.campaignSlug}
                         </span>
                       )}

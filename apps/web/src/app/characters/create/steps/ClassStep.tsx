@@ -182,27 +182,27 @@ function ClassPopover({
     <DetailPopover title={cls.name} onClose={onClose} position={position}>
       <div className="space-y-3">
         {/* Quick stats */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-xs px-2 py-0.5 rounded-full bg-red-900/30 text-red-300 border border-red-700/30">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="rounded-full border border-red-700/30 bg-red-900/30 px-2 py-0.5 text-xs text-red-300">
             d{cls.hitDiceFaces} Hit Die
           </span>
           {getClassProfs(cls).saves.length > 0 && (
-            <span className="text-xs px-2 py-0.5 rounded-full bg-gray-700/50 text-gray-300 border border-gray-600/30">
+            <span className="rounded-full border border-gray-600/30 bg-gray-700/50 px-2 py-0.5 text-xs text-gray-300">
               {getClassProfs(cls).saves.map(abilityAbbr).join("/")} saves
             </span>
           )}
           {casterBadge && (
-            <span className={`text-xs px-2 py-0.5 rounded-full ${casterBadge.className}`}>
+            <span className={`rounded-full px-2 py-0.5 text-xs ${casterBadge.className}`}>
               {casterBadge.label}
             </span>
           )}
         </div>
 
         {/* Proficiencies */}
-        {profLine && <p className="text-xs text-gray-400 leading-relaxed">{profLine}</p>}
+        {profLine && <p className="text-xs leading-relaxed text-gray-400">{profLine}</p>}
 
         {/* Description */}
-        <div className="text-sm text-gray-300 leading-relaxed">
+        <div className="text-sm leading-relaxed text-gray-300">
           <RichText text={cls.description} />
         </div>
 
@@ -241,7 +241,7 @@ function ClassCard({
     <button
       onClick={onClick}
       className={`
-        w-full text-left px-4 py-3 rounded-lg border transition-all duration-200
+        w-full rounded-lg border px-4 py-3 text-left transition-all duration-200
         ${
           isSelected
             ? "border-amber-500/50 bg-amber-950/20 ring-1 ring-amber-500/20"
@@ -250,18 +250,16 @@ function ClassCard({
       `}
     >
       <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0 flex flex-col gap-0.5">
+        <div className="flex min-w-0 flex-col gap-0.5">
           <div className="flex items-center gap-2">
             <span
-              className={`font-[family-name:var(--font-cinzel)] text-sm ${
-                isSelected ? "text-amber-200" : "text-gray-200"
-              }`}
+              className={`font-cinzel text-sm ${isSelected ? "text-amber-200" : "text-gray-200"}`}
             >
               {cls.name}
             </span>
             {casterBadge && (
               <span
-                className={`text-[10px] px-1.5 py-px rounded-full shrink-0 ${casterBadge.className}`}
+                className={`shrink-0 rounded-full px-1.5 py-px text-xs ${casterBadge.className}`}
               >
                 {casterBadge.label}
               </span>
@@ -269,8 +267,8 @@ function ClassCard({
           </div>
           <span className="text-xs text-gray-500">{profLine}</span>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <span className="text-xs text-gray-400 whitespace-nowrap tabular-nums">{statLine}</span>
+        <div className="flex shrink-0 items-center gap-2">
+          <span className="text-xs whitespace-nowrap text-gray-400 tabular-nums">{statLine}</span>
           <InfoButton onClick={onInfo} />
         </div>
       </div>
@@ -298,14 +296,14 @@ function SubclassPopover({
     <DetailPopover title={subclass.name} onClose={onClose} position={position}>
       <div className="space-y-3">
         {/* Badges */}
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex flex-wrap items-center gap-2">
           {casterBadge && (
-            <span className={`text-xs px-2 py-0.5 rounded-full ${casterBadge.className}`}>
+            <span className={`rounded-full px-2 py-0.5 text-xs ${casterBadge.className}`}>
               {casterBadge.label}
             </span>
           )}
           {spellGrants.length > 0 && (
-            <span className="text-xs px-2 py-0.5 rounded-full bg-blue-900/30 text-blue-300 border border-blue-700/30">
+            <span className="rounded-full border border-blue-700/30 bg-blue-900/30 px-2 py-0.5 text-xs text-blue-300">
               Bonus Spells
             </span>
           )}
@@ -313,7 +311,7 @@ function SubclassPopover({
 
         {/* Description */}
         {subclass.description && (
-          <div className="text-sm text-gray-300 leading-relaxed">
+          <div className="text-sm leading-relaxed text-gray-300">
             <RichText text={subclass.description} />
           </div>
         )}
@@ -321,14 +319,14 @@ function SubclassPopover({
         {/* Additional spells */}
         {spellGrants.length > 0 && (
           <div className="flex flex-col gap-1.5">
-            <span className="text-xs font-semibold text-blue-300/80 uppercase tracking-wide">
+            <span className="text-xs font-semibold tracking-wide text-blue-300/80 uppercase">
               Additional Spells
             </span>
             <div className="flex flex-wrap gap-1.5">
               {spellGrants.map((grant) => (
                 <span
                   key={`${grant.spell}-${grant.minLevel ?? 1}`}
-                  className="inline-flex items-center px-2 py-0.5 rounded text-xs border bg-violet-900/20 text-violet-300 border-violet-700/30"
+                  className="inline-flex items-center rounded border border-violet-700/30 bg-violet-900/20 px-2 py-0.5 text-xs text-violet-300"
                 >
                   {grant.spell}
                   {grant.minLevel != null && grant.minLevel > 1 && (
@@ -343,20 +341,20 @@ function SubclassPopover({
         {/* Feature preview (first feature name only as a teaser) */}
         {subclass.features.length > 0 && (
           <div className="flex flex-col gap-1.5">
-            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
+            <span className="text-xs font-semibold tracking-wide text-gray-400 uppercase">
               Features
             </span>
             <ul className="flex flex-col gap-1">
               {subclass.features.slice(0, 6).map((f) => (
                 <li key={f.name} className="flex items-center gap-2 text-xs text-gray-400">
-                  <span className="inline-flex items-center px-1 py-px rounded text-[10px] bg-gray-700/40 text-gray-500 border border-gray-600/30 tabular-nums font-mono">
+                  <span className="inline-flex items-center rounded border border-gray-600/30 bg-gray-700/40 px-1 py-px font-mono text-xs text-gray-500 tabular-nums">
                     {f.level}
                   </span>
                   {f.name}
                 </li>
               ))}
               {subclass.features.length > 6 && (
-                <li className="text-xs text-gray-600 italic pl-5">
+                <li className="pl-5 text-xs text-gray-600 italic">
                   +{subclass.features.length - 6} more
                 </li>
               )}
@@ -390,7 +388,7 @@ function SubclassCard({
     <button
       onClick={onClick}
       className={`
-        w-full text-left px-4 py-3 rounded-lg border transition-all duration-200
+        w-full rounded-lg border px-4 py-3 text-left transition-all duration-200
         ${
           isSelected
             ? "border-amber-500/50 bg-amber-950/20 ring-1 ring-amber-500/20"
@@ -399,21 +397,17 @@ function SubclassCard({
       `}
     >
       <div className="flex items-center justify-between gap-2">
-        <span
-          className={`font-[family-name:var(--font-cinzel)] text-sm ${
-            isSelected ? "text-amber-200" : "text-gray-200"
-          }`}
-        >
+        <span className={`font-cinzel text-sm ${isSelected ? "text-amber-200" : "text-gray-200"}`}>
           {subclass.name}
         </span>
-        <div className="flex items-center gap-1.5 shrink-0">
+        <div className="flex shrink-0 items-center gap-1.5">
           {hasBonusSpells && (
-            <span className="text-[10px] px-1.5 py-px rounded-full bg-blue-900/30 text-blue-300 border border-blue-700/30">
+            <span className="rounded-full border border-blue-700/30 bg-blue-900/30 px-1.5 py-px text-xs text-blue-300">
               Spells
             </span>
           )}
           {casterBadge && (
-            <span className={`text-[10px] px-1.5 py-px rounded-full ${casterBadge.className}`}>
+            <span className={`rounded-full px-1.5 py-px text-xs ${casterBadge.className}`}>
               {casterBadge.label}
             </span>
           )}
@@ -456,7 +450,7 @@ function LevelPicker({ level, maxLevel, onChange }: LevelPickerProps) {
         ].join(" ")}
       >
         <svg
-          className="w-4 h-4"
+          className="h-4 w-4"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -468,7 +462,7 @@ function LevelPicker({ level, maxLevel, onChange }: LevelPickerProps) {
       </button>
 
       {/* Slider + number display */}
-      <div className="flex-1 flex items-center gap-3">
+      <div className="flex flex-1 items-center gap-3">
         <input
           type="range"
           min={1}
@@ -480,27 +474,27 @@ function LevelPicker({ level, maxLevel, onChange }: LevelPickerProps) {
           aria-valuemax={maxLevel}
           aria-valuenow={level}
           className="
-            flex-1 h-1.5 appearance-none rounded-full bg-gray-700
-            [&::-webkit-slider-thumb]:appearance-none
-            [&::-webkit-slider-thumb]:w-4
-            [&::-webkit-slider-thumb]:h-4
-            [&::-webkit-slider-thumb]:rounded-full
-            [&::-webkit-slider-thumb]:bg-amber-400
-            [&::-webkit-slider-thumb]:cursor-pointer
-            [&::-webkit-slider-thumb]:border-2
-            [&::-webkit-slider-thumb]:border-amber-500
-            [&::-moz-range-thumb]:w-4
+            h-1.5 flex-1 appearance-none rounded-full bg-gray-700
+            accent-amber-500
             [&::-moz-range-thumb]:h-4
-            [&::-moz-range-thumb]:rounded-full
-            [&::-moz-range-thumb]:bg-amber-400
+            [&::-moz-range-thumb]:w-4
             [&::-moz-range-thumb]:cursor-pointer
+            [&::-moz-range-thumb]:rounded-full
             [&::-moz-range-thumb]:border-2
             [&::-moz-range-thumb]:border-amber-500
-            accent-amber-500
+            [&::-moz-range-thumb]:bg-amber-400
+            [&::-webkit-slider-thumb]:h-4
+            [&::-webkit-slider-thumb]:w-4
+            [&::-webkit-slider-thumb]:cursor-pointer
+            [&::-webkit-slider-thumb]:appearance-none
+            [&::-webkit-slider-thumb]:rounded-full
+            [&::-webkit-slider-thumb]:border-2
+            [&::-webkit-slider-thumb]:border-amber-500
+            [&::-webkit-slider-thumb]:bg-amber-400
           "
         />
         <span
-          className="w-8 text-center font-[family-name:var(--font-cinzel)] text-amber-300 text-base font-semibold tabular-nums"
+          className="w-8 text-center font-cinzel text-base font-semibold text-amber-300 tabular-nums"
           aria-live="polite"
         >
           {level}
@@ -522,7 +516,7 @@ function LevelPicker({ level, maxLevel, onChange }: LevelPickerProps) {
         ].join(" ")}
       >
         <svg
-          className="w-4 h-4"
+          className="h-4 w-4"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -534,7 +528,7 @@ function LevelPicker({ level, maxLevel, onChange }: LevelPickerProps) {
       </button>
 
       {/* Ordinal label */}
-      <span className="text-sm text-gray-400 w-16 shrink-0">{ordinalLevel(level)}</span>
+      <span className="w-16 shrink-0 text-sm text-gray-400">{ordinalLevel(level)}</span>
     </div>
   );
 }
@@ -551,7 +545,7 @@ function ordinalLevel(n: number): string {
 
 function LevelBadge({ level }: { level: number }) {
   return (
-    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs border bg-gray-700/40 text-gray-400 border-gray-600/30 font-mono tabular-nums">
+    <span className="inline-flex items-center rounded border border-gray-600/30 bg-gray-700/40 px-1.5 py-0.5 font-mono text-xs text-gray-400 tabular-nums">
       Lv {level}
     </span>
   );
@@ -593,13 +587,13 @@ function FeatureRow({
   const hasPermanentChoices = permanentChoices.length > 0;
 
   return (
-    <li className="flex flex-col gap-2 pl-4 border-l-2 border-gray-700/40">
+    <li className="flex flex-col gap-2 border-l-2 border-gray-700/40 pl-4">
       <div className="flex items-start justify-between gap-2">
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex flex-wrap items-center gap-2">
           <span className="text-sm font-semibold text-gray-200">{feature.name}</span>
           {hasEffects && <EffectSummary effects={feature.effects} compact />}
           {hasPermanentChoices && (
-            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs border bg-amber-900/20 text-amber-400/80 border-amber-600/30">
+            <span className="inline-flex items-center rounded border border-amber-600/30 bg-amber-900/20 px-1.5 py-0.5 text-xs text-amber-400/80">
               choose
             </span>
           )}
@@ -611,7 +605,7 @@ function FeatureRow({
             aria-expanded={expanded}
             aria-label={expanded ? "Collapse feature description" : "Expand feature description"}
             onClick={() => setExpanded((v) => !v)}
-            className="shrink-0 flex items-center gap-1 text-xs text-amber-400/60 hover:text-amber-300 transition-colors duration-150 focus:outline-none"
+            className="flex shrink-0 items-center gap-1 text-xs text-amber-400/60 transition-colors duration-150 hover:text-amber-300 focus:outline-none"
           >
             <svg
               className={[
@@ -632,13 +626,13 @@ function FeatureRow({
       </div>
 
       {expanded && hasDescription && (
-        <div className="text-xs text-gray-400 leading-relaxed">
+        <div className="text-xs leading-relaxed text-gray-400">
           <RichText text={feature.description} />
         </div>
       )}
 
       {hasPermanentChoices && (
-        <div className="flex flex-col gap-2 mt-1">
+        <div className="mt-1 flex flex-col gap-2">
           {permanentChoices.map((choice) => {
             const choiceId = choicePrefix ? `${choicePrefix}${choice.id}` : choice.id;
 
@@ -725,7 +719,7 @@ function FeatureLevelGroup({
 }: FeatureLevelGroupProps) {
   return (
     <div className="flex flex-col gap-1">
-      <div className="flex items-center gap-2 mb-2">
+      <div className="mb-2 flex items-center gap-2">
         <LevelBadge level={level} />
         <div className="h-px flex-1 bg-gray-700/30" aria-hidden="true" />
       </div>
@@ -771,12 +765,12 @@ function ClassTabs({
 }: ClassTabsProps) {
   return (
     <div
-      className="flex gap-0 border-b border-gray-700/40 overflow-x-auto"
+      className="flex gap-0 overflow-x-auto border-b border-gray-700/40"
       role="tablist"
       aria-label="Class selection"
     >
       {classes.map((entry, idx) => (
-        <div key={entry.name} className="flex items-stretch shrink-0">
+        <div key={entry.name} className="flex shrink-0 items-stretch">
           <button
             type="button"
             role="tab"
@@ -789,8 +783,8 @@ function ClassTabs({
                 : "border-transparent text-gray-500 hover:text-gray-300",
             ].join(" ")}
           >
-            <span className="font-[family-name:var(--font-cinzel)]">{entry.name}</span>
-            <span className="text-[10px] text-gray-500 tabular-nums">Lv {entry.level}</span>
+            <span className="font-cinzel">{entry.name}</span>
+            <span className="text-xs text-gray-500 tabular-nums">Lv {entry.level}</span>
           </button>
           {/* Remove button — only show when there are multiple classes */}
           {classes.length > 1 && (
@@ -798,10 +792,10 @@ function ClassTabs({
               type="button"
               aria-label={`Remove ${entry.name}`}
               onClick={() => onRemove(idx)}
-              className="px-1 pb-0.5 text-gray-600 hover:text-red-400 transition-colors duration-100 border-b-2 border-transparent"
+              className="border-b-2 border-transparent px-1 pb-0.5 text-gray-600 transition-colors duration-100 hover:text-red-400"
             >
               <svg
-                className="w-3 h-3"
+                className="h-3 w-3"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -827,7 +821,7 @@ function ClassTabs({
         ].join(" ")}
       >
         <svg
-          className="w-3.5 h-3.5"
+          className="h-3.5 w-3.5"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -863,11 +857,11 @@ function MulticlassWarning({ cls, resolvedScores }: MulticlassWarningProps) {
   if (unmet.length === 0) return null;
 
   return (
-    <div className="flex flex-col gap-1 px-4 py-3 rounded-lg border border-amber-600/30 bg-amber-950/20">
+    <div className="flex flex-col gap-1 rounded-lg border border-amber-600/30 bg-amber-950/20 px-4 py-3">
       {unmet.map(([ability, _minScore]) => {
         const score = resolvedScores[ability.toLowerCase()] ?? 0;
         return (
-          <p key={ability} className="text-xs text-amber-300/90 leading-relaxed">
+          <p key={ability} className="text-xs leading-relaxed text-amber-300/90">
             Warning: {cls.name} multiclass requires {abilityAbbr(ability)} 13+. Your current score
             is {score}.
           </p>
@@ -1080,10 +1074,7 @@ export function ClassStep() {
     <section aria-labelledby="class-step-heading" className="flex flex-col gap-8">
       {/* ── Section header ── */}
       <div>
-        <h1
-          id="class-step-heading"
-          className="text-xl font-[family-name:var(--font-cinzel)] text-amber-200/90 mb-1"
-        >
+        <h1 id="class-step-heading" className="mb-1 font-cinzel text-xl text-amber-200/90">
           Choose Your Class
         </h1>
         <p className="text-sm text-gray-400">
@@ -1094,7 +1085,7 @@ export function ClassStep() {
 
       {/* ── Initial class grid (no class chosen yet) ── */}
       {showInitialPicker && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
           {sortedClasses.map((cls) => (
             <ClassCard
               key={cls.name}
@@ -1127,9 +1118,7 @@ export function ClassStep() {
             <div className="flex flex-col gap-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-base font-[family-name:var(--font-cinzel)] text-gray-200 mb-0.5">
-                    Add a Class
-                  </h3>
+                  <h3 className="mb-0.5 font-cinzel text-base text-gray-200">Add a Class</h3>
                   <p className="text-xs text-gray-500">
                     Remaining levels: {20 - totalLevel}. Each class starts at level 1.
                   </p>
@@ -1137,12 +1126,12 @@ export function ClassStep() {
                 <button
                   type="button"
                   onClick={() => setIsAddingClass(false)}
-                  className="text-xs text-gray-500 hover:text-gray-300 transition-colors"
+                  className="text-xs text-gray-500 transition-colors hover:text-gray-300"
                 >
                   Cancel
                 </button>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
                 {availableToAdd.map((cls) => (
                   <ClassCard
                     key={cls.name}
@@ -1158,19 +1147,19 @@ export function ClassStep() {
 
           {/* ── Single-class banner (only when not in tabs mode and not adding) ── */}
           {!showTabs && !isAddingClass && selectedClass && (
-            <div className="flex items-center gap-3 px-4 py-3 rounded-lg border border-amber-500/30 bg-amber-950/15">
-              <span className="text-sm text-amber-200 font-medium">{selectedClass.name}</span>
+            <div className="flex items-center gap-3 rounded-lg border border-amber-500/30 bg-amber-950/15 px-4 py-3">
+              <span className="text-sm font-medium text-amber-200">{selectedClass.name}</span>
               <span className="text-xs text-gray-500">{selectedClassStatLine}</span>
               <div className="flex-1" />
               <button
                 onClick={(e) => handleClassInfo(selectedClass, e)}
-                className="text-xs text-amber-400/70 hover:text-amber-300 transition-colors"
+                className="text-xs text-amber-400/70 transition-colors hover:text-amber-300"
               >
                 View Details
               </button>
               <button
                 onClick={() => dispatch({ type: "REMOVE_CLASS", index: 0 })}
-                className="text-xs text-gray-500 hover:text-red-400 transition-colors"
+                className="text-xs text-gray-500 transition-colors hover:text-red-400"
               >
                 Change
               </button>
@@ -1193,7 +1182,7 @@ export function ClassStep() {
 
               {/* ── Total level cap notice ── */}
               {atCap && (
-                <div className="px-4 py-2.5 rounded-lg border border-gray-700/30 bg-gray-800/30">
+                <div className="rounded-lg border border-gray-700/30 bg-gray-800/30 px-4 py-2.5">
                   <p className="text-xs text-gray-400">
                     Total character level: 20 (maximum). To increase one class, reduce another.
                   </p>
@@ -1201,7 +1190,7 @@ export function ClassStep() {
               )}
 
               {/* ── Level Picker ── */}
-              <div className="bg-gray-800/30 border border-gray-700/20 rounded-lg p-4 flex flex-col gap-3">
+              <div className="flex flex-col gap-3 rounded-lg border border-gray-700/20 bg-gray-800/30 p-4">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium text-gray-300">
                     {showTabs ? `${selectedClass.name} Level` : "Character Level"}
@@ -1227,9 +1216,7 @@ export function ClassStep() {
               {/* ── Skill Proficiencies ── */}
               <div className="flex flex-col gap-3">
                 <div>
-                  <h3 className="text-base font-[family-name:var(--font-cinzel)] text-gray-200 mb-1">
-                    Skill Proficiencies
-                  </h3>
+                  <h3 className="mb-1 font-cinzel text-base text-gray-200">Skill Proficiencies</h3>
                   <p className="text-xs text-gray-500">
                     {activeIdx === 0
                       ? `Choose ${selectedClass.skillChoices.count} skill${selectedClass.skillChoices.count !== 1 ? "s" : ""} from the ${selectedClass.name} skill list.`
@@ -1268,7 +1255,7 @@ export function ClassStep() {
 
                   <div className="flex flex-col gap-4">
                     <div>
-                      <h3 className="text-base font-[family-name:var(--font-cinzel)] text-gray-200 mb-1">
+                      <h3 className="mb-1 font-cinzel text-base text-gray-200">
                         {selectedClass.name} Subclass
                       </h3>
                       <p className="text-xs text-gray-500">
@@ -1279,14 +1266,14 @@ export function ClassStep() {
 
                     {/* Selected subclass banner */}
                     {selectedSubclass && (
-                      <div className="flex items-center gap-3 px-4 py-2.5 rounded-lg border border-amber-500/20 bg-amber-950/10">
-                        <span className="text-sm text-amber-200 font-medium">
+                      <div className="flex items-center gap-3 rounded-lg border border-amber-500/20 bg-amber-950/10 px-4 py-2.5">
+                        <span className="text-sm font-medium text-amber-200">
                           {selectedSubclass.name}
                         </span>
                         <div className="flex-1" />
                         <button
                           onClick={(e) => handleSubclassInfo(selectedSubclass, e)}
-                          className="text-xs text-amber-400/70 hover:text-amber-300 transition-colors"
+                          className="text-xs text-amber-400/70 transition-colors hover:text-amber-300"
                         >
                           View Details
                         </button>
@@ -1298,7 +1285,7 @@ export function ClassStep() {
                               subclass: "",
                             })
                           }
-                          className="text-xs text-gray-500 hover:text-red-400 transition-colors"
+                          className="text-xs text-gray-500 transition-colors hover:text-red-400"
                         >
                           Change
                         </button>
@@ -1306,7 +1293,7 @@ export function ClassStep() {
                     )}
 
                     {/* Subclass compact grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2">
+                    <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-3">
                       {selectedClass.subclasses.map((sub) => (
                         <SubclassCard
                           key={sub.name}
@@ -1331,9 +1318,7 @@ export function ClassStep() {
 
                   <div className="flex flex-col gap-4">
                     <div>
-                      <h3 className="text-base font-[family-name:var(--font-cinzel)] text-gray-200 mb-1">
-                        Class Features
-                      </h3>
+                      <h3 className="mb-1 font-cinzel text-base text-gray-200">Class Features</h3>
                       <p className="text-xs text-gray-500">
                         Features you gain from level 1 through {activeClassLevel}. Features marked
                         "choose" require a permanent selection below.
@@ -1350,9 +1335,9 @@ export function ClassStep() {
                           isSubclassUnlockLevel && subclassAvailable && !selectedSubclass;
 
                         const subclassPrompt = showSubclassPrompt ? (
-                          <li className="flex items-center gap-2 pl-4 border-l-2 border-dashed border-amber-600/30 text-sm text-amber-400/70 italic">
+                          <li className="flex items-center gap-2 border-l-2 border-dashed border-amber-600/30 pl-4 text-sm text-amber-400/70 italic">
                             <svg
-                              className="w-4 h-4 shrink-0"
+                              className="h-4 w-4 shrink-0"
                               fill="none"
                               viewBox="0 0 24 24"
                               stroke="currentColor"
@@ -1405,10 +1390,10 @@ export function ClassStep() {
                     <button
                       type="button"
                       onClick={() => setIsAddingClass(true)}
-                      className="flex items-center gap-2 px-4 py-2 text-sm text-gray-400 border border-gray-700/40 rounded-lg hover:border-amber-500/30 hover:text-amber-300 transition-all duration-150"
+                      className="flex items-center gap-2 rounded-lg border border-gray-700/40 px-4 py-2 text-sm text-gray-400 transition-all duration-150 hover:border-amber-500/30 hover:text-amber-300"
                     >
                       <svg
-                        className="w-4 h-4"
+                        className="h-4 w-4"
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"

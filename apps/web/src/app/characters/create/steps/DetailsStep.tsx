@@ -40,8 +40,7 @@ const INPUT_CLASS =
 
 const LABEL_CLASS = "block text-sm font-medium text-gray-400 mb-1";
 
-const SECTION_HEADING_CLASS =
-  "text-base font-[family-name:var(--font-cinzel)] text-amber-200/80 mb-3";
+const SECTION_HEADING_CLASS = "text-base font-cinzel text-amber-200/80 mb-3";
 
 // ---------------------------------------------------------------------------
 // Section divider
@@ -90,10 +89,7 @@ export function DetailsStep() {
     <section aria-labelledby="details-step-heading" className="flex flex-col gap-6">
       {/* ── Header ── */}
       <div>
-        <h1
-          id="details-step-heading"
-          className="text-xl font-[family-name:var(--font-cinzel)] text-amber-200/90 mb-1"
-        >
+        <h1 id="details-step-heading" className="mb-1 font-cinzel text-xl text-amber-200/90">
           Character Details
         </h1>
         <p className="text-sm text-gray-400">
@@ -167,7 +163,7 @@ export function DetailsStep() {
             value={state.backstory}
             onChange={(e) => dispatch({ type: "SET_BACKSTORY", backstory: e.target.value })}
             placeholder="Describe your character's history, motivations, and how they came to be an adventurer..."
-            className={[INPUT_CLASS, "min-h-[120px] resize-y leading-relaxed"].join(" ")}
+            className={[INPUT_CLASS, "min-h-32 resize-y leading-relaxed"].join(" ")}
           />
         </div>
       </div>
@@ -177,7 +173,7 @@ export function DetailsStep() {
       {/* ── Personality ── */}
       <div className="flex flex-col gap-4">
         <h2 className={SECTION_HEADING_CLASS}>Personality</h2>
-        <p className="text-xs text-gray-500 -mt-2">
+        <p className="-mt-2 text-xs text-gray-500">
           These fields are optional and help the AI DM portray your character authentically.
         </p>
 
@@ -243,7 +239,7 @@ export function DetailsStep() {
       {/* ── Appearance ── */}
       <div className="flex flex-col gap-4">
         <h2 className={SECTION_HEADING_CLASS}>Appearance</h2>
-        <p className="text-xs text-gray-500 -mt-2">
+        <p className="-mt-2 text-xs text-gray-500">
           All appearance fields are optional and help the AI DM describe your character.
         </p>
 
@@ -271,10 +267,10 @@ export function DetailsStep() {
       {/* ── Starting Currency ── */}
       <div className="flex flex-col gap-3">
         <h2 className={SECTION_HEADING_CLASS}>Starting Currency</h2>
-        <p className="text-xs text-gray-500 -mt-2">
+        <p className="-mt-2 text-xs text-gray-500">
           Set your starting gold and coins. Leave at zero to let the AI DM assign starting wealth.
         </p>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {(["gp", "sp", "cp", "pp"] as const).map((coin) => (
             <div key={coin}>
               <label htmlFor={`currency-${coin}`} className={LABEL_CLASS}>
@@ -288,7 +284,7 @@ export function DetailsStep() {
                 onChange={(e) => handleCurrencyChange(coin, e.target.value)}
                 className={[
                   INPUT_CLASS,
-                  "text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none",
+                  "text-center appearance-textfield [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none",
                 ].join(" ")}
               />
             </div>

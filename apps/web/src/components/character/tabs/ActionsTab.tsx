@@ -192,7 +192,11 @@ export function ActionsTab({ character, onItemClick, onFeatureClick }: ActionsTa
                 className={`flex items-center gap-1.5 rounded px-1.5 py-0.5 text-xs ${
                   clickable ? "group cursor-pointer transition-colors hover:bg-gray-800/60" : ""
                 }`}
-                onClick={clickable ? (e) => onFeatureClick(resource.sourceFeature!, e) : undefined}
+                onClick={
+                  resource.sourceFeature
+                    ? (e) => onFeatureClick(resource.sourceFeature, e)
+                    : undefined
+                }
               >
                 <span
                   className={`flex-1 truncate ${

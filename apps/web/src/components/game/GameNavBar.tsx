@@ -52,11 +52,11 @@ export function GameNavBar({
   const showPostCampaignButtons = storyStarted || campaignConfigured;
 
   return (
-    <nav className="flex items-center justify-between h-11 px-4 bg-gray-950 border-b border-gray-700/25 shrink-0">
+    <nav className="flex h-11 shrink-0 items-center justify-between border-b border-gray-700/25 bg-gray-950 px-4">
       {/* Left: Logo + Room Code + Host */}
       <div className="flex items-center gap-2.5">
         <Button variant="icon" href="/" title="Home">
-          <Image src="/icon.svg" alt="Home" width={16} height={16} className="w-4 h-4" />
+          <Image src="/icon.svg" alt="Home" width={16} height={16} className="h-4 w-4" />
         </Button>
 
         <Button
@@ -69,7 +69,7 @@ export function GameNavBar({
         </Button>
 
         {isHost && (
-          <span className="px-1.5 py-0.5 bg-amber-500/8 border border-amber-500/25 rounded text-xs font-bold tracking-wider text-amber-400/70">
+          <span className="rounded border border-amber-500/25 bg-amber-500/8 px-1.5 py-0.5 text-xs font-bold tracking-wider text-amber-400/70">
             HOST
           </span>
         )}
@@ -79,8 +79,8 @@ export function GameNavBar({
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-1.5">
           <div
-            className={`w-1.5 h-1.5 rounded-full ${
-              dmConnected ? "bg-green-500" : "bg-yellow-500 animate-pulse"
+            className={`h-1.5 w-1.5 rounded-full ${
+              dmConnected ? "bg-green-500" : "animate-pulse bg-yellow-500"
             }`}
           />
           <span className={`text-xs ${dmConnected ? "text-gray-500" : "text-yellow-500"}`}>
@@ -90,11 +90,11 @@ export function GameNavBar({
 
         <div className="flex items-center gap-1.5">
           <div
-            className={`w-1.5 h-1.5 rounded-full ${
+            className={`h-1.5 w-1.5 rounded-full ${
               isConnected
                 ? "bg-green-500"
                 : isReconnecting
-                  ? "bg-yellow-500 animate-pulse"
+                  ? "animate-pulse bg-yellow-500"
                   : "bg-red-500"
             }`}
           />
@@ -112,7 +112,7 @@ export function GameNavBar({
           <>
             <Button variant={showNotes ? "outline" : "secondary"} size="sm" onClick={onToggleNotes}>
               <svg
-                className="w-3 h-3"
+                className="h-3 w-3"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -127,7 +127,7 @@ export function GameNavBar({
             </Button>
             <Button variant="secondary" size="sm" onClick={onToggleActivity}>
               <svg
-                className="w-3 h-3"
+                className="h-3 w-3"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -143,14 +143,14 @@ export function GameNavBar({
               </svg>
               Activity
               {logMessageCount > 0 && (
-                <span className="px-1 min-w-4 text-center bg-amber-500/15 text-amber-400 text-xs rounded-full">
+                <span className="min-w-4 rounded-full bg-amber-500/15 px-1 text-center text-xs text-amber-400">
                   {logMessageCount}
                 </span>
               )}
             </Button>
             <Button variant="secondary" size="sm" onClick={onToggleEvents}>
               <svg
-                className="w-3 h-3"
+                className="h-3 w-3"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -164,7 +164,7 @@ export function GameNavBar({
               </svg>
               Events
               {eventLogCount > 0 && (
-                <span className="px-1 min-w-4 text-center bg-amber-500/15 text-amber-400 text-xs rounded-full">
+                <span className="min-w-4 rounded-full bg-amber-500/15 px-1 text-center text-xs text-amber-400">
                   {eventLogCount}
                 </span>
               )}
@@ -174,7 +174,7 @@ export function GameNavBar({
 
         <Button variant="secondary" size="sm" onClick={onToggleParty}>
           <svg
-            className="w-3 h-3"
+            className="h-3 w-3"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -196,7 +196,7 @@ export function GameNavBar({
 
         <Button variant="icon" onClick={onOpenGuide} title="How to Play">
           <svg
-            className="w-3.5 h-3.5"
+            className="h-3.5 w-3.5"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -212,7 +212,7 @@ export function GameNavBar({
 
         <Button variant="icon" onClick={onOpenSettings} title="Settings">
           <svg
-            className="w-3.5 h-3.5"
+            className="h-3.5 w-3.5"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"

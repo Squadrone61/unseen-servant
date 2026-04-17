@@ -31,14 +31,14 @@ interface GuideCalloutProps {
 export function GuideCallout({ type, children }: GuideCalloutProps) {
   const s = styles[type];
   return (
-    <div className={`${s.bg} ${s.border} border rounded-lg px-4 py-3`}>
+    <div className={`${s.bg} ${s.border} rounded-lg border px-4 py-3`}>
       <div className="flex items-start gap-2.5">
-        <span className="text-sm shrink-0 mt-0.5">{s.icon}</span>
+        <span className="mt-0.5 shrink-0 text-sm">{s.icon}</span>
         <div>
-          <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+          <span className="text-xs font-semibold tracking-wider text-gray-400 uppercase">
             {s.label}
           </span>
-          <div className="text-sm text-gray-300 mt-1 leading-relaxed">{children}</div>
+          <div className="mt-1 text-sm leading-relaxed text-gray-300">{children}</div>
         </div>
       </div>
     </div>

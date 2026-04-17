@@ -41,13 +41,13 @@ function BackgroundPopover({
     <DetailPopover title={background.name} onClose={onClose} position={position}>
       <div className="space-y-3">
         {/* Stat badges */}
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex flex-wrap items-center gap-2">
           {(background.effects?.properties ?? [])
             .filter((p) => p.type === "proficiency" && p.category === "skill")
             .map((p) => (
               <span
                 key={(p as { value: string }).value}
-                className="text-xs px-2 py-0.5 rounded-full bg-emerald-900/30 text-emerald-300 border border-emerald-700/30"
+                className="rounded-full border border-emerald-700/30 bg-emerald-900/30 px-2 py-0.5 text-xs text-emerald-300"
               >
                 {(p as { value: string }).value}
               </span>
@@ -57,13 +57,13 @@ function BackgroundPopover({
             .map((p) => (
               <span
                 key={(p as { value: string }).value}
-                className="text-xs px-2 py-0.5 rounded-full bg-blue-900/30 text-blue-300 border border-blue-700/30"
+                className="rounded-full border border-blue-700/30 bg-blue-900/30 px-2 py-0.5 text-xs text-blue-300"
               >
                 {(p as { value: string }).value}
               </span>
             ))}
           {background.feat && (
-            <span className="text-xs px-2 py-0.5 rounded-full bg-violet-900/30 text-violet-300 border border-violet-700/30">
+            <span className="rounded-full border border-violet-700/30 bg-violet-900/30 px-2 py-0.5 text-xs text-violet-300">
               {background.feat}
             </span>
           )}
@@ -73,7 +73,7 @@ function BackgroundPopover({
         {background.effects && <EffectSummary effects={background.effects} />}
 
         {/* Full description */}
-        <div className="text-sm text-gray-300 leading-relaxed">
+        <div className="text-sm leading-relaxed text-gray-300">
           <RichText text={background.description} />
         </div>
       </div>
@@ -98,7 +98,7 @@ function FeatPopover({
     <DetailPopover title={feat.name} onClose={onClose} position={position}>
       <div className="space-y-3">
         {feat.description && (
-          <div className="text-sm text-gray-300 leading-relaxed">
+          <div className="text-sm leading-relaxed text-gray-300">
             <RichText text={feat.description} />
           </div>
         )}
@@ -136,7 +136,7 @@ function BackgroundCard({
     <button
       onClick={onClick}
       className={`
-        w-full text-left px-4 py-3 rounded-lg border transition-all duration-200
+        w-full rounded-lg border px-4 py-3 text-left transition-all duration-200
         ${
           isSelected
             ? "border-amber-500/50 bg-amber-950/20 ring-1 ring-amber-500/20"
@@ -145,19 +145,17 @@ function BackgroundCard({
       `}
     >
       <div className="flex items-start justify-between gap-3">
-        <div className="flex items-center gap-1.5 shrink-0">
+        <div className="flex shrink-0 items-center gap-1.5">
           <span
-            className={`font-[family-name:var(--font-cinzel)] text-sm ${
-              isSelected ? "text-amber-200" : "text-gray-200"
-            }`}
+            className={`font-cinzel text-sm ${isSelected ? "text-amber-200" : "text-gray-200"}`}
           >
             {background.name}
           </span>
           <InfoButton onClick={onDetailsClick} />
         </div>
-        <div className="flex flex-col items-end gap-0.5 min-w-0">
-          {skillsText && <span className="text-xs text-gray-400 text-right">{skillsText}</span>}
-          {toolsText && <span className="text-xs text-gray-500 text-right">{toolsText}</span>}
+        <div className="flex min-w-0 flex-col items-end gap-0.5">
+          {skillsText && <span className="text-right text-xs text-gray-400">{skillsText}</span>}
+          {toolsText && <span className="text-right text-xs text-gray-500">{toolsText}</span>}
         </div>
       </div>
     </button>
@@ -214,7 +212,7 @@ function AbilityModeToggle({ mode, onChange }: AbilityModeToggleProps) {
               ].join(" ")}
             >
               {selected && (
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-400" aria-hidden="true" />
+                <span className="h-1.5 w-1.5 rounded-full bg-amber-400" aria-hidden="true" />
               )}
             </span>
             {opt.label}
@@ -333,7 +331,7 @@ function AbilityScoreAssignment({
     <div className="flex flex-col gap-4">
       <div>
         <h3
-          className="text-sm font-semibold text-amber-400/90 uppercase tracking-wider"
+          className="text-sm font-semibold tracking-wider text-amber-400/90 uppercase"
           style={{ fontFamily: "var(--font-cinzel)" }}
         >
           Ability Score Distribution
@@ -351,10 +349,10 @@ function AbilityScoreAssignment({
           {from.map((ability) => (
             <span
               key={ability}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-emerald-600/30 bg-emerald-900/15 text-emerald-300 text-sm"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-600/30 bg-emerald-900/15 px-3 py-1.5 text-sm text-emerald-300"
             >
               <svg
-                className="w-3.5 h-3.5 shrink-0"
+                className="h-3.5 w-3.5 shrink-0"
                 viewBox="0 0 10 10"
                 fill="none"
                 stroke="currentColor"
@@ -365,7 +363,7 @@ function AbilityScoreAssignment({
               >
                 <path d="M1.5 5l2.5 2.5 4.5-4.5" />
               </svg>
-              {cap(ability)} <span className="text-emerald-400/80 font-medium">+1</span>
+              {cap(ability)} <span className="font-medium text-emerald-400/80">+1</span>
             </span>
           ))}
         </div>
@@ -374,15 +372,15 @@ function AbilityScoreAssignment({
           {from.slice(0, 2).map((ability) => (
             <span
               key={ability}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-amber-600/30 bg-amber-900/10 text-amber-300 text-sm"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-amber-600/30 bg-amber-900/10 px-3 py-1.5 text-sm text-amber-300"
             >
               {cap(ability)}{" "}
-              <span className="text-amber-400/80 font-medium">{weightLabel(sortedWeights[0])}</span>
+              <span className="font-medium text-amber-400/80">{weightLabel(sortedWeights[0])}</span>
             </span>
           ))}
         </div>
       ) : (
-        <div className="flex flex-wrap gap-4 items-end">
+        <div className="flex flex-wrap items-end gap-4">
           <AbilityDropdown
             id="ability-plus-two"
             label={`Gets ${weightLabel(sortedWeights[0])}`}
@@ -401,11 +399,11 @@ function AbilityScoreAssignment({
           />
           {derivedPlusTwo && derivedPlusOne && (
             <div className="flex items-center gap-2 pb-0.5">
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md border border-amber-500/30 bg-amber-900/10 text-amber-300 text-xs font-medium">
+              <span className="inline-flex items-center gap-1 rounded-md border border-amber-500/30 bg-amber-900/10 px-2.5 py-1 text-xs font-medium text-amber-300">
                 {cap(derivedPlusTwo)} {weightLabel(sortedWeights[0])}
               </span>
-              <span className="text-gray-600 text-xs">+</span>
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md border border-amber-500/30 bg-amber-900/10 text-amber-300 text-xs font-medium">
+              <span className="text-xs text-gray-600">+</span>
+              <span className="inline-flex items-center gap-1 rounded-md border border-amber-500/30 bg-amber-900/10 px-2.5 py-1 text-xs font-medium text-amber-300">
                 {cap(derivedPlusOne)} {weightLabel(sortedWeights[1])}
               </span>
             </div>
@@ -496,10 +494,7 @@ export function BackgroundStep() {
     <section aria-labelledby="background-step-heading" className="flex flex-col gap-5">
       {/* Header */}
       <div>
-        <h1
-          id="background-step-heading"
-          className="text-xl font-[family-name:var(--font-cinzel)] text-amber-200/90 mb-1"
-        >
+        <h1 id="background-step-heading" className="mb-1 font-cinzel text-xl text-amber-200/90">
           Choose Your Background
         </h1>
         <p className="text-sm text-gray-400">
@@ -510,8 +505,8 @@ export function BackgroundStep() {
 
       {/* Selected banner */}
       {selectedBg && (
-        <div className="flex items-center gap-3 px-4 py-3 rounded-lg border border-amber-500/30 bg-amber-950/15">
-          <span className="text-sm text-amber-200 font-medium">✓ {selectedBg.name}</span>
+        <div className="flex items-center gap-3 rounded-lg border border-amber-500/30 bg-amber-950/15 px-4 py-3">
+          <span className="text-sm font-medium text-amber-200">✓ {selectedBg.name}</span>
           <span className="text-xs text-gray-500">
             {(selectedBg.effects?.properties ?? [])
               .filter((p) => p.type === "proficiency" && p.category === "skill")
@@ -527,13 +522,13 @@ export function BackgroundStep() {
           <div className="flex-1" />
           <button
             onClick={(e) => handleDetailsClick(selectedBg, e)}
-            className="text-xs text-amber-400/70 hover:text-amber-300 transition-colors"
+            className="text-xs text-amber-400/70 transition-colors hover:text-amber-300"
           >
             View Details
           </button>
           <button
             onClick={() => dispatch({ type: "CLEAR_BACKGROUND" })}
-            className="text-xs text-gray-500 hover:text-red-400 transition-colors"
+            className="text-xs text-gray-500 transition-colors hover:text-red-400"
           >
             Change
           </button>
@@ -542,18 +537,18 @@ export function BackgroundStep() {
 
       {/* Search */}
       <div className="relative">
-        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">🔍</span>
+        <span className="absolute top-1/2 left-3 -translate-y-1/2 text-sm text-gray-500">🔍</span>
         <input
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Search backgrounds..."
-          className="w-full pl-9 pr-4 py-2.5 bg-gray-800/60 border border-gray-700/40 rounded-lg text-sm text-gray-200 placeholder-gray-500 focus:border-amber-500/50 focus:outline-none transition-colors"
+          className="w-full rounded-lg border border-gray-700/40 bg-gray-800/60 py-2.5 pr-4 pl-9 text-sm text-gray-200 placeholder-gray-500 transition-colors focus:border-amber-500/50 focus:outline-none"
         />
         {searchQuery && (
           <button
             onClick={() => setSearchQuery("")}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300"
+            className="absolute top-1/2 right-3 -translate-y-1/2 text-gray-500 hover:text-gray-300"
           >
             ✕
           </button>
@@ -561,7 +556,7 @@ export function BackgroundStep() {
       </div>
 
       {/* Compact grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
         {filteredBackgrounds.map((bg) => (
           <BackgroundCard
             key={bg.name}
@@ -572,13 +567,13 @@ export function BackgroundStep() {
           />
         ))}
         {filteredBackgrounds.length === 0 && (
-          <p className="col-span-full text-center text-gray-500 text-sm py-6">
+          <p className="col-span-full py-6 text-center text-sm text-gray-500">
             No backgrounds match your search.
           </p>
         )}
       </div>
 
-      <p className="text-xs text-gray-600 text-center">
+      <p className="text-center text-xs text-gray-600">
         {sortedBackgrounds.length} backgrounds available
       </p>
 
@@ -588,7 +583,7 @@ export function BackgroundStep() {
           <div className="h-px bg-gradient-to-r from-transparent via-amber-500/20 to-transparent" />
 
           <div>
-            <h2 className="text-lg font-[family-name:var(--font-cinzel)] text-amber-200/90 mb-1">
+            <h2 className="mb-1 font-cinzel text-lg text-amber-200/90">
               Configure {selectedBg.name}
             </h2>
             <p className="text-sm text-gray-400">
@@ -598,7 +593,7 @@ export function BackgroundStep() {
 
           {/* Ability score assignment */}
           <section
-            className="bg-gray-800/30 border border-gray-700/20 rounded-lg p-5"
+            className="rounded-lg border border-gray-700/20 bg-gray-800/30 p-5"
             aria-label="Ability score distribution"
           >
             <AbilityScoreAssignment
@@ -614,7 +609,7 @@ export function BackgroundStep() {
           {selectedBg.choices && selectedBg.choices.length > 0 && (
             <div className="flex flex-col gap-3">
               <h3
-                className="text-sm font-semibold text-amber-400/90 uppercase tracking-wider"
+                className="text-sm font-semibold tracking-wider text-amber-400/90 uppercase"
                 style={{ fontFamily: "var(--font-cinzel)" }}
               >
                 Background Choices
@@ -637,7 +632,7 @@ export function BackgroundStep() {
               <div className="h-px bg-gradient-to-r from-transparent via-violet-500/20 to-transparent" />
               <div className="flex items-center gap-2">
                 <h3
-                  className="text-sm font-semibold text-violet-400/90 uppercase tracking-wider"
+                  className="text-sm font-semibold tracking-wider text-violet-400/90 uppercase"
                   style={{ fontFamily: "var(--font-cinzel)" }}
                 >
                   Origin Feat: {originFeat.name}
@@ -651,8 +646,8 @@ export function BackgroundStep() {
 
               {/* Feat description */}
               {originFeat.description && (
-                <div className="bg-gray-800/30 border border-violet-700/20 rounded-lg p-4">
-                  <div className="text-sm text-gray-300 leading-relaxed">
+                <div className="rounded-lg border border-violet-700/20 bg-gray-800/30 p-4">
+                  <div className="text-sm leading-relaxed text-gray-300">
                     <RichText text={originFeat.description} />
                   </div>
                   {originFeat.effects && (

@@ -23,12 +23,12 @@ export default function CreateCharacterPage() {
   }, [importState, character, saveCharacter, router]);
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="flex min-h-screen flex-col">
       <TopBar items={[{ label: "Characters", href: "/characters" }]} current="Import" />
 
-      <div className="flex-1 flex items-center justify-center px-6">
+      <div className="flex flex-1 items-center justify-center px-6">
         <div className="w-full max-w-lg">
-          <div className="bg-gray-900/60 rounded-lg p-6 space-y-4 border border-gray-700/25">
+          <div className="space-y-4 rounded-lg border border-gray-700/25 bg-gray-900/60 p-6">
             <CharacterImport
               importState={importState}
               character={character}

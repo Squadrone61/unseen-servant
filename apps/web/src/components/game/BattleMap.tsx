@@ -842,7 +842,7 @@ export function BattleMap({
   void dragRender;
 
   return (
-    <div className={`flex flex-col bg-[#111114] shrink-0 ${className ?? ""}`} style={style}>
+    <div className={`flex shrink-0 flex-col bg-gray-950 ${className ?? ""}`} style={style}>
       {/* AoE pulse animation */}
       <style dangerouslySetInnerHTML={{ __html: AOE_PULSE_KEYFRAMES }} />
 
@@ -855,11 +855,11 @@ export function BattleMap({
 
       {/* Your-turn banner */}
       {isMyTurn && (
-        <div className="px-3 py-1.5 bg-amber-950/40 border-b border-amber-800/30 text-amber-300 text-xs font-medium tracking-wide flex items-center justify-between gap-2 shrink-0">
+        <div className="flex shrink-0 items-center justify-between gap-2 border-b border-amber-800/30 bg-amber-950/40 px-3 py-1.5 text-xs font-medium tracking-wide text-amber-300">
           <div className="flex items-center gap-2">
-            <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+            <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-amber-400" />
             Your turn &mdash; drag your token to move
-            <span className="text-amber-500/70 font-mono ml-1">{movementLeft}ft remaining</span>
+            <span className="ml-1 font-mono text-amber-500/70">{movementLeft}ft remaining</span>
           </div>
         </div>
       )}
@@ -867,13 +867,13 @@ export function BattleMap({
       {/* Map viewport (transform-based pan/zoom) */}
       <div
         ref={containerRef}
-        className="flex-1 min-h-0 overflow-hidden relative"
+        className="relative min-h-0 flex-1 overflow-hidden"
         style={{ cursor: isPanning ? "grabbing" : "default" }}
         onMouseDown={handlePanStart}
         onContextMenu={(e) => e.preventDefault()}
       >
         {/* Zoom Controls + AoE Toolbar */}
-        <div className="absolute top-2 right-2 z-10 flex gap-1.5 items-start">
+        <div className="absolute top-2 right-2 z-10 flex items-start gap-1.5">
           {/* AoE control chip (appears to the left of the Place AoE button during placement) */}
           {aoePlacement?.stagedAoE && (
             <AoEControlChip
@@ -894,10 +894,10 @@ export function BattleMap({
                     setShowAoePopover((v) => !v);
                   }
                 }}
-                className={`h-6 px-2 flex items-center justify-center text-xs rounded transition-colors ${
+                className={`flex h-6 items-center justify-center rounded px-2 text-xs transition-colors ${
                   aoePlacement.mode !== "idle"
                     ? "bg-amber-600/80 text-amber-100 hover:bg-amber-500/80"
-                    : "bg-gray-800/80 text-gray-400 hover:text-gray-200 hover:bg-gray-700/60"
+                    : "bg-gray-800/80 text-gray-400 hover:bg-gray-700/60 hover:text-gray-200"
                 }`}
                 title={
                   aoePlacement.mode !== "idle" ? "Cancel AoE placement (Esc)" : "Place AoE template"
@@ -919,24 +919,24 @@ export function BattleMap({
           )}
 
           {/* Zoom buttons */}
-          <div className="bg-gray-800/80 rounded flex gap-1 p-1">
+          <div className="flex gap-1 rounded bg-gray-800/80 p-1">
             <button
               onClick={() => zoomTo(Math.max(0.25, zoom / 1.25))}
-              className="w-6 h-6 flex items-center justify-center text-xs text-gray-400 hover:text-gray-200 rounded hover:bg-gray-700/60 transition-colors"
+              className="flex h-6 w-6 items-center justify-center rounded text-xs text-gray-400 transition-colors hover:bg-gray-700/60 hover:text-gray-200"
               title="Zoom out"
             >
               -
             </button>
             <button
               onClick={() => zoomTo(1)}
-              className="px-1.5 h-6 flex items-center justify-center text-xs text-gray-400 hover:text-gray-200 rounded hover:bg-gray-700/60 transition-colors font-mono"
+              className="flex h-6 items-center justify-center rounded px-1.5 font-mono text-xs text-gray-400 transition-colors hover:bg-gray-700/60 hover:text-gray-200"
               title="Reset zoom"
             >
               {Math.round(zoom * 100)}%
             </button>
             <button
               onClick={() => zoomTo(Math.min(3, zoom * 1.25))}
-              className="w-6 h-6 flex items-center justify-center text-xs text-gray-400 hover:text-gray-200 rounded hover:bg-gray-700/60 transition-colors"
+              className="flex h-6 w-6 items-center justify-center rounded text-xs text-gray-400 transition-colors hover:bg-gray-700/60 hover:text-gray-200"
               title="Zoom in"
             >
               +
@@ -966,7 +966,7 @@ export function BattleMap({
               {colLabels.map((label, i) => (
                 <div
                   key={`cl-${i}`}
-                  className="text-xs text-gray-600 flex items-center justify-center select-none"
+                  className="flex items-center justify-center text-xs text-gray-600 select-none"
                   style={{
                     width: TILE_SIZE + (i < map.width - 1 ? TILE_GAP : 0),
                     height: LABEL_SIZE,
@@ -984,7 +984,7 @@ export function BattleMap({
                 {Array.from({ length: map.height }, (_, i) => (
                   <div
                     key={`rl-${i}`}
-                    className="text-xs text-gray-600 flex items-center justify-center select-none"
+                    className="flex items-center justify-center text-xs text-gray-600 select-none"
                     style={{
                       height: TILE_SIZE + (i < map.height - 1 ? TILE_GAP : 0),
                       width: LABEL_SIZE,
@@ -1035,7 +1035,7 @@ export function BattleMap({
               >
                 {/* ─── Layer 1: Tile Grid ─── */}
                 <div
-                  className="absolute inset-0 rounded-sm overflow-hidden"
+                  className="absolute inset-0 overflow-hidden rounded-sm"
                   style={{
                     display: "grid",
                     gridTemplateColumns: `repeat(${map.width}, ${TILE_SIZE}px)`,
@@ -1108,7 +1108,7 @@ export function BattleMap({
                           {/* Terrain textures */}
                           {tile.type === "difficult_terrain" && (
                             <div
-                              className="absolute inset-0 opacity-20 pointer-events-none"
+                              className="pointer-events-none absolute inset-0 opacity-20"
                               style={{
                                 backgroundImage:
                                   "repeating-linear-gradient(45deg, transparent 0 3px, rgba(180,140,60,.3) 3px 4px)",
@@ -1117,7 +1117,7 @@ export function BattleMap({
                           )}
                           {tile.type === "water" && (
                             <div
-                              className="absolute inset-0 opacity-20 pointer-events-none"
+                              className="pointer-events-none absolute inset-0 opacity-20"
                               style={{
                                 backgroundImage:
                                   "repeating-linear-gradient(160deg, transparent 0 5px, rgba(60,140,200,.25) 5px 6px)",
@@ -1126,7 +1126,7 @@ export function BattleMap({
                           )}
                           {tile.type === "stairs" && (
                             <div
-                              className="absolute inset-0 opacity-25 pointer-events-none"
+                              className="pointer-events-none absolute inset-0 opacity-25"
                               style={{
                                 backgroundImage:
                                   "repeating-linear-gradient(0deg, transparent 0 6px, rgba(200,200,220,.12) 6px 7px)",
@@ -1134,13 +1134,13 @@ export function BattleMap({
                             />
                           )}
                           {tile.type === "door" && (
-                            <div className="absolute inset-[28%] rounded-sm border border-amber-800/40 bg-amber-900/15 pointer-events-none" />
+                            <div className="pointer-events-none absolute inset-door rounded-sm border border-amber-800/40 bg-amber-900/15" />
                           )}
 
                           {/* Object abbreviation */}
                           {tile.object && (
                             <div
-                              className="absolute inset-0 flex items-center justify-center pointer-events-none select-none"
+                              className="pointer-events-none absolute inset-0 flex items-center justify-center select-none"
                               style={{
                                 color: CATEGORY_COLOR[tile.object.category] ?? "#8B8B8B",
                                 opacity: 0.4,
@@ -1156,7 +1156,7 @@ export function BattleMap({
                           {/* Elevation indicator */}
                           {tile.elevation != null && tile.elevation !== 0 && (
                             <div
-                              className="absolute top-0 right-0.5 pointer-events-none select-none"
+                              className="pointer-events-none absolute top-0 right-0.5 select-none"
                               style={{
                                 fontSize: 7,
                                 color: tile.elevation > 0 ? "#94A3B8" : "#F59E0B",
@@ -1174,7 +1174,7 @@ export function BattleMap({
                           {/* Committed AoE overlay */}
                           {aoeOverlays && aoeOverlays.length > 0 && (
                             <div
-                              className="absolute inset-0 pointer-events-none"
+                              className="pointer-events-none absolute inset-0"
                               style={{
                                 backgroundColor: aoeOverlays[0].color,
                                 animation: "aoePulse 3s ease-in-out infinite",
@@ -1185,7 +1185,7 @@ export function BattleMap({
                           {/* Move-mode dashed outline on committed AoE tiles */}
                           {isMovingAoeTile && (
                             <div
-                              className="absolute inset-0 pointer-events-none"
+                              className="pointer-events-none absolute inset-0"
                               style={{
                                 border: "1.5px dashed rgba(251,191,36,0.7)",
                                 boxSizing: "border-box",
@@ -1196,7 +1196,7 @@ export function BattleMap({
                           {/* Local preview overlay (staged, not yet committed) */}
                           {isPreviewTile && aoePlacement?.stagedAoE && (
                             <div
-                              className="absolute inset-0 pointer-events-none"
+                              className="pointer-events-none absolute inset-0"
                               style={{
                                 backgroundColor: aoePlacement.stagedAoE.color,
                                 opacity: 0.45,
@@ -1206,21 +1206,21 @@ export function BattleMap({
 
                           {/* Movement range overlay (only when showing reachable) */}
                           {isReach && !isDragTarget && (
-                            <div className="absolute inset-0 pointer-events-none bg-emerald-500/10 ring-1 ring-inset ring-emerald-600/20" />
+                            <div className="pointer-events-none absolute inset-0 bg-emerald-500/10 ring-1 ring-emerald-600/20 ring-inset" />
                           )}
 
                           {/* Drag target highlight */}
                           {isDragReachable && (
-                            <div className="absolute inset-0 pointer-events-none bg-emerald-400/30 ring-2 ring-inset ring-emerald-400/50" />
+                            <div className="pointer-events-none absolute inset-0 bg-emerald-400/30 ring-2 ring-emerald-400/50 ring-inset" />
                           )}
                           {isDragUnreachable && (
-                            <div className="absolute inset-0 pointer-events-none bg-red-500/20 ring-1 ring-inset ring-red-500/40" />
+                            <div className="pointer-events-none absolute inset-0 bg-red-500/20 ring-1 ring-red-500/40 ring-inset" />
                           )}
 
                           {/* Coordinate label on hover */}
                           {isHoveredHere && (
                             <div
-                              className="absolute bottom-0 left-0 pointer-events-none select-none"
+                              className="pointer-events-none absolute bottom-0 left-0 select-none"
                               style={{
                                 fontSize: 7,
                                 color: "#9CA3AF",
@@ -1261,7 +1261,7 @@ export function BattleMap({
                     >
                       {/* Pulsing dot marker */}
                       <div
-                        className="w-3 h-3 rounded-full border border-white/40"
+                        className="h-3 w-3 rounded-full border border-white/40"
                         style={{
                           backgroundColor: aoe.color,
                           boxShadow: `0 0 6px ${aoe.color}`,
@@ -1271,15 +1271,15 @@ export function BattleMap({
                       {/* Tooltip on hover */}
                       {isHovered && (
                         <div
-                          className="absolute left-1/2 bottom-full mb-1 -translate-x-1/2 bg-gray-900 border border-gray-600/50 rounded-lg shadow-lg px-3 py-2 text-xs text-gray-200 max-w-xs pointer-events-none"
+                          className="pointer-events-none absolute bottom-full left-1/2 mb-1 max-w-xs -translate-x-1/2 rounded-lg border border-gray-600/50 bg-gray-900 px-3 py-2 text-xs text-gray-200 shadow-lg"
                           style={{ zIndex: 35 }}
                         >
                           <div className="font-medium" style={{ color: aoe.color }}>
                             {aoe.label}
                           </div>
-                          <div className="text-gray-400 mt-0.5">{sizeLabel}</div>
+                          <div className="mt-0.5 text-gray-400">{sizeLabel}</div>
                           {aoe.casterName && (
-                            <div className="text-gray-500 mt-0.5">Cast by {aoe.casterName}</div>
+                            <div className="mt-0.5 text-gray-500">Cast by {aoe.casterName}</div>
                           )}
                         </div>
                       )}
@@ -1300,7 +1300,7 @@ export function BattleMap({
                 {/* ─── Layer 3: Measurement SVG overlay ─── */}
                 {measureLine && (
                   <svg
-                    className="absolute inset-0 pointer-events-none"
+                    className="pointer-events-none absolute inset-0"
                     style={{
                       zIndex: 25,
                       width: gridWidthPx,
@@ -1440,7 +1440,7 @@ export function BattleMap({
                     >
                       {/* Circle */}
                       <div
-                        className={`rounded-full flex items-center justify-center border-2 font-bold select-none shrink-0 ${
+                        className={`flex shrink-0 items-center justify-center rounded-full border-2 font-bold select-none ${
                           isDead ? "opacity-25 grayscale" : ""
                         }`}
                         style={{
@@ -1466,7 +1466,7 @@ export function BattleMap({
                       {/* Stack count badge — shown on topmost token */}
                       {stackSize > 1 && stackIndex === stackSize - 1 && (
                         <div
-                          className="absolute -top-1 -right-1 bg-amber-500 text-black text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center shadow pointer-events-none"
+                          className="pointer-events-none absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-amber-500 text-xs font-bold text-black shadow"
                           style={{ zIndex: 30 }}
                         >
                           {stackSize}
@@ -1513,30 +1513,30 @@ export function BattleMap({
 
             return (
               <div
-                className="fixed z-50 bg-gray-900/95 border border-gray-600/50 rounded-lg shadow-xl px-3 py-2 text-xs pointer-events-none backdrop-blur-sm"
+                className="pointer-events-none fixed z-50 rounded-lg border border-gray-600/50 bg-gray-900/95 px-3 py-2 text-xs shadow-xl backdrop-blur-sm"
                 style={{ left, top, minWidth: 140, maxWidth: 240 }}
               >
                 {/* Name + Position */}
-                <div className="flex items-center justify-between gap-2 mb-1">
-                  <span className="text-gray-100 font-medium whitespace-nowrap">
+                <div className="mb-1 flex items-center justify-between gap-2">
+                  <span className="font-medium whitespace-nowrap text-gray-100">
                     {hoveredCombatant.name}
                   </span>
                   {tooltip.posLabel && (
-                    <span className="text-gray-500 font-mono">{tooltip.posLabel}</span>
+                    <span className="font-mono text-gray-500">{tooltip.posLabel}</span>
                   )}
                 </div>
 
                 {/* HP + AC inline */}
                 <div className="flex items-center gap-3">
                   {hpPercent !== null && (
-                    <div className="flex items-center gap-1.5 flex-1 min-w-0">
-                      <span className="text-gray-400 shrink-0">HP</span>
+                    <div className="flex min-w-0 flex-1 items-center gap-1.5">
+                      <span className="shrink-0 text-gray-400">HP</span>
                       {tooltip.isPlayer ? (
-                        <span className="text-gray-200 font-mono">
+                        <span className="font-mono text-gray-200">
                           {tooltip.currentHP}/{tooltip.maxHP}
                         </span>
                       ) : (
-                        <span className="text-gray-400 font-mono">
+                        <span className="font-mono text-gray-400">
                           {hpPercent > 75
                             ? "Healthy"
                             : hpPercent > 50
@@ -1548,7 +1548,7 @@ export function BattleMap({
                                   : "Down"}
                         </span>
                       )}
-                      <div className="flex-1 h-1 bg-gray-700 rounded-full overflow-hidden min-w-[30px]">
+                      <div className="h-1 min-w-8 flex-1 overflow-hidden rounded-full bg-gray-700">
                         <div
                           className="h-full rounded-full"
                           style={{ width: `${hpPercent}%`, backgroundColor: hpBarColor ?? "#666" }}
@@ -1557,19 +1557,19 @@ export function BattleMap({
                     </div>
                   )}
                   {tooltip.ac !== undefined && (
-                    <span className="text-gray-400 shrink-0">
-                      AC <span className="text-gray-200 font-mono">{tooltip.ac}</span>
+                    <span className="shrink-0 text-gray-400">
+                      AC <span className="font-mono text-gray-200">{tooltip.ac}</span>
                     </span>
                   )}
                 </div>
 
                 {/* Conditions inline */}
                 {tooltip.conditionEntries.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mt-1">
+                  <div className="mt-1 flex flex-wrap gap-1">
                     {tooltip.conditionEntries.map((cond, i) => (
                       <span
                         key={i}
-                        className="text-orange-400 bg-orange-500/10 px-1.5 py-0.5 rounded"
+                        className="rounded bg-orange-500/10 px-1.5 py-0.5 text-orange-400"
                       >
                         {cond.name}
                         {cond.duration != null ? ` (${cond.duration}rd)` : ""}
@@ -1580,7 +1580,7 @@ export function BattleMap({
 
                 {/* Concentration + Movement inline */}
                 {(tooltip.concentration || tooltip.moveRemaining !== undefined) && (
-                  <div className="flex items-center gap-3 mt-1 text-gray-400">
+                  <div className="mt-1 flex items-center gap-3 text-gray-400">
                     {tooltip.concentration && (
                       <span className="text-purple-400">
                         Conc: {tooltip.concentration.spellName}
@@ -1589,7 +1589,7 @@ export function BattleMap({
                     {tooltip.moveRemaining !== undefined && (
                       <span>
                         Move:{" "}
-                        <span className="text-gray-200 font-mono">{tooltip.moveRemaining}ft</span>
+                        <span className="font-mono text-gray-200">{tooltip.moveRemaining}ft</span>
                       </span>
                     )}
                   </div>
@@ -1611,13 +1611,13 @@ export function BattleMap({
 
                 return (
                   <div
-                    className="fixed z-50 bg-gray-900/95 border border-gray-600/50 rounded-lg shadow-xl px-3 py-1.5 text-xs pointer-events-none backdrop-blur-sm"
+                    className="pointer-events-none fixed z-50 rounded-lg border border-gray-600/50 bg-gray-900/95 px-3 py-1.5 text-xs shadow-xl backdrop-blur-sm"
                     style={{ left, top, maxWidth: 200 }}
                   >
                     {data.map((line, i) => (
                       <span
                         key={i}
-                        className={i > 0 ? "text-gray-400" : "text-gray-200 font-medium"}
+                        className={i > 0 ? "text-gray-400" : "font-medium text-gray-200"}
                       >
                         {i > 0 ? " · " : ""}
                         {line}

@@ -34,7 +34,7 @@ export function TabBar<T extends string = string>({
             size === "sm" ? "px-3 py-1.5" : "px-4 py-2.5"
           } flex items-center justify-center gap-1.5 text-xs font-medium transition-colors ${
             active === tab.value
-              ? "text-amber-300 border-b-2 border-amber-400/70"
+              ? "border-b-2 border-amber-400/70 text-amber-300"
               : "text-gray-500 hover:text-gray-300"
           }`}
         >

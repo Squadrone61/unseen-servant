@@ -16,12 +16,12 @@ interface TopBarProps {
 
 export function TopBar({ items, current, children }: TopBarProps) {
   return (
-    <nav className="flex items-center justify-between h-11 px-7 bg-gray-950 border-b border-gray-700/25 shrink-0">
+    <nav className="flex h-11 shrink-0 items-center justify-between border-b border-gray-700/25 bg-gray-950 px-7">
       <div className="flex items-center gap-2">
         <Button variant="icon" href="/" title="Home">
-          <Image src="/icon.svg" alt="Home" width={20} height={20} className="w-5 h-5" />
+          <Image src="/icon.svg" alt="Home" width={20} height={20} className="h-5 w-5" />
         </Button>
-        <div className="w-px h-4 bg-gray-700/30" />
+        <div className="h-4 w-px bg-gray-700/30" />
         <ol
           className="flex items-center gap-1.5 text-xs"
           style={{ fontFamily: "var(--font-cinzel)" }}
@@ -30,7 +30,7 @@ export function TopBar({ items, current, children }: TopBarProps) {
             <li key={i} className="flex items-center gap-1.5">
               <Link
                 href={item.href}
-                className="text-amber-400/70 hover:text-amber-300 transition-colors"
+                className="text-amber-400/70 transition-colors hover:text-amber-300"
               >
                 {item.label}
               </Link>

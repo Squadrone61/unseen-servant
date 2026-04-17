@@ -13,7 +13,7 @@ export default function CharactersPage() {
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="flex min-h-screen flex-col">
       <TopBar items={[]} current="Characters">
         <Button size="sm" href="/characters/create">
           Create Character
@@ -24,21 +24,21 @@ export default function CharactersPage() {
       </TopBar>
 
       <div className="flex-1 p-6">
-        <div className="max-w-5xl mx-auto">
+        <div className="mx-auto max-w-5xl">
           {characters.length === 0 ? (
-            <div className="text-center py-16">
+            <div className="py-16 text-center">
               <div
-                className="text-gray-600 text-lg mb-2"
+                className="mb-2 text-lg text-gray-600"
                 style={{ fontFamily: "var(--font-cinzel)" }}
               >
                 No characters yet
               </div>
-              <p className="text-gray-600 text-sm">
+              <p className="text-sm text-gray-600">
                 Create a character or import one from a file to get started.
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {characters.map((saved) => {
                 const s = saved.character.static;
                 const name = s.name || "Unnamed";
@@ -48,11 +48,11 @@ export default function CharactersPage() {
                 return (
                   <div
                     key={saved.id}
-                    className="bg-gray-900/60 border border-gray-700/25 rounded-lg p-4 hover:border-gray-700/40 transition-colors group relative"
+                    className="group relative rounded-lg border border-gray-700/25 bg-gray-900/60 p-4 transition-colors hover:border-gray-700/40"
                   >
                     <Link href={`/characters/${saved.id}`} className="flex items-center gap-3">
                       <div
-                        className={`w-10 h-10 shrink-0 rounded-md ${color.bg} border ${color.border} flex items-center justify-center`}
+                        className={`h-10 w-10 shrink-0 rounded-md ${color.bg} border ${color.border} flex items-center justify-center`}
                       >
                         <span
                           className={`text-base ${color.text}`}
@@ -61,23 +61,23 @@ export default function CharactersPage() {
                           {name[0]?.toUpperCase()}
                         </span>
                       </div>
-                      <div className="min-w-0 flex flex-col gap-0.5">
+                      <div className="flex min-w-0 flex-col gap-0.5">
                         <div className="flex items-center gap-2">
                           <span
-                            className="text-sm font-medium text-gray-300 truncate"
+                            className="truncate text-sm font-medium text-gray-300"
                             style={{ fontFamily: "var(--font-cinzel)" }}
                           >
                             {name}
                           </span>
-                          <span className="text-xs bg-amber-500/10 text-amber-400 font-bold px-2 py-0.5 rounded-full shrink-0">
+                          <span className="shrink-0 rounded-full bg-amber-500/10 px-2 py-0.5 text-xs font-bold text-amber-400">
                             Lv {getTotalLevel(s.classes)}
                           </span>
                         </div>
-                        <span className="text-xs text-gray-600 truncate">
+                        <span className="truncate text-xs text-gray-600">
                           {s.species || s.race} · {formatClassString(s.classes)}
                         </span>
                         {saved.campaignSlug && (
-                          <span className="text-xs text-amber-500/40 bg-amber-500/5 border border-amber-500/10 rounded px-1.5 py-0.5 truncate w-fit">
+                          <span className="w-fit truncate rounded border border-amber-500/10 bg-amber-500/5 px-1.5 py-0.5 text-xs text-amber-500/40">
                             {saved.campaignSlug}
                           </span>
                         )}
@@ -108,11 +108,11 @@ export default function CharactersPage() {
                       ) : (
                         <button
                           onClick={() => setConfirmDelete(saved.id)}
-                          className="text-gray-600 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
+                          className="text-gray-600 opacity-0 transition-colors group-hover:opacity-100 hover:text-red-400"
                           title="Delete character"
                         >
                           <svg
-                            className="w-4 h-4"
+                            className="h-4 w-4"
                             fill="none"
                             stroke="currentColor"
                             viewBox="0 0 24 24"

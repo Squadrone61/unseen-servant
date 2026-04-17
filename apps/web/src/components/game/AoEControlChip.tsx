@@ -53,21 +53,21 @@ export function AoEControlChip({ stagedAoE, counts, onCancel }: AoEControlChipPr
   return (
     <div className="pointer-events-auto select-none">
       <div
-        className="bg-gray-900/95 border rounded-lg shadow-xl text-xs backdrop-blur-sm"
+        className="rounded-lg border bg-gray-900/95 text-xs shadow-xl backdrop-blur-sm"
         style={{ borderColor: stagedAoE.color + "80", minWidth: 180 }}
       >
         <div className="px-3 pt-2 pb-1">
           <div className="font-semibold" style={{ color: stagedAoE.color }}>
             {stagedAoE.spellName ?? stagedAoE.label ?? "AoE Template"}
           </div>
-          <div className="text-gray-400 mt-0.5">
+          <div className="mt-0.5 text-gray-400">
             {shapeSummary(stagedAoE)}
             {saveStr}
           </div>
         </div>
 
         <div
-          className="px-3 py-1 border-t border-gray-700/40 cursor-pointer hover:bg-gray-800/40 transition-colors"
+          className="cursor-pointer border-t border-gray-700/40 px-3 py-1 transition-colors hover:bg-gray-800/40"
           onMouseEnter={() => setShowNames(true)}
           onMouseLeave={() => setShowNames(false)}
         >
@@ -75,17 +75,17 @@ export function AoEControlChip({ stagedAoE, counts, onCancel }: AoEControlChipPr
           {showNames && allNames.length > 0 && (
             <div className="mt-1 space-y-0.5">
               {counts.enemies.map((n) => (
-                <div key={n} className="text-red-400 pl-2">
+                <div key={n} className="pl-2 text-red-400">
                   {n}
                 </div>
               ))}
               {counts.allies.map((n) => (
-                <div key={n} className="text-blue-400 pl-2">
+                <div key={n} className="pl-2 text-blue-400">
                   {n}
                 </div>
               ))}
               {counts.self.map((n) => (
-                <div key={n} className="text-amber-400 pl-2">
+                <div key={n} className="pl-2 text-amber-400">
                   {n} (self)
                 </div>
               ))}
@@ -93,14 +93,14 @@ export function AoEControlChip({ stagedAoE, counts, onCancel }: AoEControlChipPr
           )}
         </div>
 
-        <div className="px-3 py-1.5 border-t border-gray-700/40">
+        <div className="border-t border-gray-700/40 px-3 py-1.5">
           <button
             onClick={onCancel}
-            className="w-full text-left text-gray-400 hover:text-gray-200 transition-colors flex items-center gap-1.5"
+            className="flex w-full items-center gap-1.5 text-left text-gray-400 transition-colors hover:text-gray-200"
           >
             <span className="text-gray-600">[</span>
             Cancel
-            <span className="font-mono text-gray-500 text-[10px]">Esc</span>
+            <span className="font-mono text-xs text-gray-500">Esc</span>
             <span className="text-gray-600">]</span>
           </button>
         </div>

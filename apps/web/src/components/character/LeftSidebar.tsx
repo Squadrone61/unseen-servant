@@ -38,12 +38,12 @@ function CharacterPicker({
 }) {
   if (characters.length === 0) {
     return (
-      <div className="p-4 text-center space-y-3">
-        <div className="text-gray-400 text-sm" style={{ fontFamily: "var(--font-cinzel)" }}>
+      <div className="space-y-3 p-4 text-center">
+        <div className="text-sm text-gray-400" style={{ fontFamily: "var(--font-cinzel)" }}>
           No characters
         </div>
-        <div className="w-12 h-px bg-gradient-to-r from-transparent via-amber-500/30 to-transparent mx-auto" />
-        <p className="text-gray-600 text-xs">Create or import a character to get started.</p>
+        <div className="mx-auto h-px w-12 bg-gradient-to-r from-transparent via-amber-500/30 to-transparent" />
+        <p className="text-xs text-gray-600">Create or import a character to get started.</p>
         <div className="flex flex-col gap-2">
           <Button size="xs" href="/characters/create" target="_blank" fullWidth>
             Create Character
@@ -60,9 +60,9 @@ function CharacterPicker({
   }
 
   return (
-    <div className="p-3 space-y-2 overflow-y-auto">
+    <div className="space-y-2 overflow-y-auto p-3">
       <div
-        className="text-sm text-gray-500 uppercase tracking-wider font-medium mb-2"
+        className="mb-2 text-sm font-medium tracking-wider text-gray-500 uppercase"
         style={{ fontFamily: "var(--font-cinzel)" }}
       >
         Select a character
@@ -73,15 +73,15 @@ function CharacterPicker({
           <button
             key={saved.id}
             onClick={() => onSelect(saved)}
-            className="w-full text-left bg-gray-900/50 hover:bg-gray-700/50 border border-gray-700/40 hover:border-gray-600/60 rounded-lg p-2.5 transition-colors"
+            className="w-full rounded-lg border border-gray-700/40 bg-gray-900/50 p-2.5 text-left transition-colors hover:border-gray-600/60 hover:bg-gray-700/50"
           >
             <div
-              className="text-sm font-medium text-amber-300 truncate"
+              className="truncate text-sm font-medium text-amber-300"
               style={{ fontFamily: "var(--font-cinzel)" }}
             >
               {s.name}
             </div>
-            <div className="text-xs text-gray-400 truncate">
+            <div className="truncate text-xs text-gray-400">
               {s.species || s.race} &middot; {formatClassString(s.classes)} &middot; Lvl{" "}
               {getTotalLevel(s.classes)}
             </div>

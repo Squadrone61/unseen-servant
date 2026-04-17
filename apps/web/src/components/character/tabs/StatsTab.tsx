@@ -76,8 +76,8 @@ function AdvMarker({ entries, className = "" }: { entries: AdvantageEntry[]; cla
 
   return (
     <span className={`shrink-0 ${className}`} title={tooltip}>
-      {hasAdv && <span className="text-xs text-green-400 font-bold">▲</span>}
-      {hasDisadv && <span className="text-xs text-red-400 font-bold">▼</span>}
+      {hasAdv && <span className="text-xs font-bold text-green-400">▲</span>}
+      {hasDisadv && <span className="text-xs font-bold text-red-400">▼</span>}
     </span>
   );
 }
@@ -107,7 +107,7 @@ export function StatsTab({ character }: StatsTabProps) {
       {/* Saving Throws */}
       <div>
         <div
-          className="text-sm text-gray-500 uppercase tracking-wider font-medium mb-1.5"
+          className="mb-1.5 text-sm font-medium tracking-wider text-gray-500 uppercase"
           style={{ fontFamily: "var(--font-cinzel)" }}
         >
           Saving Throws
@@ -119,7 +119,7 @@ export function StatsTab({ character }: StatsTabProps) {
             return (
               <div key={save.ability} className="flex items-center gap-1.5 rounded px-2 py-1">
                 <span
-                  className={`inline-block w-2 h-2 rounded-full shrink-0 ${
+                  className={`inline-block h-2 w-2 shrink-0 rounded-full ${
                     save.proficient ? "bg-green-500" : "bg-gray-600 ring-1 ring-gray-500"
                   }`}
                 />
@@ -148,7 +148,7 @@ export function StatsTab({ character }: StatsTabProps) {
       {skills.length > 0 && (
         <div>
           <div
-            className="text-sm text-gray-500 uppercase tracking-wider font-medium mb-1.5"
+            className="mb-1.5 text-sm font-medium tracking-wider text-gray-500 uppercase"
             style={{ fontFamily: "var(--font-cinzel)" }}
           >
             Skills ({skills.filter((sk) => sk.proficient || sk.expertise).length} proficient)
@@ -173,7 +173,7 @@ export function StatsTab({ character }: StatsTabProps) {
                   }`}
                 >
                   <span
-                    className={`inline-block w-1.5 h-1.5 rounded-full shrink-0 ${
+                    className={`inline-block h-1.5 w-1.5 shrink-0 rounded-full ${
                       skill.expertise
                         ? "bg-yellow-500"
                         : skill.proficient
@@ -185,12 +185,12 @@ export function StatsTab({ character }: StatsTabProps) {
                     {SKILL_DISPLAY_NAMES[skill.name] || skill.name}
                   </span>
                   {skill.expertise && (
-                    <span className="text-xs text-yellow-500 font-bold uppercase">E</span>
+                    <span className="text-xs font-bold text-yellow-500 uppercase">E</span>
                   )}
                   <AdvMarker entries={skillAdvs} />
                   {skillFloor && (
                     <span
-                      className="text-[10px] text-amber-400/80 font-bold"
+                      className="text-xs font-bold text-amber-400/80"
                       title={
                         skillFloor.mode === "total"
                           ? `Roll floor: if total < ${skillFloor.min}, use ${skillFloor.min}`
@@ -223,7 +223,7 @@ export function StatsTab({ character }: StatsTabProps) {
         return (
           <div className="space-y-0.5">
             <div
-              className="text-sm text-gray-500 uppercase tracking-wider font-medium mb-1"
+              className="mb-1 text-sm font-medium tracking-wider text-gray-500 uppercase"
               style={{ fontFamily: "var(--font-cinzel)" }}
             >
               Advantages &amp; Disadvantages
@@ -236,7 +236,7 @@ export function StatsTab({ character }: StatsTabProps) {
                   className="flex items-start gap-1.5 px-2 py-0.5 text-xs"
                 >
                   <span
-                    className={`shrink-0 text-xs font-bold mt-0.5 ${
+                    className={`mt-0.5 shrink-0 text-xs font-bold ${
                       isAdv ? "text-green-400" : "text-red-400"
                     }`}
                   >
@@ -244,7 +244,7 @@ export function StatsTab({ character }: StatsTabProps) {
                   </span>
                   <span className="text-gray-300">
                     {a.subType.replace(/-/g, " ")}
-                    <span className="text-gray-500 italic ml-1">({a.restriction})</span>
+                    <span className="ml-1 text-gray-500 italic">({a.restriction})</span>
                   </span>
                 </div>
               );
@@ -260,7 +260,7 @@ export function StatsTab({ character }: StatsTabProps) {
         otherProfs.length > 0) && (
         <div>
           <div
-            className="text-sm text-gray-500 uppercase tracking-wider font-medium mb-1.5"
+            className="mb-1.5 text-sm font-medium tracking-wider text-gray-500 uppercase"
             style={{ fontFamily: "var(--font-cinzel)" }}
           >
             Proficiencies
@@ -268,25 +268,25 @@ export function StatsTab({ character }: StatsTabProps) {
           <div className="space-y-1.5">
             {armorProfs.length > 0 && (
               <div>
-                <div className="text-sm text-gray-500 font-medium">Armor</div>
+                <div className="text-sm font-medium text-gray-500">Armor</div>
                 <div className="text-xs text-gray-300">{armorProfs.join(", ")}</div>
               </div>
             )}
             {weaponProfs.length > 0 && (
               <div>
-                <div className="text-sm text-gray-500 font-medium">Weapons</div>
+                <div className="text-sm font-medium text-gray-500">Weapons</div>
                 <div className="text-xs text-gray-300">{weaponProfs.join(", ")}</div>
               </div>
             )}
             {toolProfs.length > 0 && (
               <div>
-                <div className="text-sm text-gray-500 font-medium">Tools</div>
+                <div className="text-sm font-medium text-gray-500">Tools</div>
                 <div className="text-xs text-gray-300">{toolProfs.join(", ")}</div>
               </div>
             )}
             {otherProfs.length > 0 && (
               <div>
-                <div className="text-sm text-gray-500 font-medium">Other</div>
+                <div className="text-sm font-medium text-gray-500">Other</div>
                 <div className="text-xs text-gray-300">{otherProfs.join(", ")}</div>
               </div>
             )}
@@ -300,7 +300,7 @@ export function StatsTab({ character }: StatsTabProps) {
           {s.languages.length > 0 && (
             <div>
               <div
-                className="text-sm text-gray-500 uppercase tracking-wider font-medium mb-0.5"
+                className="mb-0.5 text-sm font-medium tracking-wider text-gray-500 uppercase"
                 style={{ fontFamily: "var(--font-cinzel)" }}
               >
                 Languages
@@ -311,7 +311,7 @@ export function StatsTab({ character }: StatsTabProps) {
           {senses.length > 0 && (
             <div>
               <div
-                className="text-sm text-gray-500 uppercase tracking-wider font-medium mb-0.5"
+                className="mb-0.5 text-sm font-medium tracking-wider text-gray-500 uppercase"
                 style={{ fontFamily: "var(--font-cinzel)" }}
               >
                 Senses

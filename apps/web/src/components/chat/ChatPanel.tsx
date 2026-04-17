@@ -134,17 +134,17 @@ export function ChatPanel({
   const isConnected = connectionState === "connected";
 
   return (
-    <div className="flex-1 flex flex-col min-h-0 min-w-0">
+    <div className="flex min-h-0 min-w-0 flex-1 flex-col">
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3 min-h-0">
+      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4">
         {messages.length === 0 && (
-          <div className="text-center text-gray-600 mt-16">
-            <p className="text-lg mb-2 text-gray-500" style={{ fontFamily: "var(--font-cinzel)" }}>
+          <div className="mt-16 text-center text-gray-600">
+            <p className="mb-2 text-lg text-gray-500" style={{ fontFamily: "var(--font-cinzel)" }}>
               {typingPlayers?.includes("DM")
                 ? "The Dungeon Master is preparing\u2026"
                 : "Waiting for the adventure to begin\u2026"}
             </p>
-            <div className="w-16 h-px bg-gradient-to-r from-transparent via-amber-500/30 to-transparent mx-auto" />
+            <div className="mx-auto h-px w-16 bg-gradient-to-r from-transparent via-amber-500/30 to-transparent" />
           </div>
         )}
         {messages.map((msg, i) => (
@@ -160,23 +160,23 @@ export function ChatPanel({
 
       {/* Typing Indicator */}
       {typingPlayers && typingPlayers.length > 0 && (
-        <div className="px-4 py-1.5 text-sm text-gray-400 italic shrink-0">
+        <div className="shrink-0 px-4 py-1.5 text-sm text-gray-400 italic">
           {formatTypingText(typingPlayers)}
         </div>
       )}
 
       {/* AoE staged badge */}
       {stagedAoE && (
-        <div className="px-4 py-2 shrink-0 border-t border-amber-800/30 bg-amber-950/20">
+        <div className="shrink-0 border-t border-amber-800/30 bg-amber-950/20 px-4 py-2">
           <div className="flex items-center gap-2 text-xs">
             <span className="text-amber-400/70">AoE</span>
-            <span className="text-amber-300 font-medium truncate flex-1">
+            <span className="flex-1 truncate font-medium text-amber-300">
               {stagedAoE.spellName ?? stagedAoE.label ?? "Template"} &middot; {stagedAoE.size}ft{" "}
               {stagedAoE.shape === "rectangle"
                 ? (stagedAoE.rectanglePreset ?? "rectangle")
                 : stagedAoE.shape}
               {stagedAoECounts && (
-                <span className="text-amber-500/70 ml-1">
+                <span className="ml-1 text-amber-500/70">
                   &middot;{" "}
                   {stagedAoECounts.enemies.length +
                     stagedAoECounts.allies.length +
@@ -188,7 +188,7 @@ export function ChatPanel({
             <button
               type="button"
               onClick={onCancelAoE}
-              className="text-gray-500 hover:text-gray-300 transition-colors ml-1 text-base leading-none"
+              className="ml-1 text-base leading-none text-gray-500 transition-colors hover:text-gray-300"
               title="Cancel AoE placement"
             >
               &times;
@@ -198,8 +198,8 @@ export function ChatPanel({
       )}
 
       {/* Input */}
-      <form onSubmit={handleSubmit} className="border-t border-gray-700/40 p-4 shrink-0">
-        <div className="flex gap-2 items-center">
+      <form onSubmit={handleSubmit} className="shrink-0 border-t border-gray-700/40 p-4">
+        <div className="flex items-center gap-2">
           {characterTrigger}
           <input
             type="text"
@@ -208,9 +208,9 @@ export function ChatPanel({
             placeholder={isConnected ? "What do you do?" : "Connecting..."}
             disabled={!isConnected}
             maxLength={2000}
-            className="flex-1 bg-gray-900/60 border border-gray-700/50 rounded-lg px-4 py-2.5
-                       text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-1
-                       focus:ring-amber-500/50 focus:border-amber-500/30 disabled:opacity-50"
+            className="flex-1 rounded-lg border border-gray-700/50 bg-gray-900/60 px-4 py-2.5
+                       text-gray-100 placeholder-gray-500 focus:border-amber-500/30 focus:ring-1
+                       focus:ring-amber-500/50 focus:outline-none disabled:opacity-50"
           />
           {isMyTurn && onEndTurn && (
             <Button type="button" onClick={onEndTurn} size="md">

@@ -99,9 +99,9 @@ export function CampaignConfigModal({ campaigns, onSubmit, onClose }: CampaignCo
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="bg-gray-800/60 rounded-xl w-full max-w-lg max-h-[85vh] flex flex-col mx-4 border border-gray-700/40 shadow-2xl">
+      <div className="mx-4 flex max-h-modal w-full max-w-lg flex-col rounded-xl border border-gray-700/40 bg-gray-800/60 shadow-2xl">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-700/40">
+        <div className="flex items-center justify-between border-b border-gray-700/40 px-5 py-4">
           <div>
             <h2
               className="text-base font-semibold text-amber-200/90"
@@ -109,7 +109,7 @@ export function CampaignConfigModal({ campaigns, onSubmit, onClose }: CampaignCo
             >
               Configure Campaign
             </h2>
-            <p className="text-xs text-gray-500 mt-0.5">
+            <p className="mt-0.5 text-xs text-gray-500">
               Set up your campaign before starting the adventure
             </p>
           </div>
@@ -119,14 +119,14 @@ export function CampaignConfigModal({ campaigns, onSubmit, onClose }: CampaignCo
         </div>
 
         {/* Body */}
-        <div className="flex-1 overflow-y-auto p-5 space-y-4">
+        <div className="flex-1 space-y-4 overflow-y-auto p-5">
           {/* Campaign Selection */}
           <div className="space-y-2">
             {campaigns.length > 0 && (
               <div className="flex gap-2">
                 <button
                   onClick={() => setMode("existing")}
-                  className={`flex-1 py-1.5 text-sm rounded-lg border transition-colors ${
+                  className={`flex-1 rounded-lg border py-1.5 text-sm transition-colors ${
                     mode === "existing"
                       ? "border-amber-500 bg-amber-600/20 text-amber-300"
                       : "border-gray-700/40 text-gray-400 hover:border-gray-600"
@@ -141,7 +141,7 @@ export function CampaignConfigModal({ campaigns, onSubmit, onClose }: CampaignCo
                     setEncounterLength("standard");
                     setSystemPrompt("");
                   }}
-                  className={`flex-1 py-1.5 text-sm rounded-lg border transition-colors ${
+                  className={`flex-1 rounded-lg border py-1.5 text-sm transition-colors ${
                     mode === "new"
                       ? "border-amber-500 bg-amber-600/20 text-amber-300"
                       : "border-gray-700/40 text-gray-400 hover:border-gray-600"
@@ -156,8 +156,8 @@ export function CampaignConfigModal({ campaigns, onSubmit, onClose }: CampaignCo
               <select
                 value={selectedSlug}
                 onChange={(e) => setSelectedSlug(e.target.value)}
-                className="w-full bg-gray-900/60 border border-gray-700/40 rounded-lg px-3 py-2
-                           text-sm text-gray-200 focus:outline-none focus:ring-1 focus:ring-amber-500/50 focus:border-amber-500/30"
+                className="w-full rounded-lg border border-gray-700/40 bg-gray-900/60 px-3 py-2
+                           text-sm text-gray-200 focus:border-amber-500/30 focus:ring-1 focus:ring-amber-500/50 focus:outline-none"
               >
                 {campaigns.map((c) => (
                   <option key={c.slug} value={c.slug}>
@@ -168,7 +168,7 @@ export function CampaignConfigModal({ campaigns, onSubmit, onClose }: CampaignCo
             ) : (
               <div>
                 <label
-                  className="text-sm text-gray-500 uppercase tracking-wider block mb-1"
+                  className="mb-1 block text-sm tracking-wider text-gray-500 uppercase"
                   style={{ fontFamily: "var(--font-cinzel)" }}
                 >
                   Campaign Name
@@ -179,9 +179,9 @@ export function CampaignConfigModal({ campaigns, onSubmit, onClose }: CampaignCo
                   onChange={(e) => setCampaignName(e.target.value)}
                   placeholder="e.g. The Lost Mines of Phandelver"
                   autoFocus
-                  className="w-full bg-gray-900/60 border border-gray-700/40 rounded-lg px-3 py-2
-                             text-sm text-gray-100 placeholder-gray-500 focus:outline-none
-                             focus:ring-1 focus:ring-amber-500/50 focus:border-amber-500/30"
+                  className="w-full rounded-lg border border-gray-700/40 bg-gray-900/60 px-3 py-2
+                             text-sm text-gray-100 placeholder-gray-500 focus:border-amber-500/30
+                             focus:ring-1 focus:ring-amber-500/50 focus:outline-none"
                 />
               </div>
             )}
@@ -193,7 +193,7 @@ export function CampaignConfigModal({ campaigns, onSubmit, onClose }: CampaignCo
           {/* Pacing */}
           <div>
             <label
-              className="text-sm text-gray-500 uppercase tracking-wider block mb-1"
+              className="mb-1 block text-sm tracking-wider text-gray-500 uppercase"
               style={{ fontFamily: "var(--font-cinzel)" }}
             >
               Pacing
@@ -201,8 +201,8 @@ export function CampaignConfigModal({ campaigns, onSubmit, onClose }: CampaignCo
             <select
               value={pacingProfile}
               onChange={(e) => setPacingProfile(e.target.value as PacingProfile)}
-              className="w-full bg-gray-900/60 border border-gray-700/40 rounded-lg px-3 py-2
-                         text-sm text-gray-200 focus:outline-none focus:ring-1 focus:ring-amber-500/50 focus:border-amber-500/30"
+              className="w-full rounded-lg border border-gray-700/40 bg-gray-900/60 px-3 py-2
+                         text-sm text-gray-200 focus:border-amber-500/30 focus:ring-1 focus:ring-amber-500/50 focus:outline-none"
             >
               <option value="story-heavy">Story-Heavy</option>
               <option value="balanced">Balanced</option>
@@ -213,7 +213,7 @@ export function CampaignConfigModal({ campaigns, onSubmit, onClose }: CampaignCo
           {/* Encounter Length */}
           <div>
             <label
-              className="text-sm text-gray-500 uppercase tracking-wider block mb-1"
+              className="mb-1 block text-sm tracking-wider text-gray-500 uppercase"
               style={{ fontFamily: "var(--font-cinzel)" }}
             >
               Encounter Length
@@ -221,8 +221,8 @@ export function CampaignConfigModal({ campaigns, onSubmit, onClose }: CampaignCo
             <select
               value={encounterLength}
               onChange={(e) => setEncounterLength(e.target.value as EncounterLength)}
-              className="w-full bg-gray-900/60 border border-gray-700/40 rounded-lg px-3 py-2
-                         text-sm text-gray-200 focus:outline-none focus:ring-1 focus:ring-amber-500/50 focus:border-amber-500/30"
+              className="w-full rounded-lg border border-gray-700/40 bg-gray-900/60 px-3 py-2
+                         text-sm text-gray-200 focus:border-amber-500/30 focus:ring-1 focus:ring-amber-500/50 focus:outline-none"
             >
               <option value="quick">Quick</option>
               <option value="standard">Standard</option>
@@ -234,7 +234,7 @@ export function CampaignConfigModal({ campaigns, onSubmit, onClose }: CampaignCo
           <div>
             <button
               onClick={() => setShowPrompt(!showPrompt)}
-              className="flex items-center gap-2 text-sm text-gray-400 hover:text-gray-200 transition-colors"
+              className="flex items-center gap-2 text-sm text-gray-400 transition-colors hover:text-gray-200"
             >
               <span
                 className={`text-xs text-gray-600 transition-transform ${showPrompt ? "rotate-90" : ""}`}
@@ -243,7 +243,7 @@ export function CampaignConfigModal({ campaigns, onSubmit, onClose }: CampaignCo
               </span>
               <span>Custom DM Instructions</span>
               {hasCustomPrompt && (
-                <span className="text-xs px-1.5 py-0.5 rounded-full font-medium bg-yellow-600/20 text-yellow-400">
+                <span className="rounded-full bg-yellow-600/20 px-1.5 py-0.5 text-xs font-medium text-yellow-400">
                   Custom
                 </span>
               )}
@@ -254,10 +254,10 @@ export function CampaignConfigModal({ campaigns, onSubmit, onClose }: CampaignCo
                   value={systemPrompt}
                   onChange={(e) => setSystemPrompt(e.target.value)}
                   placeholder="e.g. Use a dark gothic horror tone. NPCs speak in riddles. Be generous with loot..."
-                  className="w-full h-48 bg-gray-900/60 border border-gray-700/40 rounded-lg px-3 py-2
-                             text-sm text-gray-200 font-mono leading-relaxed resize-y
+                  className="h-48 w-full resize-y rounded-lg border border-gray-700/40 bg-gray-900/60 px-3
+                             py-2 font-mono text-sm leading-relaxed text-gray-200
                              placeholder-gray-600
-                             focus:outline-none focus:ring-1 focus:ring-amber-500/50 focus:border-amber-500/30"
+                             focus:border-amber-500/30 focus:ring-1 focus:ring-amber-500/50 focus:outline-none"
                   spellCheck={false}
                 />
                 <div className="flex items-center justify-between text-xs text-gray-500">
@@ -268,7 +268,7 @@ export function CampaignConfigModal({ campaigns, onSubmit, onClose }: CampaignCo
                     </Button>
                   )}
                 </div>
-                <p className="text-xs text-gray-600 leading-relaxed">
+                <p className="text-xs leading-relaxed text-gray-600">
                   These are added on top of the default DM rules (combat, dice, identity, etc.).
                   Leave empty to use defaults only.
                 </p>
@@ -278,7 +278,7 @@ export function CampaignConfigModal({ campaigns, onSubmit, onClose }: CampaignCo
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-2 px-5 py-4 border-t border-gray-700/40">
+        <div className="flex items-center justify-end gap-2 border-t border-gray-700/40 px-5 py-4">
           <Button variant="ghost" size="md" onClick={onClose}>
             Cancel
           </Button>

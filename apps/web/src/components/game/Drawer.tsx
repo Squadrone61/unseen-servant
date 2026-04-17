@@ -28,13 +28,13 @@ export function Drawer({
       {/* Panel */}
       <div
         className={`fixed top-0 ${side === "right" ? "right-0" : "left-0"} z-50
-                    ${width} h-full bg-gray-900 border-${side === "right" ? "l" : "r"} border-gray-700/40
-                    flex flex-col shadow-2xl`}
+                    ${width} border- h-full bg-gray-900${side === "right" ? "l" : "r"} flex
+                    flex-col border-gray-700/40 shadow-2xl`}
       >
         {/* Header */}
-        <div className="flex items-center justify-between h-11 px-4 border-b border-gray-700/30 shrink-0">
+        <div className="flex h-11 shrink-0 items-center justify-between border-b border-gray-700/30 px-4">
           <span
-            className="text-sm text-gray-400 uppercase tracking-wider font-medium"
+            className="text-sm font-medium tracking-wider text-gray-400 uppercase"
             style={{ fontFamily: "var(--font-cinzel)" }}
           >
             {title}

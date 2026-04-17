@@ -85,7 +85,7 @@ const METHOD_OPTIONS: { value: AbilityMethod; label: string; hint: string }[] = 
 function MethodSelector({ method, onChange }: MethodSelectorProps) {
   return (
     <div
-      className="flex gap-2 flex-wrap"
+      className="flex flex-wrap gap-2"
       role="radiogroup"
       aria-label="Ability score generation method"
     >
@@ -118,7 +118,7 @@ function MethodSelector({ method, onChange }: MethodSelectorProps) {
               ].join(" ")}
             >
               {selected && (
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-400" aria-hidden="true" />
+                <span className="h-1.5 w-1.5 rounded-full bg-amber-400" aria-hidden="true" />
               )}
             </span>
             {opt.label}
@@ -161,18 +161,18 @@ function StandardArrayAllocator({ bases, bgBonuses, onChange }: StandardArrayAll
         return (
           <div
             key={ability}
-            className="grid items-center gap-x-3 bg-gray-800/40 border border-gray-700/30 rounded-lg px-4 py-3"
+            className="grid items-center gap-x-3 rounded-lg border border-gray-700/30 bg-gray-800/40 px-4 py-3"
             style={{ gridTemplateColumns: "5rem 1fr auto auto auto" }}
           >
             {/* Col 1: Ability name */}
-            <span className="font-medium text-gray-300 text-sm">{ABILITY_LABELS[ability]}</span>
+            <span className="text-sm font-medium text-gray-300">{ABILITY_LABELS[ability]}</span>
 
             {/* Col 2: Base score dropdown */}
             <select
               value={base}
               onChange={(e) => handleChange(ability, Number(e.target.value))}
               aria-label={`${ABILITY_LABELS[ability]} base score`}
-              className="bg-gray-900/60 border border-gray-700/40 rounded px-2 py-1 text-center text-sm text-gray-200 focus:outline-none focus:border-amber-500/50 transition-colors"
+              className="rounded border border-gray-700/40 bg-gray-900/60 px-2 py-1 text-center text-sm text-gray-200 transition-colors focus:border-amber-500/50 focus:outline-none"
             >
               <option value={0}>{base === 0 ? "—" : "Clear"}</option>
               {availableOptions.map((opt) => (
@@ -184,7 +184,7 @@ function StandardArrayAllocator({ bases, bgBonuses, onChange }: StandardArrayAll
 
             {/* Col 3: Background bonus */}
             {bg !== 0 ? (
-              <span className="text-amber-400/80 text-xs text-center">+{bg} bg</span>
+              <span className="text-center text-xs text-amber-400/80">+{bg} bg</span>
             ) : (
               <span className="text-xs text-transparent select-none" aria-hidden="true">
                 +0 bg
@@ -192,23 +192,23 @@ function StandardArrayAllocator({ bases, bgBonuses, onChange }: StandardArrayAll
             )}
 
             {/* Col 4: = sign */}
-            <span className="text-gray-600 text-xs text-center" aria-hidden="true">
+            <span className="text-center text-xs text-gray-600" aria-hidden="true">
               =
             </span>
 
             {/* Col 5: Final score + modifier */}
-            <span className="text-sm text-center">
+            <span className="text-center text-sm">
               {base === 0 ? (
                 <span className="text-gray-500">—</span>
               ) : (
                 <>
                   <span
-                    className="text-amber-200 font-semibold"
+                    className="font-semibold text-amber-200"
                     aria-label={`Final ${ABILITY_LABELS[ability]}`}
                   >
                     {final}
                   </span>
-                  <span className="text-gray-400 ml-1">({formatMod(final)})</span>
+                  <span className="ml-1 text-gray-400">({formatMod(final)})</span>
                 </>
               )}
             </span>
@@ -291,11 +291,11 @@ function PointBuyAllocator({ bases, bgBonuses, onChange }: PointBuyAllocatorProp
           return (
             <div
               key={ability}
-              className="grid items-center gap-x-3 bg-gray-800/40 border border-gray-700/30 rounded-lg px-4 py-3"
+              className="grid items-center gap-x-3 rounded-lg border border-gray-700/30 bg-gray-800/40 px-4 py-3"
               style={{ gridTemplateColumns: "5rem 1fr auto auto auto" }}
             >
               {/* Col 1: Ability name */}
-              <span className="font-medium text-gray-300 text-sm">{ABILITY_LABELS[ability]}</span>
+              <span className="text-sm font-medium text-gray-300">{ABILITY_LABELS[ability]}</span>
 
               {/* Col 2: − score + cost */}
               <div className="flex items-center gap-2">
@@ -313,7 +313,7 @@ function PointBuyAllocator({ bases, bgBonuses, onChange }: PointBuyAllocatorProp
                 >
                   −
                 </button>
-                <span className="bg-gray-900/60 border border-gray-700/40 rounded px-2 py-1 w-10 text-center text-sm text-gray-200 tabular-nums">
+                <span className="w-10 rounded border border-gray-700/40 bg-gray-900/60 px-2 py-1 text-center text-sm text-gray-200 tabular-nums">
                   {base}
                 </span>
                 <button
@@ -330,12 +330,12 @@ function PointBuyAllocator({ bases, bgBonuses, onChange }: PointBuyAllocatorProp
                 >
                   +
                 </button>
-                <span className="text-gray-600 text-xs">{cost}pt</span>
+                <span className="text-xs text-gray-600">{cost}pt</span>
               </div>
 
               {/* Col 3: Background bonus */}
               {bg !== 0 ? (
-                <span className="text-amber-400/80 text-xs text-center">+{bg} bg</span>
+                <span className="text-center text-xs text-amber-400/80">+{bg} bg</span>
               ) : (
                 <span className="text-xs text-transparent select-none" aria-hidden="true">
                   +0 bg
@@ -343,19 +343,19 @@ function PointBuyAllocator({ bases, bgBonuses, onChange }: PointBuyAllocatorProp
               )}
 
               {/* Col 4: = sign */}
-              <span className="text-gray-600 text-xs text-center" aria-hidden="true">
+              <span className="text-center text-xs text-gray-600" aria-hidden="true">
                 =
               </span>
 
               {/* Col 5: Final score + modifier */}
-              <span className="text-sm text-center">
+              <span className="text-center text-sm">
                 <span
-                  className="text-amber-200 font-semibold"
+                  className="font-semibold text-amber-200"
                   aria-label={`Final ${ABILITY_LABELS[ability]}`}
                 >
                   {final}
                 </span>
-                <span className="text-gray-400 ml-1">({formatMod(final)})</span>
+                <span className="ml-1 text-gray-400">({formatMod(final)})</span>
               </span>
             </div>
           );
@@ -393,11 +393,11 @@ function ManualAllocator({ bases, bgBonuses, onChange }: ManualAllocatorProps) {
         return (
           <div
             key={ability}
-            className="grid items-center gap-x-3 bg-gray-800/40 border border-gray-700/30 rounded-lg px-4 py-3"
+            className="grid items-center gap-x-3 rounded-lg border border-gray-700/30 bg-gray-800/40 px-4 py-3"
             style={{ gridTemplateColumns: "5rem 1fr auto auto auto" }}
           >
             {/* Col 1: Ability name */}
-            <span className="font-medium text-gray-300 text-sm">{ABILITY_LABELS[ability]}</span>
+            <span className="text-sm font-medium text-gray-300">{ABILITY_LABELS[ability]}</span>
 
             {/* Col 2: Free input */}
             <input
@@ -407,12 +407,12 @@ function ManualAllocator({ bases, bgBonuses, onChange }: ManualAllocatorProps) {
               value={base}
               onChange={(e) => handleChange(ability, e.target.value)}
               aria-label={`${ABILITY_LABELS[ability]} score`}
-              className="bg-gray-900/60 border border-gray-700/40 rounded px-2 py-1 text-center text-sm text-gray-200 focus:outline-none focus:border-amber-500/50 transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              className="appearance-textfield rounded border border-gray-700/40 bg-gray-900/60 px-2 py-1 text-center text-sm text-gray-200 transition-colors focus:border-amber-500/50 focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
             />
 
             {/* Col 3: Background bonus */}
             {bg !== 0 ? (
-              <span className="text-amber-400/80 text-xs text-center">+{bg} bg</span>
+              <span className="text-center text-xs text-amber-400/80">+{bg} bg</span>
             ) : (
               <span className="text-xs text-transparent select-none" aria-hidden="true">
                 +0 bg
@@ -420,19 +420,19 @@ function ManualAllocator({ bases, bgBonuses, onChange }: ManualAllocatorProps) {
             )}
 
             {/* Col 4: = sign */}
-            <span className="text-gray-600 text-xs text-center" aria-hidden="true">
+            <span className="text-center text-xs text-gray-600" aria-hidden="true">
               =
             </span>
 
             {/* Col 5: Final score + modifier */}
-            <span className="text-sm text-center">
+            <span className="text-center text-sm">
               <span
-                className="text-amber-200 font-semibold"
+                className="font-semibold text-amber-200"
                 aria-label={`Final ${ABILITY_LABELS[ability]}`}
               >
                 {final}
               </span>
-              <span className="text-gray-400 ml-1">({formatMod(final)})</span>
+              <span className="ml-1 text-gray-400">({formatMod(final)})</span>
             </span>
           </div>
         );
@@ -490,10 +490,7 @@ export function AbilitiesStep() {
     <section aria-labelledby="abilities-step-heading" className="flex flex-col gap-6">
       {/* Section header */}
       <div>
-        <h1
-          id="abilities-step-heading"
-          className="text-xl font-[family-name:var(--font-cinzel)] text-amber-200/90 mb-1"
-        >
+        <h1 id="abilities-step-heading" className="mb-1 font-cinzel text-xl text-amber-200/90">
           Ability Scores
         </h1>
         <p className="text-sm text-gray-400">
@@ -504,7 +501,7 @@ export function AbilitiesStep() {
 
       {/* Method selector */}
       <div className="flex flex-col gap-2">
-        <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+        <span className="text-xs font-medium tracking-wider text-gray-500 uppercase">
           Generation Method
         </span>
         <MethodSelector method={state.abilityMethod} onChange={handleMethodChange} />
@@ -518,7 +515,7 @@ export function AbilitiesStep() {
 
       {/* Column headers */}
       <div
-        className="grid items-center gap-x-3 px-4 text-xs text-gray-600 uppercase tracking-wider"
+        className="grid items-center gap-x-3 px-4 text-xs tracking-wider text-gray-600 uppercase"
         style={{ gridTemplateColumns: "5rem 1fr auto auto auto" }}
       >
         <span>Ability</span>

@@ -20,28 +20,28 @@ interface ChatMessageProps {
 }
 
 const markdownComponents: Components = {
-  h1: ({ children }) => <h1 className="text-xl font-bold text-amber-300 mt-3 mb-1">{children}</h1>,
+  h1: ({ children }) => <h1 className="mt-3 mb-1 text-xl font-bold text-amber-300">{children}</h1>,
   h2: ({ children }) => (
-    <h2 className="text-lg font-bold text-amber-300 mt-2.5 mb-1">{children}</h2>
+    <h2 className="mt-2.5 mb-1 text-lg font-bold text-amber-300">{children}</h2>
   ),
   h3: ({ children }) => (
-    <h3 className="text-base font-bold text-amber-300 mt-2 mb-0.5">{children}</h3>
+    <h3 className="mt-2 mb-0.5 text-base font-bold text-amber-300">{children}</h3>
   ),
   h4: ({ children }) => (
-    <h4 className="text-sm font-bold text-amber-300 mt-1.5 mb-0.5">{children}</h4>
+    <h4 className="mt-1.5 mb-0.5 text-sm font-bold text-amber-300">{children}</h4>
   ),
-  p: ({ children }) => <p className="text-gray-200 mb-2 last:mb-0">{children}</p>,
+  p: ({ children }) => <p className="mb-2 text-gray-200 last:mb-0">{children}</p>,
   strong: ({ children }) => <strong className="font-bold text-gray-100">{children}</strong>,
-  em: ({ children }) => <em className="italic text-gray-300">{children}</em>,
+  em: ({ children }) => <em className="text-gray-300 italic">{children}</em>,
   ul: ({ children }) => (
-    <ul className="list-disc list-inside ml-2 mb-2 space-y-0.5 text-gray-200">{children}</ul>
+    <ul className="mb-2 ml-2 list-inside list-disc space-y-0.5 text-gray-200">{children}</ul>
   ),
   ol: ({ children }) => (
-    <ol className="list-decimal list-inside ml-2 mb-2 space-y-0.5 text-gray-200">{children}</ol>
+    <ol className="mb-2 ml-2 list-inside list-decimal space-y-0.5 text-gray-200">{children}</ol>
   ),
   li: ({ children }) => <li className="text-gray-200">{children}</li>,
   blockquote: ({ children }) => (
-    <blockquote className="border-l-2 border-amber-400/50 pl-3 my-2 italic text-gray-300">
+    <blockquote className="my-2 border-l-2 border-amber-400/50 pl-3 text-gray-300 italic">
       {children}
     </blockquote>
   ),
@@ -49,13 +49,13 @@ const markdownComponents: Components = {
     const isBlock = className?.includes("language-");
     if (isBlock) {
       return (
-        <code className="block bg-gray-800/60 rounded p-2 my-2 text-sm font-mono text-gray-200 overflow-x-auto">
+        <code className="my-2 block overflow-x-auto rounded bg-gray-800/60 p-2 font-mono text-sm text-gray-200">
           {children}
         </code>
       );
     }
     return (
-      <code className="bg-gray-800/60 rounded px-1 py-0.5 text-sm font-mono text-amber-300">
+      <code className="rounded bg-gray-800/60 px-1 py-0.5 font-mono text-sm text-amber-300">
         {children}
       </code>
     );
@@ -71,14 +71,14 @@ const markdownComponents: Components = {
       {children}
     </a>
   ),
-  hr: () => <hr className="border-gray-700/50 my-3" />,
+  hr: () => <hr className="my-3 border-gray-700/50" />,
   table: ({ children }) => (
-    <div className="overflow-x-auto my-2">
+    <div className="my-2 overflow-x-auto">
       <table className="min-w-full text-sm text-gray-200">{children}</table>
     </div>
   ),
   th: ({ children }) => (
-    <th className="border border-gray-700/40 px-2 py-1 bg-gray-800/60 font-semibold text-left">
+    <th className="border border-gray-700/40 bg-gray-800/60 px-2 py-1 text-left font-semibold">
       {children}
     </th>
   ),
@@ -91,7 +91,7 @@ function TTSButton({ text }: { text: string }) {
   return (
     <button
       onClick={() => (isSpeaking ? stop() : speak(text))}
-      className="p-1 rounded hover:bg-amber-800/40 text-amber-400 hover:text-amber-300 transition-colors shrink-0"
+      className="shrink-0 rounded p-1 text-amber-400 transition-colors hover:bg-amber-800/40 hover:text-amber-300"
       title={isSpeaking ? "Stop narration" : "Listen to narration"}
       aria-label={isSpeaking ? "Stop narration" : "Listen to narration"}
     >
@@ -100,7 +100,7 @@ function TTSButton({ text }: { text: string }) {
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 20 20"
           fill="currentColor"
-          className="w-4 h-4"
+          className="h-4 w-4"
         >
           <path d="M5.25 3A2.25 2.25 0 003 5.25v9.5A2.25 2.25 0 005.25 17h9.5A2.25 2.25 0 0017 14.75v-9.5A2.25 2.25 0 0014.75 3h-9.5z" />
         </svg>
@@ -109,7 +109,7 @@ function TTSButton({ text }: { text: string }) {
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 20 20"
           fill="currentColor"
-          className="w-4 h-4"
+          className="h-4 w-4"
         >
           <path d="M10 3.75a.75.75 0 00-1.264-.546L4.703 7H3.167a.75.75 0 00-.7.48A6.985 6.985 0 002 10c0 .887.165 1.737.468 2.52.111.29.39.48.7.48h1.535l4.033 3.796A.75.75 0 0010 16.25V3.75zM15.95 5.05a.75.75 0 00-1.06 1.061 5.5 5.5 0 010 7.778.75.75 0 001.06 1.06 7 7 0 000-9.899z" />
           <path d="M13.829 7.172a.75.75 0 00-1.061 1.06 2.5 2.5 0 010 3.536.75.75 0 001.06 1.06 4 4 0 000-5.656z" />
@@ -122,17 +122,17 @@ function TTSButton({ text }: { text: string }) {
 /** Renders individual die results as small badges: d20 [15] (dropped dice are dimmed + struck through) */
 function DieBadges({ roll }: { roll: RollResult }) {
   return (
-    <span className="inline-flex items-center gap-1 flex-wrap">
+    <span className="inline-flex flex-wrap items-center gap-1">
       {roll.rolls.map((r, i) => (
         <span
           key={i}
           className={`inline-flex items-center gap-0.5 ${r.dropped ? "opacity-40" : ""}`}
         >
-          <span className={`text-gray-500 text-xs ${r.dropped ? "line-through" : ""}`}>
+          <span className={`text-xs text-gray-500 ${r.dropped ? "line-through" : ""}`}>
             d{r.die}
           </span>
           <span
-            className={`text-xs font-mono font-semibold px-1.5 py-0.5 rounded ${
+            className={`rounded px-1.5 py-0.5 font-mono text-xs font-semibold ${
               r.dropped
                 ? "bg-gray-700/50 text-gray-500 line-through"
                 : "bg-gray-700/80 text-gray-200"
@@ -143,7 +143,7 @@ function DieBadges({ roll }: { roll: RollResult }) {
         </span>
       ))}
       {roll.modifier !== 0 && (
-        <span className="text-gray-400 text-xs font-mono">
+        <span className="font-mono text-xs text-gray-400">
           {roll.modifier > 0 ? `+${roll.modifier}` : roll.modifier}
         </span>
       )}
@@ -158,11 +158,11 @@ function CheckRollDisplay({ roll, dc }: { roll: RollResult; dc?: number }) {
   const totalColor = isCrit ? "text-yellow-400" : isFail ? "text-red-400" : "text-gray-100";
 
   return (
-    <div className="flex items-center gap-1.5 flex-wrap">
+    <div className="flex flex-wrap items-center gap-1.5">
       <DieBadges roll={roll} />
       <span className="text-gray-500">=</span>
       <span className={`text-sm font-bold ${totalColor}`}>{roll.total}</span>
-      {dc !== undefined && <span className="text-gray-500 text-xs">vs DC {dc}</span>}
+      {dc !== undefined && <span className="text-xs text-gray-500">vs DC {dc}</span>}
     </div>
   );
 }
@@ -170,11 +170,11 @@ function CheckRollDisplay({ roll, dc }: { roll: RollResult; dc?: number }) {
 /** Damage roll display: d6 [4] d6 [2] +3 = 9 */
 function DamageRollDisplay({ roll }: { roll: RollResult }) {
   return (
-    <div className="flex items-center gap-1.5 flex-wrap">
+    <div className="flex flex-wrap items-center gap-1.5">
       <DieBadges roll={roll} />
       <span className="text-gray-500">=</span>
       <span className="text-sm font-bold text-orange-300">{roll.total}</span>
-      <span className="text-gray-500 text-xs">damage</span>
+      <span className="text-xs text-gray-500">damage</span>
     </div>
   );
 }
@@ -191,7 +191,7 @@ function ResultBadge({
 }) {
   if (isCrit) {
     return (
-      <span className="text-xs font-bold uppercase px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">
+      <span className="rounded-full border border-yellow-500/30 bg-yellow-500/20 px-2 py-0.5 text-xs font-bold text-yellow-400 uppercase">
         Critical!
       </span>
     );
@@ -199,18 +199,18 @@ function ResultBadge({
 
   if (isFail) {
     return (
-      <span className="text-xs font-bold uppercase px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 border border-red-500/30">
+      <span className="rounded-full border border-red-500/30 bg-red-500/20 px-2 py-0.5 text-xs font-bold text-red-400 uppercase">
         Critical Fail!
       </span>
     );
   }
 
   return success ? (
-    <span className="text-xs font-bold uppercase px-2 py-0.5 rounded-full bg-green-500/20 text-green-400 border border-green-500/30">
+    <span className="rounded-full border border-green-500/30 bg-green-500/20 px-2 py-0.5 text-xs font-bold text-green-400 uppercase">
       Success
     </span>
   ) : (
-    <span className="text-xs font-bold uppercase px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 border border-red-500/30">
+    <span className="rounded-full border border-red-500/30 bg-red-500/20 px-2 py-0.5 text-xs font-bold text-red-400 uppercase">
       Failure
     </span>
   );
@@ -286,16 +286,16 @@ function CheckCard({
     myCharacterName && request.targetCharacter.toLowerCase() === myCharacterName.toLowerCase();
 
   return (
-    <div className={`border-l-4 p-3 rounded-r-lg ${bgColor} ${borderColor}`}>
+    <div className={`rounded-r-lg border-l-4 p-3 ${bgColor} ${borderColor}`}>
       {/* Header: check type + DC badge + result badge */}
-      <div className="flex items-center justify-between mb-1">
+      <div className="mb-1 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="text-lg">&#127922;</span>
           <span className="text-sm font-semibold text-gray-200">
             {isDamage ? "Damage Roll" : checkLabel}
           </span>
           {!isDamage && request.dc !== undefined && (
-            <span className="text-xs font-mono bg-gray-700/60 text-gray-300 px-1.5 py-0.5 rounded">
+            <span className="rounded bg-gray-700/60 px-1.5 py-0.5 font-mono text-xs text-gray-300">
               DC {request.dc}
             </span>
           )}
@@ -306,7 +306,7 @@ function CheckCard({
       </div>
 
       {/* Subtext: character name + reason */}
-      <div className="text-xs text-gray-400 mb-1.5">
+      <div className="mb-1.5 text-xs text-gray-400">
         <span className="text-gray-300">{request.targetCharacter}</span>
         {" — "}
         {request.reason}
@@ -345,7 +345,7 @@ function CheckCard({
               }
             }}
             maxLength={500}
-            className="w-full text-sm bg-gray-800/50 border border-gray-600 rounded px-2 py-1 text-gray-200 placeholder-gray-500 focus:outline-none focus:border-amber-500"
+            className="w-full rounded border border-gray-600 bg-gray-800/50 px-2 py-1 text-sm text-gray-200 placeholder-gray-500 focus:border-amber-500 focus:outline-none"
           />
           <Button
             variant="primary"
@@ -365,10 +365,10 @@ export function ChatMessage({ message, onRollDice, myCharacterName }: ChatMessag
     case "server:chat":
       return (
         <div className="flex gap-2">
-          <span className="font-bold text-blue-400 shrink-0">{message.playerName}:</span>
-          <span className="text-gray-200 flex-1">{message.content}</span>
+          <span className="shrink-0 font-bold text-blue-400">{message.playerName}:</span>
+          <span className="flex-1 text-gray-200">{message.content}</span>
           {"timestamp" in message && typeof message.timestamp === "number" && (
-            <span className="text-xs text-gray-600 shrink-0 self-start">
+            <span className="shrink-0 self-start text-xs text-gray-600">
               {formatTime(message.timestamp)}
             </span>
           )}
@@ -377,11 +377,11 @@ export function ChatMessage({ message, onRollDice, myCharacterName }: ChatMessag
 
     case "server:ai":
       return (
-        <div className="bg-amber-900/20 border-l-4 border-amber-500 p-3 rounded-r-lg">
-          <div className="flex items-center justify-between mb-1">
+        <div className="rounded-r-lg border-l-4 border-amber-500 bg-amber-900/20 p-3">
+          <div className="mb-1 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div
-                className="text-sm text-amber-400 font-semibold"
+                className="text-sm font-semibold text-amber-400"
                 style={{ fontFamily: "var(--font-cinzel)" }}
               >
                 Dungeon Master
@@ -392,7 +392,7 @@ export function ChatMessage({ message, onRollDice, myCharacterName }: ChatMessag
             </div>
             <TTSButton text={message.content} />
           </div>
-          <div className="text-gray-200 leading-relaxed prose-invert max-w-none">
+          <div className="prose-invert max-w-none leading-relaxed text-gray-200">
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
               rehypePlugins={[rehypeRaw]}
@@ -405,11 +405,11 @@ export function ChatMessage({ message, onRollDice, myCharacterName }: ChatMessag
       );
 
     case "server:system":
-      return <div className="text-center text-sm text-gray-500 italic py-1">{message.content}</div>;
+      return <div className="py-1 text-center text-sm text-gray-500 italic">{message.content}</div>;
 
     case "server:error":
       return (
-        <div className="text-center text-sm text-red-400 bg-red-900/20 p-2 rounded">
+        <div className="rounded bg-red-900/20 p-2 text-center text-sm text-red-400">
           Error: {message.message}
         </div>
       );
@@ -430,7 +430,7 @@ export function ChatMessage({ message, onRollDice, myCharacterName }: ChatMessag
       // Compact inline format for DM rolls to reduce chat clutter
       if (message.playerName === "DM") {
         return (
-          <div className="flex items-center gap-2 py-1 px-2 text-sm text-gray-400">
+          <div className="flex items-center gap-2 px-2 py-1 text-sm text-gray-400">
             <span className="text-xs">&#127922;</span>
             <span className="text-gray-500">DM rolled</span>
             <DieBadges roll={roll} />
@@ -447,21 +447,21 @@ export function ChatMessage({ message, onRollDice, myCharacterName }: ChatMessag
 
       return (
         <div
-          className={`border-l-4 p-3 rounded-r-lg ${
+          className={`rounded-r-lg border-l-4 p-3 ${
             isCrit
-              ? "bg-yellow-900/20 border-yellow-400"
+              ? "border-yellow-400 bg-yellow-900/20"
               : isFail
-                ? "bg-red-900/20 border-red-500"
-                : "bg-blue-900/20 border-blue-500"
+                ? "border-red-500 bg-red-900/20"
+                : "border-blue-500 bg-blue-900/20"
           }`}
         >
-          <div className="flex items-center gap-2 mb-1">
+          <div className="mb-1 flex items-center gap-2">
             <span className="text-lg">&#127922;</span>
-            <span className="text-xs font-semibold uppercase text-gray-400">
+            <span className="text-xs font-semibold text-gray-400 uppercase">
               {message.playerName} rolled
             </span>
           </div>
-          <div className="flex items-center gap-1.5 flex-wrap">
+          <div className="flex flex-wrap items-center gap-1.5">
             <DieBadges roll={roll} />
             <span className="text-gray-500">=</span>
             <span
@@ -472,9 +472,9 @@ export function ChatMessage({ message, onRollDice, myCharacterName }: ChatMessag
               {roll.total}
             </span>
           </div>
-          <div className="text-xs text-gray-400 mt-0.5">{roll.label}</div>
-          {isCrit && <div className="text-xs text-yellow-400 font-bold mt-1">CRITICAL HIT!</div>}
-          {isFail && <div className="text-xs text-red-400 font-bold mt-1">CRITICAL FAIL!</div>}
+          <div className="mt-0.5 text-xs text-gray-400">{roll.label}</div>
+          {isCrit && <div className="mt-1 text-xs font-bold text-yellow-400">CRITICAL HIT!</div>}
+          {isFail && <div className="mt-1 text-xs font-bold text-red-400">CRITICAL FAIL!</div>}
         </div>
       );
     }
@@ -486,11 +486,11 @@ export function ChatMessage({ message, onRollDice, myCharacterName }: ChatMessag
 
       return (
         <div
-          className={`border-l-4 p-3 rounded-r-lg ${
-            success ? "bg-green-900/20 border-green-500" : "bg-red-900/20 border-red-500"
+          className={`rounded-r-lg border-l-4 p-3 ${
+            success ? "border-green-500 bg-green-900/20" : "border-red-500 bg-red-900/20"
           }`}
         >
-          <div className="flex items-center gap-2 mb-1">
+          <div className="mb-1 flex items-center gap-2">
             <span className="text-lg">&#127922;</span>
             <span className={`font-bold ${success ? "text-green-400" : "text-red-400"}`}>
               {success ? "Success!" : "Failure!"}

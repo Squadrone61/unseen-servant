@@ -142,8 +142,8 @@ function StepSidebar({
   finishLabel = "Finish",
 }: StepSidebarProps) {
   return (
-    <aside className="w-[200px] shrink-0 flex flex-col bg-gray-900/50 border-l border-gray-700/40">
-      <div className="flex-1 py-4 overflow-y-auto">
+    <aside className="flex w-52 shrink-0 flex-col border-l border-gray-700/40 bg-gray-900/50">
+      <div className="flex-1 overflow-y-auto py-4">
         <ul className="flex flex-col gap-0.5 px-2">
           {STEPS.map((step) => {
             const isCurrent = step.id === activeStep;
@@ -186,7 +186,7 @@ function StepSidebar({
                       <svg
                         viewBox="0 0 12 12"
                         fill="none"
-                        className="w-3 h-3"
+                        className="h-3 w-3"
                         stroke="currentColor"
                         strokeWidth={2}
                         strokeLinecap="round"
@@ -195,7 +195,7 @@ function StepSidebar({
                         <path d="M2 6l3 3 5-5" />
                       </svg>
                     ) : isCurrent ? (
-                      <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                      <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
                     ) : (
                       step.number
                     )}
@@ -221,7 +221,7 @@ function StepSidebar({
               className={[
                 "w-full px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 disabled:cursor-not-allowed",
                 canFinish
-                  ? "bg-amber-600/80 hover:bg-amber-500/80 text-amber-50 shadow-[0_0_12px_rgba(245,158,11,0.15)] hover:shadow-[0_0_20px_rgba(245,158,11,0.25)]"
+                  ? "bg-amber-600/80 hover:bg-amber-500/80 text-amber-50 shadow-glow-amber hover:shadow-glow-amber-lg"
                   : "bg-gray-700 text-gray-500",
               ]
                 .filter(Boolean)
@@ -230,7 +230,7 @@ function StepSidebar({
               {finishLabel} ✓
             </button>
             {finishError && (
-              <p className="mt-1.5 px-1 text-xs text-red-400 leading-snug">{finishError}</p>
+              <p className="mt-1.5 px-1 text-xs leading-snug text-red-400">{finishError}</p>
             )}
           </li>
         </ul>
@@ -398,17 +398,17 @@ function BuilderLayout({
   const { stack } = useEntityPopover();
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-950">
+    <div className="flex min-h-screen flex-col bg-gray-950">
       <TopBar items={[{ label: "Characters", href: "/characters" }]} current={topBarCurrent} />
 
       <div className="flex flex-1 overflow-hidden">
         {/* Character sheet — left panel */}
-        <aside className="w-[380px] shrink-0 overflow-y-auto border-r border-gray-700/40 bg-gray-900/30">
+        <aside className="w-96 shrink-0 overflow-y-auto border-r border-gray-700/40 bg-gray-900/30">
           {character ? (
             <CharacterSheet character={character} />
           ) : (
-            <div className="flex items-center justify-center h-full p-6">
-              <p className="text-gray-600 text-sm text-center">
+            <div className="flex h-full items-center justify-center p-6">
+              <p className="text-center text-sm text-gray-600">
                 Select a species and class to see your character sheet
               </p>
             </div>
@@ -416,7 +416,7 @@ function BuilderLayout({
         </aside>
 
         {/* Main content — center */}
-        <main className="flex-1 overflow-y-auto p-6 min-w-0">
+        <main className="min-w-0 flex-1 overflow-y-auto p-6">
           <StepContent stepId={activeStep} />
 
           {/* Step navigation footer */}

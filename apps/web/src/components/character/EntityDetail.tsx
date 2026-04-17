@@ -42,11 +42,11 @@ export function EntityDetail({ data, onActionTriggered }: EntityDetailProps) {
 
       {/* 2. Badges row */}
       {badges && badges.length > 0 && (
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex flex-wrap items-center gap-2">
           {badges.map((badge, i) => {
             const toneClass = badge.tone ? BADGE_CLASSES[badge.tone] : BADGE_CLASSES.gray;
             return (
-              <span key={i} className={`text-xs px-2 py-0.5 rounded-full ${toneClass}`}>
+              <span key={i} className={`rounded-full px-2 py-0.5 text-xs ${toneClass}`}>
                 {badge.label}
               </span>
             );
@@ -69,7 +69,7 @@ export function EntityDetail({ data, onActionTriggered }: EntityDetailProps) {
                   : "text-gray-300";
             return (
               <div key={i} className={`${toneBorder} rounded px-2 py-1`}>
-                <div className="text-gray-500 uppercase text-[10px]">{prop.label}</div>
+                <div className="text-xs text-gray-500 uppercase">{prop.label}</div>
                 <div className={valueTone}>{prop.value}</div>
               </div>
             );
@@ -81,14 +81,14 @@ export function EntityDetail({ data, onActionTriggered }: EntityDetailProps) {
       {description && (
         <RichText
           text={description}
-          className="text-gray-300 text-sm"
+          className="text-sm text-gray-300"
           onEntityClick={onEntityClick}
         />
       )}
 
       {/* 5. Effect summary */}
       {effectSummary && (
-        <div className="text-xs text-gray-400 italic border-l-2 border-gray-600 pl-2">
+        <div className="border-l-2 border-gray-600 pl-2 text-xs text-gray-400 italic">
           {effectSummary}
         </div>
       )}
@@ -98,7 +98,7 @@ export function EntityDetail({ data, onActionTriggered }: EntityDetailProps) {
         <div className="space-y-2">
           {sections.map((section, i) => (
             <div key={i} className="flex items-baseline gap-2 text-sm">
-              <div className="text-[11px] text-gray-500 uppercase tracking-wide shrink-0">
+              <div className="shrink-0 text-xs tracking-wide text-gray-500 uppercase">
                 {section.heading}
               </div>
               <RichText
@@ -118,7 +118,7 @@ export function EntityDetail({ data, onActionTriggered }: EntityDetailProps) {
             <button
               key={i}
               onClick={() => onActionTriggered?.(action.label)}
-              className="w-full bg-amber-600/80 hover:bg-amber-500/80 text-amber-100 text-sm font-medium rounded-lg py-2 transition-colors flex items-center justify-center gap-2"
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-amber-600/80 py-2 text-sm font-medium text-amber-100 transition-colors hover:bg-amber-500/80"
             >
               <span>{action.label}</span>
               {action.hint && <span className="text-xs text-amber-300/70">{action.hint}</span>}

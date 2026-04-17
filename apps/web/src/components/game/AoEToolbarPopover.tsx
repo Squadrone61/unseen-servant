@@ -102,24 +102,24 @@ export function AoEToolbarPopover({
   return (
     <div
       ref={popoverRef}
-      className="absolute top-10 right-0 z-50 bg-gray-900 border border-gray-700/50 rounded-lg shadow-xl p-3 w-52"
+      className="absolute top-10 right-0 z-50 w-52 rounded-lg border border-gray-700/50 bg-gray-900 p-3 shadow-xl"
     >
-      <div className="text-xs text-gray-400 font-medium mb-2 uppercase tracking-wider">
+      <div className="mb-2 text-xs font-medium tracking-wider text-gray-400 uppercase">
         Place AoE Template
       </div>
 
       {/* Shape picker */}
       <div className="mb-3">
-        <div className="text-xs text-gray-500 mb-1">Shape</div>
+        <div className="mb-1 text-xs text-gray-500">Shape</div>
         <div className="grid grid-cols-3 gap-1">
           {(Object.keys(SHAPE_LABELS) as ShapeOption[]).map((s) => (
             <button
               key={s}
               onClick={() => setSelectedShape(s)}
-              className={`text-xs px-1.5 py-1 rounded transition-colors border ${
+              className={`rounded border px-1.5 py-1 text-xs transition-colors ${
                 selectedShape === s
-                  ? "bg-amber-600/30 border-amber-500/50 text-amber-300"
-                  : "bg-gray-800/60 border-gray-700/40 text-gray-400 hover:text-gray-200 hover:border-gray-600/50"
+                  ? "border-amber-500/50 bg-amber-600/30 text-amber-300"
+                  : "border-gray-700/40 bg-gray-800/60 text-gray-400 hover:border-gray-600/50 hover:text-gray-200"
               }`}
             >
               {SHAPE_LABELS[s]}
@@ -130,33 +130,33 @@ export function AoEToolbarPopover({
 
       {/* Size input */}
       <div className="mb-3">
-        <label className="text-xs text-gray-500 block mb-1">{sizeLabel}</label>
+        <label className="mb-1 block text-xs text-gray-500">{sizeLabel}</label>
         <input
           type="number"
           min={5}
           step={5}
           value={sizeInput}
           onChange={(e) => setSizeInput(e.target.value)}
-          className="w-full bg-gray-800/60 border border-gray-700/40 rounded px-2 py-1 text-xs text-gray-200 focus:outline-none focus:ring-1 focus:ring-amber-500/50"
+          className="w-full rounded border border-gray-700/40 bg-gray-800/60 px-2 py-1 text-xs text-gray-200 focus:ring-1 focus:ring-amber-500/50 focus:outline-none"
         />
       </div>
 
       {/* Optional label */}
       <div className="mb-3">
-        <label className="text-xs text-gray-500 block mb-1">Label (optional)</label>
+        <label className="mb-1 block text-xs text-gray-500">Label (optional)</label>
         <input
           type="text"
           value={label}
           onChange={(e) => setLabel(e.target.value)}
           placeholder="e.g. Fog Cloud"
           maxLength={30}
-          className="w-full bg-gray-800/60 border border-gray-700/40 rounded px-2 py-1 text-xs text-gray-200 placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-amber-500/50"
+          className="w-full rounded border border-gray-700/40 bg-gray-800/60 px-2 py-1 text-xs text-gray-200 placeholder-gray-600 focus:ring-1 focus:ring-amber-500/50 focus:outline-none"
         />
       </div>
 
       <button
         onClick={handleStart}
-        className="w-full bg-amber-600/80 hover:bg-amber-500/80 text-amber-100 text-xs font-medium rounded py-1.5 transition-colors"
+        className="w-full rounded bg-amber-600/80 py-1.5 text-xs font-medium text-amber-100 transition-colors hover:bg-amber-500/80"
       >
         Start Placing
       </button>

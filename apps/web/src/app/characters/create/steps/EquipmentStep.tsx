@@ -305,19 +305,19 @@ function WeaponCard({ item, selected, onToggle, disabled, notProficient }: ItemC
         >
           {item.name}
         </span>
-        <div className="shrink-0 flex items-center gap-1.5">
+        <div className="flex shrink-0 items-center gap-1.5">
           {notProficient && (
-            <span className="text-xs text-red-400/80 bg-red-900/20 border border-red-700/20 rounded px-1.5 py-0.5 leading-tight">
+            <span className="rounded border border-red-700/20 bg-red-900/20 px-1.5 py-0.5 text-xs leading-tight text-red-400/80">
               Not proficient
             </span>
           )}
           {item.damage && (
-            <span className="text-xs font-mono text-amber-400/80 bg-amber-900/20 border border-amber-700/20 rounded px-1.5 py-0.5 leading-tight">
+            <span className="rounded border border-amber-700/20 bg-amber-900/20 px-1.5 py-0.5 font-mono text-xs leading-tight text-amber-400/80">
               {item.damage} {item.damageType}
             </span>
           )}
           {item.mastery?.[0] && (
-            <span className="text-xs text-violet-400/80 bg-violet-900/20 border border-violet-700/20 rounded px-1.5 py-0.5 leading-tight">
+            <span className="rounded border border-violet-700/20 bg-violet-900/20 px-1.5 py-0.5 text-xs leading-tight text-violet-400/80">
               {item.mastery[0]}
             </span>
           )}
@@ -369,13 +369,13 @@ function ArmorCard({ item, selected, onToggle, disabled, notProficient }: ItemCa
         >
           {item.name}
         </span>
-        <div className="shrink-0 flex items-center gap-1.5">
+        <div className="flex shrink-0 items-center gap-1.5">
           {notProficient && (
-            <span className="text-xs text-red-400/80 bg-red-900/20 border border-red-700/20 rounded px-1.5 py-0.5 leading-tight">
+            <span className="rounded border border-red-700/20 bg-red-900/20 px-1.5 py-0.5 text-xs leading-tight text-red-400/80">
               Not proficient
             </span>
           )}
-          <span className="text-xs font-mono text-sky-400/80 bg-sky-900/20 border border-sky-700/20 rounded px-1.5 py-0.5 leading-tight">
+          <span className="rounded border border-sky-700/20 bg-sky-900/20 px-1.5 py-0.5 font-mono text-xs leading-tight text-sky-400/80">
             AC {item.ac ?? (typeCode(item.type) === "S" ? "+2" : "?")}
           </span>
         </div>
@@ -422,7 +422,7 @@ function PackCard({ pack, selected, onToggle }: PackCardProps) {
       >
         {pack.name}
       </span>
-      <p className="mt-0.5 text-xs text-gray-500 leading-snug">{packDescription(pack)}</p>
+      <p className="mt-0.5 text-xs leading-snug text-gray-500">{packDescription(pack)}</p>
     </button>
   );
 }
@@ -461,9 +461,9 @@ function EquipmentChipPanel({
 
   return (
     <div className="rounded-lg border border-gray-700/30 bg-gray-900/40 p-4">
-      <div className="flex items-center justify-between gap-2 mb-3">
+      <div className="mb-3 flex items-center justify-between gap-2">
         <h3
-          className="text-sm font-semibold text-amber-400/90 uppercase tracking-wider"
+          className="text-sm font-semibold tracking-wider text-amber-400/90 uppercase"
           style={{ fontFamily: "var(--font-cinzel)" }}
         >
           Your Equipment
@@ -471,15 +471,15 @@ function EquipmentChipPanel({
       </div>
 
       {equipment.length === 0 ? (
-        <p className="text-sm text-gray-600 italic mb-3">No equipment selected yet.</p>
+        <p className="mb-3 text-sm text-gray-600 italic">No equipment selected yet.</p>
       ) : (
-        <ul className="flex flex-col gap-1.5 mb-3">
+        <ul className="mb-3 flex flex-col gap-1.5">
           {equipment.map((item, i) => (
             <li
               key={`${item.name}-${i}`}
-              className="flex items-center gap-2 px-2.5 py-1.5 rounded-md border border-gray-700/40 bg-gray-800/50"
+              className="flex items-center gap-2 rounded-md border border-gray-700/40 bg-gray-800/50 px-2.5 py-1.5"
             >
-              <span className="flex-1 text-sm text-gray-200 truncate">
+              <span className="flex-1 truncate text-sm text-gray-200">
                 {item.name}
                 {item.quantity > 1 && (
                   <span className="ml-1 text-gray-500">&times;{item.quantity}</span>
@@ -491,7 +491,7 @@ function EquipmentChipPanel({
                 aria-pressed={item.equipped}
                 aria-label={item.equipped ? `Unequip ${item.name}` : `Equip ${item.name}`}
                 className={[
-                  "text-[11px] px-2 py-0.5 rounded-full border transition-colors",
+                  "text-xs px-2 py-0.5 rounded-full border transition-colors",
                   item.equipped
                     ? "border-emerald-500/40 bg-emerald-900/20 text-emerald-300 hover:bg-emerald-900/30"
                     : "border-gray-600/40 bg-gray-800/60 text-gray-400 hover:text-gray-200",
@@ -503,7 +503,7 @@ function EquipmentChipPanel({
                 type="button"
                 onClick={() => onRemove(i)}
                 aria-label={`Remove ${item.name}`}
-                className="text-gray-500 hover:text-red-400 transition-colors leading-none focus:outline-none px-1"
+                className="px-1 leading-none text-gray-500 transition-colors hover:text-red-400 focus:outline-none"
               >
                 &times;
               </button>
@@ -513,9 +513,9 @@ function EquipmentChipPanel({
       )}
 
       {/* Custom item input */}
-      <div className="flex items-end gap-2 pt-2 border-t border-gray-700/30">
+      <div className="flex items-end gap-2 border-t border-gray-700/30 pt-2">
         <label className="flex-1">
-          <span className="block text-[10px] uppercase tracking-wider text-gray-500 mb-1">
+          <span className="mb-1 block text-xs tracking-wider text-gray-500 uppercase">
             Add custom item
           </span>
           <input
@@ -529,24 +529,24 @@ function EquipmentChipPanel({
               }
             }}
             placeholder="e.g. Journal, Lucky coin..."
-            className="w-full bg-gray-800/60 border border-gray-700/40 rounded px-2 py-1 text-sm text-gray-200 placeholder-gray-600 focus:border-amber-500/50 focus:outline-none"
+            className="w-full rounded border border-gray-700/40 bg-gray-800/60 px-2 py-1 text-sm text-gray-200 placeholder-gray-600 focus:border-amber-500/50 focus:outline-none"
           />
         </label>
         <label className="w-16">
-          <span className="block text-[10px] uppercase tracking-wider text-gray-500 mb-1">Qty</span>
+          <span className="mb-1 block text-xs tracking-wider text-gray-500 uppercase">Qty</span>
           <input
             type="number"
             min={1}
             value={customQty}
             onChange={(e) => setCustomQty(parseInt(e.target.value || "1", 10))}
-            className="w-full bg-gray-800/60 border border-gray-700/40 rounded px-2 py-1 text-sm text-gray-200 focus:border-amber-500/50 focus:outline-none"
+            className="w-full rounded border border-gray-700/40 bg-gray-800/60 px-2 py-1 text-sm text-gray-200 focus:border-amber-500/50 focus:outline-none"
           />
         </label>
         <button
           type="button"
           onClick={handleAddCustom}
           disabled={!customName.trim()}
-          className="px-3 py-1 rounded text-sm font-medium border border-amber-500/40 bg-amber-900/20 text-amber-200 hover:bg-amber-900/30 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          className="rounded border border-amber-500/40 bg-amber-900/20 px-3 py-1 text-sm font-medium text-amber-200 transition-colors hover:bg-amber-900/30 disabled:cursor-not-allowed disabled:opacity-40"
         >
           Add
         </button>
@@ -716,15 +716,15 @@ function StartingEquipmentPanel() {
           onChange={(e) => setTabSearch(e.target.value)}
           placeholder={`Search ${activeTab === "gear" ? "gear & packs" : activeTab}...`}
           aria-label={`Search ${activeTab}`}
-          className="flex-1 bg-gray-800/60 border border-gray-700/40 rounded-lg px-3 py-1.5 text-sm text-gray-200 placeholder-gray-600 focus:border-amber-500/50 focus:outline-none"
+          className="flex-1 rounded-lg border border-gray-700/40 bg-gray-800/60 px-3 py-1.5 text-sm text-gray-200 placeholder-gray-600 focus:border-amber-500/50 focus:outline-none"
         />
         {activeTab !== "gear" && (
-          <label className="flex items-center gap-2 shrink-0 cursor-pointer select-none">
+          <label className="flex shrink-0 cursor-pointer items-center gap-2 select-none">
             <input
               type="checkbox"
               checked={showOnlyProficient}
               onChange={(e) => setShowOnlyProficient(e.target.checked)}
-              className="w-3.5 h-3.5 rounded accent-amber-500 cursor-pointer"
+              className="h-3.5 w-3.5 cursor-pointer rounded accent-amber-500"
             />
             <span className="text-xs text-gray-400">Proficient only</span>
           </label>
@@ -740,12 +740,12 @@ function StartingEquipmentPanel() {
             </p>
           ) : (
             <>
-              <p className="text-xs text-gray-500 mb-3">
+              <p className="mb-3 text-xs text-gray-500">
                 {weaponProf === "martial"
                   ? "You are proficient with simple and martial weapons."
                   : "You are proficient with simple weapons."}
               </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 {filteredWeapons.map((w) => (
                   <WeaponCard
                     key={w.name}
@@ -776,10 +776,10 @@ function StartingEquipmentPanel() {
             </p>
           ) : (
             <>
-              <p className="text-xs text-gray-500 mb-3">
+              <p className="mb-3 text-xs text-gray-500">
                 Select the armor and shield you start with.
               </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 {filteredArmor.map((a) => (
                   <ArmorCard
                     key={a.name}
@@ -806,15 +806,15 @@ function StartingEquipmentPanel() {
         <div className="flex flex-col gap-4">
           <div>
             <h4
-              className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-2"
+              className="mb-2 text-xs font-medium tracking-wider text-gray-400 uppercase"
               style={{ fontFamily: "var(--font-cinzel)" }}
             >
               Adventuring Packs
             </h4>
-            <p className="text-xs text-gray-500 mb-3">
+            <p className="mb-3 text-xs text-gray-500">
               Choose one pack. Each contains a curated set of supplies.
             </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               {packsArray
                 .filter((p) =>
                   tabSearch ? p.name.toLowerCase().includes(tabSearch.toLowerCase()) : true,
@@ -844,10 +844,7 @@ export function EquipmentStep() {
     <section aria-labelledby="equipment-step-heading" className="flex flex-col gap-6">
       {/* ── Header ── */}
       <div>
-        <h1
-          id="equipment-step-heading"
-          className="text-xl font-[family-name:var(--font-cinzel)] text-amber-200/90 mb-1"
-        >
+        <h1 id="equipment-step-heading" className="mb-1 font-cinzel text-xl text-amber-200/90">
           Choose Your Equipment
         </h1>
         <p className="text-sm text-gray-400">

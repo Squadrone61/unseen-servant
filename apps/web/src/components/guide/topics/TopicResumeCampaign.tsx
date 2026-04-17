@@ -3,19 +3,19 @@ import { GuideCallout } from "../GuideCallout";
 export function TopicResumeCampaign() {
   return (
     <div className="space-y-6">
-      <p className="text-sm text-amber-200/60 italic leading-relaxed border-l-2 border-amber-500/30 pl-4">
+      <p className="border-l-2 border-amber-500/30 pl-4 text-sm leading-relaxed text-amber-200/60 italic">
         The story does not end when the candles burn low. It waits, patient, for your return.
       </p>
 
       <Section title="Resuming the DM Session">
         <p>
           The host needs to re-launch the DM in their terminal with the same{" "}
-          <code className="text-amber-300/70 bg-gray-800/60 px-1 py-0.5 rounded text-xs">
+          <code className="rounded bg-gray-800/60 px-1 py-0.5 text-xs text-amber-300/70">
             --campaign
           </code>{" "}
           name used in the first session:
         </p>
-        <pre className="bg-gray-900/60 border border-gray-700/30 rounded-lg px-4 py-3 text-xs text-gray-300 font-mono overflow-x-auto whitespace-pre-wrap">
+        <pre className="overflow-x-auto rounded-lg border border-gray-700/30 bg-gray-900/60 px-4 py-3 font-mono text-xs whitespace-pre-wrap text-gray-300">
           {`node unseen-servant.mjs --room ABC123 --campaign "curse-of-strahd"`}
         </pre>
         <p>
@@ -32,7 +32,7 @@ export function TopicResumeCampaign() {
       </Section>
 
       <Section title="What Gets Restored">
-        <ul className="list-disc list-inside space-y-1 text-gray-400">
+        <ul className="list-inside list-disc space-y-1 text-gray-400">
           <li>
             <strong className="text-gray-300">Campaign notes</strong> — The DM remembers NPCs,
             locations, plot threads, and decisions from prior sessions
@@ -71,12 +71,12 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   return (
     <div className="space-y-3">
       <h3
-        className="text-sm font-semibold text-amber-200/80 uppercase tracking-wider"
+        className="text-sm font-semibold tracking-wider text-amber-200/80 uppercase"
         style={{ fontFamily: "var(--font-cinzel)" }}
       >
         {title}
       </h3>
-      <div className="space-y-3 text-sm text-gray-400 leading-relaxed">{children}</div>
+      <div className="space-y-3 text-sm leading-relaxed text-gray-400">{children}</div>
     </div>
   );
 }

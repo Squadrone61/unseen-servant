@@ -38,12 +38,12 @@ export default function CharacterDetailPage() {
 
   if (!saved) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="text-center space-y-3">
-          <div className="text-gray-400 text-lg">Character not found</div>
+      <div className="flex min-h-screen items-center justify-center p-4">
+        <div className="space-y-3 text-center">
+          <div className="text-lg text-gray-400">Character not found</div>
           <Link
             href="/characters"
-            className="text-sm text-amber-400 hover:text-amber-300 transition-colors"
+            className="text-sm text-amber-400 transition-colors hover:text-amber-300"
           >
             Back to Characters
           </Link>
@@ -60,7 +60,7 @@ export default function CharacterDetailPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="flex min-h-screen flex-col">
       <TopBar items={[{ label: "Characters", href: "/characters" }]} current={char.static.name}>
         <Link href={`/characters/${id}/edit`}>
           <Button variant="secondary" size="sm">
@@ -88,7 +88,7 @@ export default function CharacterDetailPage() {
 
       {/* Character sheet */}
       <div className="flex-1 overflow-y-auto">
-        <div className="max-w-4xl mx-auto py-4 px-6">
+        <div className="mx-auto max-w-4xl px-6 py-4">
           <CharacterSheet character={char} />
         </div>
       </div>
