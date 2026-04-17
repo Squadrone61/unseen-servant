@@ -231,9 +231,17 @@ export function ChoicePicker({
   const [query, setQuery] = useState("");
 
   const visibleOptions = useMemo(() => {
-    if (resolvedOptions.length <= 15 || !query.trim()) return resolvedOptions;
-    const lower = query.trim().toLowerCase();
-    return resolvedOptions.filter((o) => o.name.toLowerCase().includes(lower));
+    let opts = resolvedOptions;
+    if (opts.length > 15 && query.trim()) {
+      const lower = query.trim().toLowerCase();
+      opts = opts.filter((o) => o.name.toLowerCase().includes(lower));
+    }
+    // Sort: enabled options first, disabled last (stable within each group)
+    return [...opts].sort((a, b) => {
+      const ad = a.disabled ? 1 : 0;
+      const bd = b.disabled ? 1 : 0;
+      return ad - bd;
+    });
   }, [resolvedOptions, query]);
 
   const handleToggle = (optionId: string) => {

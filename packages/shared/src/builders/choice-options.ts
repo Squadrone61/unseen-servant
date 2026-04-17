@@ -33,6 +33,8 @@ export interface ResolveChoiceContext {
   className?: string;
   level?: number;
   features?: string[];
+  /** IDs already selected in other choice buckets (e.g. EI picks at other levels). */
+  excludeIds?: string[];
 }
 
 // ---------------------------------------------------------------------------
@@ -295,6 +297,7 @@ export function resolveChoice(choice: FeatureChoice, ctx?: ResolveChoiceContext)
 
     case "metamagic": {
       const options = getOptionalFeaturesByType("MM");
+      const excluded = new Set(ctx?.excludeIds);
       return options.map((opt) => ({
         id: opt.name,
         name: opt.name,
@@ -302,17 +305,24 @@ export function resolveChoice(choice: FeatureChoice, ctx?: ResolveChoiceContext)
           category: "optional_feature" as EntityCategory,
           name: opt.name,
         },
+        disabled: excluded.has(opt.name) || undefined,
+        disabledReason: excluded.has(opt.name) ? "Already selected" : undefined,
       }));
     }
 
     case "eldritch_invocation": {
       const options = getOptionalFeaturesByType("EI");
+      const excluded = new Set(ctx?.excludeIds);
       return options.map((opt) => {
         const subChoices = opt.choices?.filter((c) => c.timing === "permanent") ?? [];
         let disabled: boolean | undefined;
         let disabledReason: string | undefined;
 
-        if (opt.prerequisiteStructured) {
+        // Already selected at another level
+        if (excluded.has(opt.name)) {
+          disabled = true;
+          disabledReason = "Already selected";
+        } else if (opt.prerequisiteStructured) {
           if (!ctx?.className || ctx.className !== "Warlock") {
             disabled = true;
             disabledReason = opt.prerequisite ?? "Warlock only";

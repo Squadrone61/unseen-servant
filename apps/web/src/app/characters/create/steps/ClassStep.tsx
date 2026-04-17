@@ -623,13 +623,30 @@ function FeatureRow({
         <div className="flex flex-col gap-2 mt-1">
           {permanentChoices.map((choice) => {
             const choiceId = choicePrefix ? `${choicePrefix}${choice.id}` : choice.id;
+
+            // For pools that disallow duplicate picks across levels (e.g. EI, metamagic),
+            // gather selections from OTHER choice buckets with the same pool prefix.
+            let pickerCtx = ctx;
+            if (
+              "pool" in choice &&
+              (choice.pool === "eldritch_invocation" || choice.pool === "metamagic")
+            ) {
+              const prefix = choice.pool === "eldritch_invocation" ? "ei-" : "metamagic-";
+              const otherSelections = Object.entries(choiceSelections)
+                .filter(([id]) => id !== choiceId && id.startsWith(prefix))
+                .flatMap(([, vals]) => vals);
+              if (otherSelections.length > 0) {
+                pickerCtx = { ...ctx, excludeIds: otherSelections };
+              }
+            }
+
             return (
               <ChoicePicker
                 key={choiceId}
                 choice={choice}
                 selected={choiceSelections[choiceId] ?? []}
                 onSelect={(values) => onChoiceSelect(choiceId, values)}
-                ctx={ctx}
+                ctx={pickerCtx}
                 nestedSelections={choiceSelections}
                 onNestedSelect={(nestedId, values) => onChoiceSelect(nestedId, values)}
               />
@@ -1314,7 +1331,7 @@ export function ClassStep() {
                             onChoiceSelect={handleClassChoice}
                             choicePrefix=""
                             extra={subclassPrompt}
-                            ctx={{ className: activeClassName ?? undefined }}
+                            ctx={{ className: activeClassName ?? undefined, level: lvl }}
                           />
                         );
                       })}
