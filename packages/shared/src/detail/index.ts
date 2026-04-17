@@ -8,6 +8,7 @@ import type {
   ActionDb,
   DiseaseDb,
   StatusDb,
+  OptionalFeatureDb,
 } from "../types/data";
 import { getAbilities, getSkills, getSavingThrows } from "../character/resolve";
 import {
@@ -101,6 +102,7 @@ export interface EntityDetailPayload {
   disease: never;
   status: never;
   rule: never;
+  optional_feature: never;
 }
 
 // ---------------------------------------------------------------------------
@@ -415,5 +417,17 @@ export function entityDetailFromChoiceOption(data: ChoiceOptionDetailPayload): E
     title: "",
     description: data.description,
     effectSummary: data.effectSummary,
+  };
+}
+
+export function entityDetailFromOptionalFeature(opt: OptionalFeatureDb): EntityDetailData {
+  const badges: EntityDetailBadge[] = [];
+  if (opt.prerequisite) {
+    badges.push({ label: opt.prerequisite, tone: "gray" });
+  }
+  return {
+    title: opt.name,
+    badges: badges.length > 0 ? badges : undefined,
+    description: opt.description,
   };
 }

@@ -825,25 +825,15 @@
           "description": "You learn two spells of your choice. These spells can come from the Cleric, Druid, or Wizard spell list or any combination thereof. A spell you choose must be a cantrip or a spell for which you have spell slots, as shown in the Bard Features table.\n\nYou always have the chosen spells prepared, and whenever you gain a Bard level, you can replace one of the spells with another spell that meets these requirements.",
           "choices": [
             {
-              "id": "additional-magical-secrets",
+              "id": "magical-discoveries",
               "label": "Magical Discoveries",
               "count": 2,
               "timing": "permanent",
-              "options": [
-                {
-                  "label": "Choose 2 spells from the Cleric, Druid, or Wizard spell lists (cantrip or any level for which you have spell slots). These spells are always prepared and count as Bard spells for you."
-                }
-              ]
+              "pool": "spell_choice",
+              "from": ["Cleric", "Druid", "Wizard"],
+              "grantUsage": "always_prepared"
             }
-          ],
-          "effects": {
-            "properties": [
-              {
-                "type": "note",
-                "text": "Learn 2 spells from Cleric, Druid, or Wizard spell lists (cantrips or spells for which you have slots). Always prepared; swap one per Bard level gained."
-              }
-            ]
-          }
+          ]
         },
         {
           "name": "Peerless Skill",

@@ -275,6 +275,8 @@ export interface OptionalFeatureDb extends DbEntity {
   featureType: string[];
   /** Pre-formatted prerequisite string */
   prerequisite?: string;
+  /** Machine-readable prerequisite for pool validation (mirrors FeatDb pattern) */
+  prerequisiteStructured?: Prerequisite;
 }
 
 // ─── Monsters (rich stat blocks for AI DM, no effects) ─────

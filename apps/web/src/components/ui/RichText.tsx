@@ -21,6 +21,7 @@ const categoryStyles: Record<EntityCategory, string> = {
   "class-feature": "text-amber-300",
   "choice-option": "text-gray-300",
   "inventory-item": "text-amber-400",
+  optional_feature: "text-violet-400",
 };
 
 const KNOWN_CATEGORIES = new Set<string>([

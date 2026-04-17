@@ -21,7 +21,7 @@
 
 import type { FeatureChoice, EffectBundle, Property } from "../types/effects";
 import type { BuilderState } from "../types/builder";
-import { getFeat } from "../data/index";
+import { getFeat, getOptionalFeature } from "../data/index";
 
 // ---------------------------------------------------------------------------
 // Source descriptor
@@ -304,6 +304,58 @@ function choiceToEffects(
       const props: Property[] = selectedValues.map((v) => ({
         type: "metamagic_grant" as const,
         metamagic: v,
+      }));
+      if (props.length > 0) {
+        bundles.push({
+          id: bundleId(selectedValues.join(",")),
+          source: effectSource,
+          lifetime: { type: "permanent" },
+          effects: { properties: props },
+        });
+      }
+      break;
+    }
+
+    case "eldritch_invocation": {
+      for (const invName of selectedValues) {
+        const dbOpt = getOptionalFeature(invName);
+        if (!dbOpt) continue;
+
+        if (dbOpt.effects) {
+          bundles.push({
+            id: bundleId(invName),
+            source: effectSource,
+            lifetime: { type: "permanent" },
+            effects: dbOpt.effects,
+          });
+        }
+
+        if (dbOpt.choices) {
+          const subPicks = state.featChoices[source.sourceName] ?? {};
+          for (const subChoice of dbOpt.choices) {
+            if (subChoice.timing !== "permanent") continue;
+            const subSelected = subPicks[subChoice.id] ?? [];
+            const subBundles = choiceToEffects(
+              subChoice,
+              subSelected,
+              source,
+              state,
+              resolvedProficienciesSoFar,
+            );
+            bundles.push(...subBundles);
+          }
+        }
+      }
+      break;
+    }
+
+    case "spell_choice": {
+      const poolChoice = choice as Extract<FeatureChoice, { pool: string }>;
+      const usage = poolChoice.grantUsage ?? "1/long_rest";
+      const props: Property[] = selectedValues.map((v) => ({
+        type: "spell_grant" as const,
+        spell: v,
+        usage: usage as "at_will" | "always_prepared" | `${number}/${"short" | "long"}_rest`,
       }));
       if (props.length > 0) {
         bundles.push({

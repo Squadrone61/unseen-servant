@@ -16,6 +16,7 @@ import {
   entityDetailFromClassFeature,
   entityDetailFromInventoryItem,
   entityDetailFromChoiceOption,
+  entityDetailFromOptionalFeature,
 } from "@unseen-servant/shared/detail";
 import type {
   AbilityScoreDetailPayload,
@@ -32,6 +33,7 @@ import {
   getFeat,
   getDisease,
   getStatus,
+  getOptionalFeature,
 } from "@unseen-servant/shared/data";
 import { damageTypeColor } from "@unseen-servant/shared/utils";
 import { DetailPopover } from "./DetailPopover";
@@ -113,6 +115,11 @@ function resolveEntityDetailData(
       const p = payload as ChoiceOptionDetailPayload | undefined;
       if (!p) return { title: name };
       return entityDetailFromChoiceOption(p);
+    }
+    case "optional_feature": {
+      const data = getOptionalFeature(name);
+      if (!data) return null;
+      return entityDetailFromOptionalFeature(data);
     }
     // No popover data for these categories yet
     case "rule":

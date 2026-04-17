@@ -455,14 +455,28 @@
       "level": 18,
       "className": "Wizard",
       "description": "You have achieved such mastery over certain spells that you can cast them at will. Choose a level 1 and a level 2 spell in your spellbook that have a casting time of an action. You always have those spells prepared, and you can cast them at their lowest level without expending a spell slot. To cast either spell at a higher level, you must expend a spell slot.\n\nWhenever you finish a {rule:Long Rest}, you can study your spellbook and replace one of those spells with an eligible spell of the same level from the book.",
-      "effects": {
-        "properties": [
-          {
-            "type": "note",
-            "text": "Choose one level 1 and one level 2 Wizard spell from your spellbook (both must have a casting time of an action). You always have them prepared and can cast each at its lowest level without expending a spell slot. Can swap one on each Long Rest."
-          }
-        ]
-      }
+      "choices": [
+        {
+          "id": "spell-mastery-1",
+          "label": "Spell Mastery (1st Level)",
+          "count": 1,
+          "timing": "permanent",
+          "pool": "spell_choice",
+          "from": ["Wizard"],
+          "filter": { "level": 1, "castingTime": "1 action" },
+          "grantUsage": "at_will"
+        },
+        {
+          "id": "spell-mastery-2",
+          "label": "Spell Mastery (2nd Level)",
+          "count": 1,
+          "timing": "permanent",
+          "pool": "spell_choice",
+          "from": ["Wizard"],
+          "filter": { "level": 2, "castingTime": "1 action" },
+          "grantUsage": "at_will"
+        }
+      ]
     },
     {
       "name": "Epic Boon",

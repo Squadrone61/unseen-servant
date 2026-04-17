@@ -345,14 +345,120 @@
       "level": 1,
       "className": "Warlock",
       "description": "You have unearthed Eldritch Invocations, pieces of forbidden knowledge that imbue you with an abiding magical ability or other lessons. You gain one invocation of your choice, such as Pact of the Tome. Invocations are described in the Eldritch Invocation Options section of this class's description.\n\n**Prerequisites.** If an invocation has a prerequisite, you must meet it to learn that invocation. For example, if an invocation requires you to be a level 5+ Warlock, you can select the invocation once you reach Warlock level 5.\n\n**Replacing and Gaining Invocations.** Whenever you gain a Warlock level, you can replace one of your invocations with another one for which you qualify. You can't replace an invocation if it's a prerequisite for another invocation that you have.\n\nWhen you gain certain Warlock levels, you gain more invocations of your choice, as shown in the Invocations column of the Warlock Features table. You can't pick the same invocation more than once unless its description says otherwise.",
-      "effects": {
-        "properties": [
-          {
-            "type": "note",
-            "text": "You gain Eldritch Invocations as shown in the Invocations column: 1 at level 1, 3 at levels 2–4, 5 at levels 5–6, 6 at level 7–8, 7 at levels 9–11, 8 at levels 12–14, 9 at levels 15–17, 10 at levels 18–20."
-          }
-        ]
-      }
+      "choices": [
+        {
+          "id": "ei-1",
+          "label": "Eldritch Invocation",
+          "count": 1,
+          "timing": "permanent",
+          "pool": "eldritch_invocation"
+        }
+      ]
+    },
+    {
+      "name": "Eldritch Invocations",
+      "level": 2,
+      "className": "Warlock",
+      "description": "You gain two additional Eldritch Invocations of your choice.",
+      "choices": [
+        {
+          "id": "ei-2",
+          "label": "Eldritch Invocation",
+          "count": 2,
+          "timing": "permanent",
+          "pool": "eldritch_invocation"
+        }
+      ]
+    },
+    {
+      "name": "Eldritch Invocations",
+      "level": 5,
+      "className": "Warlock",
+      "description": "You gain two additional Eldritch Invocations of your choice.",
+      "choices": [
+        {
+          "id": "ei-5",
+          "label": "Eldritch Invocation",
+          "count": 2,
+          "timing": "permanent",
+          "pool": "eldritch_invocation"
+        }
+      ]
+    },
+    {
+      "name": "Eldritch Invocations",
+      "level": 7,
+      "className": "Warlock",
+      "description": "You gain an additional Eldritch Invocation of your choice.",
+      "choices": [
+        {
+          "id": "ei-7",
+          "label": "Eldritch Invocation",
+          "count": 1,
+          "timing": "permanent",
+          "pool": "eldritch_invocation"
+        }
+      ]
+    },
+    {
+      "name": "Eldritch Invocations",
+      "level": 9,
+      "className": "Warlock",
+      "description": "You gain an additional Eldritch Invocation of your choice.",
+      "choices": [
+        {
+          "id": "ei-9",
+          "label": "Eldritch Invocation",
+          "count": 1,
+          "timing": "permanent",
+          "pool": "eldritch_invocation"
+        }
+      ]
+    },
+    {
+      "name": "Eldritch Invocations",
+      "level": 12,
+      "className": "Warlock",
+      "description": "You gain an additional Eldritch Invocation of your choice.",
+      "choices": [
+        {
+          "id": "ei-12",
+          "label": "Eldritch Invocation",
+          "count": 1,
+          "timing": "permanent",
+          "pool": "eldritch_invocation"
+        }
+      ]
+    },
+    {
+      "name": "Eldritch Invocations",
+      "level": 15,
+      "className": "Warlock",
+      "description": "You gain an additional Eldritch Invocation of your choice.",
+      "choices": [
+        {
+          "id": "ei-15",
+          "label": "Eldritch Invocation",
+          "count": 1,
+          "timing": "permanent",
+          "pool": "eldritch_invocation"
+        }
+      ]
+    },
+    {
+      "name": "Eldritch Invocations",
+      "level": 18,
+      "className": "Warlock",
+      "description": "You gain an additional Eldritch Invocation of your choice.",
+      "choices": [
+        {
+          "id": "ei-18",
+          "label": "Eldritch Invocation",
+          "count": 1,
+          "timing": "permanent",
+          "pool": "eldritch_invocation"
+        }
+      ]
     },
     {
       "name": "Pact Magic",
@@ -461,14 +567,18 @@
       "level": 11,
       "className": "Warlock",
       "description": "Your patron grants you a magical secret called an arcanum. Choose one level 6 Warlock spell as this arcanum.\n\nYou can cast your arcanum spell once without expending a spell slot, and you must finish a {rule:Long Rest} before you can cast it in this way again.\n\nAs shown in the Warlock Features table, you gain another Warlock spell of your choice that can be cast in this way when you reach Warlock levels 13 (level 7 spell), 15 (level 8 spell), and 17 (level 9 spell). You regain all uses of your Mystic Arcanum when you finish a {rule:Long Rest}.\n\nWhenever you gain a Warlock level, you can replace one of your arcanum spells with another Warlock spell of the same level.",
-      "effects": {
-        "properties": [
-          {
-            "type": "note",
-            "text": "Choose one Warlock spell of level 6 castable once per Long Rest without a slot. Gain additional arcanum spells at levels 13 (level 7), 15 (level 8), and 17 (level 9). Each can be cast once per Long Rest without a slot; all uses reset on Long Rest."
-          }
-        ]
-      }
+      "choices": [
+        {
+          "id": "mystic-arcanum-6",
+          "label": "Mystic Arcanum (6th Level)",
+          "count": 1,
+          "timing": "permanent",
+          "pool": "spell_choice",
+          "from": ["Warlock"],
+          "filter": { "level": 6 },
+          "grantUsage": "1/long_rest"
+        }
+      ]
     },
     {
       "name": "Ability Score Improvement",
@@ -481,14 +591,18 @@
       "level": 13,
       "className": "Warlock",
       "description": "You gain a level 7 Warlock spell of your choice as an additional arcanum. You can cast it once without expending a spell slot, and you must finish a {rule:Long Rest} before you can cast it in this way again.",
-      "effects": {
-        "properties": [
-          {
-            "type": "note",
-            "text": "Gain one level 7 Warlock spell as a Mystic Arcanum. Cast it once per Long Rest without expending a spell slot."
-          }
-        ]
-      }
+      "choices": [
+        {
+          "id": "mystic-arcanum-7",
+          "label": "Mystic Arcanum (7th Level)",
+          "count": 1,
+          "timing": "permanent",
+          "pool": "spell_choice",
+          "from": ["Warlock"],
+          "filter": { "level": 7 },
+          "grantUsage": "1/long_rest"
+        }
+      ]
     },
     {
       "name": "Subclass Feature",
@@ -501,14 +615,18 @@
       "level": 15,
       "className": "Warlock",
       "description": "You gain a level 8 Warlock spell of your choice as an additional arcanum. You can cast it once without expending a spell slot, and you must finish a {rule:Long Rest} before you can cast it in this way again.",
-      "effects": {
-        "properties": [
-          {
-            "type": "note",
-            "text": "Gain one level 8 Warlock spell as a Mystic Arcanum. Cast it once per Long Rest without expending a spell slot."
-          }
-        ]
-      }
+      "choices": [
+        {
+          "id": "mystic-arcanum-8",
+          "label": "Mystic Arcanum (8th Level)",
+          "count": 1,
+          "timing": "permanent",
+          "pool": "spell_choice",
+          "from": ["Warlock"],
+          "filter": { "level": 8 },
+          "grantUsage": "1/long_rest"
+        }
+      ]
     },
     {
       "name": "Ability Score Improvement",
@@ -521,14 +639,18 @@
       "level": 17,
       "className": "Warlock",
       "description": "You gain a level 9 Warlock spell of your choice as an additional arcanum. You can cast it once without expending a spell slot, and you must finish a {rule:Long Rest} before you can cast it in this way again.",
-      "effects": {
-        "properties": [
-          {
-            "type": "note",
-            "text": "Gain one level 9 Warlock spell as a Mystic Arcanum. Cast it once per Long Rest without expending a spell slot."
-          }
-        ]
-      }
+      "choices": [
+        {
+          "id": "mystic-arcanum-9",
+          "label": "Mystic Arcanum (9th Level)",
+          "count": 1,
+          "timing": "permanent",
+          "pool": "spell_choice",
+          "from": ["Warlock"],
+          "filter": { "level": 9 },
+          "grantUsage": "1/long_rest"
+        }
+      ]
     },
     {
       "name": "Epic Boon",

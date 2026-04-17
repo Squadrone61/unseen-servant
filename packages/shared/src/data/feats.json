@@ -1937,14 +1937,15 @@
     },
     "prerequisiteText": "Spellcasting or Pact Magic feature",
     "description": "Studying occult lore, you learn one {feat:Eldritch Invocation|Eldritch Invocation} option of your choice from the {class:Warlock} class. Your spellcasting ability for the invocation is Intelligence, Wisdom, or Charisma (choose when you select this feat). If the invocation has a prerequisite of any kind, you can choose that invocation only if you're a Warlock who meets the prerequisite. Whenever you gain a level, you can replace the invocation with another one from the Warlock class.",
-    "effects": {
-      "properties": [
-        {
-          "type": "note",
-          "text": "You learn one Eldritch Invocation option of your choice from the Warlock class. Your spellcasting ability for the invocation is Intelligence, Wisdom, or Charisma (choose when you select this feat). If the invocation has a prerequisite of any kind, you can choose that invocation only if you're a Warlock who meets the prerequisite. Whenever you gain a level, you can replace the invocation with another one from the Warlock class."
-        }
-      ]
-    }
+    "choices": [
+      {
+        "id": "eldritch-adept-invocation",
+        "label": "Eldritch Invocation",
+        "count": 1,
+        "timing": "permanent",
+        "pool": "eldritch_invocation"
+      }
+    ]
   },
   {
     "name": "Elemental Adept",

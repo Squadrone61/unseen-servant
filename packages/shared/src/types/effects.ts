@@ -128,7 +128,8 @@ export type EntityCategory =
   | "ability-score"
   | "class-feature"
   | "choice-option"
-  | "inventory-item";
+  | "inventory-item"
+  | "optional_feature";
 
 // ---------------------------------------------------------------------------
 // ModifierTarget
@@ -508,6 +509,17 @@ export interface ChoiceOption {
 }
 
 // ---------------------------------------------------------------------------
+// SpellChoiceFilter
+// ---------------------------------------------------------------------------
+
+export interface SpellChoiceFilter {
+  level?: number;
+  maxLevel?: number;
+  minLevel?: number;
+  castingTime?: string;
+}
+
+// ---------------------------------------------------------------------------
 // FeatureChoice
 // ---------------------------------------------------------------------------
 
@@ -556,9 +568,15 @@ export type FeatureChoice = {
         | "fighting_style" // pick from Fighting Style feats
         | "spell_cantrip" // pick a cantrip (constrain class via `from`)
         | "weapon_mastery" // pick weapons whose Mastery property the character can use
-        | "metamagic"; // pick a Metamagic option (Sorcerer)
+        | "metamagic" // pick a Metamagic option (Sorcerer)
+        | "eldritch_invocation" // pick an Eldritch Invocation (Warlock, Eldritch Adept)
+        | "spell_choice"; // pick a spell (Mystic Arcanum, Spell Mastery, Magical Discoveries)
       /** Constrained list. Omit for "any from pool". */
       from?: string[];
+      /** Spell filter for spell_choice pool. */
+      filter?: SpellChoiceFilter;
+      /** Usage to emit on spell_grant properties (spell_choice pool). */
+      grantUsage?: "at_will" | "always_prepared" | `${number}/${"short" | "long"}_rest`;
       options?: never;
     }
 );
@@ -595,6 +613,9 @@ export interface ActionEffect {
    *   "auto"   — automatically applies (Magic Missile, Healing Word)
    */
   kind: "attack" | "save" | "auto";
+
+  /** Resource cost when used via a feature (e.g. Channel Divinity, Superiority Die). */
+  cost?: { resource: string; amount: number | string };
 
   /** Attack-roll actions (weapon swings, spell attack rolls). */
   attack?: {

@@ -587,6 +587,12 @@ export const actionEffectSchema: z.ZodType<ActionEffect> = z.lazy(() =>
         concentration: z.boolean().optional(),
       })
       .optional(),
+    cost: z
+      .object({
+        resource: z.string(),
+        amount: z.union([z.number(), z.string()]),
+      })
+      .optional(),
   }),
 );
 

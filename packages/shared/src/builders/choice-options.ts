@@ -1,4 +1,4 @@
-import type { FeatureChoice } from "../types/effects";
+import type { FeatureChoice, Prerequisite } from "../types/effects";
 import type { EntityCategory } from "../types/effects";
 import type { EntityDetailPayload } from "../detail/index";
 import {
@@ -32,6 +32,54 @@ export interface ResolvedOption {
 export interface ResolveChoiceContext {
   className?: string;
   level?: number;
+  features?: string[];
+}
+
+// ---------------------------------------------------------------------------
+// Prerequisite checker
+// ---------------------------------------------------------------------------
+
+const SPELLCASTING_CLASSES = new Set([
+  "Bard",
+  "Cleric",
+  "Druid",
+  "Paladin",
+  "Ranger",
+  "Sorcerer",
+  "Warlock",
+  "Wizard",
+]);
+
+export function checkPrerequisite(
+  prereq: Prerequisite,
+  ctx: ResolveChoiceContext,
+): { met: boolean; reason?: string } {
+  switch (prereq.type) {
+    case "level":
+      if ((ctx.level ?? 0) >= prereq.value) return { met: true };
+      return { met: false, reason: `Requires level ${prereq.value}+` };
+    case "feature": {
+      if (ctx.features?.includes(prereq.featureName)) return { met: true };
+      return { met: false, reason: `Requires ${prereq.featureName}` };
+    }
+    case "spellcasting":
+      if (ctx.className && SPELLCASTING_CLASSES.has(ctx.className)) return { met: true };
+      return { met: false, reason: "Requires Spellcasting or Pact Magic" };
+    case "ability":
+      return { met: true };
+    case "species":
+      return { met: true };
+    case "allOf": {
+      const results = prereq.of.map((p) => checkPrerequisite(p, ctx));
+      const failed = results.find((r) => !r.met);
+      return failed ?? { met: true };
+    }
+    case "anyOf": {
+      const results = prereq.of.map((p) => checkPrerequisite(p, ctx));
+      const passed = results.find((r) => r.met);
+      return passed ?? results[0] ?? { met: true };
+    }
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -253,6 +301,63 @@ export function resolveChoice(choice: FeatureChoice, ctx?: ResolveChoiceContext)
         detail: {
           category: "optional_feature" as EntityCategory,
           name: opt.name,
+        },
+      }));
+    }
+
+    case "eldritch_invocation": {
+      const options = getOptionalFeaturesByType("EI");
+      return options.map((opt) => {
+        const subChoices = opt.choices?.filter((c) => c.timing === "permanent") ?? [];
+        let disabled: boolean | undefined;
+        let disabledReason: string | undefined;
+
+        if (opt.prerequisiteStructured) {
+          if (!ctx?.className || ctx.className !== "Warlock") {
+            disabled = true;
+            disabledReason = opt.prerequisite ?? "Warlock only";
+          } else {
+            const result = checkPrerequisite(opt.prerequisiteStructured, ctx);
+            if (!result.met) {
+              disabled = true;
+              disabledReason = result.reason ?? opt.prerequisite;
+            }
+          }
+        }
+
+        return {
+          id: opt.name,
+          name: opt.name,
+          detail: {
+            category: "optional_feature" as EntityCategory,
+            name: opt.name,
+          },
+          subChoices: subChoices.length > 0 ? subChoices : undefined,
+          disabled,
+          disabledReason,
+        };
+      });
+    }
+
+    case "spell_choice": {
+      const poolChoice = choice as Extract<FeatureChoice, { pool: string }>;
+      const filter = poolChoice.filter;
+      let spells = [...spellsArray];
+      if (from && from.length > 0) {
+        spells = spells.filter((s) => s.classes.some((c) => from.includes(c)));
+      }
+      if (filter) {
+        if (filter.level !== undefined) spells = spells.filter((s) => s.level === filter.level);
+        if (filter.minLevel != null) spells = spells.filter((s) => s.level >= filter.minLevel);
+        if (filter.maxLevel != null) spells = spells.filter((s) => s.level <= filter.maxLevel);
+        if (filter.castingTime) spells = spells.filter((s) => s.castingTime === filter.castingTime);
+      }
+      return spells.map((s) => ({
+        id: s.name,
+        name: s.name,
+        detail: {
+          category: "spell" as EntityCategory,
+          name: s.name,
         },
       }));
     }
