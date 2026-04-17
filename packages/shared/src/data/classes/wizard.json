@@ -640,8 +640,14 @@
           "effects": {
             "properties": [
               {
+                "type": "resource",
+                "name": "Portent Dice",
+                "maxUses": 2,
+                "longRest": "all"
+              },
+              {
                 "type": "note",
-                "text": "On each Long Rest, roll 2d20 and record both results as Portent dice. Before any D20 Test made by you or a visible creature, you may substitute one Portent die for the actual roll. Once used, a Portent die is gone. All unused dice expire on Long Rest. Only one substitution per turn."
+                "text": "On Long Rest, roll 2d20 and record both. Before any D20 Test by you or a visible creature, substitute one Portent die for the roll. Only one substitution per turn. Unused dice expire on Long Rest."
               }
             ]
           }
@@ -815,8 +821,13 @@
           "effects": {
             "properties": [
               {
+                "type": "spell_grant",
+                "spell": "Minor Illusion",
+                "usage": "at_will"
+              },
+              {
                 "type": "note",
-                "text": "Illusion spells you cast don't require Verbal components. If the Illusion spell has a range of 10+ feet, its range increases by 60 feet. Know Minor Illusion for free (or another cantrip if you already know it). Minor Illusion can produce both sound and image in one casting, and can be cast as a Bonus Action."
+                "text": "Illusion spells you cast don't require Verbal components. If the Illusion spell has a range of 10+ feet, its range increases by 60 feet. Minor Illusion can produce both sound and image in one casting, and can be cast as a Bonus Action. If you already know Minor Illusion, learn a different Wizard cantrip instead."
               }
             ]
           }

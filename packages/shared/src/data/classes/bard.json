@@ -718,10 +718,14 @@
           "subclassName": "College of Glamour",
           "description": "You can weave fey magic into a song or dance to fill others with vigor. As a {rule:Bonus Action}, you can expend a use of Bardic Inspiration, rolling a Bardic Inspiration die. When you do so, choose a number of other creatures within 60 feet of yourself, up to a number equal to your Charisma modifier (minimum of one creature). Each of those creatures gains a number of {rule:Temporary Hit Points|Temporary Hit Points} equal to two times the number rolled on the Bardic Inspiration die, and then each can use its {rule:Reaction} to move up to its {rule:Speed} without provoking {action:Opportunity Attack|Opportunity Attacks}.",
           "effects": {
+            "action": {
+              "kind": "auto",
+              "cost": { "resource": "Bardic Inspiration", "amount": 1 }
+            },
             "properties": [
               {
                 "type": "note",
-                "text": "Bonus Action: expend 1 Bardic Inspiration, roll the die. Up to CHA modifier creatures (min 1) within 60 ft each gain Temporary HP equal to 2 × the die result, and can Reaction-move up to their Speed without provoking Opportunity Attacks."
+                "text": "Up to CHA modifier creatures (min 1) within 60 ft each gain Temporary HP equal to 2 × the Bardic Inspiration die result, and can Reaction-move up to their Speed without provoking Opportunity Attacks."
               }
             ]
           },

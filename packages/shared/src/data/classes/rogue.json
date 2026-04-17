@@ -204,8 +204,13 @@
       "effects": {
         "properties": [
           {
+            "type": "advantage",
+            "on": "attack",
+            "condition": "next attack roll this turn (Steady Aim activation)"
+          },
+          {
             "type": "note",
-            "text": "Bonus Action: gain Advantage on your next attack roll this turn. You must not have moved this turn; your Speed becomes 0 until the turn ends."
+            "text": "You must not have moved this turn to use Steady Aim. After activation, your Speed becomes 0 until the end of the current turn."
           }
         ]
       },

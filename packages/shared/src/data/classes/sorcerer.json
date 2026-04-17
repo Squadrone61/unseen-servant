@@ -1227,8 +1227,14 @@
           "effects": {
             "properties": [
               {
+                "type": "resource",
+                "name": "Tides of Chaos",
+                "maxUses": 1,
+                "longRest": "all"
+              },
+              {
                 "type": "note",
-                "text": "Before rolling a d20, gain Advantage on one D20 Test. Recharges when you cast a Sorcerer spell with a spell slot (but doing so triggers an automatic Wild Magic Surge roll) or finish a Long Rest."
+                "text": "Expend one use to gain Advantage on any D20 Test before rolling. Recharges when you cast a Sorcerer spell with a spell slot (triggers automatic Wild Magic Surge roll) or finish a Long Rest."
               }
             ]
           }

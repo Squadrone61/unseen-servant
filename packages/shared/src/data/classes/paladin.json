@@ -1061,12 +1061,16 @@
           "subclassName": "Oath of the Ancients",
           "description": "As a Magic action, you can expend one use of your Channel Divinity to conjure spectral vines around nearby creatures. Each creature of your choice that you can see within 15 feet of yourself must succeed on a Strength saving throw or have the {condition:Restrained} condition for 1 minute. A {condition:Restrained} creature repeats the save at the end of each of its turns, ending the effect on itself on a success.",
           "effects": {
-            "properties": [
-              {
-                "type": "note",
-                "text": "Channel Divinity — Magic action: creatures of your choice within 15 ft make STR save or gain Restrained 1 minute. Restrained creature repeats save at end of each of its turns, ending on success."
+            "action": {
+              "kind": "save",
+              "cost": { "resource": "Channel Divinity", "amount": 1 },
+              "save": { "ability": "strength", "dc": "spell_save_dc", "onSuccess": "negates" },
+              "area": { "shape": "sphere", "size": 15 },
+              "onFailedSave": {
+                "conditions": ["restrained"],
+                "note": "Restrained for 1 minute. Repeats STR save at end of each of its turns, ending on success."
               }
-            ]
+            }
           }
         },
         {

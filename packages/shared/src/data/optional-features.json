@@ -1077,8 +1077,13 @@
     "effects": {
       "properties": [
         {
+          "type": "damage_reduction",
+          "amount": "1d10 + prof",
+          "trigger": "reaction"
+        },
+        {
           "type": "note",
-          "text": "Reaction: When a creature you can see hits another creature within 5 feet of you with an attack roll, you can take a Reaction to reduce the damage dealt to the target by 1d10 plus your Proficiency Bonus. You must be holding a Shield or a Simple or Martial weapon to use this Reaction."
+          "text": "You must be holding a Shield or a Simple or Martial weapon to use this Reaction. Reduces damage dealt to another creature within 5 feet of you."
         }
       ]
     }
@@ -2136,8 +2141,14 @@
     "effects": {
       "properties": [
         {
+          "type": "natural_weapon",
+          "name": "Unarmed Strike",
+          "damage": "1d6",
+          "damageType": "bludgeoning"
+        },
+        {
           "type": "note",
-          "text": "When you hit with your Unarmed Strike and deal damage, you can deal Bludgeoning damage equal to 1d6 plus your Strength modifier instead of the normal damage of an Unarmed Strike. If you aren't holding any weapons or a Shield when you make the attack roll, the d6 becomes a d8."
+          "text": "If you aren't holding any weapons or a Shield when you make the attack roll, the Unarmed Strike damage die becomes a d8 instead of d6."
         },
         {
           "type": "note",

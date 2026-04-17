@@ -459,12 +459,13 @@
       "className": "Cleric",
       "description": "Whenever you use Turn Undead, you can roll a number of d8s equal to your Wisdom modifier (minimum of 1d8) and add the rolls together. Each Undead that fails its saving throw against that use of Turn Undead takes Radiant damage equal to the roll's total. This damage doesn't end the turn effect.",
       "effects": {
-        "properties": [
-          {
-            "type": "note",
-            "text": "When you use Turn Undead, each Undead that fails its save also takes Radiant damage equal to a roll of Wisdom modifier (minimum 1) d8s. This does not end the Frightened/Incapacitated effect."
+        "action": {
+          "kind": "auto",
+          "onHit": {
+            "damage": [{ "dice": "max(wis, 1)d8", "type": "radiant" }],
+            "note": "Triggered when Turn Undead is used. Only affects Undead that fail the Turn Undead save. Does not end the turn effect."
           }
-        ]
+        }
       }
     },
     {

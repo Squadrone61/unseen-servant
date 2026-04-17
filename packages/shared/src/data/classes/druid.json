@@ -435,8 +435,13 @@
       "effects": {
         "properties": [
           {
+            "type": "spell_grant",
+            "spell": "Find Familiar",
+            "usage": "always_prepared"
+          },
+          {
             "type": "note",
-            "text": "As a Magic action, expend a spell slot or one Wild Shape use to cast Find Familiar without Material components. The familiar is Fey and vanishes at the end of a Long Rest."
+            "text": "Cast by expending a spell slot or one Wild Shape use (Magic action, no Material components). The familiar is Fey and vanishes at the end of a Long Rest."
           }
         ]
       }
