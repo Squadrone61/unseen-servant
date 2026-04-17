@@ -100,6 +100,8 @@ function propertyToken(prop: Property): string | null {
       return `Mastery: ${prop.weapon}`;
     case "metamagic_grant":
       return `Metamagic: ${prop.metamagic}`;
+    case "natural_weapon":
+      return `${prop.name} (${prop.damage} ${titleCase(prop.damageType)})`;
     case "score_cap":
       return `${titleCase(prop.ability)} Max ${prop.max}`;
     case "roll_minimum": {

@@ -360,6 +360,13 @@ export const propertySchema: z.ZodType<Property> = z.discriminatedUnion("type", 
     condition: z.string().optional(),
   }),
   z.object({
+    type: z.literal("natural_weapon"),
+    name: z.string(),
+    damage: z.string(),
+    damageType: damageTypeSchema,
+    condition: z.string().optional(),
+  }),
+  z.object({
     type: z.literal("score_cap"),
     ability: abilitySchema,
     max: z.number(),

@@ -51,6 +51,7 @@ function badgeClassFromProperty(prop: Property, compact: boolean): string | null
       return "bg-orange-900/40 text-orange-300 border border-orange-700/40";
     case "extra_attack":
     case "weapon_mastery_grant":
+    case "natural_weapon":
     case "score_cap":
     case "roll_minimum":
       return "bg-amber-900/40 text-amber-300 border border-amber-700/40";

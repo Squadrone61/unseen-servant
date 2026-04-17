@@ -1544,7 +1544,7 @@ export function createMonsterBundle(monsterName: string): EffectBundle | null {
   const pushDamage = (kind: "resistance" | "immunity" | "vulnerability", raw: string) => {
     const dt = raw.trim().toLowerCase();
     if (!DAMAGE_TYPES.has(dt as DamageType)) return; // compound or unknown — skip
-    properties.push({ type: kind, damageType: dt as DamageType });
+    properties.push({ type: kind, damageType: dt as DamageType } as Property);
   };
 
   for (const dt of flatten(monster.resist as unknown[] | undefined, "resist")) {

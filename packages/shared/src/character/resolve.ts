@@ -220,6 +220,13 @@ export function getCritRiders(
   return collectProperties(bundles, "crit_rider");
 }
 
+export function getNaturalWeapons(
+  char: CharacterData,
+): Array<Extract<import("../types/effects").Property, { type: "natural_weapon" }>> {
+  const bundles = collectActiveBundles(char);
+  return collectProperties(bundles, "natural_weapon");
+}
+
 export function getRollMinimums(
   char: CharacterData,
 ): Array<{ on: string; min: number; mode: "d20" | "total"; proficientOnly: boolean }> {

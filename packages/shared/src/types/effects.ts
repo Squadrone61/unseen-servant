@@ -368,6 +368,12 @@ export type Property = {
       metamagic: string;
     }
   | {
+      type: "natural_weapon";
+      name: string;
+      damage: string;
+      damageType: DamageType;
+    }
+  | {
       /**
        * Raises the maximum value the named ability score can reach.
        * Currently descriptive (the resolver does not clamp scores), but consumed

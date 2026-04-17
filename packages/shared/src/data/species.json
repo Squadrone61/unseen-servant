@@ -13,8 +13,10 @@
           "text": "Flight: Fly Speed equal to walking speed. Can't fly in medium or heavy armor."
         },
         {
-          "type": "note",
-          "text": "Talons: Unarmed strike deals 1d6 + Strength modifier slashing damage."
+          "type": "natural_weapon",
+          "name": "Talons",
+          "damage": "1d6",
+          "damageType": "slashing"
         },
         {
           "type": "spell_grant",
@@ -201,8 +203,10 @@
           "text": "Equine Build: Count as one size larger when determining your carrying capacity and the weight you can push or drag. Any climb that requires hands and feet costs you 4 extra feet of movement per foot instead of the normal 1 extra foot."
         },
         {
-          "type": "note",
-          "text": "Hooves: Your hooves are a natural weapon for unarmed strikes. When you hit with them, the strike deals 1d6 + your Strength modifier bludgeoning damage, instead of the bludgeoning damage normal for an unarmed strike."
+          "type": "natural_weapon",
+          "name": "Hooves",
+          "damage": "1d6",
+          "damageType": "bludgeoning"
         }
       ]
     },
@@ -1463,8 +1467,10 @@
       ],
       "properties": [
         {
-          "type": "note",
-          "text": "Bite: Unarmed strike dealing 1d6 + Strength modifier slashing damage."
+          "type": "natural_weapon",
+          "name": "Bite",
+          "damage": "1d6",
+          "damageType": "slashing"
         },
         {
           "type": "note",
@@ -1504,8 +1510,10 @@
     "effects": {
       "properties": [
         {
-          "type": "note",
-          "text": "Horns: Unarmed strike dealing 1d6 + Strength modifier piercing damage."
+          "type": "natural_weapon",
+          "name": "Horns",
+          "damage": "1d6",
+          "damageType": "piercing"
         },
         {
           "type": "note",
@@ -1562,8 +1570,10 @@
     "effects": {
       "properties": [
         {
-          "type": "note",
-          "text": "Ram: Unarmed strike dealing 1d6 + Strength modifier bludgeoning damage."
+          "type": "natural_weapon",
+          "name": "Ram",
+          "damage": "1d6",
+          "damageType": "bludgeoning"
         },
         {
           "type": "advantage",
@@ -1778,8 +1788,10 @@
           "value": "Stealth"
         },
         {
-          "type": "note",
-          "text": "Cat's Claws: Unarmed strike dealing 1d6 + Strength modifier slashing damage."
+          "type": "natural_weapon",
+          "name": "Cat's Claws",
+          "damage": "1d6",
+          "damageType": "slashing"
         },
         {
           "type": "note",
@@ -1943,8 +1955,10 @@
       ],
       "properties": [
         {
-          "type": "note",
-          "text": "Claws: Unarmed strike dealing 1d6 + Strength modifier slashing damage."
+          "type": "natural_weapon",
+          "name": "Claws",
+          "damage": "1d6",
+          "damageType": "slashing"
         },
         {
           "type": "note",
