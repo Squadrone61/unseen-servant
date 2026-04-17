@@ -22,6 +22,8 @@ const categoryStyles: Record<EntityCategory, string> = {
   "choice-option": "text-gray-300",
   "inventory-item": "text-amber-400",
   optional_feature: "text-violet-400",
+  // Never appears in rich-text inline refs, but kept here so Record<EntityCategory, string> stays exhaustive.
+  "stat-breakdown": "text-amber-300",
 };
 
 const KNOWN_CATEGORIES = new Set<string>([

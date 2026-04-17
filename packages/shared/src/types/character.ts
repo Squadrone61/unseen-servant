@@ -159,6 +159,56 @@ export interface CharacterSpeed {
 }
 
 /**
+ * One contribution to a computed stat — base value, a flat add, or a "set" override.
+ *
+ * `label` is a human-readable name ("Base score", "Studded Leather", "Ring of Protection").
+ * When `sourceCategory` is present, the UI can render `label` as a clickable entity link
+ * that opens the popover for that item/feat/spell/condition.
+ */
+export interface StatContribution {
+  label: string;
+  value: number;
+  operation: "base" | "add" | "set";
+  /**
+   * True when the contribution came from an effect bundle (item, feat, spell,
+   * condition, …). False/omitted for the base formula rows emitted directly by
+   * the breakdown helpers (armor base, DEX mod, proficiency, etc.). The UI dims
+   * these base-formula rows whenever any effect `set` is present, because a set
+   * replaces the base formula entirely.
+   */
+  fromEffect?: boolean;
+  /** For linking back to the source entity via the popover stack. */
+  sourceCategory?: "item" | "feat" | "spell" | "condition" | "class" | "species" | "background";
+  sourceName?: string;
+}
+
+export interface StatSubBreakdown {
+  /** Display label — e.g. "Fly", "Swim". */
+  label: string;
+  total: number;
+  contributions: StatContribution[];
+}
+
+export interface StatBreakdown {
+  total: number;
+  contributions: StatContribution[];
+  /** Optional secondary breakdowns — e.g. fly/swim/climb/burrow speed tiers. */
+  subBreakdowns?: StatSubBreakdown[];
+}
+
+/**
+ * Spellcasting breakdown grouped by class.
+ * Each entry carries independent DC + attack breakdowns so multiclass casters
+ * can see per-class derivation without losing information.
+ */
+export interface SpellcastingBreakdownEntry {
+  className: string;
+  ability: keyof AbilityScores;
+  dc: StatBreakdown;
+  attack: StatBreakdown;
+}
+
+/**
  * Static data from the character builder.
  * Only changes when the character is re-imported.
  *

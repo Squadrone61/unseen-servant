@@ -10,18 +10,6 @@ import type {
   StatusDb,
   OptionalFeatureDb,
 } from "../types/data";
-import { getAbilities, getSkills, getSavingThrows } from "../character/resolve";
-import {
-  ABILITY_FULL_NAMES,
-  SKILL_DISPLAY_NAMES,
-  getModifier,
-  formatModifier,
-  formatBonus,
-  getSkillModifier,
-  getSavingThrowModifier,
-  getProficiencyBonus,
-  getTotalLevel,
-} from "../utils/character-helpers";
 import { resolveFeatureDescription, resolveFeatureActivationTrigger } from "../data/index";
 
 // ---------------------------------------------------------------------------
@@ -86,11 +74,31 @@ export interface ChoiceOptionDetailPayload {
   effectSummary?: string;
 }
 
+/**
+ * Which stat the "stat-breakdown" popover is showing. Name on the popover entry
+ * is set from this id; the payload carries the character to recompute from.
+ */
+export type StatBreakdownId =
+  | "ac"
+  | "speed"
+  | "prof"
+  | "init"
+  | "spell-dc"
+  | "spell-attack"
+  | "hit-dice"
+  | "passive";
+
+export interface StatBreakdownDetailPayload {
+  character: CharacterData;
+  stat: StatBreakdownId;
+}
+
 export interface EntityDetailPayload {
   "ability-score": AbilityScoreDetailPayload;
   "class-feature": ClassFeatureDetailPayload;
   "inventory-item": InventoryItemDetailPayload;
   "choice-option": ChoiceOptionDetailPayload;
+  "stat-breakdown": StatBreakdownDetailPayload;
   condition: never;
   spell: never;
   action: never;
@@ -239,48 +247,10 @@ export function entityDetailFromStatus(s: StatusDb): EntityDetailData {
 // Character-contextual resolvers
 // ---------------------------------------------------------------------------
 
-export function entityDetailFromAbilityScore(
-  character: CharacterData,
-  ability: keyof AbilityScores,
-): EntityDetailData {
-  const abilities = getAbilities(character);
-  const score = abilities[ability];
-  const modStr = formatModifier(score);
-  const fullName = ABILITY_FULL_NAMES[ability];
-  const totalLevel = getTotalLevel(character.static.classes);
-  const profBonus = getProficiencyBonus(totalLevel);
-
-  const save = getSavingThrows(character).find((sv) => sv.ability === ability);
-  const saveMod = save ? getSavingThrowModifier(save, abilities, profBonus) : getModifier(score);
-  const saveProficient = save?.proficient ?? false;
-
-  const properties: EntityDetailProperty[] = [
-    {
-      label: "Save",
-      value: formatBonus(saveMod),
-      tone: saveProficient ? "amber" : undefined,
-    },
-  ];
-  for (const sk of getSkills(character).filter((s) => s.ability === ability)) {
-    const mod = getSkillModifier(sk, abilities, profBonus);
-    const tone: BadgeTone | undefined = sk.expertise
-      ? "green"
-      : sk.proficient
-        ? "amber"
-        : undefined;
-    properties.push({
-      label: SKILL_DISPLAY_NAMES[sk.name] ?? sk.name,
-      value: formatBonus(mod),
-      tone,
-    });
-  }
-
-  return {
-    title: fullName,
-    subtitle: `${modStr} (${score})`,
-    properties,
-  };
-}
+// Ability-score popovers are rendered directly in the web app via a dedicated
+// component (AbilityScoreDetail) that lists saves/skills cleanly and shows a
+// source-attributed score breakdown. No generic EntityDetailData resolver lives
+// here anymore.
 
 export function entityDetailFromClassFeature(
   character: CharacterData,

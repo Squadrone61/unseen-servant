@@ -12,7 +12,6 @@ import {
   entityDetailFromAction,
   entityDetailFromDisease,
   entityDetailFromStatus,
-  entityDetailFromAbilityScore,
   entityDetailFromClassFeature,
   entityDetailFromInventoryItem,
   entityDetailFromChoiceOption,
@@ -23,6 +22,7 @@ import type {
   ClassFeatureDetailPayload,
   InventoryItemDetailPayload,
   ChoiceOptionDetailPayload,
+  StatBreakdownDetailPayload,
 } from "@unseen-servant/shared/detail";
 import {
   getSpell,
@@ -35,9 +35,11 @@ import {
   getStatus,
   getOptionalFeature,
 } from "@unseen-servant/shared/data";
-import { damageTypeColor } from "@unseen-servant/shared/utils";
+import { ABILITY_FULL_NAMES, damageTypeColor } from "@unseen-servant/shared/utils";
 import { DetailPopover } from "./DetailPopover";
 import { EntityDetail } from "./EntityDetail";
+import { AbilityScoreDetail } from "./AbilityScoreDetail";
+import { StatBreakdownDetail } from "./StatBreakdownDetail";
 import { useEntityPopover, type PopoverEntry } from "./EntityPopoverContext";
 import type { StartPlacementParams } from "@/hooks/useAoEPlacement";
 
@@ -96,11 +98,12 @@ function resolveEntityDetailData(
       if (!data) return null;
       return entityDetailFromStatus(data);
     }
-    case "ability-score": {
-      const p = payload as AbilityScoreDetailPayload | undefined;
-      if (!p) return null;
-      return entityDetailFromAbilityScore(p.character, p.ability);
-    }
+    case "ability-score":
+      // Rendered specially in the component (not via EntityDetail).
+      return null;
+    case "stat-breakdown":
+      // Rendered specially in the component (not via EntityDetail).
+      return null;
     case "class-feature": {
       const p = payload as ClassFeatureDetailPayload | undefined;
       if (!p) return null;
@@ -171,14 +174,51 @@ function buildPlaceOnMapParams(spellName: string): StartPlacementParams | null {
 // Component
 // ---------------------------------------------------------------------------
 
+// Title for popovers that don't go through the generic EntityDetail path.
+function specializedTitle(entry: PopoverEntry): string | null {
+  if (entry.category === "ability-score") {
+    const p = entry.payload as AbilityScoreDetailPayload | undefined;
+    if (!p) return null;
+    return ABILITY_FULL_NAMES[p.ability];
+  }
+  if (entry.category === "stat-breakdown") {
+    const p = entry.payload as StatBreakdownDetailPayload | undefined;
+    if (!p) return null;
+    switch (p.stat) {
+      case "ac":
+        return "Armor Class";
+      case "speed":
+        return "Speed";
+      case "prof":
+        return "Proficiency Bonus";
+      case "init":
+        return "Initiative";
+      case "spell-dc":
+        return "Spell Save DC";
+      case "spell-attack":
+        return "Spell Attack";
+      case "hit-dice":
+        return "Hit Dice";
+      case "passive":
+        return "Passive Perception";
+    }
+  }
+  return null;
+}
+
 export function EntityDetailPopover({ entry }: EntityDetailPopoverProps) {
   const { pop, isTopmost } = useEntityPopover();
 
+  const isSpecialized = entry.category === "ability-score" || entry.category === "stat-breakdown";
+
   const data = useMemo(
-    () => resolveEntityDetailData(entry.category, entry.name, entry.payload),
-    [entry.category, entry.name, entry.payload],
+    () =>
+      isSpecialized ? null : resolveEntityDetailData(entry.category, entry.name, entry.payload),
+    [entry.category, entry.name, entry.payload, isSpecialized],
   );
-  if (!data) return null;
+
+  const title = isSpecialized ? specializedTitle(entry) : data?.title;
+  if (!title) return null;
 
   const topmost = isTopmost(entry.id);
 
@@ -194,16 +234,27 @@ export function EntityDetailPopover({ entry }: EntityDetailPopoverProps) {
     }
   }
 
+  let body: React.ReactNode;
+  if (entry.category === "ability-score") {
+    const p = entry.payload as AbilityScoreDetailPayload;
+    body = <AbilityScoreDetail character={p.character} ability={p.ability} />;
+  } else if (entry.category === "stat-breakdown") {
+    const p = entry.payload as StatBreakdownDetailPayload;
+    body = <StatBreakdownDetail character={p.character} stat={p.stat} />;
+  } else {
+    body = data ? <EntityDetail data={data} onActionTriggered={handleActionTriggered} /> : null;
+  }
+
   return (
     <DetailPopover
-      title={data.title}
+      title={title}
       onClose={pop}
       position={entry.position}
       level={entry.level + 1}
       popoverId={entry.id}
       isTopmost={topmost}
     >
-      <EntityDetail data={data} onActionTriggered={handleActionTriggered} />
+      {body}
     </DetailPopover>
   );
 }

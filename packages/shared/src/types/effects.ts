@@ -129,7 +129,8 @@ export type EntityCategory =
   | "class-feature"
   | "choice-option"
   | "inventory-item"
-  | "optional_feature";
+  | "optional_feature"
+  | "stat-breakdown";
 
 // ---------------------------------------------------------------------------
 // ModifierTarget

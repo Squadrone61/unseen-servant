@@ -26,7 +26,9 @@ import {
   getAbilities,
   getScoreCaps,
   getPassivePerception,
+  getInitiative,
 } from "@unseen-servant/shared/character";
+import type { StatBreakdownId } from "@unseen-servant/shared/detail";
 import { HPBar } from "./HPBar";
 import { ActionsTab } from "./tabs/ActionsTab";
 import { SpellsTab } from "./tabs/SpellsTab";
@@ -85,6 +87,29 @@ function SheetTabBar({
   );
 }
 
+// ─── Stat Box ───
+
+function StatBox({
+  label,
+  value,
+  onClick,
+}: {
+  label: string;
+  value: string;
+  onClick: (e: React.MouseEvent) => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="cursor-pointer rounded border border-gray-700/50 bg-gray-900/60 py-1 transition-colors hover:border-amber-500/50 hover:bg-gray-900/70"
+    >
+      <div className="text-xs text-gray-500 uppercase">{label}</div>
+      <div className="text-base font-bold text-gray-200">{value}</div>
+    </button>
+  );
+}
+
 // ─── Main Component ───
 
 export function CharacterSheet({ character, onCastAoE }: CharacterSheetProps) {
@@ -118,6 +143,13 @@ function CharacterSheetInner({ character, onCastAoE }: CharacterSheetProps) {
   const handleAbilityClick = useCallback(
     (key: keyof AbilityScores, e: React.MouseEvent) => {
       push("ability-score", key, { x: e.clientX, y: e.clientY }, { character, ability: key });
+    },
+    [push, character],
+  );
+
+  const handleStatClick = useCallback(
+    (stat: StatBreakdownId, e: React.MouseEvent) => {
+      push("stat-breakdown", stat, { x: e.clientX, y: e.clientY }, { character, stat });
     },
     [push, character],
   );
@@ -178,55 +210,56 @@ function CharacterSheetInner({ character, onCastAoE }: CharacterSheetProps) {
 
         {/* Stat Boxes — 3-column grid, 2 rows */}
         <div className="grid grid-cols-3 gap-1.5 text-center">
-          <div className="rounded border border-gray-700/50 bg-gray-900/60 py-1">
-            <div className="text-xs text-gray-500 uppercase">AC</div>
-            <div className="text-base font-bold text-gray-200">{getAC(character)}</div>
-          </div>
-          <div className="rounded border border-gray-700/50 bg-gray-900/60 py-1">
-            <div className="text-xs text-gray-500 uppercase">Speed</div>
-            <div className="text-base font-bold text-gray-200">{getSpeed(character).walk} ft</div>
-          </div>
-          <div className="rounded border border-gray-700/50 bg-gray-900/60 py-1">
-            <div className="text-xs text-gray-500 uppercase">Prof</div>
-            <div className="text-base font-bold text-gray-200">+{profBonus}</div>
-          </div>
+          <StatBox
+            label="AC"
+            value={String(getAC(character))}
+            onClick={(e) => handleStatClick("ac", e)}
+          />
+          <StatBox
+            label="Speed"
+            value={`${getSpeed(character).walk} ft`}
+            onClick={(e) => handleStatClick("speed", e)}
+          />
+          <StatBox
+            label="Prof"
+            value={formatBonus(profBonus)}
+            onClick={(e) => handleStatClick("prof", e)}
+          />
           {isCaster ? (
             <>
-              <div className="rounded border border-gray-700/50 bg-gray-900/60 py-1">
-                <div className="text-xs text-gray-500 uppercase">Spell DC</div>
-                <div className="text-base font-bold text-gray-200">{primarySpellcasting?.dc}</div>
-              </div>
-              <div className="rounded border border-gray-700/50 bg-gray-900/60 py-1">
-                <div className="text-xs text-gray-500 uppercase">Spell Atk</div>
-                <div className="text-base font-bold text-gray-200">
-                  {formatBonus(primarySpellcasting?.attackBonus ?? 0)}
-                </div>
-              </div>
-              <div className="rounded border border-gray-700/50 bg-gray-900/60 py-1">
-                <div className="text-xs text-gray-500 uppercase">Init</div>
-                <div className="text-base font-bold text-gray-200">
-                  {formatBonus(getModifier(abilities.dexterity))}
-                </div>
-              </div>
+              <StatBox
+                label="Spell DC"
+                value={String(primarySpellcasting?.dc ?? "—")}
+                onClick={(e) => handleStatClick("spell-dc", e)}
+              />
+              <StatBox
+                label="Spell Atk"
+                value={formatBonus(primarySpellcasting?.attackBonus ?? 0)}
+                onClick={(e) => handleStatClick("spell-attack", e)}
+              />
+              <StatBox
+                label="Init"
+                value={formatBonus(getInitiative(character))}
+                onClick={(e) => handleStatClick("init", e)}
+              />
             </>
           ) : (
             <>
-              <div className="rounded border border-gray-700/50 bg-gray-900/60 py-1">
-                <div className="text-xs text-gray-500 uppercase">Init</div>
-                <div className="text-base font-bold text-gray-200">
-                  {formatBonus(getModifier(abilities.dexterity))}
-                </div>
-              </div>
-              <div className="rounded border border-gray-700/50 bg-gray-900/60 py-1">
-                <div className="text-xs text-gray-500 uppercase">Hit Dice</div>
-                <div className="text-base font-bold text-gray-200">{getTotalLevel(s.classes)}</div>
-              </div>
-              <div className="rounded border border-gray-700/50 bg-gray-900/60 py-1">
-                <div className="text-xs text-gray-500 uppercase">Passive</div>
-                <div className="text-base font-bold text-gray-200">
-                  {getPassivePerception(character)}
-                </div>
-              </div>
+              <StatBox
+                label="Init"
+                value={formatBonus(getInitiative(character))}
+                onClick={(e) => handleStatClick("init", e)}
+              />
+              <StatBox
+                label="Hit Dice"
+                value={String(getTotalLevel(s.classes))}
+                onClick={(e) => handleStatClick("hit-dice", e)}
+              />
+              <StatBox
+                label="Passive"
+                value={String(getPassivePerception(character))}
+                onClick={(e) => handleStatClick("passive", e)}
+              />
             </>
           )}
         </div>

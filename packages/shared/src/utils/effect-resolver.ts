@@ -1,6 +1,7 @@
 import type {
   Ability,
   EffectBundle,
+  EffectSource,
   Modifier,
   ModifierTarget,
   Property,
@@ -81,6 +82,35 @@ function collectModifiers(bundles: EffectBundle[], target: ModifierTarget): Modi
     for (const mod of modifiers) {
       if (applicableTargets.has(mod.target)) {
         result.push(mod);
+      }
+    }
+  }
+  return result;
+}
+
+/**
+ * Like `collectModifiers` but pairs each modifier with its bundle's source.
+ * Used by the breakdown resolvers to credit contributions to specific items/feats/spells.
+ */
+export function collectModifiersWithSource(
+  bundles: EffectBundle[],
+  target: ModifierTarget,
+): Array<{ modifier: Modifier; source: EffectSource }> {
+  const applicableTargets = new Set<ModifierTarget>([target]);
+  const parents = TARGET_PARENTS.get(target);
+  if (parents) {
+    for (const p of parents) {
+      applicableTargets.add(p);
+    }
+  }
+
+  const result: Array<{ modifier: Modifier; source: EffectSource }> = [];
+  for (const bundle of bundles) {
+    const modifiers = bundle.effects.modifiers;
+    if (!modifiers) continue;
+    for (const mod of modifiers) {
+      if (applicableTargets.has(mod.target)) {
+        result.push({ modifier: mod, source: bundle.source });
       }
     }
   }
