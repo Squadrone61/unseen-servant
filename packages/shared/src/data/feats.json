@@ -494,22 +494,10 @@
         "label": "Cleric Cantrips",
         "count": 2,
         "timing": "permanent",
-        "options": [
-          {
-            "label": "Any Cleric cantrip",
-            "description": "Choose any cantrip from the Cleric spell list. Charisma is your spellcasting ability for it."
-          }
-        ]
+        "pool": "spell_cantrip",
+        "from": ["Cleric"]
       }
-    ],
-    "effects": {
-      "properties": [
-        {
-          "type": "note",
-          "text": "The two chosen Cleric cantrips (selected via Cleric Cantrips) count as Paladin spells for you and use Charisma as the spellcasting ability. Whenever you gain a Paladin level, you can replace one of these cantrips with another Cleric cantrip."
-        }
-      ]
-    }
+    ]
   },
   {
     "name": "Blind Fighting",
@@ -1774,22 +1762,10 @@
         "label": "Druid Cantrips",
         "count": 2,
         "timing": "permanent",
-        "options": [
-          {
-            "label": "Any Druid cantrip",
-            "description": "Choose any cantrip from the Druid spell list. Wisdom is your spellcasting ability for it."
-          }
-        ]
+        "pool": "spell_cantrip",
+        "from": ["Druid"]
       }
-    ],
-    "effects": {
-      "properties": [
-        {
-          "type": "note",
-          "text": "The two chosen Druid cantrips count as Ranger spells for you, and Wisdom is your spellcasting ability for them. Whenever you gain a Ranger level, you can replace one of these cantrips with another Druid cantrip."
-        }
-      ]
-    }
+    ]
   },
   {
     "name": "Dual Wielder",

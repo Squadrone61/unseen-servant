@@ -565,6 +565,8 @@ interface FeatureRowProps {
   feature: ClassFeatureDb | SubclassFeatureDb;
   choiceSelections: Record<string, string[]>;
   onChoiceSelect: (choiceId: string, values: string[]) => void;
+  /** Store a feat's sub-choice in state.featChoices (used for fighting_style/feat pools). */
+  onFeatChoiceSelect?: (featName: string, choiceId: string, values: string[]) => void;
   choicePrefix?: string;
   /**
    * Context forwarded to ChoicePicker / resolveChoice.
@@ -577,6 +579,7 @@ function FeatureRow({
   feature,
   choiceSelections,
   onChoiceSelect,
+  onFeatChoiceSelect,
   choicePrefix = "",
   ctx,
 }: FeatureRowProps) {
@@ -660,6 +663,13 @@ function FeatureRow({
               }
             }
 
+            // For fighting_style/feat pools, nested sub-choice selections belong
+            // in state.featChoices[featName] so the effect pipeline can find them.
+            const isFeatPool =
+              "pool" in choice &&
+              ((choice as { pool: string }).pool === "fighting_style" ||
+                (choice as { pool: string }).pool === "feat");
+
             return (
               <ChoicePicker
                 key={choiceId}
@@ -668,7 +678,17 @@ function FeatureRow({
                 onSelect={(values) => onChoiceSelect(choiceId, values)}
                 ctx={pickerCtx}
                 nestedSelections={choiceSelections}
-                onNestedSelect={(nestedId, values) => onChoiceSelect(nestedId, values)}
+                onNestedSelect={(nestedId, values) => {
+                  // Always store in class choices (for UI display via nestedSelections)
+                  onChoiceSelect(nestedId, values);
+                  // For feat pools, also store in featChoices (for the effect pipeline)
+                  if (isFeatPool && onFeatChoiceSelect) {
+                    const selectedFeat = choiceSelections[choiceId]?.[0];
+                    if (selectedFeat) {
+                      onFeatChoiceSelect(selectedFeat, nestedId, values);
+                    }
+                  }
+                }}
               />
             );
           })}
@@ -687,6 +707,7 @@ interface FeatureLevelGroupProps {
   features: (ClassFeatureDb | SubclassFeatureDb)[];
   choiceSelections: Record<string, string[]>;
   onChoiceSelect: (choiceId: string, values: string[]) => void;
+  onFeatChoiceSelect?: (featName: string, choiceId: string, values: string[]) => void;
   choicePrefix?: string;
   extra?: React.ReactNode;
   ctx?: ResolveChoiceContext;
@@ -697,6 +718,7 @@ function FeatureLevelGroup({
   features,
   choiceSelections,
   onChoiceSelect,
+  onFeatChoiceSelect,
   choicePrefix,
   extra,
   ctx,
@@ -715,6 +737,7 @@ function FeatureLevelGroup({
             feature={feature}
             choiceSelections={choiceSelections}
             onChoiceSelect={onChoiceSelect}
+            onFeatChoiceSelect={onFeatChoiceSelect}
             choicePrefix={choicePrefix}
             ctx={ctx}
           />
@@ -1033,6 +1056,10 @@ export function ClassStep() {
     dispatch({ type: "SET_CLASS_CHOICE", index: activeIdx, choiceId, values });
   }
 
+  function handleFeatChoice(featName: string, choiceId: string, values: string[]) {
+    dispatch({ type: "SET_FEAT_CHOICE", featName, choiceId, values });
+  }
+
   function handleTabClick(index: number) {
     dispatch({ type: "SET_ACTIVE_CLASS", index });
     setIsAddingClass(false);
@@ -1349,6 +1376,7 @@ export function ClassStep() {
                             features={[...classAtLevel, ...subclassAtLevel]}
                             choiceSelections={activeClassChoices}
                             onChoiceSelect={handleClassChoice}
+                            onFeatChoiceSelect={handleFeatChoice}
                             choicePrefix=""
                             extra={subclassPrompt}
                             ctx={{ className: activeClassName ?? undefined, level: lvl }}
