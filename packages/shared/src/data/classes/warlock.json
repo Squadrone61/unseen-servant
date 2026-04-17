@@ -679,27 +679,6 @@
       "shortName": "Archfey",
       "className": "Warlock",
       "description": "Your pact draws on the power of the Feywild. When you choose this subclass, you might make a deal with an archfey, such as the Prince of Frost; the Queen of Air and Darkness, ruler of the Gloaming Court; Titania of the Summer Court; or an ancient hag. Or you might call on a spectrum of Fey, weaving a web of favors and debts. Whoever they are, your patron is often inscrutable and whimsical.",
-      "additionalSpells": {
-        "level3": [
-          "Calm Emotions",
-          "Faerie Fire",
-          "Misty Step",
-          "Phantasmal Force",
-          "Sleep"
-        ],
-        "level5": [
-          "Blink",
-          "Plant Growth"
-        ],
-        "level7": [
-          "Dominate Beast",
-          "Greater Invisibility"
-        ],
-        "level9": [
-          "Dominate Person",
-          "Seeming"
-        ]
-      },
       "features": [
         {
           "name": "Archfey Patron",
@@ -847,30 +826,6 @@
       "shortName": "Celestial",
       "className": "Warlock",
       "description": "Your pact draws on the Upper Planes, the realms of everlasting bliss. You might enter an agreement with an empyrean, a couatl, a sphinx, a unicorn, or another heavenly entity. Or you might call on numerous such beings as you pursue goals aligned with theirs. Your pact allows you to experience a hint of the holy light that illuminates the multiverse.",
-      "additionalSpells": {
-        "cantrips": [
-          "Sacred Flame",
-          "Light"
-        ],
-        "level3": [
-          "Aid",
-          "Cure Wounds",
-          "Guiding Bolt",
-          "Lesser Restoration"
-        ],
-        "level5": [
-          "Daylight",
-          "Revivify"
-        ],
-        "level7": [
-          "Guardian of Faith",
-          "Wall of Fire"
-        ],
-        "level9": [
-          "Greater Restoration",
-          "Summon Celestial"
-        ]
-      },
       "features": [
         {
           "name": "Celestial Patron",
@@ -1022,26 +977,6 @@
       "shortName": "Fiend",
       "className": "Warlock",
       "description": "Your pact draws on the Lower Planes, the realms of perdition. You might forge a bargain with a demon lord such as Demogorgon or Orcus; an archdevil such as Asmodeus; or a pit fiend, balor, yugoloth, or night hag that is especially mighty. That patron's aims are evil—the corruption or destruction of all things, ultimately including you—and your path is defined by the extent to which you strive against those aims.",
-      "additionalSpells": {
-        "level3": [
-          "Burning Hands",
-          "Command",
-          "Scorching Ray",
-          "Suggestion"
-        ],
-        "level5": [
-          "Fireball",
-          "Stinking Cloud"
-        ],
-        "level7": [
-          "Fire Shield",
-          "Wall of Fire"
-        ],
-        "level9": [
-          "Geas",
-          "Insect Plague"
-        ]
-      },
       "features": [
         {
           "name": "Fiend Patron",
@@ -1192,29 +1127,6 @@
       "shortName": "Great Old One",
       "className": "Warlock",
       "description": "When you choose this subclass, you might bind yourself to an unspeakable being from the Far Realm or an elder god—a being such as Tharizdun, the Chained God; Zargon, the Returner; Hadar, the Dark Hunger; or Great Cthulhu. Or you might invoke several entities without yoking yourself to one. The motives of these beings are incomprehensible, and the Great Old One might be indifferent to your existence. But the secrets you've learned nevertheless allow you to draw strange magic from it.",
-      "additionalSpells": {
-        "level3": [
-          "Detect Thoughts",
-          "Dissonant Whispers",
-          "Phantasmal Force",
-          "Tasha's Hideous Laughter"
-        ],
-        "level5": [
-          "Clairvoyance",
-          "Hunger of Hadar"
-        ],
-        "level7": [
-          "Confusion",
-          "Summon Aberration"
-        ],
-        "level9": [
-          "Modify Memory",
-          "Telekinesis"
-        ],
-        "level10": [
-          "Hex"
-        ]
-      },
       "features": [
         {
           "name": "Great Old One Patron",

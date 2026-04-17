@@ -673,28 +673,6 @@
       "shortName": "Fey Wanderer",
       "className": "Ranger",
       "description": "A fey mystique surrounds you, thanks to the boon of an archfey or a location in the Feywild that transformed you. Your joyful laughter brightens the hearts of the downtrodden, and your martial prowess strikes terror in your foes, for great is the mirth of the fey and dreadful is their fury.",
-      "additionalSpells": [
-        {
-          "level": 3,
-          "spell": "Charm Person"
-        },
-        {
-          "level": 5,
-          "spell": "Misty Step"
-        },
-        {
-          "level": 9,
-          "spell": "Summon Fey"
-        },
-        {
-          "level": 13,
-          "spell": "Dimension Door"
-        },
-        {
-          "level": 17,
-          "spell": "Mislead"
-        }
-      ],
       "features": [
         {
           "name": "Dreadful Strikes",
@@ -860,28 +838,6 @@
       "shortName": "Gloom Stalker",
       "className": "Ranger",
       "description": "Gloom Stalkers are at home in the darkest places, wielding magic drawn from the Shadowfell to combat enemies that lurk in darkness.",
-      "additionalSpells": [
-        {
-          "level": 3,
-          "spell": "Disguise Self"
-        },
-        {
-          "level": 5,
-          "spell": "Rope Trick"
-        },
-        {
-          "level": 9,
-          "spell": "Fear"
-        },
-        {
-          "level": 13,
-          "spell": "Greater Invisibility"
-        },
-        {
-          "level": 17,
-          "spell": "Seeming"
-        }
-      ],
       "features": [
         {
           "name": "Dread Ambusher",

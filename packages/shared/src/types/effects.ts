@@ -333,6 +333,8 @@ export type Property = {
       minLevel?: number;
       /** Ability score key used for the spell's DC/attack. */
       castingAbility?: Ability;
+      /** Usage restriction (e.g. "can target only snakes"). */
+      condition?: string;
     }
   | {
       type: "resource";

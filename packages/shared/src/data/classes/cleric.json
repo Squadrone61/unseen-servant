@@ -606,58 +606,6 @@
       "shortName": "Life",
       "className": "Cleric",
       "description": "The Life domain focuses on the vibrant positive energy that sustains all life. Gods of life promote vitality and health through healing the sick and wounded, caring for those in need, and driving away the forces of death and undeath.",
-      "additionalSpells": [
-        {
-          "spell": "Aid",
-          "usage": "always_prepared",
-          "minLevel": 3
-        },
-        {
-          "spell": "Bless",
-          "usage": "always_prepared",
-          "minLevel": 3
-        },
-        {
-          "spell": "Cure Wounds",
-          "usage": "always_prepared",
-          "minLevel": 3
-        },
-        {
-          "spell": "Lesser Restoration",
-          "usage": "always_prepared",
-          "minLevel": 3
-        },
-        {
-          "spell": "Mass Healing Word",
-          "usage": "always_prepared",
-          "minLevel": 5
-        },
-        {
-          "spell": "Revivify",
-          "usage": "always_prepared",
-          "minLevel": 5
-        },
-        {
-          "spell": "Aura of Life",
-          "usage": "always_prepared",
-          "minLevel": 7
-        },
-        {
-          "spell": "Death Ward",
-          "usage": "always_prepared",
-          "minLevel": 7
-        },
-        {
-          "spell": "Greater Restoration",
-          "usage": "always_prepared",
-          "minLevel": 9
-        },
-        {
-          "spell": "Mass Cure Wounds",
-          "usage": "always_prepared",
-          "minLevel": 9
-        }
-      ],
       "features": [
         {
           "name": "Life Domain",
@@ -782,58 +730,6 @@
       "shortName": "Light",
       "className": "Cleric",
       "description": "Gods of light promote the ideals of rebirth and renewal, truth, vigilance, and beauty. Clerics of light are enlightened souls infused with radiance, charged with chasing away lies and burning away darkness.",
-      "additionalSpells": [
-        {
-          "spell": "Burning Hands",
-          "usage": "always_prepared",
-          "minLevel": 3
-        },
-        {
-          "spell": "Faerie Fire",
-          "usage": "always_prepared",
-          "minLevel": 3
-        },
-        {
-          "spell": "Scorching Ray",
-          "usage": "always_prepared",
-          "minLevel": 3
-        },
-        {
-          "spell": "See Invisibility",
-          "usage": "always_prepared",
-          "minLevel": 3
-        },
-        {
-          "spell": "Daylight",
-          "usage": "always_prepared",
-          "minLevel": 5
-        },
-        {
-          "spell": "Fireball",
-          "usage": "always_prepared",
-          "minLevel": 5
-        },
-        {
-          "spell": "Arcane Eye",
-          "usage": "always_prepared",
-          "minLevel": 7
-        },
-        {
-          "spell": "Wall of Fire",
-          "usage": "always_prepared",
-          "minLevel": 7
-        },
-        {
-          "spell": "Flame Strike",
-          "usage": "always_prepared",
-          "minLevel": 9
-        },
-        {
-          "spell": "Scrying",
-          "usage": "always_prepared",
-          "minLevel": 9
-        }
-      ],
       "features": [
         {
           "name": "Light Domain",
@@ -986,58 +882,6 @@
       "shortName": "Trickery",
       "className": "Cleric",
       "description": "Gods of trickery are mischief-makers and instigators who stand as a constant challenge to the accepted order. Their clerics are a disruptive force in the world, puncturing pride, mocking tyrants, stealing from the rich, and flouting hollow traditions.",
-      "additionalSpells": [
-        {
-          "spell": "Charm Person",
-          "usage": "always_prepared",
-          "minLevel": 3
-        },
-        {
-          "spell": "Disguise Self",
-          "usage": "always_prepared",
-          "minLevel": 3
-        },
-        {
-          "spell": "Invisibility",
-          "usage": "always_prepared",
-          "minLevel": 3
-        },
-        {
-          "spell": "Pass Without Trace",
-          "usage": "always_prepared",
-          "minLevel": 3
-        },
-        {
-          "spell": "Hypnotic Pattern",
-          "usage": "always_prepared",
-          "minLevel": 5
-        },
-        {
-          "spell": "Nondetection",
-          "usage": "always_prepared",
-          "minLevel": 5
-        },
-        {
-          "spell": "Confusion",
-          "usage": "always_prepared",
-          "minLevel": 7
-        },
-        {
-          "spell": "Dimension Door",
-          "usage": "always_prepared",
-          "minLevel": 7
-        },
-        {
-          "spell": "Dominate Person",
-          "usage": "always_prepared",
-          "minLevel": 9
-        },
-        {
-          "spell": "Modify Memory",
-          "usage": "always_prepared",
-          "minLevel": 9
-        }
-      ],
       "features": [
         {
           "name": "Trickery Domain",
@@ -1167,58 +1011,6 @@
       "shortName": "War",
       "className": "Cleric",
       "description": "Gods of war watch over warriors and reward them for their great deeds. The clerics of such gods excel in battle, inspiring others to fight the good fight or offering acts of violence as prayers.",
-      "additionalSpells": [
-        {
-          "spell": "Guiding Bolt",
-          "usage": "always_prepared",
-          "minLevel": 3
-        },
-        {
-          "spell": "Magic Weapon",
-          "usage": "always_prepared",
-          "minLevel": 3
-        },
-        {
-          "spell": "Shield of Faith",
-          "usage": "always_prepared",
-          "minLevel": 3
-        },
-        {
-          "spell": "Spiritual Weapon",
-          "usage": "always_prepared",
-          "minLevel": 3
-        },
-        {
-          "spell": "Crusader's Mantle",
-          "usage": "always_prepared",
-          "minLevel": 5
-        },
-        {
-          "spell": "Spirit Guardians",
-          "usage": "always_prepared",
-          "minLevel": 5
-        },
-        {
-          "spell": "Fire Shield",
-          "usage": "always_prepared",
-          "minLevel": 7
-        },
-        {
-          "spell": "Freedom of Movement",
-          "usage": "always_prepared",
-          "minLevel": 7
-        },
-        {
-          "spell": "Hold Monster",
-          "usage": "always_prepared",
-          "minLevel": 9
-        },
-        {
-          "spell": "Steel Wind Strike",
-          "usage": "always_prepared",
-          "minLevel": 9
-        }
-      ],
       "features": [
         {
           "name": "War Domain",

@@ -155,8 +155,6 @@ function collectLanguagesFromState(state: BuilderState): string[] {
  */
 function assembleSpellsFromState(state: BuilderState, warnings: string[]): Spell[] {
   const spells: Spell[] = [];
-  const allCantrips = new Set(Object.values(state.cantrips).flat());
-  const allPrepared = new Set(Object.values(state.preparedSpells).flat());
 
   for (const cls of state.classes) {
     const classCantrips = state.cantrips[cls.name] ?? [];
@@ -211,43 +209,6 @@ function assembleSpellsFromState(state: BuilderState, warnings: string[]): Spell
         sourceClass: cls.name,
       });
     }
-
-    // Always-prepared subclass spells
-    if (cls.subclass) {
-      const classDb = getClass(cls.name);
-      const sub = classDb?.subclasses.find(
-        (s) => s.name.toLowerCase() === cls.subclass!.toLowerCase(),
-      );
-      if (sub?.additionalSpells) {
-        for (const entry of sub.additionalSpells) {
-          if (entry.minLevel > cls.level) continue;
-          const name = entry.spell;
-          if (allPrepared.has(name) || allCantrips.has(name)) continue;
-          const db = getSpell(name);
-          if (!db) {
-            warnings.push(`Unknown spell "${name}" — skipped (no DB entry)`);
-            continue;
-          }
-          spells.push({
-            name,
-            level: db.level,
-            school: db.school,
-            castingTime: db.castingTime,
-            range: db.range,
-            components: db.components,
-            duration: db.duration,
-            description: db.description,
-            ritual: db.ritual ?? false,
-            concentration: db.concentration ?? false,
-            prepared: true,
-            alwaysPrepared: true,
-            spellSource: "class",
-            knownByClass: false,
-            sourceClass: cls.name,
-          });
-        }
-      }
-    }
   }
 
   return spells;
@@ -262,6 +223,8 @@ function assembleSpellsFromState(state: BuilderState, warnings: string[]): Spell
 function assembleGrantedSpells(
   bundles: EffectBundle[],
   existing: Spell[],
+  classes: CharacterClass[],
+  totalLevel: number,
   warnings: string[],
 ): Spell[] {
   const out: Spell[] = [];
@@ -284,6 +247,25 @@ function assembleGrantedSpells(
             : "class";
 
     for (const grant of grants) {
+      // Filter by minLevel — use class level for class/subclass sources, total level otherwise
+      if (grant.minLevel != null) {
+        let effectiveLevel: number;
+        if (bundle.source.type === "class") {
+          const cls = classes.find(
+            (c) => c.name.toLowerCase() === bundle.source.name.toLowerCase(),
+          );
+          effectiveLevel = cls?.level ?? totalLevel;
+        } else if (bundle.source.type === "subclass") {
+          const cls = classes.find(
+            (c) => c.subclass?.toLowerCase() === bundle.source.name.toLowerCase(),
+          );
+          effectiveLevel = cls?.level ?? totalLevel;
+        } else {
+          effectiveLevel = totalLevel;
+        }
+        if (grant.minLevel > effectiveLevel) continue;
+      }
+
       const key = grant.spell.toLowerCase();
       if (seen.has(key)) continue;
       const db = getSpell(grant.spell);
@@ -309,6 +291,7 @@ function assembleGrantedSpells(
         knownByClass: false,
         sourceClass: bundle.source.featureName ?? bundle.source.name,
         grantUsage: grant.usage,
+        grantCondition: grant.condition,
       });
     }
   }
@@ -908,7 +891,7 @@ export function buildCharacter(state: BuilderState): {
   });
 
   // ── Granted spells from effect bundles (feats/items/species spell_grant) ──
-  const granted = assembleGrantedSpells(bundles, spells, warnings);
+  const granted = assembleGrantedSpells(bundles, spells, classes, totalLevel, warnings);
   spells.push(...granted);
 
   // ── Features (from DB) ──────────────────────────────────

@@ -391,12 +391,24 @@ function ClassSpellPanel({
     return `${abilityLabel} modifier (${modStr}) + ${levelLabel} (${levelScale === "full" ? classLevel : Math.floor(classLevel / 2)})`;
   }, [classDb.preparedSpellFormula, abilityScores, classLevel]);
 
-  // Always-prepared spells from subclass (gated by current class level)
+  // Always-prepared spells from subclass features (gated by current class level)
   const alwaysPrepared = useMemo<string[]>(() => {
     if (!subclass) return [];
     const sub = classDb.subclasses.find((s) => s.name === subclass);
-    if (!sub?.additionalSpells) return [];
-    return sub.additionalSpells.filter((e) => e.minLevel <= classLevel).map((e) => e.spell);
+    if (!sub) return [];
+    const grants: string[] = [];
+    for (const feature of sub.features) {
+      for (const prop of feature.effects?.properties ?? []) {
+        if (
+          prop.type === "spell_grant" &&
+          prop.usage === "always_prepared" &&
+          (prop.minLevel == null || prop.minLevel <= classLevel)
+        ) {
+          grants.push(prop.spell);
+        }
+      }
+    }
+    return grants;
   }, [classDb, subclass, classLevel]);
 
   // Spell lists filtered by class

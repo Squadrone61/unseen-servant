@@ -49,8 +49,18 @@ function SpellRow({ spell, onClick }: { spell: Spell; onClick: (e: React.MouseEv
         </span>
       )}
 
+      {/* Grant condition note */}
+      {spell.grantCondition && (
+        <span
+          className="text-xs text-orange-400/60 italic shrink-0 truncate max-w-[120px]"
+          title={spell.grantCondition}
+        >
+          ({spell.grantCondition})
+        </span>
+      )}
+
       {/* Source badges */}
-      {spell.spellSource === "race" && (
+      {(spell.spellSource === "race" || spell.spellSource === "species") && (
         <span className="text-xs text-emerald-400/60 font-semibold shrink-0" title="Species spell">
           S
         </span>

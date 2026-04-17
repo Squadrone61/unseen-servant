@@ -549,27 +549,6 @@
       "className": "Sorcerer",
       "source": "XPHB",
       "description": "An alien influence has wrapped its tendrils around your mind, giving you psionic power. You can now touch other minds with that power and alter the world around you. Perhaps a psychic wind from the Astral Plane carried psionic energy to you, or you were exposed to the Far Realm's warping influence. Alternatively, you were implanted with a mind flayer tadpole, but your transformation into a mind flayer never occurred; now the tadpole's psionic power is yours.",
-      "additionalSpells": {
-        "3": [
-          "Arms of Hadar",
-          "Calm Emotions",
-          "Detect Thoughts",
-          "Dissonant Whispers",
-          "Mind Sliver"
-        ],
-        "5": [
-          "Hunger of Hadar",
-          "Sending"
-        ],
-        "7": [
-          "Evard's Black Tentacles",
-          "Summon Aberration"
-        ],
-        "9": [
-          "Rary's Telepathic Bond",
-          "Telekinesis"
-        ]
-      },
       "features": [
         {
           "name": "Psionic Spells",
@@ -753,26 +732,6 @@
       "className": "Sorcerer",
       "source": "XPHB",
       "description": "The cosmic force of order has suffused you with magic. That power arises from Mechanus or a realm like it—a plane of existence shaped entirely by clockwork efficiency. You or someone from your lineage might have become entangled in the machinations of modrons, the orderly beings who inhabit Mechanus. Whatever its origin within you, the power of order can seem strange to others, but for you, it's part of a vast and glorious system.",
-      "additionalSpells": {
-        "3": [
-          "Aid",
-          "Alarm",
-          "Lesser Restoration",
-          "Protection from Evil and Good"
-        ],
-        "5": [
-          "Dispel Magic",
-          "Protection from Energy"
-        ],
-        "7": [
-          "Freedom of Movement",
-          "Summon Construct"
-        ],
-        "9": [
-          "Greater Restoration",
-          "Wall of Force"
-        ]
-      },
       "features": [
         {
           "name": "Clockwork Spells",
@@ -955,26 +914,6 @@
       "className": "Sorcerer",
       "source": "XPHB",
       "description": "Your innate magic comes from the gift of a dragon. Perhaps an ancient dragon facing death bequeathed some of its magical power to you or your ancestor. You might have absorbed magic from a site infused with dragons' power, handled treasure from a dragon's hoard steeped in draconic power, or you have a dragon for an ancestor.",
-      "additionalSpells": {
-        "3": [
-          "Alter Self",
-          "Chromatic Orb",
-          "Command",
-          "Dragon's Breath"
-        ],
-        "5": [
-          "Fear",
-          "Fly"
-        ],
-        "7": [
-          "Arcane Eye",
-          "Charm Monster"
-        ],
-        "9": [
-          "Legend Lore",
-          "Summon Dragon"
-        ]
-      },
       "features": [
         {
           "name": "Draconic Spells",

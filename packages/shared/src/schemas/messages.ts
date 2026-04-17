@@ -61,6 +61,7 @@ export const spellSchema = z.object({
   knownByClass: z.boolean(),
   sourceClass: z.string(),
   grantUsage: z.string().optional(),
+  grantCondition: z.string().optional(),
 });
 
 // spellSlotLevelSchema, itemSchema (+weapon/armor), currencySchema,

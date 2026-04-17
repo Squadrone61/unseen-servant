@@ -46,4 +46,6 @@ export interface Spell {
    * Undefined for normal class-learned spells.
    */
   grantUsage?: "at_will" | "always_prepared" | string;
+  /** Usage restriction from spell_grant (e.g. "can target only snakes"). */
+  grantCondition?: string;
 }

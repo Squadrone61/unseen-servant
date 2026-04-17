@@ -58,57 +58,20 @@ import sorcererData from "./classes/sorcerer.json";
 import warlockData from "./classes/warlock.json";
 import wizardData from "./classes/wizard.json";
 
-// ─── Type assertions for JSON imports ──────────────────
-
-/**
- * Normalize additionalSpells into `Array<{ spell, minLevel }>`. Source JSON may be:
- *   - `string[]`                                          (e.g. barbarian: always available)
- *   - `Array<{ spell, minLevel?, ... }>`                  (e.g. ranger, cleric)
- *   - `Record<string, string[]>` keyed by class level     (e.g. sorcerer, warlock)
- */
-function normalizeClassData(raw: unknown): ClassDb {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const cls = raw as any;
-  for (const sub of cls.subclasses ?? []) {
-    const src = sub.additionalSpells;
-    if (!src) continue;
-    const out: Array<{ spell: string; minLevel: number }> = [];
-    if (Array.isArray(src)) {
-      for (const entry of src) {
-        if (typeof entry === "string") {
-          out.push({ spell: entry, minLevel: 1 });
-        } else {
-          const e = entry as { spell: string; minLevel?: number };
-          out.push({ spell: e.spell, minLevel: e.minLevel ?? 1 });
-        }
-      }
-    } else if (typeof src === "object") {
-      for (const [levelKey, spellNames] of Object.entries(src)) {
-        const minLevel = parseInt(levelKey, 10) || 1;
-        for (const name of spellNames as string[]) {
-          out.push({ spell: name, minLevel });
-        }
-      }
-    }
-    sub.additionalSpells = out;
-  }
-  return cls as ClassDb;
-}
-
 const classesArray: ClassDb[] = [
-  barbarianData,
-  bardData,
-  clericData,
-  druidData,
-  fighterData,
-  monkData,
-  paladinData,
-  rangerData,
-  rogueData,
-  sorcererData,
-  warlockData,
-  wizardData,
-].map((d) => normalizeClassData(d));
+  barbarianData as ClassDb,
+  bardData as ClassDb,
+  clericData as ClassDb,
+  druidData as ClassDb,
+  fighterData as ClassDb,
+  monkData as ClassDb,
+  paladinData as ClassDb,
+  rangerData as ClassDb,
+  rogueData as ClassDb,
+  sorcererData as ClassDb,
+  warlockData as ClassDb,
+  wizardData as ClassDb,
+];
 
 // ─── Case-insensitive lookup maps ───────────────────────
 

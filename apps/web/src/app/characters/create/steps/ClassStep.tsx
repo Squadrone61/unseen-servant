@@ -5,6 +5,7 @@ import { classesArray } from "@unseen-servant/shared/data";
 import type {
   ClassDb,
   ClassFeatureDb,
+  Property,
   SubclassDb,
   SubclassFeatureDb,
 } from "@unseen-servant/shared/types";
@@ -18,6 +19,19 @@ import { useBuilder } from "../BuilderContext";
 
 // ---------------------------------------------------------------------------
 // Helpers
+
+type SpellGrant = Extract<Property, { type: "spell_grant" }>;
+
+/** Collect all spell_grant properties from a subclass's features. */
+function getSubclassSpellGrants(subclass: SubclassDb): SpellGrant[] {
+  const grants: SpellGrant[] = [];
+  for (const feature of subclass.features) {
+    for (const prop of feature.effects?.properties ?? []) {
+      if (prop.type === "spell_grant") grants.push(prop);
+    }
+  }
+  return grants;
+}
 // ---------------------------------------------------------------------------
 
 /** Format an Ability string from the DB (e.g. "strength") → "STR" */
@@ -278,6 +292,7 @@ function SubclassPopover({
   position: { x: number; y: number };
 }) {
   const casterBadge = getCasterBadge(subclass.casterProgression);
+  const spellGrants = getSubclassSpellGrants(subclass);
 
   return (
     <DetailPopover title={subclass.name} onClose={onClose} position={position}>
@@ -289,7 +304,7 @@ function SubclassPopover({
               {casterBadge.label}
             </span>
           )}
-          {subclass.additionalSpells && subclass.additionalSpells.length > 0 && (
+          {spellGrants.length > 0 && (
             <span className="text-xs px-2 py-0.5 rounded-full bg-blue-900/30 text-blue-300 border border-blue-700/30">
               Bonus Spells
             </span>
@@ -304,20 +319,20 @@ function SubclassPopover({
         )}
 
         {/* Additional spells */}
-        {subclass.additionalSpells && subclass.additionalSpells.length > 0 && (
+        {spellGrants.length > 0 && (
           <div className="flex flex-col gap-1.5">
             <span className="text-xs font-semibold text-blue-300/80 uppercase tracking-wide">
               Additional Spells
             </span>
             <div className="flex flex-wrap gap-1.5">
-              {subclass.additionalSpells.map((entry) => (
+              {spellGrants.map((grant) => (
                 <span
-                  key={`${entry.spell}-${entry.minLevel}`}
+                  key={`${grant.spell}-${grant.minLevel ?? 1}`}
                   className="inline-flex items-center px-2 py-0.5 rounded text-xs border bg-violet-900/20 text-violet-300 border-violet-700/30"
                 >
-                  {entry.spell}
-                  {entry.minLevel > 1 && (
-                    <span className="ml-1 text-violet-400/60">L{entry.minLevel}</span>
+                  {grant.spell}
+                  {grant.minLevel != null && grant.minLevel > 1 && (
+                    <span className="ml-1 text-violet-400/60">L{grant.minLevel}</span>
                   )}
                 </span>
               ))}
@@ -369,7 +384,7 @@ function SubclassCard({
   onInfo: (e: React.MouseEvent) => void;
 }) {
   const casterBadge = getCasterBadge(subclass.casterProgression);
-  const hasBonusSpells = subclass.additionalSpells && subclass.additionalSpells.length > 0;
+  const hasBonusSpells = getSubclassSpellGrants(subclass).length > 0;
 
   return (
     <button
