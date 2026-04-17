@@ -364,10 +364,16 @@
         ]
       },
       "activation": {
+        "modifiers": [
+          {
+            "target": "spell_save_dc",
+            "value": 1
+          }
+        ],
         "properties": [
           {
-            "type": "note",
-            "text": "Spell save DC increases by 1, and you have advantage on Sorcerer spell attack rolls."
+            "type": "advantage",
+            "on": "attack_spell"
           }
         ]
       },

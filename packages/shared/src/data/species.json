@@ -7,11 +7,15 @@
     ],
     "speed": 30,
     "effects": {
-      "properties": [
+      "modifiers": [
         {
-          "type": "note",
-          "text": "Flight: Fly Speed equal to walking speed. Can't fly in medium or heavy armor."
-        },
+          "target": "speed_fly",
+          "value": "speed",
+          "operation": "set",
+          "condition": "not wearing Medium or Heavy armor"
+        }
+      ],
+      "properties": [
         {
           "type": "natural_weapon",
           "name": "Talons",
@@ -475,12 +479,19 @@
           "damageType": "poison"
         },
         {
-          "type": "note",
-          "text": "Dwarven Resilience: Advantage on saving throws to avoid or end the Poisoned condition."
+          "type": "advantage",
+          "on": "save_constitution",
+          "condition": "to avoid or end the Poisoned condition"
         },
         {
-          "type": "note",
-          "text": "Psionic Fortitude: Advantage on saving throws to avoid or end the Charmed or Stunned condition."
+          "type": "advantage",
+          "on": "save_wisdom",
+          "condition": "to avoid or end the Charmed condition"
+        },
+        {
+          "type": "advantage",
+          "on": "save_wisdom",
+          "condition": "to avoid or end the Stunned condition"
         },
         {
           "type": "spell_grant",
@@ -527,8 +538,14 @@
           "condition": "to avoid or end the Poisoned condition"
         },
         {
+          "type": "resource",
+          "name": "Stonecunning",
+          "maxUses": "prof",
+          "longRest": "all"
+        },
+        {
           "type": "note",
-          "text": "Stonecunning: As a Bonus Action, gain Tremorsense 60 ft for 10 minutes (must be on stone surface). Usable Proficiency Bonus times per Long Rest."
+          "text": "Stonecunning: As a Bonus Action, gain Tremorsense 60 ft for 10 minutes (must be on stone surface)."
         }
       ]
     }
@@ -739,6 +756,14 @@
     ],
     "speed": 30,
     "effects": {
+      "modifiers": [
+        {
+          "target": "speed_fly",
+          "value": "speed",
+          "operation": "set",
+          "condition": "not wearing Medium or Heavy armor"
+        }
+      ],
       "properties": [
         {
           "type": "spell_grant",
@@ -757,10 +782,6 @@
           "spell": "Enlarge/Reduce",
           "usage": "1/long_rest",
           "castingAbility": "intelligence"
-        },
-        {
-          "type": "note",
-          "text": "Flight: Fly Speed equal to walking speed. Can't fly in medium or heavy armor."
         }
       ]
     }
@@ -2019,8 +2040,21 @@
           "text": "Amphibious: Can breathe air and water."
         },
         {
-          "type": "note",
-          "text": "Control Air and Water: Cast Fog Cloud (level 1+), Gust of Wind (level 3+), Water Walk (level 5+), each once per Long Rest. Can also use spell slots of appropriate level. Spellcasting ability is Intelligence, Wisdom, or Charisma (choose at creation)."
+          "type": "spell_grant",
+          "spell": "Fog Cloud",
+          "usage": "1/long_rest"
+        },
+        {
+          "type": "spell_grant",
+          "spell": "Gust of Wind",
+          "usage": "1/long_rest",
+          "minLevel": 3
+        },
+        {
+          "type": "spell_grant",
+          "spell": "Water Walk",
+          "usage": "1/long_rest",
+          "minLevel": 5
         },
         {
           "type": "note",
@@ -2064,12 +2098,16 @@
           "usage": "at_will"
         },
         {
-          "type": "note",
-          "text": "Animal Friendship (snakes only): Cast at will targeting only snakes. Intelligence, Wisdom, or Charisma is your spellcasting ability (choose at creation)."
+          "type": "spell_grant",
+          "spell": "Animal Friendship",
+          "usage": "at_will",
+          "condition": "can target only snakes"
         },
         {
-          "type": "note",
-          "text": "Suggestion (level 3+): Cast once per Long Rest; can also use 2nd-level or higher spell slots. Spellcasting ability is Intelligence, Wisdom, or Charisma."
+          "type": "spell_grant",
+          "spell": "Suggestion",
+          "usage": "1/long_rest",
+          "minLevel": 3
         }
       ]
     }

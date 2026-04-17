@@ -280,8 +280,14 @@
       ],
       "properties": [
         {
-          "type": "note",
-          "text": "While disguised as a real or fictional person, you have advantage on Charisma (Deception or Performance) checks to convince others you are that person."
+          "type": "advantage",
+          "on": "deception",
+          "condition": "while disguised as a real or fictional person"
+        },
+        {
+          "type": "advantage",
+          "on": "performance",
+          "condition": "while disguised as a real or fictional person"
         },
         {
           "type": "note",

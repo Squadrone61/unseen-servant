@@ -884,10 +884,17 @@
           "subclassName": "Thief",
           "description": "You've trained to get into especially hard-to-reach places, granting you these benefits.\n\n**Climber.** You gain a Climb Speed equal to your {rule:Speed}.\n\n**Jumper.** You can determine your jump distance using your Dexterity rather than your Strength.",
           "effects": {
+            "modifiers": [
+              {
+                "target": "speed_climb",
+                "value": "speed",
+                "operation": "set"
+              }
+            ],
             "properties": [
               {
                 "type": "note",
-                "text": "Climb Speed equals your Speed. You can use Dexterity instead of Strength to determine jump distance."
+                "text": "You can use Dexterity instead of Strength to determine jump distance."
               }
             ]
           }

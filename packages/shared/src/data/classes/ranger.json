@@ -418,12 +418,16 @@
             "target": "speed",
             "value": 10,
             "condition": "while not wearing Heavy armor"
-          }
-        ],
-        "properties": [
+          },
           {
-            "type": "note",
-            "text": "Gain a Climb Speed and Swim Speed equal to your Speed."
+            "target": "speed_climb",
+            "value": "speed",
+            "operation": "set"
+          },
+          {
+            "target": "speed_swim",
+            "value": "speed",
+            "operation": "set"
           }
         ]
       }

@@ -348,8 +348,14 @@ export function resolveChoice(choice: FeatureChoice, ctx?: ResolveChoiceContext)
       }
       if (filter) {
         if (filter.level !== undefined) spells = spells.filter((s) => s.level === filter.level);
-        if (filter.minLevel != null) spells = spells.filter((s) => s.level >= filter.minLevel);
-        if (filter.maxLevel != null) spells = spells.filter((s) => s.level <= filter.maxLevel);
+        if (filter.minLevel != null) {
+          const min = filter.minLevel;
+          spells = spells.filter((s) => s.level >= min);
+        }
+        if (filter.maxLevel != null) {
+          const max = filter.maxLevel;
+          spells = spells.filter((s) => s.level <= max);
+        }
         if (filter.castingTime) spells = spells.filter((s) => s.castingTime === filter.castingTime);
       }
       return spells.map((s) => ({
