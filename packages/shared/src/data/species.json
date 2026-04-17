@@ -241,8 +241,8 @@
           "text": "Creature Type: Fey."
         },
         {
-          "type": "note",
-          "text": "Shapechanger: As an action, change your appearance and voice. You determine the specifics of the changes, including coloration, hair length, and sex. You can also adjust your height between Medium and Small, and make yourself appear as a member of another species, though none of your game statistics change. You can't duplicate the appearance of an individual you've never seen, and you must adopt a form that has the same basic arrangement of limbs. Your clothing and equipment aren't changed. You stay in the new form until you use an action to revert to your true form or until you die."
+          "type": "shapechange",
+          "action": "action"
         }
       ]
     },
@@ -1323,12 +1323,13 @@
     "effects": {
       "properties": [
         {
-          "type": "note",
-          "text": "Resourceful: You gain Heroic Inspiration whenever you finish a Long Rest."
+          "type": "inspiration_grant",
+          "targets": "self",
+          "timing": "long_rest"
         },
         {
-          "type": "note",
-          "text": "Versatile: You gain one Origin feat of your choice. (Handled at character creation.)"
+          "type": "feat_grant",
+          "category": "Origin"
         }
       ]
     },

@@ -145,6 +145,36 @@ function propertyToken(prop: Property): string | null {
       return `Evasion (${titleCase(prop.ability)})`;
     case "bonus_action_grant":
       return `BA: ${prop.actions.join("/")}`;
+    case "ignore_resistance": {
+      const types = prop.damageTypes.map((t) => titleCase(t)).join("/");
+      return prop.scope ? `Ignore Resist: ${types} (${prop.scope})` : `Ignore Resist: ${types}`;
+    }
+    case "inspiration_grant": {
+      const who = prop.targets === "self" ? "self" : `${prop.count ?? ""} allies`.trim();
+      const when =
+        prop.timing === "long_rest"
+          ? "LR"
+          : prop.timing === "short_rest"
+            ? "SR"
+            : prop.timing === "rest"
+              ? "Rest"
+              : "combat";
+      return `Inspiration (${who}, ${when})`;
+    }
+    case "concentration_immunity":
+      return `Conc. Immune: ${prop.spell}`;
+    case "suppress_advantage":
+      return `No Advantage: ${titleCase(prop.against)} Against You`;
+    case "teleport_grant":
+      return `Teleport ${prop.distance}ft (${prop.timing})`;
+    case "spellcasting_focus": {
+      const abl = prop.ability ? ` (${prop.ability.slice(0, 3).toUpperCase()})` : "";
+      return `Focus: ${prop.item}${abl}`;
+    }
+    case "feat_grant":
+      return `Feat: ${prop.category}`;
+    case "shapechange":
+      return `Shapechange (${titleCase(prop.action.replace(/_/g, " "))})`;
     case "note":
       return prop.text;
   }

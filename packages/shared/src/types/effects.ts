@@ -478,6 +478,19 @@ export type Property = {
       type: "bonus_action_grant";
       actions: string[];
     }
+  | { type: "ignore_resistance"; damageTypes: DamageType[]; scope?: "spells" }
+  | {
+      type: "inspiration_grant";
+      targets: "self" | "allies";
+      count?: string;
+      timing: "long_rest" | "short_rest" | "rest" | "combat_start_of_turn";
+    }
+  | { type: "concentration_immunity"; spell: string }
+  | { type: "suppress_advantage"; against: "attacks" }
+  | { type: "teleport_grant"; distance: number; timing: string }
+  | { type: "spellcasting_focus"; item: string; ability?: Ability }
+  | { type: "feat_grant"; category: "Origin" | "General" | "Fighting Style" }
+  | { type: "shapechange"; action: "action" | "bonus_action" }
   | { type: "note"; text: string }
 );
 
@@ -812,4 +825,6 @@ export interface ResolveContext {
   proficiencyBonus: number;
   /** Stack count for stackable effects (Exhaustion). Defaults to 1. */
   stackCount?: number;
+  /** Resolved walk speed. Available after walk speed is computed in getSpeed(). */
+  speed?: number;
 }

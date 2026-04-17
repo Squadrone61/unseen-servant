@@ -227,6 +227,62 @@ export function getNaturalWeapons(
   return collectProperties(bundles, "natural_weapon");
 }
 
+export function getIgnoreResistances(
+  char: CharacterData,
+): Array<Extract<import("../types/effects").Property, { type: "ignore_resistance" }>> {
+  const bundles = collectActiveBundles(char);
+  return collectProperties(bundles, "ignore_resistance");
+}
+
+export function getInspirationGrants(
+  char: CharacterData,
+): Array<Extract<import("../types/effects").Property, { type: "inspiration_grant" }>> {
+  const bundles = collectActiveBundles(char);
+  return collectProperties(bundles, "inspiration_grant");
+}
+
+export function getConcentrationImmunities(
+  char: CharacterData,
+): Array<Extract<import("../types/effects").Property, { type: "concentration_immunity" }>> {
+  const bundles = collectActiveBundles(char);
+  return collectProperties(bundles, "concentration_immunity");
+}
+
+export function getSuppressAdvantage(
+  char: CharacterData,
+): Array<Extract<import("../types/effects").Property, { type: "suppress_advantage" }>> {
+  const bundles = collectActiveBundles(char);
+  return collectProperties(bundles, "suppress_advantage");
+}
+
+export function getTeleportGrants(
+  char: CharacterData,
+): Array<Extract<import("../types/effects").Property, { type: "teleport_grant" }>> {
+  const bundles = collectActiveBundles(char);
+  return collectProperties(bundles, "teleport_grant");
+}
+
+export function getSpellcastingFoci(
+  char: CharacterData,
+): Array<Extract<import("../types/effects").Property, { type: "spellcasting_focus" }>> {
+  const bundles = collectActiveBundles(char);
+  return collectProperties(bundles, "spellcasting_focus");
+}
+
+export function getFeatGrants(
+  char: CharacterData,
+): Array<Extract<import("../types/effects").Property, { type: "feat_grant" }>> {
+  const bundles = collectActiveBundles(char);
+  return collectProperties(bundles, "feat_grant");
+}
+
+export function getShapechanges(
+  char: CharacterData,
+): Array<Extract<import("../types/effects").Property, { type: "shapechange" }>> {
+  const bundles = collectActiveBundles(char);
+  return collectProperties(bundles, "shapechange");
+}
+
 export function getRollMinimums(
   char: CharacterData,
 ): Array<{ on: string; min: number; mode: "d20" | "total"; proficientOnly: boolean }> {
@@ -377,10 +433,11 @@ export function getSpeed(char: CharacterData): import("../types/character").Char
   const baseWalk = species?.speed ?? 30;
 
   const walk = resolveStat(bundles, "speed", baseWalk, ctx);
-  const fly = resolveStat(bundles, "speed_fly", 0, ctx);
-  const swim = resolveStat(bundles, "speed_swim", 0, ctx);
-  const climb = resolveStat(bundles, "speed_climb", 0, ctx);
-  const burrow = resolveStat(bundles, "speed_burrow", 0, ctx);
+  const ctxWithSpeed = { ...ctx, speed: walk };
+  const fly = resolveStat(bundles, "speed_fly", 0, ctxWithSpeed);
+  const swim = resolveStat(bundles, "speed_swim", 0, ctxWithSpeed);
+  const climb = resolveStat(bundles, "speed_climb", 0, ctxWithSpeed);
+  const burrow = resolveStat(bundles, "speed_burrow", 0, ctxWithSpeed);
 
   return {
     walk,

@@ -991,8 +991,12 @@
     "effects": {
       "properties": [
         {
+          "type": "spellcasting_focus",
+          "item": "pact weapon"
+        },
+        {
           "type": "note",
-          "text": "Your pact weapon can be used as a spellcasting focus. It gains a +1 bonus to attack and damage rolls unless it already has a magic bonus. You can conjure shortbows, longbows, light crossbows, or heavy crossbows as pact weapons."
+          "text": "Your pact weapon gains a +1 bonus to attack and damage rolls unless it already has a magic bonus. You can conjure shortbows, longbows, light crossbows, or heavy crossbows as pact weapons."
         }
       ]
     }
@@ -1522,8 +1526,10 @@
     "effects": {
       "properties": [
         {
-          "type": "note",
-          "text": "Bonus Action: teleport up to 30 ft to an unoccupied space within 5 ft of your Hex/curse target. The target must be visible."
+          "type": "teleport_grant",
+          "distance": 30,
+          "timing": "bonus_action",
+          "condition": "to within 5 ft of Hex/curse target"
         }
       ]
     }

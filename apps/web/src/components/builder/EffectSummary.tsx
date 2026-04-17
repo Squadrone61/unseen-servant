@@ -64,7 +64,19 @@ function badgeClassFromProperty(prop: Property, compact: boolean): string | null
     case "bonus_action_grant":
       return "bg-emerald-900/40 text-emerald-300 border border-emerald-700/40";
     case "grant":
+    case "feat_grant":
       return "bg-purple-900/40 text-purple-300 border border-purple-700/40";
+    case "ignore_resistance":
+      return "bg-red-900/40 text-red-300 border border-red-700/40";
+    case "inspiration_grant":
+      return "bg-emerald-900/40 text-emerald-300 border border-emerald-700/40";
+    case "concentration_immunity":
+    case "teleport_grant":
+    case "spellcasting_focus":
+    case "shapechange":
+      return "bg-violet-900/40 text-violet-300 border border-violet-700/40";
+    case "suppress_advantage":
+      return "bg-blue-900/40 text-blue-300 border border-blue-700/40";
     case "note":
       if (compact) return null;
       return "bg-transparent text-gray-500 border-0 italic text-left";

@@ -353,6 +353,8 @@ class Parser {
         return classLevel ?? totalLevel;
       case "stacks":
         return stackCount ?? 1;
+      case "speed":
+        return this.ctx.speed ?? 30;
       default:
         throw new Error(`Unknown identifier '${name}' in expression`);
     }

@@ -495,8 +495,8 @@
       "effects": {
         "properties": [
           {
-            "type": "note",
-            "text": "Damage no longer forces a Concentration check to maintain Hunter's Mark."
+            "type": "concentration_immunity",
+            "spell": "Hunter's Mark"
           }
         ]
       }

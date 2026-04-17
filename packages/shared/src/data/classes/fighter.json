@@ -643,8 +643,10 @@
           "effects": {
             "properties": [
               {
-                "type": "note",
-                "text": "During combat, if you start your turn without Heroic Inspiration, you can grant it to yourself."
+                "type": "inspiration_grant",
+                "targets": "self",
+                "timing": "combat_start_of_turn",
+                "condition": "if you don't have Heroic Inspiration"
               }
             ]
           }

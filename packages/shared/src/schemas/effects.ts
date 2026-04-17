@@ -419,6 +419,51 @@ export const propertySchema: z.ZodType<Property> = z.discriminatedUnion("type", 
     actions: z.array(z.string()),
     condition: z.string().optional(),
   }),
+  z.object({
+    type: z.literal("ignore_resistance"),
+    damageTypes: z.array(damageTypeSchema),
+    scope: z.literal("spells").optional(),
+    condition: z.string().optional(),
+  }),
+  z.object({
+    type: z.literal("inspiration_grant"),
+    targets: z.enum(["self", "allies"]),
+    count: z.string().optional(),
+    timing: z.enum(["long_rest", "short_rest", "rest", "combat_start_of_turn"]),
+    condition: z.string().optional(),
+  }),
+  z.object({
+    type: z.literal("concentration_immunity"),
+    spell: z.string(),
+    condition: z.string().optional(),
+  }),
+  z.object({
+    type: z.literal("suppress_advantage"),
+    against: z.literal("attacks"),
+    condition: z.string().optional(),
+  }),
+  z.object({
+    type: z.literal("teleport_grant"),
+    distance: z.number(),
+    timing: z.string(),
+    condition: z.string().optional(),
+  }),
+  z.object({
+    type: z.literal("spellcasting_focus"),
+    item: z.string(),
+    ability: abilitySchema.optional(),
+    condition: z.string().optional(),
+  }),
+  z.object({
+    type: z.literal("feat_grant"),
+    category: z.enum(["Origin", "General", "Fighting Style"]),
+    condition: z.string().optional(),
+  }),
+  z.object({
+    type: z.literal("shapechange"),
+    action: z.enum(["action", "bonus_action"]),
+    condition: z.string().optional(),
+  }),
 ]);
 
 // ---------------------------------------------------------------------------

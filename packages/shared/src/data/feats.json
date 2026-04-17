@@ -339,7 +339,12 @@
         },
         {
           "type": "note",
-          "text": "You know one Artificer 1st-level spell of your choice (chosen via Artificer 1st-Level Spell selection). Intelligence is your spellcasting ability. You can cast it once per Long Rest without expending a spell slot; you can also cast it using any spell slots you have. The chosen artisan's tool (from Artisan's Tool Proficiency selection) can be used as a spellcasting focus for any Intelligence-based spell."
+          "text": "You know one Artificer 1st-level spell of your choice. Intelligence is your spellcasting ability. You can cast it once per Long Rest without expending a spell slot; you can also cast it using any spell slots you have."
+        },
+        {
+          "type": "spellcasting_focus",
+          "item": "chosen artisan's tool",
+          "ability": "intelligence"
         }
       ]
     },
@@ -441,11 +446,13 @@
       }
     ],
     "effects": {
-      "properties": [
+      "modifiers": [
         {
-          "type": "note",
-          "text": "Climb Speed: You gain a Climb Speed equal to your current walk Speed."
-        },
+          "target": "speed_climb",
+          "value": "speed"
+        }
+      ],
+      "properties": [
         {
           "type": "note",
           "text": "Hop Up: When you have the Prone condition, you can right yourself using only 5 feet of movement instead of half your Speed."
@@ -564,8 +571,9 @@
     "effects": {
       "properties": [
         {
-          "type": "note",
-          "text": "Blink Steps: Immediately after you take the Attack action or the Magic action on your turn, you can teleport up to 30 feet to an unoccupied space you can see."
+          "type": "teleport_grant",
+          "distance": 30,
+          "timing": "after Attack or Magic action"
         }
       ]
     },
@@ -824,8 +832,8 @@
     "effects": {
       "properties": [
         {
-          "type": "note",
-          "text": "Overcome Defenses: The Bludgeoning, Piercing, and Slashing damage you deal always ignores Resistance."
+          "type": "ignore_resistance",
+          "damageTypes": ["bludgeoning", "piercing", "slashing"]
         },
         {
           "type": "note",
@@ -1307,11 +1315,14 @@
       }
     ],
     "effects": {
-      "properties": [
+      "modifiers": [
         {
-          "type": "note",
-          "text": "Improved Dash: When you take the Dash action, your Speed increases by 10 feet for the duration of that action."
-        },
+          "target": "speed",
+          "value": 10,
+          "condition": "while taking the Dash action"
+        }
+      ],
+      "properties": [
         {
           "type": "note",
           "text": "Charge Attack: If you move at least 10 feet in a straight line toward a target immediately before hitting it with a melee attack roll as part of the Attack action, choose one of the following effects: gain a 1d8 bonus to the attack's damage roll, or push the target up to 10 feet away (only if the target is no more than one size larger than you). You can use this benefit only once on each of your turns."
@@ -2006,8 +2017,13 @@
             "effects": {
               "properties": [
                 {
+                  "type": "ignore_resistance",
+                  "damageTypes": ["acid"],
+                  "scope": "spells"
+                },
+                {
                   "type": "note",
-                  "text": "Your spells ignore resistance to Acid damage. Treat 1s as 2s on Acid damage dice."
+                  "text": "Treat 1s as 2s on Acid damage dice from spells."
                 }
               ]
             }
@@ -2017,8 +2033,13 @@
             "effects": {
               "properties": [
                 {
+                  "type": "ignore_resistance",
+                  "damageTypes": ["cold"],
+                  "scope": "spells"
+                },
+                {
                   "type": "note",
-                  "text": "Your spells ignore resistance to Cold damage. Treat 1s as 2s on Cold damage dice."
+                  "text": "Treat 1s as 2s on Cold damage dice from spells."
                 }
               ]
             }
@@ -2028,8 +2049,13 @@
             "effects": {
               "properties": [
                 {
+                  "type": "ignore_resistance",
+                  "damageTypes": ["fire"],
+                  "scope": "spells"
+                },
+                {
                   "type": "note",
-                  "text": "Your spells ignore resistance to Fire damage. Treat 1s as 2s on Fire damage dice."
+                  "text": "Treat 1s as 2s on Fire damage dice from spells."
                 }
               ]
             }
@@ -2039,8 +2065,13 @@
             "effects": {
               "properties": [
                 {
+                  "type": "ignore_resistance",
+                  "damageTypes": ["lightning"],
+                  "scope": "spells"
+                },
+                {
                   "type": "note",
-                  "text": "Your spells ignore resistance to Lightning damage. Treat 1s as 2s on Lightning damage dice."
+                  "text": "Treat 1s as 2s on Lightning damage dice from spells."
                 }
               ]
             }
@@ -2050,8 +2081,13 @@
             "effects": {
               "properties": [
                 {
+                  "type": "ignore_resistance",
+                  "damageTypes": ["thunder"],
+                  "scope": "spells"
+                },
+                {
                   "type": "note",
-                  "text": "Your spells ignore resistance to Thunder damage. Treat 1s as 2s on Thunder damage dice."
+                  "text": "Treat 1s as 2s on Thunder damage dice from spells."
                 }
               ]
             }
@@ -3391,8 +3427,10 @@
     "effects": {
       "properties": [
         {
-          "type": "note",
-          "text": "**Encouraging Song.** As you finish a Short Rest or Long Rest, you can play a song on a Musical Instrument with which you have proficiency and give Heroic Inspiration to allies who hear the song. The number of allies you can affect in this way equals your Proficiency Bonus."
+          "type": "inspiration_grant",
+          "targets": "allies",
+          "count": "prof",
+          "timing": "rest"
         }
       ]
     },
@@ -3655,8 +3693,8 @@
           "value": "Poisoner's Kit"
         },
         {
-          "type": "note",
-          "text": "Your Poison damage rolls ignore resistance to Poison damage."
+          "type": "ignore_resistance",
+          "damageTypes": ["poison"]
         },
         {
           "type": "note",

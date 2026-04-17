@@ -389,8 +389,9 @@
       "effects": {
         "properties": [
           {
-            "type": "note",
-            "text": "No attack roll can have Advantage against you unless you have the Incapacitated condition."
+            "type": "suppress_advantage",
+            "against": "attacks",
+            "condition": "unless Incapacitated"
           }
         ]
       }
