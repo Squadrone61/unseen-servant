@@ -178,7 +178,7 @@ describe("Rogue 1 — martial build", () => {
         level: 1,
         subclass: null,
         skills: ["stealth", "perception"],
-        choices: { expertise: ["stealth", "perception"] },
+        choices: { "expertise-l1": ["stealth", "perception"] },
       },
     ],
     baseAbilities: {

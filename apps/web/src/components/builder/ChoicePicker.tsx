@@ -236,11 +236,12 @@ export function ChoicePicker({
       const lower = query.trim().toLowerCase();
       opts = opts.filter((o) => o.name.toLowerCase().includes(lower));
     }
-    // Sort: enabled options first, disabled last (stable within each group)
+    // Sort: enabled first, disabled last; alphabetical within each group
     return [...opts].sort((a, b) => {
       const ad = a.disabled ? 1 : 0;
       const bd = b.disabled ? 1 : 0;
-      return ad - bd;
+      if (ad !== bd) return ad - bd;
+      return a.name.localeCompare(b.name);
     });
   }, [resolvedOptions, query]);
 

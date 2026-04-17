@@ -38,4 +38,12 @@ export interface Spell {
   knownByClass: boolean;
   /** How the character gained access to this spell. */
   spellSource: "class" | "feat" | "species" | "item" | "race";
+  /**
+   * For spell_grant spells: how the spell can be cast.
+   * "at_will" — no slot needed, unlimited uses (like a cantrip).
+   * "always_prepared" — uses spell slots but always prepared.
+   * "N/long_rest" or "N/short_rest" — N free casts per rest, no slot needed.
+   * Undefined for normal class-learned spells.
+   */
+  grantUsage?: "at_will" | "always_prepared" | string;
 }

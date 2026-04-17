@@ -15,9 +15,21 @@ const AVAILABILITY_STYLES: Record<SpellAvailability, { dot: string; text: string
   known: { dot: "bg-gray-600 ring-1 ring-gray-500", text: "text-gray-500" },
 };
 
+/** Format grantUsage like "1/long_rest" → "1/LR", "2/short_rest" → "2/SR" */
+function formatGrantUsage(usage: string): string {
+  if (usage === "at_will") return "At Will";
+  const m = usage.match(/^(\d+)\/(long|short)_rest$/);
+  if (m) return `${m[1]}/${m[2] === "long" ? "LR" : "SR"}`;
+  return usage;
+}
+
 function SpellRow({ spell, onClick }: { spell: Spell; onClick: (e: React.MouseEvent) => void }) {
   const availability = getSpellAvailability(spell);
   const styles = AVAILABILITY_STYLES[availability];
+  const grantLabel =
+    spell.grantUsage && spell.grantUsage !== "always_prepared"
+      ? formatGrantUsage(spell.grantUsage)
+      : null;
 
   return (
     <div
@@ -26,6 +38,16 @@ function SpellRow({ spell, onClick }: { spell: Spell; onClick: (e: React.MouseEv
     >
       <span className={`inline-block w-1.5 h-1.5 rounded-full shrink-0 ${styles.dot}`} />
       <span className="truncate flex-1">{spell.name}</span>
+
+      {/* Grant usage badge — "At Will", "1/LR", "2/SR" */}
+      {grantLabel && (
+        <span
+          className="text-xs text-violet-400/70 font-medium shrink-0"
+          title={`Cast without a spell slot: ${grantLabel}`}
+        >
+          {grantLabel}
+        </span>
+      )}
 
       {/* Source badges */}
       {spell.spellSource === "race" && (

@@ -402,7 +402,7 @@
       "description": "You gain {rule:Expertise|Expertise} in two of your skill proficiencies of your choice. Performance and Persuasion are recommended if you have proficiency in them.\n\nAt Bard level 9, you gain Expertise in two more of your skill proficiencies of your choice.",
       "choices": [
         {
-          "id": "expertise",
+          "id": "expertise-l2",
           "label": "Expertise",
           "count": 2,
           "timing": "permanent",
@@ -484,7 +484,7 @@
       "description": "You gain {rule:Expertise|Expertise} in two more of your skill proficiencies of your choice.",
       "choices": [
         {
-          "id": "expertise",
+          "id": "expertise-l9",
           "label": "Expertise",
           "count": 2,
           "timing": "permanent",

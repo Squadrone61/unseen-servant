@@ -308,6 +308,7 @@ function assembleGrantedSpells(
         spellSource,
         knownByClass: false,
         sourceClass: bundle.source.featureName ?? bundle.source.name,
+        grantUsage: grant.usage,
       });
     }
   }

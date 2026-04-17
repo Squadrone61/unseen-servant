@@ -351,7 +351,7 @@
       "description": "Thanks to your travels, you gain the following benefits.\n\n**Expertise.** Choose one of your skill proficiencies with which you lack {rule:Expertise}. You gain Expertise in that skill.\n\n**Languages.** You know two languages of your choice.",
       "choices": [
         {
-          "id": "deft-explorer-expertise",
+          "id": "expertise-l2",
           "label": "Expertise",
           "count": 1,
           "timing": "permanent",
@@ -451,7 +451,7 @@
       "description": "Choose two of your skill proficiencies with which you lack {rule:Expertise}. You gain Expertise in those skills.",
       "choices": [
         {
-          "id": "expertise",
+          "id": "expertise-l9",
           "label": "Expertise",
           "count": 2,
           "timing": "permanent",

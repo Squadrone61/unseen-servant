@@ -624,19 +624,24 @@ function FeatureRow({
           {permanentChoices.map((choice) => {
             const choiceId = choicePrefix ? `${choicePrefix}${choice.id}` : choice.id;
 
-            // For pools that disallow duplicate picks across levels (e.g. EI, metamagic),
-            // gather selections from OTHER choice buckets with the same pool prefix.
+            // For pools that disallow duplicate picks across levels,
+            // gather selections from OTHER choice buckets with the same pool.
             let pickerCtx = ctx;
-            if (
-              "pool" in choice &&
-              (choice.pool === "eldritch_invocation" || choice.pool === "metamagic")
-            ) {
-              const prefix = choice.pool === "eldritch_invocation" ? "ei-" : "metamagic-";
-              const otherSelections = Object.entries(choiceSelections)
-                .filter(([id]) => id !== choiceId && id.startsWith(prefix))
-                .flatMap(([, vals]) => vals);
-              if (otherSelections.length > 0) {
-                pickerCtx = { ...ctx, excludeIds: otherSelections };
+            if ("pool" in choice) {
+              const poolMatchers: Record<string, (id: string) => boolean> = {
+                eldritch_invocation: (id) => id.startsWith("ei-"),
+                metamagic: (id) => id.startsWith("metamagic-"),
+                skill_expertise: (id) => id.startsWith("expertise-"),
+                fighting_style: (id) => id.includes("fighting-style"),
+              };
+              const matcher = poolMatchers[choice.pool as string];
+              if (matcher) {
+                const otherSelections = Object.entries(choiceSelections)
+                  .filter(([id]) => id !== choiceId && matcher(id))
+                  .flatMap(([, vals]) => vals);
+                if (otherSelections.length > 0) {
+                  pickerCtx = { ...ctx, excludeIds: otherSelections };
+                }
               }
             }
 

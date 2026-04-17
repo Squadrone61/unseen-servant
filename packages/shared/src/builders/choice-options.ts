@@ -193,16 +193,23 @@ export function resolveChoice(choice: FeatureChoice, ctx?: ResolveChoiceContext)
 
   switch (pool) {
     case "skill_proficiency":
-    case "skill_expertise":
     case "skill_proficiency_or_expertise": {
       const names = from && from.length > 0 ? from : ALL_SKILLS;
       const description =
         pool === "skill_proficiency"
           ? "Gain proficiency in this skill."
-          : pool === "skill_expertise"
-            ? "Gain expertise (double proficiency) in this skill."
-            : "Gain proficiency, or expertise if already proficient.";
+          : "Gain proficiency, or expertise if already proficient.";
       return names.map((name) => makeChoiceOption(name, description));
+    }
+
+    case "skill_expertise": {
+      const names = from && from.length > 0 ? from : ALL_SKILLS;
+      const excluded = new Set(ctx?.excludeIds);
+      return names.map((name) => ({
+        ...makeChoiceOption(name, "Gain expertise (double proficiency) in this skill."),
+        disabled: excluded.has(name) || undefined,
+        disabledReason: excluded.has(name) ? "Already selected" : undefined,
+      }));
     }
 
     case "language": {
@@ -238,6 +245,7 @@ export function resolveChoice(choice: FeatureChoice, ctx?: ResolveChoiceContext)
         from && from.length > 0
           ? from
           : featsArray.filter((f) => f.category === "Fighting Style").map((f) => f.name);
+      const excluded = new Set(ctx?.excludeIds);
       return candidates.map((name) => {
         const feat = getFeat(name);
         const subChoices = feat?.choices?.filter((c) => c.timing === "permanent") ?? [];
@@ -249,6 +257,8 @@ export function resolveChoice(choice: FeatureChoice, ctx?: ResolveChoiceContext)
             name,
           },
           subChoices: subChoices.length > 0 ? subChoices : undefined,
+          disabled: excluded.has(name) || undefined,
+          disabledReason: excluded.has(name) ? "Already selected" : undefined,
         };
       });
     }

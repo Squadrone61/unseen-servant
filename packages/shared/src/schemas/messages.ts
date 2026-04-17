@@ -60,6 +60,7 @@ export const spellSchema = z.object({
   spellSource: z.enum(["class", "race", "feat", "item", "species"]),
   knownByClass: z.boolean(),
   sourceClass: z.string(),
+  grantUsage: z.string().optional(),
 });
 
 // spellSlotLevelSchema, itemSchema (+weapon/armor), currencySchema,
