@@ -352,7 +352,14 @@
             "type": "note",
             "text": "When using Reckless Attack, you can forgo advantage on one Strength-based attack roll. If it hits, target takes extra 1d10 damage and suffers one Brutal Strike effect: Forceful Blow (pushed 15 ft) or Hamstring Blow (speed reduced 15 ft until start of your next turn)."
           }
-        ]
+        ],
+        "action": {
+          "kind": "auto",
+          "onHit": {
+            "damage": [{ "dice": "1d10", "type": "bludgeoning" }],
+            "note": "Damage type matches the weapon or Unarmed Strike used. Choose one Brutal Strike effect: Forceful Blow or Hamstring Blow."
+          }
+        }
       }
     },
     {
@@ -432,7 +439,14 @@
             "type": "note",
             "text": "Brutal Strike extra damage increases to 2d10. You can now apply two different Brutal Strike effects on the same hit."
           }
-        ]
+        ],
+        "action": {
+          "kind": "auto",
+          "onHit": {
+            "damage": [{ "dice": "2d10", "type": "bludgeoning" }],
+            "note": "Damage type matches the weapon or Unarmed Strike used. Choose two different Brutal Strike effects."
+          }
+        }
       }
     },
     {
@@ -513,7 +527,14 @@
                 "type": "note",
                 "text": "When you use Reckless Attack while raging, the first Strength-based attack hit on your turn deals extra damage equal to Rage Damage bonus in d6s (e.g., at level 1-8: 2d6, level 9-15: 3d6, level 16+: 4d6)."
               }
-            ]
+            ],
+            "action": {
+              "kind": "auto",
+              "onHit": {
+                "damage": [{ "dice": "table(1:2d6, 9:3d6, 16:4d6)", "type": "bludgeoning" }],
+                "note": "Damage type matches the weapon or Unarmed Strike. First Strength-based hit per turn only, requires Reckless Attack while raging."
+              }
+            }
           }
         },
         {

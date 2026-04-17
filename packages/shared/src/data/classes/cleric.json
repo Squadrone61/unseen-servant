@@ -418,13 +418,27 @@
           },
           {
             "type": "note",
-            "text": "Divine Spark: Magic action, roll 1d8 + Wisdom modifier (2d8 at level 7, 3d8 at level 13, 4d8 at level 18). Choose to heal the target or deal Necrotic/Radiant damage (CON save for half)."
+            "text": "Divine Spark: Magic action, within 30 ft. Choose to heal or damage. Heal: restore HP equal to dice + WIS. Damage: CON save vs spell DC, Necrotic or Radiant (your choice); half on success."
           },
           {
             "type": "note",
             "text": "Turn Undead: Magic action, each chosen Undead within 30 ft makes WIS save or is Frightened and Incapacitated for 1 minute, fleeing each turn. Ends early on damage or if you become Incapacitated."
           }
-        ]
+        ],
+        "action": {
+          "kind": "save",
+          "cost": { "resource": "Channel Divinity", "amount": 1 },
+          "save": {
+            "ability": "constitution",
+            "dc": "spell_save_dc",
+            "onSuccess": "half"
+          },
+          "targeting": { "type": "creature" },
+          "onFailedSave": {
+            "damage": [{ "dice": "table(2:1d8, 7:2d8, 13:3d8, 18:4d8) + wis", "type": "radiant" }],
+            "note": "Damage type is Necrotic or Radiant (your choice). Alternatively, use to heal instead of damage (no save, same dice)."
+          }
+        }
       }
     },
     {
@@ -910,7 +924,21 @@
                 "type": "note",
                 "text": "Channel Divinity: Radiance of the Dawn — Magic action. Dispel magical darkness within 30 ft. Each hostile creature within 30 ft makes CON save: 2d10 + Cleric level Radiant damage on failure, half on success. Total cover negates."
               }
-            ]
+            ],
+            "action": {
+              "kind": "save",
+              "cost": { "resource": "Channel Divinity", "amount": 1 },
+              "save": {
+                "ability": "constitution",
+                "dc": "spell_save_dc",
+                "onSuccess": "half"
+              },
+              "area": { "shape": "sphere", "size": 30 },
+              "onFailedSave": {
+                "damage": [{ "dice": "2d10 + clvl", "type": "radiant" }],
+                "note": "Also dispels magical darkness within 30 ft. Total cover negates."
+              }
+            }
           }
         },
         {

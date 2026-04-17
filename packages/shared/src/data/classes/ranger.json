@@ -1014,7 +1014,15 @@
                 "type": "note",
                 "text": "Dreadful Strike damage increases to 2d8 Psychic. When using Dreadful Strike, choose one bonus effect: Sudden Strike (extra attack vs. different creature within 5 ft) or Mass Fear (target + creatures within 10 ft make WIS save DC = spell save DC or be Frightened until start of your next turn)."
               }
-            ]
+            ],
+            "action": {
+              "kind": "auto",
+              "cost": { "resource": "Dreadful Strike", "amount": 1 },
+              "onHit": {
+                "damage": [{ "dice": "2d8", "type": "psychic" }],
+                "note": "Choose one bonus effect: Sudden Strike (extra attack vs different creature within 5 ft) or Mass Fear (WIS save vs spell DC or Frightened)."
+              }
+            }
           }
         },
         {
@@ -1078,7 +1086,14 @@
                         "type": "note",
                         "text": "Once per turn, one weapon hit against an injured creature deals an extra 1d8 damage (same type as weapon)."
                       }
-                    ]
+                    ],
+                    "action": {
+                      "kind": "auto",
+                      "onHit": {
+                        "damage": [{ "dice": "1d8", "type": "piercing" }],
+                        "note": "Damage type matches the weapon used. Target must be missing HP. Once per turn."
+                      }
+                    }
                   }
                 },
                 {

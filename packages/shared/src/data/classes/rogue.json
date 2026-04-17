@@ -795,7 +795,18 @@
                 "type": "note",
                 "text": "As part of the Attack action or an Opportunity Attack, manifest a Psychic Blade (Simple, Finesse, Thrown 60 ft, 1d6 Psychic + ability mod). After attacking with it on your turn, you can make a Bonus Action attack with a second psychic blade (1d4 Psychic) if your other hand is free."
               }
-            ]
+            ],
+            "action": {
+              "kind": "attack",
+              "attack": {
+                "bonus": "weapon_melee",
+                "range": { "normal": 60 }
+              },
+              "onHit": {
+                "damage": [{ "dice": "1d6", "type": "psychic" }],
+                "note": "Simple weapon, Finesse, Thrown 60 ft. Bonus Action attack with second blade deals 1d4 Psychic if other hand is free."
+              }
+            }
           }
         },
         {

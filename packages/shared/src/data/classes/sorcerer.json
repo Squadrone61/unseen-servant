@@ -726,9 +726,23 @@
               },
               {
                 "type": "note",
-                "text": "Magic action: teleport up to 120 ft (unoccupied visible space). Creatures within 30 ft of origin make STR save (DC = spell save DC): fail = 3d10 Force damage and pulled to origin; success = half damage. Restore use by spending 5 Sorcery Points."
+                "text": "Magic action: teleport up to 120 ft (unoccupied visible space). Creatures within 30 ft of origin make STR save: fail = 3d10 Force damage and pulled to origin; success = half damage. Restore use by spending 5 Sorcery Points."
               }
-            ]
+            ],
+            "action": {
+              "kind": "save",
+              "cost": { "resource": "Warping Implosion", "amount": 1 },
+              "save": {
+                "ability": "strength",
+                "dc": "spell_save_dc",
+                "onSuccess": "half"
+              },
+              "area": { "shape": "sphere", "size": 30 },
+              "onFailedSave": {
+                "damage": [{ "dice": "3d10", "type": "force" }],
+                "note": "Targets pulled to your former position. You teleport up to 120 ft first."
+              }
+            }
           }
         }
       ]

@@ -1168,7 +1168,21 @@
                 "type": "note",
                 "text": "Once per turn on a hit: target makes CHA save vs spell DC. On failure: target disappears, takes 8d10 Psychic (if not a Fiend), and has Incapacitated condition until end of your next turn, then returns to its space. Expend a Pact Magic slot to restore this use without resting."
               }
-            ]
+            ],
+            "action": {
+              "kind": "save",
+              "cost": { "resource": "Hurl Through Hell", "amount": 1 },
+              "save": {
+                "ability": "charisma",
+                "dc": "spell_save_dc",
+                "onSuccess": "none"
+              },
+              "onFailedSave": {
+                "damage": [{ "dice": "8d10", "type": "psychic" }],
+                "conditions": [{ "name": "Incapacitated", "duration": 1 }],
+                "note": "No Psychic damage if target is a Fiend. Target disappears and returns at end of your next turn."
+              }
+            }
           }
         }
       ]
