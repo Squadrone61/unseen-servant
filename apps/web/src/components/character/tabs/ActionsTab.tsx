@@ -185,18 +185,15 @@ export function ActionsTab({ character, onItemClick, onFeatureClick }: ActionsTa
           {classResources.map((resource) => {
             const used = (d.resourcesUsed || {})[resource.name] ?? 0;
             const remaining = resource.maxUses - used;
-            const clickable = !!resource.sourceFeature;
+            const sourceFeature = resource.sourceFeature;
+            const clickable = !!sourceFeature;
             return (
               <div
                 key={resource.name}
                 className={`flex items-center gap-1.5 rounded px-1.5 py-0.5 text-xs ${
                   clickable ? "group cursor-pointer transition-colors hover:bg-gray-800/60" : ""
                 }`}
-                onClick={
-                  resource.sourceFeature
-                    ? (e) => onFeatureClick(resource.sourceFeature, e)
-                    : undefined
-                }
+                onClick={sourceFeature ? (e) => onFeatureClick(sourceFeature, e) : undefined}
               >
                 <span
                   className={`flex-1 truncate ${
