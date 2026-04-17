@@ -444,7 +444,8 @@
             "text": "Cast by expending a spell slot or one Wild Shape use (Magic action, no Material components). The familiar is Fey and vanishes at the end of a Long Rest."
           }
         ]
-      }
+      },
+      "activationType": "action"
     },
     {
       "name": "Wild Shape",
@@ -863,7 +864,8 @@
                 "note": "Additionally, one creature of your choice in the area regains same dice in HP (unconditional, not tied to save). Costs one Wild Shape use."
               }
             }
-          }
+          },
+          "activationType": "action"
         },
         {
           "name": "Natural Recovery",
@@ -912,7 +914,8 @@
                 "text": "Magic action: expend one Wild Shape use to place a 15-ft Cube of spectral trees (within 120 ft, lasts 1 minute). You and allies in the area gain Half Cover. Allies also gain the current Nature's Ward resistance. Bonus Action: move the Cube up to 60 ft (must remain within 120 ft of you)."
               }
             ]
-          }
+          },
+          "activationType": "action"
         }
       ]
     },

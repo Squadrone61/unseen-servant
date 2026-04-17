@@ -22,7 +22,7 @@ import {
   getProficiencyBonus,
   getTotalLevel,
 } from "../utils/character-helpers";
-import { resolveFeatureDescription } from "../data/index";
+import { resolveFeatureDescription, resolveFeatureActivationTrigger } from "../data/index";
 
 // ---------------------------------------------------------------------------
 // Core types
@@ -312,6 +312,9 @@ export function entityDetailFromClassFeature(
     !new RegExp(`\\b${feature.requiredLevel}\\b`).test(sourceTag)
   ) {
     badges.push({ label: `Level ${feature.requiredLevel}`, tone: "gray" });
+  }
+  if (resolveFeatureActivationTrigger(feature) === "attack") {
+    badges.push({ label: "Part of Attack", tone: "red" });
   }
 
   const sections: EntityDetailSection[] = [];

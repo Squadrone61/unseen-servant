@@ -480,7 +480,8 @@
             "text": "Channel Divinity — Magic action: targets up to CHA modifier (min 1) creatures within 60 ft. WIS save or Frightened 1 minute (ends on damage). While Frightened this way, target can only do one of: move, action, or Bonus Action on its turn."
           }
         ]
-      }
+      },
+      "activationType": "action"
     },
     {
       "name": "Aura of Courage",
@@ -683,7 +684,9 @@
                 "text": "Channel Divinity — when you take the Attack action: imbue one held Melee weapon for 10 minutes. Add CHA modifier (min +1) to attack rolls with that weapon; hits deal its normal damage type or Radiant (your choice). Weapon emits Bright Light 20 ft, Dim Light 20 ft beyond. Ends early if you stop carrying the weapon or use this feature again."
               }
             ]
-          }
+          },
+          "activationType": "bonus",
+          "activationTrigger": "attack"
         },
         {
           "name": "Aura of Devotion",
@@ -862,7 +865,8 @@
                 "note": "Distribute 2d8 + Paladin level Temporary Hit Points among chosen creatures within 30 ft (including yourself). Triggered immediately after casting Divine Smite."
               }
             }
-          }
+          },
+          "activationType": "bonus"
         },
         {
           "name": "Peerless Athlete",
@@ -1071,7 +1075,8 @@
                 "note": "Restrained for 1 minute. Repeats STR save at end of each of its turns, ending on success."
               }
             }
-          }
+          },
+          "activationType": "action"
         },
         {
           "name": "Aura of Warding",
@@ -1251,7 +1256,9 @@
                 "text": "Lasts 1 minute or until you use this feature again. If the target drops to 0 HP before the vow ends, you can transfer the vow to another creature within 30 ft (no action required)."
               }
             ]
-          }
+          },
+          "activationType": "bonus",
+          "activationTrigger": "attack"
         },
         {
           "name": "Relentless Avenger",

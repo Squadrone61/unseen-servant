@@ -851,6 +851,7 @@
   },
   {
     "name": "Boon of Recovery",
+    "activationType": "bonus",
     "category": "Epic Boon",
     "prerequisite": {
       "type": "level",
@@ -1024,6 +1025,7 @@
   },
   {
     "name": "Boon of Speed",
+    "activationType": "bonus",
     "category": "Epic Boon",
     "prerequisite": {
       "type": "level",
@@ -1105,6 +1107,7 @@
   },
   {
     "name": "Boon of the Night Spirit",
+    "activationType": "bonus",
     "category": "Epic Boon",
     "prerequisite": {
       "type": "level",
@@ -1769,6 +1772,8 @@
   },
   {
     "name": "Dual Wielder",
+    "activationType": "bonus",
+    "activationTrigger": "attack",
     "category": "General",
     "prerequisite": {
       "type": "allOf",
@@ -1862,6 +1867,7 @@
   },
   {
     "name": "Durable",
+    "activationType": "bonus",
     "category": "General",
     "prerequisite": {
       "type": "level",
@@ -2538,6 +2544,7 @@
   },
   {
     "name": "Great Weapon Master",
+    "activationType": "bonus",
     "category": "General",
     "prerequisite": {
       "type": "allOf",
@@ -2870,6 +2877,7 @@
   },
   {
     "name": "Keen Mind",
+    "activationType": "bonus",
     "category": "General",
     "prerequisite": {
       "type": "allOf",
@@ -3435,6 +3443,7 @@
   },
   {
     "name": "Observant",
+    "activationType": "bonus",
     "category": "General",
     "prerequisite": {
       "type": "allOf",
@@ -3635,6 +3644,7 @@
   },
   {
     "name": "Poisoner",
+    "activationType": "bonus",
     "category": "General",
     "prerequisite": {
       "type": "level",
@@ -4854,6 +4864,7 @@
   },
   {
     "name": "Telekinetic",
+    "activationType": "bonus",
     "category": "General",
     "prerequisite": {
       "type": "level",

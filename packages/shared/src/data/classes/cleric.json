@@ -439,7 +439,8 @@
             "note": "Damage type is Necrotic or Radiant (your choice). Alternatively, use to heal instead of damage (no save, same dice)."
           }
         }
-      }
+      },
+      "activationType": "action"
     },
     {
       "name": "Cleric Subclass",

@@ -175,9 +175,9 @@ export function ActionsTab({ character, onItemClick, onFeatureClick }: ActionsTa
     <div className="space-y-2">
       {/* Class Resources (Rage, Ki, Channel Divinity, Superiority Dice, etc.) */}
       {classResources.length > 0 && (
-        <div className="space-y-1 pb-2 border-b border-gray-700/40">
+        <div className="space-y-1 border-b border-gray-700/40 pb-2">
           <div
-            className="text-sm text-gray-500 uppercase tracking-wider font-medium px-1.5"
+            className="px-1.5 text-sm font-medium tracking-wider text-gray-500 uppercase"
             style={{ fontFamily: "var(--font-cinzel)" }}
           >
             Class Resources
@@ -189,15 +189,15 @@ export function ActionsTab({ character, onItemClick, onFeatureClick }: ActionsTa
             return (
               <div
                 key={resource.name}
-                className={`flex items-center gap-1.5 text-xs px-1.5 py-0.5 rounded ${
-                  clickable ? "cursor-pointer hover:bg-gray-800/60 transition-colors group" : ""
+                className={`flex items-center gap-1.5 rounded px-1.5 py-0.5 text-xs ${
+                  clickable ? "group cursor-pointer transition-colors hover:bg-gray-800/60" : ""
                 }`}
                 onClick={clickable ? (e) => onFeatureClick(resource.sourceFeature!, e) : undefined}
               >
                 <span
-                  className={`truncate flex-1 ${
+                  className={`flex-1 truncate ${
                     clickable
-                      ? "text-gray-300 group-hover:text-amber-300 transition-colors"
+                      ? "text-gray-300 transition-colors group-hover:text-amber-300"
                       : "text-gray-300"
                   }`}
                 >
@@ -208,7 +208,7 @@ export function ActionsTab({ character, onItemClick, onFeatureClick }: ActionsTa
                     .filter(Boolean)
                     .join("/")}
                 </span>
-                <span className="text-amber-400/80 shrink-0">
+                <span className="shrink-0 text-amber-400/80">
                   {remaining}/{resource.maxUses}
                 </span>
               </div>
@@ -223,7 +223,7 @@ export function ActionsTab({ character, onItemClick, onFeatureClick }: ActionsTa
       {showWeapons && weapons.length > 0 && (
         <div>
           <div
-            className="text-sm text-gray-500 uppercase tracking-wider font-medium mb-0.5 px-1.5"
+            className="mb-0.5 px-1.5 text-sm font-medium tracking-wider text-gray-500 uppercase"
             style={{ fontFamily: "var(--font-cinzel)" }}
           >
             Weapons
@@ -232,13 +232,13 @@ export function ActionsTab({ character, onItemClick, onFeatureClick }: ActionsTa
             {weapons.map((action, i) => (
               <div
                 key={`${action.name}-${i}`}
-                className="flex items-center gap-1.5 text-xs px-1.5 py-1 rounded cursor-pointer hover:bg-gray-800/60 transition-colors group"
+                className="group flex cursor-pointer items-center gap-1.5 rounded px-1.5 py-1 text-xs transition-colors hover:bg-gray-800/60"
                 onClick={(e) => onItemClick(action.item, e)}
               >
-                <span className="text-gray-200 group-hover:text-amber-300 transition-colors truncate flex-1">
+                <span className="flex-1 truncate text-gray-200 transition-colors group-hover:text-amber-300">
                   {action.name}
                 </span>
-                <span className="text-gray-500 shrink-0 text-xs">{action.detail}</span>
+                <span className="shrink-0 text-xs text-gray-500">{action.detail}</span>
               </div>
             ))}
           </div>
@@ -249,7 +249,7 @@ export function ActionsTab({ character, onItemClick, onFeatureClick }: ActionsTa
       {visibleGroups.map((group) => (
         <div key={group.id}>
           <div
-            className="text-sm text-gray-500 uppercase tracking-wider font-medium mb-0.5 px-1.5"
+            className="mb-0.5 px-1.5 text-sm font-medium tracking-wider text-gray-500 uppercase"
             style={{ fontFamily: "var(--font-cinzel)" }}
           >
             {group.label}
@@ -258,14 +258,14 @@ export function ActionsTab({ character, onItemClick, onFeatureClick }: ActionsTa
             {group.features.map((feature, i) => (
               <div
                 key={`${feature.dbKind}-${feature.dbName}-${feature.featureName ?? ""}-${i}`}
-                className="flex items-center gap-1.5 text-xs px-1.5 py-1 rounded cursor-pointer hover:bg-gray-800/60 transition-colors group"
+                className="group flex cursor-pointer items-center gap-1.5 rounded px-1.5 py-1 text-xs transition-colors hover:bg-gray-800/60"
                 onClick={(e) => onFeatureClick(feature, e)}
               >
-                <span className="text-gray-200 group-hover:text-amber-300 transition-colors truncate flex-1">
+                <span className="flex-1 truncate text-gray-200 transition-colors group-hover:text-amber-300">
                   {feature.featureName ?? feature.dbName}
                 </span>
                 <span
-                  className={`text-xs shrink-0 ${SOURCE_BADGE_STYLES[feature.dbKind] || "text-gray-500"}`}
+                  className={`shrink-0 text-xs ${SOURCE_BADGE_STYLES[feature.dbKind] || "text-gray-500"}`}
                 >
                   {feature.sourceLabel}
                 </span>
@@ -276,7 +276,7 @@ export function ActionsTab({ character, onItemClick, onFeatureClick }: ActionsTa
       ))}
 
       {weapons.length === 0 && featureGroups.length === 0 && (
-        <div className="text-xs text-gray-600 text-center py-4">No actions available</div>
+        <div className="py-4 text-center text-xs text-gray-600">No actions available</div>
       )}
 
       {/* Standard combat actions (from D&D database) */}
@@ -301,9 +301,9 @@ function StandardActionsSection({
   const [expanded, setExpanded] = useState<string | null>(null);
 
   return (
-    <div className="border-t border-gray-700/40 pt-2 mt-2">
+    <div className="mt-2 border-t border-gray-700/40 pt-2">
       <div
-        className="text-sm text-gray-500 uppercase tracking-wider font-medium mb-0.5 px-1.5"
+        className="mb-0.5 px-1.5 text-sm font-medium tracking-wider text-gray-500 uppercase"
         style={{ fontFamily: "var(--font-cinzel)" }}
       >
         {label}
@@ -312,11 +312,11 @@ function StandardActionsSection({
         {items.map((sa) => (
           <div key={sa.name}>
             <div
-              className="flex items-center gap-1.5 text-xs px-1.5 py-1 rounded cursor-pointer hover:bg-gray-800/60 transition-colors text-gray-500 hover:text-gray-300"
+              className="flex cursor-pointer items-center gap-1.5 rounded px-1.5 py-1 text-xs text-gray-500 transition-colors hover:bg-gray-800/60 hover:text-gray-300"
               onClick={() => setExpanded(expanded === sa.name ? null : sa.name)}
             >
               <svg
-                className={`w-2.5 h-2.5 shrink-0 transition-transform ${expanded === sa.name ? "rotate-90" : ""}`}
+                className={`h-2.5 w-2.5 shrink-0 transition-transform ${expanded === sa.name ? "rotate-90" : ""}`}
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -328,10 +328,10 @@ function StandardActionsSection({
                   d="M9 5l7 7-7 7"
                 />
               </svg>
-              <span className="truncate flex-1">{sa.name}</span>
+              <span className="flex-1 truncate">{sa.name}</span>
             </div>
             {expanded === sa.name && (
-              <div className="text-xs text-gray-500 px-1.5 pl-6 pb-1 leading-relaxed">
+              <div className="px-1.5 pb-1 pl-6 text-xs leading-relaxed text-gray-500">
                 {sa.description}
               </div>
             )}

@@ -20,6 +20,7 @@ import type {
   ActionDb,
   PackDb,
   FeatureActivation,
+  FeatureActivationTrigger,
 } from "../types/data";
 import type { CharacterFeatureRef } from "../types/character";
 
@@ -392,6 +393,42 @@ export function resolveFeatureActivation(ref: CharacterFeatureRef): FeatureActiv
     }
     case "feat":
       return getFeat(ref.dbName)?.activationType;
+    case "species":
+    case "background":
+      return undefined;
+  }
+}
+
+/**
+ * Resolve the activation trigger for a CharacterFeatureRef (e.g., features
+ * invoked during the Attack action). Returns undefined for features with no
+ * special trigger.
+ */
+export function resolveFeatureActivationTrigger(
+  ref: CharacterFeatureRef,
+): FeatureActivationTrigger | undefined {
+  switch (ref.dbKind) {
+    case "class": {
+      const cls = getClass(ref.dbName);
+      if (!cls || !ref.featureName) return undefined;
+      return cls.features.find((f) => f.name === ref.featureName)?.activationTrigger;
+    }
+    case "subclass": {
+      for (const cls of classesArray) {
+        const sub = cls.subclasses.find(
+          (s) =>
+            s.name.toLowerCase() === ref.dbName.toLowerCase() ||
+            s.shortName.toLowerCase() === ref.dbName.toLowerCase(),
+        );
+        if (sub) {
+          if (!ref.featureName) return undefined;
+          return sub.features.find((f) => f.name === ref.featureName)?.activationTrigger;
+        }
+      }
+      return undefined;
+    }
+    case "feat":
+      return getFeat(ref.dbName)?.activationTrigger;
     case "species":
     case "background":
       return undefined;

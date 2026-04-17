@@ -134,7 +134,8 @@
             "text": "Step of the Wind: take Dash as a Bonus Action; or expend 1 Focus Point to take both Disengage and Dash as a Bonus Action, and double jump distance for the turn."
           }
         ]
-      }
+      },
+      "activationType": "bonus"
     },
     {
       "name": "Unarmored Movement",

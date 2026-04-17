@@ -722,7 +722,8 @@
                 "note": "Targets pulled to your former position. You teleport up to 120 ft first."
               }
             }
-          }
+          },
+          "activationType": "action"
         }
       ]
     },
@@ -835,7 +836,8 @@
                 "text": "Magic action: spend 1–5 Sorcery Points to create a ward on yourself or a creature within 30 ft. Ward = that many d8s. When warded creature takes damage, it can roll any number of remaining ward dice and subtract the total from damage. Ward lasts until Long Rest or next use."
               }
             ]
-          }
+          },
+          "activationType": "action"
         },
         {
           "name": "Trance of Order",
@@ -904,7 +906,8 @@
                 "text": "Magic action: summon spirits in 30-ft Cube. Effects: restore up to 100 HP split among chosen creatures; repair all damaged objects; end all spells level 6 and lower on chosen targets. Restore use by spending 7 Sorcery Points."
               }
             ]
-          }
+          },
+          "activationType": "action"
         }
       ]
     },

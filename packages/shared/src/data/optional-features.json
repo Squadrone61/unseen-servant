@@ -241,6 +241,7 @@
   },
   {
     "name": "Boots of the Winding Path",
+    "activationType": "bonus",
     "featureType": [
       "AI"
     ],
@@ -302,6 +303,7 @@
   },
   {
     "name": "Cloak of Flies",
+    "activationType": "bonus",
     "featureType": [
       "EI"
     ],
@@ -660,6 +662,7 @@
   },
   {
     "name": "Evasive Footwork",
+    "activationType": "bonus",
     "featureType": [
       "MV:B"
     ],
@@ -690,6 +693,7 @@
   },
   {
     "name": "Far Scribe",
+    "activationType": "action",
     "featureType": [
       "EI"
     ],
@@ -719,6 +723,7 @@
   },
   {
     "name": "Feinting Attack",
+    "activationType": "bonus",
     "featureType": [
       "MV:B"
     ],
@@ -772,6 +777,7 @@
   },
   {
     "name": "Frost Rune",
+    "activationType": "bonus",
     "featureType": [
       "RN"
     ],
@@ -812,6 +818,7 @@
   },
   {
     "name": "Ghostly Gaze",
+    "activationType": "action",
     "featureType": [
       "EI"
     ],
@@ -875,6 +882,7 @@
   },
   {
     "name": "Gift of the Protectors",
+    "activationType": "action",
     "featureType": [
       "EI"
     ],
@@ -919,6 +927,7 @@
   },
   {
     "name": "Grappling Strike",
+    "activationType": "bonus",
     "featureType": [
       "MV:B"
     ],
@@ -1007,6 +1016,7 @@
   },
   {
     "name": "Hill Rune",
+    "activationType": "bonus",
     "featureType": [
       "RN"
     ],
@@ -1069,6 +1079,7 @@
   },
   {
     "name": "Interception",
+    "activationType": "reaction",
     "featureType": [
       "FS:F",
       "FS:P"
@@ -1090,6 +1101,7 @@
   },
   {
     "name": "Investment of the Chain Master",
+    "activationType": "bonus",
     "featureType": [
       "EI"
     ],
@@ -1180,6 +1192,7 @@
   },
   {
     "name": "Lunging Attack",
+    "activationType": "bonus",
     "featureType": [
       "MV:B"
     ],
@@ -1195,6 +1208,7 @@
   },
   {
     "name": "Maddening Hex",
+    "activationType": "bonus",
     "featureType": [
       "EI"
     ],
@@ -1363,6 +1377,7 @@
   },
   {
     "name": "Pact of the Blade",
+    "activationType": "bonus",
     "featureType": [
       "EI"
     ],
@@ -1543,6 +1558,7 @@
   },
   {
     "name": "Quick Toss",
+    "activationType": "bonus",
     "featureType": [
       "MV:B"
     ],
@@ -1573,6 +1589,7 @@
   },
   {
     "name": "Radiant Weapon",
+    "activationType": "bonus",
     "featureType": [
       "AI"
     ],
@@ -1599,6 +1616,7 @@
   },
   {
     "name": "Rally",
+    "activationType": "bonus",
     "featureType": [
       "MV:B"
     ],
@@ -1631,6 +1649,7 @@
   },
   {
     "name": "Relentless Hex",
+    "activationType": "bonus",
     "featureType": [
       "EI"
     ],
@@ -1863,6 +1882,7 @@
   },
   {
     "name": "Spell-Refueling Ring",
+    "activationType": "action",
     "featureType": [
       "AI"
     ],
@@ -1903,6 +1923,7 @@
   },
   {
     "name": "Storm Rune",
+    "activationType": "bonus",
     "featureType": [
       "RN"
     ],
@@ -2047,6 +2068,7 @@
   },
   {
     "name": "Tomb of Levistus",
+    "activationType": "reaction",
     "featureType": [
       "EI"
     ],

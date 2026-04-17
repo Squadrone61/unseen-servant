@@ -152,10 +152,19 @@ export interface ClassDb extends DbEntity {
 /** Action economy classification for a feature. Undefined = passive. */
 export type FeatureActivation = "action" | "bonus" | "reaction";
 
+/**
+ * Secondary activation marker for features that aren't a standalone action.
+ * "attack" = invoked during the Attack action (e.g., Vow of Enmity, Sacred Weapon,
+ * Divine Smite rider). These are still bucketed by `activationType` for action
+ * economy, but the UI tags them so players know they piggyback on an Attack.
+ */
+export type FeatureActivationTrigger = "attack";
+
 export interface ClassFeatureDb extends DbEntity {
   level: number;
   className: ClassName;
   activationType?: FeatureActivation;
+  activationTrigger?: FeatureActivationTrigger;
 }
 
 export interface SubclassDb {
@@ -175,6 +184,7 @@ export interface SubclassFeatureDb extends DbEntity {
   className: ClassName;
   subclassName: string;
   activationType?: FeatureActivation;
+  activationTrigger?: FeatureActivationTrigger;
 }
 
 // ─── Feats ─────────────────────────────────────────────────
@@ -192,6 +202,7 @@ export interface FeatDb extends DbEntity {
   prerequisiteText?: string;
   repeatable?: boolean;
   activationType?: FeatureActivation;
+  activationTrigger?: FeatureActivationTrigger;
 }
 
 // ─── Species ───────────────────────────────────────────────
