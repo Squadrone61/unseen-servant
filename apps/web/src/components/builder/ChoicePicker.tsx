@@ -280,7 +280,7 @@ export function ChoicePicker({
       )}
 
       {/* Option grid */}
-      <div className="flex flex-col gap-1.5">
+      <div className="flex flex-col gap-1.5 max-h-96 overflow-y-auto">
         {visibleOptions.length === 0 && query.trim() && (
           <p className="text-sm text-gray-500 italic py-2 text-center">No results</p>
         )}
