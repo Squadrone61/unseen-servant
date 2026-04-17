@@ -479,7 +479,14 @@
                     "type": "note",
                     "text": "Once on each of your turns when you hit a creature with a weapon attack, you can deal an extra 1d8 Necrotic or Radiant damage (your choice)."
                   }
-                ]
+                ],
+                "action": {
+                  "kind": "auto",
+                  "onHit": {
+                    "damage": [{ "dice": "1d8", "type": "radiant" }],
+                    "note": "Damage type is Necrotic or Radiant (choose each time). Once per turn on weapon hit."
+                  }
+                }
               }
             },
             {

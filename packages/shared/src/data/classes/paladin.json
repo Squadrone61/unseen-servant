@@ -511,7 +511,14 @@
             "type": "note",
             "text": "Melee weapon attacks and Unarmed Strikes deal an extra 1d8 Radiant damage on a hit."
           }
-        ]
+        ],
+        "action": {
+          "kind": "auto",
+          "onHit": {
+            "damage": [{ "dice": "1d8", "type": "radiant" }],
+            "note": "Applies to melee weapon attacks and Unarmed Strikes."
+          }
+        }
       }
     },
     {

@@ -894,6 +894,11 @@
               {
                 "target": "initiative",
                 "value": "wis"
+              },
+              {
+                "target": "speed",
+                "value": 10,
+                "condition": "first turn of each combat only"
               }
             ],
             "properties": [
@@ -905,9 +910,16 @@
               },
               {
                 "type": "note",
-                "text": "First turn of each combat: Speed +10 ft until end of that turn. Dreadful Strike: once per turn, one weapon hit deals extra 2d6 Psychic damage (uses = WIS mod, min 1, regain on Long Rest)."
+                "text": "Dreadful Strike: Once per turn when you hit with a weapon, deal extra 2d6 Psychic damage. Uses = WIS mod (min 1), regain on Long Rest."
               }
-            ]
+            ],
+            "action": {
+              "kind": "auto",
+              "cost": { "resource": "Dreadful Strike", "amount": 1 },
+              "onHit": {
+                "damage": [{ "dice": "2d6", "type": "psychic" }]
+              }
+            }
           }
         },
         {

@@ -217,8 +217,13 @@
       "effects": {
         "properties": [
           {
+            "type": "advantage",
+            "on": "attack",
+            "condition": "when using Reckless Attack (Strength-based attack rolls only)"
+          },
+          {
             "type": "note",
-            "text": "When you make your first attack on your turn, you can attack recklessly: gain advantage on Strength-based attack rolls until the start of your next turn, but attack rolls against you also have advantage."
+            "text": "Reckless Attack: On your first attack of the turn, choose to attack recklessly. Gain advantage on attack rolls using Strength until start of your next turn, but attack rolls against you also have advantage."
           }
         ]
       }

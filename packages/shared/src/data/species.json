@@ -110,12 +110,24 @@
           "castingAbility": "charisma"
         },
         {
-          "type": "note",
-          "text": "Healing Hands: As a Magic action, touch a creature and roll a number of d4s equal to your Proficiency Bonus. The creature regains that many Hit Points. Usable once per Long Rest."
+          "type": "resource",
+          "name": "Healing Hands",
+          "maxUses": 1,
+          "longRest": "all"
         },
         {
           "type": "note",
-          "text": "Celestial Revelation (level 3+): As a Bonus Action, transform for 1 minute (once per Long Rest). Choose Heavenly Wings (Fly Speed equal to Speed), Inner Radiance (shed light; deal Radiant damage equal to Proficiency Bonus to creatures within 10 ft at end of your turn), or Necrotic Shroud (nearby creatures make Charisma save or gain Frightened condition). Each form deals extra damage equal to Proficiency Bonus once per turn."
+          "text": "Healing Hands: As a Magic action, touch a creature and roll a number of d4s equal to your Proficiency Bonus. The creature regains that many Hit Points."
+        },
+        {
+          "type": "resource",
+          "name": "Celestial Revelation",
+          "maxUses": 1,
+          "longRest": "all"
+        },
+        {
+          "type": "note",
+          "text": "Celestial Revelation (level 3+): As a Bonus Action, transform for 1 minute. Choose Heavenly Wings (Fly Speed equal to Speed), Inner Radiance (shed light; deal Radiant damage equal to Proficiency Bonus to creatures within 10 ft at end of your turn), or Necrotic Shroud (nearby creatures make Charisma save or gain Frightened condition). Each form deals extra damage equal to Proficiency Bonus once per turn."
         }
       ]
     },
@@ -309,8 +321,15 @@
           "castingAbility": "intelligence"
         },
         {
-          "type": "note",
-          "text": "Svirfneblin Camouflage: Can make Dexterity (Stealth) checks with advantage. Usable Proficiency Bonus times per Long Rest."
+          "type": "resource",
+          "name": "Svirfneblin Camouflage",
+          "maxUses": "prof",
+          "longRest": "all"
+        },
+        {
+          "type": "advantage",
+          "on": "stealth",
+          "condition": "when using Svirfneblin Camouflage"
         }
       ]
     }
@@ -330,12 +349,24 @@
           "range": 60
         },
         {
-          "type": "note",
-          "text": "Breath Weapon: Replace one attack with a 15-foot Cone or 30-foot Line exhalation. Dexterity save (DC 8 + Con modifier + Proficiency Bonus) or take 1d10 damage (type from ancestry; scales to 4d10 at level 17). Usable Proficiency Bonus times per Long Rest."
+          "type": "resource",
+          "name": "Breath Weapon",
+          "maxUses": "prof",
+          "longRest": "all"
         },
         {
           "type": "note",
-          "text": "Draconic Flight (level 5+): Bonus Action to sprout spectral wings granting Fly Speed equal to Speed for 10 minutes. Once per Long Rest."
+          "text": "Breath Weapon: Replace one attack with a 15-foot Cone or 30-foot Line exhalation. Dexterity save (DC 8 + Con modifier + Proficiency Bonus) or take 1d10 damage (type from ancestry; scales to 4d10 at level 17)."
+        },
+        {
+          "type": "resource",
+          "name": "Draconic Flight",
+          "maxUses": 1,
+          "longRest": "all"
+        },
+        {
+          "type": "note",
+          "text": "Draconic Flight (level 5+): Bonus Action to sprout spectral wings granting Fly Speed equal to Speed for 10 minutes."
         }
       ]
     },
@@ -575,8 +606,19 @@
           "value": "Perception"
         },
         {
+          "type": "resource",
+          "name": "Fey Step",
+          "maxUses": "prof",
+          "longRest": "all"
+        },
+        {
+          "type": "teleport_grant",
+          "distance": 30,
+          "timing": "bonus_action"
+        },
+        {
           "type": "note",
-          "text": "Fey Step: Bonus Action to teleport up to 30 ft to an unoccupied space you can see. Usable Proficiency Bonus times per Long Rest. At level 3, gains a seasonal effect (save DC 8 + prof + chosen ability): Autumn (Charmed 1 min, up to 2 creatures), Winter (Frightened until end of next turn), Spring (teleport willing ally instead), Summer (fire damage equal to prof to nearby creatures)."
+          "text": "Fey Step: Bonus Action to teleport up to 30 ft. At level 3, gains a seasonal effect (save DC 8 + prof + chosen ability): Autumn (Charmed 1 min, up to 2 creatures), Winter (Frightened until end of next turn), Spring (teleport willing ally instead), Summer (fire damage equal to prof to nearby creatures)."
         },
         {
           "type": "note",
@@ -808,16 +850,27 @@
           "castingAbility": "wisdom"
         },
         {
+          "type": "resource",
+          "name": "Hidden Step",
+          "maxUses": "prof",
+          "longRest": "all"
+        },
+        {
           "type": "note",
-          "text": "Hidden Step: Bonus Action to turn Invisible until start of your next turn or until you attack, deal damage, or force a saving throw. Usable Proficiency Bonus times per Long Rest."
+          "text": "Hidden Step: Bonus Action to turn Invisible until start of your next turn or until you attack, deal damage, or force a saving throw."
         },
         {
           "type": "note",
           "text": "Powerful Build: Count as one size larger for carrying capacity and weight you can push, drag, or lift."
         },
         {
+          "type": "advantage",
+          "on": "ability_check",
+          "condition": "Charisma checks to influence Beasts, Plants, and vegetation"
+        },
+        {
           "type": "note",
-          "text": "Speech of Beast and Leaf: Beasts, Plants, and vegetation understand you. You have advantage on Charisma checks to influence them."
+          "text": "Speech of Beast and Leaf: Beasts, Plants, and vegetation understand your words."
         }
       ]
     }
@@ -1045,8 +1098,14 @@
           "damageType": "psychic"
         },
         {
-          "type": "note",
-          "text": "Mental Discipline: Advantage on saving throws to avoid or end the Charmed or Frightened condition."
+          "type": "advantage",
+          "on": "save_wisdom",
+          "condition": "to avoid or end the Charmed condition"
+        },
+        {
+          "type": "advantage",
+          "on": "save_wisdom",
+          "condition": "to avoid or end the Frightened condition"
         },
         {
           "type": "spell_grant",
@@ -1176,12 +1235,18 @@
           "condition": "to avoid or end the Charmed condition"
         },
         {
-          "type": "note",
-          "text": "Fury of the Small: When you damage a larger creature, deal extra damage equal to your proficiency bonus. Usable Proficiency Bonus times per Long Rest, once per turn."
+          "type": "resource",
+          "name": "Fury of the Small",
+          "maxUses": "prof",
+          "longRest": "all"
         },
         {
           "type": "note",
-          "text": "Nimble Escape: Can take the Disengage or Hide action as a bonus action on each of your turns."
+          "text": "Fury of the Small: When you damage a larger creature, deal extra damage equal to your proficiency bonus. Once per turn."
+        },
+        {
+          "type": "bonus_action_grant",
+          "actions": ["Disengage", "Hide"]
         }
       ]
     }
@@ -1205,8 +1270,14 @@
           "text": "Powerful Build: Count as one size larger for carrying capacity."
         },
         {
+          "type": "resource",
+          "name": "Large Form",
+          "maxUses": 1,
+          "longRest": "all"
+        },
+        {
           "type": "note",
-          "text": "Large Form (level 5+): Bonus Action to become Large for 10 minutes (once per Long Rest). Gain advantage on Strength checks and +10 ft Speed."
+          "text": "Large Form (level 5+): Bonus Action to become Large for 10 minutes. Gain advantage on Strength checks and +10 ft Speed."
         }
       ]
     },
@@ -1300,8 +1371,14 @@
           "text": "Lucky Footwork: When you fail a Dexterity saving throw, you can use your reaction to roll a d4 and add it to the save. Can't be used if Prone or speed is 0."
         },
         {
+          "type": "resource",
+          "name": "Rabbit Hop",
+          "maxUses": "prof",
+          "longRest": "all"
+        },
+        {
           "type": "note",
-          "text": "Rabbit Hop: As a bonus action, jump up to 5 × Proficiency Bonus feet without provoking opportunity attacks (requires speed > 0). Usable Proficiency Bonus times per Long Rest."
+          "text": "Rabbit Hop: As a bonus action, jump up to 5 × Proficiency Bonus feet without provoking opportunity attacks (requires speed > 0)."
         }
       ]
     }
@@ -1322,16 +1399,28 @@
         },
         {
           "type": "advantage",
-          "on": "save_charisma",
+          "on": "save_wisdom",
           "condition": "to avoid or end the Charmed condition on yourself"
         },
         {
-          "type": "note",
-          "text": "Fey Gift: Take the Help action as a bonus action. Proficiency Bonus times per Long Rest. At level 3+, choose Hospitality (both gain 1d6 + Proficiency Bonus temp HP), Passage (both gain +10 ft speed until start of next turn), or Spite (target has disadvantage on next attack roll within 1 minute)."
+          "type": "resource",
+          "name": "Fey Gift",
+          "maxUses": "prof",
+          "longRest": "all"
         },
         {
           "type": "note",
-          "text": "Fortune from the Many: When you miss an attack roll or fail a check or save, gain a bonus equal to the number of allies you can see within 30 feet (max +3). Proficiency Bonus times per Long Rest."
+          "text": "Fey Gift: Take the Help action as a bonus action. At level 3+, choose Hospitality (both gain 1d6 + Proficiency Bonus temp HP), Passage (both gain +10 ft speed until start of next turn), or Spite (target has disadvantage on next attack roll within 1 minute)."
+        },
+        {
+          "type": "resource",
+          "name": "Fortune from the Many",
+          "maxUses": "prof",
+          "longRest": "all"
+        },
+        {
+          "type": "note",
+          "text": "Fortune from the Many: When you miss an attack roll or fail a check or save, gain a bonus equal to the number of allies you can see within 30 feet (max +3)."
         }
       ]
     }
@@ -1423,8 +1512,14 @@
           "range": 60
         },
         {
+          "type": "resource",
+          "name": "Draconic Cry",
+          "maxUses": "prof",
+          "longRest": "all"
+        },
+        {
           "type": "note",
-          "text": "Draconic Cry: As a bonus action, cry at enemies within 10 feet. Until start of your next turn, you and your allies have advantage on attack rolls against those enemies who heard you. Proficiency Bonus times per Long Rest."
+          "text": "Draconic Cry: As a bonus action, cry at enemies within 10 feet. Until start of your next turn, you and your allies have advantage on attack rolls against those enemies who heard you."
         }
       ]
     },
@@ -1575,12 +1670,25 @@
           "range": 120
         },
         {
-          "type": "note",
-          "text": "Adrenaline Rush: Bonus Action to Dash, gaining Proficiency Bonus Temporary HP. Usable Proficiency Bonus times per Short or Long Rest."
+          "type": "resource",
+          "name": "Adrenaline Rush",
+          "maxUses": "prof",
+          "longRest": "all",
+          "shortRest": "all"
         },
         {
           "type": "note",
-          "text": "Relentless Endurance: Once per Long Rest, when reduced to 0 HP (not killed outright), drop to 1 HP instead."
+          "text": "Adrenaline Rush: Bonus Action to Dash, gaining Proficiency Bonus Temporary HP."
+        },
+        {
+          "type": "resource",
+          "name": "Relentless Endurance",
+          "maxUses": 1,
+          "longRest": "all"
+        },
+        {
+          "type": "note",
+          "text": "Relentless Endurance: When reduced to 0 HP (not killed outright), drop to 1 HP instead."
         }
       ]
     }
@@ -1658,7 +1766,7 @@
         },
         {
           "type": "advantage",
-          "on": "save_charisma",
+          "on": "save_wisdom",
           "condition": "to avoid or end the Charmed condition on yourself"
         },
         {
@@ -1701,13 +1809,24 @@
         },
         {
           "type": "advantage",
-          "on": "save_charisma",
+          "on": "save_wisdom",
           "condition": "to avoid or end the Charmed condition on yourself"
         },
         {
           "type": "proficiency",
           "category": "skill",
           "value": "Perception"
+        },
+        {
+          "type": "resource",
+          "name": "Blessing of the Raven Queen",
+          "maxUses": "prof",
+          "longRest": "all"
+        },
+        {
+          "type": "teleport_grant",
+          "distance": 30,
+          "timing": "bonus_action"
         },
         {
           "type": "note",
@@ -1735,8 +1854,14 @@
           "range": 60
         },
         {
+          "type": "resource",
+          "name": "Shifting",
+          "maxUses": "prof",
+          "longRest": "all"
+        },
+        {
           "type": "note",
-          "text": "Shifting: As a bonus action, transform for 1 minute (or until dismissed as a bonus action or death). Gain temporary HP equal to 2 × Proficiency Bonus on shift. Proficiency Bonus times per Long Rest."
+          "text": "Shifting: As a bonus action, transform for 1 minute (or until dismissed as a bonus action or death). Gain temporary HP equal to 2 × Proficiency Bonus on shift."
         }
       ]
     },
