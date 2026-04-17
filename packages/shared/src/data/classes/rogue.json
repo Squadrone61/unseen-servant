@@ -116,9 +116,16 @@
         "properties": [
           {
             "type": "note",
-            "text": "Once per turn, deal extra damage equal to table(1:1d6, 3:2d6, 5:3d6, 7:4d6, 9:5d6, 11:6d6, 13:7d6, 15:8d6, 17:9d6, 19:10d6) on a hit with a Finesse or Ranged weapon when you have Advantage, or when an ally is within 5 ft of the target and you don't have Disadvantage."
+            "text": "Once per turn on a hit with a Finesse or Ranged weapon when you have Advantage, or when an ally is within 5 ft of the target and you don't have Disadvantage."
           }
-        ]
+        ],
+        "action": {
+          "kind": "auto",
+          "onHit": {
+            "damage": [{ "dice": "table(1:1d6, 3:2d6, 5:3d6, 7:4d6, 9:5d6, 11:6d6, 13:7d6, 15:8d6, 17:9d6, 19:10d6)", "type": "piercing" }],
+            "note": "Damage type matches the weapon used."
+          }
+        }
       }
     },
     {

@@ -9,10 +9,10 @@
  */
 
 import type { ActionEffect } from "../types/effects";
-import { getSpell, getBaseItem, getMagicItem, getMonster } from "./index";
+import { getSpell, getBaseItem, getMagicItem, getMonster, getClassFeatureByName } from "./index";
 
 /** Which DB category the named entity comes from. */
-export type ActionRefSource = "spell" | "weapon" | "item" | "monster";
+export type ActionRefSource = "spell" | "weapon" | "item" | "monster" | "feature";
 
 export interface ActionRef {
   /** Which DB category to search. */
@@ -67,6 +67,15 @@ export function resolveActionRef(ref: ActionRef): ResolvedActionRef {
       return {
         action: magic.effects?.action ?? null,
         displayName: magic.name,
+      };
+    }
+
+    case "feature": {
+      const feature = getClassFeatureByName(ref.name);
+      if (!feature) return { action: null, displayName: ref.name };
+      return {
+        action: feature.effects?.action ?? null,
+        displayName: feature.name,
       };
     }
 

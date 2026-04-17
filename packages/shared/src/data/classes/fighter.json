@@ -152,7 +152,15 @@
             "type": "note",
             "text": "As a Bonus Action, expend one use to regain 1d10 + Fighter level Hit Points."
           }
-        ]
+        ],
+        "action": {
+          "kind": "auto",
+          "cost": { "resource": "Second Wind", "amount": 1 },
+          "targeting": { "type": "self" },
+          "onHit": {
+            "healing": { "dice": "1d10 + clvl" }
+          }
+        }
       },
       "activationType": "bonus"
     },

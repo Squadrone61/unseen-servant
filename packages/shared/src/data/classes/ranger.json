@@ -474,10 +474,19 @@
           },
           {
             "type": "note",
-            "text": "Magic action: gain 1d8 + WIS modifier (min 1) Temporary Hit Points. On Short Rest, Exhaustion level decreases by 1."
+            "text": "On Short Rest, Exhaustion level decreases by 1."
           }
-        ]
-      }
+        ],
+        "action": {
+          "kind": "auto",
+          "cost": { "resource": "Tireless (Temp HP)", "amount": 1 },
+          "targeting": { "type": "self" },
+          "onHit": {
+            "tempHp": { "dice": "1d8 + wis" }
+          }
+        }
+      },
+      "activationType": "action"
     },
     {
       "name": "Subclass Feature",
@@ -697,9 +706,15 @@
             "properties": [
               {
                 "type": "note",
-                "text": "Once per turn, one weapon hit deals extra Psychic damage: 1d4 (levels 3-10) or 1d6 (level 11+). A single target can take this extra damage only once per turn."
+                "text": "Once per turn on a weapon hit. A single target can take this extra damage only once per turn."
               }
-            ]
+            ],
+            "action": {
+              "kind": "auto",
+              "onHit": {
+                "damage": [{ "dice": "table(3:1d4, 11:1d6)", "type": "psychic" }]
+              }
+            }
           }
         },
         {

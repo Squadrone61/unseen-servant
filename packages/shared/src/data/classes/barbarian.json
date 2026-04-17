@@ -920,9 +920,16 @@
             "properties": [
               {
                 "type": "note",
-                "text": "While raging, the first creature you hit each turn with a weapon or Unarmed Strike takes extra damage equal to 1d6 + half Barbarian level (rounded down). Choose Necrotic or Radiant each time."
+                "text": "While raging, once per turn on first hit. Choose Necrotic or Radiant each time."
               }
-            ]
+            ],
+            "action": {
+              "kind": "auto",
+              "onHit": {
+                "damage": [{ "dice": "1d6 + table(3:1, 5:2, 7:3, 9:4, 11:5, 13:6, 15:7, 17:8, 19:9)", "type": "necrotic" }],
+                "note": "Damage type is Necrotic or Radiant (choose each time)."
+              }
+            }
           }
         },
         {
@@ -941,9 +948,18 @@
               },
               {
                 "type": "note",
-                "text": "Pool of d12s (4 at level 3, 5 at 6, 6 at 12, 7 at 17). Bonus Action: expend any number of dice from pool, roll them, regain that many HP."
+                "text": "Pool of d12s. Bonus Action: expend any number of dice from pool, roll them, regain that many HP."
               }
-            ]
+            ],
+            "action": {
+              "kind": "auto",
+              "cost": { "resource": "Warrior of the Gods Dice", "amount": "1+" },
+              "targeting": { "type": "self" },
+              "onHit": {
+                "healing": { "dice": "1d12" },
+                "note": "Roll one d12 per expended die. Heal for the total."
+              }
+            }
           },
           "activationType": "bonus"
         },

@@ -6,6 +6,7 @@ import type {
   MonsterDb,
   ClassDb,
   ClassFeatureDb,
+  DbEntity,
   FeatDb,
   SpeciesDb,
   BackgroundDb,
@@ -277,6 +278,19 @@ export function getClassFeatures(className: string, upToLevel: number): ClassFea
 
 export function getOptionalFeaturesByType(type: string): OptionalFeatureDb[] {
   return optionalFeaturesArray.filter((f) => f.featureType.includes(type));
+}
+
+export function getClassFeatureByName(featureName: string): DbEntity | undefined {
+  const lower = featureName.toLowerCase();
+  for (const cls of classesArray) {
+    const feat = cls.features.find((f) => f.name.toLowerCase() === lower);
+    if (feat) return feat;
+    for (const sub of cls.subclasses) {
+      const subFeat = sub.features.find((f) => f.name.toLowerCase() === lower);
+      if (subFeat) return subFeat;
+    }
+  }
+  return undefined;
 }
 
 // ─── Class Spell Slot Helpers ──────────────────────────
