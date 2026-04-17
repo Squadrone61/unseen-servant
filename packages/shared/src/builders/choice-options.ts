@@ -388,6 +388,26 @@ export function resolveChoice(choice: FeatureChoice, ctx?: ResolveChoiceContext)
       }));
     }
 
+    case "feat": {
+      const category = from?.[0] ?? "Origin";
+      const candidates = featsArray.filter((f) => f.category === category);
+      const excluded = new Set(ctx?.excludeIds);
+      return candidates.map((feat) => {
+        const subChoices = feat.choices?.filter((c) => c.timing === "permanent") ?? [];
+        return {
+          id: feat.name,
+          name: feat.name,
+          detail: {
+            category: "feat" as EntityCategory,
+            name: feat.name,
+          },
+          subChoices: subChoices.length > 0 ? subChoices : undefined,
+          disabled: excluded.has(feat.name) || undefined,
+          disabledReason: excluded.has(feat.name) ? "Already granted by background" : undefined,
+        };
+      });
+    }
+
     default:
       return [];
   }

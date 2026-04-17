@@ -1,8 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { speciesArray } from "@unseen-servant/shared/data";
+import { speciesArray, getBackground } from "@unseen-servant/shared/data";
 import type { SpeciesDb } from "@unseen-servant/shared/data";
+import type { ResolveChoiceContext } from "@unseen-servant/shared/builders";
 import { DetailPopover } from "@/components/character/DetailPopover";
 import { EffectSummary } from "@/components/builder/EffectSummary";
 import { ChoicePicker } from "@/components/builder/ChoicePicker";
@@ -244,16 +245,25 @@ export function SpeciesStep() {
             </p>
           </div>
           <div className="flex flex-col gap-4">
-            {selectedSpecies.choices.map((choice) => (
-              <ChoicePicker
-                key={choice.id}
-                choice={choice}
-                selected={state.speciesChoices[choice.id] ?? []}
-                onSelect={(values) => handleChoiceSelect(choice.id, values)}
-                nestedSelections={state.speciesChoices}
-                onNestedSelect={(nestedId, values) => handleChoiceSelect(nestedId, values)}
-              />
-            ))}
+            {selectedSpecies.choices.map((choice) => {
+              // For feat pool choices, exclude the background's origin feat
+              let ctx: ResolveChoiceContext | undefined;
+              if ("pool" in choice && choice.pool === "feat" && state.background) {
+                const bgFeat = getBackground(state.background)?.feat;
+                if (bgFeat) ctx = { excludeIds: [bgFeat] };
+              }
+              return (
+                <ChoicePicker
+                  key={choice.id}
+                  choice={choice}
+                  selected={state.speciesChoices[choice.id] ?? []}
+                  onSelect={(values) => handleChoiceSelect(choice.id, values)}
+                  nestedSelections={state.speciesChoices}
+                  onNestedSelect={(nestedId, values) => handleChoiceSelect(nestedId, values)}
+                  ctx={ctx}
+                />
+              );
+            })}
           </div>
         </>
       )}

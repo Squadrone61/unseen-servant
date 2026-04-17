@@ -347,6 +347,39 @@ function assembleAdditionalFeatures(state: BuilderState): CharacterFeatureRef[] 
     }
   }
 
+  // Background origin feat (e.g. Skilled, Magic Initiate, Musician)
+  if (state.background) {
+    const bg = getBackground(state.background);
+    if (bg?.feat) {
+      const picks = state.featChoices[bg.feat];
+      features.push({
+        dbKind: "feat",
+        dbName: bg.feat,
+        sourceLabel: "Background",
+        choices: picks && Object.keys(picks).length > 0 ? picks : undefined,
+      });
+    }
+  }
+
+  // Species feat choices (e.g. Human Versatile → Origin feat pick)
+  if (state.species) {
+    const speciesDb = getSpecies(state.species);
+    for (const choice of speciesDb?.choices ?? []) {
+      if (!("pool" in choice) || (choice as { pool: string }).pool !== "feat") continue;
+      const picked = state.speciesChoices[choice.id] ?? [];
+      for (const featName of picked) {
+        if (!getFeat(featName)) continue;
+        const picks = state.featChoices[featName];
+        features.push({
+          dbKind: "feat",
+          dbName: featName,
+          sourceLabel: "Species",
+          choices: picks && Object.keys(picks).length > 0 ? picks : undefined,
+        });
+      }
+    }
+  }
+
   // Class-level choice picks that resolve to feats (Fighting Style picks, etc.)
   // so they appear as clickable entries on the Features tab with their own
   // description / mechanical effects rather than being silently absorbed into

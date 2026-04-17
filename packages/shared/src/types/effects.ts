@@ -570,7 +570,8 @@ export type FeatureChoice = {
         | "weapon_mastery" // pick weapons whose Mastery property the character can use
         | "metamagic" // pick a Metamagic option (Sorcerer)
         | "eldritch_invocation" // pick an Eldritch Invocation (Warlock, Eldritch Adept)
-        | "spell_choice"; // pick a spell (Mystic Arcanum, Spell Mastery, Magical Discoveries)
+        | "spell_choice" // pick a spell (Mystic Arcanum, Spell Mastery, Magical Discoveries)
+        | "feat"; // pick a feat (Human Versatile — constrain category via `from`)
       /** Constrained list. Omit for "any from pool". */
       from?: string[];
       /** Spell filter for spell_choice pool. */

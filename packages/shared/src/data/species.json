@@ -1439,10 +1439,6 @@
           "type": "inspiration_grant",
           "targets": "self",
           "timing": "long_rest"
-        },
-        {
-          "type": "feat_grant",
-          "category": "Origin"
         }
       ]
     },
@@ -1453,6 +1449,14 @@
         "count": 1,
         "timing": "permanent",
         "pool": "skill_proficiency"
+      },
+      {
+        "id": "versatile-feat",
+        "label": "Versatile (Origin Feat)",
+        "count": 1,
+        "timing": "permanent",
+        "pool": "feat",
+        "from": ["Origin"]
       }
     ]
   },
