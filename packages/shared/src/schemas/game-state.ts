@@ -52,6 +52,7 @@ export const checkResultSchema = z.object({
   dc: z.number().optional(),
   success: z.boolean().optional(),
   characterName: z.string(),
+  playerMessage: z.string().optional(),
 });
 
 // ─── Grid ───

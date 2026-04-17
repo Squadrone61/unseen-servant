@@ -641,8 +641,8 @@ function GameContent({ roomCode, playerName }: { roomCode: string; playerName: s
     setStoryStarted(true);
   };
 
-  const handleRollDice = (checkRequestId: string) => {
-    send({ type: "client:roll_dice", checkRequestId });
+  const handleRollDice = (checkRequestId: string, message?: string) => {
+    send({ type: "client:roll_dice", checkRequestId, message: message || undefined });
   };
 
   const handleRollback = (eventId: string) => {

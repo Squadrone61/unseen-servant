@@ -426,7 +426,7 @@ export class GameStateManager {
         this.handleStartStory(playerName);
         break;
       case "client:roll_dice":
-        this.handleRollDice(playerName, action.checkRequestId);
+        this.handleRollDice(playerName, action.checkRequestId, action.message);
         break;
       case "client:combat_action":
         this.handleCombatAction(playerName, action.action);
@@ -848,7 +848,7 @@ export class GameStateManager {
 
   // ─── Roll Dice ───
 
-  handleRollDice(playerName: string, checkRequestId: string): void {
+  handleRollDice(playerName: string, checkRequestId: string, playerMessage?: string): void {
     const combat = this.gameState.encounter?.combat;
     const pendingCheck = combat?.pendingCheck ?? this.gameState.pendingCheck;
 
@@ -903,6 +903,7 @@ export class GameStateManager {
         dc: pendingCheck.dc,
         success,
         characterName: char.static.name,
+        playerMessage: playerMessage || undefined,
       },
       timestamp: Date.now(),
       id: crypto.randomUUID(),
@@ -945,7 +946,8 @@ export class GameStateManager {
     );
 
     // Inject result into conversation and trigger AI follow-up
-    const systemMsg = `[System: ${char.static.name} rolled ${roll.total} on ${pendingCheck.reason}${dcStr} — ${resultLabel}${critStr}]`;
+    const noteStr = playerMessage ? ` (Player note: "${playerMessage}")` : "";
+    const systemMsg = `[System: ${char.static.name} rolled ${roll.total} on ${pendingCheck.reason}${dcStr} — ${resultLabel}${critStr}${noteStr}]`;
 
     this.conversationHistory.push({ role: "user", content: systemMsg });
     this.pushDMRequest();

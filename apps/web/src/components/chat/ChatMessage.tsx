@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { RollResult } from "@unseen-servant/shared/types";
 import type { Components } from "react-markdown";
 import ReactMarkdown from "react-markdown";
@@ -14,7 +15,7 @@ function formatTime(ts: number): string {
 
 interface ChatMessageProps {
   message: DisplayMessage;
-  onRollDice?: (checkRequestId: string) => void;
+  onRollDice?: (checkRequestId: string, message?: string) => void;
   myCharacterName?: string;
 }
 
@@ -222,9 +223,11 @@ function CheckCard({
   myCharacterName,
 }: {
   message: DisplayMessage;
-  onRollDice?: (checkRequestId: string) => void;
+  onRollDice?: (checkRequestId: string, message?: string) => void;
   myCharacterName?: string;
 }) {
+  const [playerNote, setPlayerNote] = useState("");
+
   // Extract fields depending on message type
   const isMerged = message.type === "merged_check";
   const isBare = message.type === "server:check_request";
@@ -320,11 +323,38 @@ function CheckCard({
         </div>
       )}
 
-      {/* Roll button for bare check_request */}
+      {/* Player note on merged checks */}
+      {isMerged && result?.playerMessage && (
+        <div className="mt-1.5 text-xs text-gray-400 italic">
+          <span className="text-gray-500">Note:</span> {result.playerMessage}
+        </div>
+      )}
+
+      {/* Roll input + button for bare check_request */}
       {isBare && isMyCheck && onRollDice && (
-        <Button variant="primary" size="sm" className="mt-2" onClick={() => onRollDice(request.id)}>
-          {`Roll ${request.notation}`}
-        </Button>
+        <div className="mt-2 space-y-2">
+          <input
+            type="text"
+            placeholder="Add a note (optional)..."
+            value={playerNote}
+            onChange={(e) => setPlayerNote(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                onRollDice(request.id, playerNote.trim() || undefined);
+              }
+            }}
+            maxLength={500}
+            className="w-full text-sm bg-gray-800/50 border border-gray-600 rounded px-2 py-1 text-gray-200 placeholder-gray-500 focus:outline-none focus:border-amber-500"
+          />
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => onRollDice(request.id, playerNote.trim() || undefined)}
+          >
+            {`Roll ${request.notation}`}
+          </Button>
+        </div>
       )}
     </div>
   );

@@ -337,6 +337,7 @@ export const clientStartStorySchema = z.object({
 export const clientRollDiceSchema = z.object({
   type: z.literal("client:roll_dice"),
   checkRequestId: z.string(),
+  message: z.string().max(500).optional(),
 });
 
 export const clientCombatActionSchema = z.object({

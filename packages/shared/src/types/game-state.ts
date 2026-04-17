@@ -49,6 +49,7 @@ export interface CheckResult {
   dc?: number;
   success?: boolean;
   characterName: string;
+  playerMessage?: string;
 }
 
 // ─── Grid ───

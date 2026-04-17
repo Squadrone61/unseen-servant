@@ -167,6 +167,7 @@ export interface ClientStartStoryMessage {
 export interface ClientRollDiceMessage {
   type: "client:roll_dice";
   checkRequestId: string;
+  message?: string;
 }
 
 export interface ClientCombatActionMessage {

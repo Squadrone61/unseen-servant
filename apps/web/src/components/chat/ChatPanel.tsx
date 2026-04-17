@@ -59,7 +59,7 @@ interface ChatPanelProps {
   messages: DisplayMessage[];
   onSend: (content: string) => void;
   connectionState: ConnectionState;
-  onRollDice?: (checkRequestId: string) => void;
+  onRollDice?: (checkRequestId: string, message?: string) => void;
   myCharacterName?: string;
   isMyTurn?: boolean;
   onEndTurn?: () => void;
