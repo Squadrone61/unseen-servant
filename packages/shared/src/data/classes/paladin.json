@@ -853,7 +853,15 @@
                 "type": "note",
                 "text": "Channel Divinity — immediately after casting Divine Smite: distribute Temporary Hit Points equal to 2d8 + Paladin level among creatures of your choice within 30 ft (including yourself), divided however you like."
               }
-            ]
+            ],
+            "action": {
+              "kind": "auto",
+              "cost": { "resource": "Channel Divinity", "amount": 1 },
+              "targeting": { "type": "creatures" },
+              "onHit": {
+                "note": "Distribute 2d8 + Paladin level Temporary Hit Points among chosen creatures within 30 ft (including yourself). Triggered immediately after casting Divine Smite."
+              }
+            }
           }
         },
         {
@@ -865,8 +873,18 @@
           "effects": {
             "properties": [
               {
+                "type": "advantage",
+                "on": "athletics",
+                "condition": "while Peerless Athlete is active (1 hour)"
+              },
+              {
+                "type": "advantage",
+                "on": "acrobatics",
+                "condition": "while Peerless Athlete is active (1 hour)"
+              },
+              {
                 "type": "note",
-                "text": "Channel Divinity — Bonus Action: for 1 hour, gain advantage on Athletics and Acrobatics checks, and Long/High Jump distances increase by 10 feet."
+                "text": "Channel Divinity — Bonus Action: for 1 hour, Long/High Jump distances increase by 10 feet."
               }
             ]
           },

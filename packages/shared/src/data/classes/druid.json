@@ -842,9 +842,22 @@
             "properties": [
               {
                 "type": "note",
-                "text": "Magic action: expend one Wild Shape use. Creatures of your choice in a 10-ft radius Sphere at a point within 60 ft make a CON save (your spell save DC) — fail: 2d6 Necrotic damage, success: half. One creature of your choice in the area regains 2d6 HP. Scales to 3d6 at level 10, 4d6 at level 14."
+                "text": "Magic action: expend one Wild Shape use. Creatures of your choice in a 10-ft radius Sphere at a point within 60 ft make a CON save — fail: Necrotic damage, success: half. One creature of your choice in the area regains same dice in HP."
               }
-            ]
+            ],
+            "action": {
+              "kind": "save",
+              "save": {
+                "ability": "constitution",
+                "dc": "spell_save_dc",
+                "onSuccess": "half"
+              },
+              "area": { "shape": "sphere", "size": 10 },
+              "onFailedSave": {
+                "damage": [{ "dice": "table(3:2d6, 10:3d6, 14:4d6)", "type": "necrotic" }],
+                "note": "Additionally, one creature of your choice in the area regains same dice in HP (unconditional, not tied to save). Costs one Wild Shape use."
+              }
+            }
           }
         },
         {
@@ -1028,7 +1041,14 @@
                 "type": "note",
                 "text": "Once per turn, Wild Shape form attacks can deal extra 2d10 Radiant damage. When using Moonlight Step, optionally also teleport one willing creature within 10 ft of you to within 10 ft of your destination."
               }
-            ]
+            ],
+            "action": {
+              "kind": "auto",
+              "onHit": {
+                "damage": [{ "dice": "2d10", "type": "radiant" }],
+                "note": "Once per turn, Wild Shape form attacks only."
+              }
+            }
           }
         }
       ]
