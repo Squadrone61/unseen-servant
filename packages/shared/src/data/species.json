@@ -158,7 +158,7 @@
         },
         {
           "type": "advantage",
-          "on": "save_charisma",
+          "on": "save_wisdom",
           "condition": "to avoid or end the Charmed condition"
         },
         {
@@ -566,7 +566,7 @@
         },
         {
           "type": "advantage",
-          "on": "save_charisma",
+          "on": "save_wisdom",
           "condition": "to avoid or end the Charmed condition"
         },
         {
@@ -627,7 +627,7 @@
         },
         {
           "type": "advantage",
-          "on": "save_charisma",
+          "on": "save_wisdom",
           "condition": "to avoid or end the Charmed condition"
         },
         {
@@ -948,6 +948,13 @@
             "label": "Water Genasi",
             "description": "Swim speed equal to walking speed. Acid resistance. Amphibious (breathe air and water). Know Acid Splash cantrip. At level 3: Create or Destroy Water (1/Long Rest). At level 5: Water Walk (1/Long Rest).",
             "effects": {
+              "modifiers": [
+                {
+                  "target": "speed_swim",
+                  "value": "speed",
+                  "operation": "set"
+                }
+              ],
               "properties": [
                 {
                   "type": "resistance",
@@ -974,10 +981,6 @@
                 {
                   "type": "note",
                   "text": "Amphibious: You breathe air and water."
-                },
-                {
-                  "type": "note",
-                  "text": "Swim Speed equal to walking speed."
                 }
               ]
             }
@@ -1169,7 +1172,7 @@
         },
         {
           "type": "advantage",
-          "on": "save_charisma",
+          "on": "save_wisdom",
           "condition": "to avoid or end the Charmed condition"
         },
         {

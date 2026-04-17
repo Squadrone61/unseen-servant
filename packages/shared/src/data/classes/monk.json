@@ -724,10 +724,18 @@
           "subclassName": "Warrior of the Elements",
           "description": "While your Elemental Attunement is active, you also have a Fly Speed and a Swim Speed equal to your Speed.",
           "effects": {
-            "properties": [
+            "modifiers": [
               {
-                "type": "note",
-                "text": "While Elemental Attunement is active, gain Fly Speed and Swim Speed each equal to your Speed."
+                "target": "speed_fly",
+                "value": "speed",
+                "operation": "set",
+                "condition": "while Elemental Attunement is active"
+              },
+              {
+                "target": "speed_swim",
+                "value": "speed",
+                "operation": "set",
+                "condition": "while Elemental Attunement is active"
               }
             ]
           }

@@ -880,7 +880,33 @@
               },
               {
                 "type": "note",
-                "text": "Bonus Action: enter trance for 1 minute. During trance: attack rolls against you can't have Advantage; on any D20 Test you make, treat d20 rolls of 1–9 as a 10. Restore use by spending 5 Sorcery Points."
+                "text": "Restore use by spending 5 Sorcery Points (no action required)."
+              }
+            ]
+          },
+          "activation": {
+            "properties": [
+              {
+                "type": "suppress_advantage",
+                "against": "attacks"
+              },
+              {
+                "type": "roll_minimum",
+                "on": "ability_check",
+                "min": 10,
+                "mode": "d20"
+              },
+              {
+                "type": "roll_minimum",
+                "on": "attack",
+                "min": 10,
+                "mode": "d20"
+              },
+              {
+                "type": "roll_minimum",
+                "on": "save",
+                "min": 10,
+                "mode": "d20"
               }
             ]
           },
