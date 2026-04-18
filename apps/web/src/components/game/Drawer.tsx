@@ -28,8 +28,8 @@ export function Drawer({
       {/* Panel */}
       <div
         className={`fixed top-0 ${side === "right" ? "right-0" : "left-0"} z-50
-                    ${width} border- h-full bg-gray-900${side === "right" ? "l" : "r"} flex
-                    flex-col border-gray-700/40 shadow-2xl`}
+                    ${width} border- flex h-full flex-col
+                    border-gray-700/40 bg-gray-900 shadow-2xl`}
       >
         {/* Header */}
         <div className="flex h-11 shrink-0 items-center justify-between border-b border-gray-700/30 px-4">
