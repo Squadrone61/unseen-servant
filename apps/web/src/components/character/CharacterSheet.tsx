@@ -29,6 +29,7 @@ import {
   getInitiative,
 } from "@unseen-servant/shared/character";
 import type { StatBreakdownId } from "@unseen-servant/shared/detail";
+import { getCondition } from "@unseen-servant/shared/data";
 import { HPBar } from "./HPBar";
 import { ActionsTab } from "./tabs/ActionsTab";
 import { SpellsTab } from "./tabs/SpellsTab";
@@ -309,21 +310,30 @@ function CharacterSheetInner({ character, onCastAoE }: CharacterSheetProps) {
               Conditions
             </div>
             <div className="flex flex-wrap gap-1">
-              {d.conditions.map((c, i) => (
-                <span
-                  key={i}
-                  className="rounded-full border border-red-800/50 bg-red-900/30 px-2 py-0.5 text-xs text-red-400"
-                  title={
-                    typeof c === "string"
-                      ? c
-                      : c.duration
-                        ? `${c.name} (${c.duration} rounds)`
-                        : c.name
-                  }
-                >
-                  {typeof c === "string" ? c : c.name}
-                </span>
-              ))}
+              {d.conditions.map((c, i) => {
+                const name = typeof c === "string" ? c : c.name;
+                const duration = typeof c === "string" ? undefined : c.duration;
+                const hasEntry = getCondition(name) !== undefined;
+                const label = duration ? `${name} (${duration} rounds)` : name;
+                return hasEntry ? (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={(e) => push("condition", name, { x: e.clientX, y: e.clientY })}
+                    className="cursor-pointer rounded-full border border-red-800/50 bg-red-900/30 px-2 py-0.5 text-xs text-red-400 hover:bg-red-900/50"
+                  >
+                    {label}
+                  </button>
+                ) : (
+                  <span
+                    key={i}
+                    className="rounded-full border border-red-800/50 bg-red-900/30 px-2 py-0.5 text-xs text-red-400"
+                    title={label}
+                  >
+                    {label}
+                  </span>
+                );
+              })}
             </div>
           </div>
         )}
