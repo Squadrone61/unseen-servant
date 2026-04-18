@@ -252,7 +252,10 @@ Examples:
             checkLabel: result.roll.label,
           });
 
-          const fullResult = formatted + effectHints + damageBonusHints;
+          const noteLine = result.playerMessage
+            ? `\n📝 Player note: "${result.playerMessage}"`
+            : "";
+          const fullResult = formatted + noteLine + effectHints + damageBonusHints;
           gameLogger.toolCall(
             "roll_dice",
             { notation, checkType, player, dc: resolvedDC, reason },

@@ -818,6 +818,7 @@ export class WSClient {
               dc: cr.dc,
               success: cr.success,
               characterName: cr.characterName,
+              playerMessage: cr.playerMessage,
             });
           } else {
             resolve({

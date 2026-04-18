@@ -173,6 +173,7 @@ export class GameStateManager {
     criticalHit?: boolean;
     criticalFail?: boolean;
     notation?: string;
+    playerMessage?: string;
   } | null = null;
 
   constructor(opts: {
@@ -921,6 +922,7 @@ export class GameStateManager {
       criticalHit: roll.criticalHit,
       criticalFail: roll.criticalFail,
       notation: finalNotation,
+      playerMessage: playerMessage || undefined,
     };
 
     // Clear pending check
