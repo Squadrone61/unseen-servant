@@ -661,12 +661,38 @@ export function getClassResources(
       b.effects.properties?.some((p) => p.type === "resource" && p.name === res.name),
     )?.source;
 
+    let sourceFeature: import("../types/character").CharacterFeatureRef | undefined;
+    if (bundleSource) {
+      const sourceKind = bundleSource.type;
+      const dbKind: import("../types/character").CharacterFeatureRef["dbKind"] | null =
+        sourceKind === "class"
+          ? "class"
+          : sourceKind === "subclass"
+            ? "subclass"
+            : sourceKind === "feat"
+              ? "feat"
+              : sourceKind === "species"
+                ? "species"
+                : sourceKind === "background"
+                  ? "background"
+                  : null;
+      if (dbKind) {
+        sourceFeature = {
+          dbKind,
+          dbName: bundleSource.name,
+          featureName: bundleSource.featureName,
+          sourceLabel: bundleSource.featureName ?? bundleSource.name,
+        };
+      }
+    }
+
     resources.push({
       name: res.name,
       maxUses: Math.floor(maxUses),
       longRest: res.longRest,
       shortRest: res.shortRest,
       source: bundleSource?.name ?? "Unknown",
+      sourceFeature,
     });
   }
 
