@@ -321,14 +321,7 @@ export class CampaignManager {
       const { playerName, userId, builder, static: staticData, dynamic: dynamicData } = result.data;
       // Use saved playerName, fall back to character name from static data
       const key = playerName || staticData.name || file.replace(".json", "");
-      // `builder` is optional in the schema for back-compat with legacy snapshots;
-      // cast allows assignment into CharacterData (which requires it) — callers
-      // must tolerate a possibly-undefined builder on very old files.
-      characters[key] = {
-        builder: builder as CharacterData["builder"],
-        static: staticData,
-        dynamic: dynamicData,
-      };
+      characters[key] = { builder, static: staticData, dynamic: dynamicData };
       if (userId && key) {
         userIds[key] = userId;
       }

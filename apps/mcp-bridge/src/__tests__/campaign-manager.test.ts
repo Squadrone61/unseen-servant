@@ -208,5 +208,37 @@ describe("loadCharacterSnapshotsWithIds — Zod validation", () => {
       expect(warnSpy).toHaveBeenCalledOnce();
       expect(warnSpy.mock.calls[0][0]).toMatch(/phantom\.json/);
     });
+
+    it("skips a snapshot missing builder with a console.warn", () => {
+      const manager = new CampaignManager();
+      manager.createCampaign("Lifecycle Missing Builder");
+      const slug = "lifecycle-missing-builder";
+      const charDir = path.join(campaignsDir, slug, "characters");
+      fs.mkdirSync(charDir, { recursive: true });
+
+      // Legacy-shape snapshot: static + dynamic present, no builder.
+      // This is the exact shape that caused the cooptwr regression; under the
+      // strict schema it must be rejected so in-memory state can't be poisoned.
+      const fighter = createFighterCharacter();
+      const malformed = {
+        playerName: "Legacy",
+        static: fighter.static,
+        dynamic: fighter.dynamic,
+        // builder intentionally absent
+      };
+      fs.writeFileSync(
+        path.join(charDir, "legacy.json"),
+        JSON.stringify(malformed, null, 2),
+        "utf-8",
+      );
+
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      const result = manager.loadCharacterSnapshotsWithIds();
+
+      expect(result.characters["Legacy"]).toBeUndefined();
+      expect(Object.keys(result.characters)).toHaveLength(0);
+      expect(warnSpy).toHaveBeenCalledOnce();
+      expect(warnSpy.mock.calls[0][0]).toMatch(/legacy\.json/);
+    });
   });
 });
