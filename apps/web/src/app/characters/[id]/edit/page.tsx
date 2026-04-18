@@ -13,7 +13,7 @@ interface EditInnerProps {
 }
 
 function EditInner({ id }: EditInnerProps) {
-  const { dispatch } = useBuilder();
+  const { dispatch, equipmentDispatch } = useBuilder();
   const { characters, getCharacter } = useCharacterLibrary();
   const router = useRouter();
   const loaded = characters.length > 0 || typeof window === "undefined";
@@ -25,9 +25,18 @@ function EditInner({ id }: EditInnerProps) {
       router.replace("/characters");
       return;
     }
-    const restoredState = saved.character.builder;
-    dispatch({ type: "LOAD_STATE", state: restoredState });
-  }, [id, loaded, getCharacter, dispatch, router]);
+    dispatch({ type: "LOAD_STATE", state: saved.character.builder });
+    // Seed the sibling equipment store from live runtime state — this is the
+    // single source of truth for inventory/currency, potentially mutated by
+    // in-game MCP tools (add_item, update_currency, ...) since creation.
+    equipmentDispatch({
+      type: "LOAD_EQUIPMENT",
+      state: {
+        inventory: saved.character.dynamic.inventory,
+        currency: saved.character.dynamic.currency,
+      },
+    });
+  }, [id, loaded, getCharacter, dispatch, equipmentDispatch, router]);
 
   if (!loaded) {
     return (

@@ -1,7 +1,7 @@
 "use client";
 
 import { useBuilder } from "../BuilderContext";
-import type { CharacterAppearance, CharacterTraits } from "@unseen-servant/shared/types";
+import type { CharacterAppearance, CharacterTraits, Currency } from "@unseen-servant/shared/types";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -60,7 +60,7 @@ function SectionDivider() {
 // ---------------------------------------------------------------------------
 
 export function DetailsStep() {
-  const { state, dispatch } = useBuilder();
+  const { state, dispatch, equipment, equipmentDispatch } = useBuilder();
 
   function handleAppearanceChange(key: keyof CharacterAppearance, value: string) {
     dispatch({
@@ -76,12 +76,12 @@ export function DetailsStep() {
     });
   }
 
-  function handleCurrencyChange(key: keyof typeof state.currency, raw: string) {
+  function handleCurrencyChange(key: keyof Currency, raw: string) {
     const parsed = parseInt(raw, 10);
     const value = isNaN(parsed) || parsed < 0 ? 0 : parsed;
-    dispatch({
+    equipmentDispatch({
       type: "SET_CURRENCY",
-      currency: { ...state.currency, [key]: value },
+      currency: { ...equipment.currency, [key]: value },
     });
   }
 
@@ -280,7 +280,7 @@ export function DetailsStep() {
                 id={`currency-${coin}`}
                 type="number"
                 min={0}
-                value={state.currency[coin]}
+                value={equipment.currency[coin]}
                 onChange={(e) => handleCurrencyChange(coin, e.target.value)}
                 className={[
                   INPUT_CLASS,

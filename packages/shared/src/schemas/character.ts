@@ -23,6 +23,36 @@ export const conditionEntrySchema = z.object({
   expiresAt: z.enum(["start-of-turn", "end-of-turn"]).optional(),
 });
 
+// ─── Primitive character schemas ──────────────────────────────────────────────
+// Defined here (in the leaf character module) so they can be shared between
+// messages.ts and builder.ts without creating an import cycle.
+
+export const abilityScoresSchema = z.object({
+  strength: z.number(),
+  dexterity: z.number(),
+  constitution: z.number(),
+  intelligence: z.number(),
+  wisdom: z.number(),
+  charisma: z.number(),
+});
+
+export const characterTraitsSchema = z.object({
+  personalityTraits: z.string().optional(),
+  ideals: z.string().optional(),
+  bonds: z.string().optional(),
+  flaws: z.string().optional(),
+});
+
+export const characterAppearanceSchema = z.object({
+  gender: z.string().optional(),
+  age: z.string().optional(),
+  height: z.string().optional(),
+  weight: z.string().optional(),
+  hair: z.string().optional(),
+  eyes: z.string().optional(),
+  skin: z.string().optional(),
+});
+
 // ─── Item ───
 
 const DAMAGE_TYPES = [

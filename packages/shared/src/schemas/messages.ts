@@ -27,14 +27,10 @@ export const authUserSchema = z.object({
 
 // === Character schemas ===
 
-export const abilityScoresSchema = z.object({
-  strength: z.number(),
-  dexterity: z.number(),
-  constitution: z.number(),
-  intelligence: z.number(),
-  wisdom: z.number(),
-  charisma: z.number(),
-});
+// abilityScoresSchema / characterTraitsSchema / characterAppearanceSchema live
+// in ./character.ts so they can be shared with ./builder.ts without a cycle.
+// They're re-exported from the schemas barrel via `export * from "./character"`.
+import { abilityScoresSchema, characterTraitsSchema, characterAppearanceSchema } from "./character";
 
 export const characterClassSchema = z.object({
   name: z.string(),
@@ -75,13 +71,6 @@ export {
   currencySchema,
   deathSavesSchema,
 } from "./character";
-
-export const characterTraitsSchema = z.object({
-  personalityTraits: z.string().optional(),
-  ideals: z.string().optional(),
-  bonds: z.string().optional(),
-  flaws: z.string().optional(),
-});
 
 export const skillProficiencySchema = z.object({
   name: z.string(),
@@ -138,16 +127,6 @@ export const combatBonusSchema = z.object({
   condition: z.string().optional(),
 });
 
-export const characterAppearanceSchema = z.object({
-  gender: z.string().optional(),
-  age: z.string().optional(),
-  height: z.string().optional(),
-  weight: z.string().optional(),
-  hair: z.string().optional(),
-  eyes: z.string().optional(),
-  skin: z.string().optional(),
-});
-
 /**
  * CharacterStaticData schema — Phase 7.
  * Derivable fields (AC, maxHP, speed, skills, savingThrows, senses, spellcasting,
@@ -175,19 +154,13 @@ export const characterStaticDataSchema = z.object({
 // characterDynamicDataSchema lives in ./character.ts — re-exported here.
 export { characterDynamicDataSchema } from "./character";
 
-/**
- * `builder` is the full BuilderState snapshot from the web app. It's opaque to
- * the wire (worker never reads it; bridge strips it from DM tool payloads).
- * We use `z.custom<BuilderState>` instead of `z.any()` so the inferred type
- * stays `BuilderState` (matching the hand-written `CharacterData.builder`).
- * Runtime validation is intentionally permissive — any shape is accepted —
- * because writing a structural schema for BuilderState isn't worth the
- * maintenance cost for a field that's never validated against server logic.
- */
-const builderStateOpaqueSchema = z.custom<import("../types/builder").BuilderState>(() => true);
+// builderStateSchema lives in ./builder.ts — strict schema strips unknown keys
+// so stale `equipment` / `currency` fields on older snapshots drop silently.
+export { builderStateSchema } from "./builder";
+import { builderStateSchema } from "./builder";
 
 export const characterDataSchema = z.object({
-  builder: builderStateOpaqueSchema,
+  builder: builderStateSchema,
   static: characterStaticDataSchema,
   dynamic: characterDynamicDataSchema,
 });
@@ -195,12 +168,13 @@ export const characterDataSchema = z.object({
 /**
  * Shape of a character snapshot file written by CampaignManager.snapshotCharacters.
  * Used by loadCharacterSnapshotsWithIds to validate files on load — invalid files
- * are logged and skipped rather than silently coerced to unknown.
+ * (including any missing `builder`) are logged and skipped rather than silently
+ * coerced into in-memory state.
  */
 export const characterSnapshotSchema = z.object({
   playerName: z.string(),
   userId: z.string().optional(),
-  builder: builderStateOpaqueSchema.optional(),
+  builder: builderStateSchema,
   static: characterStaticDataSchema,
   dynamic: characterDynamicDataSchema,
 });

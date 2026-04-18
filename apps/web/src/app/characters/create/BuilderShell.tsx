@@ -256,12 +256,12 @@ export interface BuilderShellProps {
  * Must be rendered inside a BuilderProvider.
  */
 export function BuilderShell({ mode, editId, editName, editDynamicData }: BuilderShellProps) {
-  const { state } = useBuilder();
+  const { state, equipment } = useBuilder();
   const [activeStep, setActiveStep] = useState<StepId>("species");
   const [finishError, setFinishError] = useState<string | null>(null);
   const router = useRouter();
   const { saveCharacter, updateCharacter } = useCharacterLibrary();
-  const { character, warnings: _warnings } = useComputedCharacter(state);
+  const { character, warnings: _warnings } = useComputedCharacter(state, equipment);
 
   const isEditMode = mode === "edit";
   const unlockedSteps = getUnlockedSteps(state, isEditMode);
@@ -299,12 +299,13 @@ export function BuilderShell({ mode, editId, editName, editDynamicData }: Builde
     setFinishError(null);
 
     if (isEditMode && editId) {
-      // Builder is the source of truth for editable data (inventory, currency,
-      // spell slot shape, resource map). Only carry forward ephemeral gameplay
-      // state (damage taken, used counts, conditions) from the prior dynamic.
+      // `character.dynamic.inventory` and `character.dynamic.currency` already
+      // reflect the Equipment / Details step edits (seeded from live dynamic on
+      // edit load). Carry forward only ephemeral gameplay state (HP taken, used
+      // counts, conditions) from the prior dynamic snapshot.
       const mergedCharacter = editDynamicData
         ? {
-            builder: state,
+            builder: character.builder,
             static: character.static,
             dynamic: {
               ...character.dynamic,

@@ -17,6 +17,7 @@ import type {
   SpellSlotLevel,
   AbilityScores,
   CharacterClass,
+  Currency,
 } from "../types/character";
 import type { Spell } from "../types/spell";
 import type { Item } from "../types/item";
@@ -822,7 +823,17 @@ export function enrichItem(raw: {
 
 // ─── Main Builder ────────────────────────────────────────
 
-export function buildCharacter(state: BuilderState): {
+/**
+ * Build a CharacterData from a BuilderState. `starting` seeds the initial
+ * runtime inventory and currency (both default to empty). Once the character
+ * exists, the DM's MCP tools (`add_item`, `update_item`, `update_currency`,
+ * etc.) mutate `dynamic.inventory` / `dynamic.currency` directly — those are
+ * the single source of truth for gear from that point on.
+ */
+export function buildCharacter(
+  state: BuilderState,
+  starting: { inventory?: Item[]; currency?: Currency } = {},
+): {
   character: CharacterData;
   warnings: string[];
 } {
@@ -927,13 +938,10 @@ export function buildCharacter(state: BuilderState): {
   };
 
   // ── Inventory (enriched from DB — weapon/armor intrinsics populated) ──
-  // Each item in BuilderState.equipment is already an Item (set by EquipmentStep).
-  // Pass through as-is; enrichItem is used by add_item at runtime and by
-  // EquipmentStep when constructing the initial item from BaseItemDb.
-  const inventory: Item[] = state.equipment.map((item) => {
-    // If the item already has weapon/armor sub-objects (built by EquipmentStep via
-    // enrichItem), pass it through. If it's a legacy plain item with no sub-objects,
-    // re-enrich it from the DB.
+  // Starting items come from the builder's sibling equipment store (web) or
+  // from the caller in tests. Items already enriched by the EquipmentStep pass
+  // through; raw entries (name + quantity only) get enriched from the DB here.
+  const inventory: Item[] = (starting.inventory ?? []).map((item) => {
     if (item.weapon !== undefined || item.armor !== undefined) return item;
     return enrichItem(item);
   });
@@ -947,7 +955,7 @@ export function buildCharacter(state: BuilderState): {
     conditions: [],
     deathSaves: { successes: 0, failures: 0 },
     inventory,
-    currency: state.currency ?? { cp: 0, sp: 0, gp: 0, pp: 0 },
+    currency: starting.currency ?? { cp: 0, sp: 0, gp: 0, pp: 0 },
     heroicInspiration: false,
     activeEffects: [],
   };

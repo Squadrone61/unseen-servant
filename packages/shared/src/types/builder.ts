@@ -1,10 +1,15 @@
 /**
  * Builder state types — shared between the web app (which owns the reducer)
  * and CharacterData (which stores the snapshot for lossless edit round-trips).
+ *
+ * Inventory and currency are NOT part of BuilderState — they are runtime state
+ * owned by `CharacterDynamicData`. The builder's Equipment step operates on a
+ * sibling store (see apps/web/.../BuilderContext.tsx) that seeds
+ * `dynamic.inventory` / `dynamic.currency` on save and is re-seeded from them
+ * on edit-mode load.
  */
 
-import type { AbilityScores, CharacterAppearance, CharacterTraits, Currency } from "./character";
-import type { Item } from "./item";
+import type { AbilityScores, CharacterAppearance, CharacterTraits } from "./character";
 import type { Ability } from "./effects";
 
 // ---------------------------------------------------------------------------
@@ -86,7 +91,7 @@ export interface BuilderState {
   cantrips: Record<string, string[]>;
   preparedSpells: Record<string, string[]>;
 
-  // --- Step 7: Equipment ---
+  // --- Step 7: Equipment --- (inventory/currency live in the sibling store, not here)
 
   // --- Step 8: Details ---
   name: string;
@@ -94,8 +99,6 @@ export interface BuilderState {
   backstory: string;
   alignment: string;
   traits: CharacterTraits;
-  equipment: Item[];
-  currency: Currency;
 }
 
 // ---------------------------------------------------------------------------
@@ -139,21 +142,12 @@ export type BuilderAction =
   | { type: "SET_CANTRIPS"; className: string; cantrips: string[] }
   | { type: "SET_PREPARED_SPELLS"; className: string; spells: string[] }
 
-  // Equipment
-  | { type: "ADD_EQUIPMENT"; item: Item }
-  | { type: "ADD_EQUIPMENT_BATCH"; items: Item[] }
-  | { type: "REMOVE_EQUIPMENT"; index: number }
-  | { type: "REMOVE_EQUIPMENT_BATCH"; packName: string }
-  | { type: "TOGGLE_EQUIPPED"; index: number }
-
   // Details
   | { type: "SET_NAME"; name: string }
   | { type: "SET_APPEARANCE"; appearance: Partial<CharacterAppearance> }
   | { type: "SET_BACKSTORY"; backstory: string }
   | { type: "SET_ALIGNMENT"; alignment: string }
   | { type: "SET_TRAITS"; traits: Partial<CharacterTraits> }
-  | { type: "SET_EQUIPMENT"; equipment: Item[] }
-  | { type: "SET_CURRENCY"; currency: Currency }
 
   // Lifecycle
   | { type: "LOAD_STATE"; state: BuilderState }

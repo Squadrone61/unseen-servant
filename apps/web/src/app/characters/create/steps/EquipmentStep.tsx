@@ -562,7 +562,7 @@ function EquipmentChipPanel({
 type StartingTab = "weapons" | "armor" | "gear";
 
 function StartingEquipmentPanel() {
-  const { state, dispatch } = useBuilder();
+  const { state, equipment, equipmentDispatch } = useBuilder();
   const [activeTab, setActiveTab] = useState<StartingTab>("weapons");
   const [tabSearch, setTabSearch] = useState("");
   const [selectedPack, setSelectedPack] = useState<string | null>(null);
@@ -623,16 +623,16 @@ function StartingEquipmentPanel() {
   }, [allArmor, weaponProf, allowedArmorTypes, hasShieldProf, showOnlyProficient]);
 
   const selectedNames = useMemo(
-    () => new Set(state.equipment.map((e) => e.name)),
-    [state.equipment],
+    () => new Set(equipment.inventory.map((e) => e.name)),
+    [equipment.inventory],
   );
 
   function toggleItem(item: BaseItemDb, equipOnAdd: boolean) {
     if (selectedNames.has(item.name)) {
-      const idx = state.equipment.findIndex((e) => e.name === item.name);
-      if (idx !== -1) dispatch({ type: "REMOVE_EQUIPMENT", index: idx });
+      const idx = equipment.inventory.findIndex((e) => e.name === item.name);
+      if (idx !== -1) equipmentDispatch({ type: "REMOVE_EQUIPMENT", index: idx });
     } else {
-      dispatch({
+      equipmentDispatch({
         type: "ADD_EQUIPMENT",
         item: baseItemToItem(item, equipOnAdd),
       });
@@ -641,13 +641,13 @@ function StartingEquipmentPanel() {
 
   function togglePack(pack: PackDb) {
     if (selectedPack === pack.name) {
-      dispatch({ type: "REMOVE_EQUIPMENT_BATCH", packName: pack.name });
+      equipmentDispatch({ type: "REMOVE_EQUIPMENT_BATCH", packName: pack.name });
       setSelectedPack(null);
     } else {
       if (selectedPack) {
-        dispatch({ type: "REMOVE_EQUIPMENT_BATCH", packName: selectedPack });
+        equipmentDispatch({ type: "REMOVE_EQUIPMENT_BATCH", packName: selectedPack });
       }
-      dispatch({ type: "ADD_EQUIPMENT_BATCH", items: packToItems(pack) });
+      equipmentDispatch({ type: "ADD_EQUIPMENT_BATCH", items: packToItems(pack) });
       setSelectedPack(pack.name);
     }
   }
@@ -677,16 +677,16 @@ function StartingEquipmentPanel() {
 
       {/* Persistent equipment chip panel */}
       <EquipmentChipPanel
-        equipment={state.equipment}
+        equipment={equipment.inventory}
         onRemove={(i) => {
-          const item = state.equipment[i];
+          const item = equipment.inventory[i];
           if (item?.fromPack && item.fromPack === selectedPack) {
             setSelectedPack(null);
           }
-          dispatch({ type: "REMOVE_EQUIPMENT", index: i });
+          equipmentDispatch({ type: "REMOVE_EQUIPMENT", index: i });
         }}
-        onToggleEquipped={(i) => dispatch({ type: "TOGGLE_EQUIPPED", index: i })}
-        onAddCustom={(item) => dispatch({ type: "ADD_EQUIPMENT", item })}
+        onToggleEquipped={(i) => equipmentDispatch({ type: "TOGGLE_EQUIPPED", index: i })}
+        onAddCustom={(item) => equipmentDispatch({ type: "ADD_EQUIPMENT", item })}
       />
 
       {/* Tab bar */}

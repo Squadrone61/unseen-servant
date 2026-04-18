@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import type { BuilderState } from "./builder-state";
+import type { EquipmentState } from "./BuilderContext";
 import type { AbilityScores, CharacterData } from "@unseen-servant/shared/types";
 import { buildCharacter, getClass } from "@unseen-servant/shared";
 import { getAbilities } from "@unseen-servant/shared/character";
@@ -26,7 +27,10 @@ export function computeResolvedAbilities(state: BuilderState): AbilityScores {
   }
 }
 
-export function useComputedCharacter(state: BuilderState): {
+export function useComputedCharacter(
+  state: BuilderState,
+  equipment: EquipmentState,
+): {
   character: CharacterData | null;
   warnings: string[];
 } {
@@ -43,10 +47,13 @@ export function useComputedCharacter(state: BuilderState): {
     }
 
     try {
-      return buildCharacter(state);
+      return buildCharacter(state, {
+        inventory: equipment.inventory,
+        currency: equipment.currency,
+      });
     } catch (err) {
       const message = err instanceof Error ? err.message : "Unknown build error";
       return { character: null, warnings: [`Build error: ${message}`] };
     }
-  }, [state]);
+  }, [state, equipment]);
 }

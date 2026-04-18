@@ -826,14 +826,16 @@ describe("Minimal state — level 1 no subclass", () => {
   });
 
   it("default currency is all zeros when not provided", () => {
-    const state = makeBuilderState({ currency: { cp: 0, sp: 0, gp: 0, pp: 0 } });
+    const state = makeBuilderState();
     const { character } = buildCharacter(state);
     expect(character.dynamic.currency).toEqual({ cp: 0, sp: 0, gp: 0, pp: 0 });
   });
 
   it("provided currency is preserved", () => {
-    const state = makeBuilderState({ currency: { cp: 5, sp: 10, gp: 50, pp: 2 } });
-    const { character } = buildCharacter(state);
+    const state = makeBuilderState();
+    const { character } = buildCharacter(state, {
+      currency: { cp: 5, sp: 10, gp: 50, pp: 2 },
+    });
     expect(character.dynamic.currency).toEqual({ cp: 5, sp: 10, gp: 50, pp: 2 });
   });
 
@@ -947,9 +949,8 @@ describe("AC computation", () => {
         wisdom: 12,
         charisma: 8,
       },
-      equipment: [], // no armor
     });
-    const { character } = buildCharacter(state);
+    const { character } = buildCharacter(state); // no armor
     expect(getAC(character)).toBe(12); // 10 + 2
   });
 
@@ -964,9 +965,8 @@ describe("AC computation", () => {
         wisdom: 10,
         charisma: 8,
       },
-      equipment: [], // no armor
     });
-    const { character } = buildCharacter(state);
+    const { character } = buildCharacter(state); // no armor
     // 10 + 2 (DEX) + 3 (CON) = 15
     expect(getAC(character)).toBe(15);
   });
@@ -974,7 +974,9 @@ describe("AC computation", () => {
   it("chain mail + shield gives AC 18", () => {
     const state = makeBuilderState({
       classes: [{ name: "Fighter", level: 1, subclass: null, skills: [], choices: {} }],
-      equipment: [
+    });
+    const { character } = buildCharacter(state, {
+      inventory: [
         {
           name: "Chain Mail",
           equipped: true,
@@ -984,7 +986,6 @@ describe("AC computation", () => {
         { name: "Shield", equipped: true, quantity: 1, armor: { type: "shield", baseAc: 2 } },
       ],
     });
-    const { character } = buildCharacter(state);
     expect(getAC(character)).toBe(18);
   });
 });
@@ -1168,18 +1169,16 @@ describe("Fighting Style — no double-bonus (regression)", () => {
         wisdom: 12,
         charisma: 8,
       },
-      equipment: [chainMail],
     });
-    const { character } = buildCharacter(state);
+    const { character } = buildCharacter(state, { inventory: [chainMail] });
     expect(getAC(character)).toBe(17); // 16 (chain mail) + 1 (Defence) = 17, not 18
   });
 
   it("Fighter 1 without Defence and chain mail has AC 16 (baseline)", () => {
     const state = makeBuilderState({
       classes: [{ name: "Fighter", level: 1, subclass: null, skills: [], choices: {} }],
-      equipment: [chainMail],
     });
-    const { character } = buildCharacter(state);
+    const { character } = buildCharacter(state, { inventory: [chainMail] });
     expect(getAC(character)).toBe(16);
   });
 
@@ -1194,14 +1193,12 @@ describe("Fighting Style — no double-bonus (regression)", () => {
           choices: { "fighting-style": ["Defense"] },
         },
       ],
-      equipment: [chainMail],
     });
     const without = makeBuilderState({
       classes: [{ name: "Fighter", level: 1, subclass: null, skills: [], choices: {} }],
-      equipment: [chainMail],
     });
-    const { character: charWith } = buildCharacter(withDefence);
-    const { character: charWithout } = buildCharacter(without);
+    const { character: charWith } = buildCharacter(withDefence, { inventory: [chainMail] });
+    const { character: charWithout } = buildCharacter(without, { inventory: [chainMail] });
     expect(getAC(charWith) - getAC(charWithout)).toBe(1);
   });
 
@@ -1232,9 +1229,8 @@ describe("Fighting Style — no double-bonus (regression)", () => {
     // doesn't break property-only feats either.
     const stateNoStyle = makeBuilderState({
       classes: [{ name: "Fighter", level: 1, subclass: null, skills: [], choices: {} }],
-      equipment: [chainMail],
     });
-    const { character: charNoStyle } = buildCharacter(stateNoStyle);
+    const { character: charNoStyle } = buildCharacter(stateNoStyle, { inventory: [chainMail] });
     const stateGwf = makeBuilderState({
       classes: [
         {
@@ -1245,9 +1241,8 @@ describe("Fighting Style — no double-bonus (regression)", () => {
           choices: { "fighting-style": ["Great Weapon Fighting"] },
         },
       ],
-      equipment: [chainMail],
     });
-    const { character: charGwf } = buildCharacter(stateGwf);
+    const { character: charGwf } = buildCharacter(stateGwf, { inventory: [chainMail] });
     // GWF has no AC modifier; both should be identical
     expect(getAC(charGwf)).toBe(getAC(charNoStyle));
   });

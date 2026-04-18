@@ -70,7 +70,8 @@ export function createInitialState(): BuilderState {
     cantrips: {},
     preparedSpells: {},
 
-    // Step 7
+    // Step 7 — equipment / currency are held in the sibling equipment store,
+    // not in BuilderState (see BuilderContext.tsx).
 
     // Step 8
     name: "",
@@ -78,8 +79,6 @@ export function createInitialState(): BuilderState {
     backstory: "",
     alignment: "",
     traits: {},
-    equipment: [],
-    currency: { cp: 0, sp: 0, gp: 0, pp: 0 },
   };
 }
 
@@ -473,35 +472,6 @@ export function builderReducer(state: BuilderState, action: BuilderAction): Buil
       };
       break;
 
-    // ---- Equipment ---------------------------------------------------------
-    case "ADD_EQUIPMENT":
-      next = { ...state, equipment: [...state.equipment, action.item] };
-      break;
-
-    case "ADD_EQUIPMENT_BATCH":
-      next = { ...state, equipment: [...state.equipment, ...action.items] };
-      break;
-
-    case "REMOVE_EQUIPMENT": {
-      const updated = state.equipment.filter((_, i) => i !== action.index);
-      next = { ...state, equipment: updated };
-      break;
-    }
-
-    case "REMOVE_EQUIPMENT_BATCH": {
-      const updated = state.equipment.filter((item) => item.fromPack !== action.packName);
-      next = { ...state, equipment: updated };
-      break;
-    }
-
-    case "TOGGLE_EQUIPPED": {
-      const updated = state.equipment.map((item, i) =>
-        i === action.index ? { ...item, equipped: !item.equipped } : item,
-      );
-      next = { ...state, equipment: updated };
-      break;
-    }
-
     // ---- Details -----------------------------------------------------------
     case "SET_NAME":
       next = { ...state, name: action.name };
@@ -527,14 +497,6 @@ export function builderReducer(state: BuilderState, action: BuilderAction): Buil
         ...state,
         traits: { ...state.traits, ...action.traits },
       };
-      break;
-
-    case "SET_EQUIPMENT":
-      next = { ...state, equipment: action.equipment };
-      break;
-
-    case "SET_CURRENCY":
-      next = { ...state, currency: action.currency };
       break;
 
     // ---- Lifecycle ---------------------------------------------------------

@@ -3,7 +3,39 @@ import { clientMessageSchema, serverMessageSchema } from "../schemas/messages.js
 
 // ─── Shared fixtures ─────────────────────────────────────────────────────────
 
+const minimalBuilderState = {
+  currentStep: "details" as const,
+  completedSteps: [],
+  species: "Human",
+  speciesChoices: {},
+  background: null,
+  backgroundChoices: {},
+  abilityScoreMode: "two-one" as const,
+  abilityScoreAssignments: {},
+  classes: [{ name: "Fighter", level: 1, subclass: null, skills: [], choices: {} }],
+  activeClassIndex: 0,
+  abilityMethod: "manual" as const,
+  baseAbilities: {
+    strength: 10,
+    dexterity: 10,
+    constitution: 10,
+    intelligence: 10,
+    wisdom: 10,
+    charisma: 10,
+  },
+  featSelections: [],
+  featChoices: {},
+  cantrips: {},
+  preparedSpells: {},
+  name: "Test",
+  appearance: {},
+  backstory: "",
+  alignment: "",
+  traits: {},
+};
+
 const minimalCharacter = {
+  builder: minimalBuilderState,
   static: {
     name: "Test",
     race: "Human",

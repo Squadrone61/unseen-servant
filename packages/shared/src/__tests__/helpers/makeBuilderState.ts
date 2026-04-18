@@ -5,11 +5,14 @@
  * (Human Fighter 1, standard array abilities), then deep-merges overrides.
  *
  * Also exports convenience builders for common fixture archetypes used in
- * mcp-bridge tests.
+ * mcp-bridge tests. Archetype builders return a `BuilderFixture` triple
+ * because `inventory` and `currency` are no longer part of BuilderState —
+ * they seed `dynamic.inventory` / `dynamic.currency` via the `starting` arg
+ * of `buildCharacter(state, starting)`.
  */
 
 import type { BuilderState, BuilderClassEntry } from "../../types/builder.js";
-import type { AbilityScores } from "../../types/character.js";
+import type { AbilityScores, Currency } from "../../types/character.js";
 import type { Item } from "../../types/item.js";
 
 // ---------------------------------------------------------------------------
@@ -32,6 +35,18 @@ const DEFAULT_CLASS: BuilderClassEntry = {
   skills: [],
   choices: {},
 };
+
+const ZERO_CURRENCY: Currency = { cp: 0, sp: 0, gp: 0, pp: 0 };
+
+/**
+ * A test fixture bundles the BuilderState together with the starting inventory
+ * and currency, which are the `starting` argument to `buildCharacter`.
+ */
+export interface BuilderFixture {
+  state: BuilderState;
+  inventory: Item[];
+  currency: Currency;
+}
 
 // ---------------------------------------------------------------------------
 // Core helper
@@ -65,8 +80,6 @@ export function makeBuilderState(overrides: Partial<BuilderState> = {}): Builder
     backstory: "",
     alignment: "",
     traits: {},
-    equipment: [],
-    currency: { cp: 0, sp: 0, gp: 0, pp: 0 },
     ...overrides,
   };
 }
@@ -80,8 +93,8 @@ export function makeBuilderState(overrides: Partial<BuilderState> = {}): Builder
  * STR 16, DEX 14, CON 14, INT 10, WIS 12, CHA 8
  * Equipment: Longsword, Shield, Chain Mail
  */
-export function makeFighterBuilderState(overrides: Partial<BuilderState> = {}): BuilderState {
-  return makeBuilderState({
+export function makeFighterBuilderState(overrides: Partial<BuilderState> = {}): BuilderFixture {
+  const state = makeBuilderState({
     name: "Theron",
     species: "Human",
     classes: [
@@ -101,35 +114,35 @@ export function makeFighterBuilderState(overrides: Partial<BuilderState> = {}): 
       wisdom: 12,
       charisma: 8,
     },
-    equipment: [
-      {
-        name: "Longsword",
-        equipped: true,
-        quantity: 1,
-        weapon: {
-          damage: "1d8",
-          damageType: "slashing",
-          properties: ["Versatile"],
-          versatile: "1d10",
-        },
-      } satisfies Item,
-      {
-        name: "Shield",
-        equipped: true,
-        quantity: 1,
-        armor: { type: "shield", baseAc: 2 },
-      } satisfies Item,
-      {
-        name: "Chain Mail",
-        equipped: true,
-        quantity: 1,
-        armor: { type: "heavy", baseAc: 16, stealthDisadvantage: true },
-      } satisfies Item,
-    ],
-    currency: { cp: 0, sp: 0, gp: 50, pp: 0 },
     traits: { personalityTraits: "Brave and loyal" },
     ...overrides,
   });
+  const inventory: Item[] = [
+    {
+      name: "Longsword",
+      equipped: true,
+      quantity: 1,
+      weapon: {
+        damage: "1d8",
+        damageType: "slashing",
+        properties: ["Versatile"],
+        versatile: "1d10",
+      },
+    },
+    {
+      name: "Shield",
+      equipped: true,
+      quantity: 1,
+      armor: { type: "shield", baseAc: 2 },
+    },
+    {
+      name: "Chain Mail",
+      equipped: true,
+      quantity: 1,
+      armor: { type: "heavy", baseAc: 16, stealthDisadvantage: true },
+    },
+  ];
+  return { state, inventory, currency: { cp: 0, sp: 0, gp: 50, pp: 0 } };
 }
 
 /**
@@ -137,8 +150,8 @@ export function makeFighterBuilderState(overrides: Partial<BuilderState> = {}): 
  * STR 14, DEX 10, CON 16, INT 12, WIS 18, CHA 8
  * Equipment: Mace, Shield, Chain Mail
  */
-export function makeClericBuilderState(overrides: Partial<BuilderState> = {}): BuilderState {
-  return makeBuilderState({
+export function makeClericBuilderState(overrides: Partial<BuilderState> = {}): BuilderFixture {
+  const state = makeBuilderState({
     name: "Brynn",
     species: "Dwarf",
     classes: [
@@ -164,31 +177,31 @@ export function makeClericBuilderState(overrides: Partial<BuilderState> = {}): B
     cantrips: {
       Cleric: ["Sacred Flame"],
     },
-    equipment: [
-      {
-        name: "Mace",
-        equipped: true,
-        quantity: 1,
-        weapon: { damage: "1d6", damageType: "bludgeoning" },
-      } satisfies Item,
-      {
-        name: "Shield",
-        equipped: true,
-        quantity: 1,
-        armor: { type: "shield", baseAc: 2 },
-      } satisfies Item,
-      {
-        name: "Chain Mail",
-        equipped: true,
-        quantity: 1,
-        armor: { type: "heavy", baseAc: 16, stealthDisadvantage: true },
-      } satisfies Item,
-    ],
     speciesChoices: { language_extra: ["Dwarvish"] },
-    currency: { cp: 0, sp: 0, gp: 75, pp: 0 },
     traits: { personalityTraits: "Compassionate healer" },
     ...overrides,
   });
+  const inventory: Item[] = [
+    {
+      name: "Mace",
+      equipped: true,
+      quantity: 1,
+      weapon: { damage: "1d6", damageType: "bludgeoning" },
+    },
+    {
+      name: "Shield",
+      equipped: true,
+      quantity: 1,
+      armor: { type: "shield", baseAc: 2 },
+    },
+    {
+      name: "Chain Mail",
+      equipped: true,
+      quantity: 1,
+      armor: { type: "heavy", baseAc: 16, stealthDisadvantage: true },
+    },
+  ];
+  return { state, inventory, currency: { cp: 0, sp: 0, gp: 75, pp: 0 } };
 }
 
 /**
@@ -196,8 +209,8 @@ export function makeClericBuilderState(overrides: Partial<BuilderState> = {}): B
  * STR 8, DEX 14, CON 14, INT 10, WIS 12, CHA 18
  * Equipment: Light Crossbow, Leather Armor, Component Pouch
  */
-export function makeWarlockBuilderState(overrides: Partial<BuilderState> = {}): BuilderState {
-  return makeBuilderState({
+export function makeWarlockBuilderState(overrides: Partial<BuilderState> = {}): BuilderFixture {
+  const state = makeBuilderState({
     name: "Zara",
     species: "Tiefling",
     classes: [
@@ -223,31 +236,31 @@ export function makeWarlockBuilderState(overrides: Partial<BuilderState> = {}): 
     cantrips: {
       Warlock: ["Eldritch Blast", "Minor Illusion"],
     },
-    equipment: [
-      {
-        name: "Light Crossbow",
-        equipped: true,
-        quantity: 1,
-        weapon: {
-          damage: "1d8",
-          damageType: "piercing",
-          properties: ["Ammunition", "Loading"],
-          range: "80/320",
-        },
-      } satisfies Item,
-      {
-        name: "Leather Armor",
-        equipped: true,
-        quantity: 1,
-        armor: { type: "light", baseAc: 11 },
-      } satisfies Item,
-      { name: "Component Pouch", equipped: true, quantity: 1 } satisfies Item,
-    ],
     speciesChoices: { language_extra: ["Infernal"] },
-    currency: { cp: 0, sp: 0, gp: 30, pp: 0 },
     traits: { personalityTraits: "Haunted by the pact she made" },
     ...overrides,
   });
+  const inventory: Item[] = [
+    {
+      name: "Light Crossbow",
+      equipped: true,
+      quantity: 1,
+      weapon: {
+        damage: "1d8",
+        damageType: "piercing",
+        properties: ["Ammunition", "Loading"],
+        range: "80/320",
+      },
+    },
+    {
+      name: "Leather Armor",
+      equipped: true,
+      quantity: 1,
+      armor: { type: "light", baseAc: 11 },
+    },
+    { name: "Component Pouch", equipped: true, quantity: 1 },
+  ];
+  return { state, inventory, currency: { cp: 0, sp: 0, gp: 30, pp: 0 } };
 }
 
 /**
@@ -255,8 +268,8 @@ export function makeWarlockBuilderState(overrides: Partial<BuilderState> = {}): 
  * STR 18, DEX 14, CON 16, INT 8, WIS 10, CHA 10
  * Equipment: Greataxe, Javelins (no armor — Unarmored Defense)
  */
-export function makeBarbarianBuilderState(overrides: Partial<BuilderState> = {}): BuilderState {
-  return makeBuilderState({
+export function makeBarbarianBuilderState(overrides: Partial<BuilderState> = {}): BuilderFixture {
+  const state = makeBuilderState({
     name: "Gruk",
     species: "Half-Orc",
     classes: [
@@ -276,33 +289,33 @@ export function makeBarbarianBuilderState(overrides: Partial<BuilderState> = {})
       wisdom: 10,
       charisma: 10,
     },
-    equipment: [
-      {
-        name: "Greataxe",
-        equipped: true,
-        quantity: 1,
-        weapon: { damage: "1d12", damageType: "slashing", properties: ["Heavy", "Two-Handed"] },
-      } satisfies Item,
-      {
-        name: "Javelin",
-        equipped: false,
-        quantity: 4,
-        weapon: { damage: "1d6", damageType: "piercing", properties: ["Thrown"], range: "30/120" },
-      } satisfies Item,
-    ],
     speciesChoices: { language_extra: ["Orc"] },
-    currency: { cp: 0, sp: 5, gp: 10, pp: 0 },
     traits: { personalityTraits: "Fierce but protective of allies" },
     ...overrides,
   });
+  const inventory: Item[] = [
+    {
+      name: "Greataxe",
+      equipped: true,
+      quantity: 1,
+      weapon: { damage: "1d12", damageType: "slashing", properties: ["Heavy", "Two-Handed"] },
+    },
+    {
+      name: "Javelin",
+      equipped: false,
+      quantity: 4,
+      weapon: { damage: "1d6", damageType: "piercing", properties: ["Thrown"], range: "30/120" },
+    },
+  ];
+  return { state, inventory, currency: { cp: 0, sp: 5, gp: 10, pp: 0 } };
 }
 
 /**
  * Selene — Half-Elf Cleric 3 (Life Domain) / Warlock 2 (Archfey)
  * STR 10, DEX 12, CON 14, INT 10, WIS 16, CHA 16
  */
-export function makeMulticlassBuilderState(overrides: Partial<BuilderState> = {}): BuilderState {
-  return makeBuilderState({
+export function makeMulticlassBuilderState(overrides: Partial<BuilderState> = {}): BuilderFixture {
+  const state = makeBuilderState({
     name: "Selene",
     species: "Half-Elf",
     classes: [
@@ -331,22 +344,25 @@ export function makeMulticlassBuilderState(overrides: Partial<BuilderState> = {}
       Cleric: ["Sacred Flame"],
       Warlock: ["Eldritch Blast"],
     },
-    equipment: [
-      {
-        name: "Mace",
-        equipped: true,
-        quantity: 1,
-        weapon: { damage: "1d6", damageType: "bludgeoning" },
-      } satisfies Item,
-      {
-        name: "Chain Shirt",
-        equipped: true,
-        quantity: 1,
-        armor: { type: "medium", baseAc: 13, dexCap: 2 },
-      } satisfies Item,
-    ],
-    currency: { cp: 0, sp: 0, gp: 60, pp: 0 },
     traits: { personalityTraits: "Seeks balance between divine and eldritch power" },
     ...overrides,
   });
+  const inventory: Item[] = [
+    {
+      name: "Mace",
+      equipped: true,
+      quantity: 1,
+      weapon: { damage: "1d6", damageType: "bludgeoning" },
+    },
+    {
+      name: "Chain Shirt",
+      equipped: true,
+      quantity: 1,
+      armor: { type: "medium", baseAc: 13, dexCap: 2 },
+    },
+  ];
+  return { state, inventory, currency: { cp: 0, sp: 0, gp: 60, pp: 0 } };
 }
+
+// Re-export a neutral zero-currency for tests that need a Currency default.
+export { ZERO_CURRENCY };
