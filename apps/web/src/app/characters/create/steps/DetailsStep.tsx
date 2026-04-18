@@ -60,7 +60,8 @@ function SectionDivider() {
 // ---------------------------------------------------------------------------
 
 export function DetailsStep() {
-  const { state, dispatch, equipment, equipmentDispatch } = useBuilder();
+  const { state, dispatch, equipment, equipmentDispatch, identity, identityDispatch } =
+    useBuilder();
 
   function handleAppearanceChange(key: keyof CharacterAppearance, value: string) {
     dispatch({
@@ -70,7 +71,7 @@ export function DetailsStep() {
   }
 
   function handleTraitsChange(key: keyof CharacterTraits, value: string) {
-    dispatch({
+    identityDispatch({
       type: "SET_TRAITS",
       traits: { [key]: value },
     });
@@ -183,7 +184,7 @@ export function DetailsStep() {
           </label>
           <textarea
             id="character-personality-traits"
-            value={state.traits.personalityTraits ?? ""}
+            value={identity.traits.personalityTraits ?? ""}
             onChange={(e) => handleTraitsChange("personalityTraits", e.target.value)}
             placeholder="Describe how your character typically behaves, speaks, or presents themselves..."
             rows={2}
@@ -197,7 +198,7 @@ export function DetailsStep() {
           </label>
           <textarea
             id="character-ideals"
-            value={state.traits.ideals ?? ""}
+            value={identity.traits.ideals ?? ""}
             onChange={(e) => handleTraitsChange("ideals", e.target.value)}
             placeholder="What principles or beliefs does your character hold above all else?"
             rows={2}
@@ -211,7 +212,7 @@ export function DetailsStep() {
           </label>
           <textarea
             id="character-bonds"
-            value={state.traits.bonds ?? ""}
+            value={identity.traits.bonds ?? ""}
             onChange={(e) => handleTraitsChange("bonds", e.target.value)}
             placeholder="What connects your character to the world — people, places, or memories?"
             rows={2}
@@ -225,7 +226,7 @@ export function DetailsStep() {
           </label>
           <textarea
             id="character-flaws"
-            value={state.traits.flaws ?? ""}
+            value={identity.traits.flaws ?? ""}
             onChange={(e) => handleTraitsChange("flaws", e.target.value)}
             placeholder="What weakness, fear, or vice could get your character into trouble?"
             rows={2}

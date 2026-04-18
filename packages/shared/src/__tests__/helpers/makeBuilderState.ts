@@ -12,7 +12,7 @@
  */
 
 import type { BuilderState, BuilderClassEntry } from "../../types/builder.js";
-import type { AbilityScores, Currency } from "../../types/character.js";
+import type { AbilityScores, CharacterTraits, Currency } from "../../types/character.js";
 import type { Item } from "../../types/item.js";
 
 // ---------------------------------------------------------------------------
@@ -39,13 +39,14 @@ const DEFAULT_CLASS: BuilderClassEntry = {
 const ZERO_CURRENCY: Currency = { cp: 0, sp: 0, gp: 0, pp: 0 };
 
 /**
- * A test fixture bundles the BuilderState together with the starting inventory
- * and currency, which are the `starting` argument to `buildCharacter`.
+ * A test fixture bundles the BuilderState together with the starting inventory,
+ * currency, and traits — the `starting` argument to `buildCharacter`.
  */
 export interface BuilderFixture {
   state: BuilderState;
   inventory: Item[];
   currency: Currency;
+  traits: CharacterTraits;
 }
 
 // ---------------------------------------------------------------------------
@@ -59,8 +60,6 @@ export interface BuilderFixture {
  */
 export function makeBuilderState(overrides: Partial<BuilderState> = {}): BuilderState {
   return {
-    currentStep: "details",
-    completedSteps: [],
     species: "Human",
     speciesChoices: {},
     background: null,
@@ -68,7 +67,6 @@ export function makeBuilderState(overrides: Partial<BuilderState> = {}): Builder
     abilityScoreMode: "two-one",
     abilityScoreAssignments: {},
     classes: [{ ...DEFAULT_CLASS }],
-    activeClassIndex: 0,
     abilityMethod: "manual",
     baseAbilities: { ...DEFAULT_ABILITIES },
     featSelections: [],
@@ -79,7 +77,6 @@ export function makeBuilderState(overrides: Partial<BuilderState> = {}): Builder
     appearance: {},
     backstory: "",
     alignment: "",
-    traits: {},
     ...overrides,
   };
 }
@@ -114,9 +111,9 @@ export function makeFighterBuilderState(overrides: Partial<BuilderState> = {}): 
       wisdom: 12,
       charisma: 8,
     },
-    traits: { personalityTraits: "Brave and loyal" },
     ...overrides,
   });
+  const traits: CharacterTraits = { personalityTraits: "Brave and loyal" };
   const inventory: Item[] = [
     {
       name: "Longsword",
@@ -142,7 +139,7 @@ export function makeFighterBuilderState(overrides: Partial<BuilderState> = {}): 
       armor: { type: "heavy", baseAc: 16, stealthDisadvantage: true },
     },
   ];
-  return { state, inventory, currency: { cp: 0, sp: 0, gp: 50, pp: 0 } };
+  return { state, inventory, currency: { cp: 0, sp: 0, gp: 50, pp: 0 }, traits };
 }
 
 /**
@@ -178,9 +175,9 @@ export function makeClericBuilderState(overrides: Partial<BuilderState> = {}): B
       Cleric: ["Sacred Flame"],
     },
     speciesChoices: { language_extra: ["Dwarvish"] },
-    traits: { personalityTraits: "Compassionate healer" },
     ...overrides,
   });
+  const traits: CharacterTraits = { personalityTraits: "Compassionate healer" };
   const inventory: Item[] = [
     {
       name: "Mace",
@@ -201,7 +198,7 @@ export function makeClericBuilderState(overrides: Partial<BuilderState> = {}): B
       armor: { type: "heavy", baseAc: 16, stealthDisadvantage: true },
     },
   ];
-  return { state, inventory, currency: { cp: 0, sp: 0, gp: 75, pp: 0 } };
+  return { state, inventory, currency: { cp: 0, sp: 0, gp: 75, pp: 0 }, traits };
 }
 
 /**
@@ -237,9 +234,9 @@ export function makeWarlockBuilderState(overrides: Partial<BuilderState> = {}): 
       Warlock: ["Eldritch Blast", "Minor Illusion"],
     },
     speciesChoices: { language_extra: ["Infernal"] },
-    traits: { personalityTraits: "Haunted by the pact she made" },
     ...overrides,
   });
+  const traits: CharacterTraits = { personalityTraits: "Haunted by the pact she made" };
   const inventory: Item[] = [
     {
       name: "Light Crossbow",
@@ -260,7 +257,7 @@ export function makeWarlockBuilderState(overrides: Partial<BuilderState> = {}): 
     },
     { name: "Component Pouch", equipped: true, quantity: 1 },
   ];
-  return { state, inventory, currency: { cp: 0, sp: 0, gp: 30, pp: 0 } };
+  return { state, inventory, currency: { cp: 0, sp: 0, gp: 30, pp: 0 }, traits };
 }
 
 /**
@@ -290,9 +287,9 @@ export function makeBarbarianBuilderState(overrides: Partial<BuilderState> = {})
       charisma: 10,
     },
     speciesChoices: { language_extra: ["Orc"] },
-    traits: { personalityTraits: "Fierce but protective of allies" },
     ...overrides,
   });
+  const traits: CharacterTraits = { personalityTraits: "Fierce but protective of allies" };
   const inventory: Item[] = [
     {
       name: "Greataxe",
@@ -307,7 +304,7 @@ export function makeBarbarianBuilderState(overrides: Partial<BuilderState> = {})
       weapon: { damage: "1d6", damageType: "piercing", properties: ["Thrown"], range: "30/120" },
     },
   ];
-  return { state, inventory, currency: { cp: 0, sp: 5, gp: 10, pp: 0 } };
+  return { state, inventory, currency: { cp: 0, sp: 5, gp: 10, pp: 0 }, traits };
 }
 
 /**
@@ -344,9 +341,11 @@ export function makeMulticlassBuilderState(overrides: Partial<BuilderState> = {}
       Cleric: ["Sacred Flame"],
       Warlock: ["Eldritch Blast"],
     },
-    traits: { personalityTraits: "Seeks balance between divine and eldritch power" },
     ...overrides,
   });
+  const traits: CharacterTraits = {
+    personalityTraits: "Seeks balance between divine and eldritch power",
+  };
   const inventory: Item[] = [
     {
       name: "Mace",
@@ -361,7 +360,7 @@ export function makeMulticlassBuilderState(overrides: Partial<BuilderState> = {}
       armor: { type: "medium", baseAc: 13, dexCap: 2 },
     },
   ];
-  return { state, inventory, currency: { cp: 0, sp: 0, gp: 60, pp: 0 } };
+  return { state, inventory, currency: { cp: 0, sp: 0, gp: 60, pp: 0 }, traits };
 }
 
 // Re-export a neutral zero-currency for tests that need a Currency default.

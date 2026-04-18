@@ -38,8 +38,8 @@ import {
  *           proficiency +3, Second Wind ×2 + Action Surge ×1 (short rest resources)
  */
 export function createFighterCharacter(): CharacterData {
-  const { state, inventory, currency } = makeFighterBuilderState();
-  const { character } = buildCharacter(state, { inventory, currency });
+  const { state, inventory, currency, traits } = makeFighterBuilderState();
+  const { character } = buildCharacter(state, { inventory, currency, traits });
   return character;
 }
 
@@ -57,8 +57,8 @@ export function createFighterCharacter(): CharacterData {
  *           spell slots 4/3/2, spellcasting WIS (DC 15, +7)
  */
 export function createClericCharacter(): CharacterData {
-  const { state, inventory, currency } = makeClericBuilderState();
-  const { character } = buildCharacter(state, { inventory, currency });
+  const { state, inventory, currency, traits } = makeClericBuilderState();
+  const { character } = buildCharacter(state, { inventory, currency, traits });
   return character;
 }
 
@@ -75,8 +75,8 @@ export function createClericCharacter(): CharacterData {
  *           pact magic: 2 slots at level 3, spellcasting CHA (DC 15, +7)
  */
 export function createWarlockCharacter(): CharacterData {
-  const { state, inventory, currency } = makeWarlockBuilderState();
-  const { character } = buildCharacter(state, { inventory, currency });
+  const { state, inventory, currency, traits } = makeWarlockBuilderState();
+  const { character } = buildCharacter(state, { inventory, currency, traits });
   return character;
 }
 
@@ -93,8 +93,8 @@ export function createWarlockCharacter(): CharacterData {
  *           proficiency +3, Rage ×3 (long rest)
  */
 export function createBarbarianCharacter(): CharacterData {
-  const { state, inventory, currency } = makeBarbarianBuilderState();
-  const { character } = buildCharacter(state, { inventory, currency });
+  const { state, inventory, currency, traits } = makeBarbarianBuilderState();
+  const { character } = buildCharacter(state, { inventory, currency, traits });
   return character;
 }
 
@@ -110,7 +110,7 @@ export function createBarbarianCharacter(): CharacterData {
  * Expected: proficiency +3, regular slots from Cleric 3, pact slots from Warlock 2
  */
 export function createMulticlassCharacter(): CharacterData {
-  const { state, inventory, currency } = makeMulticlassBuilderState();
-  const { character } = buildCharacter(state, { inventory, currency });
+  const { state, inventory, currency, traits } = makeMulticlassBuilderState();
+  const { character } = buildCharacter(state, { inventory, currency, traits });
   return character;
 }

@@ -1,23 +1,15 @@
 import { z } from "zod";
 import { abilitySchema } from "./effects";
-import { abilityScoresSchema, characterTraitsSchema, characterAppearanceSchema } from "./character";
+import { abilityScoresSchema, characterAppearanceSchema } from "./character";
 
 /**
  * Zod schema for BuilderState. Strips unknown keys by default (Zod's stripping
- * mode), which cleans up stale `equipment` / `currency` fields from older
- * snapshots automatically on parse.
+ * mode), which cleans up stale `equipment` / `currency` / `currentStep` /
+ * `completedSteps` / `activeClassIndex` / `traits` fields from older snapshots
+ * automatically on parse. Those fields were transient UI state or duplicated
+ * with `static.traits` — `buildCharacter(state, { traits, inventory, currency })`
+ * is the single entry for their runtime values.
  */
-
-export const builderStepSchema = z.enum([
-  "species",
-  "background",
-  "class",
-  "abilities",
-  "feats",
-  "spells",
-  "equipment",
-  "details",
-]);
 
 export const featSelectionSchema = z.object({
   level: z.number(),
@@ -37,9 +29,6 @@ export const builderClassEntrySchema = z.object({
 });
 
 export const builderStateSchema = z.object({
-  currentStep: builderStepSchema,
-  completedSteps: z.array(builderStepSchema),
-
   // Step 1: Species
   species: z.string().nullable(),
   speciesChoices: z.record(z.string(), z.array(z.string())),
@@ -52,7 +41,6 @@ export const builderStateSchema = z.object({
 
   // Step 3: Class
   classes: z.array(builderClassEntrySchema),
-  activeClassIndex: z.number(),
 
   // Step 4: Abilities
   abilityMethod: z.enum(["standard-array", "point-buy", "manual"]),
@@ -66,10 +54,10 @@ export const builderStateSchema = z.object({
   cantrips: z.record(z.string(), z.array(z.string())),
   preparedSpells: z.record(z.string(), z.array(z.string())),
 
-  // Step 8: Details (Step 7 Equipment now lives in the dynamic inventory)
+  // Step 8: Details (Step 7 Equipment lives in the dynamic inventory; traits
+  // lives in static.traits — both handled by sibling stores during building.)
   name: z.string(),
   appearance: characterAppearanceSchema,
   backstory: z.string(),
   alignment: z.string(),
-  traits: characterTraitsSchema,
 });

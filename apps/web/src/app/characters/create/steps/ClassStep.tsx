@@ -876,7 +876,7 @@ function MulticlassWarning({ cls, resolvedScores }: MulticlassWarningProps) {
 // ---------------------------------------------------------------------------
 
 export function ClassStep() {
-  const { state, dispatch } = useBuilder();
+  const { state, dispatch, activeClassIndex, setActiveClassIndex } = useBuilder();
 
   const [classPopover, setClassPopover] = useState<{
     cls: ClassDb;
@@ -898,7 +898,7 @@ export function ClassStep() {
   );
 
   // Derived values for the currently active class entry
-  const activeIdx = state.activeClassIndex;
+  const activeIdx = activeClassIndex;
   const activeEntry = state.classes[activeIdx] ?? null;
   const activeClassName = activeEntry?.name ?? null;
   const activeClassLevel = activeEntry?.level ?? 1;
@@ -1010,15 +1010,19 @@ export function ClassStep() {
     // No classes chosen yet: first selection
     if (state.classes.length === 0) {
       dispatch({ type: "ADD_CLASS", className: name });
+      setActiveClassIndex(0);
     } else {
       // Replacing the primary class (single-class mode, "Change" was clicked)
       dispatch({ type: "REMOVE_CLASS", index: 0 });
       dispatch({ type: "ADD_CLASS", className: name });
+      setActiveClassIndex(0);
     }
   }
 
   function handleAddClassCardClick(name: string) {
     dispatch({ type: "ADD_CLASS", className: name });
+    // The new class is appended at the end; activate it.
+    setActiveClassIndex(state.classes.length);
     setIsAddingClass(false);
   }
 
@@ -1055,12 +1059,15 @@ export function ClassStep() {
   }
 
   function handleTabClick(index: number) {
-    dispatch({ type: "SET_ACTIVE_CLASS", index });
+    setActiveClassIndex(index);
     setIsAddingClass(false);
   }
 
   function handleRemoveClass(index: number) {
     dispatch({ type: "REMOVE_CLASS", index });
+    // Clamp active index into the remaining range.
+    const remainingLen = state.classes.length - 1;
+    setActiveClassIndex(Math.max(0, Math.min(activeClassIndex, remainingLen - 1)));
     setIsAddingClass(false);
   }
 
@@ -1158,7 +1165,7 @@ export function ClassStep() {
                 View Details
               </button>
               <button
-                onClick={() => dispatch({ type: "REMOVE_CLASS", index: 0 })}
+                onClick={() => handleRemoveClass(0)}
                 className="text-xs text-gray-500 transition-colors hover:text-red-400"
               >
                 Change

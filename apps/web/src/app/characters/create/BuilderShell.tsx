@@ -22,6 +22,7 @@ import { SpellsStep } from "./steps/SpellsStep";
 import { EquipmentStep } from "./steps/EquipmentStep";
 import { DetailsStep } from "./steps/DetailsStep";
 import type { BuilderState } from "./builder-state";
+import { isStepComplete } from "./builder-state";
 import { getHP } from "@unseen-servant/shared/character";
 
 // ─── Step definitions ────────────────────────────────────────────────────────
@@ -55,10 +56,7 @@ const STEPS: StepDef[] = [
 
 // ─── Unlock logic ─────────────────────────────────────────────────────────────
 
-function getUnlockedSteps(
-  state: ReturnType<typeof useBuilder>["state"],
-  editMode: boolean,
-): Set<StepId> {
+function getUnlockedSteps(state: BuilderState, editMode: boolean): Set<StepId> {
   // In edit mode all steps are immediately available since the character
   // is already complete — the user should be able to jump to any step.
   if (editMode) {
@@ -79,7 +77,7 @@ function getUnlockedSteps(
   const classDone = backgroundDone && state.classes.length > 0;
   if (classDone) unlocked.add("abilities");
 
-  const abilitiesDone = classDone && state.completedSteps.includes("abilities");
+  const abilitiesDone = classDone && isStepComplete("abilities", state);
   if (abilitiesDone) {
     unlocked.add("feats");
     unlocked.add("spells");
@@ -91,7 +89,9 @@ function getUnlockedSteps(
 
 function getCompletedSteps(state: BuilderState): Set<StepId> {
   const completed = new Set<StepId>();
-  state.completedSteps.forEach((step) => completed.add(step as StepId));
+  for (const step of STEPS) {
+    if (isStepComplete(step.id, state)) completed.add(step.id);
+  }
   return completed;
 }
 
@@ -256,12 +256,12 @@ export interface BuilderShellProps {
  * Must be rendered inside a BuilderProvider.
  */
 export function BuilderShell({ mode, editId, editName, editDynamicData }: BuilderShellProps) {
-  const { state, equipment } = useBuilder();
+  const { state, equipment, identity } = useBuilder();
   const [activeStep, setActiveStep] = useState<StepId>("species");
   const [finishError, setFinishError] = useState<string | null>(null);
   const router = useRouter();
   const { saveCharacter, updateCharacter } = useCharacterLibrary();
-  const { character, warnings: _warnings } = useComputedCharacter(state, equipment);
+  const { character, warnings: _warnings } = useComputedCharacter(state, equipment, identity);
 
   const isEditMode = mode === "edit";
   const unlockedSteps = getUnlockedSteps(state, isEditMode);

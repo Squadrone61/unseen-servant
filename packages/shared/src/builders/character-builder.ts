@@ -13,6 +13,7 @@ import type {
   CharacterStaticData,
   CharacterDynamicData,
   CharacterFeatureRef,
+  CharacterTraits,
   ClassResource,
   SpellSlotLevel,
   AbilityScores,
@@ -824,15 +825,18 @@ export function enrichItem(raw: {
 // ─── Main Builder ────────────────────────────────────────
 
 /**
- * Build a CharacterData from a BuilderState. `starting` seeds the initial
- * runtime inventory and currency (both default to empty). Once the character
- * exists, the DM's MCP tools (`add_item`, `update_item`, `update_currency`,
- * etc.) mutate `dynamic.inventory` / `dynamic.currency` directly — those are
- * the single source of truth for gear from that point on.
+ * Build a CharacterData from a BuilderState. `starting` seeds fields that are
+ * either runtime state (inventory/currency — mutated by MCP tools in-game) or
+ * character identity state duplicated with static.* (traits). All three default
+ * to empty when omitted.
  */
 export function buildCharacter(
   state: BuilderState,
-  starting: { inventory?: Item[]; currency?: Currency } = {},
+  starting: {
+    inventory?: Item[];
+    currency?: Currency;
+    traits?: CharacterTraits;
+  } = {},
 ): {
   character: CharacterData;
   warnings: string[];
@@ -922,7 +926,7 @@ export function buildCharacter(
     languages,
     spells,
     features,
-    traits: state.traits ?? {},
+    traits: starting.traits ?? {},
     appearance:
       Object.keys(state.appearance).length > 0
         ? (state.appearance as NonNullable<CharacterStaticData["appearance"]>)

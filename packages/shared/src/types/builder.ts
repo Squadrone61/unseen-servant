@@ -9,7 +9,7 @@
  * on edit-mode load.
  */
 
-import type { AbilityScores, CharacterAppearance, CharacterTraits } from "./character";
+import type { AbilityScores, CharacterAppearance } from "./character";
 import type { Ability } from "./effects";
 
 // ---------------------------------------------------------------------------
@@ -62,9 +62,6 @@ export interface BuilderClassEntry {
 // ---------------------------------------------------------------------------
 
 export interface BuilderState {
-  currentStep: BuilderStep;
-  completedSteps: BuilderStep[];
-
   // --- Step 1: Species ---
   species: string | null;
   speciesChoices: Record<string, string[]>;
@@ -77,7 +74,6 @@ export interface BuilderState {
 
   // --- Step 3: Class ---
   classes: BuilderClassEntry[];
-  activeClassIndex: number;
 
   // --- Step 4: Abilities ---
   abilityMethod: "standard-array" | "point-buy" | "manual";
@@ -94,11 +90,12 @@ export interface BuilderState {
   // --- Step 7: Equipment --- (inventory/currency live in the sibling store, not here)
 
   // --- Step 8: Details ---
+  // `traits` is duplicated with static.traits; handled via the sibling identity
+  // store (BuilderContext.identity) rather than the persisted snapshot.
   name: string;
   appearance: Partial<CharacterAppearance>;
   backstory: string;
   alignment: string;
-  traits: CharacterTraits;
 }
 
 // ---------------------------------------------------------------------------
@@ -106,9 +103,6 @@ export interface BuilderState {
 // ---------------------------------------------------------------------------
 
 export type BuilderAction =
-  // Navigation
-  | { type: "SET_STEP"; step: BuilderStep }
-
   // Species
   | { type: "SET_SPECIES"; species: string }
   | { type: "SET_SPECIES_CHOICE"; choiceId: string; values: string[] }
@@ -124,7 +118,6 @@ export type BuilderAction =
   // Class
   | { type: "ADD_CLASS"; className: string }
   | { type: "REMOVE_CLASS"; index: number }
-  | { type: "SET_ACTIVE_CLASS"; index: number }
   | { type: "SET_CLASS_LEVEL"; index: number; level: number }
   | { type: "SET_CLASS_SUBCLASS"; index: number; subclass: string }
   | { type: "SET_CLASS_SKILLS"; index: number; skills: string[] }
@@ -147,7 +140,6 @@ export type BuilderAction =
   | { type: "SET_APPEARANCE"; appearance: Partial<CharacterAppearance> }
   | { type: "SET_BACKSTORY"; backstory: string }
   | { type: "SET_ALIGNMENT"; alignment: string }
-  | { type: "SET_TRAITS"; traits: Partial<CharacterTraits> }
 
   // Lifecycle
   | { type: "LOAD_STATE"; state: BuilderState }

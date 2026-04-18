@@ -110,13 +110,13 @@ async function joinAs(
 }
 
 function fighter(): CharacterData {
-  const { state, inventory, currency } = makeFighterBuilderState();
-  return buildCharacter(state, { inventory, currency }).character;
+  const { state, inventory, currency, traits } = makeFighterBuilderState();
+  return buildCharacter(state, { inventory, currency, traits }).character;
 }
 
 function cleric(): CharacterData {
-  const { state, inventory, currency } = makeClericBuilderState();
-  return buildCharacter(state, { inventory, currency }).character;
+  const { state, inventory, currency, traits } = makeClericBuilderState();
+  return buildCharacter(state, { inventory, currency, traits }).character;
 }
 
 // ---------------------------------------------------------------------------

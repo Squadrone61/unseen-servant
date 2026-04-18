@@ -34,9 +34,6 @@ export const BUILDER_STEPS: BuilderStep[] = [
 
 export function createInitialState(): BuilderState {
   return {
-    currentStep: "species",
-    completedSteps: [],
-
     // Step 1
     species: null,
     speciesChoices: {},
@@ -49,7 +46,6 @@ export function createInitialState(): BuilderState {
 
     // Step 3
     classes: [],
-    activeClassIndex: 0,
 
     // Step 4
     abilityMethod: "standard-array",
@@ -70,15 +66,15 @@ export function createInitialState(): BuilderState {
     cantrips: {},
     preparedSpells: {},
 
-    // Step 7 — equipment / currency are held in the sibling equipment store,
-    // not in BuilderState (see BuilderContext.tsx).
+    // Step 7 — equipment / currency live in the sibling equipment store
+    // (BuilderContext.tsx), not in BuilderState.
 
-    // Step 8
+    // Step 8 — traits lives in the sibling identity store (BuilderContext.tsx)
+    // since static.traits is its real home.
     name: "",
     appearance: {},
     backstory: "",
     alignment: "",
-    traits: {},
   };
 }
 
@@ -87,10 +83,10 @@ export function createInitialState(): BuilderState {
 // ---------------------------------------------------------------------------
 
 /**
- * Determines whether a given step has all required fields filled.
- * Used to populate `completedSteps` after each action.
+ * Pure selector: does a given step have all required fields filled? Callers
+ * memoize via `useMemo` in the builder shell rather than persisting the result.
  */
-function isStepComplete(step: BuilderStep, state: BuilderState): boolean {
+export function isStepComplete(step: BuilderStep, state: BuilderState): boolean {
   switch (step) {
     case "species":
       return state.species !== null;
@@ -130,11 +126,8 @@ function isStepComplete(step: BuilderStep, state: BuilderState): boolean {
   }
 }
 
-/**
- * Recomputes the completedSteps array from scratch based on the current state.
- * Always derives from state rather than incrementally modifying to avoid drift.
- */
-function recomputeCompletedSteps(state: BuilderState): BuilderStep[] {
+/** Pure selector: the set of completed steps for a given state. */
+export function computeCompletedSteps(state: BuilderState): BuilderStep[] {
   return BUILDER_STEPS.filter((step) => isStepComplete(step, state));
 }
 
@@ -146,11 +139,6 @@ export function builderReducer(state: BuilderState, action: BuilderAction): Buil
   let next: BuilderState;
 
   switch (action.type) {
-    // ---- Navigation --------------------------------------------------------
-    case "SET_STEP":
-      next = { ...state, currentStep: action.step };
-      break;
-
     // ---- Species -----------------------------------------------------------
     case "SET_SPECIES":
       next = {
@@ -248,7 +236,6 @@ export function builderReducer(state: BuilderState, action: BuilderAction): Buil
       next = {
         ...state,
         classes: newClasses,
-        activeClassIndex: newClasses.length - 1,
         // Keep existing class spells, new class starts empty
         cantrips: { ...state.cantrips },
         preparedSpells: { ...state.preparedSpells },
@@ -263,7 +250,6 @@ export function builderReducer(state: BuilderState, action: BuilderAction): Buil
       }
       const removedName = state.classes[action.index].name;
       const remaining = state.classes.filter((_, i) => i !== action.index);
-      const newIndex = Math.min(state.activeClassIndex, remaining.length - 1);
       // Drop feat selections that belonged to the removed class, and renumber
       // classIndex for any selections that were from a later class.
       const prunedFeatSelections = state.featSelections
@@ -278,17 +264,12 @@ export function builderReducer(state: BuilderState, action: BuilderAction): Buil
       next = {
         ...state,
         classes: remaining,
-        activeClassIndex: newIndex,
         featSelections: prunedFeatSelections,
         cantrips: keptCantrips,
         preparedSpells: keptPrepared,
       };
       break;
     }
-
-    case "SET_ACTIVE_CLASS":
-      next = { ...state, activeClassIndex: action.index };
-      break;
 
     case "SET_CLASS_LEVEL": {
       const entry = state.classes[action.index];
@@ -492,21 +473,9 @@ export function builderReducer(state: BuilderState, action: BuilderAction): Buil
       next = { ...state, alignment: action.alignment };
       break;
 
-    case "SET_TRAITS":
-      next = {
-        ...state,
-        traits: { ...state.traits, ...action.traits },
-      };
-      break;
-
     // ---- Lifecycle ---------------------------------------------------------
     case "LOAD_STATE":
-      // Full replacement for edit mode; recompute completedSteps to be safe
-      next = {
-        ...action.state,
-        completedSteps: recomputeCompletedSteps(action.state),
-      };
-      return next;
+      return action.state;
 
     case "RESET":
       return createInitialState();
@@ -518,7 +487,5 @@ export function builderReducer(state: BuilderState, action: BuilderAction): Buil
     }
   }
 
-  // Recompute completedSteps after every state change
-  next = { ...next, completedSteps: recomputeCompletedSteps(next) };
   return next;
 }

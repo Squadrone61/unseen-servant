@@ -1,13 +1,13 @@
 "use client";
 
-import { createContext, useContext, useReducer, type ReactNode } from "react";
+import { createContext, useContext, useReducer, useState, type ReactNode } from "react";
 import {
   type BuilderState,
   type BuilderAction,
   builderReducer,
   createInitialState,
 } from "./builder-state";
-import type { Item, Currency } from "@unseen-servant/shared/types";
+import type { Item, Currency, CharacterTraits } from "@unseen-servant/shared/types";
 
 // ─── Sibling equipment store ──────────────────────────────────────────────────
 // Inventory and currency are runtime state owned by `dynamic.inventory` /
@@ -80,6 +80,39 @@ function equipmentReducer(state: EquipmentState, action: EquipmentAction): Equip
   }
 }
 
+// ─── Sibling identity store ───────────────────────────────────────────────────
+// `traits` lives in `character.static.traits`, not in the builder snapshot.
+// This sibling store is the Details step's handle on that value — seeded from
+// `character.static.traits` on edit-mode load, flows back via `buildCharacter`.
+
+export interface IdentityState {
+  traits: CharacterTraits;
+}
+
+export type IdentityAction =
+  | { type: "SET_TRAITS"; traits: Partial<CharacterTraits> }
+  | { type: "LOAD_IDENTITY"; state: IdentityState }
+  | { type: "RESET_IDENTITY" };
+
+function createInitialIdentity(): IdentityState {
+  return { traits: {} };
+}
+
+function identityReducer(state: IdentityState, action: IdentityAction): IdentityState {
+  switch (action.type) {
+    case "SET_TRAITS":
+      return { ...state, traits: { ...state.traits, ...action.traits } };
+    case "LOAD_IDENTITY":
+      return action.state;
+    case "RESET_IDENTITY":
+      return createInitialIdentity();
+    default: {
+      const _exhaustive: never = action;
+      return _exhaustive;
+    }
+  }
+}
+
 // ─── Context ─────────────────────────────────────────────────────────────────
 
 interface BuilderContextValue {
@@ -87,6 +120,11 @@ interface BuilderContextValue {
   dispatch: React.Dispatch<BuilderAction>;
   equipment: EquipmentState;
   equipmentDispatch: React.Dispatch<EquipmentAction>;
+  identity: IdentityState;
+  identityDispatch: React.Dispatch<IdentityAction>;
+  /** Which class tab is active in the Class/Feats/Spells steps — transient UI. */
+  activeClassIndex: number;
+  setActiveClassIndex: (index: number) => void;
 }
 
 const BuilderContext = createContext<BuilderContextValue | null>(null);
@@ -98,8 +136,26 @@ export function BuilderProvider({ children }: { children: ReactNode }) {
     undefined,
     createInitialEquipment,
   );
+  const [identity, identityDispatch] = useReducer(
+    identityReducer,
+    undefined,
+    createInitialIdentity,
+  );
+  const [activeClassIndex, setActiveClassIndex] = useState(0);
+
   return (
-    <BuilderContext.Provider value={{ state, dispatch, equipment, equipmentDispatch }}>
+    <BuilderContext.Provider
+      value={{
+        state,
+        dispatch,
+        equipment,
+        equipmentDispatch,
+        identity,
+        identityDispatch,
+        activeClassIndex,
+        setActiveClassIndex,
+      }}
+    >
       {children}
     </BuilderContext.Provider>
   );
