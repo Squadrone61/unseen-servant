@@ -39,6 +39,7 @@ import { StatsTab } from "./tabs/StatsTab";
 import { TabBar } from "@/components/ui/TabBar";
 import { EntityPopoverProvider, useEntityPopover } from "./EntityPopoverContext";
 import { EntityDetailPopover } from "./EntityDetailPopover";
+import { ActiveEffectsList } from "./ActiveEffectsList";
 import type { StartPlacementParams } from "@/hooks/useAoEPlacement";
 
 // ─── Helpers ───
@@ -299,6 +300,9 @@ function CharacterSheetInner({ character, onCastAoE }: CharacterSheetProps) {
             </span>
           </div>
         )}
+
+        {/* Active Effects (buffs/debuffs from spells, items, features) */}
+        <ActiveEffectsList effects={d.activeEffects} />
 
         {/* Conditions */}
         {d.conditions.length > 0 && (

@@ -1,4 +1,4 @@
-import type { CharacterData, CombatState } from "@unseen-servant/shared/types";
+import type { CharacterData, CombatState, EffectBundle } from "@unseen-servant/shared/types";
 import { getHP } from "@unseen-servant/shared/character";
 import { getCondition } from "@unseen-servant/shared/data";
 import {
@@ -6,6 +6,7 @@ import {
   useEntityPopover,
 } from "@/components/character/EntityPopoverContext";
 import { EntityDetailPopover } from "@/components/character/EntityDetailPopover";
+import { ActiveEffectsList } from "@/components/character/ActiveEffectsList";
 
 interface InitiativeTrackerProps {
   combat: CombatState;
@@ -46,6 +47,7 @@ function InitiativeTrackerInner({
           let currentHP: number | undefined;
           let maxHP: number | undefined;
           let concentratingOn: { spellName: string; since?: number } | undefined;
+          let activeEffects: EffectBundle[] | undefined = combatant.activeEffects;
 
           if (combatant.type === "player" && partyCharacters) {
             const char = Object.values(partyCharacters).find(
@@ -55,6 +57,7 @@ function InitiativeTrackerInner({
               currentHP = char.dynamic.currentHP;
               maxHP = getHP(char);
               concentratingOn = char.dynamic.concentratingOn;
+              activeEffects = char.dynamic.activeEffects;
             }
           } else {
             currentHP = combatant.currentHP;
@@ -136,6 +139,9 @@ function InitiativeTrackerInner({
                   C
                 </div>
               )}
+
+              {/* Active effects (buffs/debuffs) */}
+              <ActiveEffectsList effects={activeEffects} compact />
 
               {/* Conditions */}
               {combatant.conditions && combatant.conditions.length > 0 && (
