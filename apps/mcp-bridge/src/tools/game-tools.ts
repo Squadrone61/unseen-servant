@@ -183,6 +183,54 @@ export function registerGameTools(
   );
 
   server.registerTool(
+    "peek_inbox",
+    {
+      description:
+        "Peek at pending player messages without consuming them. Call this during long turns (e.g. between tool chains or before dispatching a specialist that might take 5+ seconds) to see if new context arrived. Broadcasts a server:dm_noticed event so the frontend can flip the indicator from 'thinking' to 'catching up'. Returns { hasNew, queueDepth, previews[] } — previews are short snippets of queued messages. Does NOT clear pendingRequestId — your current turn remains open.",
+    },
+    async () => {
+      const queued = messageQueue.peek();
+      const hasNew = queued.length > 0;
+
+      // Build short previews (first 120 chars of the last message per request)
+      const previews = queued.map((req) => {
+        const last = req.messages[req.messages.length - 1];
+        const content = last?.content ?? "";
+        return content.length > 120 ? content.slice(0, 117) + "..." : content;
+      });
+
+      // Extract [PlayerName]: prefix from messages to build noticedPlayers list for the indicator
+      const noticedPlayers = new Set<string>();
+      for (const req of queued) {
+        for (const m of req.messages) {
+          const match = /^\[([^\]]+)\]:/.exec(m.content);
+          if (match?.[1]) noticedPlayers.add(match[1]);
+        }
+      }
+      wsClient.sendDMNoticed(Array.from(noticedPlayers));
+
+      log("game-tools", `peek_inbox: hasNew=${hasNew}, queueDepth=${queued.length}`);
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify(
+              {
+                hasNew,
+                queueDepth: queued.length,
+                previews,
+                noticedPlayers: Array.from(noticedPlayers),
+              },
+              null,
+              2,
+            ),
+          },
+        ],
+      };
+    },
+  );
+
+  server.registerTool(
     "acknowledge",
     {
       description:
@@ -209,10 +257,10 @@ export function registerGameTools(
     "send_response",
     {
       description:
-        "Send the DM narrative response back to all players. Broadcasts the message and stores it in conversation history.",
+        "Send the FINAL DM narrative response for this turn. Broadcasts the message, stores it in conversation history, and closes the turn (clears pendingRequestId so the next wait_for_message can proceed). For partial/streaming narration while the turn is still open, use send_narration instead.",
       inputSchema: {
         requestId: z.string().describe("The requestId from the dm_request to respond to"),
-        message: z.string().describe("The DM narrative message to send back to the players"),
+        message: z.string().describe("The final DM narrative message to send back to the players"),
       },
     },
     async ({ requestId, message }) => {
@@ -225,6 +273,43 @@ export function registerGameTools(
           {
             type: "text" as const,
             text: `Response sent for request ${requestId} (${message.length} chars)`,
+          },
+        ],
+      };
+    },
+  );
+
+  server.registerTool(
+    "send_narration",
+    {
+      description:
+        "Send a PARTIAL narration chunk while the DM turn is still open. Does NOT close the turn — you must still call send_response (or acknowledge) at the end. Use to open a long turn with an immediate acknowledgment ('You steady your blade…') before dispatching to a specialist, or to narrate in pieces while tool-calling. The frontend merges consecutive chunks into one growing message. Each chunk is appended to conversation history so subsequent specialists see prior narration.",
+      inputSchema: {
+        requestId: z.string().describe("The requestId from the dm_request currently being handled"),
+        message: z
+          .string()
+          .describe("The partial narration chunk to send — typically 1-3 sentences"),
+      },
+    },
+    async ({ requestId, message }) => {
+      if (pendingRequestId !== requestId) {
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: `ERROR: send_narration requestId "${requestId}" does not match the current pending request "${pendingRequestId ?? "(none)"}". send_narration only works while a wait_for_message is in flight.`,
+            },
+          ],
+          isError: true,
+        };
+      }
+      wsClient.sendDMNarration(requestId, message);
+      log("game-tools", `send_narration: requestId=${requestId}, ${message.length} chars`);
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: `Partial narration sent for request ${requestId} (${message.length} chars). Turn still open — call send_response when done.`,
           },
         ],
       };

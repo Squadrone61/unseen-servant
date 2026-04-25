@@ -438,19 +438,28 @@ function formatDiseaseFn(d: DiseaseDb): string {
 /** Send a visible "[Rules]" system event to the activity log when lookup fails. */
 function logLookupFailure(wsClient: WSClient, category: string, name: string): void {
   wsClient.broadcastSystemEvent(
-    `[Rules] "${name}" not found in any source — DM is using training knowledge`,
+    `[Rules] "${name}" not in 2024 database — DM is checking alternatives`,
   );
   log("srd-tools", `${category} lookup failed: "${name}"`);
 }
 
 function notFoundResult(category: string, name: string) {
+  const payload = JSON.stringify({
+    error: "not_found",
+    query: name,
+    category,
+    message: "No matching entry in the D&D 2024 database.",
+  });
+  const text =
+    `LOOKUP_FAILED: "${name}" (category: ${category})\n` +
+    `---\n${payload}\n\n` +
+    `STOP. Do not invent mechanics. Either:\n` +
+    `1. Retry with a different name or without a category filter, OR\n` +
+    `2. Return UNKNOWN_ABILITY / UNKNOWN_REFERENCE / UNKNOWN_COMBATANT per your procedure, OR\n` +
+    `3. Ask the conductor / player to clarify the exact name.`;
   return {
-    content: [
-      {
-        type: "text" as const,
-        text: `"${name}" not found in the D&D 2024 database. Use your training knowledge as fallback.`,
-      },
-    ],
+    content: [{ type: "text" as const, text }],
+    isError: true,
   };
 }
 

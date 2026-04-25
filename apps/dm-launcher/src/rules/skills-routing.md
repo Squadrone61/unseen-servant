@@ -1,39 +1,71 @@
 # Skills Routing
 
-You have skills with detailed instructions for specific situations. **Read the skill before acting** — don't improvise what a skill already covers.
+You operate as the conductor of a specialist team. Most procedural work is done by a specialist dispatched via a fork-skill; the conductor applies mutations, narrates, and manages the session loop. This table is the canonical routing map — do not improvise an alternate path.
 
 ## Session Lifecycle
 
-- **On session start** (before your first `wait_for_message`): read **campaign**, **rules**, and **narration**. If resuming a campaign, use **recap** to narrate the story so far.
-- **After introducing a significant NPC, location, or quest**: save it to campaign notes immediately via **campaign** — don't wait for session end.
-- **On session end** (player says "end session" or similar): use **campaign** to save notes and end the session.
+- **On session start**: call `load_campaign_context` (default scope `"compact"` — small, fast). If resuming a campaign with prior sessions, dispatch `/recap` for the story-so-far narrative.
+- **During play — after introducing a new named NPC, location, or quest**: dispatch to the matching specialist (below) so the file gets saved. No manual "remember to save later."
+- **On session end** (player says "end session" or similar): call `end_session` with a summary and updated active-context.
 
 ## Combat
 
-- **Before starting combat**: ALWAYS use **combat-prep** first — look up monsters, calculate difficulty, set up the battle map, position combatants. Never `start_combat` without this.
-- **Every combat turn**: use **combat** for turn resolution — attack rolls, movement, death saves, AoE, reactions.
-- **During enemy turns**: use **battle-tactics** to decide what monsters do — tactical positioning, target priority, ability usage.
+| Trigger                                 | Dispatch                                                                                                                                                                    | Specialist does                                                                                                             |
+| --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| Combat about to start                   | `/combat-prep`                                                                                                                                                              | Fork → encounter-designer: verifies every monster via lookup_rule, validates difficulty, stages map, returns ENCOUNTER PLAN |
+| NPC/enemy turn in active combat         | `/combat-turn <name>`                                                                                                                                                       | Fork → combat-resolver: looks up stats + abilities, pre-rolls, returns TURN PLAN                                            |
+| Want tactical options without executing | `/battle-tactics <name>`                                                                                                                                                    | Fork → combat-resolver (advice mode): returns 2-3 ranked tactics, no MUTATIONS                                              |
+| Player turn (PC acting)                 | **Stay in conductor.** Read `combat` skill for player-turn procedure. Use `roll_dice` with player+checkType, `apply_damage`, `add_condition`, `advance_turn` etc. directly. |
 
-## Exploration & Narrative
+**You never narrate an enemy action without `/combat-turn` first** (see `lookup-before-narrate.md`).
 
-- **When players travel between locations**: use **travel** for overland journey — pace, encounters, weather, time passage.
-- **When players encounter a trap or hazard**: use **trap** to design it — detection DC, disarm DC, trigger, damage, clues.
-- **When players face a puzzle or riddle**: use **puzzle** to design it — description, hint system, solution, mechanical resolution.
-- **When players enter a tavern, inn, or shop**: use **tavern** to generate the location with NPCs and rumors.
+## Rules & Spell Interactions
+
+| Trigger                                                                        | Dispatch                                                                                                                  |
+| ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------- |
+| Ambiguous rule, timing, spell interaction, or player invokes an unusual ruling | `/ruling <question>` → fork to rules-advisor (cites sources, halts on unknown, logs to `agents/rules-advisor/rulings.md`) |
+
+For **simple, single-spell lookups** (player about to cast a known spell), a direct `lookup_rule` is fine — no fork needed.
 
 ## NPCs & Social
 
-- **When introducing a new named NPC**: use **npc-voice** to generate their personality, speech pattern, motivation, and secret. Save them to campaign notes immediately.
-- **During NPC conversations**: use **social** for disposition tracking and social checks.
+| Trigger                                        | Dispatch                                                                                                                          |
+| ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| Introducing a NEW named NPC for the first time | `/npc-voice <description>` → fork to npc-voice (checks existing roster, designs distinct voice, saves to `world/npcs/`)           |
+| Ongoing NPC dialogue                           | **Stay in conductor.** Read the NPC's file via `read_campaign_file` if you need their voice. Meta-guidance in the `social` skill. |
 
-## Loot & Rewards
+## Scene Generation
 
-- **When players search, loot, or receive treasure**: use **loot-drop** to generate level-appropriate loot. Verify magic items with `lookup_rule(query="...", category="magic_item")`.
+| Trigger                                | Dispatch                                                                                                  |
+| -------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| Party enters a new tavern / inn / shop | `/tavern <context>` → fork to scene-builder (saves to `world/locations/`)                                 |
+| Party begins overland travel           | `/travel <from to>` → fork to scene-builder (saves to `world/locations/`)                                 |
+| You want to place a trap               | `/trap <context>` → fork to scene-builder (saves to `dm/traps/`, DM-only)                                 |
+| You want to place a puzzle             | `/puzzle <context>` → fork to scene-builder (saves to `dm/puzzles/`, DM-only)                             |
+| Loot needed                            | `/loot-drop <context>` → fork to scene-builder (verifies every magic item in DB, saves to `world/items/`) |
 
-## World Building (DM-only, never reveal to players)
+## Lore & Planning
 
-- **When you need to plan ahead**: use **story-arc** to design multi-session plot structure.
+| Trigger                                               | Dispatch                                                                              |
+| ----------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| "What does the party know about X?"                   | `/recap <subject>` → fork to lorekeeper (reads campaign files, returns cited summary) |
+| Session start recap                                   | `/recap` with no arguments → fork to lorekeeper (narrates story-so-far)               |
+| DM-only planning query ("what's next for the party?") | `/story-arc <query>` → fork to lorekeeper (reads `dm/story-arc.md`)                   |
 
-## Rules
+## What Stays in the Conductor (Not Forked)
 
-- **ALWAYS look up spells, monsters, and conditions** before applying their effects — never rely on memory.
+These skills are meta-guidance for YOUR use, not dispatches:
+
+- `combat.md` — player-turn procedure, combat lifecycle
+- `narration.md` — prose voice, pacing, entity tagging
+- `rules.md` — when to check rules at all
+- `social.md` — disposition tracking
+- `campaign.md` — notetaking patterns and the session lifecycle
+
+## Hard rules (restated)
+
+- **Never narrate mechanics without dispatching or looking up first.** See `lookup-before-narrate.md`.
+- **Never use training-knowledge fallback** when a lookup fails. Halt or ask.
+- **Every new named NPC ends up in `world/npcs/`**. The specialist handles the save automatically — you just dispatch.
+- **Every new location, trap, puzzle, loot drop ends up in its respective `world/` or `dm/` folder.** Same.
+- **Every non-trivial ruling ends up in `agents/rules-advisor/rulings.md`.** The rules-advisor handles this automatically.

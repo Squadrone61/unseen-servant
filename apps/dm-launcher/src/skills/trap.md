@@ -1,21 +1,19 @@
 ---
-description: "Design a trap: detection, disarm, trigger, damage, hints"
-user-invocable: false
+description: "Design a trap with detection DC, disarm DC, trigger, damage, and observable clues. Dispatches to the scene-builder specialist which persists to dm/traps/. DM-only spec — the conductor describes clues to players, never the mechanics directly."
+context: fork
+agent: scene-builder
+user-invocable: true
 ---
 
-# /trap
+Design a trap for the following situation.
 
-Design a trap based on the user's description:
+Context: $ARGUMENTS
 
-1. **Detection** — Perception or Investigation DC to notice the trap (passive or active)
-2. **Disarm** — Thieves' Tools, Arcana, or other skill DC to disarm
-3. **Trigger** — what sets it off (pressure plate, tripwire, proximity, opening a container)
-4. **Effect** — damage dice and type, or condition (poison, restrained, etc.), save DC
-5. **Hints** — subtle clues for observant players (scuff marks, faint clicking, discolored stone)
-6. **Place it** — note the trap location and status in your DM planning. Save to `dm/` notes via `save_campaign_file` if it's part of a planned dungeon.
-7. **During play** — when players encounter the trap, describe ONLY observable clues via `send_response`. Call for Perception/Investigation checks with `roll_dice`. If triggered, roll damage/saves and apply with `apply_damage`/`add_condition`.
+Follow the scene-builder procedure (trap variant):
 
-Do NOT reveal trap details to players — only describe what they can observe.
-Present the trap design to the DM operator only.
+1. Determine location, trigger, effect (damage type + save DC — verify damage dice via `lookup_rule` for any referenced spells or mechanical effects).
+2. Pick detection / disarm DCs appropriate to the party level (call `get_players` if needed).
+3. Describe the observable clue — something a Perception check could catch — without giving away the mechanics.
+4. Save to `dm/traps/<slug>.md`.
 
-Example usage: `/trap poison dart trap in a tomb corridor, party level 5`
+Return a DM-only summary: clue, trigger, effect, DCs. The conductor will describe the clue to players IF they succeed on their passive/active Perception; never narrate the trap's mechanical details unless sprung.

@@ -87,6 +87,48 @@ function isStoryMessage(msg: ServerMessage): boolean {
   return msg.type === "server:chat" || msg.type === "server:ai";
 }
 
+/**
+ * Merge a server:ai message into an existing chat list, handling streaming chunks.
+ *
+ * - Partial chunks (streaming:true) with the same streamId as the last ai message are appended.
+ * - A final chunk (streaming:false or absent) with the same streamId as the streaming bubble
+ *   replaces the last chunk (since send_response sends the final authoritative text).
+ * - Non-streaming ai messages without a streamId are pushed as-is (legacy / single-shot).
+ */
+function appendAIMessage(
+  prev: DisplayMessage[],
+  msg: Extract<ServerMessage, { type: "server:ai" }>,
+): DisplayMessage[] {
+  const streamId = msg.streamId;
+  const isPartial = msg.streaming === true;
+
+  if (streamId) {
+    const lastIdx = prev.length - 1;
+    const last = lastIdx >= 0 ? prev[lastIdx] : null;
+    const lastIsMatchingStream =
+      last && last.type === "server:ai" && last.streamId === streamId && last.streaming === true;
+
+    if (lastIsMatchingStream) {
+      const mergedContent = isPartial
+        ? `${last.content}${last.content.endsWith("\n") || last.content.endsWith(" ") ? "" : " "}${msg.content}`
+        : msg.content;
+      const merged: typeof last = {
+        ...last,
+        content: mergedContent,
+        timestamp: msg.timestamp,
+        id: msg.id,
+        streaming: isPartial,
+        streamId: isPartial ? streamId : undefined,
+      };
+      const next = prev.slice(0, lastIdx);
+      next.push(merged);
+      return next;
+    }
+  }
+
+  return [...prev, msg];
+}
+
 /** Messages that belong in the sidebar activity log */
 function isLogMessage(msg: ServerMessage): boolean {
   return msg.type === "server:system" || msg.type === "server:error";
@@ -155,6 +197,9 @@ function GameContent({ roomCode, playerName }: { roomCode: string; playerName: s
   const [showGuide, setShowGuide] = useState(false);
   const [showNotes, setShowNotes] = useState(false);
   const [typingPlayers, setTypingPlayers] = useState<Map<string, number>>(new Map());
+  /** Transient DM indicator override — set to "catching_up" for ~4s after server:dm_noticed. */
+  const [dmActivityOverride, setDMActivityOverride] = useState<"catching_up" | null>(null);
+  const dmActivityTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [battleMapWidth, setBattleMapWidth] = useState(50);
   const [showActivity, setShowActivity] = useState(false);
@@ -466,6 +511,14 @@ function GameContent({ roomCode, playerName }: { roomCode: string; playerName: s
           break;
         }
 
+        case "server:dm_noticed": {
+          // DM peeked at the inbox during a long turn — flash the indicator to "catching up" for ~4s
+          setDMActivityOverride("catching_up");
+          if (dmActivityTimeoutRef.current) clearTimeout(dmActivityTimeoutRef.current);
+          dmActivityTimeoutRef.current = setTimeout(() => setDMActivityOverride(null), 4000);
+          break;
+        }
+
         case "server:player_notes_loaded":
           playerNotesLoadedRef.current?.(msg.content);
           break;
@@ -509,7 +562,11 @@ function GameContent({ roomCode, playerName }: { roomCode: string; playerName: s
 
         default:
           if (isStoryMessage(msg)) {
-            setStoryMessages((prev) => [...prev, msg]);
+            if (msg.type === "server:ai") {
+              setStoryMessages((prev) => appendAIMessage(prev, msg));
+            } else {
+              setStoryMessages((prev) => [...prev, msg]);
+            }
             // Ensure chat panel is visible for non-host players who missed the start_story event
             setStoryStarted(true);
           } else if (isLogMessage(msg)) {
@@ -577,6 +634,19 @@ function GameContent({ roomCode, playerName }: { roomCode: string; playerName: s
 
   // AoE placement hook — owns local staging state for player-placed templates
   const aoePlacement = useAoEPlacement(combatState, battleMap, myCharacter?.static.name);
+
+  /**
+   * Compute DM activity label. Priority:
+   * 1. If last story message is a streaming server:ai from the DM → "narrating" (ChatPanel hides indicator, bubble IS the indicator)
+   * 2. If server:dm_noticed fired recently (dmActivityOverride) → "catching_up"
+   * 3. Else null → ChatPanel falls back to "thinking"
+   */
+  const dmActivity = useMemo<"thinking" | "catching_up" | "narrating" | null>(() => {
+    const last = storyMessages[storyMessages.length - 1];
+    if (last && last.type === "server:ai" && last.streaming === true) return "narrating";
+    if (dmActivityOverride === "catching_up") return "catching_up";
+    return null;
+  }, [storyMessages, dmActivityOverride]);
 
   // Read my userId from auth state (set during room_joined)
   const [myUserId, setMyUserId] = useState<string | undefined>(undefined);
@@ -885,6 +955,7 @@ function GameContent({ roomCode, playerName }: { roomCode: string; playerName: s
                   onRollDice={handleRollDice}
                   isMyTurn={isMyTurn}
                   typingPlayers={Array.from(typingPlayers.keys())}
+                  dmActivity={dmActivity}
                   onTypingChange={handleTypingChange}
                   aoePlacement={aoePlacement}
                   myUserId={myUserId}
@@ -908,6 +979,7 @@ function GameContent({ roomCode, playerName }: { roomCode: string; playerName: s
                   isMyTurn={isMyTurn}
                   onEndTurn={handleEndTurn}
                   typingPlayers={Array.from(typingPlayers.keys())}
+                  dmActivity={dmActivity}
                   onTypingChange={handleTypingChange}
                   characterTrigger={
                     myCharacter ? (
@@ -1149,6 +1221,7 @@ function CombatLayout({
   onRollDice,
   isMyTurn,
   typingPlayers,
+  dmActivity,
   onTypingChange,
   characterTrigger,
   aoePlacement,
@@ -1171,6 +1244,7 @@ function CombatLayout({
   onRollDice: (id: string) => void;
   isMyTurn: boolean;
   typingPlayers: string[];
+  dmActivity: "thinking" | "catching_up" | "narrating" | null;
   onTypingChange: (isTyping: boolean) => void;
   characterTrigger?: React.ReactNode;
   aoePlacement: import("@/hooks/useAoEPlacement").UseAoEPlacementResult;
@@ -1227,6 +1301,7 @@ function CombatLayout({
         isMyTurn={isMyTurn}
         onEndTurn={onEndTurn}
         typingPlayers={typingPlayers}
+        dmActivity={dmActivity}
         onTypingChange={onTypingChange}
         characterTrigger={characterTrigger}
         stagedAoE={aoePlacement.stagedAoE}

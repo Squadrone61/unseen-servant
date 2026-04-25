@@ -73,12 +73,42 @@ export function registerCampaignTools(
   server.registerTool(
     "load_campaign_context",
     {
-      description: "Load the startup context for the active campaign.",
+      description:
+        "Load campaign context for the active campaign. Default scope 'compact' is best for conductor session start and most specialist calls — it loads manifest + active-context.md + last 2 session summaries + party (~3-5k tokens). Use 'full' only when you need a deep review of all world/NPC/faction/quest files + all sessions (can be 30k+ on mature campaigns). Use 'agent:<name>' (e.g. 'agent:rules-advisor') to load a specialist's private notes alongside the compact context.",
+      inputSchema: {
+        scope: z
+          .string()
+          .optional()
+          .default("compact")
+          .describe(
+            'Scope: "compact" (default — manifest + active-context + last 2 sessions + party), "full" (everything — previous behavior), or "agent:<specialist>" (compact + that specialist\'s agents/<name>/ folder).',
+          ),
+      },
     },
-    async () => {
+    async ({ scope }) => {
       try {
-        const context = campaignManager.getStartupContext();
-        gameLogger.toolCall("load_campaign_context", {}, context);
+        const effectiveScope = scope ?? "compact";
+        let context: string;
+        if (effectiveScope === "full") {
+          context = campaignManager.getStartupContext();
+        } else if (effectiveScope.startsWith("agent:")) {
+          const agentName = effectiveScope.slice("agent:".length).trim();
+          if (!agentName) {
+            return {
+              content: [
+                {
+                  type: "text" as const,
+                  text: `Error: agent scope requires a name, e.g. "agent:rules-advisor".`,
+                },
+              ],
+              isError: true,
+            };
+          }
+          context = campaignManager.getAgentContext(agentName);
+        } else {
+          context = campaignManager.getCompactContext();
+        }
+        gameLogger.toolCall("load_campaign_context", { scope: effectiveScope }, context);
         return {
           content: [{ type: "text" as const, text: context }],
         };

@@ -11,10 +11,19 @@ AI-powered D&D 5e web app where an AI acts as the Dungeon Master. Players create
                                        ↕ WebSocket (DM participant)
                                 [MCP Bridge Server]      (game engine + state + D&D tools + campaigns)
                                   ↕ stdio MCP
-                                [Claude Code]            (AI Dungeon Master)
+                           [Claude Code — the Conductor]
+                                       │
+                         (fork-skills with context: fork)
+                                       ↓
+           [Specialist Subagents: combat-resolver, rules-advisor,
+            encounter-designer, npc-voice, scene-builder, lorekeeper]
 ```
 
-**Key principle:** The MCP bridge owns ALL game logic (combat, dice, HP, conditions, spell slots, conversation history). The worker is a **pure multiplayer relay** — it forwards player actions to the bridge and broadcasts bridge responses to clients.
+**Key principle — game logic:** The MCP bridge owns ALL game logic (combat, dice, HP, conditions, spell slots, conversation history). The worker is a **pure multiplayer relay** — it forwards player actions to the bridge and broadcasts bridge responses to clients.
+
+**Key principle — DM runtime:** The AI DM is a **conductor + specialist team**, not a monolith. The main Claude Code session (the conductor) owns the game loop, player voice, entity tagging, and mutation tools (apply_damage, advance_turn, etc.). Specialists (written to `.claude/agents/` by the DM launcher on startup) are dispatched via fork-skills and have **research-only toolsets** — they cannot mutate state, only look up rules, roll dice, and return structured TURN PLANs / ENCOUNTER PLANs / RULINGs. The conductor applies mutations from the specialist's plan and narrates. This enforces rules discipline structurally: the combat-resolver must `lookup_rule` every ability before narrating because it literally has no other way to resolve a turn. See `apps/dm-launcher/src/agents/*.md` for the specialist roster and `apps/dm-launcher/src/rules/lookup-before-narrate.md` for the mandatory-dispatch rule.
+
+**Two-way communication:** The conductor can `send_narration` for partial/streaming responses (turn stays open) and `peek_inbox` to check queued player messages mid-turn — both let the conductor acknowledge and interact while still working, instead of silently blocking.
 
 ### Monorepo Structure (pnpm workspaces + Turborepo)
 
@@ -104,19 +113,20 @@ pnpm deploy:web     # Deploy web only
 - `services/game-state-manager.ts` — **Core game engine**: owns GameState, combat, HP, conditions, spell slots, conversation history, check flow, battle map, rollback
 - `services/dice-engine.ts` — Dice engine wrapping @dice-roller/rpg-dice-roller: `rollNotation()`, `formatRollOutput()`, `buildOutputFromResult()`
 - `services/campaign-manager.ts` — Campaign persistence: create/load/list campaigns, save/read files, session management, character snapshots
-- `tools/game-tools.ts` — MCP tools: wait_for_message, send_response, get_players, get_game_state, get_character, apply_damage, heal, set_hp, set_temp_hp, add_condition, remove_condition, start_combat, end_combat, advance_turn, add_combatant, remove_combatant, move_combatant, use_spell_slot, restore_spell_slot, use_class_resource, restore_class_resource, update_battle_map, add_item, update_item, remove_item, update_currency, grant_inspiration, use_inspiration, compact_history, get_combat_summary, get_map_info, show_aoe, apply_area_effect, dismiss_aoe, apply_batch_effects, short_rest, long_rest, death_save, set_concentration, break_concentration, calculate_encounter_difficulty
+- `tools/game-tools.ts` — MCP tools: wait_for_message, send_response, send_narration (partial streaming chunk), peek_inbox, acknowledge, get_players, get_game_state, get_character, apply_damage, heal, set_hp, set_temp_hp, add_condition, remove_condition, start_combat, end_combat, advance_turn, add_combatant, remove_combatant, move_combatant, use_spell_slot, restore_spell_slot, use_class_resource, restore_class_resource, update_battle_map, add_item, update_item, remove_item, update_currency, grant_inspiration, use_inspiration, compact_history, get_combat_summary, get_map_info, show_aoe, apply_area_effect, dismiss_aoe, apply_batch_effects, short_rest, long_rest, death_save, set_concentration, break_concentration, calculate_encounter_difficulty
 - `tools/dnd-tools.ts` — roll_dice (notation-first; checkType for auto-modifier from character sheet; with player = interactive, without = DM server-side)
 - `tools/srd-tools.ts` — D&D 2024 database lookup tools: lookup_spell, lookup_monster, lookup_condition, lookup_magic_item, lookup_feat, lookup_class, lookup_species, lookup_background, lookup_optional_feature, lookup_action, lookup_language, lookup_disease, search_rules
-- `tools/campaign-tools.ts` — create_campaign, list_campaigns, load_campaign_context, save_campaign_file, read_campaign_file, list_campaign_files, end_session
+- `tools/campaign-tools.ts` — create_campaign, list_campaigns, load_campaign_context (scopes: "compact" (default), "full", "agent:<name>"), save_campaign_file, read_campaign_file, list_campaign_files, end_session
 - `types.ts` — Bridge message types, CampaignManifest, CampaignSummary
 
 ### DM Launcher (apps/dm-launcher/src/)
 
 - `entry.ts` — npm bin entry point
-- `cli.ts` — Spawns Claude Code with MCP config, writes CLAUDE.md + `.claude/rules/*.md` + `.claude/skills/<name>/SKILL.md` from bundled `.md` sources
-- `claude-md.md` — Trimmed core-contract CLAUDE.md (game loop, invariants) written to the DM's workDir at launch
-- `rules/*.md` — Set-in-stone DM rules (player identity, response-vs-acknowledge, creativity, entity highlighting, action_ref, skills routing). Loaded into every DM session via Claude Code's `.claude/rules/` system.
-- `skills/*.md` — Model-invocable DM skills (combat, combat-prep, narration, rules, campaign, social, recap, npc-voice, story-arc, loot-drop, tavern, battle-tactics, travel, trap, puzzle). Inlined into the launcher binary via esbuild's `.md` text loader.
+- `cli.ts` — Spawns Claude Code with MCP config, writes CLAUDE.md + `.claude/rules/*.md` + `.claude/skills/<name>/SKILL.md` + `.claude/agents/<name>.md` from bundled `.md` sources
+- `claude-md.md` — Conductor core contract (game loop, invariants, turn-plan execution, compact instructions) written to the DM's workDir at launch
+- `rules/*.md` — Set-in-stone DM rules (player identity, response-vs-acknowledge, creativity, entity highlighting, action_ref, skills routing, lookup-before-narrate). Loaded into every DM session via Claude Code's `.claude/rules/` system.
+- `agents/*.md` — DM-runtime specialist subagents (combat-resolver, rules-advisor, encounter-designer, npc-voice, scene-builder, lorekeeper). Each has its own narrow tool allowlist and system prompt. Referenced by fork-skills for specialist dispatch. Distinct from the dev-team agents in the repo's `.claude/agents/`.
+- `skills/*.md` — Model-invocable DM skills. Two flavors: **fork-skills** (frontmatter `context: fork` + `agent: <name>`) dispatch to a specialist subagent — these are `combat-prep`, `combat-turn`, `battle-tactics`, `ruling`, `npc-voice`, `tavern`, `travel`, `trap`, `puzzle`, `loot-drop`, `recap`, `story-arc`. **Conductor-side skills** (no fork) are reference material for the conductor — `combat` (player-turn procedure), `narration`, `rules`, `campaign`, `social`. Inlined into the launcher binary via esbuild's `.md` text loader.
 - `server.ts` — Express server for OAuth callback handling
 
 ### Backend (apps/worker/src/)

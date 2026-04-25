@@ -20,10 +20,12 @@ import SKILL_PUZZLE from "./skills/puzzle.md";
 import SKILL_BATTLE_TACTICS from "./skills/battle-tactics.md";
 import SKILL_COMBAT_PREP from "./skills/combat-prep.md";
 import SKILL_COMBAT from "./skills/combat.md";
+import SKILL_COMBAT_TURN from "./skills/combat-turn.md";
 import SKILL_NARRATION from "./skills/narration.md";
 import SKILL_SOCIAL from "./skills/social.md";
 import SKILL_RULES from "./skills/rules.md";
 import SKILL_CAMPAIGN from "./skills/campaign.md";
+import SKILL_RULING from "./skills/ruling.md";
 
 import RULE_PLAYER_IDENTITY from "./rules/player-identity.md";
 import RULE_RESPONSE_VS_ACKNOWLEDGE from "./rules/response-vs-acknowledge.md";
@@ -31,6 +33,14 @@ import RULE_CREATIVITY from "./rules/creativity.md";
 import RULE_ENTITY_HIGHLIGHTING from "./rules/entity-highlighting.md";
 import RULE_ACTION_REF from "./rules/action-ref.md";
 import RULE_SKILLS_ROUTING from "./rules/skills-routing.md";
+import RULE_LOOKUP_BEFORE_NARRATE from "./rules/lookup-before-narrate.md";
+
+import AGENT_COMBAT_RESOLVER from "./agents/combat-resolver.md";
+import AGENT_RULES_ADVISOR from "./agents/rules-advisor.md";
+import AGENT_ENCOUNTER_DESIGNER from "./agents/encounter-designer.md";
+import AGENT_NPC_VOICE from "./agents/npc-voice.md";
+import AGENT_SCENE_BUILDER from "./agents/scene-builder.md";
+import AGENT_LOREKEEPER from "./agents/lorekeeper.md";
 
 declare const UNSEEN_VERSION: string;
 declare const PRODUCTION_WORKER_URL: string;
@@ -49,20 +59,24 @@ const BANNER = `
 
 /** Native Claude Code skills — model-invocable, written to .claude/skills/<name>/SKILL.md */
 const NATIVE_SKILLS: Record<string, string> = {
-  // Gameplay skills
-  "combat-prep": SKILL_COMBAT_PREP,
-  combat: SKILL_COMBAT,
+  // Combat — mixed conductor + fork-skills
+  combat: SKILL_COMBAT, // conductor-side reference for player turns + lifecycle
+  "combat-prep": SKILL_COMBAT_PREP, // fork → encounter-designer
+  "combat-turn": SKILL_COMBAT_TURN, // fork → combat-resolver (NPC turn resolution)
+  "battle-tactics": SKILL_BATTLE_TACTICS, // fork → combat-resolver (advice only)
+  // Rules arbitration (fork-skill)
+  ruling: SKILL_RULING, // fork → rules-advisor
+  // Conductor meta-skills (not forked)
   narration: SKILL_NARRATION,
   social: SKILL_SOCIAL,
   rules: SKILL_RULES,
   campaign: SKILL_CAMPAIGN,
-  // DM prep skills
+  // DM prep skills (will be converted to fork-skills in Phase C)
   recap: SKILL_RECAP,
   "npc-voice": SKILL_NPC_VOICE,
   "story-arc": SKILL_STORY_ARC,
   "loot-drop": SKILL_LOOT_DROP,
   tavern: SKILL_TAVERN,
-  "battle-tactics": SKILL_BATTLE_TACTICS,
   travel: SKILL_TRAVEL,
   trap: SKILL_TRAP,
   puzzle: SKILL_PUZZLE,
@@ -76,6 +90,17 @@ const NATIVE_RULES: Record<string, string> = {
   "entity-highlighting": RULE_ENTITY_HIGHLIGHTING,
   "action-ref": RULE_ACTION_REF,
   "skills-routing": RULE_SKILLS_ROUTING,
+  "lookup-before-narrate": RULE_LOOKUP_BEFORE_NARRATE,
+};
+
+/** DM-runtime subagents — written to .claude/agents/<name>.md. Referenced by fork-skills for specialist dispatch. */
+const NATIVE_AGENTS: Record<string, string> = {
+  "combat-resolver": AGENT_COMBAT_RESOLVER,
+  "rules-advisor": AGENT_RULES_ADVISOR,
+  "encounter-designer": AGENT_ENCOUNTER_DESIGNER,
+  "npc-voice": AGENT_NPC_VOICE,
+  "scene-builder": AGENT_SCENE_BUILDER,
+  lorekeeper: AGENT_LOREKEEPER,
 };
 
 function prompt(rl: readline.Interface, question: string): Promise<string> {
@@ -112,8 +137,11 @@ export async function startCli(): Promise<void> {
   }
 
   // Parse CLI args (falls back to interactive prompt for room code + model)
+  // Default: opus — the conductor coordinates a specialist team across long sessions,
+  // so 1M context (Opus 4.7 / 4.6) pays off. Specialists run on Sonnet via their own
+  // .claude/agents/*.md frontmatter.
   let roomCode = findArg("--room");
-  let model = findArg("--model") || "sonnet";
+  let model = findArg("--model") || "opus";
   const workerUrl = findArg("--worker-url") || process.env.UNSEEN_WORKER_URL || DEFAULT_WORKER_URL;
   const campaignName = findArg("--campaign");
 
@@ -124,7 +152,7 @@ export async function startCli(): Promise<void> {
       console.error("Error: Room code is required.");
       process.exit(1);
     }
-    const modelInput = (await prompt(rl, `Model [${model}] (sonnet/opus/haiku): `)).trim();
+    const modelInput = (await prompt(rl, `Model [${model}] (opus/sonnet/haiku): `)).trim();
     if (modelInput) model = modelInput.toLowerCase();
     rl.close();
   }
@@ -147,6 +175,13 @@ export async function startCli(): Promise<void> {
   fs.mkdirSync(rulesDir, { recursive: true });
   for (const [name, content] of Object.entries(NATIVE_RULES)) {
     fs.writeFileSync(path.join(rulesDir, `${name}.md`), content);
+  }
+
+  // Write DM-runtime subagent definitions (specialists the conductor dispatches to via fork-skills)
+  const agentsDir = path.join(workDir, ".claude", "agents");
+  fs.mkdirSync(agentsDir, { recursive: true });
+  for (const [name, content] of Object.entries(NATIVE_AGENTS)) {
+    fs.writeFileSync(path.join(agentsDir, `${name}.md`), content);
   }
 
   // Write .mcp.json (use "node" directly — cmd eats stdin)

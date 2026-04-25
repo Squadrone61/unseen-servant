@@ -42,14 +42,28 @@ function getMessageKey(msg: DisplayMessage, index: number): string {
   }
 }
 
-function formatTypingText(names: string[]): string {
+export type DMActivity = "thinking" | "catching_up" | "narrating" | null;
+
+function dmVerb(activity: DMActivity): string {
+  switch (activity) {
+    case "catching_up":
+      return "catching up";
+    case "narrating":
+      return "narrating";
+    case "thinking":
+    default:
+      return "thinking";
+  }
+}
+
+function formatTypingText(names: string[], dmActivity: DMActivity): string {
   if (names.length === 1) {
-    const verb = names[0] === "DM" ? "thinking" : "typing";
+    const verb = names[0] === "DM" ? dmVerb(dmActivity) : "typing";
     return `${names[0]} is ${verb}...`;
   }
   if (names.length === 2) {
     // If DM is one of two, just show both actions
-    const parts = names.map((n) => `${n} is ${n === "DM" ? "thinking" : "typing"}`);
+    const parts = names.map((n) => `${n} is ${n === "DM" ? dmVerb(dmActivity) : "typing"}`);
     return `${parts.join(" and ")}...`;
   }
   return `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]} are typing...`;
@@ -64,6 +78,8 @@ interface ChatPanelProps {
   isMyTurn?: boolean;
   onEndTurn?: () => void;
   typingPlayers?: string[];
+  /** DM activity override: "thinking" (default), "catching_up" (after peek_inbox), "narrating" (streaming open). Null falls back to "thinking". */
+  dmActivity?: DMActivity;
   onTypingChange?: (isTyping: boolean) => void;
   /** Optional element rendered left of the input (e.g. character trigger button) */
   characterTrigger?: React.ReactNode;
@@ -84,6 +100,7 @@ export function ChatPanel({
   isMyTurn,
   onEndTurn,
   typingPlayers,
+  dmActivity,
   onTypingChange,
   characterTrigger,
   stagedAoE,
@@ -158,12 +175,18 @@ export function ChatPanel({
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Typing Indicator */}
-      {typingPlayers && typingPlayers.length > 0 && (
-        <div className="shrink-0 px-4 py-1.5 text-sm text-gray-400 italic">
-          {formatTypingText(typingPlayers)}
-        </div>
-      )}
+      {/* Typing Indicator — suppressed when DM is actively narrating (the streaming bubble IS the indicator) */}
+      {typingPlayers &&
+        typingPlayers.length > 0 &&
+        !(
+          dmActivity === "narrating" &&
+          typingPlayers.length === 1 &&
+          typingPlayers[0] === "DM"
+        ) && (
+          <div className="shrink-0 px-4 py-1.5 text-sm text-gray-400 italic">
+            {formatTypingText(typingPlayers, dmActivity ?? null)}
+          </div>
+        )}
 
       {/* AoE staged badge */}
       {stagedAoE && (

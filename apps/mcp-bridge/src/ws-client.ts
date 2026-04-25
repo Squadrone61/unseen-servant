@@ -718,6 +718,18 @@ export class WSClient {
     }
   }
 
+  /**
+   * Broadcast that the DM just peeked at the inbox — frontend flips the typing indicator
+   * from "thinking" to "catching up" so players know the DM is aware of newer messages.
+   */
+  sendDMNoticed(noticedPlayers: string[]): void {
+    this.broadcastViaWorker({
+      type: "server:dm_noticed",
+      noticedPlayers,
+      timestamp: Date.now(),
+    });
+  }
+
   /** Broadcast DM typing indicator to all players */
   sendTypingIndicator(isTyping: boolean): void {
     this.broadcastViaWorker({
@@ -745,9 +757,14 @@ export class WSClient {
     this.broadcastSystemEvent(content);
   }
 
-  /** Send a DM response — now goes through GameStateManager */
+  /** Send a DM response — final chunk, closes any open stream for this requestId. */
   sendDMResponse(requestId: string, text: string): void {
     this.gameStateManager.sendResponse(requestId, text);
+  }
+
+  /** Send a partial narration chunk — turn stays open, frontend merges chunks by streamId. */
+  sendDMNarration(requestId: string, text: string): void {
+    this.gameStateManager.sendNarration(requestId, text);
   }
 
   /** Send a DM dice roll to all players */

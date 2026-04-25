@@ -829,22 +829,46 @@ export class GameStateManager {
   // ─── Send Response (called by MCP tool) ───
 
   sendResponse(requestId: string, text: string): void {
-    // Store in conversation history
+    // Store in conversation history (final chunk closes the turn)
     this.conversationHistory.push({ role: "assistant", content: text });
     this.lastSentIndex = this.conversationHistory.length;
     this._chatDirty = true;
     this.gameLogger?.dmResponse(text);
 
-    // Broadcast AI narrative to all players
+    // Broadcast AI narrative to all players (streaming:false = closes any open stream for this requestId)
     this.broadcast({
       type: "server:ai",
       content: text,
       timestamp: Date.now(),
       id: crypto.randomUUID(),
+      streaming: false,
+      streamId: requestId,
     });
 
     // Persist session state after every DM response
     this.saveSessionStateToCampaign();
+  }
+
+  /**
+   * Send a partial narration chunk. The turn stays OPEN (pendingRequestId is not cleared by the caller).
+   * Used when the conductor wants to acknowledge first / narrate in pieces while tool-calling.
+   * Each call broadcasts server:ai with streaming:true and the same streamId so the frontend merges chunks.
+   * Chunks are appended to conversation history so downstream tool calls / specialists see prior narration.
+   */
+  sendNarration(requestId: string, text: string): void {
+    // Append to conversation history so subsequent tool results include the partial narration context
+    this.conversationHistory.push({ role: "assistant", content: text });
+    this._chatDirty = true;
+    this.gameLogger?.dmResponse(text);
+
+    this.broadcast({
+      type: "server:ai",
+      content: text,
+      timestamp: Date.now(),
+      id: crypto.randomUUID(),
+      streaming: true,
+      streamId: requestId,
+    });
   }
 
   // ─── Roll Dice ───

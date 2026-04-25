@@ -1,22 +1,21 @@
 ---
-description: "Design a puzzle: description, hints, solution, resolution"
-user-invocable: false
+description: "Design a puzzle or riddle with description, 3-tier hints, solution, and mechanical resolution. Dispatches to the scene-builder specialist which persists to dm/puzzles/. The DM-only solution stays private; hints escalate as players struggle."
+context: fork
+agent: scene-builder
+user-invocable: true
 ---
 
-# /puzzle
+Design a puzzle for the following situation.
 
-Design a puzzle for the party:
+Context: $ARGUMENTS
 
-1. **Description** — what the players see (inscriptions, mechanisms, magical effects, physical layout)
-2. **Hint system** (3 tiers):
-   - **Subtle**: environmental clue players might notice on their own
-   - **Moderate**: available with a successful Investigation/Arcana check (DC 12-15)
-   - **Direct**: given if the party is stuck for too long — nearly gives the answer
-3. **Solution** — the correct sequence, answer, or action
-4. **Mechanical resolution** — what checks help (Investigation, Arcana, History, Perception), DCs, and what info each reveals
-5. **Reward** — what solving the puzzle grants (passage, treasure, lore, shortcut)
-6. **During play** — describe the initial scene via `send_response`. As players attempt solutions, call for relevant checks with `roll_dice`, reveal hints based on the tier system, and narrate outcomes. When solved, deliver rewards narratively and mechanically (`add_item`, etc.).
+Follow the scene-builder procedure (puzzle variant):
 
-Present the puzzle design to the DM operator. When players encounter it in play, describe only what they observe and respond to their attempts.
+1. Decide the puzzle type (mechanical / verbal / spatial / magical).
+2. Write what players SEE (narration-ready description).
+3. Write the solution (DM-only).
+4. Draft 3 hints in escalating order — subtle, clearer, obvious.
+5. Define the mechanical resolution (ability check DCs, reward for solving, consequence for failure).
+6. Save to `dm/puzzles/<slug>.md`.
 
-Example usage: `/puzzle ancient dwarven door with rune-based lock, party level 7`
+Return a short summary with the puzzle's description, solution, and when/how to drip the hints.

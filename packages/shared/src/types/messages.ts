@@ -316,6 +316,15 @@ export interface ServerAIMessage {
   content: string;
   timestamp: number;
   id: string;
+  /**
+   * When true, this is a partial narration chunk from send_narration — the DM turn is still open.
+   * Consecutive chunks with the same streamId should be rendered as one growing message.
+   */
+  streaming?: boolean;
+  /**
+   * Groups partial chunks into one streamed message. Present when streaming is true.
+   */
+  streamId?: string;
 }
 
 export interface ServerSystemMessage {
@@ -323,6 +332,16 @@ export interface ServerSystemMessage {
   content: string;
   timestamp: number;
   id?: string;
+}
+
+/**
+ * Emitted when the DM calls peek_inbox while already processing a turn.
+ * Tells the frontend the DM is aware of newer pending messages so the indicator can update.
+ */
+export interface ServerDMNoticedMessage {
+  type: "server:dm_noticed";
+  noticedPlayers: string[];
+  timestamp: number;
 }
 
 export interface ServerRoomJoinedMessage {
@@ -550,4 +569,5 @@ export type ServerMessage =
   | ServerPlayerActionMessage
   | ServerRoomDestroyedMessage
   | ServerTypingMessage
-  | ServerPlayerNotesLoadedMessage;
+  | ServerPlayerNotesLoadedMessage
+  | ServerDMNoticedMessage;

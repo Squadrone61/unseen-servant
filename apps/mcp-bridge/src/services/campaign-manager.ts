@@ -125,6 +125,27 @@ export class CampaignManager {
       this.ensureDir(path.join(dir, "world", category));
     }
 
+    // DM-private planning directory
+    this.ensureDir(path.join(dir, "dm"));
+
+    // Specialist-scoped scratch directories (agents write into their own namespace)
+    // rules-advisor is seeded because cross-session ruling consistency is a core feature.
+    // Other specialists get their dirs lazily via save_campaign_file.
+    this.ensureDir(path.join(dir, "agents", "rules-advisor"));
+    fs.writeFileSync(
+      path.join(dir, "agents", "rules-advisor", "rulings.md"),
+      "# Rulings Log\n\n" +
+        "Append one entry per ambiguous ruling this session. Read this file BEFORE ruling on anything\n" +
+        "that sounds familiar so session-7's ruling matches session-2's.\n\n" +
+        "## Format\n\n" +
+        "### Session N — <Date> — <Subject>\n" +
+        "- **Question:** <restated question>\n" +
+        "- **Answer:** <yes / no / depends>\n" +
+        "- **Reasoning:** <short summary>\n" +
+        "- **Citations:** <sources>\n\n",
+      "utf-8",
+    );
+
     return manifest;
   }
 
@@ -327,6 +348,154 @@ export class CampaignManager {
       }
     }
     return { characters, userIds };
+  }
+
+  /**
+   * Compact startup context — for the conductor session and most per-turn reloads.
+   * Loads: manifest summary + system prompt + active-context.md + character summaries
+   * + last 2 session summaries. Skips full world/dm folders (specialists pull those on demand).
+   * Target: ~3-5k tokens even for long campaigns.
+   */
+  getCompactContext(): string {
+    if (!this.activeDir) throw new Error("No campaign loaded");
+    const parts: string[] = [];
+
+    // 1. Manifest
+    const manifest = this.cachedManifest;
+    if (manifest) {
+      parts.push(
+        `## Campaign: ${manifest.name}\n` +
+          `- Sessions played: ${manifest.sessionCount}\n` +
+          `- Players: ${manifest.players.length > 0 ? manifest.players.join(", ") : "none yet"}\n` +
+          `- Last played: ${manifest.lastPlayedAt}\n`,
+      );
+    }
+
+    // 2. System prompt
+    const systemPromptPath = path.join(this.activeDir, "system-prompt.md");
+    if (fs.existsSync(systemPromptPath)) {
+      const prompt = fs.readFileSync(systemPromptPath, "utf-8").trim();
+      if (prompt) parts.push(`## DM Instructions\n\n${prompt}`);
+    }
+
+    // 3. Active context — the single most important file
+    const activeContextPath = path.join(this.activeDir, "active-context.md");
+    if (fs.existsSync(activeContextPath)) {
+      const ctx = fs.readFileSync(activeContextPath, "utf-8").trim();
+      if (ctx) parts.push(`## Current State\n\n${ctx}`);
+    }
+
+    // 4. Last 2 session summaries (newest first)
+    const sessionsDir = path.join(this.activeDir, "sessions");
+    if (fs.existsSync(sessionsDir)) {
+      const sessionFiles = fs
+        .readdirSync(sessionsDir)
+        .filter((f) => f.endsWith(".md") && /^session-\d+\.md$/.test(f))
+        .sort()
+        .reverse()
+        .slice(0, 2);
+      if (sessionFiles.length > 0) {
+        const summaries: string[] = [];
+        for (const file of sessionFiles) {
+          const summary = fs.readFileSync(path.join(sessionsDir, file), "utf-8").trim();
+          if (summary) {
+            const num = parseInt(file.replace("session-", "").replace(".md", ""), 10);
+            summaries.push(`### Session ${num || file}\n${summary}`);
+          }
+        }
+        if (summaries.length > 0) {
+          parts.push(
+            `## Recent Sessions (last 2, newest first — use \`list_campaign_files\` + \`read_campaign_file\` for older ones)\n\n${summaries.join("\n\n")}`,
+          );
+        }
+      }
+    }
+
+    // 5. Character summaries (one line each)
+    parts.push(...this.characterSummariesSection());
+
+    // 6. Index hint for deep queries
+    parts.push(
+      `## Deep queries\n\n` +
+        `For specific NPCs, locations, factions, quests, items, traps, puzzles, or DM story-arc:\n` +
+        `- Dispatch \`/recap <subject>\` or \`/story-arc <query>\` (both fork to lorekeeper)\n` +
+        `- Or call \`list_campaign_files\` to browse, then \`read_campaign_file\` for specific files.\n` +
+        `Avoid loading full scope unless you need a session-start deep review.`,
+    );
+
+    return parts.join("\n\n---\n\n");
+  }
+
+  /**
+   * Specialist-scoped context: manifest + active-context + the specialist's own agents/<name>/ folder.
+   * Small and focused so the specialist can cross-reference its prior runs.
+   */
+  getAgentContext(agentName: string): string {
+    if (!this.activeDir) throw new Error("No campaign loaded");
+    const parts: string[] = [];
+
+    const manifest = this.cachedManifest;
+    if (manifest) {
+      parts.push(`## Campaign: ${manifest.name} — session ${manifest.sessionCount + 1}`);
+    }
+
+    const activeContextPath = path.join(this.activeDir, "active-context.md");
+    if (fs.existsSync(activeContextPath)) {
+      const ctx = fs.readFileSync(activeContextPath, "utf-8").trim();
+      if (ctx) parts.push(`## Current State\n\n${ctx}`);
+    }
+
+    const agentDir = path.join(this.activeDir, "agents", agentName);
+    if (fs.existsSync(agentDir) && fs.statSync(agentDir).isDirectory()) {
+      const files = fs
+        .readdirSync(agentDir)
+        .filter((f) => f.endsWith(".md"))
+        .sort();
+      if (files.length > 0) {
+        const entries: string[] = [];
+        for (const file of files) {
+          const content = fs.readFileSync(path.join(agentDir, file), "utf-8").trim();
+          if (content) entries.push(`### ${file}\n${content}`);
+        }
+        if (entries.length > 0) {
+          parts.push(`## Specialist notes (agents/${agentName}/)\n\n${entries.join("\n\n")}`);
+        }
+      }
+    }
+
+    return parts.join("\n\n---\n\n");
+  }
+
+  /** Character summary lines — shared between compact and full context builders. */
+  private characterSummariesSection(): string[] {
+    if (!this.activeDir) return [];
+    const parts: string[] = [];
+    const charDir = path.join(this.activeDir, "characters");
+    if (fs.existsSync(charDir)) {
+      const charFiles = fs.readdirSync(charDir).filter((f) => f.endsWith(".json"));
+      if (charFiles.length > 0) {
+        const charSummaries: string[] = [];
+        for (const file of charFiles) {
+          try {
+            const data = JSON.parse(fs.readFileSync(path.join(charDir, file), "utf-8"));
+            const s = data.static;
+            const d = data.dynamic;
+            const classes = s.classes
+              ?.map((c: { name: string; level: number }) => `${c.name} ${c.level}`)
+              .join("/");
+            charSummaries.push(
+              `- **${s.name}** (${s.species || s.race} ${classes}) — HP ${d.currentHP}/${s.maxHP}, AC ${s.armorClass}`,
+            );
+          } catch {
+            // skip
+          }
+        }
+        if (charSummaries.length > 0) {
+          parts.push(`## Party\n\n${charSummaries.join("\n")}`);
+        }
+      }
+    }
+    return parts;
   }
 
   /**

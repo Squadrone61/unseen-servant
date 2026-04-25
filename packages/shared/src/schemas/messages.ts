@@ -455,6 +455,17 @@ export const serverAISchema = z.object({
   content: z.string(),
   timestamp: z.number(),
   id: z.string(),
+  /**
+   * When true, this is a partial narration chunk from send_narration — the DM turn is still open.
+   * Consecutive chunks with the same streamId should be rendered as one growing message on the frontend.
+   * A final server:ai with streaming:false (or omitted) closes the stream.
+   */
+  streaming: z.boolean().optional(),
+  /**
+   * Identifier that groups partial chunks into one streamed message. Present when streaming:true.
+   * Typically the MCP requestId the DM is responding to.
+   */
+  streamId: z.string().optional(),
 });
 
 export const serverSystemSchema = z.object({
@@ -462,6 +473,18 @@ export const serverSystemSchema = z.object({
   content: z.string(),
   timestamp: z.number(),
   id: z.string().optional(),
+});
+
+/**
+ * Emitted when the DM calls peek_inbox while already processing a turn —
+ * signals to the frontend that the DM is aware of newer pending messages.
+ * Frontend flips the typing indicator to "catching up…".
+ */
+export const serverDMNoticedSchema = z.object({
+  type: z.literal("server:dm_noticed"),
+  /** Player names whose queued messages the DM just peeked at. Empty array means "checked but nothing new". */
+  noticedPlayers: z.array(z.string()),
+  timestamp: z.number(),
 });
 
 export const serverRoomJoinedSchema = z.object({
@@ -680,4 +703,5 @@ export const serverMessageSchema = z.discriminatedUnion("type", [
   serverRoomDestroyedSchema,
   serverTypingSchema,
   serverPlayerNotesLoadedSchema,
+  serverDMNoticedSchema,
 ]);

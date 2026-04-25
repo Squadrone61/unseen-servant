@@ -1,16 +1,26 @@
 ---
-description: "Turn-by-turn combat execution: attack resolution, movement validation, death saves, AoE, flanking, cover, opportunity attacks. Invoke during active combat."
+description: "Conductor-side combat reference for player turns, combat lifecycle, and general mechanics. For NPC/enemy turn resolution, dispatch to /combat-turn (forks to combat-resolver). For initial combat setup, dispatch to /combat-prep (forks to encounter-designer)."
 user-invocable: false
 ---
 
-## Combat (Active)
+## Combat (Conductor Reference)
 
-### Tactical Tools
+This skill is for **your** (the conductor's) use during active combat — primarily player turns, combat lifecycle, and general mechanics the specialists don't own. For NPC/enemy turns, **dispatch to `/combat-turn`** (which forks to combat-resolver). For initial setup, **dispatch to `/combat-prep`** (which forks to encounter-designer). Don't duplicate the specialist's work.
 
-- Use `get_combat_summary` instead of `get_game_state` during combat — it's optimized for tactical decisions.
-- Use `get_map_info` to check terrain, objects, cover, and elevation in an area (e.g., area: "C3:F6") — useful for answering player questions about the battlefield.
-- Use `apply_batch_effects` to apply multiple effects (damage, heal, conditions, movement) in one call — efficient for multi-target resolution. Max 10 effects.
-- SRD lookups default to summary mode (~30 tokens). Use `detail: "full"` only for rules disputes or complex interactions.
+### Dispatch routing (strict)
+
+| Situation                    | Do this                                                                                              |
+| ---------------------------- | ---------------------------------------------------------------------------------------------------- |
+| Combat is about to start     | `/combat-prep` → encounter-designer returns plan, you then call `update_battle_map` + `start_combat` |
+| It is an NPC / enemy's turn  | `/combat-turn <combatant name>` → combat-resolver returns TURN PLAN, you apply MUTATIONS and narrate |
+| Ambiguous rule during a turn | `/ruling <question>` → rules-advisor returns RULING                                                  |
+
+### Tactical Tools (for player turns)
+
+- Use `get_combat_summary` instead of `get_game_state` during combat — optimized for tactical decisions.
+- Use `get_map_info` to answer player questions about terrain, cover, elevation in an area (e.g., area: "C3:F6").
+- Use `apply_batch_effects` to apply multiple effects in one call (max 10) when multiple things happen at once on a player turn.
+- SRD lookups default to summary mode (~30 tokens). Use `detail: "full"` for rules disputes. For ambiguous interactions prefer `/ruling` instead.
 
 ### Effect System
 
@@ -42,17 +52,47 @@ See the **rules** skill for damage type handling, feature activation, concentrat
 - Use `set_initiative` to override initiative (readied actions, DM adjustments).
 - Use `set_active_turn` to jump to a specific combatant's turn (DM override — skips condition expiry for skipped turns).
 
-### Attack Resolution
+### Player attack resolution (conductor-owned)
 
-- For monster attacks: roll attack with `roll_dice({ checkType: "attack", notation: "1d20+X", reason: "Monster attack" })` — if it hits, apply damage via `apply_damage({ target, action_ref: { source: "monster", name, monster_action_name }, outcome_branch: "onHit" })` for structured entries, or explicit `damage`/`damage_type` for prose-only monsters.
-- For player attacks: the player describes the attack, you determine if it hits using the attack roll, then have the player roll damage with `roll_dice({ player: "CharName", checkType: "damage", notation: "..." })`
-- **Players ALWAYS roll their own damage.** When a player's attack/spell hits, use roll_dice with player + checkType="damage" so the player sees "Roll Damage". NEVER roll damage on behalf of a player.
-- **Always pass DC and checkType for attack rolls.** Use roll_dice with player, checkType="melee_attack"/"ranged_attack"/"spell_attack"/"finesse_attack", dc=TARGET_AC. "melee_attack" uses STR + prof. "ranged_attack" uses DEX + prof. "spell_attack" uses spell attack bonus. "finesse_attack" uses max(STR,DEX) + prof. Combat bonuses like Archery +2 are applied automatically.
-- Describe attacks cinematically, not just mechanically
-- Give enemies tactical behavior appropriate to their intelligence
-- Make combat dynamic — use the environment, have enemies adapt
-- Call out when players are low on HP or resources as appropriate
-- **NEVER reveal exact enemy HP to players.** Describe enemy health narratively: "barely scratched", "looking roughed up", "badly wounded", "on its last legs", "bloodied" (≤50%). Exact HP numbers are for your internal tracking only.
+- Player describes the attack. You determine if it hits via a `roll_dice` call.
+- **Always pass DC and checkType for player attack rolls.** Use `roll_dice` with `player`, `checkType="melee_attack"` / `"ranged_attack"` / `"spell_attack"` / `"finesse_attack"`, `dc=TARGET_AC`. Combat bonuses (Archery +2, etc.) are applied automatically.
+  - `melee_attack`: STR + prof
+  - `ranged_attack`: DEX + prof
+  - `spell_attack`: spell attack bonus
+  - `finesse_attack`: max(STR, DEX) + prof
+- On hit: have the player roll damage via `roll_dice({ player: "<name>", checkType: "damage", notation: "..." })`. **Players ALWAYS roll their own damage.** Never roll damage on behalf of a player.
+- Apply damage to the target via `apply_damage` using the rolled damage.
+
+### Player-initiated combat (conductor-owned)
+
+When a player initiates a fight (ambush, surprise attack, "I attack the guard"):
+
+1. **Let the initiating player resolve their opening action FIRST** — describe the attack, roll damage, apply effects.
+2. **Then** dispatch `/combat-prep` to set up formal initiative.
+3. The initiating player's opening action counts as their first turn — they act normally in initiative order from Round 2 onward.
+4. For ambushes where the whole party has surprise, give every party member a chance to act before rolling initiative.
+5. Enemies who are surprised skip their first turn in initiative order (they can't act in Round 1).
+
+### NPC / enemy attacks (dispatch, don't DIY)
+
+For enemy attacks and abilities, **dispatch `/combat-turn <combatant>`**. The combat-resolver specialist will:
+
+- Look up the monster and every ability used
+- Pick a tactic consistent with INT
+- Pre-roll attacks, saves, damage
+- Return a TURN PLAN with MUTATIONS you apply
+
+Your job then:
+
+1. Apply each MUTATION in order (`apply_damage`, `add_condition`, `move_combatant`, etc. — the plan names them).
+2. Narrate using the plan's NARRATIVE as your draft, adding entity tags (`{pc:Name}`, `{npc:Name}`, `{place:Name}`).
+3. Call `advance_turn` (always last for NPC turns).
+
+### Description and health
+
+- Describe attacks cinematically, not just mechanically.
+- Call out when players are low on HP or resources as appropriate.
+- **NEVER reveal exact enemy HP to players.** Describe narratively: "barely scratched", "looking roughed up", "badly wounded", "on its last legs", "bloodied" (≤50%). Exact HP numbers are for your internal tracking only.
 
 ### Critical Hits
 

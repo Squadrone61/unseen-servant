@@ -1,19 +1,17 @@
 ---
-description: "Narrate a story-so-far recap from campaign notes"
-user-invocable: false
+description: "Narrate the story so far, in DM voice, from campaign files. Dispatches to the lorekeeper specialist which reads active-context and recent sessions. Use at session start when resuming a campaign."
+context: fork
+agent: lorekeeper
+user-invocable: true
 ---
 
-# /recap
+Produce a recap narrative for the campaign's current state.
 
-Generate an in-character recap of the story so far:
+Context (optional focus): $ARGUMENTS
 
-1. **Load campaign context** — call `load_campaign_context` to get all campaign notes
-2. **Read session notes** — call `list_campaign_files` and read any session summaries
-3. **Compose the recap** — write a dramatic, in-character narration covering:
-   - How the adventure began
-   - Key events and turning points
-   - Important NPCs met and their relationships
-   - Active quests and unresolved threads
-   - Where the party currently stands
-4. **Deliver it** — send the recap via `send_response` as atmospheric DM narration (not a dry summary)
-5. **Context check** — if `totalMessageCount` is high (50+), consider calling `compact_history` afterward to free context space
+Follow the lorekeeper procedure (session recap variant):
+
+1. Load `active-context.md`, last 2-3 `sessions/session-*.md`, and `dm/story-arc.md` if present.
+2. Return a 2-4 paragraph recap narrative in DM voice — where the party ended, what's at stake, unresolved threads.
+
+The conductor will relay your narrative directly to players via `send_response`, adding entity tags (`{pc:...}`, `{npc:...}`, `{place:...}`).

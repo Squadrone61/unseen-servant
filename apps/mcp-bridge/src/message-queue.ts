@@ -85,4 +85,9 @@ export class MessageQueue {
   get pending(): number {
     return this.queue.length;
   }
+
+  /** Peek at queued messages without consuming them. Returns a shallow copy. */
+  peek(): DMRequest[] {
+    return this.queue.slice();
+  }
 }

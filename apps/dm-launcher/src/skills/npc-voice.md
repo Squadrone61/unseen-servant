@@ -1,23 +1,19 @@
 ---
-description: "Generate an NPC with personality, speech patterns, and secrets"
-user-invocable: false
+description: "Create a new NPC with a distinctive voice and persist it to world/npcs/. Dispatches to the npc-voice specialist which reads existing NPCs first to avoid name/voice collisions, looks up any class/spell mechanics, and always writes the file. Use whenever introducing a NAMED NPC for the first time."
+context: fork
+agent: npc-voice
+user-invocable: true
 ---
 
-# /npc-voice
+Create a new NPC for the following situation.
 
-Create a detailed NPC based on the user's description.
+Context: $ARGUMENTS
 
-**Name variety is a hard requirement.** Repetitive or archetypal names are a failure — consciously vary syllable count, cadence, and cultural root across every NPC you create this campaign. Do not recycle names or cadences you've already used.
+Follow the npc-voice procedure:
 
-1. **Parse the description** — extract the NPC concept (e.g., "grizzled dwarf blacksmith", "nervous elven scholar")
-2. **Generate the NPC profile:**
-   - **Name** — a fitting fantasy name (distinct in sound and origin from prior NPCs)
-   - **Appearance** — 2-3 distinctive physical traits
-   - **Personality** — core trait, flaw, and bond
-   - **Speech pattern** — a verbal tic, accent note, or catchphrase that makes them recognizable (e.g., always speaks in questions, uses nautical metaphors, whispers everything)
-   - **Motivation** — what they want right now
-   - **Secret** — something they're hiding that could become a plot hook
-3. **Save to campaign notes** — call `save_campaign_file` to create `world/npcs/{slug}` with the NPC's details
-4. **Introduce them** — send a brief introduction via `send_response`, demonstrating their speech pattern in a line of dialogue
+1. Survey existing NPCs via `list_campaign_files` (filter `world/npcs/`).
+2. Design a name/voice deliberately DIFFERENT from existing patterns (syllable palette, cadence).
+3. Look up any class/spell/item mechanics the NPC has.
+4. Save to `world/npcs/<slug>.md` in the required format.
 
-Example usage: `/npc-voice grizzled dwarf blacksmith with a gambling problem`
+Return a short summary with the NPC's name, role, three voice tics, and the hook the conductor can use.

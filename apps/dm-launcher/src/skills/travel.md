@@ -1,20 +1,20 @@
 ---
-description: "Overland travel: pace, distance, encounters, weather, time passage"
-user-invocable: false
+description: "Generate an overland travel leg: distance, pace, terrain, weather, time passage, and possible encounters. Dispatches to the scene-builder specialist which persists to world/locations/. Use when the party is traveling between regions."
+context: fork
+agent: scene-builder
+user-invocable: true
 ---
 
-# /travel
+Build a travel leg for the following journey.
 
-Process overland travel to a destination:
+Context: $ARGUMENTS
 
-1. **Determine travel pace** — ask the party or infer:
-   - **Fast** (30 miles/day): -5 to passive Perception, no stealth possible
-   - **Normal** (24 miles/day): standard travel
-   - **Slow** (18 miles/day): able to use stealth, +5 to passive Perception for noticing threats
-2. **Calculate time** — distance / daily pace = travel days
-3. **Random encounters** — roll for each travel day/segment if appropriate for the region (d20, encounter on 18+, adjust frequency by danger level)
-4. **Weather** — describe weather briefly for flavor (sun, rain, fog, snow)
-5. **Narrate the journey** — send_response with travel montage: landscapes, weather, camp scenes, arrival
-6. **Note the destination** — if it's a new location, save to campaign notes via save_campaign_file
+Follow the scene-builder procedure (travel variant):
 
-Example usage: `/travel 3-day journey through the Misty Mountains to Rivendell`
+1. Read `active-context.md` and any existing location files for the start/end.
+2. Determine realistic distance, pace, terrain, weather, time.
+3. Seed 0-2 events or encounters appropriate to the terrain and party level. Look up any monster stats.
+4. Note exhaustion / rest / watch impact.
+5. Save to `world/locations/<slug>.md` (travel leg as its own location entry).
+
+Return a summary the conductor can narrate from — terrain, weather, timing, encounter hooks.
