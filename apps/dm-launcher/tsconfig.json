@@ -4,5 +4,5 @@
     "rootDir": "../../",
     "noEmit": true
   },
-  "include": ["src", "../mcp-bridge/src"]
+  "include": ["src", "test", "../mcp-bridge/src"]
 }
