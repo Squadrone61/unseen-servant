@@ -36,11 +36,14 @@ When a player declares **"I cast <spell>"** or **"I use <class feature>"**, befo
 1. Call `get_character({ name: "<player>" })`.
 2. Check `character.static.spells[]` (for spells) or `character.static.features[]` (for class features) for an entry matching the declared name. A ritual-castable spell still needs to be on the list. Cantrips count.
 3. If not present, **STOP**. Do not `lookup_rule`, do not narrate effects, do not `use_spell_slot`.
-4. Reply in-character with the closest-match shortlist from the player's actual sheet, e.g.:
+4. Build the alternatives shortlist by **literally reading** the names out of the JSON `get_character` returned. Open `character.static.spells[]` and `character.static.cantrips` (or `spells[]` entries with `level: 0`); the alternatives you offer the player are the `name` fields of those entries — and **only** those entries. Treat your own training memory of "what a 5th-level warlock typically knows" as **adversarial**: every spell name you can recall that is NOT in the JSON output is a forbidden token. If you find yourself typing "Fireball" or "Scorching Ray" or any other class-staple, ask: "did I see this exact name in the JSON I just got from `get_character`?" If no, delete it.
+5. Reply in-character. Format example:
 
    > "{pc:Dordıl}, I don't see Fire Storm on your prepared list — your 5th-level druid slots today have _Call Lightning_, _Conjure Animals_, and _Plant Growth_. Which did you mean?"
 
-This is the same halt-and-clarify discipline as `LOOKUP_FAILED`, but for character-sheet violations rather than DB misses. A spell being in the 2024 DB does NOT mean this PC has it.
+   The bracketed names in this example came from `character.static.spells[]`. **They were not invented from class knowledge.** Yours must do the same.
+
+This is the same halt-and-clarify discipline as `LOOKUP_FAILED`, but for character-sheet violations rather than DB misses. A spell being in the 2024 DB does NOT mean this PC has it. A spell being a class staple does NOT mean this PC has it.
 
 **Exception**: If the player is using an item or scroll that grants a spell cast (e.g., _Scroll of Fireball_, _Gauntlets of … as dawn_), verify the item via `get_character` inventory first. Out-of-class spells cast from items are legal; out-of-class spells cast from nowhere are not.
 
