@@ -10,13 +10,25 @@ import type { Scenario, ScenarioAssertions, ScenarioFrontmatter } from "./types.
  * No nesting, no anchors. Throws on unsupported syntax so we fail loudly.
  */
 function parseSimpleYaml(source: string): Record<string, unknown> {
+  // Pre-pass: join continuation lines so prettier's "key:\n  [items]" wrap
+  // collapses back to "key: [items]". Continuation = indented (starts with space)
+  // and the previous logical line ends with ':' or with an open '[' that isn't yet closed.
+  const collapsedLines: string[] = [];
+  for (const raw of source.split(/\r?\n/)) {
+    const stripped = raw.replace(/#.*$/, "").trimEnd();
+    if (!stripped) continue;
+    const isIndentedContinuation = /^\s/.test(raw) && collapsedLines.length > 0;
+    if (isIndentedContinuation) {
+      collapsedLines[collapsedLines.length - 1] += " " + stripped.trim();
+    } else {
+      collapsedLines.push(stripped);
+    }
+  }
+
   const result: Record<string, unknown> = {};
-  const lines = source.split(/\r?\n/);
-  for (const raw of lines) {
-    const line = raw.replace(/#.*$/, "").trimEnd();
-    if (!line.trim()) continue;
+  for (const line of collapsedLines) {
     const m = /^([A-Za-z_][\w-]*)\s*:\s*(.*)$/.exec(line);
-    if (!m) throw new Error(`parseSimpleYaml: cannot parse line: ${raw}`);
+    if (!m) throw new Error(`parseSimpleYaml: cannot parse line: ${line}`);
     const [, key, valueRaw] = m;
     const v = valueRaw.trim();
     if (v.startsWith("[") && v.endsWith("]")) {
