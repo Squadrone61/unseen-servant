@@ -2769,6 +2769,7 @@ export class GameStateManager {
     const survivors = Object.values(this.gameState.encounter.combat.combatants)
       .filter((c) => (c.currentHP ?? 0) > 0)
       .map((c) => c.name);
+    const endingBundleSlug = this.gameState.encounter.combat.bundleSlug;
 
     this.createEvent("combat_end", "Combat ended", [{ type: "combat_phase", phase: "ended" }]);
 
@@ -2776,6 +2777,17 @@ export class GameStateManager {
     this.gameState.encounter.phase = "exploration";
     this.gameState.encounter.combat = undefined;
     this.gameState.encounter.map = undefined;
+
+    // Archive the resolver's per-encounter turn-log so a future engagement
+    // (or end-of-session recap) can reference it without overwriting it on
+    // the next bundle-bound combat.
+    if (endingBundleSlug && this.campaignManager.activeSlug) {
+      try {
+        this.campaignManager.archiveTurnLog(endingBundleSlug);
+      } catch {
+        // Archive is best-effort — don't block combat end on filesystem hiccups.
+      }
+    }
 
     this.broadcast({
       type: "server:combat_update",

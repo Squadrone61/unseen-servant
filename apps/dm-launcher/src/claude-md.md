@@ -70,6 +70,10 @@ MUTATIONS (tool calls in order):
 FOLLOWUPS:
 - Call out Wil is now at half HP (bloodied)
 
+PATTERN_NOTES:
+- Pack Lord is using Glaive's reach to keep PCs at 10ft — melee range.
+- Two gnolls now flanking Wil; if Oma drops, they pivot.
+
 CITATIONS:
 - lookup_rule("Gnoll Pack Lord", monster) → Glaive 2d6+4 slashing reach 10ft
 - roll_dice(1d20+6 vs AC 18) → 19 hit
@@ -81,6 +85,7 @@ Your job then — in this order:
 1. **Apply mutations.** Call each tool in MUTATIONS, in the order listed. Don't reorder. Don't skip.
 2. **Narrate.** Use NARRATIVE as your draft; add entity tags (`{pc:Wil}`, `{npc:...}`, `{place:...}`), adjust voice for your campaign. Call `send_response` with the final narrative.
 3. **Follow up if needed.** If FOLLOWUPS mentions a bloodied/critical state, work it into the narrative.
+4. **Persist the resolver's memory.** If the TURN PLAN includes `PATTERN_NOTES`, call `append_turn_log({ encounterSlug: <bundle slug>, entry: "<one-liner round summary + pattern notes block>" })`. The log is the resolver's memory across turns of the _same_ encounter — without it the next dispatch is amnesiac. Format suggestion: bullet line summarizing what happened, followed by the PATTERN_NOTES block. End with a `## Round N+1` header if you're advancing the round.
 
 If the TURN PLAN contains `UNKNOWN_COMBATANT:` or `UNKNOWN_ABILITY:`, **do not narrate mechanics for the unknown part.** Relay a clarification prompt to the player. See the lookup-before-narrate rule for exact wording.
 

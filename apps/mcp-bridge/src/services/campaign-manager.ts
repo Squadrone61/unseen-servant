@@ -292,6 +292,119 @@ export class CampaignManager {
     return out.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   }
 
+  // ─── Turn Log (per-encounter scratch for combat-resolver) ───
+  // Lives at `dm/encounter-logs/<slug>.md`. Combat-resolver appends one entry
+  // per turn so future turns of the same encounter can read prior reasoning
+  // (target focus, pattern of misses, used reactions). Archived on end_combat.
+
+  /** Append an entry to the turn-log for an encounter. Creates file with header on first call. */
+  appendTurnLog(encounterSlug: string, entry: string): string {
+    if (!this.activeDir) throw new Error("No campaign loaded");
+    if (!/^[a-z0-9-]+$/.test(encounterSlug)) {
+      throw new Error(`Invalid encounter slug: ${encounterSlug}`);
+    }
+    const dir = path.join(this.activeDir, "dm", "encounter-logs");
+    this.ensureDir(dir);
+    const filePath = path.join(dir, `${encounterSlug}.md`);
+    if (!fs.existsSync(filePath)) {
+      fs.writeFileSync(filePath, `# Turn Log — ${encounterSlug}\n\n`, "utf-8");
+    }
+    fs.appendFileSync(filePath, entry.endsWith("\n") ? entry : entry + "\n", "utf-8");
+    return path.relative(this.activeDir, filePath);
+  }
+
+  /**
+   * Read a turn-log. If `lastNRounds` is set, returns only the tail starting
+   * from the (N+1)-from-last `## Round` header. Returns null if no log exists.
+   */
+  readTurnLog(encounterSlug: string, lastNRounds?: number): string | null {
+    if (!this.activeDir) throw new Error("No campaign loaded");
+    const filePath = path.join(this.activeDir, "dm", "encounter-logs", `${encounterSlug}.md`);
+    if (!fs.existsSync(filePath)) return null;
+    const content = fs.readFileSync(filePath, "utf-8");
+    if (!lastNRounds || lastNRounds <= 0) return content;
+
+    const lines = content.split(/\r?\n/);
+    const roundHeaderIndices: number[] = [];
+    lines.forEach((line, i) => {
+      if (/^##\s+Round\s+\d+/i.test(line)) roundHeaderIndices.push(i);
+    });
+    if (roundHeaderIndices.length <= lastNRounds) return content;
+    const startIdx = roundHeaderIndices[roundHeaderIndices.length - lastNRounds];
+    // Keep the file's H1 header for context.
+    const head = lines.slice(0, 2).join("\n");
+    const tail = lines.slice(startIdx).join("\n");
+    return `${head}\n\n${tail}`;
+  }
+
+  /**
+   * Archive an encounter's turn-log when combat ends. Renames
+   * `<slug>.md` → `<slug>.archive.md` so future end-of-session recap can
+   * reference it without colliding with a possible re-engagement.
+   */
+  archiveTurnLog(encounterSlug: string): void {
+    if (!this.activeDir) return;
+    const dir = path.join(this.activeDir, "dm", "encounter-logs");
+    const live = path.join(dir, `${encounterSlug}.md`);
+    if (!fs.existsSync(live)) return;
+    const archive = path.join(dir, `${encounterSlug}.archive.md`);
+    // If archive already exists (e.g. encounter re-engaged twice), append a
+    // separator + the live log so we don't lose history.
+    if (fs.existsSync(archive)) {
+      const tail = fs.readFileSync(live, "utf-8");
+      fs.appendFileSync(archive, `\n\n---\n\n${tail}`, "utf-8");
+      fs.unlinkSync(live);
+    } else {
+      fs.renameSync(live, archive);
+    }
+  }
+
+  // ─── Session Scratch (per-session memo for lorekeeper / conductor) ───
+  // Lives at `dm/session-scratch/session-NNN.md`, where NNN is the active
+  // session number (`cachedManifest.sessionCount + 1`). Cleared at end_session
+  // since the session summary supersedes it.
+
+  /** Compute the active session number string (zero-padded) for filenames. */
+  private activeSessionFile(): string | null {
+    if (!this.activeDir || !this.cachedManifest) return null;
+    const num = this.cachedManifest.sessionCount + 1;
+    return path.join(
+      this.activeDir,
+      "dm",
+      "session-scratch",
+      `session-${String(num).padStart(3, "0")}.md`,
+    );
+  }
+
+  /** Append an entry to the active-session scratch. Creates the file on first call. */
+  appendSessionScratch(entry: string): string {
+    if (!this.activeDir || !this.cachedManifest) throw new Error("No campaign loaded");
+    const filePath = this.activeSessionFile();
+    if (!filePath) throw new Error("No active session");
+    this.ensureDir(path.dirname(filePath));
+    if (!fs.existsSync(filePath)) {
+      const num = this.cachedManifest.sessionCount + 1;
+      fs.writeFileSync(filePath, `# Session ${num} — Scratch\n\n`, "utf-8");
+    }
+    fs.appendFileSync(filePath, entry.endsWith("\n") ? entry : entry + "\n", "utf-8");
+    return path.relative(this.activeDir, filePath);
+  }
+
+  /** Read the active-session scratch. Returns null if none. */
+  readSessionScratch(): string | null {
+    if (!this.activeDir || !this.cachedManifest) return null;
+    const filePath = this.activeSessionFile();
+    if (!filePath || !fs.existsSync(filePath)) return null;
+    return fs.readFileSync(filePath, "utf-8");
+  }
+
+  /** Remove the active-session scratch — called at end_session, since the summary replaces it. */
+  clearSessionScratch(): void {
+    if (!this.activeDir || !this.cachedManifest) return;
+    const filePath = this.activeSessionFile();
+    if (filePath && fs.existsSync(filePath)) fs.unlinkSync(filePath);
+  }
+
   /** List all files in the active campaign as a tree. */
   listFiles(): string[] {
     if (!this.activeDir) throw new Error("No campaign loaded");
@@ -713,6 +826,18 @@ export class CampaignManager {
         (c) => c.static?.name || "Unknown",
       );
     }
+
+    // Clear any active-session scratch BEFORE flushing the manifest, since
+    // activeSessionFile() resolves against `cachedManifest.sessionCount + 1`
+    // — which has just been incremented to the *next* session. We need to
+    // remove the file for the session that just ended.
+    const justEndedScratch = path.join(
+      this.activeDir,
+      "dm",
+      "session-scratch",
+      `session-${String(sessionNumber).padStart(3, "0")}.md`,
+    );
+    if (fs.existsSync(justEndedScratch)) fs.unlinkSync(justEndedScratch);
 
     // Flush manifest (critical checkpoint)
     this.writeManifestToDisk();

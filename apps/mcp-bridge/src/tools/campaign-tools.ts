@@ -320,6 +320,156 @@ export function registerCampaignTools(
     },
   );
 
+  // --- Standing Crew memory ---
+  // Per-encounter turn-log (combat-resolver) and per-session scratch
+  // (lorekeeper / narrative continuity). See plans/standing-crew.md.
+
+  server.registerTool(
+    "append_turn_log",
+    {
+      description:
+        "Append one entry to the per-encounter turn-log at dm/encounter-logs/<slug>.md. Combat-resolver uses this after each NPC turn so future turns of the same encounter see prior reasoning (target focus, used reactions, miss patterns). The log is archived to <slug>.archive.md when end_combat fires. Pass `entry` as a fully-formed markdown line — e.g. '## Round 2' for a header, or '- **Grixx**: Multiattack on Theron → hit, miss. HP 21/21.' for a bullet. The file is created with an H1 header on first call.",
+      inputSchema: {
+        encounterSlug: z
+          .string()
+          .describe("Bundle slug for the active combat (matches CombatState.bundleSlug)."),
+        entry: z
+          .string()
+          .describe(
+            "Markdown line(s) to append. Append round headers, bullet entries, or a `## Pattern notes` section as needed.",
+          ),
+      },
+    },
+    async ({ encounterSlug, entry }) => {
+      try {
+        const savedAs = campaignManager.appendTurnLog(encounterSlug, entry);
+        const text = `Appended to ${savedAs} (${entry.length} chars)`;
+        gameLogger.toolCall("append_turn_log", { encounterSlug }, text);
+        return { content: [{ type: "text" as const, text }] };
+      } catch (e) {
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: `Error: ${e instanceof Error ? e.message : String(e)}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+    },
+  );
+
+  server.registerTool(
+    "read_turn_log",
+    {
+      description:
+        "Read the per-encounter turn-log. Combat-resolver calls this once at the start of each turn (alongside load_encounter_bundle) to see prior-turn reasoning and pattern notes. Default `lastNRounds: 3` keeps the read tight for context-sensitive tactic selection without bloating the resolver's prompt.",
+      inputSchema: {
+        encounterSlug: z.string().describe("Bundle slug for the active combat."),
+        lastNRounds: z
+          .number()
+          .int()
+          .positive()
+          .optional()
+          .describe(
+            "Trim to the last N `## Round N` sections. Omit to read the full log. Defaults to 3 if unspecified.",
+          ),
+      },
+    },
+    async ({ encounterSlug, lastNRounds }) => {
+      try {
+        const window = lastNRounds ?? 3;
+        const log = campaignManager.readTurnLog(encounterSlug, window);
+        if (log === null) {
+          const text = `No turn-log yet for "${encounterSlug}". Resolver should treat this as round 1 with no prior context.`;
+          gameLogger.toolCall("read_turn_log", { encounterSlug, lastNRounds: window }, text);
+          return { content: [{ type: "text" as const, text }] };
+        }
+        gameLogger.toolCall(
+          "read_turn_log",
+          { encounterSlug, lastNRounds: window },
+          `[${log.length} chars]`,
+        );
+        return { content: [{ type: "text" as const, text: log }] };
+      } catch (e) {
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: `Error: ${e instanceof Error ? e.message : String(e)}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+    },
+  );
+
+  server.registerTool(
+    "append_session_scratch",
+    {
+      description:
+        "Append a brief note to the active-session scratch file at dm/session-scratch/session-NNN.md. Used for intra-session memory that isn't yet world-canonical: NPCs introduced this session, suspicious quotes, side-quest hooks the players bit on. Cleared automatically at end_session (since the session summary supersedes it). Lorekeeper reads this for in-session recap; the conductor may append spontaneously.",
+      inputSchema: {
+        entry: z
+          .string()
+          .describe(
+            "Markdown line(s). Single bullets are typical, e.g. '- Met {npc:Brogan}, dwarven smith at the Iron Anvil. Suspicious of the party.'",
+          ),
+      },
+    },
+    async ({ entry }) => {
+      try {
+        const savedAs = campaignManager.appendSessionScratch(entry);
+        const text = `Appended to ${savedAs} (${entry.length} chars)`;
+        gameLogger.toolCall("append_session_scratch", {}, text);
+        return { content: [{ type: "text" as const, text }] };
+      } catch (e) {
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: `Error: ${e instanceof Error ? e.message : String(e)}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+    },
+  );
+
+  server.registerTool(
+    "read_session_scratch",
+    {
+      description:
+        "Read the active-session scratch file. Returns null-equivalent text if no scratch has been written yet this session.",
+    },
+    async () => {
+      try {
+        const content = campaignManager.readSessionScratch();
+        if (content === null) {
+          const text =
+            "No session scratch yet. The session has not produced any intra-session notes.";
+          gameLogger.toolCall("read_session_scratch", {}, text);
+          return { content: [{ type: "text" as const, text }] };
+        }
+        gameLogger.toolCall("read_session_scratch", {}, `[${content.length} chars]`);
+        return { content: [{ type: "text" as const, text: content }] };
+      } catch (e) {
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: `Error: ${e instanceof Error ? e.message : String(e)}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+    },
+  );
+
   server.registerTool(
     "load_encounter_bundle",
     {
