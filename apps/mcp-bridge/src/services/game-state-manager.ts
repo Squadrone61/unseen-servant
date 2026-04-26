@@ -2596,8 +2596,9 @@ export class GameStateManager {
       tokenColor?: string;
       saveBonuses?: Record<string, number>;
     }>,
-    surprisedCombatants?: string[],
+    options?: { surprisedCombatants?: string[]; bundleSlug?: string },
   ): ToolResponse {
+    const surprisedCombatants = options?.surprisedCombatants;
     // Require a battle map before starting combat
     if (!this.gameState.encounter?.map) {
       return toResponse(
@@ -2708,6 +2709,7 @@ export class GameStateManager {
       turnIndex: 0,
       turnOrder: initiativeOrder.map((i) => i.id),
       combatants: combatantMap,
+      ...(options?.bundleSlug ? { bundleSlug: options.bundleSlug } : {}),
     };
 
     if (!this.gameState.encounter) {
@@ -4993,6 +4995,11 @@ export class GameStateManager {
 
     const lines: string[] = [];
     lines.push(`=== Round ${combat.round} | ${activeCombatant.name}'s turn ===`);
+    if (combat.bundleSlug) {
+      lines.push(
+        `Bundle: ${combat.bundleSlug} (call load_encounter_bundle("${combat.bundleSlug}") for pre-resolved monster stats + abilities)`,
+      );
+    }
     lines.push("");
     lines.push("Turn order:");
 

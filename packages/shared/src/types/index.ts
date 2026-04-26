@@ -6,6 +6,7 @@ export * from "./effects";
 export * from "./builder";
 export * from "./spell";
 export * from "./item";
+export * from "./encounter-bundle";
 export type {
   SpellSchool,
   SpellLevel,

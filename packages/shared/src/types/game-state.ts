@@ -149,6 +149,8 @@ export interface CombatState {
   combatants: Record<string, Combatant>;
   pendingCheck?: CheckRequest;
   activeAoE?: AoEOverlay[];
+  /** Slug of the EncounterBundle this combat was started from (if any). Combat-resolver reads `dm/encounters/<slug>.json` once per turn instead of re-looking-up monster stats + abilities. */
+  bundleSlug?: string;
 }
 
 // ─── Encounter ───

@@ -731,7 +731,7 @@ export function registerGameTools(
     "start_combat",
     {
       description:
-        "Initialize combat with a list of combatants. Initiative is rolled automatically. Creates turn order and broadcasts combat state. Use your combat skill for turn-by-turn rules.",
+        "Initialize combat with a list of combatants. Initiative is rolled automatically. Creates turn order and broadcasts combat state. Use your combat skill for turn-by-turn rules.\n\nIf you ran /combat-prep, the encounter-designer saved an EncounterBundle — pass its slug as encounter_bundle_slug so combat-resolver can load pre-resolved monster stats + abilities each turn instead of re-looking-up.",
       inputSchema: {
         combatants: z
           .array(
@@ -769,16 +769,24 @@ export function registerGameTools(
             }),
           )
           .describe("List of combatants to add to combat"),
+        encounter_bundle_slug: z
+          .string()
+          .optional()
+          .describe(
+            "Slug of the EncounterBundle that designed this fight. When present, combat-resolver loads pre-resolved monster stats from dm/encounters/<slug>.json each turn instead of calling lookup_rule per ability.",
+          ),
       },
     },
-    async ({ combatants }) => {
+    async ({ combatants, encounter_bundle_slug }) => {
       // Parse A1 notation positions to {x, y}
       const parsed = combatants.map((c) => {
         const pos = c.position ? parseGridPosition(c.position) : undefined;
         return { ...c, position: pos ?? undefined };
       });
-      const result = wsClient.gameStateManager.startCombat(parsed);
-      return fromToolResponse(result, "start_combat", { combatants });
+      const result = wsClient.gameStateManager.startCombat(parsed, {
+        bundleSlug: encounter_bundle_slug,
+      });
+      return fromToolResponse(result, "start_combat", { combatants, encounter_bundle_slug });
     },
   );
 

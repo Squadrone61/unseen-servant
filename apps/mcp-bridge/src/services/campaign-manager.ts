@@ -3,8 +3,8 @@ import * as path from "path";
 import { log } from "../logger.js";
 import { campaignManifestSchema } from "../types.js";
 import type { CampaignManifest, CampaignSummary } from "../types.js";
-import { characterSnapshotSchema } from "@unseen-servant/shared/schemas";
-import type { CharacterData } from "@unseen-servant/shared/types";
+import { characterSnapshotSchema, encounterBundleSchema } from "@unseen-servant/shared/schemas";
+import type { CharacterData, EncounterBundle } from "@unseen-servant/shared/types";
 
 const CAMPAIGNS_ROOT =
   process.env.UNSEEN_CAMPAIGNS_DIR || path.join(process.cwd(), ".unseen", "campaigns");
@@ -246,6 +246,50 @@ export class CampaignManager {
     fs.writeFileSync(filePath, content, "utf-8");
 
     return path.relative(this.activeDir, filePath);
+  }
+
+  // ─── Encounter Bundles ───
+  // Persistent artifact written by encounter-designer at /combat-prep time
+  // and read by combat-resolver each turn. See plans/encounter-bundle.md.
+
+  /** Save an encounter bundle to dm/encounters/<slug>.json. Validates against the schema. */
+  saveEncounterBundle(bundle: EncounterBundle): string {
+    if (!this.activeDir) throw new Error("No campaign loaded");
+    const validated = encounterBundleSchema.parse(bundle);
+    const dir = path.join(this.activeDir, "dm", "encounters");
+    this.ensureDir(dir);
+    const filePath = path.join(dir, `${validated.slug}.json`);
+    fs.writeFileSync(filePath, JSON.stringify(validated, null, 2), "utf-8");
+    return path.relative(this.activeDir, filePath);
+  }
+
+  /** Load an encounter bundle by slug. Returns null if it doesn't exist. */
+  loadEncounterBundle(slug: string): EncounterBundle | null {
+    if (!this.activeDir) throw new Error("No campaign loaded");
+    const filePath = path.join(this.activeDir, "dm", "encounters", `${slug}.json`);
+    if (!fs.existsSync(filePath)) return null;
+    const raw = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+    return encounterBundleSchema.parse(raw);
+  }
+
+  /** List all encounter bundles in this campaign with light metadata. */
+  listEncounterBundles(): { slug: string; createdAt: string; difficulty: string }[] {
+    if (!this.activeDir) return [];
+    const dir = path.join(this.activeDir, "dm", "encounters");
+    if (!fs.existsSync(dir)) return [];
+    const out: { slug: string; createdAt: string; difficulty: string }[] = [];
+    for (const file of fs.readdirSync(dir)) {
+      if (!file.endsWith(".json")) continue;
+      try {
+        const raw = JSON.parse(fs.readFileSync(path.join(dir, file), "utf-8"));
+        if (raw.slug && raw.createdAt && raw.difficulty) {
+          out.push({ slug: raw.slug, createdAt: raw.createdAt, difficulty: raw.difficulty });
+        }
+      } catch {
+        // Skip malformed bundles
+      }
+    }
+    return out.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   }
 
   /** List all files in the active campaign as a tree. */

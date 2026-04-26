@@ -1,5 +1,5 @@
 ---
-description: "Mandatory combat setup BEFORE start_combat. Dispatches to the encounter-designer specialist which verifies every monster against the SRD database, validates difficulty, and returns an ENCOUNTER PLAN with verified stats + map suggestion + opening positions. Use whenever combat is about to begin."
+description: "Mandatory combat setup BEFORE start_combat. Dispatches to the encounter-designer specialist which verifies every monster against the SRD database, validates difficulty, draws the battle map, and persists an Encounter Bundle (so combat-resolver doesn't re-look-up each turn). Returns a SHORT ENCOUNTER SUMMARY with the bundle slug. Use whenever combat is about to begin."
 context: fork
 agent: encounter-designer
 user-invocable: false
@@ -12,11 +12,10 @@ Request: $ARGUMENTS
 Follow the encounter-designer procedure in your system prompt:
 
 1. Read the party composition.
-2. Verify EVERY candidate monster with lookup_rule (category: "monster"). Reject any that fail.
-3. Validate difficulty with calculate_encounter_difficulty against the campaign's target (standard / long / boss).
-4. Suggest a map size, terrain, and concrete tile configs in A1 notation.
-5. Stage opening positions for each combatant.
+2. Verify EVERY candidate monster with `lookup_rule` (category: "monster"). Reject any that fail.
+3. Validate difficulty with `calculate_encounter_difficulty` against the campaign's target (standard / long / boss).
+4. Draw the battle map yourself via `update_battle_map`.
+5. **Save the Encounter Bundle via `save_encounter_bundle`** — this captures every monster's stats + abilities so the combat-resolver can read once per turn instead of re-looking-up. The bundle is the contract for the rest of the fight.
+6. Return a SHORT ENCOUNTER SUMMARY (slug + difficulty + combatant list + opening hook + citations).
 
-Return an ENCOUNTER PLAN in the exact format from your system prompt: Difficulty, Combatants (verified in DB), Map suggestion (concrete A1 tile configs), Opening positions, Tactics hint, Citations.
-
-The conductor will use your plan to call `update_battle_map` and `start_combat`. Do not call those tools yourself.
+The conductor will use the bundle slug to call `start_combat` with `encounter_bundle_slug: "<slug>"`. The map is already drawn, the bundle is already saved — do NOT call `start_combat` yourself.

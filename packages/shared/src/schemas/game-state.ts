@@ -192,6 +192,7 @@ export const combatStateSchema = z.object({
   combatants: z.record(z.string(), combatantSchema),
   pendingCheck: checkRequestSchema.optional(),
   activeAoE: z.array(aoeOverlaySchema).optional(),
+  bundleSlug: z.string().optional(),
 });
 
 // ─── Encounter ───

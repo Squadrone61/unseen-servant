@@ -3,6 +3,7 @@ import { z } from "zod";
 import type { CampaignManager } from "../services/campaign-manager.js";
 import type { WSClient } from "../ws-client.js";
 import type { GameLogger } from "../services/game-logger.js";
+import { encounterBundleSchema } from "@unseen-servant/shared/schemas";
 
 export function registerCampaignTools(
   server: McpServer,
@@ -270,6 +271,78 @@ export function registerCampaignTools(
         const slug = campaignManager.activeSlug || "unknown";
         const text = `Campaign files (${slug}):\n${tree}`;
         gameLogger.toolCall("list_campaign_files", {}, text);
+        return { content: [{ type: "text" as const, text }] };
+      } catch (e) {
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: `Error: ${e instanceof Error ? e.message : String(e)}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+    },
+  );
+
+  // --- Encounter Bundles ---
+  // Owned by encounter-designer (write) and combat-resolver (read).
+  // Bundle = pre-resolved monster stats + abilities, eliminating per-turn
+  // lookup_rule churn. See plans/encounter-bundle.md.
+
+  server.registerTool(
+    "save_encounter_bundle",
+    {
+      description:
+        "Persist a pre-designed encounter to dm/encounters/<slug>.json. Encounter-designer calls this once at /combat-prep time, capturing every monster's verified stats and abilities so the resolver doesn't re-look-up each turn. Pass the slug to start_combat afterward via encounter_bundle_slug.",
+      inputSchema: {
+        bundle: encounterBundleSchema.describe("Full EncounterBundle JSON"),
+      },
+    },
+    async ({ bundle }) => {
+      try {
+        const savedAs = campaignManager.saveEncounterBundle(bundle);
+        const text = `Saved encounter bundle "${bundle.slug}" → ${savedAs} (${bundle.combatants.length} combatants, ${bundle.difficulty})`;
+        gameLogger.toolCall("save_encounter_bundle", { slug: bundle.slug }, text);
+        return { content: [{ type: "text" as const, text }] };
+      } catch (e) {
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: `Error: ${e instanceof Error ? e.message : String(e)}`,
+            },
+          ],
+          isError: true,
+        };
+      }
+    },
+  );
+
+  server.registerTool(
+    "load_encounter_bundle",
+    {
+      description:
+        "Load a previously saved encounter bundle. Combat-resolver calls this once per turn (cheap — single JSON file read) to get pre-resolved monster stats + abilities + tactic hints, instead of re-looking-up each ability via lookup_rule. The current bundle slug is in get_combat_summary.bundleSlug.",
+      inputSchema: {
+        slug: z.string().describe("Bundle slug, e.g. 'goblin-ambush-river'"),
+      },
+    },
+    async ({ slug }) => {
+      try {
+        const bundle = campaignManager.loadEncounterBundle(slug);
+        if (!bundle) {
+          const text = `Bundle "${slug}" not found. Encounter may have been started without a bundle (legacy path) — fall back to lookup_rule for monster stats.`;
+          gameLogger.toolCall("load_encounter_bundle", { slug }, text);
+          return { content: [{ type: "text" as const, text }] };
+        }
+        const text = JSON.stringify(bundle, null, 2);
+        gameLogger.toolCall(
+          "load_encounter_bundle",
+          { slug },
+          `[bundle: ${bundle.combatants.length} combatants]`,
+        );
         return { content: [{ type: "text" as const, text }] };
       } catch (e) {
         return {
