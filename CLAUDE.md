@@ -113,7 +113,7 @@ pnpm deploy:web     # Deploy web only
 - `services/game-state-manager.ts` — **Core game engine**: owns GameState, combat, HP, conditions, spell slots, conversation history, check flow, battle map, rollback
 - `services/dice-engine.ts` — Dice engine wrapping @dice-roller/rpg-dice-roller: `rollNotation()`, `formatRollOutput()`, `buildOutputFromResult()`
 - `services/campaign-manager.ts` — Campaign persistence: create/load/list campaigns, save/read files, session management, character snapshots
-- `tools/game-tools.ts` — MCP tools: wait_for_message, send_response, send_narration (partial streaming chunk), peek_inbox, acknowledge, get_players, get_game_state, get_character, apply_damage, heal, set_hp, set_temp_hp, add_condition, remove_condition, start_combat, end_combat, advance_turn, add_combatant, remove_combatant, move_combatant, use_spell_slot, restore_spell_slot, use_class_resource, restore_class_resource, update_battle_map, add_item, update_item, remove_item, update_currency, grant_inspiration, use_inspiration, compact_history, get_combat_summary, get_map_info, show_aoe, apply_area_effect, dismiss_aoe, apply_batch_effects, short_rest, long_rest, death_save, set_concentration, break_concentration, calculate_encounter_difficulty
+- `tools/game-tools.ts` — MCP tools: wait_for_message, send_response, send_narration (partial streaming chunk), peek_inbox, acknowledge, get_players, get_game_state, get_character, list_known_spells, apply_damage, heal, set_hp, set_temp_hp, add_condition, remove_condition, start_combat, end_combat, advance_turn, add_combatant, remove_combatant, move_combatant, use_spell_slot, restore_spell_slot, use_class_resource, restore_class_resource, update_battle_map, add_item, update_item, remove_item, update_currency, grant_inspiration, use_inspiration, compact_history, get_combat_summary, get_map_info, show_aoe, apply_area_effect, dismiss_aoe, apply_batch_effects, short_rest, long_rest, death_save, set_concentration, break_concentration, calculate_encounter_difficulty
 - `tools/dnd-tools.ts` — roll_dice (notation-first; checkType for auto-modifier from character sheet; with player = interactive, without = DM server-side)
 - `tools/srd-tools.ts` — D&D 2024 database lookup tools: lookup_spell, lookup_monster, lookup_condition, lookup_magic_item, lookup_feat, lookup_class, lookup_species, lookup_background, lookup_optional_feature, lookup_action, lookup_language, lookup_disease, search_rules
 - `tools/campaign-tools.ts` — create_campaign, list_campaigns, load_campaign_context (scopes: "compact" (default), "full", "agent:<name>"), save_campaign_file, read_campaign_file, list_campaign_files, end_session
@@ -170,14 +170,15 @@ pnpm deploy:web     # Deploy web only
 
 ### Game Communication
 
-| Tool               | Description                                                                                                                       |
-| ------------------ | --------------------------------------------------------------------------------------------------------------------------------- |
-| `wait_for_message` | Blocks until a player message arrives. Returns `{ requestId, systemPrompt, messages }`. Main loop driver.                         |
-| `acknowledge`      | Silently observe a player message without responding. Use when players are talking to each other or roleplaying among themselves. |
-| `send_response`    | Sends DM narrative back, stores in conversation history, broadcasts to all players.                                               |
-| `get_players`      | Returns current player list with character summaries.                                                                             |
-| `get_game_state`   | Game state snapshot. Accepts `detail`: `"compact"` (default, ~200 tokens), `"tactical"` (~500 tokens), `"full"` (everything).     |
-| `get_character`    | Specific character's full data (static + dynamic) by name.                                                                        |
+| Tool                | Description                                                                                                                                                                                                    |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `wait_for_message`  | Blocks until a player message arrives. Returns `{ requestId, systemPrompt, messages }`. Main loop driver.                                                                                                      |
+| `acknowledge`       | Silently observe a player message without responding. Use when players are talking to each other or roleplaying among themselves.                                                                              |
+| `send_response`     | Sends DM narrative back, stores in conversation history, broadcasts to all players.                                                                                                                            |
+| `get_players`       | Returns current player list with character summaries.                                                                                                                                                          |
+| `get_game_state`    | Game state snapshot. Accepts `detail`: `"compact"` (default, ~200 tokens), `"tactical"` (~500 tokens), `"full"` (everything).                                                                                  |
+| `get_character`     | Specific character's full data (static + dynamic) by name.                                                                                                                                                     |
+| `list_known_spells` | Plain-text, level-grouped list of a character's exact prepared/known spells. Call after halting on an unknown spell so you can quote alternatives verbatim without drifting into class-staple training memory. |
 
 ### HP & Conditions
 

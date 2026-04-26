@@ -442,6 +442,50 @@ export function registerGameTools(
     },
   );
 
+  server.registerTool(
+    "list_known_spells",
+    {
+      description:
+        "Return a plain-text, level-grouped list of EXACTLY the spells this character has on their sheet (cantrips + prepared/known leveled spells). Use this AFTER a player tries to cast something that isn't on their sheet, BEFORE you reply listing alternatives — the response is impossible to misread, so you can safely quote spell names verbatim without drifting into class-staple training memory. The output is the source of truth: do NOT mention any spell name not appearing in this output.",
+      inputSchema: {
+        name: z.string().describe("Character name"),
+      },
+    },
+    async ({ name }) => {
+      const result = wsClient.gameStateManager.getCharacter(name);
+      if (!result) {
+        return {
+          content: [{ type: "text" as const, text: `Character "${name}" not found` }],
+          isError: true,
+        };
+      }
+      const spells = result.character.static.spells ?? [];
+      const byLevel = new Map<number, string[]>();
+      for (const s of spells) {
+        const arr = byLevel.get(s.level) ?? [];
+        arr.push(s.name);
+        byLevel.set(s.level, arr);
+      }
+      const lines: string[] = [`# Spells on ${result.character.static.name}'s sheet`];
+      if (spells.length === 0) {
+        lines.push("(none — this character has no spells on their sheet)");
+      } else {
+        const levels = Array.from(byLevel.keys()).sort((a, b) => a - b);
+        for (const lvl of levels) {
+          const label = lvl === 0 ? "Cantrips" : `Level ${lvl}`;
+          lines.push(`- **${label}:** ${byLevel.get(lvl)!.join(", ")}`);
+        }
+      }
+      lines.push("");
+      lines.push(
+        "These are the ONLY spells this character can cast. Any name not in this list is forbidden in your reply.",
+      );
+      const text = lines.join("\n");
+      gameLogger.toolCall("list_known_spells", { name }, text);
+      return { content: [{ type: "text" as const, text }] };
+    },
+  );
+
   // ─── HP & Conditions ───
 
   server.registerTool(
