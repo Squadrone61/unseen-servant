@@ -20,6 +20,7 @@
     "test:web": "cd apps/web && pnpm test",
     "dead-code": "knip",
     "audit:data": "pnpm --filter @unseen-servant/shared audit:data",
+    "audit:dm-rules": "tsx scripts/audit-dm-rules.ts",
     "prepare": "husky"
   },
   "lint-staged": {

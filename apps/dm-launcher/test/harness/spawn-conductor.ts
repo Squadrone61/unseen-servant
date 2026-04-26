@@ -54,6 +54,13 @@ export async function spawnConductor(scenario: Scenario): Promise<SpawnResult> {
     if (!fs.existsSync(src)) throw new Error(`spawn: rule not found: ${src}`);
     fs.copyFileSync(src, path.join(rulesDir, `${ruleName}.md`));
   }
+  // invariants.md is the always-on contract — load it for every scenario,
+  // matching the production loader (NATIVE_RULES in cli.ts). The scenario's
+  // explicit `rules:` list still applies on top.
+  const invariantsSrc = path.join(DM_LAUNCHER_SRC, "rules", "invariants.md");
+  if (fs.existsSync(invariantsSrc)) {
+    fs.copyFileSync(invariantsSrc, path.join(rulesDir, "invariants.md"));
+  }
   for (const agentName of fm.agents ?? []) {
     const src = path.join(DM_LAUNCHER_SRC, "agents", `${agentName}.md`);
     if (!fs.existsSync(src)) throw new Error(`spawn: agent not found: ${src}`);

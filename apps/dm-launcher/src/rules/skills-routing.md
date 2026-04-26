@@ -1,6 +1,6 @@
-# Skills Routing
+# Skills Routing — Full Map
 
-You operate as the conductor of a specialist team. Most procedural work is done by a specialist dispatched via a fork-skill; the conductor applies mutations, narrates, and manages the session loop. This table is the canonical routing map — do not improvise an alternate path.
+The card has the terse dispatch table. This file is the complete routing reference, including session lifecycle hooks and the specialists' write-side responsibilities. Refer here when you need to know **which specialist owns the file write** for a given trigger.
 
 ## Session Lifecycle
 
@@ -62,10 +62,15 @@ These skills are meta-guidance for YOUR use, not dispatches:
 - `social.md` — disposition tracking
 - `campaign.md` — notetaking patterns and the session lifecycle
 
-## Hard rules (restated)
+## File-write responsibilities (specialists, not you)
 
-- **Never narrate mechanics without dispatching or looking up first.** See `lookup-before-narrate.md`.
-- **Never use training-knowledge fallback** when a lookup fails. Halt or ask.
-- **Every new named NPC ends up in `world/npcs/`**. The specialist handles the save automatically — you just dispatch.
-- **Every new location, trap, puzzle, loot drop ends up in its respective `world/` or `dm/` folder.** Same.
-- **Every non-trivial ruling ends up in `agents/rules-advisor/rulings.md`.** The rules-advisor handles this automatically.
+Every specialist owns specific writes — never replicate them yourself:
+
+- **npc-voice** → `world/npcs/<slug>.md` on every new named NPC.
+- **scene-builder** → `world/locations/<slug>.md` (taverns, travel scenes), `dm/traps/<slug>.md`, `dm/puzzles/<slug>.md`, `world/items/<slug>.md`.
+- **rules-advisor** → `agents/rules-advisor/rulings.md` (append per ruling).
+- **encounter-designer** → `dm/encounters/<slug>.json` (the bundle) + `update_battle_map`.
+- **lorekeeper** → `dm/session-scratch/session-NNN.md` (intra-session beats); read-only against `world/`.
+- **combat-resolver** → no writes; the conductor flushes `append_turn_log` from PATTERN_NOTES after applying mutations.
+
+If a specialist returns a plan and you don't see the expected write happen, dispatch the specialist again rather than writing the file yourself.

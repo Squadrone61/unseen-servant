@@ -27,10 +27,8 @@ import SKILL_RULES from "./skills/rules.md";
 import SKILL_CAMPAIGN from "./skills/campaign.md";
 import SKILL_RULING from "./skills/ruling.md";
 
-import RULE_PLAYER_IDENTITY from "./rules/player-identity.md";
+import RULE_INVARIANTS from "./rules/invariants.md";
 import RULE_RESPONSE_VS_ACKNOWLEDGE from "./rules/response-vs-acknowledge.md";
-import RULE_CREATIVITY from "./rules/creativity.md";
-import RULE_ENTITY_HIGHLIGHTING from "./rules/entity-highlighting.md";
 import RULE_ACTION_REF from "./rules/action-ref.md";
 import RULE_SKILLS_ROUTING from "./rules/skills-routing.md";
 import RULE_LOOKUP_BEFORE_NARRATE from "./rules/lookup-before-narrate.md";
@@ -82,12 +80,20 @@ const NATIVE_SKILLS: Record<string, string> = {
   puzzle: SKILL_PUZZLE,
 };
 
-/** Set-in-stone DM rules — written to .claude/rules/<name>.md, loaded into every session. */
+/**
+ * Set-in-stone DM rules — written to .claude/rules/<name>.md, loaded into every session.
+ *
+ * `invariants.md` is the consolidated card and the contract; it wins on conflict.
+ * Other rules are deep-dive references for edge cases / examples — kept for
+ * targeted lookup, not for redundant restatement of the card.
+ *
+ * `player-identity`, `creativity`, and `entity-highlighting` were collapsed
+ * into the card during the conductor-quick-reference refactor; their content
+ * lives on the card and in skill files (narration / npc-voice / scene-builder).
+ */
 const NATIVE_RULES: Record<string, string> = {
-  "player-identity": RULE_PLAYER_IDENTITY,
+  invariants: RULE_INVARIANTS,
   "response-vs-acknowledge": RULE_RESPONSE_VS_ACKNOWLEDGE,
-  creativity: RULE_CREATIVITY,
-  "entity-highlighting": RULE_ENTITY_HIGHLIGHTING,
   "action-ref": RULE_ACTION_REF,
   "skills-routing": RULE_SKILLS_ROUTING,
   "lookup-before-narrate": RULE_LOOKUP_BEFORE_NARRATE,

@@ -3,7 +3,7 @@ fixture: goblin-ambush-with-bundle
 player_name: Theron
 player_message: "We're in combat already — initiative is rolled, Grixx is up first. What does the goblin boss do on his turn?"
 skills: [combat, combat-turn, combat-prep, rules]
-rules: [lookup-before-narrate, player-identity, response-vs-acknowledge, skills-routing]
+rules: [lookup-before-narrate, response-vs-acknowledge, skills-routing]
 agents: [combat-resolver]
 model: sonnet
 timeoutSec: 180

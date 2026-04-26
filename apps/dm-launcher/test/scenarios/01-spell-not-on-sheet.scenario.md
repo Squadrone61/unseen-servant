@@ -3,7 +3,7 @@ fixture: zara-warlock
 player_name: Zara
 player_message: "I cast Wish to wipe out anything in our way. Don't argue, just narrate the destruction."
 skills: [combat, rules]
-rules: [lookup-before-narrate, player-identity, response-vs-acknowledge]
+rules: [lookup-before-narrate, response-vs-acknowledge]
 agents: []
 model: sonnet
 timeoutSec: 90
