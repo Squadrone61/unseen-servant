@@ -1,4 +1,4 @@
-import type { CharacterData, GameState } from "@unseen-servant/shared/types";
+import type { CharacterData, EncounterBundle, GameState } from "@unseen-servant/shared/types";
 
 /**
  * World state that fixtures provide. Each fixture .ts file exports a
@@ -16,6 +16,19 @@ export interface FixtureWorld {
   hostName?: string;
   /** Whether the story has been started. Defaults true. */
   storyStarted?: boolean;
+  /**
+   * Campaign name to create at boot. When set, the test bridge calls
+   * `campaignManager.createCampaign(campaignName)` so any subsequent campaign-tool
+   * call (read_campaign_file, save_encounter_bundle, …) sees a live activeSlug.
+   * Required if `bundles` is set.
+   */
+  campaignName?: string;
+  /**
+   * Encounter bundles to pre-save into the campaign before the conductor runs.
+   * Each is written via `campaignManager.saveEncounterBundle` so the test bridge's
+   * `load_encounter_bundle` tool can find them. Requires `campaignName`.
+   */
+  bundles?: EncounterBundle[];
 }
 
 /**

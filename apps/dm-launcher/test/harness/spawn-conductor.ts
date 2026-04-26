@@ -86,6 +86,12 @@ export async function spawnConductor(scenario: Scenario): Promise<SpawnResult> {
         `(have: ${Object.keys(world.characters).join(", ")})`,
     );
   }
+  if (world.bundles && world.bundles.length > 0 && !world.campaignName) {
+    throw new Error(
+      `spawn: fixture '${fm.fixture}' provides bundles[] but no campaignName — ` +
+        `bundles are written via the active campaign and need a campaignName to land`,
+    );
+  }
   const fixture: FixtureState = {
     ...world,
     playerMessage: { playerName: fm.player_name, chat: fm.player_message },
@@ -102,7 +108,7 @@ export async function spawnConductor(scenario: Scenario): Promise<SpawnResult> {
   // 6. Write .mcp.json. claude spawns the test bridge as a stdio child.
   const mcpConfig = {
     mcpServers: {
-      "test-bridge": {
+      "unseen-servant": {
         command: "npx",
         args: ["tsx", TEST_MCP_SERVER],
         env: {
@@ -130,7 +136,7 @@ export async function spawnConductor(scenario: Scenario): Promise<SpawnResult> {
     "--model",
     model,
     "--allowedTools",
-    "mcp__test-bridge__*",
+    "mcp__unseen-servant__*,Task",
     "--system-prompt",
     "You are the Unseen Servant. Follow all instructions in CLAUDE.md and .claude/rules. " +
       "After the first send_response or acknowledge, the harness will end the run.",

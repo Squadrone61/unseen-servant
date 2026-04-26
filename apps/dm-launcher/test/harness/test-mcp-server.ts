@@ -53,6 +53,20 @@ if (fixture.gameState) {
   gsm.gameState = { ...gsm.gameState, ...(fixture.gameState as GameState) };
 }
 
+// Optionally create a campaign and pre-save encounter bundles. Lets scenarios
+// exercise tools that require an active campaign (load_encounter_bundle,
+// read_campaign_file, save_campaign_file …).
+if (fixture.campaignName) {
+  campaignManager.createCampaign(fixture.campaignName);
+  for (const bundle of fixture.bundles ?? []) {
+    campaignManager.saveEncounterBundle(bundle);
+  }
+} else if (fixture.bundles && fixture.bundles.length > 0) {
+  process.stderr.write(
+    "[test-mcp-server] fixture has bundles[] but no campaignName — bundles ignored\n",
+  );
+}
+
 const toolLogStream = fs.createWriteStream(logPath, { flags: "a" });
 const broadcastLogStream = fs.createWriteStream(broadcastPath, { flags: "a" });
 
