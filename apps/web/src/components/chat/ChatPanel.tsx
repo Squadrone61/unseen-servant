@@ -80,6 +80,8 @@ interface ChatPanelProps {
   typingPlayers?: string[];
   /** DM activity override: "thinking" (default), "catching_up" (after peek_inbox), "narrating" (streaming open). Null falls back to "thinking". */
   dmActivity?: DMActivity;
+  /** Most recent activity-ping label ("The DM consults the rulebooks…"). Rendered next to the typing indicator while the DM is mid-turn. */
+  dmActivityLabel?: string | null;
   onTypingChange?: (isTyping: boolean) => void;
   /** Optional element rendered left of the input (e.g. character trigger button) */
   characterTrigger?: React.ReactNode;
@@ -101,6 +103,7 @@ export function ChatPanel({
   onEndTurn,
   typingPlayers,
   dmActivity,
+  dmActivityLabel,
   onTypingChange,
   characterTrigger,
   stagedAoE,
@@ -176,17 +179,32 @@ export function ChatPanel({
       </div>
 
       {/* Typing Indicator — suppressed when DM is actively narrating (the streaming bubble IS the indicator) */}
-      {typingPlayers &&
-        typingPlayers.length > 0 &&
-        !(
-          dmActivity === "narrating" &&
-          typingPlayers.length === 1 &&
-          typingPlayers[0] === "DM"
-        ) && (
+      {(() => {
+        const dmTyping = !!typingPlayers?.includes("DM");
+        const otherTyping = (typingPlayers?.length ?? 0) > 0 && !dmTyping;
+        const dmNarrating =
+          dmActivity === "narrating" && typingPlayers?.length === 1 && typingPlayers[0] === "DM";
+        // Show the indicator when:
+        //   - DM is typing (server:typing within 30s) OR
+        //   - we have a fresh activity ping (the ping itself proves the DM is mid-turn even
+        //     after the safety-timeout cleared the typing state) OR
+        //   - any other player is typing.
+        const showDM = (dmTyping || !!dmActivityLabel) && !dmNarrating;
+        if (!showDM && !otherTyping) return null;
+        const labelText = showDM
+          ? otherTyping
+            ? formatTypingText(typingPlayers ?? [], dmActivity ?? null)
+            : `DM is ${dmVerb(dmActivity ?? null)}...`
+          : formatTypingText(typingPlayers ?? [], dmActivity ?? null);
+        return (
           <div className="shrink-0 px-4 py-1.5 text-sm text-gray-400 italic">
-            {formatTypingText(typingPlayers, dmActivity ?? null)}
+            {labelText}
+            {showDM && dmActivityLabel && (
+              <span className="ml-2 text-amber-400/80 not-italic">· {dmActivityLabel}</span>
+            )}
           </div>
-        )}
+        );
+      })()}
 
       {/* AoE staged badge */}
       {stagedAoE && (

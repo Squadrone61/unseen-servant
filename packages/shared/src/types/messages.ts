@@ -344,6 +344,17 @@ export interface ServerDMNoticedMessage {
   timestamp: number;
 }
 
+/**
+ * Transient activity-ping label emitted while the DM is mid-turn. Frontend
+ * surfaces it inline next to the typing indicator so players can see the DM
+ * is making visible progress.
+ */
+export interface ServerDMActivityPingMessage {
+  type: "server:dm_activity_ping";
+  label: string;
+  timestamp: number;
+}
+
 export interface ServerRoomJoinedMessage {
   type: "server:room_joined";
   roomCode: string;
@@ -570,4 +581,5 @@ export type ServerMessage =
   | ServerRoomDestroyedMessage
   | ServerTypingMessage
   | ServerPlayerNotesLoadedMessage
-  | ServerDMNoticedMessage;
+  | ServerDMNoticedMessage
+  | ServerDMActivityPingMessage;

@@ -748,13 +748,22 @@ export class WSClient {
     });
   }
 
-  /** Rate-limited activity ping so long DM tool chains don't look silent. */
+  /**
+   * Rate-limited activity ping so long DM tool chains don't look silent.
+   * Broadcasts a transient `server:dm_activity_ping` for the inline indicator
+   * (next to "DM is thinking…"). Does NOT broadcast a system event — pings are
+   * UI-only progress beats, not activity-log entries.
+   */
   private lastActivityPingAt = 0;
   pingActivity(content: string, minIntervalMs = 2500): void {
     const now = Date.now();
     if (now - this.lastActivityPingAt < minIntervalMs) return;
     this.lastActivityPingAt = now;
-    this.broadcastSystemEvent(content);
+    this.broadcastViaWorker({
+      type: "server:dm_activity_ping",
+      label: content,
+      timestamp: now,
+    });
   }
 
   /** Send a DM response — final chunk, closes any open stream for this requestId. */

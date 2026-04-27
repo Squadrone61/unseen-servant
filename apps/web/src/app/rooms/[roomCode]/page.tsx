@@ -200,6 +200,9 @@ function GameContent({ roomCode, playerName }: { roomCode: string; playerName: s
   /** Transient DM indicator override — set to "catching_up" for ~4s after server:dm_noticed. */
   const [dmActivityOverride, setDMActivityOverride] = useState<"catching_up" | null>(null);
   const dmActivityTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** Latest activity ping label ("The DM consults the rulebooks…", etc.). Cleared when the DM stops thinking or the ping ages out. */
+  const [dmActivityLabel, setDMActivityLabel] = useState<string | null>(null);
+  const dmActivityLabelTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [battleMapWidth, setBattleMapWidth] = useState(50);
   const [showActivity, setShowActivity] = useState(false);
@@ -519,6 +522,16 @@ function GameContent({ roomCode, playerName }: { roomCode: string; playerName: s
           break;
         }
 
+        case "server:dm_activity_ping": {
+          // Transient progress beat — surface inline next to the typing indicator.
+          // Auto-clears after 8s if no follow-up ping arrives (covers cases where
+          // the DM finishes silently without sending another ping).
+          setDMActivityLabel(msg.label);
+          if (dmActivityLabelTimeoutRef.current) clearTimeout(dmActivityLabelTimeoutRef.current);
+          dmActivityLabelTimeoutRef.current = setTimeout(() => setDMActivityLabel(null), 8000);
+          break;
+        }
+
         case "server:player_notes_loaded":
           playerNotesLoadedRef.current?.(msg.content);
           break;
@@ -647,6 +660,29 @@ function GameContent({ roomCode, playerName }: { roomCode: string; playerName: s
     if (dmActivityOverride === "catching_up") return "catching_up";
     return null;
   }, [storyMessages, dmActivityOverride]);
+
+  // Clear the activity-ping label when a NEW DM message lands (transition from
+  // n→n+1 story messages). The label otherwise self-expires via its 8s timeout
+  // if no follow-up ping arrives. We track the last seen message count via a
+  // ref so the effect doesn't keep firing on the same final message.
+  const storyCountRef = useRef(0);
+  useEffect(() => {
+    const prev = storyCountRef.current;
+    const curr = storyMessages.length;
+    storyCountRef.current = curr;
+    if (curr > prev) {
+      const last = storyMessages[curr - 1];
+      const isFinalDMReply =
+        last?.type === "server:ai" && (last as { streaming?: boolean }).streaming !== true;
+      if (isFinalDMReply) {
+        setDMActivityLabel(null);
+        if (dmActivityLabelTimeoutRef.current) {
+          clearTimeout(dmActivityLabelTimeoutRef.current);
+          dmActivityLabelTimeoutRef.current = null;
+        }
+      }
+    }
+  }, [storyMessages]);
 
   // Read my userId from auth state (set during room_joined)
   const [myUserId, setMyUserId] = useState<string | undefined>(undefined);
@@ -956,6 +992,7 @@ function GameContent({ roomCode, playerName }: { roomCode: string; playerName: s
                   isMyTurn={isMyTurn}
                   typingPlayers={Array.from(typingPlayers.keys())}
                   dmActivity={dmActivity}
+                  dmActivityLabel={dmActivityLabel}
                   onTypingChange={handleTypingChange}
                   aoePlacement={aoePlacement}
                   myUserId={myUserId}
@@ -980,6 +1017,7 @@ function GameContent({ roomCode, playerName }: { roomCode: string; playerName: s
                   onEndTurn={handleEndTurn}
                   typingPlayers={Array.from(typingPlayers.keys())}
                   dmActivity={dmActivity}
+                  dmActivityLabel={dmActivityLabel}
                   onTypingChange={handleTypingChange}
                   characterTrigger={
                     myCharacter ? (
@@ -1222,6 +1260,7 @@ function CombatLayout({
   isMyTurn,
   typingPlayers,
   dmActivity,
+  dmActivityLabel,
   onTypingChange,
   characterTrigger,
   aoePlacement,
@@ -1245,6 +1284,7 @@ function CombatLayout({
   isMyTurn: boolean;
   typingPlayers: string[];
   dmActivity: "thinking" | "catching_up" | "narrating" | null;
+  dmActivityLabel: string | null;
   onTypingChange: (isTyping: boolean) => void;
   characterTrigger?: React.ReactNode;
   aoePlacement: import("@/hooks/useAoEPlacement").UseAoEPlacementResult;
@@ -1302,6 +1342,7 @@ function CombatLayout({
         onEndTurn={onEndTurn}
         typingPlayers={typingPlayers}
         dmActivity={dmActivity}
+        dmActivityLabel={dmActivityLabel}
         onTypingChange={onTypingChange}
         characterTrigger={characterTrigger}
         stagedAoE={aoePlacement.stagedAoE}

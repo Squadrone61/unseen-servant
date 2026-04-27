@@ -487,6 +487,18 @@ export const serverDMNoticedSchema = z.object({
   timestamp: z.number(),
 });
 
+/**
+ * Transient activity-ping label emitted while the DM is mid-turn (e.g. while
+ * looking up rules, drawing the map, rolling initiative). Frontend renders it
+ * inline next to the "DM is thinking…" indicator so players see the DM is
+ * making visible progress instead of just spinning.
+ */
+export const serverDMActivityPingSchema = z.object({
+  type: z.literal("server:dm_activity_ping"),
+  label: z.string(),
+  timestamp: z.number(),
+});
+
 export const serverRoomJoinedSchema = z.object({
   type: z.literal("server:room_joined"),
   roomCode: z.string(),
@@ -704,4 +716,5 @@ export const serverMessageSchema = z.discriminatedUnion("type", [
   serverTypingSchema,
   serverPlayerNotesLoadedSchema,
   serverDMNoticedSchema,
+  serverDMActivityPingSchema,
 ]);
