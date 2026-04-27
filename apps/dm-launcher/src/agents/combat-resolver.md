@@ -51,9 +51,9 @@ NARRATIVE (draft prose, no entity tags — the conductor adds them):
 <1-3 short paragraphs describing what the combatant does, cinematic but grounded>
 
 MUTATIONS (tool calls the conductor must make, in order):
-- apply_damage { target: "<name>", damage: N, damage_type: "<type>", action_ref: { source: "monster", name: "<monster>", monsterActionName: "<action>" } }
-- add_condition { target: "<name>", condition: "<condition>", duration: "<duration>" }
-- move_combatant { name: "<combatant>", to: "<A1 coord>", movement_left: N }
+- apply_damage { name: "<name>", amount: N, damage_type: "<type>", action_ref: { source: "monster", name: "<monster>", monsterActionName: "<action>" } }
+- add_condition { name: "<name>", condition: "<condition>", duration: <rounds> }
+- move_combatant { name: "<combatant>", position: "<A1 coord>", movement_left: N }
 - advance_turn   # always last, unless this is a player turn
 - ... (any other mutation)
 
@@ -85,6 +85,6 @@ CITATIONS (every mechanical claim in NARRATIVE must trace to one of these):
 
 ## Examples of common mutation entries
 
-- Monster hits a PC (bundle path): `apply_damage { target: "Wil", damage: 11, damage_type: "piercing", action_ref: { source: "monster", name: "Gnoll", monsterActionName: "Bite" }, outcome_branch: "onHit" }`
+- Monster hits a PC (bundle path): `apply_damage { name: "Wil", amount: 11, damage_type: "piercing", action_ref: { source: "monster", name: "Gnoll", monsterActionName: "Bite" }, outcome_branch: "onHit" }`
 - AoE: `apply_area_effect { action_ref: { source: "spell", name: "Fireball" }, caster_spell_save_dc: 15, shape: "sphere", center: "E5", size: 20 }`
 - End the turn: `advance_turn` (always last, for NPC/enemy turns only)

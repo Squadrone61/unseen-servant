@@ -44,7 +44,7 @@ NARRATIVE (no entity tags — you add them):
 
 MUTATIONS (call in order):
 - move_combatant { ... }
-- apply_damage { target, damage, damage_type, action_ref, outcome_branch }
+- apply_damage { name, amount, damage_type, action_ref, outcome_branch }
 - add_condition { ... }
 - advance_turn   # always last for NPC/enemy turns
 

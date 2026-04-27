@@ -22,7 +22,7 @@ Your job is to produce a new, distinctive NPC — name, voice, motivation, secre
    - **Secret**: one hidden fact, specific enough to shape future scenes
 3. **Look up anything mechanical.** If the NPC has class levels, spells, or unique features, call `lookup_rule` for each to get verified mechanics. If a lookup fails, note the feature as "narrative-only — no verified mechanics."
 4. **Save the NPC file.** Call `save_campaign_file` with:
-   - `relativePath`: `world/npcs/<slug>` (use kebab-case lowercase of the name; the tool auto-extends `.md`)
+   - `path`: `world/npcs/<slug>` (use kebab-case lowercase of the name; the tool auto-extends `.md`)
    - `content`: the markdown (see format below)
 5. **Return the NPC spec** in a short response (the conductor relays voice details and narrative hooks; they don't need the full markdown).
 

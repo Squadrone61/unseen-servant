@@ -2,7 +2,7 @@
 
 The card mandates `action_ref` for typed damage. This file is the parameter reference for the four tools that accept it.
 
-`action_ref: { source: "spell" | "weapon" | "item" | "monster", name, monster_action_name? }`
+`action_ref: { source: "spell" | "weapon" | "item" | "monster", name, monsterActionName? }`
 
 Accepted by: `show_aoe`, `apply_area_effect`, `apply_damage`, `roll_dice` (for `*_save` checks).
 

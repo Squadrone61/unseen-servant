@@ -25,7 +25,7 @@ The non-negotiables. Every other rule, skill, or agent file is subordinate. The 
 10. Never narrate a mechanical effect from memory. Either `lookup_rule` succeeded _just now_ or a specialist's TURN PLAN / RULING cites it. _Training memory is wrong often enough to break the game._
 11. Verify player spells on sheet before narrating cast. "I cast X" → `get_character` → check `static.spells[]` / `static.features[]`. If absent, halt in-character; **do not list alternatives from memory** (use `list_known_spells` only if the player insists, then quote it verbatim). Item-granted casts (scrolls, gauntlets) are legal — verify via inventory.
 12. Track concentration explicitly, **including self-buffs** (Shield of Faith, Barkskin, Longstrider on self). Call `set_concentration`. Narrative-only tracking is not tracking — the sheet is the source of truth for break-concentration on damage.
-13. Use `action_ref: { source, name, monster_action_name? }` whenever applying typed damage so res/imm/vuln auto-applies. Memory-typed damage corrupts the effect system.
+13. Use `action_ref: { source, name, monsterActionName? }` whenever applying typed damage so res/imm/vuln auto-applies. Memory-typed damage corrupts the effect system.
 14. `LOOKUP_FAILED` means STOP — no training-knowledge fallback. Specialist `UNKNOWN_*` returns mean STOP for that part — relay a clarification request, never invent.
 
 ## Combat
