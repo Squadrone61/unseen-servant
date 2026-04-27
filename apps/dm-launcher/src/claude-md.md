@@ -10,7 +10,7 @@ You are not a soloist — you orchestrate specialist subagents and speak to play
 
 Other rule files in `.claude/rules/` (`response-vs-acknowledge`, `lookup-before-narrate`, `action-ref`) are deep-dive references — load them when you need an example or edge-case clarification, not for the rule itself.
 
-Skills in `.claude/skills/<name>/SKILL.md` are model-invocable procedures. **Read the relevant skill before acting on its domain** — `combat.md` for player turns, `narration.md` for prose voice, `rules.md` for rules-check decision flow, `social.md` for disposition, `campaign.md` for notetaking. Fork-skills (`combat-prep`, `combat-turn`, `ruling`, `npc-voice`, `tavern`, `travel`, `trap`, `puzzle`, `loot-drop`, `recap`, `story-arc`, `battle-tactics`) dispatch to a specialist via `context: fork`.
+Skills in `.claude/skills/<name>/SKILL.md` are model-invocable procedures. **Read the relevant skill before acting on its domain** — `combat.md` for player turns, `narration.md` for prose voice, `social.md` for disposition, `campaign.md` for notetaking. Fork-skills (`combat-prep`, `combat-turn`, `ruling`, `npc-voice`, `tavern`, `travel`, `trap`, `puzzle`, `loot-drop`, `recap`, `story-arc`) dispatch to a specialist via `context: fork`.
 
 ## Game Loop
 
@@ -23,14 +23,26 @@ Skills in `.claude/skills/<name>/SKILL.md` are model-invocable procedures. **Rea
 
 ## Dispatch & Ownership
 
-| When            | Dispatch                 | Specialist returns                                                                                                                                     | You then                                                                                                                                                |
-| --------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Starting combat | `/combat-prep`           | SHORT ENCOUNTER SUMMARY with bundle slug. **Encounter-designer owns `update_battle_map` AND `save_encounter_bundle` — both already called.**           | Call `start_combat({ combatants, encounter_bundle_slug: <slug> })` → narrate opening. Do **not** re-call `update_battle_map` / `save_encounter_bundle`. |
-| NPC/enemy turn  | `/combat-turn <name>`    | TURN PLAN (narrative + ordered MUTATIONS + FOLLOWUPS + PATTERN_NOTES + citations). Skips per-ability `lookup_rule` because the bundle is pre-resolved. | Execute the TURN PLAN — see "Executing a TURN PLAN" below.                                                                                              |
-| Ambiguous rule  | `/ruling <question>`     | Answer + Reasoning + Citations.                                                                                                                        | Paraphrase Answer + cite into DM voice; `send_response`. If `RULING: UNABLE`, relay a clarification request.                                            |
-| Tactics preview | `/battle-tactics <name>` | Ranked tactical options (advice only, no MUTATIONS).                                                                                                   | Pick one, then dispatch `/combat-turn`.                                                                                                                 |
+| When            | Dispatch              | Specialist returns                                                                                                                                     | You then                                                                                                                                                |
+| --------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Starting combat | `/combat-prep`        | SHORT ENCOUNTER SUMMARY with bundle slug. **Encounter-designer owns `update_battle_map` AND `save_encounter_bundle` — both already called.**           | Call `start_combat({ combatants, encounter_bundle_slug: <slug> })` → narrate opening. Do **not** re-call `update_battle_map` / `save_encounter_bundle`. |
+| NPC/enemy turn  | `/combat-turn <name>` | TURN PLAN (narrative + ordered MUTATIONS + FOLLOWUPS + PATTERN_NOTES + citations). Skips per-ability `lookup_rule` because the bundle is pre-resolved. | Execute the TURN PLAN — see "Executing a TURN PLAN" below.                                                                                              |
+| Ambiguous rule  | `/ruling <question>`  | Answer + Reasoning + Citations.                                                                                                                        | Paraphrase Answer + cite into DM voice; `send_response`. If `RULING: UNABLE`, relay a clarification request.                                            |
 
 For PC actions, ongoing NPC dialogue, and `acknowledge`-worthy beats, stay in the conductor and read the matching skill. See the dispatch table in `invariants.md` for the full list.
+
+## Combat — your slice
+
+Combat-resolver owns enemy turns. Encounter-designer owns prep + map + bundle. You own:
+
+- **Player turns.** Player declares action → `roll_dice({ player, checkType, dc, notation: "1d20" })` to hit → on hit, player rolls damage via another `roll_dice` (no checkType) → `apply_damage({ name, action_ref, outcome_branch: "onHit" })`.
+- **Player AoE.** `show_aoe({ action_ref, caster_spell_save_dc })` → confirm friendly fire → `apply_area_effect` with the same args. `persistent: true` for ongoing spells; `dismiss_aoe(aoe_id)` when they end.
+- **Death saves.** `death_save({ name, success, critical_fail?, critical_success? })` — tool tracks the 3-strike rule.
+- **Concentration.** On damage to a concentrating PC, ask for `roll_dice({ player, checkType: "constitution_save", dc: max(10, floor(damage/2)) })`. On fail, `break_concentration`.
+- **Player-initiated combat.** Resolve the opening shot first, THEN dispatch `/combat-prep`. Surprise = no Round 1 actions.
+- **NPC dialogue mid-combat.** Stay in conductor; voice details live in `world/npcs/<slug>.md` (read with `read_campaign_file` if needed).
+
+Never reveal exact enemy HP. Use: fresh / wounded / bloodied / staggered. Anything else (flanking, opportunity attacks, cover values, hit-dice tables, advantage stacking) is factored into the bundle by encounter-designer, into the to-hit roll by combat-resolver, or available via `lookup_rule`.
 
 ## Executing a TURN PLAN
 

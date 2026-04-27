@@ -59,4 +59,4 @@ PC actions and ongoing NPC dialogue stay in the conductor — read `combat`, `so
 
 ---
 
-**The card wins on conflict.** Skills (`combat.md`, `narration.md`, `rules.md`, `social.md`, `campaign.md`) hold deeper procedure. Other rule files in this folder cover edge cases.
+**The card wins on conflict.** Skills (`combat.md`, `narration.md`, `social.md`, `campaign.md`) hold deeper procedure. Other rule files in this folder cover edge cases.

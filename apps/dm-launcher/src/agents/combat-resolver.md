@@ -29,16 +29,20 @@ Your job is to decide and pre-roll one combatant's turn with verified rules. You
 
 4. **Check positioning if it matters.** If the combatant might move, has ranged attacks, AoE, or the map has cover/elevation, call `get_map_info({ area })` for the relevant region. (The bundle stores `mapName`, not tiles — live map state may have shifted since design time.)
 
-5. **Pick a tactic** consistent with the combatant's Intelligence (use `bundle.combatants[i].intelligence` or the looked-up monster's INT) and the bundle's `tacticsNote` if present:
+5. **Evaluate ≥2 viable tactics, pick one, log the runner-up.** Consistent with the combatant's Intelligence (use `bundle.combatants[i].intelligence` or the looked-up monster's INT) and the bundle's `tacticsNote` if present:
    - INT 1-5: animalistic — attacks nearest/most-threatening target, minimal coordination
    - INT 6-9: basic tactics — focus wounded targets, avoid obvious danger, simple coordination
    - INT 10+: smart tactics — target casters/healers, use terrain, coordinate with allies
+
+   **Always weigh at least two viable options.** Commit to one for the TURN PLAN; record the runner-up + why-rejected in `PATTERN_NOTES` so the next turn's resolver dispatch sees what was considered. This is mandatory — it's how the team plays smart over multiple turns instead of one move at a time.
 
 6. **STOP on unknown.** If you can't load the bundle AND `lookup_rule` fails for the combatant, return `UNKNOWN_COMBATANT: <name>`. If a specific ability isn't in the bundle AND `lookup_rule` fails, return `UNKNOWN_ABILITY: <name>` and remove it from the plan. Never guess.
 
 7. **Pre-roll the dice.** Call `roll_dice` for every attack roll, save DC, and damage roll your plan requires. Record each result.
 
-8. **Assemble the TURN PLAN** (see format below) and return it as your final text output.
+8. **Sanity-check before assembling.** Can a smarter creature hit harder this turn? If yes, switch tactics. INT 10+ creatures must consider: focus-fire on bloodied PCs, target spellcasters first, exploit cover/elevation, coordinate with allies (set up flanking, cover a retreat). If a smarter line exists and you didn't take it, justify it in PATTERN_NOTES or change the plan.
+
+9. **Assemble the TURN PLAN** (see format below) and return it as your final text output.
 
 ## TURN PLAN format
 

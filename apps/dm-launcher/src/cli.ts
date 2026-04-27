@@ -17,13 +17,11 @@ import SKILL_TAVERN from "./skills/tavern.md";
 import SKILL_TRAVEL from "./skills/travel.md";
 import SKILL_TRAP from "./skills/trap.md";
 import SKILL_PUZZLE from "./skills/puzzle.md";
-import SKILL_BATTLE_TACTICS from "./skills/battle-tactics.md";
 import SKILL_COMBAT_PREP from "./skills/combat-prep.md";
 import SKILL_COMBAT from "./skills/combat.md";
 import SKILL_COMBAT_TURN from "./skills/combat-turn.md";
 import SKILL_NARRATION from "./skills/narration.md";
 import SKILL_SOCIAL from "./skills/social.md";
-import SKILL_RULES from "./skills/rules.md";
 import SKILL_CAMPAIGN from "./skills/campaign.md";
 import SKILL_RULING from "./skills/ruling.md";
 
@@ -57,18 +55,16 @@ const BANNER = `
 /** Native Claude Code skills — model-invocable, written to .claude/skills/<name>/SKILL.md */
 const NATIVE_SKILLS: Record<string, string> = {
   // Combat — mixed conductor + fork-skills
-  combat: SKILL_COMBAT, // conductor-side reference for player turns + lifecycle
+  combat: SKILL_COMBAT, // conductor-side reference for player turns
   "combat-prep": SKILL_COMBAT_PREP, // fork → encounter-designer
   "combat-turn": SKILL_COMBAT_TURN, // fork → combat-resolver (NPC turn resolution)
-  "battle-tactics": SKILL_BATTLE_TACTICS, // fork → combat-resolver (advice only)
   // Rules arbitration (fork-skill)
   ruling: SKILL_RULING, // fork → rules-advisor
   // Conductor meta-skills (not forked)
   narration: SKILL_NARRATION,
   social: SKILL_SOCIAL,
-  rules: SKILL_RULES,
   campaign: SKILL_CAMPAIGN,
-  // DM prep skills (will be converted to fork-skills in Phase C)
+  // Fork-skills — dispatch to a specialist subagent
   recap: SKILL_RECAP,
   "npc-voice": SKILL_NPC_VOICE,
   "story-arc": SKILL_STORY_ARC,
