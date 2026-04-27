@@ -5,13 +5,6 @@ agent: lorekeeper
 user-invocable: true
 ---
 
-Produce a recap narrative for the campaign's current state.
+Produce a recap. Focus (optional): $ARGUMENTS
 
-Context (optional focus): $ARGUMENTS
-
-Follow the lorekeeper procedure (session recap variant):
-
-1. Load `active-context.md`, last 2-3 `sessions/session-*.md`, and `dm/story-arc.md` if present.
-2. Return a 2-4 paragraph recap narrative in DM voice — where the party ended, what's at stake, unresolved threads.
-
-The conductor will relay your narrative directly to players via `send_response`, adding entity tags (`{pc:...}`, `{npc:...}`, `{place:...}`).
+See your specialist procedure (session recap variant).

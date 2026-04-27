@@ -1,6 +1,6 @@
 # Lookup-Before-Narrate — Examples + Edge Cases
 
-The card states the rule (#11-#14): never narrate mechanics from memory; verify player spells; track concentration including self-buffs; use `action_ref` for typed damage; `LOOKUP_FAILED` and specialist `UNKNOWN_*` mean STOP. This file is the deep guidance — when direct `lookup_rule` is fine, exact halt-and-clarify wording, exception clauses.
+Deep ref for invariants 11-14. The card has the rule; this file has the procedures.
 
 ## Direct `lookup_rule` permitted (no fork needed)
 

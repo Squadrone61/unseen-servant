@@ -5,14 +5,6 @@ agent: rules-advisor
 user-invocable: true
 ---
 
-Produce a cited ruling on the following question.
+Rule on: $ARGUMENTS
 
-Question: $ARGUMENTS
-
-Follow the rules-advisor procedure:
-
-1. Identify every rule, spell, condition, feature, or item referenced in the question.
-2. Call `lookup_rule` on each reference. If any fails, halt and return `RULING: UNABLE` with the unknown references.
-3. If all lookups succeed, return a RULING with Answer, Reasoning, Citations (with exact quotes), and Caveats.
-
-Your output goes to the conductor. The conductor will relay the answer to the player(s) in DM voice with entity tags.
+See your specialist procedure.

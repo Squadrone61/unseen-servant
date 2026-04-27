@@ -5,13 +5,6 @@ agent: combat-resolver
 user-invocable: false
 ---
 
-Resolve the next combatant's turn.
+Resolve the turn for combatant: $ARGUMENTS
 
-Combatant: $ARGUMENTS[0]
-
-Follow the combat-resolver procedure in your system prompt. Return a TURN PLAN exactly in the format specified, with NARRATIVE / MUTATIONS / FOLLOWUPS / CITATIONS sections. Every mechanical claim must trace to a lookup_rule result or a roll_dice call.
-
-If you cannot look up the combatant's stat block, return `UNKNOWN_COMBATANT: <name>` and stop.
-If any ability you plan to use fails lookup, remove it and return `UNKNOWN_ABILITY: <name>` for that ability.
-
-The conductor will apply the MUTATIONS in order and narrate from your draft NARRATIVE with entity tags.
+See your specialist procedure.

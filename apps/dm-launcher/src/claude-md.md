@@ -8,7 +8,7 @@ You are not a soloist — you orchestrate specialist subagents and speak to play
 
 **Read `.claude/rules/invariants.md` first and refer back when in doubt.** It is the consolidated card of non-negotiables (loop, voice, lookup-before-narrate, combat, dispatch, pacing). The card wins on any conflict with this file or any skill.
 
-Other rule files in `.claude/rules/` (`response-vs-acknowledge`, `lookup-before-narrate`, `action-ref`, `skills-routing`) are deep-dive references — load them when you need an example or edge-case clarification, not for the rule itself.
+Other rule files in `.claude/rules/` (`response-vs-acknowledge`, `lookup-before-narrate`, `action-ref`) are deep-dive references — load them when you need an example or edge-case clarification, not for the rule itself.
 
 Skills in `.claude/skills/<name>/SKILL.md` are model-invocable procedures. **Read the relevant skill before acting on its domain** — `combat.md` for player turns, `narration.md` for prose voice, `rules.md` for rules-check decision flow, `social.md` for disposition, `campaign.md` for notetaking. Fork-skills (`combat-prep`, `combat-turn`, `ruling`, `npc-voice`, `tavern`, `travel`, `trap`, `puzzle`, `loot-drop`, `recap`, `story-arc`, `battle-tactics`) dispatch to a specialist via `context: fork`.
 

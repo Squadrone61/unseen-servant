@@ -30,7 +30,6 @@ import SKILL_RULING from "./skills/ruling.md";
 import RULE_INVARIANTS from "./rules/invariants.md";
 import RULE_RESPONSE_VS_ACKNOWLEDGE from "./rules/response-vs-acknowledge.md";
 import RULE_ACTION_REF from "./rules/action-ref.md";
-import RULE_SKILLS_ROUTING from "./rules/skills-routing.md";
 import RULE_LOOKUP_BEFORE_NARRATE from "./rules/lookup-before-narrate.md";
 
 import AGENT_COMBAT_RESOLVER from "./agents/combat-resolver.md";
@@ -95,7 +94,6 @@ const NATIVE_RULES: Record<string, string> = {
   invariants: RULE_INVARIANTS,
   "response-vs-acknowledge": RULE_RESPONSE_VS_ACKNOWLEDGE,
   "action-ref": RULE_ACTION_REF,
-  "skills-routing": RULE_SKILLS_ROUTING,
   "lookup-before-narrate": RULE_LOOKUP_BEFORE_NARRATE,
 };
 

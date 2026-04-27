@@ -1,17 +1,23 @@
-# `action_ref` — Structured Outcomes (Reference)
+# `action_ref` — Schema Reference
 
-The card mandates `action_ref` for typed damage. This file is the parameter reference for the four tools that accept it.
+Deep ref for invariant 13. The rule itself is on the card; this file is the schema.
 
-`action_ref: { source: "spell" | "weapon" | "item" | "monster", name, monsterActionName? }`
+```
+action_ref: {
+  source: "spell" | "weapon" | "item" | "monster",
+  name: string,
+  monsterActionName?: string  // required for source: "monster"
+}
+```
 
 Accepted by: `show_aoe`, `apply_area_effect`, `apply_damage`, `roll_dice` (for `*_save` checks).
 
-The tool resolves area shape, save ability/DC, damage dice, damage type, and `onSuccess` semantics from the DB.
+Resolves area shape, save ability/DC, damage dice, damage type, and `onSuccess` semantics from the DB.
 
-Companion args:
+Companion args (snake_case at top level — separate from `action_ref` itself):
 
-- `caster_spell_save_dc` — passes the caster's spell save DC for spells.
-- `upcast_level` — passes the casting level so upcast scaling resolves correctly.
-- `outcome_branch` — for `apply_damage`, one of `"onHit"` / `"onFailedSave"` / `"onSuccessfulSave"`.
+- `caster_spell_save_dc` — the caster's spell save DC; substituted when the action's DC field is `"spell_save_dc"`.
+- `upcast_level` — extra spell levels above base; scales damage dice.
+- `outcome_branch` — for `apply_damage` only: `"onHit" | "onMiss" | "onFailedSave" | "onSuccessfulSave"`.
 
-Explicit args remain supported as a fallback for prose-only entries (~41% of monster actions). Use the fallback only when the DB row lacks structured `ActionEffect` data — never as a shortcut to skip `action_ref` for a structured row.
+Explicit args (`damage`, `damage_type`, `save_ability`, `save_dc`) remain a fallback for prose-only DB rows. Use the fallback only when the row lacks structured `ActionEffect` data.

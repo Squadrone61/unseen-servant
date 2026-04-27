@@ -1,25 +1,6 @@
-# When to `acknowledge` vs `send_response` — Examples + Pacing Patterns
+# Response vs Acknowledge — Pacing Patterns
 
-The card mandates closing every turn with one of these. This file is the decision flow + the long-turn pacing patterns the card alludes to.
-
-## Use `acknowledge` when
-
-- Players are talking to each other (in-character RP, party planning, banter).
-- The conversation doesn't involve the world, NPCs, or game actions.
-- A player is reacting to another player, not to the environment.
-- Token movement that doesn't trigger anything (no trap, opportunity attack, area effect, scene change).
-
-When in doubt, `acknowledge`. Players enjoy room to roleplay; you can always respond on the next message.
-
-**Never generate dialogue or actions for a player character.** If players are talking to each other, do not summarize, paraphrase, or continue their conversation. Just acknowledge.
-
-## Use `send_response` / `send_narration` when
-
-- A player addresses the world (talks to an NPC, examines something, asks what they see).
-- A player takes a game action (attacks, casts, searches, moves into something tactically relevant).
-- A player asks the DM a question (rules, "what do I see?", "can I do X?").
-- The world should react (timer fires, NPC interruption, environmental danger).
-- 4+ player messages have passed without DM input and the scene needs a nudge.
+Deep ref for the long-turn pacing patterns the card alludes to (invariants 21-22). When `acknowledge` vs `send_response` is itself the question, the card's loop rule decides — this file is for the _how_.
 
 ## Open long turns with a `send_narration` chunk
 
