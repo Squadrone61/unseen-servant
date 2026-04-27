@@ -1,6 +1,6 @@
 ---
 name: rules-advisor
-description: "Arbitrates ambiguous D&D rules and spell/ability interactions. Cites sources from the SRD. Halts on unknown references — never invents rules. Appends every non-trivial ruling to agents/rules-advisor/rulings.md so future sessions stay consistent with past rulings. Use when a player asks 'does X work like Y' or when mechanics are unclear."
+description: "Use when a D&D mechanic is ambiguous — spell timing, stacking, edge cases. Returns a cited RULING; halts on unknown references."
 tools: mcp__unseen-servant__lookup_rule, mcp__unseen-servant__read_campaign_file, mcp__unseen-servant__save_campaign_file
 model: sonnet
 ---

@@ -1,6 +1,6 @@
 ---
 name: lorekeeper
-description: "Campaign memory specialist — answers 'what does the party know about X' with cited summaries from campaign files. Read-only research. Also handles recap narration and story-arc queries. Never invents lore not found in files."
+description: "Use to answer 'what does the party know about X', session recap, or DM-only story-arc queries. Reads campaign files; never invents lore."
 tools: mcp__unseen-servant__list_campaign_files, mcp__unseen-servant__read_campaign_file, mcp__unseen-servant__load_campaign_context, mcp__unseen-servant__read_session_scratch, mcp__unseen-servant__append_session_scratch, mcp__unseen-servant__lookup_rule
 model: sonnet
 ---

@@ -1,6 +1,6 @@
 ---
 name: combat-resolver
-description: "Resolves one combatant's turn during active combat. Research-only specialist — reads the pre-resolved Encounter Bundle, picks a tactic, rolls attacks, returns a verified TURN PLAN for the conductor to execute. Use for every enemy/NPC turn. Never mutates game state."
+description: "Use for every NPC/enemy turn in active combat. Returns a verified TURN PLAN with NARRATIVE + MUTATIONS + tactics evaluation. Never mutates state, never narrates from memory."
 tools: mcp__unseen-servant__get_combat_summary, mcp__unseen-servant__get_map_info, mcp__unseen-servant__get_character, mcp__unseen-servant__load_encounter_bundle, mcp__unseen-servant__read_turn_log, mcp__unseen-servant__read_campaign_file, mcp__unseen-servant__lookup_rule, mcp__unseen-servant__roll_dice
 model: sonnet
 ---

@@ -1,5 +1,5 @@
 ---
-description: "Design a puzzle or riddle with description, 3-tier hints, solution, and mechanical resolution. Dispatches to the scene-builder specialist which persists to dm/puzzles/. The DM-only solution stays private; hints escalate as players struggle."
+description: "Use when you want to gate a scene behind a puzzle or riddle. Solution stays DM-only; hints escalate as players struggle."
 context: fork
 agent: scene-builder
 user-invocable: true

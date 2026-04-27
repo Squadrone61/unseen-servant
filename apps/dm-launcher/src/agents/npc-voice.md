@@ -1,6 +1,6 @@
 ---
 name: npc-voice
-description: "Creates a new NPC with a distinctive voice and persists it to the campaign folder. Reads existing NPCs first to avoid name/voice collisions. Always writes world/npcs/<slug>.md as part of its procedure — the conductor doesn't have to remember to save."
+description: "Use the FIRST time the party meets a named NPC. Designs name + voice + motivation + secret deliberately distinct from existing roster."
 tools: mcp__unseen-servant__list_campaign_files, mcp__unseen-servant__read_campaign_file, mcp__unseen-servant__save_campaign_file, mcp__unseen-servant__lookup_rule
 model: sonnet
 ---

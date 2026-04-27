@@ -1,5 +1,5 @@
 ---
-description: "Design a trap with detection DC, disarm DC, trigger, damage, and observable clues. Dispatches to the scene-builder specialist which persists to dm/traps/. DM-only spec — the conductor describes clues to players, never the mechanics directly."
+description: "Use when you want to plant a trap in a dungeon, route, or container. DM-only spec; describe only the clue to players unless the trap triggers."
 context: fork
 agent: scene-builder
 user-invocable: true

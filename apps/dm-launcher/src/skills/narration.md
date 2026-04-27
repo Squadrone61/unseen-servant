@@ -1,5 +1,5 @@
 ---
-description: "Narrative style: vivid descriptions, improv framework, pacing, scene transitions, entity highlighting tags. Invoke when crafting narrative responses."
+description: "Use when drafting any send_response prose — scene transitions, exploration, action narration, entity tagging discipline, length control, mechanical-restraint in voice."
 user-invocable: false
 ---
 

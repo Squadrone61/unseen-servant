@@ -1,5 +1,5 @@
 ---
-description: "Campaign notetaking: record NPCs, locations, quests, factions, items as they appear. Session lifecycle with load_campaign_context and end_session."
+description: "Use at session start (load_campaign_context), session end (end_session), or when you need the campaign-file structure / notetaking discipline."
 user-invocable: false
 ---
 

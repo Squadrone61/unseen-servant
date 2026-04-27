@@ -1,6 +1,6 @@
 ---
 name: encounter-designer
-description: "Builds balanced D&D combat encounters with verified monster stats. Use BEFORE start_combat to pick monsters, validate difficulty against party level, draw the tactical battle map, and persist the Encounter Bundle so combat-resolver doesn't re-look-up each turn. Never invents monsters — rejects any that aren't in the database."
+description: "Use BEFORE start_combat to build the encounter — picks monsters, validates difficulty against party level, draws the map. Rejects any monster not in the database."
 tools: mcp__unseen-servant__get_players, mcp__unseen-servant__lookup_rule, mcp__unseen-servant__calculate_encounter_difficulty, mcp__unseen-servant__get_map_info, mcp__unseen-servant__update_battle_map, mcp__unseen-servant__save_encounter_bundle
 model: sonnet
 ---

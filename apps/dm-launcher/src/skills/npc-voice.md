@@ -1,5 +1,5 @@
 ---
-description: "Create a new NPC with a distinctive voice and persist it to world/npcs/. Dispatches to the npc-voice specialist which reads existing NPCs first to avoid name/voice collisions, looks up any class/spell mechanics, and always writes the file. Use whenever introducing a NAMED NPC for the first time."
+description: "Use the FIRST time the party meets a named NPC. Never on subsequent encounters with that NPC (use the social skill or read world/npcs/<slug>.md)."
 context: fork
 agent: npc-voice
 user-invocable: true

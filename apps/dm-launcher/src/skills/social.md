@@ -1,5 +1,5 @@
 ---
-description: "NPC disposition framework and social encounter mechanics: hostile/indifferent/friendly attitudes, social checks, persuasion. Invoke during NPC interactions."
+description: "Use when a player engages an NPC socially after first introduction — persuasion, deception, intimidation, insight, ongoing dialogue. NOT for first-time NPC creation (use /npc-voice)."
 user-invocable: false
 ---
 

@@ -1,6 +1,6 @@
 ---
 name: scene-builder
-description: "Builds a tavern, travel-leg, trap, puzzle, or loot scene from parameters and persists it to the appropriate campaign folder. Always writes to world/locations/, dm/traps/, dm/puzzles/, or world/items/ as part of its procedure — the conductor doesn't have to remember to save."
+description: "Use to build a tavern, travel leg, trap, puzzle, or loot drop. Verifies all referenced mechanics; rejects any unknown spell/item/monster."
 tools: mcp__unseen-servant__list_campaign_files, mcp__unseen-servant__read_campaign_file, mcp__unseen-servant__save_campaign_file, mcp__unseen-servant__lookup_rule, mcp__unseen-servant__get_players
 model: sonnet
 ---

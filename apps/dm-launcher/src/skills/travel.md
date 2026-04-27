@@ -1,5 +1,5 @@
 ---
-description: "Generate an overland travel leg: distance, pace, terrain, weather, time passage, and possible encounters. Dispatches to the scene-builder specialist which persists to world/locations/. Use when the party is traveling between regions."
+description: "Use when the party begins overland travel between regions or settlements."
 context: fork
 agent: scene-builder
 user-invocable: true

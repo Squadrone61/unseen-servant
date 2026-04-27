@@ -1,5 +1,5 @@
 ---
-description: "Generate a tavern, inn, or shop with NPCs, menu, rumors, and atmosphere. Dispatches to the scene-builder specialist which always persists to world/locations/. Use when the party enters a new drinking/lodging/commerce venue."
+description: "Use when the party enters a new drinking, lodging, or commerce venue for the first time."
 context: fork
 agent: scene-builder
 user-invocable: true

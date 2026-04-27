@@ -1,5 +1,5 @@
 ---
-description: "Resolve a single NPC or enemy combatant's turn during active combat. Dispatches to the combat-resolver specialist which looks up stats, picks tactics, pre-rolls dice, and returns a TURN PLAN. Use this for EVERY enemy turn — never narrate enemy actions without it."
+description: "Use for EVERY NPC/enemy turn during active combat — never narrate an enemy action without it. Returns a TURN PLAN you execute."
 context: fork
 agent: combat-resolver
 user-invocable: false

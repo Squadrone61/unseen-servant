@@ -1,5 +1,5 @@
 ---
-description: "Query campaign plans and upcoming story beats (DM-only). Dispatches to the lorekeeper specialist which reads dm/story-arc.md and active-context. Use for DM planning; never relay output directly to players."
+description: "Use for DM-only planning ('what's next for the party?', 'what threads are open?'). Output is private; never relay verbatim to players."
 context: fork
 agent: lorekeeper
 user-invocable: true

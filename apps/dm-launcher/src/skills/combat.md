@@ -1,5 +1,5 @@
 ---
-description: "Conductor-side combat reference for player turns: attack resolution + AoE targeting flow. For NPC/enemy turns dispatch /combat-turn (forks to combat-resolver). For combat start dispatch /combat-prep (forks to encounter-designer)."
+description: "Use during a PLAYER's turn in active combat — attack resolution, AoE targeting flow, death saves, concentration checks. For NPC/enemy turns use /combat-turn; for combat start use /combat-prep."
 user-invocable: false
 ---
 
