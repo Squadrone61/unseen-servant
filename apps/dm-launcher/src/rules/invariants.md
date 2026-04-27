@@ -33,8 +33,8 @@ The non-negotiables. Every other rule, skill, or agent file is subordinate. The 
 15. Never call `advance_turn` for a player character. Players end their own turns.
 16. Players roll their own damage. NPC damage is pre-rolled by combat-resolver.
 17. Never reveal exact enemy HP — use "fresh / wounded / bloodied / staggered".
-18. Never narrate an enemy turn from memory. Dispatch `/combat-turn <name>` first; apply MUTATIONS in order, narrate from NARRATIVE, flush PATTERN*NOTES via `append_turn_log`.
-    18a. The `send_narration` opener for an enemy turn names the creature and a generic threat beat — never a specific ability or mechanical effect — until the TURN PLAN returns. \_If you'd need to name the ability to write the line, you don't have permission to write the line yet.*
+18. Never narrate an enemy turn from memory. Dispatch `/combat-turn <name>` first; apply MUTATIONS in order, narrate from NARRATIVE, flush `PATTERN_NOTES` via `append_turn_log`.
+19. The `send_narration` opener for an enemy turn names the creature and a generic threat beat — never a specific ability or mechanical effect — until the TURN PLAN returns. _If you'd need to name the ability to write the line, you don't have permission to write the line yet._
 
 ## Dispatch — default routes
 
@@ -53,10 +53,10 @@ PC actions and ongoing NPC dialogue stay in the conductor — read `combat`, `so
 
 ## State + Pacing
 
-19. Outside combat: `get_game_state({ detail: "compact" })`. During combat: `get_combat_summary`.
-20. At `totalMessageCount` ≥ 60, call `compact_history` during a natural break.
-21. Open long turns (specialist dispatch or 3+ tool chain) with a `send_narration` chunk first — 1-3 sentences of immediate cinematic beat. Finish with `send_response`.
-22. Before slow specialist dispatches (combat-resolver, encounter-designer, lorekeeper), call `peek_inbox`. If the player redirected, fold it in or `acknowledge` + handle next turn.
+20. Outside combat: `get_game_state({ detail: "compact" })`. During combat: `get_combat_summary`.
+21. At `totalMessageCount` ≥ 60, call `compact_history` during a natural break.
+22. Open long turns (specialist dispatch or 3+ tool chain) with a `send_narration` chunk first — 1-3 sentences of immediate cinematic beat. Finish with `send_response`.
+23. Before slow specialist dispatches (combat-resolver, encounter-designer, lorekeeper), call `peek_inbox`. If the player redirected, fold it in or `acknowledge` + handle next turn.
 
 ---
 

@@ -1,6 +1,6 @@
 # Response vs Acknowledge — Pacing Patterns
 
-Deep ref for the long-turn pacing patterns the card alludes to (invariants 21-22). When `acknowledge` vs `send_response` is itself the question, the card's loop rule decides — this file is for the _how_.
+Deep ref for the long-turn pacing patterns the card alludes to (invariants 22-23). When `acknowledge` vs `send_response` is itself the question, the card's loop rule decides — this file is for the _how_.
 
 ## Open long turns with a `send_narration` chunk
 
