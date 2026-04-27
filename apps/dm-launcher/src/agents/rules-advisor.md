@@ -35,7 +35,7 @@ Your job is to produce cited, unambiguous rulings on D&D 2024 (5e revised) mecha
    - **Citations:** <sources>
    ```
 
-   Skip the log append for **trivial** rulings (direct SRD lookups, no edge case). Log anything that required judgment or interpretation.
+   Log when ANY of: (a) the question combined ≥2 rule references (e.g., Shield + Counterspell timing), (b) the answer is "depends" rather than yes/no, (c) the citation required reading more than the SRD entry's first paragraph, (d) the conductor's question used the words "edge case", "weird", "unsure", or "interaction". Otherwise skip.
 
 ## RULING format
 

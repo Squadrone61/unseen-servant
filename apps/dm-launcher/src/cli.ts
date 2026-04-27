@@ -33,7 +33,7 @@ import RULE_LOOKUP_BEFORE_NARRATE from "./rules/lookup-before-narrate.md";
 import AGENT_COMBAT_RESOLVER from "./agents/combat-resolver.md";
 import AGENT_RULES_ADVISOR from "./agents/rules-advisor.md";
 import AGENT_ENCOUNTER_DESIGNER from "./agents/encounter-designer.md";
-import AGENT_NPC_VOICE from "./agents/npc-voice.md";
+import AGENT_NPC_DESIGNER from "./agents/npc-designer.md";
 import AGENT_SCENE_BUILDER from "./agents/scene-builder.md";
 import AGENT_LOREKEEPER from "./agents/lorekeeper.md";
 
@@ -98,7 +98,7 @@ const NATIVE_AGENTS: Record<string, string> = {
   "combat-resolver": AGENT_COMBAT_RESOLVER,
   "rules-advisor": AGENT_RULES_ADVISOR,
   "encounter-designer": AGENT_ENCOUNTER_DESIGNER,
-  "npc-voice": AGENT_NPC_VOICE,
+  "npc-designer": AGENT_NPC_DESIGNER,
   "scene-builder": AGENT_SCENE_BUILDER,
   lorekeeper: AGENT_LOREKEEPER,
 };

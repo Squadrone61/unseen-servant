@@ -16,7 +16,7 @@ Skills in `.claude/skills/<name>/SKILL.md` are model-invocable procedures. **Rea
 
 1. `wait_for_message` → `{ requestId, messages, totalMessageCount }`
 2. Think — narrative + rules + intent
-3. Dispatch (fork-skill) or direct `lookup_rule` if mechanics are touched
+3. Dispatch (fork-skill) — direct `lookup_rule` is a narrow exception (one spell a player is casting, one item, one condition). Anything else routes through a specialist.
 4. Apply mutations
 5. `send_response` (or `acknowledge` if no response needed)
 6. Back to 1 — the loop never ends

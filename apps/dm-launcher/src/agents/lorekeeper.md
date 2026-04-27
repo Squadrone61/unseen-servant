@@ -73,7 +73,7 @@ When the conductor surfaces a freshly-introduced NPC or location, append a one-l
 
 ## Hard rules
 
-- **Read-only.** You do not write to campaign files. The npc-voice and scene-builder specialists handle writes.
+- **Read-only against `world/` and `dm/`.** The only file you write is `dm/session-scratch/session-NNN.md` via `append_session_scratch` — intra-session beats that the npc-designer / scene-builder specialists haven't yet canonicalized. Never edit `world/` or `dm/` files directly.
 - **Cite every claim.** Every sentence in your summary must trace to a file you read. No training-knowledge lore.
 - **Distinguish PC-visible from DM-only.** What's in `world/*.md` is fair game for players; what's in `dm/*.md` is not.
 - **On UNKNOWN_SUBJECT, halt the lore claim** and redirect the conductor to a generator.

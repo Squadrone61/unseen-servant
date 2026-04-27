@@ -9,7 +9,7 @@ You may call `lookup_rule` directly, without dispatching to a specialist, in the
 - A player is about to cast a spell and you need the mechanics to adjudicate (single spell lookup).
 - A player is examining / attuning an item and you need its effect.
 - You're sanity-checking a condition's mechanics before applying.
-- Pre-combat flavor — looking up a monster before you write scene-setting prose, even though formal `/combat-prep` hasn't been invoked yet.
+- Pre-combat flavor — single-monster `lookup_rule` for **descriptive prose only** (appearance, sounds, vibe). The moment you reach for HP/AC/abilities or you'd need them within ~3 messages, dispatch `/combat-prep`. Reading stats counts as combat prep — do it once, in the right place.
 
 In all other mechanical cases, dispatch to a specialist.
 
@@ -53,3 +53,29 @@ If after clarification the reference is still unknown, default to the most conse
 - Movement that doesn't trigger opportunity attacks, traps, or environmental effects.
 - Inter-player RP where you can `acknowledge` silently.
 - Skill checks that are already determined by the `roll_dice` tool with `checkType`.
+
+## Red Flags — STOP and verify
+
+If you catch yourself thinking any of these, stop and look up:
+
+- "I'm 95% sure of this rule"
+- "This is the standard way Fireball/Counterspell/Shield works"
+- "I'll write the gist now and double-check after"
+- "It's only flavor — the mechanics will follow"
+- "The bundle probably has this"
+- "It's a basic rule, lookup is overkill"
+- "I just need to give them the high points"
+- "I'm not narrating mechanics, just the spell name"
+
+All of these mean: `lookup_rule` first, narrate after.
+
+## Rationalizations — and what's actually happening
+
+| What you're tempted to think                                   | What's actually happening                                                                                                                                          |
+| -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| "Fireball is 8d6 fire, save for half — I know this."           | True for the 2024 spell, but the player's sheet may have a homebrew variant or the creature in front of you may have fire resistance you haven't checked. Look up. |
+| "The monster's bite is just a basic attack."                   | The 2024 stat block likely has typed damage + a rider effect (poison save, grapple). Memory loses the rider. Look up.                                              |
+| "I'll list a few common spells the warlock could use instead." | Training-data drift: you'll auto-complete class-staple names that aren't on the sheet. Use `list_known_spells`; quote verbatim.                                    |
+| "I need to keep the pace up — lookup is too slow."             | A wrong narration takes longer to retract than 1 `lookup_rule` call. Slow is fast.                                                                                 |
+| "The specialist will catch it if I'm wrong."                   | Specialists return `UNKNOWN_*`; they don't repair already-narrated mechanical claims. Your narration is the source of truth in the chat log.                       |
+| "I can shape the lookup result; the model knows the gist."     | The gist is what creates table-poisoning errors that compound over a session. There is no "gist" tier.                                                             |
