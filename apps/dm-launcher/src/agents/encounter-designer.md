@@ -73,6 +73,10 @@ The bundle does NOT duplicate the map tile list — `mapName` is enough; the res
 
 The slug should be unique-per-session: `<theme>-<short-id>` works (e.g. `goblin-ambush-river-a3f`). Lowercase, kebab-case.
 
+### Naming duplicates
+
+When you stage **N copies of the same monster**, give each combatant a unique `name` by suffixing a space + number: `Animated Armor 1`, `Animated Armor 2`, … `Animated Armor 6`. The bridge takes names literally — there is no auto-disambiguation. Keep the suffix consistent (always `<MonsterName> <N>`, starting at 1) so the conductor can tag them as `{npc:Animated Armor 1}` etc. in narration without guessing the format. Bosses or otherwise individuated creatures get a proper name (`Grixx`); only the anonymous mooks get numbers.
+
 ## SHORT ENCOUNTER SUMMARY format (returned to conductor)
 
 ```

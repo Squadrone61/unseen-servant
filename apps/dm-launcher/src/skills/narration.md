@@ -62,15 +62,19 @@ When in doubt: read your draft out loud. If the first half is tavern and the sec
 
 You MUST wrap ALL named entity mentions in tags for UI color-coding. Tag EVERY mention, not just the first.
 
-**Tag types:**
+**Tag types — these five prefixes only:**
 
 - Places: {place:Waterdeep}, {place:The Yawning Portal}
-- NPCs/gods: {npc:Barthen}, {npc:Tiamat}
+- NPCs / gods / **all hostile creatures and monsters**: {npc:Barthen}, {npc:Tiamat}, {npc:Animated Armor 6}, {npc:Goblin 2}
 - Player characters: {pc:Zara Stormweave}, {pc:Thorin}
 - Items (specific named): {item:Flame Tongue}, {item:Potion of Healing}
 - Factions: {faction:Zhentarim}, {faction:Harpers}
 
+**Hostile combatants use `{npc:...}`.** There is no `{enemy:...}`, `{monster:...}`, `{character:...}`, or `{foe:...}` prefix — those will render as plain grey fallback. The bridge's internal `type: "enemy"` field is engine-side only; the narrative tag is always `{npc:...}` for any creature, friend or foe.
+
 **Correct:** "{npc:Barthen} gestures to {place:The Yawning Portal}. 'You'll find the {faction:Zhentarim} there,' {npc:Barthen} whispers."
 **Wrong:** "{npc:Barthen} gestures to {place:The Yawning Portal}. 'You'll find the Zhentarim there,' Barthen whispers."
+
+**Combat example:** "{npc:Animated Armor 6} brings its gauntlet down on {pc:Wil} — the plates rattle as the blow lands." Each numbered duplicate (`Animated Armor 1`..`Animated Armor 6`, `Goblin 1`..`Goblin 4`) gets its own `{npc:...}` wrapper.
 
 Only tag proper names — not generic references like "the city" or "a sword".

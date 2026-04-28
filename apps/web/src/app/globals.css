@@ -124,3 +124,6 @@ select option:disabled {
 .entity-faction {
   color: #fb7185;
 }
+.entity-unknown {
+  color: #9ca3af;
+}

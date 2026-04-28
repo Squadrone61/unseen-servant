@@ -105,7 +105,7 @@ EXECUTED:
   - Frame 2 (attack): roll_dice("1d20+<b>") → <result> vs <target> AC <ac> — MISS
   - Frame 3 (end): advance_turn ✓
 
-NARRATIVE_DRAFT (no entity tags — the conductor adds them):
+NARRATIVE_DRAFT (no entity tags — the conductor adds them; combatants will be tagged as `{npc:Name}`, including hostile monsters):
 <2-5 short sentences or per-combatant beats woven into one cohesive read covering what each named combatant did. INT shapes coordination tone — uncoordinated for low-INT swarms, coordinated for high-INT packs.>
 
 PATTERN_NOTES (≤3 short bullets — already flushed via append_turn_log; included here for the conductor's reference):
