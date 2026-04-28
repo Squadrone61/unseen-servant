@@ -445,14 +445,13 @@ test.describe("Battle Map", () => {
       timeout: 8_000,
     });
 
-    // Conditions are shown as SVG warning icons with a title attribute on the container div.
-    // The Goblin has 1 condition ("poisoned") so the container title should be "poisoned".
+    // Conditions render as red dots in the compact ActiveEffectsList alongside other effects.
+    // The dot's parent span carries a title with the category prefix ("COND") and condition name.
     const goblinButton = page.locator("button").filter({ hasText: "Goblin" });
     await expect(goblinButton).toBeVisible();
 
-    // The condition icon container has a title attribute set to the comma-joined condition names
-    const conditionContainer = goblinButton.locator('[title="poisoned"]');
-    await expect(conditionContainer).toBeVisible();
+    const conditionDot = goblinButton.locator('[title="COND poisoned"]');
+    await expect(conditionDot).toBeVisible();
 
     bridge.disconnect();
   });

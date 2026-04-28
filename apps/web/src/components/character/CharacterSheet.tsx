@@ -29,7 +29,6 @@ import {
   getInitiative,
 } from "@unseen-servant/shared/character";
 import type { StatBreakdownId } from "@unseen-servant/shared/detail";
-import { getCondition } from "@unseen-servant/shared/data";
 import { HPBar } from "./HPBar";
 import { ActionsTab } from "./tabs/ActionsTab";
 import { SpellsTab } from "./tabs/SpellsTab";
@@ -286,61 +285,8 @@ function CharacterSheetInner({ character, onCastAoE }: CharacterSheetProps) {
           </span>
         </div>
 
-        {/* Concentration */}
-        {d.concentratingOn && (
-          <div>
-            <div
-              className="mb-1 text-sm font-medium tracking-wider text-gray-500 uppercase"
-              style={{ fontFamily: "var(--font-cinzel)" }}
-            >
-              Concentrating On
-            </div>
-            <span className="rounded-full border border-purple-800/50 bg-purple-900/30 px-2 py-0.5 text-xs text-purple-300">
-              {d.concentratingOn.spellName}
-            </span>
-          </div>
-        )}
-
-        {/* Active Effects (buffs/debuffs from spells, items, features) */}
-        <ActiveEffectsList effects={d.activeEffects} />
-
-        {/* Conditions */}
-        {d.conditions.length > 0 && (
-          <div>
-            <div
-              className="mb-1 text-sm font-medium tracking-wider text-gray-500 uppercase"
-              style={{ fontFamily: "var(--font-cinzel)" }}
-            >
-              Conditions
-            </div>
-            <div className="flex flex-wrap gap-1">
-              {d.conditions.map((c, i) => {
-                const name = typeof c === "string" ? c : c.name;
-                const duration = typeof c === "string" ? undefined : c.duration;
-                const hasEntry = getCondition(name) !== undefined;
-                const label = duration ? `${name} (${duration} rounds)` : name;
-                return hasEntry ? (
-                  <button
-                    key={i}
-                    type="button"
-                    onClick={(e) => push("condition", name, { x: e.clientX, y: e.clientY })}
-                    className="cursor-pointer rounded-full border border-red-800/50 bg-red-900/30 px-2 py-0.5 text-xs text-red-400 hover:bg-red-900/50"
-                  >
-                    {label}
-                  </button>
-                ) : (
-                  <span
-                    key={i}
-                    className="rounded-full border border-red-800/50 bg-red-900/30 px-2 py-0.5 text-xs text-red-400"
-                    title={label}
-                  >
-                    {label}
-                  </span>
-                );
-              })}
-            </div>
-          </div>
-        )}
+        {/* Active Effects — concentration spells, buffs, conditions, debuffs (single chip area) */}
+        <ActiveEffectsList effects={d.activeEffects} conditions={d.conditions} />
 
         {/* Death Saves */}
         {(d.deathSaves.successes > 0 || d.deathSaves.failures > 0) && (

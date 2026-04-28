@@ -1,6 +1,10 @@
-import type { CharacterData, CombatState, EffectBundle } from "@unseen-servant/shared/types";
+import type {
+  CharacterData,
+  CombatState,
+  EffectBundle,
+  ConditionEntry,
+} from "@unseen-servant/shared/types";
 import { getHP } from "@unseen-servant/shared/character";
-import { getCondition } from "@unseen-servant/shared/data";
 import {
   EntityPopoverProvider,
   useEntityPopover,
@@ -28,7 +32,7 @@ function InitiativeTrackerInner({
   onCombatantClick,
   partyCharacters,
 }: InitiativeTrackerProps) {
-  const { stack, push } = useEntityPopover();
+  const { stack } = useEntityPopover();
 
   return (
     <>
@@ -46,8 +50,8 @@ function InitiativeTrackerInner({
 
           let currentHP: number | undefined;
           let maxHP: number | undefined;
-          let concentratingOn: { spellName: string; since?: number } | undefined;
           let activeEffects: EffectBundle[] | undefined = combatant.activeEffects;
+          let conditions: ConditionEntry[] | undefined = combatant.conditions;
 
           if (combatant.type === "player" && partyCharacters) {
             const char = Object.values(partyCharacters).find(
@@ -56,16 +60,12 @@ function InitiativeTrackerInner({
             if (char) {
               currentHP = char.dynamic.currentHP;
               maxHP = getHP(char);
-              concentratingOn = char.dynamic.concentratingOn;
               activeEffects = char.dynamic.activeEffects;
+              conditions = char.dynamic.conditions;
             }
           } else {
             currentHP = combatant.currentHP;
             maxHP = combatant.maxHP;
-          }
-
-          if (combatant.concentratingOn) {
-            concentratingOn = combatant.concentratingOn;
           }
 
           const isDead = currentHP !== undefined && currentHP <= 0;
@@ -130,58 +130,8 @@ function InitiativeTrackerInner({
                 </>
               )}
 
-              {/* Concentration */}
-              {concentratingOn && (
-                <div
-                  className="mt-0.5 text-xs font-bold text-purple-400"
-                  title={`Concentrating: ${concentratingOn.spellName}`}
-                >
-                  C
-                </div>
-              )}
-
-              {/* Active effects (buffs/debuffs) */}
-              <ActiveEffectsList effects={activeEffects} compact />
-
-              {/* Conditions */}
-              {combatant.conditions && combatant.conditions.length > 0 && (
-                <div className="mt-0.5 flex items-center gap-0.5">
-                  {combatant.conditions.map((cond, ci) => {
-                    const hasEntry = getCondition(cond.name) !== undefined;
-                    return (
-                      <span
-                        key={ci}
-                        role={hasEntry ? "button" : undefined}
-                        tabIndex={hasEntry ? 0 : undefined}
-                        title={cond.duration ? `${cond.name} (${cond.duration} rounds)` : cond.name}
-                        onClick={
-                          hasEntry
-                            ? (e) => {
-                                e.stopPropagation();
-                                push("condition", cond.name, { x: e.clientX, y: e.clientY });
-                              }
-                            : undefined
-                        }
-                        className={hasEntry ? "cursor-pointer" : undefined}
-                      >
-                        <svg
-                          className="h-3 w-3 text-orange-400"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <circle cx="12" cy="12" r="10" />
-                          <line x1="12" x2="12" y1="8" y2="12" />
-                          <line x1="12" x2="12.01" y1="16" y2="16" />
-                        </svg>
-                      </span>
-                    );
-                  })}
-                </div>
-              )}
+              {/* Active effects + conditions (concentration purple, buffs green, debuffs/conditions red) */}
+              <ActiveEffectsList effects={activeEffects} conditions={conditions} compact />
             </button>
           );
         })}
