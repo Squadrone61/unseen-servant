@@ -318,7 +318,10 @@ export function registerGameTools(
 
   server.registerTool(
     "get_players",
-    { description: "Get the current player list with character summaries." },
+    {
+      description:
+        "Get the party roster with grounded character summaries. For each PC: name, race, classes/level, HP, AC, conditions, alignment, appearance fields the player typed (gender/age/height/weight/hair/eyes/skin), a one-line backstory hook, and currently-equipped gear (weapons, armor, shield, attuned items). This is the source-of-truth for opening-scene narration — never narrate a weapon, armor piece, shield, or appearance detail that isn't in the response.",
+    },
     async () => {
       return {
         content: [

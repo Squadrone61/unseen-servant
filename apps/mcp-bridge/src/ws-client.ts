@@ -685,7 +685,7 @@ export class WSClient {
         };
         if (char) {
           const totalLevel = char.static.classes.reduce((sum, c) => sum + c.level, 0);
-          summary.character = {
+          const characterSummary: NonNullable<PlayerSummary["character"]> = {
             name: char.static.name,
             race: char.static.species || char.static.race,
             classes: char.static.classes.map((c) => `${c.name} ${c.level}`).join("/"),
@@ -694,6 +694,72 @@ export class WSClient {
             ac: getAC(char),
             conditions: char.dynamic.conditions.map((c) => c.name),
           };
+
+          if (char.static.alignment) {
+            characterSummary.alignment = char.static.alignment;
+          }
+
+          // Appearance — only include fields with values, omit object entirely if all empty.
+          const appearance = char.static.appearance;
+          if (appearance) {
+            const filled: Record<string, string> = {};
+            for (const key of [
+              "gender",
+              "age",
+              "height",
+              "weight",
+              "hair",
+              "eyes",
+              "skin",
+            ] as const) {
+              const v = appearance[key];
+              if (typeof v === "string" && v.trim().length > 0) {
+                filled[key] = v;
+              }
+            }
+            if (Object.keys(filled).length > 0) {
+              characterSummary.appearance = filled;
+            }
+          }
+
+          // Backstory hook — first non-blank line, truncated to 140 chars.
+          const firstLine = (char.static.backstory ?? "")
+            .split(/\r?\n/)
+            .find((l) => l.trim().length > 0);
+          if (firstLine) {
+            characterSummary.backstoryHook = firstLine.slice(0, 140);
+          }
+
+          // Equipped gear — pull from dynamic.inventory[] where equipped===true.
+          const inventory = char.dynamic.inventory ?? [];
+          const equippedWeapons: string[] = [];
+          const attunedItems: string[] = [];
+          let equippedArmor: string | undefined;
+          let equippedShield: string | undefined;
+          for (const item of inventory) {
+            if (item.attuned) attunedItems.push(item.name);
+            if (!item.equipped) continue;
+            if (item.weapon) {
+              equippedWeapons.push(item.name);
+            } else if (item.armor?.type === "shield") {
+              equippedShield = item.name;
+            } else if (item.armor) {
+              equippedArmor = item.name;
+            }
+          }
+          if (
+            equippedWeapons.length > 0 ||
+            equippedArmor ||
+            equippedShield ||
+            attunedItems.length > 0
+          ) {
+            characterSummary.equipped = { weapons: equippedWeapons };
+            if (equippedArmor) characterSummary.equipped.armor = equippedArmor;
+            if (equippedShield) characterSummary.equipped.shield = equippedShield;
+            if (attunedItems.length > 0) characterSummary.equipped.attunedItems = attunedItems;
+          }
+
+          summary.character = characterSummary;
         }
         return summary;
       });

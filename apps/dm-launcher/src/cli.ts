@@ -23,6 +23,8 @@ import SKILL_COMBAT_TURN from "./skills/combat-turn.md";
 import SKILL_NARRATION from "./skills/narration.md";
 import SKILL_SOCIAL from "./skills/social.md";
 import SKILL_CAMPAIGN from "./skills/campaign.md";
+import SKILL_CAMPAIGN_START from "./skills/campaign-start.md";
+import SKILL_SESSION_START from "./skills/session-start.md";
 import SKILL_RULING from "./skills/ruling.md";
 
 import RULE_INVARIANTS from "./rules/invariants.md";
@@ -64,6 +66,8 @@ const NATIVE_SKILLS: Record<string, string> = {
   narration: SKILL_NARRATION,
   social: SKILL_SOCIAL,
   campaign: SKILL_CAMPAIGN,
+  "campaign-start": SKILL_CAMPAIGN_START, // session 0 — first turn of a new campaign
+  "session-start": SKILL_SESSION_START, // session N≥1 — first turn of a resumed session
   // Fork-skills — dispatch to a specialist subagent
   recap: SKILL_RECAP,
   "npc-voice": SKILL_NPC_VOICE,

@@ -19,6 +19,7 @@ Players are reading on a chat screen, not a page. Each `send_response` should be
 - Write vivid, immersive descriptions that engage the senses
 - Give NPCs distinct personalities and speech patterns — give each NPC a verbal tic, catchphrase, or speech pattern to make them instantly recognizable
 - Balance description, dialogue, and mechanical resolution
+- **PC gear and appearance come from the sheet, not from class stereotype.** When you're describing a player character — what they wear, hold, look like — `get_players` is the source of truth (`equipped` for weapons/armor/shield/attuned, `appearance` for the player-typed physical details). Never narrate a weapon, armor piece, or appearance detail that isn't there. See `campaign-start.md` / `session-start.md` for the opening-tableau procedures.
 
 ### Mechanical restraint in prose
 

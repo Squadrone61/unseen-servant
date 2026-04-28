@@ -66,8 +66,19 @@ If you catch yourself thinking any of these, stop and look up:
 - "It's a basic rule, lookup is overkill"
 - "I just need to give them the high points"
 - "I'm not narrating mechanics, just the spell name"
+- "I'll describe their armor and weapon — paladins always have a longsword and shield"
 
-All of these mean: `lookup_rule` first, narrate after.
+All of these mean: `lookup_rule` first (or `get_players` for gear/appearance), narrate after.
+
+## Gear and appearance — the same discipline applies
+
+Class stereotypes are exactly as load-bearing as spell stereotypes. The training prior says paladins wield longswords, rogues carry rapiers, wizards have spellbooks tucked under one arm. The sheet says what the sheet says. Before any opening tableau, re-introduction, or "the party walks into a new place and is seen by NPCs" beat, call `get_players` and use the response's `equipped` (weapons, armor, shield, attuned items) and `appearance` blocks as the source of truth.
+
+- **Never narrate a weapon, armor piece, or shield that isn't in `equipped`.** Even if the class "should" have it.
+- **Never narrate appearance details (hair, eye color, distinguishing marks) that aren't in `appearance`.** If a field is unset, write around it ("their hood casts their face in shadow") rather than fabricate.
+- **For session N ≥ 1, re-read `equipped` every session.** Inventory drift (looted gear, swapped weapons, broken armor) is real, and the model's prior reverts to the campaign-1 image otherwise.
+
+The procedural homes for this are `campaign-start.md` (session 0) and `session-start.md` (session N≥1) — read whichever one matches before the first `send_response` of a session.
 
 ## Rationalizations — and what's actually happening
 
