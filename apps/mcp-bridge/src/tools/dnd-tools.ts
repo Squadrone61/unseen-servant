@@ -5,10 +5,14 @@ import type { GameLogger } from "../services/game-logger.js";
 import { rollNotation, buildOutputFromResult, formatRollOutput } from "../services/dice-engine.js";
 import { parseCheckType, getCheckAdvantageInfo } from "@unseen-servant/shared/utils";
 import { getRollMinimums, getSkills, getCritRiders } from "@unseen-servant/shared/character";
-import { getCombatBonus } from "@unseen-servant/shared/character";
 import { resolveActionRef } from "@unseen-servant/shared/data";
 import type { ActionRef } from "@unseen-servant/shared/data";
 import { getAction } from "@unseen-servant/shared";
+import {
+  computeDamageRoll,
+  type DamageRollExtra,
+  type DamageRollOptions,
+} from "@unseen-servant/shared/utils";
 
 export function registerDndTools(
   server: McpServer,
@@ -18,7 +22,7 @@ export function registerDndTools(
   server.registerTool(
     "roll_dice",
     {
-      description: `Roll dice. notation is always required.
+      description: `Roll dice. notation is required EXCEPT when checkType="damage" with action_ref (the action's dice are auto-resolved).
 
 NEVER ask a player to "roll X" in prose. If a PC must roll — attack, save, check, death save, initiative, damage — call \`roll_dice\` with \`player\` set so the player gets an interactive Roll button. Omit \`player\` ONLY for hidden DM/NPC/monster rolls.
 
@@ -32,30 +36,32 @@ checkType values (modifier auto-calculated, requires player):
   Abilities: "strength", "dexterity", "constitution", "intelligence", "wisdom", "charisma"
   Saves: "strength_save", "dexterity_save", "constitution_save", "intelligence_save", "wisdom_save", "charisma_save"
   Attacks: "melee_attack" (STR + prof), "ranged_attack" (DEX + prof), "spell_attack" (spell bonus), "finesse_attack" (max(STR,DEX) + prof)
+  Damage: "damage" — REQUIRES action_ref. Auto-resolves base dice + ability mod (weapon: from properties; spell: when entry has addAbilityMod) + every active damage_* effect (Magic Weapon, Rage, Dueling…) filtered by source-kind. NO manual notation/math needed. Use is_critical_hit for crits, extras for opt-in (Sneak Attack, Smite, Hex, Hunter's Mark, etc.).
 
 When checkType is omitted, notation is rolled exactly as-is — include any modifiers yourself.
 
 Examples:
-  Player perception check:  { notation: "1d20", player: "Arlon", checkType: "perception", dc: 15 }
-  Player DEX save (adv):    { notation: "2d20kh1", player: "Arlon", checkType: "dexterity_save", dc: 14 }
-
-When checkType + player are provided, the tool checks active effects for advantage/disadvantage and returns hints (e.g., "Advantage on STR checks from Rage"). Use these hints to decide whether to roll with advantage/disadvantage.
-
-Examples:
+  Player perception:        { player: "Arlon", notation: "1d20", checkType: "perception", dc: 15 }
+  Player DEX save (adv):    { player: "Arlon", notation: "2d20kh1", checkType: "dexterity_save", dc: 14 }
+  Longsword damage:         { player: "Arlon", checkType: "damage", action_ref: { source: "weapon", name: "Longsword" } }
+  Fireball at slot 5:       { player: "Mira",  checkType: "damage", action_ref: { source: "spell", name: "Fireball" }, upcast_level: 2 }
+  Fire Bolt (caster lvl 5): { player: "Mira",  checkType: "damage", action_ref: { source: "spell", name: "Fire Bolt" } }
+  Crit longsword + sneak:   { player: "Slip",  checkType: "damage", action_ref: { source: "weapon", name: "Rapier" }, is_critical_hit: true, extras: [{ source: "feature", name: "Sneak Attack" }] }
+  Smite at slot 3:          { player: "Lia",   checkType: "damage", action_ref: { source: "weapon", name: "Longsword" }, extras: [{ source: "spell", name: "Divine Smite", upcastLevel: 2 }] }
   Monster attack (DM roll): { notation: "1d20+6", dc: 15, reason: "Goblin attacks Arlon" }
-  Damage roll:              { notation: "2d6+3", reason: "Goblin shortsword damage" }
-  Player rolls damage:      { notation: "1d8+2d6+3", player: "Rogue", reason: "Sneak attack" }`,
+  Goblin damage (DM roll):  { notation: "2d6+3", reason: "Goblin shortsword damage" }`,
       inputSchema: {
         notation: z
           .string()
+          .optional()
           .describe(
-            "Dice notation: '1d20', '2d20kh1' (advantage), '2d20kl1' (disadvantage), '2d6+3', '4d6dl1'. When using checkType, omit modifier — it's auto-calculated.",
+            "Dice notation: '1d20', '2d20kh1' (advantage), '2d6+3'. Required for non-damage rolls; optional with checkType='damage' + action_ref (the action's dice are resolved automatically). When provided alongside damage+action_ref, treated as additive extra dice.",
           ),
         checkType: z
           .string()
           .optional()
           .describe(
-            "Auto-compute modifier from character sheet. Requires player. See tool description for valid values.",
+            "Auto-compute modifier from character sheet. Requires player. See tool description for valid values, including 'damage'.",
           ),
         player: z
           .string()
@@ -67,7 +73,7 @@ Examples:
           .number()
           .optional()
           .describe(
-            "Difficulty Class — shows Success/Failure to players. Overrides action_ref DC if provided.",
+            "Difficulty Class — shows Success/Failure to players. Overrides action_ref DC if provided. Ignored for damage rolls.",
           ),
         reason: z
           .string()
@@ -75,13 +81,13 @@ Examples:
           .describe("Why: 'Goblin attack', 'Spot the trap', 'Fireball damage'"),
         action_ref: z
           .object({
-            source: z.enum(["spell", "weapon", "item", "monster"]),
+            source: z.enum(["spell", "weapon", "item", "monster", "feature"]),
             name: z.string(),
             monsterActionName: z.string().optional(),
           })
           .optional()
           .describe(
-            "Auto-fill save DC from a DB entity's ActionEffect save.dc. Used with checkType ending in '_save'. Provide caster_spell_save_dc if the action uses 'spell_save_dc'.",
+            "Identifies the action being rolled. For checkType ending in '_save': auto-fills DC. For checkType='damage': REQUIRED — auto-resolves dice/ability mod/effect bonuses.",
           ),
         caster_spell_save_dc: z.coerce
           .number()
@@ -89,10 +95,183 @@ Examples:
           .describe(
             "Caster's spell save DC — substituted when action_ref resolves to 'spell_save_dc'.",
           ),
+        is_critical_hit: z
+          .boolean()
+          .optional()
+          .describe("checkType='damage' only — doubles all dice (modifiers untouched)."),
+        upcast_level: z.coerce
+          .number()
+          .optional()
+          .describe(
+            "checkType='damage' only — extra spell levels above the spell's base level (Fireball at slot 5 = 2). Triggers per-level scaling.",
+          ),
+        ability: z
+          .enum(["strength", "dexterity", "constitution", "intelligence", "wisdom", "charisma"])
+          .optional()
+          .describe(
+            "checkType='damage' only — override the ability used for the damage modifier (e.g. Monk uses DEX for Monk weapons). Default: derived from weapon properties.",
+          ),
+        add_spellcasting_mod: z
+          .boolean()
+          .optional()
+          .describe(
+            "checkType='damage' only — force-add or force-skip the caster's spellcasting modifier on spell damage. Default: read from ActionOutcome.damage[*].addAbilityMod (most attack-roll cantrips have this set).",
+          ),
+        extras: z
+          .array(
+            z.object({
+              source: z.enum(["spell", "feature", "feat", "weapon", "item", "monster"]),
+              name: z.string(),
+              upcastLevel: z.coerce.number().optional(),
+              diceOverride: z.string().optional(),
+              typeOverride: z.string().optional(),
+            }),
+          )
+          .optional()
+          .describe(
+            "checkType='damage' only — opt-in extras (Sneak Attack, Divine Smite, Psionic Strike, Hex, Hunter's Mark, etc.). Each ref is resolved against the DB (source: 'feature' for class features, 'spell' for spells like Smite/Hex). Use diceOverride for ad-hoc rolls.",
+          ),
       },
     },
-    async ({ notation, checkType, player, dc, reason, action_ref, caster_spell_save_dc }) => {
-      // Auto-fill DC from action_ref if dc not explicitly provided
+    async ({
+      notation,
+      checkType,
+      player,
+      dc,
+      reason,
+      action_ref,
+      caster_spell_save_dc,
+      is_critical_hit,
+      upcast_level,
+      ability,
+      add_spellcasting_mod,
+      extras,
+    }) => {
+      // ── Validate checkType ──
+      if (checkType) {
+        const parsed = parseCheckType(checkType);
+        if (!parsed) {
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: `Error: Unrecognized checkType "${checkType}". Valid: skill names, ability names, saves, attacks (melee_attack, ranged_attack, spell_attack, finesse_attack), or "damage".`,
+              },
+            ],
+          };
+        }
+        if (!player) {
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: `Error: checkType requires player — need a character sheet to compute modifier. Either provide player or include modifier in notation directly.`,
+              },
+            ],
+          };
+        }
+      }
+
+      // ── Resolve damage-roll notation up front ──
+      // For checkType="damage": resolve action_ref + extras + ability mod + effect
+      // bonuses → final notation, breakdown, hints. Notation arg is treated as
+      // additive extra dice.
+      const isDamageRoll = checkType?.toLowerCase() === "damage";
+      let damageNotation: string | undefined;
+      let damageBreakdown = "";
+      let damageHints = "";
+      let damageErrors = "";
+      let damagePrimaryType: string | undefined;
+
+      if (isDamageRoll) {
+        if (!action_ref) {
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: `Error: checkType="damage" requires action_ref so the dice can be auto-resolved. Example: { player: "Arlon", checkType: "damage", action_ref: { source: "weapon", name: "Longsword" } }.`,
+              },
+            ],
+          };
+        }
+        const char = Object.values(wsClient.gameStateManager.characters).find(
+          (c) => c.static.name.toLowerCase() === (player ?? "").toLowerCase(),
+        );
+        if (!char) {
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: `Error: Could not find character "${player}" for damage roll.`,
+              },
+            ],
+          };
+        }
+
+        const opts: DamageRollOptions = {
+          ability,
+          upcastLevel: upcast_level,
+          isCriticalHit: is_critical_hit,
+          addSpellcastingMod: add_spellcasting_mod,
+          extras: extras as DamageRollExtra[] | undefined,
+        };
+        const computed = computeDamageRoll(char, action_ref, opts);
+        damageNotation = computed.notation;
+        damagePrimaryType = computed.primaryDamageType;
+
+        if (computed.errors.length > 0) {
+          damageErrors = "\n⚠️ " + computed.errors.join("; ");
+        }
+
+        // Append additive notation if provided (Q8: notation is treated as
+        // additive extras for damage rolls).
+        if (notation && notation.trim() !== "") {
+          damageNotation = damageNotation
+            ? `${damageNotation}+${notation.trim()}`
+            : notation.trim();
+        }
+
+        // Breakdown line.
+        if (computed.breakdown.length > 0) {
+          const parts = computed.breakdown.map((b) => {
+            const dmg = b.damageType ? ` ${b.damageType}` : "";
+            if (b.dice && b.flat !== undefined) return `${b.dice}+${b.flat} ${b.label}${dmg}`;
+            if (b.dice) return `${b.dice} ${b.label}${dmg}`;
+            if (b.flat !== undefined) return `${b.flat >= 0 ? "+" : ""}${b.flat} ${b.label}${dmg}`;
+            return b.label;
+          });
+          damageBreakdown = `\n📊 ${parts.join(", ")}`;
+        }
+        if (computed.hints.length > 0) {
+          damageHints = "\n💡 " + computed.hints.join("; ");
+        }
+
+        // If the computed notation is empty, surface error and bail.
+        if (!damageNotation || damageNotation === "0") {
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: `Error: Could not resolve damage roll for ${action_ref.source}:${action_ref.name}.${damageErrors}`,
+              },
+            ],
+          };
+        }
+      } else {
+        // Non-damage path: notation is required.
+        if (!notation || notation.trim() === "") {
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: `Error: notation is required (omit only when checkType="damage" with action_ref).`,
+              },
+            ],
+          };
+        }
+      }
+
+      // ── Auto-fill DC from action_ref for save checks ──
       let resolvedDC = dc;
       if (resolvedDC === undefined && action_ref && checkType?.endsWith("_save")) {
         const ref: ActionRef = action_ref;
@@ -110,34 +289,10 @@ Examples:
           }
         }
       }
-      // ── Validate checkType ──
-      if (checkType) {
-        const parsed = parseCheckType(checkType);
-        if (!parsed) {
-          return {
-            content: [
-              {
-                type: "text" as const,
-                text: `Error: Unrecognized checkType "${checkType}". Valid values: skill names (perception, stealth...), ability names (strength, dexterity...), saves (dexterity_save...), attacks (melee_attack, ranged_attack, spell_attack, finesse_attack).`,
-              },
-            ],
-          };
-        }
-        if (!player) {
-          return {
-            content: [
-              {
-                type: "text" as const,
-                text: `Error: checkType requires player — need a character sheet to compute modifier. Either provide player or include modifier in notation directly.`,
-              },
-            ],
-          };
-        }
-      }
 
-      // ── Build advantage/disadvantage hints from active effects ──
+      // ── Build advantage/disadvantage hints from active effects (d20 checks only) ──
       let effectHints = "";
-      if (checkType && player) {
+      if (checkType && player && !isDamageRoll) {
         const char = Object.values(wsClient.gameStateManager.characters).find(
           (c) => c.static.name.toLowerCase() === player.toLowerCase(),
         );
@@ -151,8 +306,6 @@ Examples:
           }
 
           // Roll-minimum hints (Reliable Talent, Indomitable Might).
-          // The d20 result is set in the player's browser, so we surface the
-          // floor as a DM-visible reminder rather than rewriting the total.
           const parsed = parseCheckType(checkType);
           const minimums = getRollMinimums(char);
           if (parsed && minimums.length > 0) {
@@ -212,37 +365,27 @@ Examples:
         }
       }
 
-      // ── Build damage bonus hints from combatBonuses + active effects ──
-      let damageBonusHints = "";
-      if (!checkType && player) {
-        const char = Object.values(wsClient.gameStateManager.characters).find(
-          (c) => c.static.name.toLowerCase() === player.toLowerCase(),
-        );
-        if (char) {
-          // Phase 7: getCombatBonus() derives from effects
-          const dmgBonuses = getCombatBonus(char).filter((b) => b.type === "damage");
-          if (dmgBonuses.length > 0) {
-            const parts = dmgBonuses.map(
-              (b) =>
-                `${b.value >= 0 ? "+" : ""}${b.value} ${b.attackType ?? ""} damage (${b.source})${b.condition ? ` [${b.condition}]` : ""}`,
-            );
-            damageBonusHints = "\n📋 Damage bonuses: " + parts.join(", ");
-          }
-        }
+      // ── Damage rolls don't use DC; ignore it if accidentally provided ──
+      if (isDamageRoll) {
+        resolvedDC = undefined;
       }
+
+      // Final notation: damage path overrides; otherwise use the user-provided
+      // notation (which we've already validated is non-empty).
+      const finalNotation = damageNotation ?? (notation as string);
 
       // ── Interactive player roll ──
       if (player) {
         try {
           const result = await wsClient.sendCheckRequest({
-            notation,
+            notation: finalNotation,
             checkType,
             targetCharacter: player,
             dc: resolvedDC,
-            reason: reason || "Roll",
+            reason: reason || (isDamageRoll ? "Damage roll" : "Roll"),
           });
 
-          const output = buildOutputFromResult(result.roll, notation);
+          const output = buildOutputFromResult(result.roll, finalNotation);
           const formatted = formatRollOutput(output, {
             dc: result.dc,
             success: result.success,
@@ -255,10 +398,18 @@ Examples:
           const noteLine = result.playerMessage
             ? `\n📝 Player note: "${result.playerMessage}"`
             : "";
-          const fullResult = formatted + noteLine + effectHints + damageBonusHints;
+          const damageTypeLine = isDamageRoll && damagePrimaryType ? ` (${damagePrimaryType})` : "";
+          const fullResult =
+            formatted +
+            damageTypeLine +
+            noteLine +
+            effectHints +
+            damageBreakdown +
+            damageHints +
+            damageErrors;
           gameLogger.toolCall(
             "roll_dice",
-            { notation, checkType, player, dc: resolvedDC, reason },
+            { notation: finalNotation, checkType, player, dc: resolvedDC, reason },
             fullResult,
           );
           return { content: [{ type: "text" as const, text: fullResult }] };
@@ -266,7 +417,7 @@ Examples:
           const errMsg = `Check request failed: ${error instanceof Error ? error.message : String(error)}`;
           gameLogger.toolCall(
             "roll_dice",
-            { notation, checkType, player, dc: resolvedDC, reason },
+            { notation: finalNotation, checkType, player, dc: resolvedDC, reason },
             errMsg,
           );
           return {
@@ -281,7 +432,7 @@ Examples:
       }
 
       // ── DM server-side roll ──
-      const { result: roll, output } = rollNotation(notation, reason || notation);
+      const { result: roll, output } = rollNotation(finalNotation, reason || finalNotation);
 
       // Send to all players
       wsClient.sendDiceRoll(roll, reason);
@@ -296,8 +447,14 @@ Examples:
         criticalFail: roll.criticalFail,
       });
 
-      gameLogger.toolCall("roll_dice", { notation, dc: resolvedDC, reason }, formatted);
-      return { content: [{ type: "text" as const, text: formatted }] };
+      const damageTypeLine = isDamageRoll && damagePrimaryType ? ` (${damagePrimaryType})` : "";
+      const fullResult = formatted + damageTypeLine + damageBreakdown + damageHints + damageErrors;
+      gameLogger.toolCall(
+        "roll_dice",
+        { notation: finalNotation, dc: resolvedDC, reason },
+        fullResult,
+      );
+      return { content: [{ type: "text" as const, text: fullResult }] };
     },
   );
 }

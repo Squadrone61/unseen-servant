@@ -6,3 +6,4 @@ export * from "./encounter";
 export * from "./effect-resolver";
 export * from "./damage-color";
 export * from "./weapon-mastery";
+export * from "./damage-roll";

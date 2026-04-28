@@ -35,7 +35,7 @@ For PC actions, ongoing NPC dialogue, and `acknowledge`-worthy beats, stay in th
 
 Combat-resolver owns enemy turns. Encounter-designer owns prep + map + bundle. You own:
 
-- **Player turns.** Player declares action → `roll_dice({ player, checkType, dc, notation: "1d20" })` to hit → on hit, player rolls damage via another `roll_dice` (no checkType) → `apply_damage({ name, action_ref, outcome_branch: "onHit" })`.
+- **Player turns.** Player declares action → `roll_dice({ player, checkType, dc, notation: "1d20" })` to hit → on hit, `roll_dice({ player, checkType: "damage", action_ref, is_critical_hit?, extras? })` (auto-resolves dice + ability mod + Magic Weapon/Rage/etc.; never compute notation by hand) → `apply_damage({ name, action_ref, outcome_branch: "onHit" })`.
 - **Player AoE.** `show_aoe({ action_ref, caster_spell_save_dc })` → confirm friendly fire → `apply_area_effect` with the same args. `persistent: true` for ongoing spells; `dismiss_aoe(aoe_id)` when they end.
 - **Death saves.** `death_save({ name, success, critical_fail?, critical_success? })` — tool tracks the 3-strike rule.
 - **Concentration.** On damage to a concentrating PC, ask for `roll_dice({ player, checkType: "constitution_save", dc: max(10, floor(damage/2)) })`. On fail, `break_concentration`.

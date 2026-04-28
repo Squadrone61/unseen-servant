@@ -699,8 +699,15 @@ export interface ActionEffect {
  * Poison spray that deals poison damage AND applies Poisoned on a failed save).
  */
 export interface ActionOutcome {
-  /** Damage rolls to apply on this branch. Multiple entries add together. */
-  damage?: Array<{ dice: string; type: DamageType }>;
+  /**
+   * Damage rolls to apply on this branch. Multiple entries add together.
+   *
+   * `addAbilityMod` flags entries that include the caster's spellcasting
+   * ability modifier on damage (typical for attack-roll cantrips like
+   * Fire Bolt, Eldritch Blast). Weapons add the wielder's ability mod by
+   * default and don't need this flag.
+   */
+  damage?: Array<{ dice: string; type: DamageType; addAbilityMod?: boolean }>;
   /** Healing to apply (Cure Wounds, Healing Word). */
   healing?: { dice: string };
   /** Temporary HP granted (False Life, Aid). */

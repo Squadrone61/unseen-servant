@@ -56,7 +56,8 @@ export type ParsedCheck =
   | { category: "skill"; skill: string; ability: string }
   | { category: "ability"; ability: string }
   | { category: "saving_throw"; ability: string }
-  | { category: "attack"; attackType: "melee" | "ranged" | "spell" | "finesse" };
+  | { category: "attack"; attackType: "melee" | "ranged" | "spell" | "finesse" }
+  | { category: "damage" };
 
 /**
  * Parse a flat checkType string into a structured ParsedCheck.
@@ -95,6 +96,10 @@ export function parseCheckType(checkType: string): ParsedCheck | null {
   if (key === "spell_attack") return { category: "attack", attackType: "spell" };
   if (key === "finesse_attack") return { category: "attack", attackType: "finesse" };
 
+  // Damage rolls — notation is pre-resolved by computeDamageRoll, so
+  // computeCheckModifier returns 0 for this category.
+  if (key === "damage") return { category: "damage" };
+
   return null;
 }
 
@@ -125,6 +130,9 @@ export function buildCheckLabel(check: CheckRequest): string {
     case "attack": {
       const atkLabel = parsed.attackType.charAt(0).toUpperCase() + parsed.attackType.slice(1);
       return `${atkLabel} Attack${reason ? ` — ${reason}` : ""}`;
+    }
+    case "damage": {
+      return reason ? `Damage — ${reason}` : "Damage";
     }
   }
 }
@@ -208,6 +216,12 @@ export function computeCheckModifier(char: CharacterData, check: CheckRequest): 
     return getModifier(effectiveAbilityScore) + getEffectBonus(char, "d20");
   }
 
+  if (parsed.category === "damage") {
+    // Damage notation is pre-resolved by computeDamageRoll; no flat modifier
+    // to append at d20 time. Return 0.
+    return 0;
+  }
+
   if (parsed.category === "attack") {
     // Spell attacks use the first (or only) spellcasting entry + effect bonuses
     // Phase 7: getSpellcasting() derives from effects
@@ -284,6 +298,9 @@ function checkToAdvantageTargets(parsed: ParsedCheck): AdvantageTarget[] {
       const specific = `attack_${parsed.attackType}` as AdvantageTarget;
       return [specific, "attack"];
     }
+    case "damage":
+      // Damage rolls don't have a d20-style advantage system in 5e.
+      return [];
   }
 }
 

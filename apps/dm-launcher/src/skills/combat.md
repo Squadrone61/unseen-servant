@@ -16,7 +16,7 @@ Combat-resolver owns enemy turns. Encounter-designer owns prep + map + bundle. Y
    - `spell_attack` (spell attack bonus)
    - `finesse_attack` (max(STR,DEX) + prof)
      The tool auto-applies the modifier from the sheet and surfaces advantage/disadvantage hints from active effects.
-3. **On hit, the player rolls their own damage.** Issue `roll_dice({ player, notation: "<dice>+<mod>", reason: "..." })` — no `checkType`. Players ALWAYS roll their own damage.
+3. **On hit, the player rolls their own damage.** Issue `roll_dice({ player, checkType: "damage", action_ref: { source, name }, is_critical_hit?, extras? })`. The tool auto-resolves base dice + ability mod + Magic Weapon / Rage / Dueling / etc. — DO NOT compute notation by hand. Use `is_critical_hit: true` on a nat 20 (doubles dice). Use `extras` for opt-in damage like Sneak Attack (`{ source: "feature", name: "Sneak Attack" }`), Divine Smite (`{ source: "spell", name: "Divine Smite", upcastLevel: <slot - 1> }`), Hex/Hunter's Mark when on the marked target. The tool surfaces hints if a relevant extra is available but un-fired.
 4. Apply the rolled damage via `apply_damage({ name, action_ref: { source, name, monsterActionName? }, outcome_branch: "onHit" })`. The action_ref pulls damage type so res/imm/vuln auto-applies.
 
 ### Player AoE targeting flow
