@@ -36,7 +36,7 @@ checkType values (modifier auto-calculated, requires player):
   Abilities: "strength", "dexterity", "constitution", "intelligence", "wisdom", "charisma"
   Saves: "strength_save", "dexterity_save", "constitution_save", "intelligence_save", "wisdom_save", "charisma_save"
   Attacks: "melee_attack" (STR + prof), "ranged_attack" (DEX + prof), "spell_attack" (spell bonus), "finesse_attack" (max(STR,DEX) + prof)
-  Damage: "damage" — REQUIRES action_ref. Auto-resolves base dice + ability mod (weapon: from properties; spell: when entry has addAbilityMod) + every active damage_* effect (Magic Weapon, Rage, Dueling…) filtered by source-kind. NO manual notation/math needed. Use is_critical_hit for crits, extras for opt-in (Sneak Attack, Smite, Hex, Hunter's Mark, etc.).
+  Damage: "damage" — REQUIRES action_ref. Auto-resolves base dice (with embedded \`spell_mod\`/\`int\`/\`str\`/etc. expression atoms for caster mods) + weapon ability mod from properties + every active damage_* effect (Magic Weapon, Rage, Dueling…) filtered by source-kind. NO manual notation/math needed. Use is_critical_hit for crits, extras for opt-in (Sneak Attack, Smite, Hex, Hunter's Mark, etc.).
 
 When checkType is omitted, notation is rolled exactly as-is — include any modifiers yourself.
 
@@ -109,13 +109,7 @@ Examples:
           .enum(["strength", "dexterity", "constitution", "intelligence", "wisdom", "charisma"])
           .optional()
           .describe(
-            "checkType='damage' only — override the ability used for the damage modifier (e.g. Monk uses DEX for Monk weapons). Default: derived from weapon properties.",
-          ),
-        add_spellcasting_mod: z
-          .boolean()
-          .optional()
-          .describe(
-            "checkType='damage' only — force-add or force-skip the caster's spellcasting modifier on spell damage. Default: read from ActionOutcome.damage[*].addAbilityMod (most attack-roll cantrips have this set).",
+            "checkType='damage' only — override the ability used for the WEAPON damage modifier (e.g. Monk uses DEX for Monk weapons). Default: derived from weapon properties. Spell ability mods are baked into the spell's dice expression via `spell_mod` and need no override.",
           ),
         extras: z
           .array(
@@ -144,7 +138,6 @@ Examples:
       is_critical_hit,
       upcast_level,
       ability,
-      add_spellcasting_mod,
       extras,
     }) => {
       // ── Validate checkType ──
@@ -212,7 +205,6 @@ Examples:
           ability,
           upcastLevel: upcast_level,
           isCriticalHit: is_critical_hit,
-          addSpellcastingMod: add_spellcasting_mod,
           extras: extras as DamageRollExtra[] | undefined,
         };
         const computed = computeDamageRoll(char, action_ref, opts);

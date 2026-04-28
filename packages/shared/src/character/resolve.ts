@@ -106,11 +106,35 @@ function deriveProficiencyBonus(classes: CharacterClass[]): number {
 function buildBaseCtx(char: CharacterData): Omit<ResolveContext, "abilities"> {
   const totalLevel = char.static.classes.reduce((sum, c) => sum + c.level, 0);
   const proficiencyBonus = Math.floor((totalLevel - 1) / 4) + 2;
+  // Pick the first class that grants spellcasting (full/half/pact/third-caster).
+  // Used by the `spell_mod` expression atom; undefined for non-spellcasters.
+  let spellcastingAbility: keyof AbilityScores | undefined;
+  for (const cls of char.static.classes) {
+    const classDb = getClass(cls.name);
+    const classAbility = classDb?.spellcastingAbility as keyof AbilityScores | undefined;
+    if (classAbility) {
+      spellcastingAbility = classAbility;
+      break;
+    }
+    if (cls.subclass && classDb) {
+      const sub = classDb.subclasses.find(
+        (s) =>
+          s.name.toLowerCase() === cls.subclass!.toLowerCase() ||
+          s.shortName.toLowerCase() === cls.subclass!.toLowerCase(),
+      );
+      const subAbility = sub?.spellcastingAbility as keyof AbilityScores | undefined;
+      if (subAbility && sub?.casterProgression != null) {
+        spellcastingAbility = subAbility;
+        break;
+      }
+    }
+  }
   return {
     totalLevel,
     classLevel: char.static.classes[0]?.level ?? 1,
     proficiencyBonus,
     stackCount: char.dynamic.exhaustionLevel ?? undefined,
+    spellcastingAbility,
   };
 }
 

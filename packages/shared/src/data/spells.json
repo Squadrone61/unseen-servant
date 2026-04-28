@@ -955,7 +955,7 @@
         "kind": "attack",
         "attack": { "bonus": "spell_attack", "range": { "normal": 60 } },
         "targeting": { "type": "creature" },
-        "onHit": { "damage": [{ "dice": "1d6", "type": "bludgeoning", "addAbilityMod": true }], "note": "Imbue 1-3 pebbles (1 min). Ranged spell attack using your spellcasting mod. Usable by others (they use your modifier)." }
+        "onHit": { "damage": [{ "dice": "1d6 + spell_mod", "type": "bludgeoning" }], "note": "Imbue 1-3 pebbles (1 min). Ranged spell attack using your spellcasting mod. Usable by others (they use your modifier)." }
       }
     }
   },
@@ -6413,9 +6413,8 @@
         "onHit": {
           "damage": [
             {
-              "dice": "3d6",
-              "type": "fire",
-              "addAbilityMod": true
+              "dice": "3d6 + spell_mod",
+              "type": "fire"
             }
           ]
         },
@@ -7949,9 +7948,8 @@
         "onHit": {
           "damage": [
             {
-              "dice": "1d8",
-              "type": "force",
-              "addAbilityMod": true
+              "dice": "1d8 + spell_mod",
+              "type": "force"
             }
           ]
         },

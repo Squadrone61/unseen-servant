@@ -4,7 +4,7 @@
  * Evaluates value expressions used in the effect system. Supports:
  *   - Literals: 5, -2, 10
  *   - Ability modifiers: str, dex, con, int, wis, cha  → Math.floor((score - 10) / 2)
- *   - Context atoms: prof, lvl, clvl
+ *   - Context atoms: prof, lvl, clvl, spell_mod (caster's spellcasting ability mod)
  *   - Arithmetic: +, -, *  (standard precedence: * before +/-)
  *   - Functions:
  *       min(a, b), max(a, b)
@@ -328,7 +328,8 @@ class Parser {
   }
 
   private resolveAtom(name: string): number {
-    const { abilities, totalLevel, classLevel, proficiencyBonus, stackCount } = this.ctx;
+    const { abilities, totalLevel, classLevel, proficiencyBonus, stackCount, spellcastingAbility } =
+      this.ctx;
 
     switch (name) {
       case "str":
@@ -343,6 +344,9 @@ class Parser {
         return abilityModifier(abilities.wisdom);
       case "cha":
         return abilityModifier(abilities.charisma);
+      case "spell_mod":
+        // Caster's spellcasting ability modifier; 0 if non-spellcaster.
+        return spellcastingAbility ? abilityModifier(abilities[spellcastingAbility]) : 0;
       case "prof":
         return proficiencyBonus;
       case "half_prof":

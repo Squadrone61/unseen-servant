@@ -480,13 +480,6 @@ export const propertySchema: z.ZodType<Property> = z.discriminatedUnion("type", 
 const damageEntrySchema = z.object({
   dice: z.string(),
   type: damageTypeSchema,
-  /**
-   * When true, the caster's spellcasting ability modifier is added to this
-   * damage entry (typical for attack-roll cantrips like Fire Bolt). Default
-   * false; weapons don't need this flag (they add wielder's ability mod by
-   * convention).
-   */
-  addAbilityMod: z.boolean().optional(),
 });
 
 const diceOnlySchema = z.object({ dice: z.string() });

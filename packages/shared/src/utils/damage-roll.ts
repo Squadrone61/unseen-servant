@@ -4,12 +4,12 @@
  *
  * The DM provides an `action_ref` (what is being rolled) plus optional flags
  * (crit, upcast, ability override, opt-in extras). This helper resolves:
- *   - Base dice from action.onHit / onFailedSave damage entries.
- *   - Ability modifier per source-kind:
- *       weapon → STR/DEX/max(STR,DEX) from weapon properties (or `ability` override)
- *       spell  → spellcasting ability, only when damage entry has `addAbilityMod: true`
- *                or the DM forces it via `add_spellcasting_mod`.
- *       feature/item/monster — embedded in dice expressions (e.g. "table(...) + int")
+ *   - Base dice from action.onHit / onFailedSave damage entries. Dice expressions
+ *     can embed ability mods directly via the value-notation language — e.g.
+ *     "1d6 + spell_mod" for Magic Stone, "table(3:1d6, 5:1d8) + int" for Psi Strike.
+ *   - Wielder's ability modifier for weapon attacks (STR / DEX / max(STR,DEX)
+ *     from weapon properties, or `ability` override). Spell ability mods are
+ *     embedded in the dice expression via `spell_mod` — no flag needed.
  *   - Damage_* effect modifiers (Magic Weapon +1, Rage, Dueling, etc.) filtered
  *     by source-kind tag (melee/ranged/spell). Conditional `damage` parent
  *     modifiers (Hex/Hunter's Mark, which need a target match) are skipped from
@@ -27,12 +27,7 @@ import type { ActionRef } from "../data/resolve-action";
 import { resolveActionRef } from "../data/resolve-action";
 import { getAction, collectModifiersWithSource } from "./effect-resolver";
 import { evaluateExpression } from "./expression-evaluator";
-import {
-  getAbilities,
-  getSpellcasting,
-  collectActiveBundles,
-  buildCtx,
-} from "../character/resolve";
+import { getAbilities, collectActiveBundles, buildCtx } from "../character/resolve";
 import { getBaseItem } from "../data/index";
 
 // ---------------------------------------------------------------------------
@@ -60,17 +55,12 @@ export interface DamageRollExtra {
 }
 
 export interface DamageRollOptions {
-  /** Override the ability used for the damage modifier (e.g. Monk Wisdom). */
+  /** Override the ability used for the weapon damage modifier (e.g. Monk Wisdom). */
   ability?: Ability;
   /** Spell-slot upcast level (extra levels above base) for the primary action_ref. */
   upcastLevel?: number;
   /** True doubles all dice counts (5e crit rule). Flat bonuses are untouched. */
   isCriticalHit?: boolean;
-  /**
-   * Force the spellcasting modifier on or off for the primary spell damage.
-   * Default: read from ActionOutcome.damage[*].addAbilityMod flag.
-   */
-  addSpellcastingMod?: boolean;
   /** Opt-in extras: Sneak Attack, Smite, Hex, etc. */
   extras?: DamageRollExtra[];
 }
@@ -365,8 +355,9 @@ export function computeDamageRoll(
     }
   }
 
-  // 5. Ability modifier (weapon damage or spell-with-flag).
-  const abilityResult = computeAbilityMod(char, ref, action, damageEntries, options, ctx);
+  // 5. Wielder's ability modifier for weapon attacks. Spell ability mods are
+  //    embedded in the dice expression (`+ spell_mod`), already counted above.
+  const abilityResult = computeWeaponAbilityMod(char, ref, action, options, ctx);
   if (abilityResult) {
     flatTotal += abilityResult.value;
     breakdown.push({
@@ -463,44 +454,25 @@ function inferSourceKind(
   return null;
 }
 
-function computeAbilityMod(
+function computeWeaponAbilityMod(
   char: CharacterData,
   ref: ActionRef,
   action: NonNullable<ReturnType<typeof getAction>>,
-  damageEntries: ReadonlyArray<{ dice: string; type: string; addAbilityMod?: boolean }>,
   options: DamageRollOptions,
   ctx: ResolveContext,
 ): { ability: Ability; value: number } | null {
-  // Explicit DM override.
+  // Explicit DM override (used for weapons; spells get the mod via expression).
   if (options.ability) {
     const score = ctx.abilities[options.ability];
     return { ability: options.ability, value: abilityModFromScore(score) };
   }
 
   const bonus = action.attack?.bonus;
-
-  // Weapon damage: STR/DEX/finesse-max from weapon properties.
   if (ref.source === "weapon" || bonus === "weapon_melee" || bonus === "weapon_ranged") {
     const ability = chooseWeaponAbility(char, ref.name);
     if (!ability) return null;
     const score = ctx.abilities[ability];
     return { ability, value: abilityModFromScore(score) };
-  }
-
-  // Spell damage: only when explicitly opted in (DM flag) or when at least one
-  // damage entry has addAbilityMod: true.
-  if (ref.source === "spell" || bonus === "spell_attack") {
-    const wantsMod =
-      options.addSpellcastingMod ?? damageEntries.some((d) => d.addAbilityMod === true);
-    if (!wantsMod) return null;
-    // Find the character's spellcasting ability (first matching class).
-    for (const cls of char.static.classes) {
-      const sc = getSpellcasting(char, cls.name);
-      if (sc) {
-        const score = ctx.abilities[sc.ability];
-        return { ability: sc.ability, value: abilityModFromScore(score) };
-      }
-    }
   }
 
   return null;

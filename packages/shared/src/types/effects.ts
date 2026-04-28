@@ -701,13 +701,12 @@ export interface ActionEffect {
 export interface ActionOutcome {
   /**
    * Damage rolls to apply on this branch. Multiple entries add together.
-   *
-   * `addAbilityMod` flags entries that include the caster's spellcasting
-   * ability modifier on damage (typical for attack-roll cantrips like
-   * Fire Bolt, Eldritch Blast). Weapons add the wielder's ability mod by
-   * default and don't need this flag.
+   * `dice` is a value expression (see Value Notation Language at top of file):
+   * pure dice ("8d6"), tables ("table(1:1d6, 5:2d6)"), or mixed with ability
+   * mods ("1d6 + spell_mod", "table(3:1d6, 5:1d8) + int"). The `spell_mod`
+   * atom resolves to the caster's spellcasting ability modifier.
    */
-  damage?: Array<{ dice: string; type: DamageType; addAbilityMod?: boolean }>;
+  damage?: Array<{ dice: string; type: DamageType }>;
   /** Healing to apply (Cure Wounds, Healing Word). */
   healing?: { dice: string };
   /** Temporary HP granted (False Life, Aid). */
@@ -859,4 +858,10 @@ export interface ResolveContext {
   stackCount?: number;
   /** Resolved walk speed. Available after walk speed is computed in getSpeed(). */
   speed?: number;
+  /**
+   * The character's spellcasting ability (first matching class). Used by the
+   * `spell_mod` expression atom for spells that add the caster's modifier to
+   * damage (Magic Stone, Spiritual Weapon, Flame Blade, etc.).
+   */
+  spellcastingAbility?: keyof AbilityScores;
 }
