@@ -159,7 +159,7 @@ export class GameStateManager {
   private _dirtyCharacters = new Set<string>();
   /** Debounce timer for coalescing rapid mutations into a single write */
   private _flushTimer: ReturnType<typeof setTimeout> | null = null;
-  /** Debounce delay in ms — coalesces rapid mutations (e.g., applyBatchEffects) */
+  /** Debounce delay in ms — coalesces rapid mutations into a single write */
   private readonly FLUSH_DELAY_MS = 200;
   /** Last completed check result — consumed by sendCheckRequest resolver */
   lastCheckResult: {
@@ -4913,86 +4913,6 @@ export class GameStateManager {
       width: map.width,
       height: map.height,
       name: map.name ?? "unnamed",
-    });
-  }
-
-  /** Apply multiple effects in a single call (damage, heal, conditions, movement) */
-  applyBatchEffects(
-    effects: Array<
-      | { type: "damage"; name: string; amount: number; damage_type?: string }
-      | { type: "heal"; name: string; amount: number }
-      | { type: "set_hp"; name: string; value: number }
-      | { type: "condition_add"; name: string; condition: string; duration?: number }
-      | { type: "condition_remove"; name: string; condition: string }
-      | { type: "move"; name: string; position: string }
-    >,
-  ): ToolResponse {
-    if (effects.length > 10) {
-      return toResponse("Too many effects (max 10)", { count: effects.length }, true);
-    }
-
-    const results: Array<{
-      index: number;
-      type: string;
-      target: string;
-      result: string;
-      error?: boolean;
-    }> = [];
-    let applied = 0;
-    let failed = 0;
-
-    for (let i = 0; i < effects.length; i++) {
-      const effect = effects[i];
-      let r: ToolResponse = toResponse("", {}, true);
-      switch (effect.type) {
-        case "damage":
-          r = this.applyDamage(effect.name, effect.amount, effect.damage_type);
-          break;
-        case "heal":
-          r = this.heal(effect.name, effect.amount);
-          break;
-        case "set_hp":
-          r = this.setHP(effect.name, effect.value);
-          break;
-        case "condition_add":
-          r = this.addCondition(effect.name, effect.condition, effect.duration);
-          break;
-        case "condition_remove":
-          r = this.removeCondition(effect.name, effect.condition);
-          break;
-        case "move": {
-          const pos = parseGridPosition(effect.position);
-          if (!pos) {
-            r = toResponse(`Invalid position "${effect.position}"`, { name: effect.name }, true);
-          } else {
-            r = this.moveCombatant(effect.name, pos);
-          }
-          break;
-        }
-      }
-      if (r.error) {
-        failed++;
-        results.push({
-          index: i,
-          type: effect.type,
-          target: effect.name,
-          result: r.text,
-          error: true,
-        });
-      } else {
-        applied++;
-        results.push({ index: i, type: effect.type, target: effect.name, result: r.text });
-      }
-    }
-
-    const summary = results
-      .map((r) => `${r.error ? "✗" : "✓"} [${r.type}] ${r.target}: ${r.result}`)
-      .join("\n");
-    this.markDirty();
-    return toResponse(`Batch: ${applied} applied, ${failed} failed\n${summary}`, {
-      applied,
-      failed,
-      results,
     });
   }
 

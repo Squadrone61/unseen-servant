@@ -1576,64 +1576,6 @@ export function registerGameTools(
     },
   );
 
-  // ─── Batch Effects ───
-
-  server.registerTool(
-    "apply_batch_effects",
-    {
-      description:
-        "Apply multiple effects in a single call — damage, heal, conditions, movement. Max 10 effects.",
-      inputSchema: {
-        effects: z
-          .array(
-            z.discriminatedUnion("type", [
-              z.object({
-                type: z.literal("damage"),
-                name: z.string().describe("Character or combatant name"),
-                amount: z.coerce.number().describe("Damage amount"),
-                damage_type: z.string().optional().describe("Damage type"),
-              }),
-              z.object({
-                type: z.literal("heal"),
-                name: z.string().describe("Character or combatant name"),
-                amount: z.coerce.number().describe("Heal amount"),
-              }),
-              z.object({
-                type: z.literal("set_hp"),
-                name: z.string().describe("Character or combatant name"),
-                value: z.coerce.number().describe("HP value"),
-              }),
-              z.object({
-                type: z.literal("condition_add"),
-                name: z.string().describe("Character or combatant name"),
-                condition: z.string().describe("Condition name"),
-                duration: z.coerce.number().optional().describe("Duration in rounds"),
-              }),
-              z.object({
-                type: z.literal("condition_remove"),
-                name: z.string().describe("Character or combatant name"),
-                condition: z.string().describe("Condition name"),
-              }),
-              z.object({
-                type: z.literal("move"),
-                name: z.string().describe("Character or combatant name"),
-                position: z.string().describe("Target position in A1 notation"),
-              }),
-            ]),
-          )
-          .max(10)
-          .describe("Array of effects to apply (max 10)"),
-      },
-    },
-    async ({ effects }) => {
-      return fromToolResponse(
-        wsClient.gameStateManager.applyBatchEffects(effects),
-        "apply_batch_effects",
-        { effects },
-      );
-    },
-  );
-
   // ─── Inventory & Currency ───
 
   server.registerTool(
