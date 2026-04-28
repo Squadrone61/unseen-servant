@@ -5,7 +5,7 @@ user-invocable: false
 
 ## Combat — Conductor's Slice
 
-Combat-resolver owns enemy turns. Encounter-designer owns prep + map + bundle. You own player turns and player AoE casts.
+Combat-resolver owns NPC-turn mechanics end-to-end (verification, frame execution, all NPC mutations, player-save flow). Encounter-designer owns prep + map + bundle. You own player turns and player AoE casts. **Never call a mutation tool during an NPC's turn** — the resolver did it before returning.
 
 ### Player attack resolution
 
@@ -28,6 +28,6 @@ Combat-resolver owns enemy turns. Encounter-designer owns prep + map + bundle. Y
 
 ### Redirects
 
-- **NPC/enemy turn** → dispatch `/combat-turn <combatant>`. Never narrate from memory.
+- **NPC/enemy turn** → dispatch `/combat-turn <combatant> <requestId>`. Never narrate from memory. The resolver runs the whole turn (or whole consecutive-NPC group) and returns APPLIED FRAMES; you narrate the closing.
 - **Combat start** → dispatch `/combat-prep`.
 - **Ambiguous rule mid-fight** → dispatch `/ruling <question>`.

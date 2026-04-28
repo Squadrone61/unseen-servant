@@ -45,6 +45,8 @@ Specialists halt on missing data. When a specialist returns one of these, you re
 - `UNKNOWN_REFERENCE: <term>` (rules-advisor) → "I want to get this right — can you confirm the exact name of the spell/feature you're using?"
 - `RULING: UNABLE` → "The interaction is ambiguous enough that I want to check one more thing — can you clarify <specific variable>?"
 
+**Combat-resolver UNKNOWNs are pre-execution.** The resolver runs verify-then-execute: every ability for every group member is confirmed (bundle entry first, fallback `lookup_rule`) **before any mutation is applied**. If verification fails for any ability, the resolver returns `APPLIED FRAMES — 0 NPC(s) — UNKNOWN_<*>` with **zero broadcasts**. Nothing has happened on the battle map; nothing is stuck mid-state. Relay the clarification request and the next `wait_for_message` will surface the player's response.
+
 If after clarification the reference is still unknown, default to the most conservative plausible interpretation and narrate the decision ("Going with standard Fireball — 8d6 fire, DC 15 Dex") so the player can correct you if wrong.
 
 ## What stays inline (no dispatch, no lookup)

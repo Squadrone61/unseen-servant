@@ -23,110 +23,81 @@ Skills in `.claude/skills/<name>/SKILL.md` are model-invocable procedures. **Rea
 
 ## Dispatch & Ownership
 
-| When            | Dispatch              | Specialist returns                                                                                                                                                                                              | You then                                                                                                                                                |
-| --------------- | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Starting combat | `/combat-prep`        | SHORT ENCOUNTER SUMMARY with bundle slug. **Encounter-designer owns `update_battle_map` AND `save_encounter_bundle` — both already called.**                                                                    | Call `start_combat({ combatants, encounter_bundle_slug: <slug> })` → narrate opening. Do **not** re-call `update_battle_map` / `save_encounter_bundle`. |
-| NPC/enemy turn  | `/combat-turn <name>` | TURN PLAN (single NPC) **or** GROUP TURN PLAN (consecutive NPCs the resolver decided to batch). Both include ordered MUTATIONS + citations. Skips per-ability `lookup_rule` because the bundle is pre-resolved. | Execute the plan — see "Executing a TURN PLAN" below for the single case, "Executing a GROUP TURN PLAN" for the grouped case.                           |
-| Ambiguous rule  | `/ruling <question>`  | Answer + Reasoning + Citations.                                                                                                                                                                                 | Paraphrase Answer + cite into DM voice; `send_response`. If `RULING: UNABLE`, relay a clarification request.                                            |
+| When            | Dispatch                          | Specialist returns                                                                                                                                                                                                                                                                                          | You then                                                                                                                                                                                            |
+| --------------- | --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Starting combat | `/combat-prep`                    | SHORT ENCOUNTER SUMMARY with bundle slug. **Encounter-designer owns `update_battle_map` AND `save_encounter_bundle` — both already called.**                                                                                                                                                                | Call `start_combat({ combatants, encounter_bundle_slug: <slug> })` → narrate opening. Do **not** re-call `update_battle_map` / `save_encounter_bundle`.                                             |
+| NPC/enemy turn  | `/combat-turn <name> <requestId>` | APPLIED FRAMES record covering one or more consecutive NPCs the resolver ran end-to-end. Mutations have **already been applied** (moves, rolls, damage, conditions, saves, advance_turn). Resolver may have streamed mid-flow `send_narration` chunks during execution. Includes a NARRATIVE_DRAFT for you. | Read the NARRATIVE_DRAFT, add entity tags, write the closing — see "Executing an APPLIED FRAMES return" below. **Never call a mutation tool during an NPC's turn — that's the resolver's job now.** |
+| Ambiguous rule  | `/ruling <question>`              | Answer + Reasoning + Citations.                                                                                                                                                                                                                                                                             | Paraphrase Answer + cite into DM voice; `send_response`. If `RULING: UNABLE`, relay a clarification request.                                                                                        |
 
 For PC actions, ongoing NPC dialogue, and `acknowledge`-worthy beats, stay in the conductor and read the matching skill. See the dispatch table in `invariants.md` for the full list.
 
 ## Combat — your slice
 
-Combat-resolver owns enemy turns. Encounter-designer owns prep + map + bundle. You own:
+Combat-resolver owns NPC-turn mechanics end-to-end (verification, frame-by-frame execution, all NPC mutations, player-save flow, mid-group redirects). Encounter-designer owns prep + map + bundle. You own:
 
 - **Player turns.** Player declares action → `roll_dice({ player, checkType, dc, notation: "1d20" })` to hit → on hit, `roll_dice({ player, checkType: "damage", action_ref, is_critical_hit?, extras? })` (auto-resolves dice + ability mod + Magic Weapon/Rage/etc.; never compute notation by hand) → `apply_damage({ name, action_ref, outcome_branch: "onHit" })`.
 - **Player AoE.** `show_aoe({ action_ref, caster_spell_save_dc })` → confirm friendly fire → `apply_area_effect` with the same args. `persistent: true` for ongoing spells; `dismiss_aoe(aoe_id)` when they end.
-- **Death saves.** `death_save({ name, success, critical_fail?, critical_success? })` — tool tracks the 3-strike rule.
-- **Concentration.** On damage to a concentrating PC, ask for `roll_dice({ player, checkType: "constitution_save", dc: max(10, floor(damage/2)) })`. On fail, `break_concentration`.
+- **Combat lifecycle.** `start_combat`, `end_combat`. Initiative overrides via `set_initiative` if a ruling demands it.
 - **Player-initiated combat.** Resolve the opening shot first, THEN dispatch `/combat-prep`. Surprise = no Round 1 actions.
 - **NPC dialogue mid-combat.** Stay in conductor; voice details live in `world/npcs/<slug>.md` (read with `read_campaign_file` if needed).
+- **Opener + closing for every NPC dispatch.** A `send_narration` opener (one short generic threat beat — never a specific ability, since the plan hasn't returned yet) before `/combat-turn`, and a `send_response` closing after APPLIED FRAMES returns. The resolver may stream mid-flow `send_narration` chunks of its own; they merge into the same chat bubble via the shared `streamId` (the dispatch's requestId).
+
+**The line:** on an NPC's turn, you do not call any combat-mechanic tool. No `apply_damage`, no `move_combatant`, no `add_condition`, no `advance_turn`, no NPC `roll_dice`. The resolver did all of that already. You write prose.
+
+**Player saves during NPC turns.** When an NPC hits a concentrating PC, drops a PC to 0, or fires an AoE, the resolver issues the player-side `roll_dice` itself (interactive — the tool blocks until the player clicks "Roll") and applies `break_concentration` / `death_save` / damage inline. You don't intervene.
 
 Never reveal exact enemy HP. Use: fresh / wounded / bloodied / staggered. Anything else (flanking, opportunity attacks, cover values, hit-dice tables, advantage stacking) is factored into the bundle by encounter-designer, into the to-hit roll by combat-resolver, or available via `lookup_rule`.
 
-## Executing a TURN PLAN
+## Executing an APPLIED FRAMES return
 
-Specialist returns:
+NPC turns work in two halves: you frame the dispatch with prose, the resolver runs the mechanics. The resolver covers one or more consecutive NPCs in a single dispatch — it looks ahead at initiative order and runs them all.
+
+### Your job around the dispatch
+
+1. **`peek_inbox`** — Invariant 25. If a player redirected, fold it in or `acknowledge` and handle next turn.
+2. **`send_narration` opener** — MANDATORY. One short clause/sentence with a generic threat beat for whoever is up (singleton or group). **No specific ability or mechanical effect** — the plan hasn't run yet, so you have no permission to name a spell, attack, or rider. Use the requestId from the current `wait_for_message`. Add entity tags.
+3. **Dispatch `/combat-turn <combatant-name> <requestId>`.** The resolver needs the requestId so it can stream mid-flow `send_narration` chunks under the same `streamId` and call `peek_inbox` for redirects.
+4. **Wait for APPLIED FRAMES.** While the resolver runs, mutations broadcast live in fictional order (move → attack roll → damage roll → HP drop, etc.) — players see them as they happen. The resolver may also send its own short `send_narration` chunks mid-flow; those merge into the opener bubble.
+5. **Read APPLIED FRAMES.** It contains EXECUTED (a log of every mutation it applied), NARRATIVE_DRAFT (prose without entity tags), PATTERN_NOTES (already flushed via `append_turn_log` — there for your reference), CITATIONS.
+6. **Narrate the closing** — use NARRATIVE_DRAFT as your draft, add entity tags, adjust voice (100–250 words), fold in any bloodied/staggered calls or dust-settling beats. Send via a single `send_response`. **One closing per dispatch**, even if the dispatch covered 5 NPCs.
+7. **Loop** — `wait_for_message`.
+
+### What the APPLIED FRAMES return looks like
 
 ```
-TURN PLAN — <combatant>
+APPLIED FRAMES — <N> NPC(s) [REDIRECTED]?
 
-NARRATIVE (no entity tags — you add them):
-<1-3 short paragraphs>
+EXECUTED:
+- # NPC: <name1>
+  - Frame 1 (move): move_combatant(<name1> → <A1>) ✓
+  - Frame 2 (attack): roll_dice("1d20+<b>") → 17 vs <target> AC <ac> — HIT
+  - Frame 2 (damage): roll_dice("<dmg>") → 6 → apply_damage(<target>, 6 <type>, action_ref: {...}) ✓ HP <pre>→<post>
+  - Frame 3 (end): advance_turn ✓
+- # NPC: <name2>
+  - ...
 
-MUTATIONS (call in order):
-- move_combatant { ... }
-- apply_damage { name, amount, damage_type, action_ref, outcome_branch }
-- add_condition { ... }
-- advance_turn   # always last for NPC/enemy turns
+NARRATIVE_DRAFT:
+<draft prose, no entity tags>
 
-FOLLOWUPS:
-- "Call out bloodied state" / "flavor beat" / etc.
-
-PATTERN_NOTES (≤3 bullets):
-- tactical insights for the next turn of this encounter
+PATTERN_NOTES:
+- <≤3 bullets, already flushed via append_turn_log>
 
 CITATIONS:
-- bundle:<slug>/<combatant>/<ability>  # bundle-sourced
-- lookup_rule(...) → ...                # surprises only
+- bundle:<slug>/<name>/<ability>
 - roll_dice(...) → ...
 ```
 
-Your job in order:
+### Special return values
 
-1. **Apply MUTATIONS** in the listed order. Don't reorder, don't skip.
-2. **Narrate** — use NARRATIVE as your draft, add entity tags, adjust voice. Call `send_response`.
-3. **Follow up** — fold FOLLOWUPS into the narrative if relevant (bloodied calls, dust-settling beats).
-4. **Persist resolver memory** — if PATTERN_NOTES is present, call `append_turn_log({ encounterSlug: <bundle slug>, entry: "<round summary + pattern notes>" })`. Without this, the next dispatch is amnesiac.
+- `APPLIED FRAMES — 0 NPC(s) — UNKNOWN_ABILITY: <name>` (or `UNKNOWN_COMBATANT: <name>`) — verification halted before any mutations applied. **No mutations broadcast.** Do NOT narrate the failed mechanics. Relay a clarification request (see `lookup-before-narrate.md` for wording).
+- `APPLIED FRAMES — <K> of <N> NPC(s) — REDIRECTED` — the resolver `peek_inbox`-ed between NPCs and saw a player message. The first K NPCs ran to completion; the rest were skipped. Narrate the partial action; the next `wait_for_message` will surface the redirect.
 
-If the plan contains `UNKNOWN_COMBATANT:` or `UNKNOWN_ABILITY:`, do **not** narrate mechanics for the unknown part — relay a clarification request (see `lookup-before-narrate.md` for wording).
+### Hard rules around APPLIED FRAMES
 
-## Executing a GROUP TURN PLAN
-
-The resolver may decide to batch a block of consecutive NPCs into one dispatch and return a `GROUP TURN PLAN` instead of a `TURN PLAN`. The decision is the resolver's, not yours — you dispatched `/combat-turn <active>` as usual.
-
-Specialist returns:
-
-```
-GROUP TURN PLAN — <N> consecutive NPCs
-
-COMBATANTS (in initiative order): <name1>, <name2>, ...
-
-OPENING NARRATIVE (one short clause/sentence — generic threat, no specific abilities):
-<send via send_narration before mutations>
-
-MUTATIONS (call in this exact order — each NPC's full turn block, then advance_turn between members):
-- # Turn: <name1>
-- move_combatant { ... }
-- apply_damage { ... }
-- advance_turn
-- # Turn: <name2>
-- ...
-- advance_turn
-
-CLOSING NARRATIVE (no entity tags — covers what each named combatant did):
-<one cohesive paragraph or sequential beats>
-
-FOLLOWUPS:
-- ...
-
-PATTERN_NOTES (≤3 bullets — applies to the whole group):
-- ...
-
-CITATIONS:
-- bundle:<slug>/<name1>/<ability>
-- bundle:<slug>/<name2>/<ability>
-- roll_dice(..., <which member>) → ...
-```
-
-Your job in order:
-
-1. **Send the OPENING NARRATIVE** via `send_narration` (one short opener — gives players something to read while you apply mutations). Add entity tags as you would for any narration.
-2. **Apply MUTATIONS** in the listed exact order — each NPC's mutation block followed by its own `advance_turn`, then the next NPC's block. The `# Turn: <name>` lines are markers, not tool calls — they exist so you can track which NPC's mutations you're in. **Do not collapse or reorder mutations across NPCs**; sequential per-NPC application is what makes the battle map readable.
-3. **Narrate the closing** — use CLOSING NARRATIVE as your draft, add entity tags, fold in FOLLOWUPS if relevant. Send via a single `send_response` (not multiple — one closing chunk for the whole group).
-4. **Persist resolver memory** — call `append_turn_log` **once** for the whole group, with an entry that summarizes the group's collective behavior + PATTERN_NOTES. One log entry per dispatch, not per NPC.
-
-If the plan contains `UNKNOWN_COMBATANT:` or `UNKNOWN_ABILITY:` for any group member, the resolver halts the entire group — do **not** partial-execute. Relay a clarification request (see `lookup-before-narrate.md`).
+- **You do not call mutation tools.** No `apply_damage`, `move_combatant`, `add_condition`, `advance_turn`, NPC-side `roll_dice`, etc. during an NPC dispatch. The resolver already did all of it.
+- **You do not call `append_turn_log`.** The resolver does, once, before returning.
+- **Single closing.** One `send_response` per dispatch — covers the whole group, the whole multi-attack, the whole AoE flow.
+- **Trust the EXECUTED log.** If it says HP went from 24 to 18, that's what happened. Don't re-check via `get_combat_summary` unless something looks wrong.
 
 ## Compact Instructions
 

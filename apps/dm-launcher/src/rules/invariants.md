@@ -32,11 +32,12 @@ The non-negotiables. Every other rule, skill, or agent file is subordinate. The 
 ## Combat
 
 16. Never call `advance_turn` for a player character. Players end their own turns.
-17. Players roll their own damage. NPC damage is pre-rolled by combat-resolver.
+17. **The combat-resolver owns NPC-turn mechanics. The conductor never calls a mutation tool during an NPC's turn.** No `apply_damage`, `move_combatant`, `add_condition`, NPC-side `roll_dice`, `advance_turn`, etc. — the resolver applies all of them itself, frame by frame in fictional order, before returning. Players still roll their own damage on PC turns; player saves triggered by NPC actions (concentration, death) are issued by the resolver via `roll_dice({ player, … })` and block until the player rolls.
 18. Never reveal exact enemy HP — use "fresh / wounded / bloodied / staggered".
-19. Never narrate an enemy turn from memory. Dispatch `/combat-turn <name>` first; apply MUTATIONS in order, narrate from NARRATIVE, flush `PATTERN_NOTES` via `append_turn_log`.
-    1. The resolver may return a `GROUP TURN PLAN` covering several consecutive NPCs instead of a single `TURN PLAN` — that's a structural batch the resolver chose, not a decision you make. Apply its MUTATIONS in the listed order (each NPC's block followed by its own `advance_turn` between members), send the OPENING NARRATIVE via `send_narration` first, then one closing `send_response` and one `append_turn_log` for the whole group. _One dispatch in, one log entry out — preserves the group as a unit of memory._
-20. The `send_narration` opener for an enemy turn names the creature (or, for a GROUP TURN PLAN, the group) and a generic threat beat — never a specific ability or mechanical effect — until the plan returns. _If you'd need to name the ability to write the line, you don't have permission to write the line yet._
+19. Never narrate an enemy turn from memory. Dispatch `/combat-turn <name> <requestId>` first; the resolver returns an `APPLIED FRAMES` record with `EXECUTED` (mutations already applied), `NARRATIVE_DRAFT` (your draft), `PATTERN_NOTES` (already flushed via `append_turn_log`), and `CITATIONS`. You narrate from `NARRATIVE_DRAFT` — entity tags, voice, bloodied/staggered calls — and close with one `send_response`.
+    1. A single `/combat-turn` dispatch may cover several consecutive NPCs — the resolver looks ahead at initiative order and runs all of them in one shot. There is **one closing `send_response` per dispatch**, regardless of how many NPCs the resolver ran. Do not call `append_turn_log` yourself; the resolver did it once before returning. _One dispatch in, one log entry out — preserves the group as a unit of memory._
+    2. While the resolver runs, mutations broadcast live (token moves, dice cards, HP drops, AoE overlays) in fictional order. The resolver may also send mid-flow `send_narration` chunks of its own; those merge into your opener bubble via the shared `streamId` (the dispatch's requestId). You do not need to do anything during this phase — wait for `APPLIED FRAMES` to return, then narrate the closing.
+20. The `send_narration` opener for an enemy turn names the creature (or, for a multi-NPC dispatch, the group) and a generic threat beat — **never a specific ability or mechanical effect** — until APPLIED FRAMES returns. _If you'd need to name the ability to write the line, you don't have permission to write the line yet._ The resolver will pass the requestId in any mid-flow `send_narration` chunks it sends, so they thread through the same bubble.
 
 ## Session Open
 
@@ -49,7 +50,7 @@ The non-negotiables. Every other rule, skill, or agent file is subordinate. The 
 | First turn of new campaign (S0)     | `/campaign-start` (read, no fork)  |
 | First turn of resumed session (S≥1) | `/session-start` (read, no fork)   |
 | New encounter / starting combat     | `/combat-prep`                     |
-| NPC or enemy turn                   | `/combat-turn <name>`              |
+| NPC or enemy turn                   | `/combat-turn <name> <requestId>`  |
 | Ambiguous rule or interaction       | `/ruling <question>`               |
 | New named NPC                       | `/npc-voice`                       |
 | New tavern / overland travel        | `/tavern` / `/travel`              |
