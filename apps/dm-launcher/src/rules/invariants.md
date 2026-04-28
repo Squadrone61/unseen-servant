@@ -34,7 +34,8 @@ The non-negotiables. Every other rule, skill, or agent file is subordinate. The 
 16. Players roll their own damage. NPC damage is pre-rolled by combat-resolver.
 17. Never reveal exact enemy HP — use "fresh / wounded / bloodied / staggered".
 18. Never narrate an enemy turn from memory. Dispatch `/combat-turn <name>` first; apply MUTATIONS in order, narrate from NARRATIVE, flush `PATTERN_NOTES` via `append_turn_log`.
-19. The `send_narration` opener for an enemy turn names the creature and a generic threat beat — never a specific ability or mechanical effect — until the TURN PLAN returns. _If you'd need to name the ability to write the line, you don't have permission to write the line yet._
+    1. The resolver may return a `GROUP TURN PLAN` covering several consecutive NPCs instead of a single `TURN PLAN` — that's a structural batch the resolver chose, not a decision you make. Apply its MUTATIONS in the listed order (each NPC's block followed by its own `advance_turn` between members), send the OPENING NARRATIVE via `send_narration` first, then one closing `send_response` and one `append_turn_log` for the whole group. _One dispatch in, one log entry out — preserves the group as a unit of memory._
+19. The `send_narration` opener for an enemy turn names the creature (or, for a GROUP TURN PLAN, the group) and a generic threat beat — never a specific ability or mechanical effect — until the plan returns. _If you'd need to name the ability to write the line, you don't have permission to write the line yet._
 
 ## Dispatch — default routes
 

@@ -23,11 +23,11 @@ Skills in `.claude/skills/<name>/SKILL.md` are model-invocable procedures. **Rea
 
 ## Dispatch & Ownership
 
-| When            | Dispatch              | Specialist returns                                                                                                                                     | You then                                                                                                                                                |
-| --------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Starting combat | `/combat-prep`        | SHORT ENCOUNTER SUMMARY with bundle slug. **Encounter-designer owns `update_battle_map` AND `save_encounter_bundle` — both already called.**           | Call `start_combat({ combatants, encounter_bundle_slug: <slug> })` → narrate opening. Do **not** re-call `update_battle_map` / `save_encounter_bundle`. |
-| NPC/enemy turn  | `/combat-turn <name>` | TURN PLAN (narrative + ordered MUTATIONS + FOLLOWUPS + PATTERN_NOTES + citations). Skips per-ability `lookup_rule` because the bundle is pre-resolved. | Execute the TURN PLAN — see "Executing a TURN PLAN" below.                                                                                              |
-| Ambiguous rule  | `/ruling <question>`  | Answer + Reasoning + Citations.                                                                                                                        | Paraphrase Answer + cite into DM voice; `send_response`. If `RULING: UNABLE`, relay a clarification request.                                            |
+| When            | Dispatch              | Specialist returns                                                                                                                                                                                              | You then                                                                                                                                                |
+| --------------- | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Starting combat | `/combat-prep`        | SHORT ENCOUNTER SUMMARY with bundle slug. **Encounter-designer owns `update_battle_map` AND `save_encounter_bundle` — both already called.**                                                                    | Call `start_combat({ combatants, encounter_bundle_slug: <slug> })` → narrate opening. Do **not** re-call `update_battle_map` / `save_encounter_bundle`. |
+| NPC/enemy turn  | `/combat-turn <name>` | TURN PLAN (single NPC) **or** GROUP TURN PLAN (consecutive NPCs the resolver decided to batch). Both include ordered MUTATIONS + citations. Skips per-ability `lookup_rule` because the bundle is pre-resolved. | Execute the plan — see "Executing a TURN PLAN" below for the single case, "Executing a GROUP TURN PLAN" for the grouped case.                           |
+| Ambiguous rule  | `/ruling <question>`  | Answer + Reasoning + Citations.                                                                                                                                                                                 | Paraphrase Answer + cite into DM voice; `send_response`. If `RULING: UNABLE`, relay a clarification request.                                            |
 
 For PC actions, ongoing NPC dialogue, and `acknowledge`-worthy beats, stay in the conductor and read the matching skill. See the dispatch table in `invariants.md` for the full list.
 
@@ -80,6 +80,53 @@ Your job in order:
 4. **Persist resolver memory** — if PATTERN_NOTES is present, call `append_turn_log({ encounterSlug: <bundle slug>, entry: "<round summary + pattern notes>" })`. Without this, the next dispatch is amnesiac.
 
 If the plan contains `UNKNOWN_COMBATANT:` or `UNKNOWN_ABILITY:`, do **not** narrate mechanics for the unknown part — relay a clarification request (see `lookup-before-narrate.md` for wording).
+
+## Executing a GROUP TURN PLAN
+
+The resolver may decide to batch a block of consecutive NPCs into one dispatch and return a `GROUP TURN PLAN` instead of a `TURN PLAN`. The decision is the resolver's, not yours — you dispatched `/combat-turn <active>` as usual.
+
+Specialist returns:
+
+```
+GROUP TURN PLAN — <N> consecutive NPCs
+
+COMBATANTS (in initiative order): <name1>, <name2>, ...
+
+OPENING NARRATIVE (one short clause/sentence — generic threat, no specific abilities):
+<send via send_narration before mutations>
+
+MUTATIONS (call in this exact order — each NPC's full turn block, then advance_turn between members):
+- # Turn: <name1>
+- move_combatant { ... }
+- apply_damage { ... }
+- advance_turn
+- # Turn: <name2>
+- ...
+- advance_turn
+
+CLOSING NARRATIVE (no entity tags — covers what each named combatant did):
+<one cohesive paragraph or sequential beats>
+
+FOLLOWUPS:
+- ...
+
+PATTERN_NOTES (≤3 bullets — applies to the whole group):
+- ...
+
+CITATIONS:
+- bundle:<slug>/<name1>/<ability>
+- bundle:<slug>/<name2>/<ability>
+- roll_dice(..., <which member>) → ...
+```
+
+Your job in order:
+
+1. **Send the OPENING NARRATIVE** via `send_narration` (one short opener — gives players something to read while you apply mutations). Add entity tags as you would for any narration.
+2. **Apply MUTATIONS** in the listed exact order — each NPC's mutation block followed by its own `advance_turn`, then the next NPC's block. The `# Turn: <name>` lines are markers, not tool calls — they exist so you can track which NPC's mutations you're in. **Do not collapse or reorder mutations across NPCs**; sequential per-NPC application is what makes the battle map readable.
+3. **Narrate the closing** — use CLOSING NARRATIVE as your draft, add entity tags, fold in FOLLOWUPS if relevant. Send via a single `send_response` (not multiple — one closing chunk for the whole group).
+4. **Persist resolver memory** — call `append_turn_log` **once** for the whole group, with an entry that summarizes the group's collective behavior + PATTERN_NOTES. One log entry per dispatch, not per NPC.
+
+If the plan contains `UNKNOWN_COMBATANT:` or `UNKNOWN_ABILITY:` for any group member, the resolver halts the entire group — do **not** partial-execute. Relay a clarification request (see `lookup-before-narrate.md`).
 
 ## Compact Instructions
 
