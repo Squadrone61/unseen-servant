@@ -18,8 +18,9 @@ import { makeBuilderState } from "@unseen-servant/shared/test-helpers";
  * features that mark a creature (Vow of Enmity is the canonical example).
  *
  * The feature's `activation.action.{onHit|onFailedSave}.applyEffects` block
- * defines the per-target bundle. Bundles are tagged with sourceActivation
- * and swept on deactivate_feature, the same way concentration sweeps work.
+ * defines the per-target bundle. Bundles are tagged with sourceTracked
+ * (kind: "feature") and swept on deactivate_feature, the same way
+ * concentration sweeps work.
  */
 
 function createOathOfVengeancePaladin(): CharacterData {
@@ -70,29 +71,39 @@ describe("activateFeature with applied_targets — Vow of Enmity mark", () => {
     ]);
   });
 
-  it("places a sourceActivation bundle on the marked NPC combatant", () => {
+  it("places a sourceTracked feature bundle on the marked NPC combatant", () => {
     const r = gsm.activateFeature("Aelar", "Vow of Enmity", ["Bandit"]);
     assertToolSuccess(r);
     const combat = gsm.gameState.encounter?.combat;
     const bandit = Object.values(combat!.combatants).find((c) => c.name === "Bandit");
     const mark = (bandit?.activeEffects ?? []).find(
-      (b) => b.sourceActivation?.feature.toLowerCase() === "vow of enmity",
+      (b) =>
+        b.sourceTracked?.identifier.kind === "feature" &&
+        b.sourceTracked.identifier.name.toLowerCase() === "vow of enmity",
     );
     expect(mark).toBeDefined();
-    expect(mark?.sourceActivation?.caster.toLowerCase()).toBe("aelar");
+    expect(mark?.sourceTracked?.caster.toLowerCase()).toBe("aelar");
   });
 
-  it("activation bundle on the caster does NOT carry unconditional advantage on attack", () => {
+  it("activation bundle on the caster carries predicate-gated advantage (not unconditional)", () => {
     gsm.activateFeature("Aelar", "Vow of Enmity", ["Bandit"]);
     const aelar = gsm.characters["P1"];
     const activation = (aelar.dynamic.activeEffects ?? []).find((b) =>
       b.id.endsWith(":vow of enmity"),
     );
     expect(activation).toBeDefined();
-    // The caster bundle must not carry unconditional advantage — that was the
-    // original bug. Advantage applies only to attacks against the marked target.
+    // Phase 6 migration: the caster bundle carries `{ type: "advantage", on: "attack",
+    // when: { targetHasEffect: { feature: "Vow of Enmity", caster: <activator> } } }`
+    // — the original bug was unconditional advantage; the fix is the structured
+    // `when` predicate that gates the advantage on the target's marker.
     const advProps = (activation?.effects.properties ?? []).filter((p) => p.type === "advantage");
-    expect(advProps).toEqual([]);
+    expect(advProps.length).toBeGreaterThan(0);
+    for (const adv of advProps) {
+      expect(adv.when).toBeDefined();
+      expect(adv.when?.targetHasEffect?.feature.toLowerCase()).toBe("vow of enmity");
+      // "self" placeholder must be substituted with the activator's name at apply time.
+      expect(adv.when?.targetHasEffect?.caster).toBe("Aelar");
+    }
   });
 
   it("response text reports the applied target and the activation note", () => {
@@ -107,7 +118,9 @@ describe("activateFeature with applied_targets — Vow of Enmity mark", () => {
     const combat = gsm.gameState.encounter?.combat;
     const bandit = Object.values(combat!.combatants).find((c) => c.name === "Bandit");
     const mark = (bandit?.activeEffects ?? []).find(
-      (b) => b.sourceActivation?.feature.toLowerCase() === "vow of enmity",
+      (b) =>
+        b.sourceTracked?.identifier.kind === "feature" &&
+        b.sourceTracked.identifier.name.toLowerCase() === "vow of enmity",
     );
     expect(mark).toBeUndefined();
   });
@@ -125,7 +138,9 @@ describe("activateFeature with applied_targets — Vow of Enmity mark", () => {
     const combat = gsm.gameState.encounter?.combat;
     const bandit = Object.values(combat!.combatants).find((c) => c.name === "Bandit");
     const mark = (bandit?.activeEffects ?? []).find(
-      (b) => b.sourceActivation?.feature.toLowerCase() === "vow of enmity",
+      (b) =>
+        b.sourceTracked?.identifier.kind === "feature" &&
+        b.sourceTracked.identifier.name.toLowerCase() === "vow of enmity",
     );
     expect(mark).toBeDefined();
   });

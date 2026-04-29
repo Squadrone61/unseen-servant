@@ -1248,6 +1248,16 @@
           "activation": {
             "properties": [
               {
+                "type": "advantage",
+                "on": "attack",
+                "when": {
+                  "targetHasEffect": {
+                    "feature": "Vow of Enmity",
+                    "caster": "self"
+                  }
+                }
+              },
+              {
                 "type": "note",
                 "text": "Vow of Enmity active. You have advantage on attack rolls against the marked target. Lasts 1 minute or until you use this feature again. If the target drops to 0 HP before the vow ends, you can transfer the vow to another creature within 30 ft (no action required)."
               }
@@ -1256,16 +1266,6 @@
               "kind": "auto",
               "targeting": {
                 "type": "creature"
-              },
-              "onHit": {
-                "applyEffects": {
-                  "properties": [
-                    {
-                      "type": "note",
-                      "text": "Marked by Vow of Enmity. The Paladin has advantage on attack rolls against this creature until the vow ends or transfers."
-                    }
-                  ]
-                }
               }
             }
           },

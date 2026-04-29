@@ -8,6 +8,8 @@ export {
   createFeatureTargetBundle,
   createItemBundle,
   createMonsterBundle,
+  createTrackedMarkerBundle,
+  substituteSelfInEffects,
   enrichItem,
 } from "./character-builder";
 export { summarizeEffects, titleCase, ABILITY_ABBR } from "./effect-summary";

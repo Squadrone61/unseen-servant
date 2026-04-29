@@ -5,6 +5,7 @@ import type {
   ActionOutcome,
   Property,
   Prerequisite,
+  EffectPredicate,
 } from "../types/effects";
 
 /**
@@ -250,6 +251,28 @@ export const effectLifetimeSchema = z.discriminatedUnion("type", [
 ]);
 
 // ---------------------------------------------------------------------------
+// EffectPredicate
+// ---------------------------------------------------------------------------
+
+/**
+ * Structured predicate the resolver evaluates against an EffectContext
+ * (target bundles, caster names). See `EffectPredicate` in types/effects.ts.
+ */
+export const effectPredicateSchema: z.ZodType<EffectPredicate> = z.object({
+  targetHasEffect: z
+    .object({
+      feature: z.string(),
+      caster: z.string().optional(),
+    })
+    .optional(),
+  exceptTargetIs: z
+    .object({
+      caster: z.string(),
+    })
+    .optional(),
+});
+
+// ---------------------------------------------------------------------------
 // Modifier
 // ---------------------------------------------------------------------------
 
@@ -258,6 +281,7 @@ export const modifierSchema = z.object({
   value: z.union([z.number(), z.string()]),
   operation: z.enum(["add", "set"]).optional(),
   condition: z.string().optional(),
+  when: effectPredicateSchema.optional(),
 });
 
 // ---------------------------------------------------------------------------
@@ -277,48 +301,57 @@ export const propertySchema: z.ZodType<Property> = z.discriminatedUnion("type", 
     type: z.literal("resistance"),
     damageType: damageTypeOrAllSchema,
     condition: z.string().optional(),
+    when: effectPredicateSchema.optional(),
   }),
   z.object({
     type: z.literal("immunity"),
     damageType: damageTypeOrAllSchema,
     condition: z.string().optional(),
+    when: effectPredicateSchema.optional(),
   }),
   z.object({
     type: z.literal("vulnerability"),
     damageType: damageTypeOrAllSchema,
     condition: z.string().optional(),
+    when: effectPredicateSchema.optional(),
   }),
   z.object({
     type: z.literal("condition_immunity"),
     conditionName: conditionNameSchema,
     condition: z.string().optional(),
+    when: effectPredicateSchema.optional(),
   }),
   z.object({
     type: z.literal("proficiency"),
     category: z.enum(["armor", "weapon", "tool", "skill", "save", "language"]),
     value: z.string(),
     condition: z.string().optional(),
+    when: effectPredicateSchema.optional(),
   }),
   z.object({
     type: z.literal("expertise"),
     skill: skillSchema,
     condition: z.string().optional(),
+    when: effectPredicateSchema.optional(),
   }),
   z.object({
     type: z.literal("sense"),
     sense: senseTypeSchema,
     range: z.number(),
     condition: z.string().optional(),
+    when: effectPredicateSchema.optional(),
   }),
   z.object({
     type: z.literal("advantage"),
     on: advantageTargetSchema,
     condition: z.string().optional(),
+    when: effectPredicateSchema.optional(),
   }),
   z.object({
     type: z.literal("disadvantage"),
     on: advantageTargetSchema,
     condition: z.string().optional(),
+    when: effectPredicateSchema.optional(),
   }),
   z.object({
     type: z.literal("spell_grant"),
@@ -335,6 +368,7 @@ export const propertySchema: z.ZodType<Property> = z.discriminatedUnion("type", 
     minLevel: z.number().optional(),
     castingAbility: abilitySchema.optional(),
     condition: z.string().optional(),
+    when: effectPredicateSchema.optional(),
   }),
   z.object({
     type: z.literal("resource"),
@@ -343,21 +377,25 @@ export const propertySchema: z.ZodType<Property> = z.discriminatedUnion("type", 
     longRest: z.union([z.number(), z.literal("all")]),
     shortRest: z.union([z.number(), z.literal("all")]).optional(),
     condition: z.string().optional(),
+    when: effectPredicateSchema.optional(),
   }),
   z.object({
     type: z.literal("extra_attack"),
     count: z.number(),
     condition: z.string().optional(),
+    when: effectPredicateSchema.optional(),
   }),
   z.object({
     type: z.literal("weapon_mastery_grant"),
     weapon: z.string(),
     condition: z.string().optional(),
+    when: effectPredicateSchema.optional(),
   }),
   z.object({
     type: z.literal("metamagic_grant"),
     metamagic: z.string(),
     condition: z.string().optional(),
+    when: effectPredicateSchema.optional(),
   }),
   z.object({
     type: z.literal("natural_weapon"),
@@ -365,12 +403,14 @@ export const propertySchema: z.ZodType<Property> = z.discriminatedUnion("type", 
     damage: z.string(),
     damageType: damageTypeSchema,
     condition: z.string().optional(),
+    when: effectPredicateSchema.optional(),
   }),
   z.object({
     type: z.literal("score_cap"),
     ability: abilitySchema,
     max: z.number(),
     condition: z.string().optional(),
+    when: effectPredicateSchema.optional(),
   }),
   z.object({
     type: z.literal("roll_minimum"),
@@ -379,6 +419,7 @@ export const propertySchema: z.ZodType<Property> = z.discriminatedUnion("type", 
     mode: z.enum(["d20", "total"]).optional(),
     proficientOnly: z.boolean().optional(),
     condition: z.string().optional(),
+    when: effectPredicateSchema.optional(),
   }),
   z.object({
     type: z.literal("crit_rider"),
@@ -389,17 +430,20 @@ export const propertySchema: z.ZodType<Property> = z.discriminatedUnion("type", 
       z.object({ kind: z.literal("target_disadvantage_attacks") }),
     ]),
     condition: z.string().optional(),
+    when: effectPredicateSchema.optional(),
   }),
   z.object({
     type: z.literal("grant"),
     grant: z.string(),
     grantType: entityCategorySchema,
     condition: z.string().optional(),
+    when: effectPredicateSchema.optional(),
   }),
   z.object({
     type: z.literal("note"),
     text: z.string(),
     condition: z.string().optional(),
+    when: effectPredicateSchema.optional(),
   }),
   z.object({
     type: z.literal("damage_reduction"),
@@ -407,23 +451,27 @@ export const propertySchema: z.ZodType<Property> = z.discriminatedUnion("type", 
     amount: z.union([z.number(), z.string()]),
     trigger: z.enum(["passive", "reaction"]).optional(),
     condition: z.string().optional(),
+    when: effectPredicateSchema.optional(),
   }),
   z.object({
     type: z.literal("save_outcome_override"),
     ability: abilitySchema,
     saveEffect: z.literal("evasion"),
     condition: z.string().optional(),
+    when: effectPredicateSchema.optional(),
   }),
   z.object({
     type: z.literal("bonus_action_grant"),
     actions: z.array(z.string()),
     condition: z.string().optional(),
+    when: effectPredicateSchema.optional(),
   }),
   z.object({
     type: z.literal("ignore_resistance"),
     damageTypes: z.array(damageTypeSchema),
     scope: z.literal("spells").optional(),
     condition: z.string().optional(),
+    when: effectPredicateSchema.optional(),
   }),
   z.object({
     type: z.literal("inspiration_grant"),
@@ -431,38 +479,52 @@ export const propertySchema: z.ZodType<Property> = z.discriminatedUnion("type", 
     count: z.string().optional(),
     timing: z.enum(["long_rest", "short_rest", "rest", "combat_start_of_turn"]),
     condition: z.string().optional(),
+    when: effectPredicateSchema.optional(),
   }),
   z.object({
     type: z.literal("concentration_immunity"),
     spell: z.string(),
     condition: z.string().optional(),
+    when: effectPredicateSchema.optional(),
   }),
   z.object({
     type: z.literal("suppress_advantage"),
     against: z.literal("attacks"),
     condition: z.string().optional(),
+    when: effectPredicateSchema.optional(),
   }),
   z.object({
     type: z.literal("teleport_grant"),
     distance: z.number(),
     timing: z.string(),
     condition: z.string().optional(),
+    when: effectPredicateSchema.optional(),
   }),
   z.object({
     type: z.literal("spellcasting_focus"),
     item: z.string(),
     ability: abilitySchema.optional(),
     condition: z.string().optional(),
+    when: effectPredicateSchema.optional(),
   }),
   z.object({
     type: z.literal("feat_grant"),
     category: z.enum(["Origin", "General", "Fighting Style"]),
     condition: z.string().optional(),
+    when: effectPredicateSchema.optional(),
   }),
   z.object({
     type: z.literal("shapechange"),
     action: z.enum(["action", "bonus_action"]),
     condition: z.string().optional(),
+    when: effectPredicateSchema.optional(),
+  }),
+  z.object({
+    type: z.literal("tracked_by"),
+    feature: z.string(),
+    caster: z.string(),
+    condition: z.string().optional(),
+    when: effectPredicateSchema.optional(),
   }),
 ]);
 
@@ -608,28 +670,73 @@ export const entityEffectsSchema: z.ZodType<EntityEffects> = z.lazy(() =>
 // EffectBundle (now structural — effects is the full EntityEffects)
 // ---------------------------------------------------------------------------
 
-export const effectBundleSchema = z.object({
-  id: z.string(),
-  source: effectSourceSchema,
-  lifetime: effectLifetimeSchema,
-  effects: entityEffectsSchema,
-  sourceConcentration: z
-    .object({
-      caster: z.string(),
-      spell: z.string(),
-    })
-    .optional(),
-  /**
-   * If set, this bundle was applied to a target by another creature's
-   * activated feature (e.g. Vow of Enmity's mark). When the activator's
-   * deactivate_feature fires (or the feature lapses), every bundle in the
-   * room tagged with this caster+feature pair is swept in one pass —
-   * mirrors `sourceConcentration` for spell-driven target bundles.
-   */
-  sourceActivation: z
-    .object({
-      caster: z.string(),
-      feature: z.string(),
-    })
-    .optional(),
+/**
+ * Schema for the unified target-bundle tracking tag. Replaces v0.x
+ * `sourceConcentration` (kind: "spell") and `sourceActivation` (kind: "feature")
+ * fields. Old snapshots are upgraded on parse via `effectBundleSchema`'s
+ * preprocess step.
+ */
+export const sourceTrackedSchema = z.object({
+  caster: z.string(),
+  identifier: z.object({
+    kind: z.enum(["spell", "feature"]),
+    name: z.string(),
+  }),
 });
+
+/**
+ * Parse-time upgrader for legacy `sourceConcentration` / `sourceActivation`
+ * shapes. Maps:
+ *   { sourceConcentration: { caster, spell } }
+ *   → { sourceTracked: { caster, identifier: { kind: "spell", name: spell } } }
+ *   { sourceActivation: { caster, feature } }
+ *   → { sourceTracked: { caster, identifier: { kind: "feature", name: feature } } }
+ * If `sourceTracked` is already present, the legacy fields are dropped.
+ * Returns the input unchanged for non-objects (Zod will surface the type error).
+ */
+function upgradeLegacyBundleTags(input: unknown): unknown {
+  if (!input || typeof input !== "object" || Array.isArray(input)) return input;
+  const obj = input as Record<string, unknown>;
+  if (obj.sourceTracked !== undefined) {
+    // New shape already present — strip any leftover legacy fields.
+    if ("sourceConcentration" in obj || "sourceActivation" in obj) {
+      const { sourceConcentration: _sc, sourceActivation: _sa, ...rest } = obj;
+      return rest;
+    }
+    return obj;
+  }
+  const sc = obj.sourceConcentration as { caster?: string; spell?: string } | undefined;
+  if (sc && typeof sc.caster === "string" && typeof sc.spell === "string") {
+    const { sourceConcentration: _sc, sourceActivation: _sa, ...rest } = obj;
+    return {
+      ...rest,
+      sourceTracked: {
+        caster: sc.caster,
+        identifier: { kind: "spell", name: sc.spell },
+      },
+    };
+  }
+  const sa = obj.sourceActivation as { caster?: string; feature?: string } | undefined;
+  if (sa && typeof sa.caster === "string" && typeof sa.feature === "string") {
+    const { sourceConcentration: _sc, sourceActivation: _sa, ...rest } = obj;
+    return {
+      ...rest,
+      sourceTracked: {
+        caster: sa.caster,
+        identifier: { kind: "feature", name: sa.feature },
+      },
+    };
+  }
+  return obj;
+}
+
+export const effectBundleSchema = z.preprocess(
+  upgradeLegacyBundleTags,
+  z.object({
+    id: z.string(),
+    source: effectSourceSchema,
+    lifetime: effectLifetimeSchema,
+    effects: entityEffectsSchema,
+    sourceTracked: sourceTrackedSchema.optional(),
+  }),
+);

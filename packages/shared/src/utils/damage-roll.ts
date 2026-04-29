@@ -22,10 +22,10 @@
  */
 
 import type { CharacterData } from "../types/character";
-import type { Ability, ResolveContext } from "../types/effects";
+import type { Ability, EffectBundle, ResolveContext } from "../types/effects";
 import type { ActionRef } from "../data/resolve-action";
 import { resolveActionRef } from "../data/resolve-action";
-import { getAction, collectModifiersWithSource } from "./effect-resolver";
+import { getAction, collectModifiersWithSource, type EffectContext } from "./effect-resolver";
 import { evaluateExpression } from "./expression-evaluator";
 import { getAbilities, collectActiveBundles, buildCtx } from "../character/resolve";
 import { getBaseItem } from "../data/index";
@@ -63,6 +63,14 @@ export interface DamageRollOptions {
   isCriticalHit?: boolean;
   /** Opt-in extras: Sneak Attack, Smite, Hex, etc. */
   extras?: DamageRollExtra[];
+  /**
+   * Resolved attack target — when provided, predicate-gated damage modifiers
+   * (Hex's "+1d6 against hexed target", Hunter's Mark "+1d6 against marked
+   * target") auto-apply iff their `when.targetHasEffect` predicate matches a
+   * `tracked_by` marker on the target's bundles. Without `vs`, those
+   * predicate-gated modifiers are skipped.
+   */
+  vs?: { name: string; bundles: EffectBundle[] };
 }
 
 export interface DamageBreakdownEntry {
@@ -295,6 +303,13 @@ export function computeDamageRoll(
 
   const ctx = buildCtx(char);
   const bundles = collectActiveBundles(char);
+  const effectCtx: EffectContext | undefined = options.vs
+    ? {
+        bearerName: char.static.name,
+        targetBundles: options.vs.bundles,
+        targetName: options.vs.name,
+      }
+    : undefined;
 
   // 1. Resolve the action.
   const resolved = resolveActionRef(ref);
@@ -367,14 +382,17 @@ export function computeDamageRoll(
   }
 
   // 6. damage_* effect modifiers (Magic Weapon, Rage, Dueling, etc.) — auto-apply.
-  //    Filter by source-kind tag, skip conditional 'damage' parent (Hex/Hunter's Mark).
+  //    Filter by source-kind tag. Predicate-gated entries (Hex/Hunter's Mark
+  //    after Phase 6 migration) only contribute when `vs` is provided AND the
+  //    `when` predicate matches the target. Free-text `condition:` modifiers
+  //    (un-migrated entries) still surface as hints.
   if (sourceKind) {
     const targetKey = `damage_${sourceKind}` as const;
-    const targetMods = collectModifiersWithSource(bundles, targetKey);
+    const targetMods = collectModifiersWithSource(bundles, targetKey, effectCtx);
     for (const { modifier, source } of targetMods) {
-      // Conditional 'damage' parent modifiers (Hex/Hunter's Mark) require target
-      // match — surface as hints, don't auto-apply.
-      if (modifier.target === "damage" && modifier.condition) {
+      // Conditional 'damage' parent modifiers with FREE-TEXT condition only —
+      // resolver can't evaluate; surface as hint.
+      if (modifier.target === "damage" && modifier.condition && !modifier.when) {
         const sourceName = source.featureName ?? source.name;
         const refStr =
           source.type === "spell" ? `{source:'spell', name:'${sourceName}'}` : sourceName;
@@ -383,14 +401,15 @@ export function computeDamageRoll(
       }
       const expanded = resolveDamageValue(modifier.value, ctx);
       const sourceLabel = source.featureName ?? source.name;
+      const vsSuffix = modifier.when && options.vs ? ` vs ${options.vs.name}` : "";
       if (expanded.dice.length > 0) {
         const diceStr = expanded.dice.join("+");
         dicePieces.push(diceStr);
-        breakdown.push({ label: sourceLabel, dice: diceStr });
+        breakdown.push({ label: `${sourceLabel}${vsSuffix}`, dice: diceStr });
       }
       if (expanded.flat !== 0) {
         flatTotal += expanded.flat;
-        breakdown.push({ label: sourceLabel, flat: expanded.flat });
+        breakdown.push({ label: `${sourceLabel}${vsSuffix}`, flat: expanded.flat });
       }
     }
   }

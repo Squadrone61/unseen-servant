@@ -264,6 +264,27 @@ export type Prerequisite =
 // ---------------------------------------------------------------------------
 
 /**
+ * Structured predicate that gates a Property or Modifier's contribution at
+ * resolution time. Replaces free-text `condition:` fields for cases the
+ * resolver can evaluate against an EffectContext.
+ *
+ *   targetHasEffect — match when the resolved target carries a `tracked_by`
+ *     marker for the named feature/spell. `caster` defaults to "any caster"
+ *     when omitted; `caster: "self"` is a placeholder substituted at activation
+ *     /cast time with the bearer's name (so the resolver can do strict equality).
+ *   exceptTargetIs — exclude the property/modifier when the resolved target
+ *     equals the named caster. Same `"self"` substitution rule. Encodes
+ *     "X applies UNLESS the target is Y" patterns (Goading Strike).
+ *
+ * Multiple keys ANDed. New axes can be added without touching call sites —
+ * `evaluatePredicate` in the resolver delegates per-key.
+ */
+export interface EffectPredicate {
+  targetHasEffect?: { feature: string; caster?: "self" | string };
+  exceptTargetIs?: { caster: "self" | string };
+}
+
+/**
  * A numeric bonus or formula applied to a specific stat.
  *
  * Operations:
@@ -278,6 +299,10 @@ export type Prerequisite =
  *
  * Condition is a human-readable string for display only — the resolver does not
  * parse or enforce it; activation must be tracked separately in game state.
+ *
+ * `when` is a structured predicate the resolver DOES evaluate. Use `when` for
+ * target-conditional cases the predicate axes cover (e.g. "+1d6 against hexed
+ * target"); fall back to `condition:` free text only when no axis fits.
  */
 export interface Modifier {
   target: ModifierTarget;
@@ -287,6 +312,8 @@ export interface Modifier {
   operation?: "add" | "set";
   /** Human-readable activation condition: "while raging", "not wearing armor". */
   condition?: string;
+  /** Structured target-conditional predicate evaluated by the resolver. */
+  when?: EffectPredicate;
 }
 
 // ---------------------------------------------------------------------------
@@ -301,12 +328,18 @@ export interface Modifier {
  * The shared `condition` field (human-readable) applies to every variant. Like
  * Modifier.condition, it is for display only — enforcement lives in game state.
  *
+ * The shared `when` field is a structured predicate the resolver evaluates
+ * against an EffectContext (target bundles, names). Use `when` for target-
+ * conditional cases (Vow of Enmity advantage, Goading Strike disadvantage).
+ *
  * The `note` variant is the explicit escape hatch for mechanics too complex or
  * rare to capture in structured form. The AI DM reads the text.
  */
 export type Property = {
   /** Human-readable activation condition shared across all variants. */
   condition?: string;
+  /** Structured target-conditional predicate evaluated by the resolver. */
+  when?: EffectPredicate;
 } & (
   | { type: "resistance"; damageType: DamageType | "all" }
   | { type: "immunity"; damageType: DamageType | "all" }
@@ -495,6 +528,19 @@ export type Property = {
   | { type: "spellcasting_focus"; item: string; ability?: Ability }
   | { type: "feat_grant"; category: "Origin" | "General" | "Fighting Style" }
   | { type: "shapechange"; action: "action" | "bonus_action" }
+  | {
+      /**
+       * Marker placed on a target by another creature's tracked spell/feature
+       * (Vow of Enmity, Hex, Hunter's Mark, Faerie Fire, Goading Strike, ...).
+       * The marker has no direct mechanical effect on the bearer — it exists so
+       * the activator's conditional properties/modifiers can match it via the
+       * `when.targetHasEffect` predicate. Swept by the GSM when the source
+       * (concentration spell or activated feature) ends.
+       */
+      type: "tracked_by";
+      feature: string;
+      caster: string;
+    }
   | { type: "note"; text: string }
 );
 
@@ -824,21 +870,19 @@ export interface EffectBundle {
   lifetime: EffectLifetime;
   effects: EntityEffects;
   /**
-   * If set, this bundle was applied to a target by another creature's
-   * concentration spell (e.g. Bane disadvantage on a goblin saved against
-   * the wizard's concentration). When the caster's concentration breaks (or
-   * is replaced), every bundle in the room tagged with this caster+spell
-   * pair is removed in one sweep — no manual `remove_condition` per target.
+   * If set, this bundle was applied to a target by another creature's tracked
+   * source — a concentration spell (Bane, Bless, Hold Person) or an activated
+   * feature (Vow of Enmity, Hex, Hunter's Mark, Goading Strike). When the
+   * source ends (concentration breaks or `deactivate_feature` fires), every
+   * bundle in the room with the matching caster+identifier is swept in one
+   * pass. Replaces v0.x `sourceConcentration` (kind: "spell") and
+   * `sourceActivation` (kind: "feature") fields — old snapshots are auto-
+   * upgraded on load via `effectBundleSchema`'s parse-time transform.
    */
-  sourceConcentration?: { caster: string; spell: string };
-  /**
-   * If set, this bundle was applied to a target by another creature's
-   * activated feature (e.g. a Paladin's Vow of Enmity mark). When the
-   * activator calls `deactivate_feature`, every bundle in the room tagged
-   * with this caster+feature pair is swept in one pass — mirrors
-   * `sourceConcentration` for feature-driven target bundles.
-   */
-  sourceActivation?: { caster: string; feature: string };
+  sourceTracked?: {
+    caster: string;
+    identifier: { kind: "spell" | "feature"; name: string };
+  };
 }
 
 // ---------------------------------------------------------------------------

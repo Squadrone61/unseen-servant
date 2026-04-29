@@ -195,7 +195,7 @@ describe("breakConcentration", () => {
 //
 // Bug regression coverage for set_concentration applied_targets — Bless/Bane
 // and similar single-target buffs/debuffs must land on each named target with
-// a sourceConcentration tag, surface in the resolver, and be swept off cleanly
+// a sourceTracked tag (kind: "spell"), surface in the resolver, and be swept off cleanly
 // when the caster's concentration ends or is replaced.
 
 describe("setConcentration with applied_targets — Bless propagation", () => {
@@ -216,29 +216,35 @@ describe("setConcentration with applied_targets — Bless propagation", () => {
     ]);
   });
 
-  it("places a sourceConcentration bundle on each named PC target", () => {
+  it("places a sourceTracked spell bundle on each named PC target", () => {
     const r = gsm.setConcentration("Brynn", "Bless", ["Brynn", "Theron"]);
     assertToolSuccess(r);
     const cleric = gsm.characters["P1"];
     const fighter = gsm.characters["P2"];
     const clericBundle = (cleric.dynamic.activeEffects ?? []).find(
-      (b) => b.sourceConcentration?.spell.toLowerCase() === "bless",
+      (b) =>
+        b.sourceTracked?.identifier.kind === "spell" &&
+        b.sourceTracked.identifier.name.toLowerCase() === "bless",
     );
     const fighterBundle = (fighter.dynamic.activeEffects ?? []).find(
-      (b) => b.sourceConcentration?.spell.toLowerCase() === "bless",
+      (b) =>
+        b.sourceTracked?.identifier.kind === "spell" &&
+        b.sourceTracked.identifier.name.toLowerCase() === "bless",
     );
     expect(clericBundle).toBeDefined();
     expect(fighterBundle).toBeDefined();
-    expect(clericBundle?.sourceConcentration?.caster.toLowerCase()).toBe("brynn");
+    expect(clericBundle?.sourceTracked?.caster.toLowerCase()).toBe("brynn");
   });
 
-  it("places a sourceConcentration bundle on a named NPC combatant target", () => {
+  it("places a sourceTracked spell bundle on a named NPC combatant target", () => {
     const r = gsm.setConcentration("Brynn", "Bless", ["Goblin"]);
     assertToolSuccess(r);
     const combat = gsm.gameState.encounter?.combat;
     const goblin = Object.values(combat!.combatants).find((c) => c.name === "Goblin");
     const bundle = (goblin?.activeEffects ?? []).find(
-      (b) => b.sourceConcentration?.spell.toLowerCase() === "bless",
+      (b) =>
+        b.sourceTracked?.identifier.kind === "spell" &&
+        b.sourceTracked.identifier.name.toLowerCase() === "bless",
     );
     expect(bundle).toBeDefined();
   });
@@ -246,8 +252,10 @@ describe("setConcentration with applied_targets — Bless propagation", () => {
   it("Bless target bundle carries the +1d4 attack and save modifiers", () => {
     gsm.setConcentration("Brynn", "Bless", ["Theron"]);
     const fighter = gsm.characters["P2"];
-    const bundle = (fighter.dynamic.activeEffects ?? []).find(
-      (b) => b.sourceConcentration?.spell.toLowerCase() === "bless",
+    // The new architecture pushes BOTH a tracked_by marker bundle and the
+    // outcome bundle (carrying the +1d4 modifiers). Pull the outcome bundle.
+    const bundle = (fighter.dynamic.activeEffects ?? []).find((b) =>
+      b.id.startsWith("spell-target:bless:"),
     );
     expect(bundle).toBeDefined();
     const targets = (bundle?.effects.modifiers ?? []).map((m) => m.target);
@@ -281,8 +289,16 @@ describe("setConcentration with applied_targets — Bless propagation", () => {
     const combat = gsm.gameState.encounter?.combat;
     const goblin = Object.values(combat!.combatants).find((c) => c.name === "Goblin");
 
-    const hasBundle = (effects?: Array<{ sourceConcentration?: { spell: string } }>) =>
-      (effects ?? []).some((b) => b.sourceConcentration?.spell.toLowerCase() === "bless");
+    const hasBundle = (
+      effects?: Array<{
+        sourceTracked?: { identifier: { kind: "spell" | "feature"; name: string } };
+      }>,
+    ) =>
+      (effects ?? []).some(
+        (b) =>
+          b.sourceTracked?.identifier.kind === "spell" &&
+          b.sourceTracked.identifier.name.toLowerCase() === "bless",
+      );
     expect(hasBundle(cleric.dynamic.activeEffects)).toBe(false);
     expect(hasBundle(fighter.dynamic.activeEffects)).toBe(false);
     expect(hasBundle(goblin?.activeEffects)).toBe(false);
@@ -293,7 +309,9 @@ describe("setConcentration with applied_targets — Bless propagation", () => {
     assertToolSuccess(r);
     const fighter = gsm.characters["P2"];
     const bundle = (fighter.dynamic.activeEffects ?? []).find(
-      (b) => b.sourceConcentration?.spell.toLowerCase() === "bless",
+      (b) =>
+        b.sourceTracked?.identifier.kind === "spell" &&
+        b.sourceTracked.identifier.name.toLowerCase() === "bless",
     );
     expect(bundle).toBeDefined();
   });
@@ -328,13 +346,12 @@ describe("setConcentration with applied_targets — Bane debuff", () => {
     expect(targets).not.toContain("save");
   });
 
-  it("places a sourceConcentration bundle on the named target with negative attack modifier", () => {
+  it("places a sourceTracked spell bundle on the named target with negative attack modifier", () => {
     gsm.setConcentration("Brynn", "Bane", ["Goblin"]);
     const combat = gsm.gameState.encounter?.combat;
     const goblin = Object.values(combat!.combatants).find((c) => c.name === "Goblin");
-    const bundle = (goblin?.activeEffects ?? []).find(
-      (b) => b.sourceConcentration?.spell.toLowerCase() === "bane",
-    );
+    // Find the outcome bundle (carries the modifiers), not the marker.
+    const bundle = (goblin?.activeEffects ?? []).find((b) => b.id.startsWith("spell-target:bane:"));
     expect(bundle).toBeDefined();
     const attackMods = bundle?.effects.modifiers?.filter(
       (m) => m.target === "attack" || m.target === "save",
@@ -366,7 +383,9 @@ describe("setConcentration with applied_targets — strict no_target_effect erro
     gsm.setConcentration("Brynn", "Silent Image", ["Theron"]);
     const fighter = gsm.characters["P2"];
     const bundle = (fighter.dynamic.activeEffects ?? []).find(
-      (b) => b.sourceConcentration?.spell.toLowerCase() === "silent image",
+      (b) =>
+        b.sourceTracked?.identifier.kind === "spell" &&
+        b.sourceTracked.identifier.name.toLowerCase() === "silent image",
     );
     expect(bundle).toBeUndefined();
   });

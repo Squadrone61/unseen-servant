@@ -26,6 +26,17 @@ Combat-resolver owns NPC-turn mechanics end-to-end (verification, frame executio
 3. Resolve damage + saves: `apply_area_effect({ action_ref, caster_spell_save_dc, upcast_level? })`. Save DC, ability, damage dice and onSuccess all resolve from DB.
 4. Set `persistent: true` for ongoing spells (Wall of Fire, Spirit Guardians, Fog Cloud). Call `dismiss_aoe(aoe_id)` when they end.
 
+### Single-target buff/debuff features and spells
+
+Features and spells that mark a creature need a TWO-step propagation:
+
+- **Activated feature with marked target** (Vow of Enmity, etc.): call `activate_feature({ name, feature, targets: [<target>] })`. The `targets` shortcut binds the feature to the named creature(s) immediately — equivalent to calling `apply_targeted_effect` afterward.
+- **Concentration spell with named targets** (Bless, Bane, Hex, Hunter's Mark, Hold Person, Faerie Fire, Shield of Faith): call `set_concentration({ name, spell_name })`, then `apply_targeted_effect({ source: "spell", caster, identifier: spell_name, targets: [...] })`.
+
+Both paths push a `tracked_by` marker on each target plus any per-target outcome bundle (Bless's +1d4, Bane's −1d4, Hold Person's paralysis). Markers auto-clear when concentration breaks or the feature is deactivated.
+
+For attack rolls and damage rolls against marked creatures, **pass `vs: "<target>"` to `roll_dice`** — the resolver matches predicate-gated advantage/damage modifiers (Vow of Enmity advantage, Hex/Hunter's Mark +1d6) against the target's marker. Without `vs`, those gated effects don't apply.
+
 ### Redirects
 
 - **NPC/enemy turn** → dispatch `/combat-turn <combatant> <requestId>`. Never narrate from memory. The resolver runs the whole turn (or whole consecutive-NPC group) and returns APPLIED FRAMES; you narrate the closing.

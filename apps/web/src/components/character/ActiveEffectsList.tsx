@@ -64,7 +64,9 @@ function lifetimeLabel(bundle: EffectBundle): string | undefined {
   const l = bundle.lifetime;
   switch (l.type) {
     case "concentration":
-      return bundle.sourceConcentration ? `from ${bundle.sourceConcentration.caster}` : undefined;
+      return bundle.sourceTracked?.identifier.kind === "spell"
+        ? `from ${bundle.sourceTracked.caster}`
+        : undefined;
     case "duration":
       return `${l.rounds} round${l.rounds === 1 ? "" : "s"}`;
     case "until_rest":

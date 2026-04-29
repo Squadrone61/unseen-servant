@@ -13,6 +13,32 @@ import {
   type DamageRollExtra,
   type DamageRollOptions,
 } from "@unseen-servant/shared/utils";
+import type { EffectBundle } from "@unseen-servant/shared/types";
+
+/**
+ * Resolve a `vs` target name to (name, bundles). Looks across NPC combatants
+ * and player characters. Returns undefined if the name doesn't resolve so the
+ * caller can fall through to the no-context path (predicate-gated entries
+ * skip).
+ */
+function resolveTargetForVs(
+  wsClient: WSClient,
+  vs: string,
+): { name: string; bundles: EffectBundle[] } | undefined {
+  const trimmed = vs.trim();
+  const lc = trimmed.toLowerCase();
+  const combat = wsClient.gameStateManager.gameState.encounter?.combat;
+  if (combat) {
+    const c = Object.values(combat.combatants).find((cc) => cc.name.trim().toLowerCase() === lc);
+    if (c) return { name: c.name, bundles: c.activeEffects ?? [] };
+  }
+  const charEntry = Object.values(wsClient.gameStateManager.characters).find(
+    (ch) => ch.static.name.trim().toLowerCase() === lc,
+  );
+  if (charEntry)
+    return { name: charEntry.static.name, bundles: charEntry.dynamic.activeEffects ?? [] };
+  return undefined;
+}
 
 export function registerDndTools(
   server: McpServer,
@@ -125,6 +151,12 @@ Examples:
           .describe(
             "checkType='damage' only — opt-in extras (Sneak Attack, Divine Smite, Psionic Strike, Hex, Hunter's Mark, etc.). Each ref is resolved against the DB (source: 'feature' for class features, 'spell' for spells like Smite/Hex). Use diceOverride for ad-hoc rolls.",
           ),
+        vs: z
+          .string()
+          .optional()
+          .describe(
+            "Target creature name (combatant or character). Surfaces target-conditional advantage hints when the attacker has predicate-gated effects (Vow of Enmity vs sworn target, Hex damage vs hexed target, Faerie Fire vs affected target). Without `vs`, predicate-gated entries are skipped — conservative default. Useful for attack rolls and damage rolls.",
+          ),
       },
     },
     async ({
@@ -139,6 +171,7 @@ Examples:
       upcast_level,
       ability,
       extras,
+      vs,
     }) => {
       // ── Validate checkType ──
       if (checkType) {
@@ -206,6 +239,7 @@ Examples:
           upcastLevel: upcast_level,
           isCriticalHit: is_critical_hit,
           extras: extras as DamageRollExtra[] | undefined,
+          vs: vs ? resolveTargetForVs(wsClient, vs) : undefined,
         };
         const computed = computeDamageRoll(char, action_ref, opts);
         damageNotation = computed.notation;
@@ -282,6 +316,9 @@ Examples:
         }
       }
 
+      // ── Resolve `vs` target's bundles for predicate-aware hints ──
+      const vsTarget = vs ? resolveTargetForVs(wsClient, vs) : undefined;
+
       // ── Build advantage/disadvantage hints from active effects (d20 checks only) ──
       let effectHints = "";
       if (checkType && player && !isDamageRoll) {
@@ -289,7 +326,7 @@ Examples:
           (c) => c.static.name.toLowerCase() === player.toLowerCase(),
         );
         if (char) {
-          const advInfo = getCheckAdvantageInfo(char, checkType);
+          const advInfo = getCheckAdvantageInfo(char, checkType, vsTarget);
           if (advInfo.sources.length > 0) {
             effectHints = "\n⚡ " + advInfo.sources.join("; ");
             if (advInfo.advantage && advInfo.disadvantage) {

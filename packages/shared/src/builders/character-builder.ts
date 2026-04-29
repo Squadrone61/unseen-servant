@@ -25,7 +25,9 @@ import type { Item } from "../types/item";
 import type { BuilderState } from "../types/builder";
 import type {
   EffectBundle,
+  EffectPredicate,
   EntityEffects,
+  Modifier,
   Property,
   ResolveContext,
   DamageType,
@@ -1324,6 +1326,70 @@ function resolveConditionGrants(effects: EntityEffects, depth: number = 0): Enti
 }
 
 /**
+ * Substitute the literal placeholder `caster: "self"` inside any `when`
+ * predicate (`targetHasEffect`, `exceptTargetIs`) with the bearer's name.
+ * Run when an activator/caster bundle is pushed onto the bearer so the
+ * resolver can do strict equality without runtime substitution.
+ *
+ * Returns a NEW EntityEffects (does not mutate input).
+ */
+export function substituteSelfInEffects(effects: EntityEffects, bearerName: string): EntityEffects {
+  const subWhen = (when: EffectPredicate | undefined): EffectPredicate | undefined => {
+    if (!when) return undefined;
+    const next: EffectPredicate = {};
+    if (when.targetHasEffect) {
+      next.targetHasEffect = {
+        ...when.targetHasEffect,
+        caster: when.targetHasEffect.caster === "self" ? bearerName : when.targetHasEffect.caster,
+      };
+    }
+    if (when.exceptTargetIs) {
+      next.exceptTargetIs = {
+        caster: when.exceptTargetIs.caster === "self" ? bearerName : when.exceptTargetIs.caster,
+      };
+    }
+    return next;
+  };
+
+  const properties = effects.properties?.map((p) =>
+    p.when ? ({ ...p, when: subWhen(p.when) } as Property) : p,
+  );
+  const modifiers = effects.modifiers?.map((m) =>
+    m.when ? ({ ...m, when: subWhen(m.when) } as Modifier) : m,
+  );
+  return {
+    ...effects,
+    ...(properties !== undefined ? { properties } : {}),
+    ...(modifiers !== undefined ? { modifiers } : {}),
+  };
+}
+
+/**
+ * Build the lightweight target-marker bundle pushed onto each tracked target.
+ * Carries a single `tracked_by` Property whose `(feature, caster)` pair is
+ * matched by activator-side `when.targetHasEffect` predicates. Tagged with
+ * `sourceTracked` so the GSM sweep can find and remove it when the source
+ * (concentration spell or activated feature) ends.
+ */
+export function createTrackedMarkerBundle(
+  caster: string,
+  identifier: { kind: "spell" | "feature"; name: string },
+): EffectBundle {
+  return {
+    id: `tracked-marker:${identifier.kind}:${identifier.name.toLowerCase()}:${caster.toLowerCase()}`,
+    source: {
+      type: identifier.kind === "spell" ? "spell" : "class",
+      name: identifier.name,
+    },
+    lifetime: identifier.kind === "spell" ? { type: "concentration" } : { type: "manual" },
+    effects: {
+      properties: [{ type: "tracked_by", feature: identifier.name, caster }],
+    },
+    sourceTracked: { caster, identifier },
+  };
+}
+
+/**
  * Create an EffectBundle for a concentration spell.
  * SpellDb does not yet carry structured effects, so this is a forward-looking
  * hook — returns null until spell effects are added to the database.
@@ -1345,7 +1411,7 @@ export function createSpellBundle(spellName: string): EffectBundle | null {
  * from the spell's ActionEffect outcome branches — `onFailedSave` for save-kind
  * spells, `onHit` for attack-kind, the first available outcome for auto-kind.
  *
- * The returned bundle is tagged with `sourceConcentration: { caster, spell }`
+ * The returned bundle is tagged with `sourceTracked: { caster, identifier: { kind: "spell", name: spell } }`
  * so the GSM can sweep all such bundles off every combatant when the caster's
  * concentration breaks. Returns null if the spell has no target-applied effects
  * (pure damage spells, etc. — caller should fall through to manual handling).
@@ -1398,8 +1464,11 @@ export function createSpellTargetBundle(spellName: string, caster: string): Effe
     id: `spell-target:${spellName.toLowerCase()}:${caster.toLowerCase()}`,
     source: { type: "spell", name: spellName },
     lifetime: spell?.concentration ? { type: "concentration" } : { type: "manual" },
-    effects: merged,
-    sourceConcentration: { caster, spell: spellName },
+    // Substitute `caster: "self"` placeholders with the caster name so target-
+    // side `when` predicates (e.g. Goading Strike's `exceptTargetIs.caster`)
+    // refer to the caster, not the bearer (target).
+    effects: substituteSelfInEffects(merged, caster),
+    sourceTracked: { caster, identifier: { kind: "spell", name: spellName } },
   };
 }
 
@@ -1484,7 +1553,7 @@ export function createActivationBundle(
  * feature's `activation.action.{onHit|onFailedSave|onSuccessfulSave}.applyEffects`
  * — same outcome-branch shape as concentration spells.
  *
- * The returned bundle is tagged with `sourceActivation: { caster, feature }`
+ * The returned bundle is tagged with `sourceTracked: { caster, identifier: { kind: "feature", name: feature } }`
  * so the GSM can sweep all such bundles off every combatant when the caster
  * deactivates the feature. Returns null if the feature has no
  * `activation.action` block (most features only buff the bearer; only mark/curse-style
@@ -1576,8 +1645,10 @@ export function createFeatureTargetBundle(
     id: `feature-target:${className.toLowerCase()}:${featureName.toLowerCase()}:${caster.toLowerCase()}`,
     source: { type: "class", name: className, featureName, level: classLevel },
     lifetime: { type: "manual" },
-    effects: merged,
-    sourceActivation: { caster, feature: featureName },
+    // See createSpellTargetBundle — `caster: "self"` placeholders refer to the
+    // caster, not the bearer; substitute now so target-side resolution works.
+    effects: substituteSelfInEffects(merged, caster),
+    sourceTracked: { caster, identifier: { kind: "feature", name: featureName } },
   };
 }
 

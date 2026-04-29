@@ -2,6 +2,7 @@ import type {
   Ability,
   EffectBundle,
   EffectSource,
+  EffectPredicate,
   Modifier,
   ModifierTarget,
   Property,
@@ -11,6 +12,84 @@ import type {
   EntityEffects,
 } from "../types/effects";
 import { evaluateExpression } from "./expression-evaluator";
+
+// ---------------------------------------------------------------------------
+// EffectContext
+// ---------------------------------------------------------------------------
+
+/**
+ * Target-aware context for evaluating Property/Modifier `when` predicates.
+ *
+ *   bearerName    — the creature whose bundles are being resolved (the
+ *                   attacker for offensive checks). Used to substitute
+ *                   `caster: "self"` placeholders at evaluation time as a
+ *                   fallback when the activation-time substitution wasn't
+ *                   applied (e.g. raw DB-loaded bundles in tests).
+ *   targetBundles — active EffectBundles on the resolved target. The resolver
+ *                   inspects these for `tracked_by` markers when evaluating
+ *                   `targetHasEffect` predicates.
+ *   targetName    — the resolved target's name. Used by `exceptTargetIs`.
+ *
+ * Optional everywhere. When omitted, predicate-gated properties/modifiers are
+ * SKIPPED (conservative default — over-application of conditional effects was
+ * the original bug). Non-predicated entries always contribute.
+ */
+export interface EffectContext {
+  bearerName?: string;
+  targetBundles?: EffectBundle[];
+  targetName?: string;
+}
+
+/**
+ * Evaluate a structured predicate against an EffectContext.
+ *
+ * Returns true (the gated property/modifier contributes) iff:
+ *   - `when` is undefined (no gating), OR
+ *   - every clause in `when` matches `ctx`.
+ *
+ * Returns false when `when` has at least one clause but `ctx` is undefined —
+ * the resolver cannot know whether the predicate holds, so it skips.
+ *
+ * Clause semantics:
+ *   targetHasEffect — `ctx.targetBundles` must contain a `tracked_by` Property
+ *     whose feature matches (case-insensitive) and whose caster matches when
+ *     specified. `caster: "self"` is substituted with `ctx.bearerName` (the
+ *     attacker) at evaluation time as a fallback for un-substituted bundles.
+ *   exceptTargetIs — `ctx.targetName` must NOT equal the resolved caster
+ *     (case-insensitive). Same `"self"` substitution rule.
+ */
+export function evaluatePredicate(when: EffectPredicate | undefined, ctx?: EffectContext): boolean {
+  if (!when || (when.targetHasEffect === undefined && when.exceptTargetIs === undefined)) {
+    return true;
+  }
+  if (!ctx) return false;
+
+  if (when.targetHasEffect) {
+    const desired = when.targetHasEffect;
+    const desiredCaster = desired.caster === "self" ? ctx.bearerName : desired.caster;
+    const targetBundles = ctx.targetBundles ?? [];
+    const hasMarker = targetBundles.some((b) =>
+      b.effects.properties?.some(
+        (p) =>
+          p.type === "tracked_by" &&
+          p.feature.toLowerCase() === desired.feature.toLowerCase() &&
+          (desiredCaster === undefined || p.caster.toLowerCase() === desiredCaster.toLowerCase()),
+      ),
+    );
+    if (!hasMarker) return false;
+  }
+
+  if (when.exceptTargetIs) {
+    const desired = when.exceptTargetIs;
+    const desiredCaster = desired.caster === "self" ? ctx.bearerName : desired.caster;
+    if (!desiredCaster || !ctx.targetName) return false;
+    if (ctx.targetName.toLowerCase() === desiredCaster.toLowerCase()) {
+      return false;
+    }
+  }
+
+  return true;
+}
 
 // ---------------------------------------------------------------------------
 // Target Hierarchy
@@ -63,8 +142,15 @@ const TARGET_PARENTS = buildParentMap();
  * Collect all modifiers from bundles that apply to the given target.
  * A modifier applies if its target matches directly OR if its target is a parent
  * of the query target. Example: a modifier on "attack" applies to "attack_melee".
+ *
+ * `effectCtx` is consulted for `when`-predicate filtering. Predicate-gated
+ * modifiers are skipped when the predicate fails OR when no context is given.
  */
-function collectModifiers(bundles: EffectBundle[], target: ModifierTarget): Modifier[] {
+function collectModifiers(
+  bundles: EffectBundle[],
+  target: ModifierTarget,
+  effectCtx?: EffectContext,
+): Modifier[] {
   // Build the set of targets that count as a match:
   // the queried target itself, plus all of its parents.
   const applicableTargets = new Set<ModifierTarget>([target]);
@@ -80,9 +166,9 @@ function collectModifiers(bundles: EffectBundle[], target: ModifierTarget): Modi
     const modifiers = bundle.effects.modifiers;
     if (!modifiers) continue;
     for (const mod of modifiers) {
-      if (applicableTargets.has(mod.target)) {
-        result.push(mod);
-      }
+      if (!applicableTargets.has(mod.target)) continue;
+      if (!evaluatePredicate(mod.when, effectCtx)) continue;
+      result.push(mod);
     }
   }
   return result;
@@ -95,6 +181,7 @@ function collectModifiers(bundles: EffectBundle[], target: ModifierTarget): Modi
 export function collectModifiersWithSource(
   bundles: EffectBundle[],
   target: ModifierTarget,
+  effectCtx?: EffectContext,
 ): Array<{ modifier: Modifier; source: EffectSource }> {
   const applicableTargets = new Set<ModifierTarget>([target]);
   const parents = TARGET_PARENTS.get(target);
@@ -109,9 +196,9 @@ export function collectModifiersWithSource(
     const modifiers = bundle.effects.modifiers;
     if (!modifiers) continue;
     for (const mod of modifiers) {
-      if (applicableTargets.has(mod.target)) {
-        result.push({ modifier: mod, source: bundle.source });
-      }
+      if (!applicableTargets.has(mod.target)) continue;
+      if (!evaluatePredicate(mod.when, effectCtx)) continue;
+      result.push({ modifier: mod, source: bundle.source });
     }
   }
   return result;
@@ -140,8 +227,9 @@ export function resolveStat(
   target: ModifierTarget,
   base: number,
   ctx: ResolveContext,
+  effectCtx?: EffectContext,
 ): number {
-  const modifiers = collectModifiers(bundles, target);
+  const modifiers = collectModifiers(bundles, target, effectCtx);
 
   // Separate into "set" and "add" groups
   const setMods = modifiers.filter((m) => m.operation === "set");
@@ -175,19 +263,26 @@ export function resolveStat(
 // Property Queries
 // ---------------------------------------------------------------------------
 
-/** Collect all properties of a given type from bundles */
+/**
+ * Collect all properties of a given type from bundles.
+ *
+ * `effectCtx` filters out predicate-gated properties whose `when` clause does
+ * not match. Predicate-gated properties are skipped when no context is given —
+ * conservative default to avoid over-application of conditional effects.
+ */
 export function collectProperties<T extends Property["type"]>(
   bundles: EffectBundle[],
   type: T,
+  effectCtx?: EffectContext,
 ): Extract<Property, { type: T }>[] {
   const result: Extract<Property, { type: T }>[] = [];
   for (const bundle of bundles) {
     const properties = bundle.effects.properties;
     if (!properties) continue;
     for (const prop of properties) {
-      if (prop.type === type) {
-        result.push(prop as Extract<Property, { type: T }>);
-      }
+      if (prop.type !== type) continue;
+      if (!evaluatePredicate(prop.when, effectCtx)) continue;
+      result.push(prop as Extract<Property, { type: T }>);
     }
   }
   return result;
@@ -221,16 +316,29 @@ export function hasConditionImmunity(bundles: EffectBundle[], conditionName: str
   );
 }
 
-/** Check if any bundle grants advantage on something */
-export function hasAdvantage(bundles: EffectBundle[], on: string): boolean {
-  return collectProperties(bundles, "advantage").some(
+/**
+ * Check if any bundle grants advantage on something. `effectCtx` is consulted
+ * for `when`-predicate filtering — predicate-gated entries (e.g. Vow of Enmity
+ * "advantage on attacks against the sworn target") only contribute when the
+ * context's target carries the matching `tracked_by` marker.
+ */
+export function hasAdvantage(
+  bundles: EffectBundle[],
+  on: string,
+  effectCtx?: EffectContext,
+): boolean {
+  return collectProperties(bundles, "advantage", effectCtx).some(
     (p) => p.on.toLowerCase() === on.toLowerCase(),
   );
 }
 
-/** Check if any bundle grants disadvantage on something */
-export function hasDisadvantage(bundles: EffectBundle[], on: string): boolean {
-  return collectProperties(bundles, "disadvantage").some(
+/** Check if any bundle grants disadvantage on something. See hasAdvantage for ctx semantics. */
+export function hasDisadvantage(
+  bundles: EffectBundle[],
+  on: string,
+  effectCtx?: EffectContext,
+): boolean {
+  return collectProperties(bundles, "disadvantage", effectCtx).some(
     (p) => p.on.toLowerCase() === on.toLowerCase(),
   );
 }

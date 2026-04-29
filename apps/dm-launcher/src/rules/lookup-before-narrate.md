@@ -36,11 +36,18 @@ This is the same halt-and-clarify discipline as `LOOKUP_FAILED`, but for charact
 
 When a player casts a concentration spell **on themselves** (Barkskin, Longstrider, Shield of Faith on self, etc.), call `set_concentration({ name, spell_name })` — same as for any other concentration spell. Self-buffs are the easiest place to miss this because they don't produce an AoE overlay or a visible battlefield change. **Set concentration anyway.** "The DM narrates it as active" is not mechanical tracking; the sheet is the source of truth for break-concentration tests on damage.
 
-## `applied_targets` — propagating per-target effects
+## `apply_targeted_effect` — binding spells/features to named creatures
 
-When a player casts a concentration spell that buffs/debuffs _named creatures_ (Bless on the party, Bane on enemies, Shield of Faith on the cleric, Hold Person on a goblin, Faerie Fire on a knot of bandits), pass `applied_targets` so the per-target bundle (the +1d4, the disadvantage, the paralysis, the visibility) lands on each target's sheet/card and auto-clears when concentration ends.
+When a spell or activated feature affects _named creatures_, propagate it AFTER the concentration/activation tool, with `apply_targeted_effect`:
 
-Strict: only pass `applied_targets` for spells with a per-target effect. Spells like Silent Image, Wall of Fire, and Beast Bond have no per-target buff — passing names returns an error. Drop `applied_targets` for those.
+- **Concentration spell on named targets** (Bless on the party, Bane on enemies, Shield of Faith on the cleric, Hold Person on a goblin, Faerie Fire on a knot of bandits, Hex on a single foe, Hunter's Mark on quarry): call `set_concentration({ name, spell_name })` first, then `apply_targeted_effect({ source: "spell", caster, identifier: spell_name, targets: [...] })`.
+- **Activated feature with a marked target** (Vow of Enmity, Hex via Pact of the Chain extension, etc.): call `activate_feature({ name, feature, targets: [...] })` — the `targets` shortcut is equivalent to calling `apply_targeted_effect({ source: "feature", ... })` immediately afterward.
+
+Each target gets a `tracked_by` marker (visible as a chip on their card) plus any per-target outcome (Bless's +1d4, Bane's −1d4, Hold Person's paralysis, Faerie Fire's note). Markers and outcome bundles auto-clear when concentration breaks or the feature is deactivated.
+
+For target-conditional effects (Vow of Enmity advantage, Hex's +1d6 vs hexed target, Hunter's Mark damage), pass `vs: <target>` to `roll_dice` so the resolver can match the activator's `when.targetHasEffect` predicate against the target's marker — without `vs`, those predicate-gated effects don't apply.
+
+Strict: only pass `targets` to spells/features with per-target effects. Spells like Silent Image, Wall of Fire, and Beast Bond return an error — drop the targets and use the spell's own AoE/effect tools instead.
 
 ## On `UNKNOWN_*` returns from specialists
 

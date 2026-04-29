@@ -6,9 +6,15 @@
 
 import type { CheckRequest } from "../types/game-state";
 import type { CharacterData } from "../types/character";
-import type { ModifierTarget, AdvantageTarget } from "../types/effects";
+import type { EffectBundle, ModifierTarget, AdvantageTarget } from "../types/effects";
 import { getModifier } from "./character-helpers";
-import { resolveStat, hasAdvantage, hasDisadvantage } from "./effect-resolver";
+import {
+  resolveStat,
+  hasAdvantage,
+  hasDisadvantage,
+  evaluatePredicate,
+  type EffectContext,
+} from "./effect-resolver";
 import {
   getSkills,
   getSavingThrows,
@@ -308,12 +314,18 @@ function checkToAdvantageTargets(parsed: ParsedCheck): AdvantageTarget[] {
  * Check if a character has advantage or disadvantage on a given check type
  * from their active effect bundles.
  *
+ * `vs` is the resolved attack/check target (name + their active bundles). When
+ * provided, predicate-gated properties (Vow of Enmity, Goading Strike, ...)
+ * contribute only if their `when` clause matches. Without `vs`, predicate-gated
+ * entries are skipped — conservative default that avoids over-application.
+ *
  * Returns { advantage, disadvantage, sources } where sources describe where
  * the advantage/disadvantage comes from.
  */
 export function getCheckAdvantageInfo(
   char: CharacterData,
   checkType: string,
+  vs?: { name: string; bundles: EffectBundle[] },
 ): { advantage: boolean; disadvantage: boolean; sources: string[] } {
   const parsed = parseCheckType(checkType);
   if (!parsed) return { advantage: false, disadvantage: false, sources: [] };
@@ -321,38 +333,69 @@ export function getCheckAdvantageInfo(
   const bundles = collectActiveBundles(char);
   if (bundles.length === 0) return { advantage: false, disadvantage: false, sources: [] };
 
+  const effectCtx: EffectContext | undefined = vs
+    ? {
+        bearerName: char.static.name,
+        targetBundles: vs.bundles,
+        targetName: vs.name,
+      }
+    : undefined;
+
   const targets = checkToAdvantageTargets(parsed);
   let advantage = false;
   let disadvantage = false;
   const sources: string[] = [];
 
   for (const target of targets) {
-    if (hasAdvantage(bundles, target)) {
+    if (hasAdvantage(bundles, target, effectCtx)) {
       advantage = true;
-      // Find the source bundle(s)
+      // Find the source bundle(s) — re-evaluate predicates so we only credit
+      // sources that actually contributed.
       for (const b of bundles) {
         if (
           b.effects.properties?.some(
-            (p) => p.type === "advantage" && p.on.toLowerCase() === target.toLowerCase(),
+            (p) =>
+              p.type === "advantage" &&
+              p.on.toLowerCase() === target.toLowerCase() &&
+              evaluatePredicate(p.when, effectCtx),
           )
         ) {
-          sources.push(`advantage on ${target} from ${b.source.featureName ?? b.source.name}`);
+          const srcLabel = b.source.featureName ?? b.source.name;
+          const vsSuffix = vs && hasPredicate(b, "advantage", target) ? ` vs ${vs.name}` : "";
+          sources.push(`advantage on ${target} from ${srcLabel}${vsSuffix}`);
         }
       }
     }
-    if (hasDisadvantage(bundles, target)) {
+    if (hasDisadvantage(bundles, target, effectCtx)) {
       disadvantage = true;
       for (const b of bundles) {
         if (
           b.effects.properties?.some(
-            (p) => p.type === "disadvantage" && p.on.toLowerCase() === target.toLowerCase(),
+            (p) =>
+              p.type === "disadvantage" &&
+              p.on.toLowerCase() === target.toLowerCase() &&
+              evaluatePredicate(p.when, effectCtx),
           )
         ) {
-          sources.push(`disadvantage on ${target} from ${b.source.featureName ?? b.source.name}`);
+          const srcLabel = b.source.featureName ?? b.source.name;
+          const vsSuffix = vs && hasPredicate(b, "disadvantage", target) ? ` vs ${vs.name}` : "";
+          sources.push(`disadvantage on ${target} from ${srcLabel}${vsSuffix}`);
         }
       }
     }
   }
 
   return { advantage, disadvantage, sources };
+}
+
+/** True if the bundle has a property of the named type+target carrying a `when` predicate. */
+function hasPredicate(
+  bundle: EffectBundle,
+  propType: "advantage" | "disadvantage",
+  target: string,
+): boolean {
+  return (bundle.effects.properties ?? []).some(
+    (p) =>
+      p.type === propType && p.on.toLowerCase() === target.toLowerCase() && p.when !== undefined,
+  );
 }

@@ -3796,14 +3796,14 @@
           "type": "area"
         },
         "onFailedSave": {
-          "applyConditions": [
-            {
-              "name": "Invisible",
-              "duration": {
-                "type": "concentration"
+          "applyEffects": {
+            "properties": [
+              {
+                "type": "note",
+                "text": "Outlined by Faerie Fire. Attack rolls against this creature have advantage. The creature sheds dim light in a 10-foot radius and cannot benefit from the Invisible condition."
               }
-            }
-          ]
+            ]
+          }
         }
       }
     }
@@ -4269,7 +4269,13 @@
         {
           "target": "damage",
           "value": "1d6",
-          "condition": "necrotic, on attacks against hexed target"
+          "condition": "necrotic, on attacks against hexed target",
+          "when": {
+            "targetHasEffect": {
+              "feature": "Hex",
+              "caster": "self"
+            }
+          }
         }
       ],
       "properties": [
@@ -4317,7 +4323,13 @@
         {
           "target": "damage",
           "value": "1d6",
-          "condition": "on weapon attacks against marked target"
+          "condition": "force damage on weapon attacks against marked target",
+          "when": {
+            "targetHasEffect": {
+              "feature": "Hunter's Mark",
+              "caster": "self"
+            }
+          }
         }
       ],
       "action": {

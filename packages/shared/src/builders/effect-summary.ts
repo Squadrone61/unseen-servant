@@ -175,6 +175,8 @@ function propertyToken(prop: Property): string | null {
       return `Feat: ${prop.category}`;
     case "shapechange":
       return `Shapechange (${titleCase(prop.action.replace(/_/g, " "))})`;
+    case "tracked_by":
+      return `${prop.feature} (from ${prop.caster})`;
     case "note":
       return prop.text;
   }

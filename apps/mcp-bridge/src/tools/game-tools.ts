@@ -694,25 +694,25 @@ export function registerGameTools(
     "activate_feature",
     {
       description:
-        "Activate a class or subclass feature's mechanical effects (e.g., Rage, Wild Shape, Bladesong, Vow of Enmity). Creates an effect bundle with bonuses/resistances that apply until deactivated. Use alongside use_class_resource when the feature costs a resource. Optionally provide `applied_targets` for features that mark/curse a creature (Vow of Enmity, Hunter's Quarry-style). The per-target bundle auto-clears when the feature is deactivated. Strict: errors if `applied_targets` is given for a feature with no per-target effect.",
+        "Activate a class or subclass feature's mechanical effects (e.g., Rage, Wild Shape, Bladesong, Vow of Enmity). Creates an effect bundle with bonuses/resistances that apply until deactivated. Use alongside use_class_resource when the feature costs a resource. Optionally provide `targets` for features that mark/curse a creature (Vow of Enmity, Goading Strike) — equivalent to calling apply_targeted_effect immediately afterward with source='feature'. The per-target bundle auto-clears when the feature is deactivated. Strict: errors if `targets` is given for a feature with no per-target effect.",
       inputSchema: {
         name: z.string().describe("Character name"),
         feature: z
           .string()
           .describe("Feature name (e.g., 'Rage', 'Wild Shape', 'Bladesong', 'Vow of Enmity')"),
-        applied_targets: z
+        targets: z
           .array(z.string())
           .optional()
           .describe(
-            "Combatant or character names that the feature's effects apply to (the marked target for Vow of Enmity, etc.). Errors if the feature has no per-target effect. Auto-clears on deactivate_feature.",
+            "Combatant or character names that the feature's effects apply to (the marked target for Vow of Enmity, etc.). Errors if the feature has no per-target effect. Auto-clears on deactivate_feature. Same as calling apply_targeted_effect after activate_feature.",
           ),
       },
     },
-    async ({ name, feature, applied_targets }) => {
+    async ({ name, feature, targets }) => {
       return fromToolResponse(
-        wsClient.gameStateManager.activateFeature(name, feature, applied_targets),
+        wsClient.gameStateManager.activateFeature(name, feature, targets),
         "activate_feature",
-        { name, feature, applied_targets },
+        { name, feature, targets },
       );
     },
   );
@@ -721,7 +721,7 @@ export function registerGameTools(
     "deactivate_feature",
     {
       description:
-        "Deactivate a class or subclass feature's mechanical effects. Removes the effect bundle so bonuses/resistances no longer apply.",
+        "Deactivate a class or subclass feature's mechanical effects. Removes the effect bundle so bonuses/resistances no longer apply. Auto-clears any target-side marker bundles bound to this feature (Vow of Enmity, Goading Strike, ...).",
       inputSchema: {
         name: z.string().describe("Character name"),
         feature: z.string().describe("Feature name to deactivate"),
@@ -732,6 +732,39 @@ export function registerGameTools(
         wsClient.gameStateManager.deactivateFeature(name, feature),
         "deactivate_feature",
         { name, feature },
+      );
+    },
+  );
+
+  server.registerTool(
+    "apply_targeted_effect",
+    {
+      description:
+        "Bind a concentration spell or activated feature to one or more target creatures. Pushes a tracked-by marker on each target plus any per-target outcome bundle (Bless +1d4, Bane disadvantage). Required AFTER set_concentration for spells like Bless, Bane, Hex, Hunter's Mark, Hold Person, Faerie Fire — or AFTER activate_feature for features like Vow of Enmity. Targets auto-clear when concentration breaks or the feature is deactivated. Strict: errors if the source is not active on the caster, or if the source has no per-target effects.",
+      inputSchema: {
+        source: z
+          .enum(["spell", "feature"])
+          .describe(
+            "'spell' for a concentration spell, 'feature' for an activated class/subclass feature",
+          ),
+        caster: z
+          .string()
+          .describe("Caster name (character or combatant for spells; PC only for features)"),
+        identifier: z
+          .string()
+          .describe(
+            "Spell name (must match active concentration) or feature name (must match active activation)",
+          ),
+        targets: z
+          .array(z.string())
+          .describe("Combatant or character names to bind the source to. At least one required."),
+      },
+    },
+    async ({ source, caster, identifier, targets }) => {
+      return fromToolResponse(
+        wsClient.gameStateManager.applyTargetedEffect({ source, caster, identifier, targets }),
+        "apply_targeted_effect",
+        { source, caster, identifier, targets },
       );
     },
   );
@@ -1855,24 +1888,17 @@ export function registerGameTools(
     "set_concentration",
     {
       description:
-        "Set a character or combatant as concentrating on a spell. Auto-breaks any previous concentration. Optionally provide `applied_targets` — combatant names (allies or enemies) the spell affects. Each target gets a tracked bundle that is swept automatically when the caster's concentration ends. ONLY pass applied_targets for spells whose data carries a per-target effect (Bless, Bane, Shield of Faith, Hold Person, Faerie Fire, ...). For spells with no per-target buff/debuff (Silent Image, Wall of Fire, etc.) drop applied_targets — the call will return an error otherwise.",
+        "Set a character or combatant as concentrating on a spell. Auto-breaks any previous concentration and sweeps its target bundles. To bind the new spell to specific creatures (Bless, Bane, Hex, Hunter's Mark, Hold Person, Faerie Fire, ...) call `apply_targeted_effect` with `source: 'spell'` AFTER this tool. The two are intentionally split so concentration tracking and target binding can be staged independently.",
       inputSchema: {
         name: z.string().describe("Caster name (character or combatant)"),
         spell_name: z.string().describe("Name of the concentration spell"),
-        applied_targets: z
-          .array(z.string())
-          .optional()
-          .describe(
-            "Combatant or character names that the spell's effects apply to. Errors if the spell has no per-target effects. Names that resolve to nobody in the encounter are reported under missingTargets[].reason='name_not_found'.",
-          ),
       },
     },
-    async ({ name, spell_name, applied_targets }) => {
-      const result = wsClient.gameStateManager.setConcentration(name, spell_name, applied_targets);
+    async ({ name, spell_name }) => {
+      const result = wsClient.gameStateManager.setConcentration(name, spell_name);
       return fromToolResponse(result, "set_concentration", {
         name,
         spell_name,
-        applied_targets,
       });
     },
   );
