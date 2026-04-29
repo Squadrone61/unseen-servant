@@ -781,6 +781,13 @@ function GameContent({ roomCode, playerName }: { roomCode: string; playerName: s
     [send],
   );
 
+  const handleReorderInventory = useCallback(
+    (order: string[]) => {
+      send({ type: "client:reorder_inventory", order });
+    },
+    [send],
+  );
+
   const handleConfigureCampaign = (config: {
     campaignName: string;
     systemPrompt?: string;
@@ -924,6 +931,7 @@ function GameContent({ roomCode, playerName }: { roomCode: string; playerName: s
                     }
                   : undefined
               }
+              onReorderInventory={handleReorderInventory}
             />
           </div>
         )}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { TopBar } from "@/components/ui/TopBar";
@@ -11,10 +11,40 @@ import { useCharacterLibrary } from "@/hooks/useCharacterLibrary";
 export default function CharacterDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const { getCharacter, deleteCharacter } = useCharacterLibrary();
+  const { getCharacter, deleteCharacter, updateCharacter } = useCharacterLibrary();
 
   const saved = getCharacter(id);
   const [confirmDelete, setConfirmDelete] = useState(false);
+
+  const handleReorderInventory = useCallback(
+    (order: string[]) => {
+      if (!saved) return;
+      const char = saved.character;
+      const inventory = char.dynamic.inventory ?? [];
+      if (inventory.length === 0) return;
+
+      const byNameLower = new Map<string, number>();
+      inventory.forEach((item, idx) => byNameLower.set(item.name.toLowerCase(), idx));
+
+      const seen = new Set<number>();
+      const next: typeof inventory = [];
+      for (const name of order) {
+        const idx = byNameLower.get(name.toLowerCase());
+        if (idx === undefined || seen.has(idx)) continue;
+        seen.add(idx);
+        next.push(inventory[idx]);
+      }
+      for (let i = 0; i < inventory.length; i++) {
+        if (!seen.has(i)) next.push(inventory[i]);
+      }
+
+      updateCharacter(saved.id, {
+        ...char,
+        dynamic: { ...char.dynamic, inventory: next },
+      });
+    },
+    [saved, updateCharacter],
+  );
 
   const exportNative = (character: typeof char) => {
     const data = {
@@ -89,7 +119,7 @@ export default function CharacterDetailPage() {
       {/* Character sheet */}
       <div className="flex-1 overflow-y-auto">
         <div className="mx-auto max-w-4xl px-6 py-4">
-          <CharacterSheet character={char} />
+          <CharacterSheet character={char} onReorderInventory={handleReorderInventory} />
         </div>
       </div>
     </div>

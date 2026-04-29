@@ -317,6 +317,7 @@ export class GameRoom extends DurableObject<Env> {
         case "client:configure_campaign":
         case "client:save_notes":
         case "client:dismiss_aoe":
+        case "client:reorder_inventory":
           this.forwardToBridge(ws, msg);
           break;
 

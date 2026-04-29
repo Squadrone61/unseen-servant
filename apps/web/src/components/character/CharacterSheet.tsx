@@ -55,6 +55,8 @@ interface CharacterSheetProps {
   character: CharacterData;
   /** If provided, shows "Place on map" CTA for AoE spells */
   onCastAoE?: (params: StartPlacementParams) => void;
+  /** If provided, enables drag-drop reordering of the inventory list. */
+  onReorderInventory?: (order: string[]) => void;
 }
 
 // ─── Tab Bar Helper ───
@@ -113,15 +115,19 @@ function StatBox({
 
 // ─── Main Component ───
 
-export function CharacterSheet({ character, onCastAoE }: CharacterSheetProps) {
+export function CharacterSheet({ character, onCastAoE, onReorderInventory }: CharacterSheetProps) {
   return (
     <EntityPopoverProvider>
-      <CharacterSheetInner character={character} onCastAoE={onCastAoE} />
+      <CharacterSheetInner
+        character={character}
+        onCastAoE={onCastAoE}
+        onReorderInventory={onReorderInventory}
+      />
     </EntityPopoverProvider>
   );
 }
 
-function CharacterSheetInner({ character, onCastAoE }: CharacterSheetProps) {
+function CharacterSheetInner({ character, onCastAoE, onReorderInventory }: CharacterSheetProps) {
   const s = character.static;
   const d = character.dynamic;
   const abilities = useMemo(() => getAbilities(character), [character]);
@@ -384,7 +390,11 @@ function CharacterSheetInner({ character, onCastAoE }: CharacterSheetProps) {
           <SpellsTab character={character} onSpellClick={handleSpellClick} />
         )}
         {activeTab === "inventory" && (
-          <InventoryTab character={character} onItemClick={handleItemClick} />
+          <InventoryTab
+            character={character}
+            onItemClick={handleItemClick}
+            onReorderInventory={onReorderInventory}
+          />
         )}
         {activeTab === "features" && (
           <FeaturesTab character={character} onFeatureClick={handleFeatureClick} />

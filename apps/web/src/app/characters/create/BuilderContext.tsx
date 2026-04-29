@@ -31,6 +31,7 @@ export type EquipmentAction =
   | { type: "REMOVE_EQUIPMENT"; index: number }
   | { type: "REMOVE_EQUIPMENT_BATCH"; packName: string }
   | { type: "TOGGLE_EQUIPPED"; index: number }
+  | { type: "REORDER_EQUIPMENT"; items: Item[] }
   | { type: "SET_CURRENCY"; currency: Currency }
   | { type: "LOAD_EQUIPMENT"; state: EquipmentState }
   | { type: "RESET_EQUIPMENT" };
@@ -63,6 +64,9 @@ function equipmentReducer(state: EquipmentState, action: EquipmentAction): Equip
           i === action.index ? { ...item, equipped: !item.equipped } : item,
         ),
       };
+
+    case "REORDER_EQUIPMENT":
+      return { ...state, inventory: action.items };
 
     case "SET_CURRENCY":
       return { ...state, currency: action.currency };

@@ -1,4 +1,5 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
+import { Reorder, useDragControls, type DragControls } from "framer-motion";
 import type { CharacterData, Item } from "@unseen-servant/shared/types";
 import { FilterChipBar } from "../FilterChipBar";
 import { RARITY_COLORS } from "../utils";
@@ -6,44 +7,189 @@ import { RARITY_COLORS } from "../utils";
 interface InventoryTabProps {
   character: CharacterData;
   onItemClick: (item: Item, e: React.MouseEvent) => void;
+  /** Called with item names in the new desired order. Absent = read-only inventory. */
+  onReorderInventory?: (order: string[]) => void;
 }
 
-export function InventoryTab({ character, onItemClick }: InventoryTabProps) {
+interface InventoryRowProps {
+  item: Item;
+  onItemClick: (item: Item, e: React.MouseEvent) => void;
+  draggable: boolean;
+  dragControls?: DragControls;
+}
+
+function InventoryRowContent({ item, onItemClick, draggable, dragControls }: InventoryRowProps) {
+  const isMagic = !!item.rarity && item.rarity !== "Common";
+  const rarityColor =
+    item.rarity && RARITY_COLORS[item.rarity]
+      ? RARITY_COLORS[item.rarity]
+      : item.equipped
+        ? "text-gray-200"
+        : "text-gray-400";
+
+  let typeLabel: string | undefined;
+  if (item.weapon) typeLabel = "Weapon";
+  else if (item.armor) {
+    typeLabel =
+      item.armor.type === "shield"
+        ? "Shield"
+        : `${item.armor.type.charAt(0).toUpperCase() + item.armor.type.slice(1)} Armor`;
+  }
+
+  return (
+    <>
+      {/* Drag handle (only when reordering is enabled) */}
+      {draggable && dragControls && (
+        <button
+          type="button"
+          onPointerDown={(e) => {
+            e.preventDefault();
+            dragControls.start(e);
+          }}
+          aria-label={`Reorder ${item.name}`}
+          className="shrink-0 cursor-grab touch-none px-0.5 text-gray-600 transition-colors hover:text-amber-400 active:cursor-grabbing"
+        >
+          <svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor" aria-hidden="true">
+            <circle cx="2.5" cy="2.5" r="1" />
+            <circle cx="7.5" cy="2.5" r="1" />
+            <circle cx="2.5" cy="7" r="1" />
+            <circle cx="7.5" cy="7" r="1" />
+            <circle cx="2.5" cy="11.5" r="1" />
+            <circle cx="7.5" cy="11.5" r="1" />
+          </svg>
+        </button>
+      )}
+
+      {/* Equipped indicator */}
+      <span
+        className={`inline-block h-1.5 w-1.5 shrink-0 rounded-full ${
+          item.equipped ? "bg-green-500" : "bg-gray-700"
+        }`}
+      />
+
+      {/* Name (click to open popover) */}
+      <span
+        className={`flex-1 cursor-pointer truncate transition-colors hover:text-amber-300 ${rarityColor}`}
+        onClick={(e) => onItemClick(item, e)}
+      >
+        {item.name}
+        {isMagic && <span className="ml-0.5 text-amber-400">✦</span>}
+      </span>
+
+      {/* Attunement indicator */}
+      {item.attunement && (
+        <span
+          className={`shrink-0 text-xs ${item.attuned ? "text-amber-400" : "text-gray-600"}`}
+          title={item.attuned ? "Attuned" : "Requires attunement"}
+        >
+          ◈
+        </span>
+      )}
+
+      {/* Quantity */}
+      {item.quantity > 1 && (
+        <span className="shrink-0 text-xs text-gray-500">×{item.quantity}</span>
+      )}
+
+      {/* Type badge */}
+      {typeLabel && <span className="shrink-0 text-xs text-gray-600">{typeLabel}</span>}
+    </>
+  );
+}
+
+function ReorderableRow({
+  item,
+  onItemClick,
+}: {
+  item: Item;
+  onItemClick: (item: Item, e: React.MouseEvent) => void;
+}) {
+  const dragControls = useDragControls();
+  return (
+    <Reorder.Item
+      value={item}
+      dragListener={false}
+      dragControls={dragControls}
+      className="group flex items-center gap-1.5 rounded bg-gray-900/0 px-1.5 py-1 text-xs transition-colors hover:bg-gray-800/60"
+    >
+      <InventoryRowContent
+        item={item}
+        onItemClick={onItemClick}
+        draggable={true}
+        dragControls={dragControls}
+      />
+    </Reorder.Item>
+  );
+}
+
+function StaticRow({
+  item,
+  onItemClick,
+}: {
+  item: Item;
+  onItemClick: (item: Item, e: React.MouseEvent) => void;
+}) {
+  return (
+    <div className="group flex items-center gap-1.5 rounded px-1.5 py-1 text-xs transition-colors hover:bg-gray-800/60">
+      <InventoryRowContent item={item} onItemClick={onItemClick} draggable={false} />
+    </div>
+  );
+}
+
+export function InventoryTab({ character, onItemClick, onReorderInventory }: InventoryTabProps) {
   const [filter, setFilter] = useState<string>("all");
   const d = character.dynamic;
 
-  const counts = useMemo(() => {
-    const equipped = d.inventory.filter((i) => i.equipped).length;
-    const attunement = d.inventory.filter((i) => i.attunement).length;
-    return { equipped, attunement };
+  // Local optimistic copy so drag-reorder updates immediately while we debounce
+  // the dispatch back to the bridge / library. Synced from props whenever the
+  // authoritative inventory changes (add_item, remove_item, etc.).
+  const [localItems, setLocalItems] = useState<Item[]>(d.inventory);
+  useEffect(() => {
+    setLocalItems(d.inventory);
   }, [d.inventory]);
 
+  const counts = useMemo(() => {
+    const equipped = localItems.filter((i) => i.equipped).length;
+    const attunement = localItems.filter((i) => i.attunement).length;
+    return { equipped, attunement };
+  }, [localItems]);
+
   const chips = [
-    { id: "all", label: "ALL", count: d.inventory.length },
+    { id: "all", label: "ALL", count: localItems.length },
     { id: "equipment", label: "EQUIPPED", count: counts.equipped },
     ...(counts.attunement > 0
       ? [{ id: "attunement", label: "ATTUNEMENT", count: counts.attunement }]
       : []),
   ];
 
-  const filtered = useMemo(() => {
+  const filteredView = useMemo(() => {
     switch (filter) {
       case "equipment":
-        return d.inventory.filter((i) => i.equipped);
+        return localItems.filter((i) => i.equipped);
       case "attunement":
-        return d.inventory.filter((i) => i.attunement);
+        return localItems.filter((i) => i.attunement);
       default:
-        return d.inventory;
+        return localItems;
     }
-  }, [d.inventory, filter]);
+  }, [localItems, filter]);
 
-  // Sort: equipped first, then by name
-  const sorted = useMemo(() => {
-    return [...filtered].sort((a, b) => {
-      if (a.equipped !== b.equipped) return a.equipped ? -1 : 1;
-      return a.name.localeCompare(b.name);
-    });
-  }, [filtered]);
+  const draggable = filter === "all" && !!onReorderInventory;
+
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, []);
+
+  function handleReorder(newOrder: Item[]) {
+    setLocalItems(newOrder);
+    if (!onReorderInventory) return;
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      onReorderInventory(newOrder.map((i) => i.name));
+    }, 300);
+  }
 
   const hasCurrency =
     d.currency.gp > 0 || d.currency.sp > 0 || d.currency.cp > 0 || d.currency.pp > 0;
@@ -70,74 +216,29 @@ export function InventoryTab({ character, onItemClick }: InventoryTabProps) {
 
       <FilterChipBar chips={chips} activeChipId={filter} onSelect={setFilter} />
 
-      {sorted.length === 0 && (
+      {filteredView.length === 0 && (
         <div className="py-4 text-center text-xs text-gray-600">No items</div>
       )}
 
-      <div className="space-y-0.5">
-        {sorted.map((item, i) => {
-          const isMagic = !!item.rarity && item.rarity !== "Common";
-          const rarityColor =
-            item.rarity && RARITY_COLORS[item.rarity]
-              ? RARITY_COLORS[item.rarity]
-              : item.equipped
-                ? "text-gray-200"
-                : "text-gray-400";
-
-          // Determine type label from sub-objects
-          let typeLabel: string | undefined;
-          if (item.weapon) typeLabel = "Weapon";
-          else if (item.armor) {
-            typeLabel =
-              item.armor.type === "shield"
-                ? "Shield"
-                : `${item.armor.type.charAt(0).toUpperCase() + item.armor.type.slice(1)} Armor`;
-          }
-
-          return (
-            <div
-              key={`${item.name}-${i}`}
-              className="group flex cursor-pointer items-center gap-1.5 rounded px-1.5 py-1 text-xs transition-colors hover:bg-gray-800/60"
-              onClick={(e) => onItemClick(item, e)}
-            >
-              {/* Equipped indicator */}
-              <span
-                className={`inline-block h-1.5 w-1.5 shrink-0 rounded-full ${
-                  item.equipped ? "bg-green-500" : "bg-gray-700"
-                }`}
-              />
-
-              {/* Name */}
-              <span
-                className={`flex-1 truncate transition-colors group-hover:text-amber-300 ${rarityColor}`}
-              >
-                {item.name}
-                {isMagic && <span className="ml-0.5 text-amber-400">✦</span>}
-              </span>
-
-              {/* Attunement indicator */}
-              {item.attunement && (
-                <span
-                  className={`shrink-0 text-xs ${
-                    item.attuned ? "text-amber-400" : "text-gray-600"
-                  }`}
-                  title={item.attuned ? "Attuned" : "Requires attunement"}
-                >
-                  ◈
-                </span>
-              )}
-
-              {/* Quantity */}
-              {item.quantity > 1 && (
-                <span className="shrink-0 text-xs text-gray-500">×{item.quantity}</span>
-              )}
-
-              {/* Type badge */}
-              {typeLabel && <span className="shrink-0 text-xs text-gray-600">{typeLabel}</span>}
-            </div>
-          );
-        })}
-      </div>
+      {draggable ? (
+        <Reorder.Group
+          axis="y"
+          values={localItems}
+          onReorder={handleReorder}
+          as="div"
+          className="space-y-0.5"
+        >
+          {localItems.map((item) => (
+            <ReorderableRow key={item.name} item={item} onItemClick={onItemClick} />
+          ))}
+        </Reorder.Group>
+      ) : (
+        <div className="space-y-0.5">
+          {filteredView.map((item) => (
+            <StaticRow key={item.name} item={item} onItemClick={onItemClick} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -305,6 +305,11 @@ export const clientSetCharacterSchema = z.object({
   character: characterDataSchema,
 });
 
+export const clientReorderInventorySchema = z.object({
+  type: z.literal("client:reorder_inventory"),
+  order: z.array(z.string().min(1)).max(200),
+});
+
 export const clientStartStorySchema = z.object({
   type: z.literal("client:start_story"),
 });
@@ -420,6 +425,7 @@ export const clientMessageSchema = z.discriminatedUnion("type", [
   clientSetPasswordSchema,
   clientKickPlayerSchema,
   clientSetCharacterSchema,
+  clientReorderInventorySchema,
   clientStartStorySchema,
   clientRollDiceSchema,
   clientCombatActionSchema,

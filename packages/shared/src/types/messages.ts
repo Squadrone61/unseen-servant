@@ -160,6 +160,12 @@ export interface ClientSetCharacterMessage {
   character: CharacterData;
 }
 
+/** Player reorders their inventory — names in the new desired order */
+export interface ClientReorderInventoryMessage {
+  type: "client:reorder_inventory";
+  order: string[];
+}
+
 export interface ClientStartStoryMessage {
   type: "client:start_story";
 }
@@ -282,6 +288,7 @@ export type ClientMessage =
   | ClientSetPasswordMessage
   | ClientKickPlayerMessage
   | ClientSetCharacterMessage
+  | ClientReorderInventoryMessage
   | ClientStartStoryMessage
   | ClientRollDiceMessage
   | ClientCombatActionMessage

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { Reorder, useDragControls, type DragControls } from "framer-motion";
 import {
   weaponsArray,
   armorArray,
@@ -435,13 +436,88 @@ interface EquipmentChipPanelProps {
   equipment: Item[];
   onRemove: (index: number) => void;
   onToggleEquipped: (index: number) => void;
+  onReorder: (items: Item[]) => void;
   onAddCustom: (item: Item) => void;
+}
+
+function EquipmentChipRow({
+  item,
+  index,
+  onRemove,
+  onToggleEquipped,
+}: {
+  item: Item;
+  index: number;
+  onRemove: (index: number) => void;
+  onToggleEquipped: (index: number) => void;
+}) {
+  const dragControls = useDragControls();
+  return (
+    <Reorder.Item
+      value={item}
+      dragListener={false}
+      dragControls={dragControls}
+      className="flex items-center gap-2 rounded-md border border-gray-700/40 bg-gray-800/50 px-2.5 py-1.5"
+    >
+      <DragHandle controls={dragControls} label={`Reorder ${item.name}`} />
+      <span className="flex-1 truncate text-sm text-gray-200">
+        {item.name}
+        {item.quantity > 1 && <span className="ml-1 text-gray-500">&times;{item.quantity}</span>}
+      </span>
+      <button
+        type="button"
+        onClick={() => onToggleEquipped(index)}
+        aria-pressed={item.equipped}
+        aria-label={item.equipped ? `Unequip ${item.name}` : `Equip ${item.name}`}
+        className={[
+          "text-xs px-2 py-0.5 rounded-full border transition-colors",
+          item.equipped
+            ? "border-emerald-500/40 bg-emerald-900/20 text-emerald-300 hover:bg-emerald-900/30"
+            : "border-gray-600/40 bg-gray-800/60 text-gray-400 hover:text-gray-200",
+        ].join(" ")}
+      >
+        {item.equipped ? "Equipped" : "Unequipped"}
+      </button>
+      <button
+        type="button"
+        onClick={() => onRemove(index)}
+        aria-label={`Remove ${item.name}`}
+        className="px-1 leading-none text-gray-500 transition-colors hover:text-red-400 focus:outline-none"
+      >
+        &times;
+      </button>
+    </Reorder.Item>
+  );
+}
+
+function DragHandle({ controls, label }: { controls: DragControls; label: string }) {
+  return (
+    <button
+      type="button"
+      onPointerDown={(e) => {
+        e.preventDefault();
+        controls.start(e);
+      }}
+      aria-label={label}
+      className="shrink-0 cursor-grab touch-none px-0.5 text-gray-600 transition-colors hover:text-amber-400 active:cursor-grabbing"
+    >
+      <svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor" aria-hidden="true">
+        <circle cx="2.5" cy="2.5" r="1" />
+        <circle cx="7.5" cy="2.5" r="1" />
+        <circle cx="2.5" cy="7" r="1" />
+        <circle cx="7.5" cy="7" r="1" />
+        <circle cx="2.5" cy="11.5" r="1" />
+        <circle cx="7.5" cy="11.5" r="1" />
+      </svg>
+    </button>
+  );
 }
 
 function EquipmentChipPanel({
   equipment,
   onRemove,
   onToggleEquipped,
+  onReorder,
   onAddCustom,
 }: EquipmentChipPanelProps) {
   const [customName, setCustomName] = useState("");
@@ -473,43 +549,23 @@ function EquipmentChipPanel({
       {equipment.length === 0 ? (
         <p className="mb-3 text-sm text-gray-600 italic">No equipment selected yet.</p>
       ) : (
-        <ul className="mb-3 flex flex-col gap-1.5">
+        <Reorder.Group
+          axis="y"
+          values={equipment}
+          onReorder={onReorder}
+          as="ul"
+          className="mb-3 flex flex-col gap-1.5"
+        >
           {equipment.map((item, i) => (
-            <li
-              key={`${item.name}-${i}`}
-              className="flex items-center gap-2 rounded-md border border-gray-700/40 bg-gray-800/50 px-2.5 py-1.5"
-            >
-              <span className="flex-1 truncate text-sm text-gray-200">
-                {item.name}
-                {item.quantity > 1 && (
-                  <span className="ml-1 text-gray-500">&times;{item.quantity}</span>
-                )}
-              </span>
-              <button
-                type="button"
-                onClick={() => onToggleEquipped(i)}
-                aria-pressed={item.equipped}
-                aria-label={item.equipped ? `Unequip ${item.name}` : `Equip ${item.name}`}
-                className={[
-                  "text-xs px-2 py-0.5 rounded-full border transition-colors",
-                  item.equipped
-                    ? "border-emerald-500/40 bg-emerald-900/20 text-emerald-300 hover:bg-emerald-900/30"
-                    : "border-gray-600/40 bg-gray-800/60 text-gray-400 hover:text-gray-200",
-                ].join(" ")}
-              >
-                {item.equipped ? "Equipped" : "Unequipped"}
-              </button>
-              <button
-                type="button"
-                onClick={() => onRemove(i)}
-                aria-label={`Remove ${item.name}`}
-                className="px-1 leading-none text-gray-500 transition-colors hover:text-red-400 focus:outline-none"
-              >
-                &times;
-              </button>
-            </li>
+            <EquipmentChipRow
+              key={item.name}
+              item={item}
+              index={i}
+              onRemove={onRemove}
+              onToggleEquipped={onToggleEquipped}
+            />
           ))}
-        </ul>
+        </Reorder.Group>
       )}
 
       {/* Custom item input */}
@@ -686,6 +742,7 @@ function StartingEquipmentPanel() {
           equipmentDispatch({ type: "REMOVE_EQUIPMENT", index: i });
         }}
         onToggleEquipped={(i) => equipmentDispatch({ type: "TOGGLE_EQUIPPED", index: i })}
+        onReorder={(items) => equipmentDispatch({ type: "REORDER_EQUIPMENT", items })}
         onAddCustom={(item) => equipmentDispatch({ type: "ADD_EQUIPMENT", item })}
       />
 

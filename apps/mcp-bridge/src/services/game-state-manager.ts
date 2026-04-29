@@ -453,6 +453,9 @@ export class GameStateManager {
       case "client:set_character":
         this.handleSetCharacter(playerName, action.character);
         break;
+      case "client:reorder_inventory":
+        this.handleReorderInventory(playerName, action.order);
+        break;
       case "client:set_campaign":
         // Handled by ws-client directly (campaign manager)
         break;
@@ -1489,6 +1492,54 @@ export class GameStateManager {
     // Broadcast to all players — the bridge is the single authoritative sender of
     // character_updated. The worker caches the character on receipt of this broadcast
     // (via handleBroadcast) but must not send its own copy.
+    this.broadcast({
+      type: "server:character_updated",
+      playerName,
+      character,
+      source: "player",
+    });
+  }
+
+  /**
+   * Reorder a player's inventory array in place by name. Items mentioned in
+   * `order` come first in the new sequence; any inventory items not listed are
+   * appended at the end (defensive against stale orderings sent from a client
+   * that hasn't seen a recent add_item).
+   */
+  handleReorderInventory(playerName: string, order: string[]): void {
+    const character = this.findCharacterByPlayerName(playerName);
+    if (!character) return;
+
+    const inventory = character.dynamic.inventory ?? [];
+    if (inventory.length === 0) return;
+
+    const byNameLower = new Map<string, number>();
+    inventory.forEach((item, idx) => byNameLower.set(item.name.toLowerCase(), idx));
+
+    const seen = new Set<number>();
+    const next: typeof inventory = [];
+    for (const name of order) {
+      const idx = byNameLower.get(name.toLowerCase());
+      if (idx === undefined || seen.has(idx)) continue;
+      seen.add(idx);
+      next.push(inventory[idx]);
+    }
+    for (let i = 0; i < inventory.length; i++) {
+      if (!seen.has(i)) next.push(inventory[i]);
+    }
+
+    character.dynamic.inventory = next;
+    this.markCharacterDirty(playerName);
+
+    const cm = this.campaignManager;
+    if (cm.activeSlug) {
+      try {
+        cm.snapshotCharacters({ [playerName]: character });
+      } catch {
+        // ignore
+      }
+    }
+
     this.broadcast({
       type: "server:character_updated",
       playerName,
