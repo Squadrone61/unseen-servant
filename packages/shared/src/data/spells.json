@@ -2653,16 +2653,35 @@
     ],
     "higherLevels": "**Using a Higher-Level Spell Slot.**\nYou can target one additional creature for each spell slot level above 1.",
     "effects": {
-      "modifiers": [
-        {
-          "target": "attack",
-          "value": "-1d4"
+      "action": {
+        "kind": "save",
+        "save": {
+          "ability": "charisma",
+          "dc": "spell_save_dc",
+          "onSuccess": "negates"
         },
-        {
-          "target": "save",
-          "value": "-1d4"
+        "targeting": {
+          "type": "creatures",
+          "count": 3
+        },
+        "onFailedSave": {
+          "applyEffects": {
+            "modifiers": [
+              {
+                "target": "attack",
+                "value": "-1d4"
+              },
+              {
+                "target": "save",
+                "value": "-1d4"
+              }
+            ]
+          }
+        },
+        "meta": {
+          "concentration": true
         }
-      ]
+      }
     }
   },
   {
@@ -2712,16 +2731,30 @@
     ],
     "higherLevels": "**Using a Higher-Level Spell Slot.**\nYou can target one additional creature for each spell slot level above 1.",
     "effects": {
-      "modifiers": [
-        {
-          "target": "attack",
-          "value": "1d4"
+      "action": {
+        "kind": "auto",
+        "targeting": {
+          "type": "creatures",
+          "count": 3
         },
-        {
-          "target": "save",
-          "value": "1d4"
+        "onHit": {
+          "applyEffects": {
+            "modifiers": [
+              {
+                "target": "attack",
+                "value": "1d4"
+              },
+              {
+                "target": "save",
+                "value": "1d4"
+              }
+            ]
+          }
+        },
+        "meta": {
+          "concentration": true
         }
-      ]
+      }
     }
   },
   {
@@ -4194,7 +4227,18 @@
           "type": "creature"
         },
         "onHit": {
-          "note": "Target gains immunity to Frightened and gains temp HP equal to your spellcasting ability modifier at start of each turn while concentration lasts."
+          "applyEffects": {
+            "properties": [
+              {
+                "type": "condition_immunity",
+                "conditionName": "Frightened"
+              },
+              {
+                "type": "note",
+                "text": "Gains temp HP equal to caster's spellcasting ability modifier at the start of each of its turns (while concentration lasts)."
+              }
+            ]
+          }
         },
         "meta": {
           "concentration": true
@@ -4820,12 +4864,25 @@
       "Paladin"
     ],
     "effects": {
-      "modifiers": [
-        {
-          "target": "ac",
-          "value": 2
+      "action": {
+        "kind": "auto",
+        "targeting": {
+          "type": "creature"
+        },
+        "onHit": {
+          "applyEffects": {
+            "modifiers": [
+              {
+                "target": "ac",
+                "value": 2
+              }
+            ]
+          }
+        },
+        "meta": {
+          "concentration": true
         }
-      ]
+      }
     }
   },
   {

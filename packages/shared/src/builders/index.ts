@@ -5,6 +5,7 @@ export {
   createSpellBundle,
   createSpellTargetBundle,
   createActivationBundle,
+  createFeatureTargetBundle,
   createItemBundle,
   createMonsterBundle,
   enrichItem,

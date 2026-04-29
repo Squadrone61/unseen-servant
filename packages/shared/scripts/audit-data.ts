@@ -237,6 +237,24 @@ function auditSpells(): CategoryReport {
 
   const errors = validateEffects(spellsArray, "spell");
 
+  // Concentration spells with non-Self range MUST have an `effects.action` block —
+  // that is the channel `set_concentration applied_targets` reads to fan
+  // per-target buffs/debuffs out to combatants. If a spell only carries
+  // top-level `effects.modifiers` it gets glued to the caster (often
+  // self-debuffing, e.g. legacy Bane) and never reaches its actual targets.
+  const concWithoutAction = spellsArray.filter(
+    (s) =>
+      s.concentration === true &&
+      s.range !== undefined &&
+      s.range.toLowerCase() !== "self" &&
+      s.effects?.action === undefined,
+  );
+  for (const s of concWithoutAction) {
+    errors.push(
+      `[spell] "${s.name}": concentration && range="${s.range}" but no effects.action — applied_targets cannot propagate per-target effects. Migrate top-level effects.modifiers/properties into effects.action.{onHit|onFailedSave}.applyEffects.`,
+    );
+  }
+
   return {
     category: "Spells",
     total,
@@ -248,6 +266,11 @@ function auditSpells(): CategoryReport {
         pct: pct(withActionEffect, total),
       },
       { label: "legacy damage field", count: withLegacyDamage, pct: pct(withLegacyDamage, total) },
+      {
+        label: "concentration non-Self without effects.action (WARN)",
+        count: concWithoutAction.length,
+        pct: pct(concWithoutAction.length, total),
+      },
     ],
     errors,
   };

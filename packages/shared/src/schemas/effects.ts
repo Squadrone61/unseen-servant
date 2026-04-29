@@ -619,4 +619,17 @@ export const effectBundleSchema = z.object({
       spell: z.string(),
     })
     .optional(),
+  /**
+   * If set, this bundle was applied to a target by another creature's
+   * activated feature (e.g. Vow of Enmity's mark). When the activator's
+   * deactivate_feature fires (or the feature lapses), every bundle in the
+   * room tagged with this caster+feature pair is swept in one pass —
+   * mirrors `sourceConcentration` for spell-driven target bundles.
+   */
+  sourceActivation: z
+    .object({
+      caster: z.string(),
+      feature: z.string(),
+    })
+    .optional(),
 });

@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import {
   createTestGSM,
   createClericCharacter,
+  createFighterCharacter,
   registerCharacter,
   assertToolSuccess,
   assertToolError,
@@ -185,5 +186,208 @@ describe("breakConcentration", () => {
       const result = gsm.breakConcentration("Zxqlorp");
       expect(result.text).toContain("Zxqlorp");
     });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// applied_targets — propagation of concentration spell effects to named targets
+// ---------------------------------------------------------------------------
+//
+// Bug regression coverage for set_concentration applied_targets — Bless/Bane
+// and similar single-target buffs/debuffs must land on each named target with
+// a sourceConcentration tag, surface in the resolver, and be swept off cleanly
+// when the caster's concentration ends or is replaced.
+
+describe("setConcentration with applied_targets — Bless propagation", () => {
+  beforeEach(() => {
+    const t = createTestGSM();
+    gsm = t.gsm;
+    registerCharacter(gsm, "P1", createClericCharacter()); // Brynn (Cleric)
+    registerCharacter(gsm, "P2", createFighterCharacter()); // Theron (Fighter)
+    gsm.updateBattleMap({ id: "map1", width: 10, height: 10, tiles: [], name: "Arena" });
+    gsm.startCombat([
+      {
+        name: "Goblin",
+        type: "npc" as const,
+        initiativeModifier: 2,
+        maxHP: 7,
+        armorClass: 15,
+      },
+    ]);
+  });
+
+  it("places a sourceConcentration bundle on each named PC target", () => {
+    const r = gsm.setConcentration("Brynn", "Bless", ["Brynn", "Theron"]);
+    assertToolSuccess(r);
+    const cleric = gsm.characters["P1"];
+    const fighter = gsm.characters["P2"];
+    const clericBundle = (cleric.dynamic.activeEffects ?? []).find(
+      (b) => b.sourceConcentration?.spell.toLowerCase() === "bless",
+    );
+    const fighterBundle = (fighter.dynamic.activeEffects ?? []).find(
+      (b) => b.sourceConcentration?.spell.toLowerCase() === "bless",
+    );
+    expect(clericBundle).toBeDefined();
+    expect(fighterBundle).toBeDefined();
+    expect(clericBundle?.sourceConcentration?.caster.toLowerCase()).toBe("brynn");
+  });
+
+  it("places a sourceConcentration bundle on a named NPC combatant target", () => {
+    const r = gsm.setConcentration("Brynn", "Bless", ["Goblin"]);
+    assertToolSuccess(r);
+    const combat = gsm.gameState.encounter?.combat;
+    const goblin = Object.values(combat!.combatants).find((c) => c.name === "Goblin");
+    const bundle = (goblin?.activeEffects ?? []).find(
+      (b) => b.sourceConcentration?.spell.toLowerCase() === "bless",
+    );
+    expect(bundle).toBeDefined();
+  });
+
+  it("Bless target bundle carries the +1d4 attack and save modifiers", () => {
+    gsm.setConcentration("Brynn", "Bless", ["Theron"]);
+    const fighter = gsm.characters["P2"];
+    const bundle = (fighter.dynamic.activeEffects ?? []).find(
+      (b) => b.sourceConcentration?.spell.toLowerCase() === "bless",
+    );
+    expect(bundle).toBeDefined();
+    const targets = (bundle?.effects.modifiers ?? []).map((m) => m.target);
+    expect(targets).toContain("attack");
+    expect(targets).toContain("save");
+  });
+
+  it("response text reports applied targets for Bless", () => {
+    const r = gsm.setConcentration("Brynn", "Bless", ["Brynn", "Theron"]);
+    expect(r.text).toContain("Applied to");
+    expect(r.text).toContain("Brynn");
+    expect(r.text).toContain("Theron");
+  });
+
+  it("response data lists appliedTargets and empty missingTargets on success", () => {
+    const r = gsm.setConcentration("Brynn", "Bless", ["Brynn", "Theron"]);
+    const data = r.data as {
+      appliedTargets: string[];
+      missingTargets: Array<{ name: string; reason: string }>;
+    };
+    expect(data.appliedTargets).toEqual(expect.arrayContaining(["Brynn", "Theron"]));
+    expect(data.missingTargets).toEqual([]);
+  });
+
+  it("breakConcentration sweeps Bless target bundles off every named target", () => {
+    gsm.setConcentration("Brynn", "Bless", ["Brynn", "Theron", "Goblin"]);
+    gsm.breakConcentration("Brynn");
+
+    const cleric = gsm.characters["P1"];
+    const fighter = gsm.characters["P2"];
+    const combat = gsm.gameState.encounter?.combat;
+    const goblin = Object.values(combat!.combatants).find((c) => c.name === "Goblin");
+
+    const hasBundle = (effects?: Array<{ sourceConcentration?: { spell: string } }>) =>
+      (effects ?? []).some((b) => b.sourceConcentration?.spell.toLowerCase() === "bless");
+    expect(hasBundle(cleric.dynamic.activeEffects)).toBe(false);
+    expect(hasBundle(fighter.dynamic.activeEffects)).toBe(false);
+    expect(hasBundle(goblin?.activeEffects)).toBe(false);
+  });
+
+  it("trims whitespace on target name lookup (defensive)", () => {
+    const r = gsm.setConcentration("Brynn", "Bless", ["  Theron  "]);
+    assertToolSuccess(r);
+    const fighter = gsm.characters["P2"];
+    const bundle = (fighter.dynamic.activeEffects ?? []).find(
+      (b) => b.sourceConcentration?.spell.toLowerCase() === "bless",
+    );
+    expect(bundle).toBeDefined();
+  });
+});
+
+describe("setConcentration with applied_targets — Bane debuff", () => {
+  beforeEach(() => {
+    const t = createTestGSM();
+    gsm = t.gsm;
+    registerCharacter(gsm, "P1", createClericCharacter()); // Brynn (Cleric)
+    gsm.updateBattleMap({ id: "map1", width: 10, height: 10, tiles: [], name: "Arena" });
+    gsm.startCombat([
+      {
+        name: "Goblin",
+        type: "npc" as const,
+        initiativeModifier: 2,
+        maxHP: 7,
+        armorClass: 15,
+      },
+    ]);
+  });
+
+  it("does NOT place Bane modifiers on the caster's own bundle", () => {
+    gsm.setConcentration("Brynn", "Bane", ["Goblin"]);
+    const cleric = gsm.characters["P1"];
+    const casterBundle = (cleric.dynamic.activeEffects ?? []).find((b) => b.id === "spell:bane");
+    // The caster bundle (marker for concentration tracking) must not carry
+    // attack/save modifiers — those belong on the target's bundle. Otherwise
+    // the Cleric self-debuffs while concentrating on Bane.
+    const targets = (casterBundle?.effects.modifiers ?? []).map((m) => m.target);
+    expect(targets).not.toContain("attack");
+    expect(targets).not.toContain("save");
+  });
+
+  it("places a sourceConcentration bundle on the named target with negative attack modifier", () => {
+    gsm.setConcentration("Brynn", "Bane", ["Goblin"]);
+    const combat = gsm.gameState.encounter?.combat;
+    const goblin = Object.values(combat!.combatants).find((c) => c.name === "Goblin");
+    const bundle = (goblin?.activeEffects ?? []).find(
+      (b) => b.sourceConcentration?.spell.toLowerCase() === "bane",
+    );
+    expect(bundle).toBeDefined();
+    const attackMods = bundle?.effects.modifiers?.filter(
+      (m) => m.target === "attack" || m.target === "save",
+    );
+    expect(attackMods?.length).toBeGreaterThan(0);
+  });
+});
+
+describe("setConcentration with applied_targets — strict no_target_effect error", () => {
+  beforeEach(() => {
+    const t = createTestGSM();
+    gsm = t.gsm;
+    registerCharacter(gsm, "P1", createClericCharacter()); // Brynn
+    registerCharacter(gsm, "P2", createFighterCharacter()); // Theron
+  });
+
+  it("returns an error ToolResponse when applied_targets is given for a spell with no per-target effects", () => {
+    // Silent Image is a concentration spell with no per-target buff/debuff.
+    const r = gsm.setConcentration("Brynn", "Silent Image", ["Theron"]);
+    assertToolError(r);
+  });
+
+  it("error text mentions that the spell has no per-target effects", () => {
+    const r = gsm.setConcentration("Brynn", "Silent Image", ["Theron"]);
+    expect(r.text.toLowerCase()).toMatch(/no.*target.*effect|cannot.*apply/);
+  });
+
+  it("does not create any target bundles when erroring", () => {
+    gsm.setConcentration("Brynn", "Silent Image", ["Theron"]);
+    const fighter = gsm.characters["P2"];
+    const bundle = (fighter.dynamic.activeEffects ?? []).find(
+      (b) => b.sourceConcentration?.spell.toLowerCase() === "silent image",
+    );
+    expect(bundle).toBeUndefined();
+  });
+});
+
+describe("setConcentration with applied_targets — missing target reason", () => {
+  beforeEach(() => {
+    const t = createTestGSM();
+    gsm = t.gsm;
+    registerCharacter(gsm, "P1", createClericCharacter());
+    registerCharacter(gsm, "P2", createFighterCharacter());
+  });
+
+  it("reports missingTargets[].reason='name_not_found' for unknown target names", () => {
+    const r = gsm.setConcentration("Brynn", "Bless", ["Theron", "NobodyByThatName"]);
+    const data = r.data as {
+      appliedTargets: string[];
+      missingTargets: Array<{ name: string; reason: string }>;
+    };
+    expect(data.appliedTargets).toContain("Theron");
+    const missing = data.missingTargets.find((m) => m.name === "NobodyByThatName");
+    expect(missing?.reason).toBe("name_not_found");
   });
 });

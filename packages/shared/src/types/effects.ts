@@ -831,6 +831,14 @@ export interface EffectBundle {
    * pair is removed in one sweep — no manual `remove_condition` per target.
    */
   sourceConcentration?: { caster: string; spell: string };
+  /**
+   * If set, this bundle was applied to a target by another creature's
+   * activated feature (e.g. a Paladin's Vow of Enmity mark). When the
+   * activator calls `deactivate_feature`, every bundle in the room tagged
+   * with this caster+feature pair is swept in one pass — mirrors
+   * `sourceConcentration` for feature-driven target bundles.
+   */
+  sourceActivation?: { caster: string; feature: string };
 }
 
 // ---------------------------------------------------------------------------

@@ -36,6 +36,12 @@ This is the same halt-and-clarify discipline as `LOOKUP_FAILED`, but for charact
 
 When a player casts a concentration spell **on themselves** (Barkskin, Longstrider, Shield of Faith on self, etc.), call `set_concentration({ name, spell_name })` — same as for any other concentration spell. Self-buffs are the easiest place to miss this because they don't produce an AoE overlay or a visible battlefield change. **Set concentration anyway.** "The DM narrates it as active" is not mechanical tracking; the sheet is the source of truth for break-concentration tests on damage.
 
+## `applied_targets` — propagating per-target effects
+
+When a player casts a concentration spell that buffs/debuffs _named creatures_ (Bless on the party, Bane on enemies, Shield of Faith on the cleric, Hold Person on a goblin, Faerie Fire on a knot of bandits), pass `applied_targets` so the per-target bundle (the +1d4, the disadvantage, the paralysis, the visibility) lands on each target's sheet/card and auto-clears when concentration ends.
+
+Strict: only pass `applied_targets` for spells with a per-target effect. Spells like Silent Image, Wall of Fire, and Beast Bond have no per-target buff — passing names returns an error. Drop `applied_targets` for those.
+
 ## On `UNKNOWN_*` returns from specialists
 
 Specialists halt on missing data. When a specialist returns one of these, you relay to the player — never invent:

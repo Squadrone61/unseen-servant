@@ -1479,6 +1479,109 @@ export function createActivationBundle(
 }
 
 /**
+ * Build the EffectBundle that an activated class/subclass feature applies to a
+ * target creature when the activation lands. Pulls EntityEffects from the
+ * feature's `activation.action.{onHit|onFailedSave|onSuccessfulSave}.applyEffects`
+ * — same outcome-branch shape as concentration spells.
+ *
+ * The returned bundle is tagged with `sourceActivation: { caster, feature }`
+ * so the GSM can sweep all such bundles off every combatant when the caster
+ * deactivates the feature. Returns null if the feature has no
+ * `activation.action` block (most features only buff the bearer; only mark/curse-style
+ * features need this).
+ */
+export function createFeatureTargetBundle(
+  className: string,
+  featureName: string,
+  classLevel: number,
+  caster: string,
+  subclassName?: string,
+): EffectBundle | null {
+  const cls = getClass(className);
+  if (!cls) return null;
+
+  const findFeatureActivation = (): { activation: EntityEffects; sourceName: string } | null => {
+    // Class features first
+    const classFeature = cls.features.find(
+      (f) => f.name.toLowerCase() === featureName.toLowerCase() && f.activation,
+    );
+    if (classFeature?.activation) {
+      return { activation: classFeature.activation, sourceName: className };
+    }
+    // Specific subclass if provided
+    if (subclassName) {
+      const sc = cls.subclasses.find(
+        (sub) => sub.name.toLowerCase() === subclassName.toLowerCase(),
+      );
+      const subFeature = sc?.features.find(
+        (f) => f.name.toLowerCase() === featureName.toLowerCase() && f.activation,
+      );
+      if (subFeature?.activation) {
+        return { activation: subFeature.activation, sourceName: subclassName };
+      }
+    }
+    // Fuzzy across all subclasses
+    if (!subclassName) {
+      for (const sc of cls.subclasses) {
+        const subFeature = sc.features.find(
+          (f) => f.name.toLowerCase() === featureName.toLowerCase() && f.activation,
+        );
+        if (subFeature?.activation) {
+          return { activation: subFeature.activation, sourceName: sc.name };
+        }
+      }
+    }
+    return null;
+  };
+
+  const found = findFeatureActivation();
+  const action = found?.activation.action;
+  if (!action) return null;
+
+  const outcome =
+    action.kind === "save"
+      ? action.onFailedSave
+      : action.kind === "attack"
+        ? action.onHit
+        : (action.onFailedSave ?? action.onHit ?? action.onSuccessfulSave);
+  if (!outcome) return null;
+
+  const merged: EntityEffects = {
+    modifiers: outcome.applyEffects?.modifiers,
+    properties: outcome.applyEffects?.properties,
+  };
+
+  if (outcome.applyConditions && outcome.applyConditions.length > 0) {
+    const conditionProps: Property[] = outcome.applyConditions.flatMap((c) => {
+      const cond = getCondition(c.name);
+      const inlined = cond?.effects ? resolveConditionGrants(cond.effects) : null;
+      return inlined?.properties ?? [];
+    });
+    if (conditionProps.length > 0) {
+      merged.properties = [...(merged.properties ?? []), ...conditionProps];
+    }
+    const conditionMods = outcome.applyConditions.flatMap((c) => {
+      const cond = getCondition(c.name);
+      const inlined = cond?.effects ? resolveConditionGrants(cond.effects) : null;
+      return inlined?.modifiers ?? [];
+    });
+    if (conditionMods.length > 0) {
+      merged.modifiers = [...(merged.modifiers ?? []), ...conditionMods];
+    }
+  }
+
+  if (!merged.modifiers && !merged.properties) return null;
+
+  return {
+    id: `feature-target:${className.toLowerCase()}:${featureName.toLowerCase()}:${caster.toLowerCase()}`,
+    source: { type: "class", name: className, featureName, level: classLevel },
+    lifetime: { type: "manual" },
+    effects: merged,
+    sourceActivation: { caster, feature: featureName },
+  };
+}
+
+/**
  * Create an EffectBundle for a magic item when it is equipped and attuned.
  * Looks up the item in the magic item database. Returns null if the item
  * has no structured effects or is not found in the database.

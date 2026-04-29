@@ -45,6 +45,7 @@ import { damageTypeColor } from "@unseen-servant/shared/utils";
 import {
   createConditionBundle,
   createActivationBundle,
+  createFeatureTargetBundle,
   createSpellBundle,
   createSpellTargetBundle,
   createItemBundle,
@@ -2509,8 +2510,117 @@ export class GameStateManager {
     ]);
   }
 
+  /**
+   * Apply a feature's target-effect bundle (e.g. Vow of Enmity's mark) to each
+   * named target. Mirrors `applyConcentrationTargetBundles` for spells.
+   * Returns structured missing entries with the same reason taxonomy.
+   */
+  private applyFeatureTargetBundles(
+    caster: string,
+    className: string,
+    featureName: string,
+    classLevel: number,
+    subclassName: string | undefined,
+    targetNames: string[],
+  ): {
+    applied: string[];
+    missing: Array<{ name: string; reason: "name_not_found" | "no_target_effect" }>;
+  } {
+    const applied: string[] = [];
+    const missing: Array<{ name: string; reason: "name_not_found" | "no_target_effect" }> = [];
+
+    const template = createFeatureTargetBundle(
+      className,
+      featureName,
+      classLevel,
+      caster,
+      subclassName,
+    );
+    if (!template) {
+      for (const rawName of targetNames) {
+        missing.push({ name: rawName.trim(), reason: "no_target_effect" });
+      }
+      return { applied, missing };
+    }
+
+    const combat = this.gameState.encounter?.combat;
+    for (const rawName of targetNames) {
+      const targetName = rawName.trim();
+      const combatant = combat
+        ? Object.values(combat.combatants).find(
+            (c) => c.name.trim().toLowerCase() === targetName.toLowerCase() && c.type !== "player",
+          )
+        : undefined;
+      if (combatant) {
+        if (!combatant.activeEffects) combatant.activeEffects = [];
+        combatant.activeEffects = combatant.activeEffects.filter(
+          (b) =>
+            b.sourceActivation?.caster.toLowerCase() !== caster.toLowerCase() ||
+            b.sourceActivation?.feature.toLowerCase() !== featureName.toLowerCase(),
+        );
+        combatant.activeEffects.push({ ...template });
+        this.recomputeCombatantSpeed(combatant);
+        applied.push(combatant.name);
+        continue;
+      }
+      const charEntry = Object.entries(this.characters).find(
+        ([, ch]) => ch.static.name.trim().toLowerCase() === targetName.toLowerCase(),
+      );
+      if (charEntry) {
+        const [pName, ch] = charEntry;
+        if (!ch.dynamic.activeEffects) ch.dynamic.activeEffects = [];
+        ch.dynamic.activeEffects = ch.dynamic.activeEffects.filter(
+          (b) =>
+            b.sourceActivation?.caster.toLowerCase() !== caster.toLowerCase() ||
+            b.sourceActivation?.feature.toLowerCase() !== featureName.toLowerCase(),
+        );
+        ch.dynamic.activeEffects.push({ ...template });
+        applied.push(ch.static.name);
+        this.markCharacterDirty(pName);
+        continue;
+      }
+      missing.push({ name: targetName, reason: "name_not_found" });
+    }
+    return { applied, missing };
+  }
+
+  /** Sweep target bundles applied by a caster's feature (mirrors clearConcentrationTargetBundles). */
+  private clearFeatureTargetBundles(caster: string, feature: string): { targetsCleared: string[] } {
+    const cleared: string[] = [];
+    const matches = (b: { sourceActivation?: { caster: string; feature: string } }) =>
+      b.sourceActivation?.caster.toLowerCase() === caster.toLowerCase() &&
+      b.sourceActivation?.feature.toLowerCase() === feature.toLowerCase();
+
+    const combat = this.gameState.encounter?.combat;
+    if (combat) {
+      for (const c of Object.values(combat.combatants)) {
+        if (!c.activeEffects?.length) continue;
+        const before = c.activeEffects.length;
+        c.activeEffects = c.activeEffects.filter((b) => !matches(b));
+        if (c.activeEffects.length < before) {
+          this.recomputeCombatantSpeed(c);
+          cleared.push(c.name);
+        }
+      }
+    }
+    for (const [pName, char] of Object.entries(this.characters)) {
+      if (!char.dynamic.activeEffects?.length) continue;
+      const before = char.dynamic.activeEffects.length;
+      char.dynamic.activeEffects = char.dynamic.activeEffects.filter((b) => !matches(b));
+      if (char.dynamic.activeEffects.length < before) {
+        cleared.push(char.static.name);
+        this.markCharacterDirty(pName);
+      }
+    }
+    return { targetsCleared: cleared };
+  }
+
   /** Activate a class/subclass feature's effects (Rage, Wild Shape, etc.) */
-  activateFeature(characterName: string, featureName: string): ToolResponse {
+  activateFeature(
+    characterName: string,
+    featureName: string,
+    appliedTargets?: string[],
+  ): ToolResponse {
     for (const [pName, char] of Object.entries(this.characters)) {
       if (char.static.name.toLowerCase() !== characterName.toLowerCase()) continue;
 
@@ -2525,19 +2635,26 @@ export class GameStateManager {
         });
       }
 
-      // Try to create a bundle from each class the character has
+      // Resolve the class/subclass that owns the feature so we can build both
+      // the activation bundle and (if applied_targets given) the target bundle
+      // from the same source.
       let bundle: EffectBundle | null = null;
+      let resolvedClass: { name: string; level: number; subclass?: string } | null = null;
       for (const cls of char.static.classes) {
-        bundle = createActivationBundle(
+        const candidate = createActivationBundle(
           cls.name,
           featureName,
           cls.level,
           cls.subclass ?? undefined,
         );
-        if (bundle) break;
+        if (candidate) {
+          bundle = candidate;
+          resolvedClass = { name: cls.name, level: cls.level, subclass: cls.subclass ?? undefined };
+          break;
+        }
       }
 
-      if (!bundle) {
+      if (!bundle || !resolvedClass) {
         return toResponse(
           `No activation effects found for "${featureName}" on ${char.static.name}`,
           { target: char.static.name, feature: featureName },
@@ -2546,8 +2663,43 @@ export class GameStateManager {
         );
       }
 
+      // Strict applied_targets validation — refuse if the feature has no
+      // per-target effect (mirrors set_concentration's contract).
+      if (appliedTargets && appliedTargets.length > 0) {
+        const probe = createFeatureTargetBundle(
+          resolvedClass.name,
+          featureName,
+          resolvedClass.level,
+          char.static.name,
+          resolvedClass.subclass,
+        );
+        if (!probe) {
+          return toResponse(
+            `${featureName} has no per-target effects — drop applied_targets, or pick a feature with a target buff/debuff (Vow of Enmity, ...).`,
+            {
+              target: char.static.name,
+              feature: featureName,
+              reason: "no_target_effect",
+            },
+            true,
+          );
+        }
+      }
+
       if (!char.dynamic.activeEffects) char.dynamic.activeEffects = [];
       char.dynamic.activeEffects.push(bundle);
+
+      // Apply target bundles if requested.
+      const targetResult = appliedTargets
+        ? this.applyFeatureTargetBundles(
+            char.static.name,
+            resolvedClass.name,
+            featureName,
+            resolvedClass.level,
+            resolvedClass.subclass,
+            appliedTargets,
+          )
+        : { applied: [], missing: [] };
 
       this.createEvent("condition_added", `${char.static.name} activates ${featureName}`, []);
       this.broadcast({
@@ -2565,17 +2717,27 @@ export class GameStateManager {
         .filter((p): p is Extract<typeof p, { type: "note" }> => p.type === "note")
         .map((p) => p.text);
 
-      return toResponse(
-        `${char.static.name} activates ${featureName} (${modCount} modifiers, ${propCount} properties applied)${notes.length > 0 ? "\n" + notes.join("\n") : ""}`,
-        {
-          target: char.static.name,
-          feature: featureName,
-          activated: true,
-          bundleId: bundle.id,
-          modifiers: modCount,
-          properties: propCount,
-        },
-      );
+      const parts = [
+        `${char.static.name} activates ${featureName} (${modCount} modifiers, ${propCount} properties applied)`,
+      ];
+      if (notes.length > 0) parts.push(notes.join("\n"));
+      if (targetResult.applied.length > 0)
+        parts.push(`Applied to: ${targetResult.applied.join(", ")}`);
+      if (targetResult.missing.length > 0)
+        parts.push(
+          `Could not apply to: ${targetResult.missing.map((m) => `${m.name} (${m.reason})`).join(", ")}`,
+        );
+
+      return toResponse(parts.join("\n"), {
+        target: char.static.name,
+        feature: featureName,
+        activated: true,
+        bundleId: bundle.id,
+        modifiers: modCount,
+        properties: propCount,
+        appliedTargets: targetResult.applied,
+        missingTargets: targetResult.missing,
+      });
     }
 
     return toResponse(`Character "${characterName}" not found`, { target: characterName }, true, [
@@ -2613,6 +2775,9 @@ export class GameStateManager {
         });
       }
 
+      // Sweep any target-side bundles this feature applied (Vow of Enmity mark, etc.).
+      const { targetsCleared } = this.clearFeatureTargetBundles(char.static.name, featureName);
+
       this.createEvent("condition_removed", `${char.static.name} deactivates ${featureName}`, []);
       this.broadcast({
         type: "server:character_updated",
@@ -2620,10 +2785,15 @@ export class GameStateManager {
         character: char,
       });
       this.markCharacterDirty(pName);
-      return toResponse(`${char.static.name} deactivates ${featureName}`, {
+      const text =
+        targetsCleared.length > 0
+          ? `${char.static.name} deactivates ${featureName}. Effects cleared from: ${targetsCleared.join(", ")}`
+          : `${char.static.name} deactivates ${featureName}`;
+      return toResponse(text, {
         target: char.static.name,
         feature: featureName,
         deactivated: true,
+        targetsCleared,
       });
     }
 
@@ -4530,26 +4700,42 @@ export class GameStateManager {
    * already adjudicated who is affected (rolled saves, attack rolls); this
    * just stamps the bundle onto each combatant/character so the resolver
    * picks up the disadvantage/modifier/condition until concentration ends.
+   *
+   * Returns structured missing entries with a reason so the caller can
+   * distinguish "spell does not support target effects" (configuration mistake
+   * by the DM — set_concentration treats this as an error) from "name was not
+   * found in the encounter" (typo or wrong room — surfaced as a hint).
    */
   private applyConcentrationTargetBundles(
     caster: string,
     spellName: string,
     targetNames: string[],
-  ): { applied: string[]; missing: string[] } {
+  ): {
+    applied: string[];
+    missing: Array<{ name: string; reason: "name_not_found" | "no_target_effect" }>;
+  } {
     const applied: string[] = [];
-    const missing: string[] = [];
-    const combat = this.gameState.encounter?.combat;
+    const missing: Array<{ name: string; reason: "name_not_found" | "no_target_effect" }> = [];
 
-    for (const targetName of targetNames) {
-      const bundle = createSpellTargetBundle(spellName, caster);
-      if (!bundle) {
-        missing.push(targetName);
-        continue;
+    // Build the target bundle template once. The factory is deterministic in
+    // (spellName, caster); a null result means the spell has no per-target
+    // mechanical effect at all (e.g. Silent Image). In that case every named
+    // target is reported as "no_target_effect".
+    const template = createSpellTargetBundle(spellName, caster);
+    if (!template) {
+      for (const rawName of targetNames) {
+        missing.push({ name: rawName.trim(), reason: "no_target_effect" });
       }
+      return { applied, missing };
+    }
+
+    const combat = this.gameState.encounter?.combat;
+    for (const rawName of targetNames) {
+      const targetName = rawName.trim();
       // NPC combatant
       const combatant = combat
         ? Object.values(combat.combatants).find(
-            (c) => c.name.toLowerCase() === targetName.toLowerCase() && c.type !== "player",
+            (c) => c.name.trim().toLowerCase() === targetName.toLowerCase() && c.type !== "player",
           )
         : undefined;
       if (combatant) {
@@ -4560,14 +4746,17 @@ export class GameStateManager {
             b.sourceConcentration?.caster.toLowerCase() !== caster.toLowerCase() ||
             b.sourceConcentration?.spell.toLowerCase() !== spellName.toLowerCase(),
         );
-        combatant.activeEffects.push(bundle);
+        // Each target gets its own bundle copy — the template's id/source is
+        // the same across targets but we don't share the object reference so
+        // future per-target mutations stay scoped.
+        combatant.activeEffects.push({ ...template });
         this.recomputeCombatantSpeed(combatant);
         applied.push(combatant.name);
         continue;
       }
       // Player character
       const charEntry = Object.entries(this.characters).find(
-        ([, ch]) => ch.static.name.toLowerCase() === targetName.toLowerCase(),
+        ([, ch]) => ch.static.name.trim().toLowerCase() === targetName.toLowerCase(),
       );
       if (charEntry) {
         const [pName, char] = charEntry;
@@ -4577,22 +4766,43 @@ export class GameStateManager {
             b.sourceConcentration?.caster.toLowerCase() !== caster.toLowerCase() ||
             b.sourceConcentration?.spell.toLowerCase() !== spellName.toLowerCase(),
         );
-        char.dynamic.activeEffects.push(bundle);
+        char.dynamic.activeEffects.push({ ...template });
         applied.push(char.static.name);
         this.markCharacterDirty(pName);
         continue;
       }
-      missing.push(targetName);
+      missing.push({ name: targetName, reason: "name_not_found" });
     }
     return { applied, missing };
   }
 
   setConcentration(targetName: string, spellName: string, appliedTargets?: string[]): ToolResponse {
+    // Pre-validate applied_targets against the spell shape. If the caller
+    // provides target names but the spell has no per-target mechanical effect
+    // (e.g. Silent Image, Beast Bond), refuse with an error before mutating
+    // any state. This forces the DM to either drop applied_targets or pick a
+    // spell that actually buffs/debuffs its targets.
+    if (appliedTargets && appliedTargets.length > 0) {
+      const probe = createSpellTargetBundle(spellName, targetName);
+      if (!probe) {
+        return toResponse(
+          `${spellName} has no per-target effects — drop applied_targets, or pick a spell with a target buff/debuff (Bless, Bane, Hold Person, ...)`,
+          {
+            target: targetName,
+            spell: spellName,
+            reason: "no_target_effect",
+          },
+          true,
+        );
+      }
+    }
+
     // Check NPC combatants
     const combat = this.gameState.encounter?.combat;
     if (combat) {
       const combatant = Object.values(combat.combatants).find(
-        (c) => c.name.toLowerCase() === targetName.toLowerCase() && c.type !== "player",
+        (c) =>
+          c.name.trim().toLowerCase() === targetName.trim().toLowerCase() && c.type !== "player",
       );
       if (combatant) {
         const prev = combatant.concentratingOn?.spellName;
@@ -4629,7 +4839,10 @@ export class GameStateManager {
             : `${combatant.name} is now concentrating on ${spellName}`,
         ];
         if (applied.length > 0) parts.push(`Applied to: ${applied.join(", ")}`);
-        if (missing.length > 0) parts.push(`Could not apply to: ${missing.join(", ")}`);
+        if (missing.length > 0)
+          parts.push(
+            `Could not apply to: ${missing.map((m) => `${m.name} (${m.reason})`).join(", ")}`,
+          );
         this.markDirty();
         return toResponse(parts.join(". "), {
           target: combatant.name,
@@ -4644,7 +4857,7 @@ export class GameStateManager {
 
     // Player characters
     for (const [pName, char] of Object.entries(this.characters)) {
-      if (char.static.name.toLowerCase() === targetName.toLowerCase()) {
+      if (char.static.name.trim().toLowerCase() === targetName.trim().toLowerCase()) {
         const prev = char.dynamic.concentratingOn?.spellName;
         // Remove previous spell bundle if switching concentration
         if (prev && char.dynamic.activeEffects) {
@@ -4676,7 +4889,10 @@ export class GameStateManager {
             : `${char.static.name} is now concentrating on ${spellName}`,
         ];
         if (applied.length > 0) parts.push(`Applied to: ${applied.join(", ")}`);
-        if (missing.length > 0) parts.push(`Could not apply to: ${missing.join(", ")}`);
+        if (missing.length > 0)
+          parts.push(
+            `Could not apply to: ${missing.map((m) => `${m.name} (${m.reason})`).join(", ")}`,
+          );
         this.markCharacterDirty(pName);
         return toResponse(parts.join(". "), {
           target: char.static.name,
