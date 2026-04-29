@@ -4136,11 +4136,13 @@ export class GameStateManager {
           }
         }
 
-        // Clear effect bundles with until_rest lifetime (both short and long expire on short rest)
+        // Clear effect bundles with until_rest lifetime tagged rest: "short".
+        // rest: "long" bundles persist through short rest — they only expire on
+        // long rest (see EffectLifetime docs in shared/types/effects.ts).
         if (char.dynamic.activeEffects) {
           const beforeLen = char.dynamic.activeEffects.length;
           char.dynamic.activeEffects = char.dynamic.activeEffects.filter(
-            (b) => b.lifetime.type !== "until_rest",
+            (b) => !(b.lifetime.type === "until_rest" && b.lifetime.rest === "short"),
           );
           const clearedCount = beforeLen - char.dynamic.activeEffects.length;
           if (clearedCount > 0) {
@@ -4321,6 +4323,11 @@ export class GameStateManager {
             restored.push(`${clearedCount} temporary effect(s) expired`);
           }
         }
+
+        // Temp HP expires on long rest (PHB 2024). Sources with their own
+        // duration (Aid 8h, Armor of Agathys 1h, Heroism concentration) run on
+        // their own clocks and are gone by the end of an 8-hour rest anyway.
+        char.dynamic.tempHP = 0;
 
         // Decrement exhaustion by 1 on long rest (PHB 2024 p.367)
         if (char.dynamic.exhaustionLevel && char.dynamic.exhaustionLevel > 0) {

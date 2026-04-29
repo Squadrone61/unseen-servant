@@ -155,6 +155,56 @@ describe("shortRest", () => {
     });
   });
 
+  describe("does not clear tempHP", () => {
+    it("tempHP carries through short rest (PHB 2024)", () => {
+      const theron = getTheron(gsm);
+      theron.dynamic.tempHP = 8;
+
+      const result = gsm.shortRest(["Theron"]);
+
+      assertToolSuccess(result);
+      expect(getTheron(gsm).dynamic.tempHP).toBe(8);
+    });
+  });
+
+  describe("until_rest effect bundle filtering", () => {
+    it("clears bundles tagged rest: 'short' on short rest", () => {
+      const theron = getTheron(gsm);
+      theron.dynamic.activeEffects = [
+        {
+          id: "test:short-rest-bundle",
+          source: { type: "spell", name: "TestShortBundle" },
+          lifetime: { type: "until_rest", rest: "short" },
+          effects: {},
+        },
+      ];
+
+      const result = gsm.shortRest(["Theron"]);
+
+      assertToolSuccess(result);
+      const ids = (getTheron(gsm).dynamic.activeEffects ?? []).map((b) => b.id);
+      expect(ids).not.toContain("test:short-rest-bundle");
+    });
+
+    it("preserves bundles tagged rest: 'long' on short rest", () => {
+      const theron = getTheron(gsm);
+      theron.dynamic.activeEffects = [
+        {
+          id: "test:long-rest-bundle",
+          source: { type: "feat", name: "TestLongBundle" },
+          lifetime: { type: "until_rest", rest: "long" },
+          effects: {},
+        },
+      ];
+
+      const result = gsm.shortRest(["Theron"]);
+
+      assertToolSuccess(result);
+      const ids = (getTheron(gsm).dynamic.activeEffects ?? []).map((b) => b.id);
+      expect(ids).toContain("test:long-rest-bundle");
+    });
+  });
+
   describe("no matching characters — error", () => {
     it("returns error ToolResponse when character name does not match any player", () => {
       const result = gsm.shortRest(["Glarbnaz the Unknowable"]);
@@ -370,6 +420,55 @@ describe("longRest", () => {
       assertToolSuccess(result);
       const hasPoison = getTheron(gsm).dynamic.conditions.some((c) => c.name === "Poisoned");
       expect(hasPoison).toBe(true);
+    });
+  });
+
+  describe("until_rest effect bundle filtering", () => {
+    it("clears both rest: 'short' and rest: 'long' bundles on long rest", () => {
+      const theron = getTheron(gsm);
+      theron.dynamic.activeEffects = [
+        {
+          id: "test:short-rest-bundle",
+          source: { type: "spell", name: "TestShortBundle" },
+          lifetime: { type: "until_rest", rest: "short" },
+          effects: {},
+        },
+        {
+          id: "test:long-rest-bundle",
+          source: { type: "feat", name: "TestLongBundle" },
+          lifetime: { type: "until_rest", rest: "long" },
+          effects: {},
+        },
+      ];
+
+      const result = gsm.longRest(["Theron"]);
+
+      assertToolSuccess(result);
+      const ids = (getTheron(gsm).dynamic.activeEffects ?? []).map((b) => b.id);
+      expect(ids).not.toContain("test:short-rest-bundle");
+      expect(ids).not.toContain("test:long-rest-bundle");
+    });
+  });
+
+  describe("clears tempHP", () => {
+    it("zeroes out tempHP on long rest (PHB 2024 default)", () => {
+      const theron = getTheron(gsm);
+      theron.dynamic.tempHP = 10;
+
+      const result = gsm.longRest(["Theron"]);
+
+      assertToolSuccess(result);
+      expect(getTheron(gsm).dynamic.tempHP).toBe(0);
+    });
+
+    it("leaves tempHP at 0 when already 0 (no-op)", () => {
+      const theron = getTheron(gsm);
+      theron.dynamic.tempHP = 0;
+
+      const result = gsm.longRest(["Theron"]);
+
+      assertToolSuccess(result);
+      expect(getTheron(gsm).dynamic.tempHP).toBe(0);
     });
   });
 
